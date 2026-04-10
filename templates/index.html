@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skriptorij V8 Turbo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    {{ introhtml | safe }}
+
+    <div id="main-ui-wrapper" style="display:none; opacity:0;">
+
+        <header class="app-header">
+            <div class="logo-area">
+                <svg class="quill-icon" viewBox="0 0 24 24" fill="none" stroke="url(#neonGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <defs>
+                        <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#00f3ff"/>
+                            <stop offset="50%" stop-color="#e000ff"/>
+                            <stop offset="100%" stop-color="#ff2a00"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                    <line x1="16" y1="8" x2="2" y2="22"></line>
+                    <line x1="17.5" y1="15" x2="9" y2="15"></line>
+                </svg>
+                <span class="app-title">SKRIPTORIJ <span class="accent">V8</span> TURBO</span>
+            </div>
+            <div id="status-badge" class="status-badge idle">IDLE</div>
+        </header>
+
+        <main class="app-main">
+
+            <!-- Lijeva kolona: kontrole -->
+            <section class="panel control-panel">
+                <h2 class="panel-title">📚 Knjiga &amp; Model</h2>
+
+                <div class="form-group">
+                    <label for="book-select">Odaberi knjigu</label>
+                    <select id="book-select" class="input-field">
+                        <option value="">-- Učitavam listu --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="model-select">AI Model</label>
+                    <select id="model-select" class="input-field">
+                        <option value="QUAD_CORE">QUAD_CORE</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="upload-input">Upload knjige (.epub / .mobi)</label>
+                    <input type="file" id="upload-input" class="input-field" accept=".epub,.mobi">
+                    <button id="upload-btn" class="btn btn-secondary">⬆ Upload</button>
+                    <span id="upload-msg" class="info-msg"></span>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="start-btn" class="btn btn-primary">▶ START</button>
+                    <button id="pause-btn" class="btn btn-warning" disabled>⏸ PAUZA</button>
+                    <button id="resume-btn" class="btn btn-success" disabled>▶ NASTAVI</button>
+                    <button id="stop-btn" class="btn btn-danger" disabled>⏹ STOP</button>
+                    <button id="reset-btn" class="btn btn-secondary">↺ RESET</button>
+                </div>
+            </section>
+
+            <!-- Desna kolona: status -->
+            <section class="panel status-panel">
+                <h2 class="panel-title">📊 Status Obrade</h2>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Engine</span>
+                        <span id="stat-engine" class="stat-value accent">---</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Fajl</span>
+                        <span id="stat-file" class="stat-value">---</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Fajlovi</span>
+                        <span id="stat-files" class="stat-value">0 / 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Chunkovi</span>
+                        <span id="stat-chunks" class="stat-value">0 / 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">OK / Skip</span>
+                        <span id="stat-ok" class="stat-value success">0 / 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">ETA</span>
+                        <span id="stat-eta" class="stat-value">--:--:--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Fleet aktivan</span>
+                        <span id="stat-fleet-active" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Fleet hlađenje</span>
+                        <span id="stat-fleet-cooling" class="stat-value">0</span>
+                    </div>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Napredak</span>
+                        <span id="progress-pct">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="progress-bar" class="progress-bar-fill" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <div class="audit-container">
+                    <h3 class="audit-title">🔍 Live Audit</h3>
+                    <div id="live-audit" class="audit-log">Sistem spreman. Čekam inicijalizaciju...</div>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

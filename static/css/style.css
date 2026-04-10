@@ -1,0 +1,319 @@
+/* ============================================================
+   SKRIPTORIJ V8 TURBO — Global Styles
+   ============================================================ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg:        #0a0a0f;
+    --bg-panel:  #0f0f1a;
+    --bg-input:  #15152a;
+    --border:    #1e1e3a;
+    --cyan:      #00f3ff;
+    --red:       #ff2a00;
+    --purple:    #e000ff;
+    --amber:     #f59e0b;
+    --green:     #10b981;
+    --text:      #c8d0e0;
+    --text-dim:  #5a6278;
+    --radius:    8px;
+    --transition: 0.25s ease;
+}
+
+html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-panel);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.quill-icon {
+    width: 36px;
+    height: 36px;
+    filter: drop-shadow(0 0 8px var(--cyan));
+}
+
+.app-title {
+    font-size: 1.25rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text);
+    text-shadow: 0 0 12px rgba(0, 243, 255, 0.4);
+}
+
+.app-title .accent {
+    color: var(--cyan);
+}
+
+/* ── Status Badge ─────────────────────────────────────────── */
+.status-badge {
+    padding: 0.35rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 2px solid;
+    transition: var(--transition);
+}
+
+.status-badge.idle       { border-color: var(--text-dim); color: var(--text-dim); }
+.status-badge.running    { border-color: var(--cyan);   color: var(--cyan);   box-shadow: 0 0 10px var(--cyan); }
+.status-badge.paused     { border-color: var(--amber);  color: var(--amber);  box-shadow: 0 0 10px var(--amber); }
+.status-badge.stopped    { border-color: var(--red);    color: var(--red);    box-shadow: 0 0 10px var(--red); }
+.status-badge.done       { border-color: var(--green);  color: var(--green);  box-shadow: 0 0 10px var(--green); }
+
+/* ── Main Layout ──────────────────────────────────────────── */
+.app-main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+    min-height: calc(100vh - 70px);
+}
+
+@media (max-width: 900px) {
+    .app-main {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Panel ────────────────────────────────────────────────── */
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.panel-title {
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+}
+
+/* ── Form Elements ────────────────────────────────────────── */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-group label {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.input-field {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 0.55rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.input-field:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 6px rgba(0, 243, 255, 0.3);
+}
+
+select.input-field {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2300f3ff' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+    padding-right: 2rem;
+}
+
+input[type="file"].input-field {
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+}
+
+.info-msg {
+    font-size: 0.8rem;
+    color: var(--green);
+    min-height: 1.2em;
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    border: 2px solid;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all var(--transition);
+    background: transparent;
+}
+
+.btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.btn-primary   { border-color: var(--cyan);   color: var(--cyan); }
+.btn-secondary { border-color: var(--text-dim); color: var(--text-dim); }
+.btn-warning   { border-color: var(--amber);  color: var(--amber); }
+.btn-success   { border-color: var(--green);  color: var(--green); }
+.btn-danger    { border-color: var(--red);    color: var(--red); }
+
+.btn:not(:disabled):hover.btn-primary   { background: var(--cyan);   color: var(--bg); box-shadow: 0 0 14px var(--cyan); }
+.btn:not(:disabled):hover.btn-secondary { background: var(--text-dim); color: var(--bg); }
+.btn:not(:disabled):hover.btn-warning   { background: var(--amber);  color: var(--bg); box-shadow: 0 0 14px var(--amber); }
+.btn:not(:disabled):hover.btn-success   { background: var(--green);  color: var(--bg); box-shadow: 0 0 14px var(--green); }
+.btn:not(:disabled):hover.btn-danger    { background: var(--red);    color: var(--bg); box-shadow: 0 0 14px var(--red); }
+
+/* ── Stats Grid ───────────────────────────────────────────── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.stat-item {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.stat-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    word-break: break-all;
+}
+
+.stat-value.accent  { color: var(--cyan); }
+.stat-value.success { color: var(--green); }
+
+/* ── Progress Bar ─────────────────────────────────────────── */
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.progress-bar-bg {
+    width: 100%;
+    height: 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    border-radius: 100px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 8px var(--cyan);
+}
+
+/* ── Live Audit Log ───────────────────────────────────────── */
+.audit-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 0;
+}
+
+.audit-title {
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.audit-log {
+    flex: 1;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: var(--green);
+    white-space: pre-wrap;
+    overflow-y: auto;
+    min-height: 200px;
+    max-height: 420px;
+}
+
+/* ── Transitions for main-ui-wrapper ─────────────────────── */
+#main-ui-wrapper {
+    transition: opacity 0.8s ease;
+}
