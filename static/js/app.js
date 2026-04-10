@@ -7,6 +7,9 @@ let fleetPollInterval = null;
 let isRunning = false;
 let lastAuditHTML = '';
 
+const FLEET_BAR_HIGH = 60;
+const FLEET_BAR_MID = 30;
+
 document.addEventListener('DOMContentLoaded', () => {
     applyStoredTheme();
     loadBooks();
@@ -422,7 +425,7 @@ function updateFleetPool() {
                 const cooling = info.cooling || 0;
                 const total = info.total || (active + cooling) || 1;
                 const pct = Math.round((active / total) * 100);
-                const barColor = pct > 60 ? 'var(--col-success)' : pct > 30 ? 'var(--col-warning)' : 'var(--col-danger)';
+                const barColor = pct > FLEET_BAR_HIGH ? 'var(--col-success)' : pct > FLEET_BAR_MID ? 'var(--col-warning)' : 'var(--col-danger)';
 
                 html += '<tr>'
                     + '<td class="fleet-prov">' + prov + '</td>'
@@ -451,7 +454,7 @@ function _updateEl(id, val) {
 }
 
 // Tastatura shortcut-i
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey) {
         const setupScreen = document.getElementById('setup-screen');
         if (e.key === 'Enter' && setupScreen && !setupScreen.classList.contains('hidden')) {
