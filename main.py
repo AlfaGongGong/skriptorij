@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 import os
 import re
 import threading
@@ -10,7 +10,7 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 PORT = 8080
 PROJECTS_ROOT = os.path.join(os.getcwd(), 'data')
 os.makedirs(PROJECTS_ROOT, exist_ok=True)
-SHARED_STATS = {'status': 'IDLE', 'active_engine': '---', 'current_file': '---', 'current_file_idx': 0, 'total_files': 0, 'current_chunk_idx': 0, 'total_file_chunks': 0, 'ok': '0 / 0', 'skipped': '0', 'pct': 0, 'est': '--:--:--', 'fleet_active': 0, 'fleet_cooling': 0, 'live_audit': 'Sistem spreman. Čekam inicijalizaciju...'}
+SHARED_STATS = {'status': 'IDLE', 'active_engine': '---', 'current_file': '---', 'current_file_idx': 0, 'total_files': 0, 'current_chunk_idx': 0, 'total_file_chunks': 0, 'ok': '0 / 0', 'skipped': '0', 'pct': 0, 'est': '--:--:--', 'fleet_active': 0, 'fleet_cooling': 0, 'live_audit': 'Sistem spreman. Čekam inicijalizaciju...', 'output_file': ''}
 SHARED_CONTROLS = {'pause': False, 'stop': False, 'reset': False}
 _start_time = None
 _start_pct = 0
@@ -45,7 +45,7 @@ def reset_stats():
     global _start_time, _start_pct
     _start_time = None
     _start_pct = 0
-    SHARED_STATS.update({'status': 'RESETOVANO', 'active_engine': '---', 'current_file': '---', 'current_file_idx': 0, 'total_files': 0, 'current_chunk_idx': 0, 'total_file_chunks': 0, 'ok': '0 / 0', 'skipped': '0', 'pct': 0, 'est': '--:--:--', 'fleet_active': 0, 'fleet_cooling': 0, 'live_audit': 'Sesija resetovana.\n'})
+    SHARED_STATS.update({'status': 'RESETOVANO', 'active_engine': '---', 'current_file': '---', 'current_file_idx': 0, 'total_files': 0, 'current_chunk_idx': 0, 'total_file_chunks': 0, 'ok': '0 / 0', 'skipped': '0', 'pct': 0, 'est': '--:--:--', 'fleet_active': 0, 'fleet_cooling': 0, 'live_audit': 'Sesija resetovana.\n', 'output_file': ''})
     SHARED_CONTROLS.update({'pause': False, 'stop': False, 'reset': False})
 
 def _racunaj_eta():
@@ -76,7 +76,7 @@ def list_books():
     os.makedirs(PROJECTS_ROOT, exist_ok=True)
     files = sorted((f for f in os.listdir(PROJECTS_ROOT) if f.lower().endswith(('.epub', '.mobi'))))
     try:
-        with open('last_book.json', 'r') as f:
+        with open(os.path.join(PROJECTS_ROOT, 'last_book.json'), 'r') as f:
             last = json.load(f).get('last_book')
     except Exception:
         last = None
@@ -104,7 +104,7 @@ def dev_models():
         models = ['QUAD_CORE'] + [k for k in data.keys() if k.upper() not in skip]
         return jsonify(models)
     except Exception:
-        return jsonify([' <!-- V8_turbo', 'GEMINI', 'GROQ', 'CEREBRAS'])
+        return jsonify(['QUAD_CORE', 'GEMINI', 'GROQ', 'CEREBRAS'])
 
 @app.route('/api/status')
 def get_status():
@@ -131,27 +131,42 @@ def start_processing():
             return (jsonify({'error': 'Nije odabran fajl'}), 400)
         book = secure_filename(data['book'])
         model = data.get('model', 'QUAD_CORE')
+        mode = data.get('mode', 'PREVOD').upper()
         book_path = _safe_path(book)
         if not os.path.exists(book_path):
             return (jsonify({'error': f"Fajl '{book}' ne postoji na serveru"}), 404)
         SHARED_CONTROLS.update({'pause': False, 'stop': False, 'reset': False})
-        SHARED_STATS.update({'status': 'POKRETANJE...', 'current_file': book, 'active_engine': model, 'pct': 0, 'ok': '0 / 0', 'live_audit': f'Inicijalizacija za: {book}\n'})
+        SHARED_STATS.update({'status': 'POKRETANJE...', 'current_file': book, 'active_engine': model, 'pct': 0, 'ok': '0 / 0', 'live_audit': f'Inicijalizacija za: {book}\n', 'output_file': ''})
         _start_time = time.time()
         _start_pct = 0
         try:
-            with open('last_book.json', 'w') as f:
+            with open(os.path.join(PROJECTS_ROOT, 'last_book.json'), 'w') as f:
                 json.dump({'last_book': book}, f)
         except Exception:
             pass
-        from skriptorij import start_skriptorij_from_master
-        thread = threading.Thread(target=start_skriptorij_from_master, args=(book_path, model, SHARED_STATS, SHARED_CONTROLS), daemon=True)
+        if mode == 'TTS':
+            from tts import start_from_master as start_tts
+            thread = threading.Thread(target=start_tts, args=(book_path, model, SHARED_STATS, SHARED_CONTROLS), daemon=True)
+        else:
+            from skriptorij import start_skriptorij_from_master
+            thread = threading.Thread(target=start_skriptorij_from_master, args=(book_path, model, SHARED_STATS, SHARED_CONTROLS), daemon=True)
         thread.start()
-        return jsonify({'status': 'Started', 'file': book})
+        return jsonify({'status': 'Started', 'file': book, 'mode': mode})
     except ValueError as e:
         return (jsonify({'error': str(e)}), 400)
     except Exception as e:
         SHARED_STATS['status'] = 'GREŠKA PRI STARTU'
         return (jsonify({'error': str(e)}), 500)
+
+@app.route('/api/download/<path:filename>')
+def download_file(filename):
+    safe = secure_filename(filename)
+    full = os.path.realpath(os.path.join(PROJECTS_ROOT, safe))
+    if not full.startswith(os.path.realpath(PROJECTS_ROOT)):
+        return (jsonify({'error': 'Neispravan zahtjev'}), 400)
+    if not os.path.exists(full):
+        return (jsonify({'error': 'Fajl nije pronađen'}), 404)
+    return send_from_directory(PROJECTS_ROOT, safe, as_attachment=True)
 
 @app.route('/control/<action>', methods=['POST'])
 def control_process(action):

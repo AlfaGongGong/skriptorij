@@ -9,6 +9,7 @@
 
 import os
 import re
+import shutil
 import zipfile
 import time
 import json
@@ -22,6 +23,12 @@ from datetime import datetime
 from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString, XMLParsedAsHTMLWarning
 from api_fleet import FleetManager
+
+try:
+    import mobi
+    HAS_MOBI = True
+except ImportError:
+    HAS_MOBI = False
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
@@ -72,9 +79,6 @@ def _url_daisy():
 _GLOBAL_DOOR = asyncio.Lock()
 _LAST_CALLS = {}
 MIN_GAP = 2.3
-
-BASE_PATH = Path("/storage/emulated/0/termux/Termux_ai_lektor")
-PROJECTS_ROOT = BASE_PATH / "format_projects"
 
 
 # ============================================================================
@@ -1089,7 +1093,7 @@ class SkriptorijAllInOne:
                         f.relative_to(self.work_dir),
                         compress_type=zipfile.ZIP_DEFLATED,
                     )
-        self.shared_stats.update({"status": "✅ Operacija završena", "pct": 100})
+        self.shared_stats.update({"status": "✅ Operacija završena", "pct": 100, "output_file": self.out_path.name})
         self.log(f"📖 EPUB: {self.out_path.name}", "system")
 
 
@@ -1103,8 +1107,44 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
     engine.work_dir.mkdir(parents=True, exist_ok=True)
     engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    with zipfile.ZipFile(engine.book_path, "r") as z:
-        z.extractall(engine.work_dir)
+    # MOBI podrška — konverzija u EPUB/HTML prije obrade
+    if engine.book_path.suffix.lower() == ".mobi":
+        if not HAS_MOBI:
+            engine.log(
+                "Greška! MOBI dekoder nije instaliran. Pokrenite: <b>pip install mobi</b>",
+                "error",
+            )
+            sharedstats["status"] = "ZAUSTAVLJENO"
+            return
+        engine.log(f"Razbijam MOBI strukturu: {engine.book_path.name}...", "system")
+        sharedstats["status"] = "RASPAKOVANJE MOBI-ja..."
+        try:
+            tempdir, filepath = mobi.extract(str(engine.book_path))
+            extracted_path = Path(filepath)
+            if extracted_path.suffix.lower() == ".epub":
+                with zipfile.ZipFile(extracted_path, "r") as z:
+                    z.extractall(engine.work_dir)
+            elif extracted_path.is_dir():
+                for item in extracted_path.rglob("*"):
+                    if item.is_file():
+                        rel_path = item.relative_to(extracted_path)
+                        target = engine.work_dir / rel_path
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy(item, target)
+            else:
+                shutil.copy(extracted_path, engine.work_dir / extracted_path.name)
+            try:
+                shutil.rmtree(tempdir, ignore_errors=True)
+            except Exception:
+                pass
+            engine.log("MOBI uspješno konvertovan. Nastavljam V8 obradu.", "system")
+        except Exception as e:
+            engine.log(f"MOBI ekstrakcija neuspješna: {e}", "error")
+            sharedstats["status"] = "ZAUSTAVLJENO"
+            return
+    else:
+        with zipfile.ZipFile(engine.book_path, "r") as z:
+            z.extractall(engine.work_dir)
 
     engine.html_files = sorted(
         [

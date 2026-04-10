@@ -47,8 +47,8 @@ class TTSProcessor:
 
         self.fleet = FleetManager()
 
-        # Checkpoint sistem ostaje u radnom folderu skripte
-        self.checkpoint_path = Path("tts_map_checkpoint.json")
+        # Checkpoint se čuva pored knjige u data/ folderu
+        self.checkpoint_path = self.book_path.parent / "tts_map_checkpoint.json"
         self.phonetic_dictionary = self._load_checkpoint()
 
         self.hr_stopwords = {
@@ -379,8 +379,10 @@ class TTSProcessor:
 
             self._save_moon_reader_filter()
             self.shared_stats["status"] = "ZAVRŠENO"
+            self.shared_stats["pct"] = 100
             self.shared_stats["active_engine"] = "---"
             self.shared_stats["current_worker"] = "---"
+            self.shared_stats["output_file"] = out_name
 
         shutil.rmtree(self.work_dir, ignore_errors=True)
 

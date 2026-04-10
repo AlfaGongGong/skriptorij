@@ -38,19 +38,23 @@ from api_fleet import FleetManager
 
 # ============================================================================
 # KONFIGURACIJA - PROXY LISTA
+# Proxy konfiguracija se učitava iz proxies.json (nije u verzioniranju).
+# Format: lista stringova "ip:port:korisnik:lozinka"
+# Primjer: kopirajte proxies.json.example u proxies.json i unesite vaše podatke.
 # ============================================================================
-RAW_PROXIES = [
-    "31.59.20.176:6754:alfagonggong:2010Danizock",
-    "23.95.150.145:6114:alfagonggong:2010Danizock",
-    "198.23.239.134:6540:alfagonggong:2010Danizock",
-    "45.38.107.97:6014:alfagonggong:2010Danizock",
-    "107.172.163.27:6543:alfagonggong:2010Danizock",
-    "198.105.121.200:6462:alfagonggong:2010Danizock",
-    "216.10.27.159:6837:alfagonggong:2010Danizock",
-    "142.111.67.146:5611:alfagonggong:2010Danizock",
-    "191.96.254.138:6185:alfagonggong:2010Danizock",
-    "31.58.9.4:6077:alfagonggong:2010Danizock",
-]
+def _load_proxies():
+    proxy_file = Path(__file__).parent / "proxies.json"
+    try:
+        with open(proxy_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            return [str(p) for p in data if p]
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return []
+
+
+RAW_PROXIES = _load_proxies()
 
 
 def get_random_proxy():
