@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Skriptorij — osjetljivi i generisani fajlovi
+proxies.json
+dev_api.json
+data/
+*.epub
+*.mobi
