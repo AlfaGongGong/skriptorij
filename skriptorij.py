@@ -1,0 +1,1155 @@
+# ============================================================================
+# SKRIPTORIJ V8 OMNI-CORE — skriptorij.py
+# Poboljšanja: #5 Rate-limit headeri | #6 asyncio.to_thread | #7 Atomic write
+# #8 Exp. backoff | #9 Overlap chunking | #11 Dinamička analiza knjige
+# #12 Idiomska zaštita | #13 Konzistentnost tona | #14 Trostepeni pipeline
+# #15 AI marker čišćenje | #16 Poboljšana halucinacija | #17 Gemini 2.5
+# #18 Bolja temperatura
+# ============================================================================
+
+import os
+import re
+import zipfile
+import time
+import json
+import asyncio
+import random
+import requests
+import urllib3
+import warnings
+from collections import Counter
+from datetime import datetime
+from pathlib import Path
+from bs4 import BeautifulSoup, NavigableString, XMLParsedAsHTMLWarning
+from api_fleet import FleetManager
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+
+
+# ============================================================================
+# URL GENERATORI
+# ============================================================================
+def _url_gemini_compat():
+    return "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+
+
+def _url_groq():
+    return "https://api.groq.com/openai/v1/chat/completions"
+
+
+def _url_samba():
+    return "https://api.sambanova.ai/v1/chat/completions"
+
+
+def _url_cerebras():
+    return "https://api.cerebras.ai/v1/chat/completions"
+
+
+def _url_mistral():
+    return "https://api.mistral.ai/v1/chat/completions"
+
+
+def _url_cohere():
+    return "https://api.cohere.com/v2/chat"
+
+
+def _url_openrouter():
+    return "https://openrouter.ai/api/v1/chat/completions"
+
+
+def _url_github():
+    return "https://models.inference.ai.azure.com/chat/completions"
+
+
+def _url_daisy():
+    return "http://www.daisy.org/z3986/2005/ncx/"
+
+
+# ============================================================================
+# GLOBALNI RATE LIMITER
+# ============================================================================
+_GLOBAL_DOOR = asyncio.Lock()
+_LAST_CALLS = {}
+MIN_GAP = 2.3
+
+BASE_PATH = Path("/storage/emulated/0/termux/Termux_ai_lektor")
+PROJECTS_ROOT = BASE_PATH / "format_projects"
+
+
+# ============================================================================
+# #15: AI MARKER ČIŠĆENJE
+# ============================================================================
+_AI_TELLS_PATTERNS = [
+    r"\bNaravno[,!]?\b",
+    r"\bSvakako[,!]?\b",
+    r"\bKao što znate\b",
+    r"\bZanimljivo je da\b",
+    r"\bVrijedi napomenuti\b",
+    r"\bU zaključku\b",
+    r"\bSažeto rečeno[,]?\b",
+    r"\bUkratko[,]?\b",
+    r"Evo (?:rezultata|prijevoda|teksta)[:\.]?",
+    r"Izvolite[:\.]?",
+    r"Prijevod[:\.]?",
+    r"Lektura[:\.]?",
+    r"Ovdje je (?:vaš|tvoj) (?:tekst|prijevod)[:\.]?",
+    r"Nadam se da (?:vam|ti) (?:se sviđa|je korisno)[!.]?",
+    r"Rado (?:sam|ću) (?:pomoći|prevesti)[!.]?",
+]
+
+
+def _ocisti_ai_markere(tekst: str) -> str:
+    for p in _AI_TELLS_PATTERNS:
+        tekst = re.sub(p, "", tekst, flags=re.IGNORECASE)
+    tekst = re.sub(r"\n{3,}", "\n\n", tekst)
+    return tekst.strip()
+
+
+# ============================================================================
+# DETEKCIJA ENGLESKOG
+# ============================================================================
+_EN_STOPWORDS = frozenset(
+    {
+        "the",
+        "and",
+        "was",
+        "for",
+        "are",
+        "with",
+        "his",
+        "they",
+        "have",
+        "from",
+        "this",
+        "that",
+        "will",
+        "what",
+        "their",
+        "said",
+        "been",
+        "which",
+        "into",
+        "but",
+        "not",
+        "she",
+        "her",
+        "had",
+        "him",
+        "its",
+        "our",
+        "out",
+        "who",
+        "when",
+        "than",
+        "then",
+        "some",
+        "very",
+        "just",
+        "like",
+        "your",
+        "can",
+    }
+)
+
+
+def _detektuj_en_ostatke(tekst: str) -> float:
+    try:
+        cist = re.sub(r"<[^>]+>", "", tekst).lower()
+        words = re.findall(r"\b[a-z]{3,}\b", cist)
+        if not words:
+            return 0.0
+        return sum(1 for w in words if w in _EN_STOPWORDS) / len(words)
+    except Exception:
+        return 0.0
+
+
+# ============================================================================
+# #16: POBOLJŠANA HALUCINACIJA DETEKCIJA
+# ===========================================
+def _detektuj_halucinaciju(original: str, prijevod: str, uloga: str = "LEKTOR") -> bool:
+    """
+    Detektuje STVARNE halucinacije — ne odbacuje lektorirane verzije!
+    Pragovi su FLEKSIBILNI:
+    - PREVODILAC: stroža (ratio 0.15-3.0)
+    - LEKTOR: VRLO blaža (ratio 0.1-4.5) — koristi sve što je logično
+    """
+    try:
+        orig_len = len(re.sub(r"<[^>]+>", "", original))
+        prev_len = len(re.sub(r"<[^>]+>", "", prijevod))
+
+        # Minimalnost — ako je dovoljno nešto
+        if orig_len == 0 or prev_len < 15:
+            return False
+
+        ratio = prev_len / orig_len
+
+        # ⚠️ SAMO EKSTREMNI SLUČAJEVI — ne odbacuj lekturu!
+        if uloga == "LEKTOR":
+            # Lektorirani tekst može biti 10%-450% originala — nije greška!
+            if ratio < 0.10 or ratio > 4.5:
+                return True
+        else:  # PREVODILAC
+            # Prijevod mora biti closer
+            if ratio < 0.15 or ratio > 3.0:
+                return True
+
+        # TEST 2: BESKONAČNA PETLJA — ista rečenica 7+ puta (ne 3!)
+        recenice = [
+            s.strip() for s in re.split(r"[.!?]", prijevod) if len(s.strip()) > 20
+        ]
+        counts = Counter(recenice)
+        if any(v >= 7 for v in counts.values()):  # ← Povećano na 7
+            return True
+
+        # TEST 3: 4-gram ponavljanje — samo ako je doista loše (8+ puta)
+        words = re.findall(r"\b\w+\b", prijevod.lower())
+        if len(words) > 80:  # ← Povećan na 80 slov, ne 50
+            grams = [" ".join(words[i : i + 4]) for i in range(len(words) - 3)]
+            counts = Counter(grams)
+            if any(v >= 8 for v in counts.values()):  # ← Povećano na 8
+                return True
+
+        # Ako prođe sve testove — nije halucinacija!
+        return False
+    except Exception:
+        return False
+
+
+def _agresivno_cisti(tekst: str) -> str:
+    if not tekst:
+        return ""
+    patterns = [
+        r"https?://googleusercontent\.com/immersive_entry_chip/\d+",
+        r"```(?:html|json|text|xml)?\s*",
+        r"```\s*$",
+        r"ZADATAK:.*?\n",
+        r"GLOSAR:.*?\n",
+        r"SYSTEM:.*?\n",
+        r"\*\*(.*?)\*\*",
+    ]
+    for p in patterns:
+        tekst = re.sub(
+            p,
+            r"\1" if r"\1" in p else "",
+            tekst,
+            flags=re.DOTALL | re.IGNORECASE | re.MULTILINE,
+        )
+    return _ocisti_ai_markere(tekst.strip())
+
+
+# ============================================================================
+# LOGIRANJE
+# ============================================================================
+audit_logs = []
+
+
+def add_audit(msg, atype="info", en_text="", shared_stats=None):
+    global audit_logs
+    ts = datetime.now().strftime("%H:%M:%S")
+    style_map = {
+        "system": (
+            "border-left:4px solid #c026d3",
+            "background:#2e0b36",
+            "color:#f0abfc",
+        ),
+        "tech": (
+            "border-left:3px solid #cbd5e1",
+            "background:#1e293b",
+            "color:#94a3b8; font-size:0.85em",
+        ),
+        "warning": ("border-left:3px solid #fa0", "background:#310", "color:#fa0"),
+        "error": ("border-left:4px solid #f44", "background:#300", "color:#f44"),
+        "validator": (
+            "border-left:3px solid #10b981",
+            "background:#052e16",
+            "color:#6ee7b7; font-size:0.85em",
+        ),
+    }
+    if atype == "accordion":
+        entry = f"<div>{en_text}</div>"
+    else:
+        s = style_map.get(
+            atype,
+            (
+                "border-left:2px solid #334155",
+                "background:transparent",
+                "color:#94a3b8; font-size:0.9em",
+            ),
+        )
+        entry = (
+            f"<div style='{s[0]}; {s[1]}; {s[2]}; padding:8px; margin-bottom:5px; border-radius:4px;'>"
+            f"<b>[{ts}]</b> {msg}{('<br>' + en_text) if en_text else ''}</div>"
+        )
+    audit_logs.append(entry)
+    if len(audit_logs) > 250:
+        audit_logs.pop(0)
+    if shared_stats is not None:
+        shared_stats["live_audit"] = "".join(audit_logs)
+
+
+# ============================================================================
+# #11 + #12 + #13: SYSTEM PROMPTI — DINAMIČKI
+# ============================================================================
+_PREVODILAC_TEMPLATE = """\
+Ti si precizni prevodilac s engleskog na bosanski/hrvatski jezik.
+PRAVILA:
+1. Zadrži SVE HTML tagove kakvi su — ne mijenjaj ih.
+2. Vrati ISKLJUČIVO prevedeni tekst. Bez komentara, uvoda ili objašnjenja.
+3. IDIOMI: NIKAD ne prevodi idiome doslovno. Koristi ekvivalent:
+   "kick the bucket"→"ispustiti dušu" | "piece of cake"→"mačji kašalj" |
+   "it's raining cats and dogs"→"pada kao iz kabla" | "break a leg"→"sretno" |
+   "bite the bullet"→"prihvatiti gorku istinu" | "under the weather"→"nije dobro" |
+   "spill the beans"→"odati tajnu" | "cost an arm and a leg"→"koštati bogatstvo" |
+   "hit the nail on the head"→"pogoditi u metu" | "let the cat out of the bag"→"odati tajnu"
+4. TON: {ton_injekcija}
+5. GLOSAR:\n{glosar_injekcija}
+"""
+
+_LEKTOR_TEMPLATE = """\
+Ti si književni urednik i redaktor u elitnoj izdavačskoj kući.
+KONTEKST: {knjiga_kontekst}
+PRAVILA:
+1. STIL: {stil_injekcija}
+2. JEZIK: Standardni, bogati bosanski/hrvatski. Ispravljaj nespretne konstrukcije i rogobatne prijevode.
+3. KONZISTENTNOST: Prethodni odlomak završava: "{prev_kraj}"
+   Nastavi ISTIM glagolskim vremenom i perspektivom.
+4. FORMAT: Zadrži HTML tagove (<i>, <b>, <em>). Fokus je na tekstu, ne kodu.
+5. ZABRANJENO: Ne koristi fraze poput "Naravno!", "Svakako!", "Evo rezultata:".
+Vrati ISKLJUČIVO: {{"finalno_polirano": "lektorisani tekst ovdje"}}
+"""
+
+_VALIDATOR_SYS = """\
+Ti si kontrolor kvalitete prijevoda.
+Provjeri da li prijevod vjerno prenosi SMISAO originalnog engleskog teksta.
+Gledaj samo smisao i nijanse — ne gledaj stil.
+Vrati ISKLJUČIVO JSON: {"ok": true/false, "razlog": "kratko objašnjenje ako nije ok"}
+"""
+
+_ANALIZA_SYS = """\
+Pročitaj priloženi uvodni tekst knjige i ekstraktuj:
+1. Žanr i ton (npr: dark fantasy, thriller, romantika, SF, historijski)
+2. Stil pripovijedanja (1. lice, 3. lice ograničeno, 3. lice sveznajuće)
+3. Period radnje (suvremeni / historijski — koje doba / fantastični / budućnost)
+4. Do 10 ključnih likova u formatu "Ime: [opis, M/Ž]"
+5. 5-10 specifičnih termina ili argota koji se ponavljaju
+
+Vrati ISKLJUČIVO JSON:
+{"zanr":"...","ton":"...","stil_pripovijedanja":"...","period":"...",
+ "likovi":{"ImeLika":"opis, M/Ž"},"glosar":{"OrigTerm":"kako prevesti"}}
+"""
+
+
+# ============================================================================
+# KLASA
+# ============================================================================
+class SkriptorijAllInOne:
+    def __init__(self, book_path, model_name, shared_stats, shared_controls):
+        self.book_path = Path(book_path)
+        self.model_name = model_name
+        self.shared_stats = shared_stats
+        self.shared_controls = shared_controls
+        self.fleet = FleetManager(config_path="dev_api.json")
+
+        self.clean_book_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.book_path.stem)
+        self.work_dir = self.book_path.parent / f"_skr_{self.clean_book_name}"
+        self.checkpoint_dir = self.work_dir / "checkpoints"
+        self.out_path = self.book_path.parent / f"PREVEDENO_{self.clean_book_name}.epub"
+
+        # #11: Kontekst knjige
+        self.book_context = {
+            "zanr": "nepoznat",
+            "ton": "neutralan",
+            "stil_pripovijedanja": "3. lice",
+            "period": "suvremeni",
+            "likovi": {},
+            "glosar": {},
+        }
+        self.knjiga_analizirana = False
+        self.glosar_tekst = ""
+
+        self.toc_entries, self.chapter_counter = [], 0
+        self.global_total_chunks = self.global_done_chunks = 0
+        self.stvarno_prevedeno_u_sesiji = self.spaseno_iz_checkpointa = 0
+        self.chunk_skips = 0
+        self.html_files = []
+
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        self.log(f"V8 Engine inicijaliziran za: {self.book_path.name}", "tech")
+
+    def log(self, msg, ltype="info", en_text=""):
+        add_audit(msg, ltype, en_text, self.shared_stats)
+
+    # #7: Poboljšan atomic write — čisti stari .tmp
+    def _atomic_write(self, path, content):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(f".tmp_{random.randint(10000, 99999)}")
+        for old in path.parent.glob(f"{path.stem}.tmp*"):
+            try:
+                old.unlink()
+            except Exception:
+                pass
+        try:
+            tmp.write_text(content, encoding="utf-8")
+            tmp.replace(path)
+        except Exception as e:
+            self.log(f"Greška pri pisanju {path.name}: {e}", "error")
+            if tmp.exists():
+                try:
+                    tmp.unlink()
+                except Exception:
+                    pass
+
+    def _detect_language(self, text):
+        return "EN" if _detektuj_en_ostatke(text) > 0.08 else "HR"
+
+    def _build_glosar_tekst(self) -> str:
+        parts = []
+        if self.book_context.get("likovi"):
+            parts.append("LIKOVI:")
+            for ime, opis in list(self.book_context["likovi"].items())[:15]:
+                parts.append(f"  - {ime}: {opis}")
+        if self.book_context.get("glosar"):
+            parts.append("TERMINI:")
+            for term, uputa in list(self.book_context["glosar"].items())[:20]:
+                parts.append(f"  - {term}: {uputa}")
+        return "\n".join(parts)
+
+    def _extract_relevant_glossary(self, chunk_text: str) -> str:
+        if not self.glosar_tekst or not chunk_text:
+            return "Nema specifičnog glosara."
+        clean = BeautifulSoup(chunk_text, "html.parser").get_text().lower()
+        relevant = []
+        for line in self.glosar_tekst.split("\n"):
+            name = re.split(r"[,\-:–(]", line)[0].strip().lower()
+            if len(name) >= 2 and re.search(r"\b" + re.escape(name) + r"\b", clean):
+                relevant.append(line)
+        return (
+            "\n".join(relevant[:25])
+            if relevant
+            else "Nema relevantnih termina u ovom bloku."
+        )
+
+    def _get_prevodilac_prompt(self, glosar_chunk="") -> str:
+        ton = self.book_context.get("ton", "neutralan")
+        stil = self.book_context.get("stil_pripovijedanja", "3. lice")
+        return _PREVODILAC_TEMPLATE.format(
+            ton_injekcija=f"Ton knjige: {ton}. Stil: {stil}. Prilagodi vokabular.",
+            glosar_injekcija=glosar_chunk or self.glosar_tekst or "Nema glosara.",
+        )
+
+    def _get_lektor_prompt(self, prev_kraj="") -> str:
+        zanr = self.book_context.get("zanr", "nepoznat")
+        ton = self.book_context.get("ton", "neutralan")
+        stil = self.book_context.get("stil_pripovijedanja", "3. lice")
+        period = self.book_context.get("period", "suvremeni")
+        return _LEKTOR_TEMPLATE.format(
+            knjiga_kontekst=f"Žanr: {zanr} | Ton: {ton} | Period: {period}",
+            stil_injekcija=f"Prilagodi žanru {zanr} ({ton}). Stil: {stil}. Prirodan ritam.",
+            prev_kraj=(prev_kraj[-200:] if prev_kraj else "—"),
+        )
+
+    # ============================================================================
+    # #9: OVERLAP CHUNKING
+    # ============================================================================
+    def chunk_html(self, html_content: str, max_words=250) -> list:
+        soup = BeautifulSoup(html_content, "html.parser")
+        body = soup.body if soup.body else soup
+        chunks, current_chunk, current_words = [], [], 0
+
+        for tag in body.children:
+            tag_str = str(tag)
+            text = (
+                tag.get_text(strip=True)
+                if not isinstance(tag, NavigableString)
+                else str(tag).strip()
+            )
+            words = len(text.split())
+            if words == 0:
+                current_chunk.append(tag_str)
+                continue
+            if current_words + words > max_words and current_words > 0:
+                chunks.append("".join(current_chunk))
+                current_chunk = [tag_str]
+                current_words = words
+            else:
+                current_chunk.append(tag_str)
+                current_words += words
+
+        if current_chunk:
+            chunks.append("".join(current_chunk))
+        return [c for c in chunks if c.strip()]
+
+    def get_context_window(self, chunks: list, idx: int, file_name: str) -> tuple:
+        prev_ctx, next_ctx = "Početak poglavlja.", "Kraj poglavlja."
+        if idx > 0:
+            prev_chk = self.checkpoint_dir / f"{file_name}_blok_{idx - 1}.chk"
+            if prev_chk.exists():
+                try:
+                    prev_raw = prev_chk.read_text("utf-8")
+                    prev_ctx = BeautifulSoup(prev_raw, "html.parser").get_text()[-600:]
+                except Exception:
+                    prev_ctx = chunks[idx - 1][-600:]
+            else:
+                prev_ctx = chunks[idx - 1][-600:]
+        if idx < len(chunks) - 1:
+            next_ctx = chunks[idx + 1][:400]
+        return prev_ctx, next_ctx
+
+    # ============================================================================
+    # MREŽNI SLOJ — #6 asyncio.to_thread
+    # ============================================================================
+    async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key):
+        try:
+            # #6: asyncio.to_thread umjesto deprecated get_event_loop
+            resp = await asyncio.to_thread(
+                requests.post,
+                url,
+                headers=headers,
+                json=json_payload,
+                timeout=90,
+                verify=False,
+            )
+            # #5: Pravi rate-limit podaci iz headera
+            self.fleet.analyze_response(prov, key, resp.status_code, resp.headers)
+
+            if resp.status_code == 200:
+                return resp.json()
+            elif resp.status_code == 429:
+                backoff = self.fleet.get_backoff_for_provider(prov_upper)
+                self.log(
+                    f"[{prov_upper}] 429 Rate limit. Čekam {backoff:.0f}s ⏳", "warning"
+                )
+                await asyncio.sleep(max(backoff, 5))
+                return None
+            else:
+                safe = resp.text[:200].replace("<", "&lt;").replace(">", "&gt;")
+                self.log(f"[{prov_upper}] HTTP {resp.status_code}: {safe}", "tech")
+                return None
+        except Exception as e:
+            self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:100]}", "error")
+            return None
+
+    async def _call_single_provider(
+        self, prov_upper, model, sys_content, user_prompt, opt_temp
+    ):
+        key = self.fleet.get_best_key(prov_upper)
+        if not key:
+            return None, None
+
+        headers = {"Content-Type": "application/json"}
+        messages = [
+            {"role": "system", "content": sys_content},
+            {"role": "user", "content": user_prompt},
+        ]
+        payload = {
+            "model": model,
+            "temperature": opt_temp,
+            "max_tokens": 2048,
+            "messages": messages,
+        }
+
+        if prov_upper == "GEMINI":
+            url = _url_gemini_compat()
+            headers["Authorization"] = f"Bearer {key}"
+        elif prov_upper == "COHERE":
+            url = _url_cohere()
+            headers["Authorization"] = f"Bearer {key.strip()}"
+            headers["Accept"] = "application/json"
+        else:
+            url_map = {
+                "GROQ": _url_groq(),
+                "CEREBRAS": _url_cerebras(),
+                "SAMBANOVA": _url_samba(),
+                "MISTRAL": _url_mistral(),
+                "OPENROUTER": _url_openrouter(),
+                "GITHUB": _url_github(),
+            }
+            url = url_map.get(prov_upper, _url_groq())
+            headers["Authorization"] = f"Bearer {key.strip()}"
+            if prov_upper == "CEREBRAS":
+                payload["max_completion_tokens"] = payload.pop("max_tokens")
+
+        async with _GLOBAL_DOOR:
+            elapsed = time.time() - _LAST_CALLS.get(f"{prov_upper}:{model}", 0)
+            if elapsed < MIN_GAP:
+                await asyncio.sleep(MIN_GAP - elapsed)
+            _LAST_CALLS[f"{prov_upper}:{model}"] = time.time()
+
+        data = await self._async_http_post(
+            url, headers, payload, prov_upper, prov_upper, key
+        )
+        if not data:
+            return None, None
+
+        # Ekstrakcija odgovora
+        if prov_upper == "COHERE" and "message" in data:
+            raw = data["message"]["content"][0]["text"].strip()
+        elif "choices" in data:
+            raw = data["choices"][0]["message"].get("content", "").strip()
+        else:
+            return None, None
+
+        return raw, f"{prov_upper}—{model}"
+
+    async def _call_ai_engine(
+        self, prompt, chunk_idx, uloga="LEKTOR", filename="", sys_override=None
+    ):
+        svi = list(self.fleet.fleet.keys())
+
+        # #17: Gemini 2.5 flash | #18: Temperature po ulozi
+        if uloga == "LEKTOR":
+            opt_temp = 0.60  # #18: Viša temperatura = bogatiji vokabular
+            pms = []
+            for p in svi:
+                up = p.upper()
+                if up == "GEMINI":
+                    pms += [
+                        ("GEMINI", "gemini-2.5-flash"),
+                        ("GEMINI", "gemini-2.5-flash-lite-preview-06-17"),
+                    ]
+                elif up in [
+                    "GROQ",
+                    "CEREBRAS",
+                    "SAMBANOVA",
+                    "MISTRAL",
+                    "OPENROUTER",
+                    "COHERE",
+                ]:
+                    pms.append((up, self.fleet.get_active_model(up) or "default"))
+            sys_c = sys_override or self._get_lektor_prompt()
+
+        elif uloga == "PREVODILAC":
+            opt_temp = 0.18  # #18: Niska temperatura = precizan prijevod
+            pms = []
+            for p in svi:
+                up = p.upper()
+                if up in [
+                    "GROQ",
+                    "CEREBRAS",
+                    "SAMBANOVA",
+                    "GEMINI",
+                    "MISTRAL",
+                    "OPENROUTER",
+                ]:
+                    m = (
+                        "gemini-2.5-flash"
+                        if up == "GEMINI"
+                        else (self.fleet.get_active_model(up) or "default")
+                    )
+                    pms.append((up, m))
+            sys_c = sys_override or self._get_prevodilac_prompt()
+
+        elif uloga == "VALIDATOR":
+            opt_temp = 0.05
+            pms = []
+            for p in svi:
+                up = p.upper()
+                if up in ["GROQ", "CEREBRAS", "GEMINI"]:
+                    m = (
+                        "gemini-2.5-flash-lite-preview-06-17"
+                        if up == "GEMINI"
+                        else self.fleet.get_active_model(up)
+                    )
+                    pms.append((up, m))
+                    break
+            sys_c = _VALIDATOR_SYS
+
+        elif uloga == "ANALIZA":
+            opt_temp = 0.1
+            pms = []
+            for p in svi:
+                up = p.upper()
+                if up in ["GEMINI", "GROQ", "CEREBRAS"]:
+                    m = (
+                        "gemini-2.5-flash"
+                        if up == "GEMINI"
+                        else self.fleet.get_active_model(up)
+                    )
+                    pms.append((up, m))
+            sys_c = _ANALIZA_SYS
+        else:
+            return None, "N/A"
+
+        random.shuffle(pms)
+        if not pms:
+            return None, "N/A"
+
+        for pokusaj in range(5):
+            if self.shared_controls.get("stop") or self.shared_controls.get("reset"):
+                return None, "N/A"
+            for prov_upper, model in pms:
+                raw, label = await self._call_single_provider(
+                    prov_upper, model, sys_c, prompt, opt_temp
+                )
+                if raw:
+                    return raw, label
+            # #8: Exponential backoff s jitterom
+            wait = min(10 * (2**pokusaj), 120) + random.uniform(0, 3)
+            self.log(
+                f"[Pokušaj {pokusaj + 1}/5] Motori zauzeti. Čekam {wait:.0f}s ⏳",
+                "warning",
+            )
+            await asyncio.sleep(wait)
+
+        return None, "N/A"
+
+    # ============================================================================
+    # #11: ANALIZA KNJIGE — jednom na početku
+    # ============================================================================
+    async def analiziraj_knjigu(self, intro_text: str):
+        self.shared_stats["status"] = "ANALIZA KNJIGE..."
+        self.log("🔬 Analiziram kontekst: žanr, ton, likovi, glosar...", "system")
+        clean = BeautifulSoup(intro_text, "html.parser").get_text()[:2500]
+        raw, engine = await self._call_ai_engine(clean, 0, uloga="ANALIZA")
+        if raw:
+            try:
+                m = re.search(r"\{.*\}", raw, re.DOTALL)
+                ctx = json.loads(m.group() if m else raw)
+                self.book_context.update(ctx)
+                self.knjiga_analizirana = True
+                self.glosar_tekst = self._build_glosar_tekst()
+                likovi = ", ".join(list(self.book_context.get("likovi", {}).keys())[:5])
+                self.log(
+                    f"✅ Analiza završena ({engine})<br>"
+                    f"📚 Žanr: <b>{self.book_context.get('zanr')}</b> | "
+                    f"Ton: <b>{self.book_context.get('ton')}</b><br>"
+                    f"👥 Likovi: {likovi or '—'}",
+                    "system",
+                )
+            except Exception as e:
+                self.log(
+                    f"Analiza — JSON parse greška: {e}. Nastavljam s defaultima.",
+                    "warning",
+                )
+        else:
+            self.log("Analiza nije dala odgovor. Nastavljam s defaultima.", "warning")
+
+    # ============================================================================
+    # #14: TROSTEPENI PIPELINE: Prijevod → Validator → Lektor
+    # ============================================================================
+    async def process_chunk_with_ai(
+        self, chunk: str, prev_ctx: str, next_ctx: str, chunk_idx: int, file_name: str
+    ) -> tuple:
+        chk_fajl = self.checkpoint_dir / f"{file_name}_blok_{chunk_idx}.chk"
+
+        if chk_fajl.exists():
+            try:
+                zapamceno = chk_fajl.read_text("utf-8", errors="ignore")
+                if len(zapamceno) > 10 and _detektuj_en_ostatke(zapamceno) < 0.08:
+                    self.spaseno_iz_checkpointa += 1
+                    self.global_done_chunks += 1
+                    return zapamceno, "DATABASE"
+            except Exception:
+                pass
+
+        if self.shared_controls.get("stop") or self.shared_controls.get("reset"):
+            return None, "N/A"
+
+        jezik = self._detect_language(chunk)
+        rel_glosar = self._extract_relevant_glossary(chunk)
+
+        # ── KORAK 1: PRIJEVOD ───────────────────────────────────────────
+        if jezik == "HR":
+            sirovo, prov1 = chunk, "AUTO-HR (Bypass)"
+            self.log(f"[{file_name}] Blok {chunk_idx}: HR, preskačem prijevod.", "info")
+        else:
+            prev_sys = self._get_prevodilac_prompt(glosar_chunk=rel_glosar)
+            p_prevod = (
+                f"Kontekst prethodnog odlomka:\n{prev_ctx[-300:]}\n\n"
+                f"Tekst za prijevod:\n```\n{chunk}\n```"
+            )
+            raw_p, prov1 = await self._call_ai_engine(
+                p_prevod,
+                chunk_idx,
+                uloga="PREVODILAC",
+                filename=file_name,
+                sys_override=prev_sys,
+            )
+            if not raw_p:
+                self.chunk_skips += 1
+                self.shared_stats["skipped"] = str(self.chunk_skips)
+                return None, "N/A"
+            sirovo = _agresivno_cisti(raw_p)
+
+        # ── KORAK 2: VALIDATOR (#14) ─────────────────────────────────────
+        if jezik != "HR":
+            val_prompt = (
+                f"ORIGINAL (EN):\n{chunk[:800]}\n\nPRIJEVOD (HR/BS):\n{sirovo[:800]}"
+            )
+            val_raw, _ = await self._call_ai_engine(
+                val_prompt, chunk_idx, uloga="VALIDATOR", filename=file_name
+            )
+            if val_raw:
+                try:
+                    m = re.search(r"\{.*\}", val_raw, re.DOTALL)
+                    val_obj = json.loads(m.group() if m else val_raw)
+                    if not val_obj.get("ok", True):
+                        razlog = val_obj.get("razlog", "nepoznat razlog")
+                        self.log(
+                            f"Validator: Blok {chunk_idx} odbijen ({razlog}) — retry",
+                            "validator",
+                        )
+                        retry_p = (
+                            f"Prethodni prijevod imao grešku: {razlog}\n"
+                            f"Ispravi i ponovi:\n```\n{chunk}\n```"
+                        )
+                        retry_raw, prov1 = await self._call_ai_engine(
+                            retry_p, chunk_idx, uloga="PREVODILAC", filename=file_name
+                        )
+                        if retry_raw:
+                            sirovo = _agresivno_cisti(retry_raw)
+                except Exception:
+                    pass
+
+        # ── KORAK 3: LEKTOR ──────────────────────────────────────────────
+        lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx)
+        p_lek = (
+            f"IZVORNI TEKST (referenca):\n{chunk[:400]}\n\n"
+            f"TEKST ZA LEKTURU:\n{sirovo}\n\n"
+            f"Izvrši dubinsku lekturu. Uglancaj vokabular i osiguraj književni ton."
+        )
+        raw_l, prov2 = await self._call_ai_engine(
+            p_lek, chunk_idx, uloga="LEKTOR", filename=file_name, sys_override=lek_sys
+        )
+
+        finalno = ""
+        if raw_l:
+            try:
+                m = re.search(r"\{.*\}", raw_l, re.DOTALL)
+                obj = json.loads(m.group() if m else raw_l)
+                finalno = obj.get("finalno_polirano", next(iter(obj.values()), ""))
+            except Exception:
+                finalno = _agresivno_cisti(raw_l)
+
+        if not finalno:
+            finalno, prov2 = sirovo, f"{prov1}(FS)"
+
+        # #15: Finalni prolaz — AI markeri
+        finalno = _ocisti_ai_markere(finalno)
+        h_detected = _detektuj_halucinaciju(chunk, finalno, uloga="LEKTOR")
+
+        if h_detected:
+            orig_len = len(re.sub(r"<[^>]+>", "", chunk))
+            prev_len = len(re.sub(r"<[^>]+>", "", finalno))
+            ratio = prev_len / orig_len if orig_len else 1
+
+            if ratio < 0.08 or ratio > 6.0:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ⚡ GIGANTSKA halucinacija (ratio={ratio:.2f}) — SPAŠAVAM SIROVI PREVOD!",
+                    "error",
+                )
+                finalno = sirovo
+            else:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju (ratio={ratio:.2f}), puštam dalje.",
+                    "warning",
+                )
+
+        self._atomic_write(chk_fajl, finalno)
+        self.global_done_chunks += 1
+        self.stvarno_prevedeno_u_sesiji += 1
+
+        aud = (
+            f"<div style='border-left:4px solid #0ea5e9; background:#0f172a; "
+            f"padding:10px; margin:4px 0; border-radius:4px;'>"
+            f"<div style='font-size:0.75em; color:#94a3b8; margin-bottom:4px;'>"
+            f"📦 Blok {chunk_idx} | {prov1} → {prov2}</div>"
+            f"<div style='display:grid; grid-template-columns:1fr 1fr; gap:8px; "
+            f"font-size:0.82em; font-family:monospace;'>"
+            f"<div style='color:#64748b;'>EN: {BeautifulSoup(chunk, 'html.parser').get_text()[:70]}…</div>"
+            f"<div style='color:#e2e8f0;'>HR: {BeautifulSoup(finalno, 'html.parser').get_text()[:70]}…</div>"
+            f"</div></div>"
+        )
+
+        self.log("", "accordion", en_text=aud)
+        return finalno, f"{prov1}→{prov2}"
+
+    async def process_single_file_worker(self, file_path):
+        file_name = file_path.name
+        try:
+            raw_html = file_path.read_text("utf-8", errors="ignore")
+        except Exception:
+            return
+
+        chunks = self.chunk_html(raw_html, max_words=250)
+        if not chunks:
+            return
+
+        self.shared_stats["current_file"] = file_name
+        self.shared_stats["total_file_chunks"] = len(chunks)
+        final_parts = []
+
+        for i, chunk in enumerate(chunks):
+            if self.shared_controls.get("stop") or self.shared_controls.get("reset"):
+                return
+
+            while self.shared_controls.get("pause"):
+                await asyncio.sleep(1)
+
+            p_ctx, n_ctx = self.get_context_window(chunks, i, file_name)
+            res, eng = await self.process_chunk_with_ai(
+                chunk, p_ctx, n_ctx, i, file_name
+            )
+            final_parts.append(res if res else chunk)
+
+            if (i + 1) % 10 == 0:
+                self.buildlive_epub()
+
+            self.shared_stats["current_chunk_idx"] = i + 1
+            self.shared_stats["active_engine"] = eng
+
+            try:
+                self.shared_stats["current_file_idx"] = (
+                    self.html_files.index(file_path) + 1
+                )
+                self.shared_stats["total_files"] = len(self.html_files)
+            except Exception:
+                pass
+
+            try:
+                summary = self.fleet.get_fleet_summary()
+                self.shared_stats["fleet_active"] = sum(
+                    v["active"] for v in summary.values()
+                )
+                self.shared_stats["fleet_cooling"] = sum(
+                    v["cooling"] for v in summary.values()
+                )
+            except Exception:
+                pass
+
+            if self.global_total_chunks > 0:
+                self.shared_stats["pct"] = int(
+                    (self.global_done_chunks / self.global_total_chunks) * 100
+                )
+                self.shared_stats["ok"] = (
+                    f"{self.global_done_chunks} / {self.global_total_chunks}"
+                )
+
+        file_path.write_text("".join(final_parts), encoding="utf-8")
+
+    # ============================================================================
+    # OBLIKOVANJE + NCX + FINALIZACIJA
+    # ============================================================================
+    def buildlive_epub(self):
+        try:
+            live_epub = self.book_path.parent / f"(LIVE)_{self.clean_book_name}.epub"
+            with zipfile.ZipFile(live_epub, "w", zipfile.ZIP_DEFLATED) as z:
+                m_path = self.work_dir / "mimetype"
+                if m_path.exists():
+                    z.write(m_path, "mimetype", compress_type=zipfile.ZIP_STORED)
+                for f in self.work_dir.rglob("*"):
+                    if (
+                        f.is_file()
+                        and f.name != "mimetype"
+                        and "checkpoints" not in f.parts
+                    ):
+                        if f.suffix.lower() in [".html", ".htm", ".xhtml", ".xml"]:
+                            try:
+                                soup = BeautifulSoup(
+                                    f.read_text("utf-8", errors="ignore"), "html.parser"
+                                )
+                                self.apply_dropcap_and_toc(soup, f, samo_dropcap=True)
+                                z.writestr(
+                                    str(f.relative_to(self.work_dir)),
+                                    str(soup).encode("utf-8"),
+                                )
+                            except Exception:
+                                z.write(f, f.relative_to(self.work_dir))
+                        else:
+                            z.write(f, f.relative_to(self.work_dir))
+        except Exception:
+            pass
+
+    def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
+        """Primijeni dropcap i dodaj u TOC."""
+        needs_dropcap = True
+
+        # ════════════════════════════════════════════════════════════
+        # PETLJA 1: Zaglavlja (h1, h2, h3) — Dodaj u TOC
+        # ════════════════════════════════════════════════════════════
+        for heading in soup.find_all(["h1", "h2", "h3"]):
+            t = heading.get_text(strip=True)
+
+            # Preskoči ako je naslov prazan, sadrži "ZADATAK:" ili je premao
+            if not t or "ZADATAK:" in t.upper() or len(t) > 100:
+                heading.name = "p"
+                continue  # ✅ SADA JE U PETLJI!
+
+            tid = heading.get("id")
+            if not samo_dropcap:
+                self.chapter_counter += 1
+                tid = f"skr_ch_{self.chapter_counter}"
+                self.toc_entries.append(
+                    {
+                        "title": t,
+                        "abs_path": str(
+                            html_file
+                        ),  # ✅ FIX: Koristi parametar html_file
+                        "anchor": tid,
+                    }
+                )
+            elif not tid:
+                tid = f"live_ch_{random.randint(1000, 9999)}"
+
+            heading["style"] = (
+                "page-break-before:always; text-align:center; padding-top:10vh; "
+                "margin-bottom:15vh; font-family:serif; text-transform:uppercase;"
+            )
+            heading["id"] = tid
+            needs_dropcap = True
+
+        # ════════════════════════════════════════════════════════════
+        # PETLJA 2: Paragrafи — Dodaj dropcap na prvi paragraf
+        # ════════════════════════════════════════════════════════════
+        for p in soup.find_all("p"):
+            if not needs_dropcap:
+                break
+
+            if len(p.get_text(strip=True)) > 40:
+                # Pronađi prvi NavigableString čvor sa tekstom
+                node = next(
+                    (
+                        n
+                        for n in p.descendants
+                        if isinstance(n, NavigableString) and n.strip()
+                    ),
+                    None,
+                )
+
+                if node:  # ✅ FIX: Provjera da node postoji
+                    c = node.string.lstrip()
+                    if not c:
+                        continue
+
+                    # Kreiraj dropcap span
+                    s = soup.new_tag(
+                        "span",
+                        attrs={
+                            "style": (
+                                "float:left; font-size:3.5em; line-height:0.8; "
+                                "margin-right:0.1em; font-weight:bold;"
+                            )
+                        },
+                    )
+
+                    # Ako počinje sa navodnicima, uzmi 2 znaka
+                    o = 2 if c[0] in ["'", '"', "„", "\u201c"] else 1
+                    s.string = c[:o]
+                    node.replace_with(c[o:])
+                    p.insert(0, s)
+                    needs_dropcap = False  # ✅ FIX: Sada je dostupna varijabla
+
+    def generate_ncx(self):
+        """Generiši NCX (Table of Contents) za EPUB."""
+        if not self.toc_entries:
+            return
+
+        ncx = next(self.work_dir.rglob("*.ncx"), self.work_dir / "OEBPS" / "toc.ncx")
+        ncx.parent.mkdir(parents=True, exist_ok=True)
+
+        pts = "".join(
+            f'<navPoint id="n{i}" playOrder="{i}">'
+            f"<navLabel><text>{e['title']}</text></navLabel>"
+            f'<content src="{Path(os.path.relpath(e["abs_path"], ncx.parent)).as_posix()}#{e["anchor"]}"/>'
+            f"</navPoint>\n"
+            for i, e in enumerate(self.toc_entries, 1)
+        )
+
+        ncx.write_text(
+            f'<?xml version="1.0" encoding="UTF-8"?>'
+            f'<ncx xmlns="{_url_daisy()}" version="2005-1">'
+            f'<head><meta name="dtb:uid" content="urn:uuid:skr-{self.clean_book_name}"/></head>'
+            f"<docTitle><text>{self.book_path.stem}</text></docTitle>"
+            f"<navMap>{pts}</navMap></ncx>",
+            encoding="utf-8",
+        )
+
+    def finalize(self):
+        self.shared_stats["status"] = "Finalno pakiranje..."
+        self.log(
+            f"📊 Prevedeno: {self.stvarno_prevedeno_u_sesiji} | "
+            f"Iz cache: {self.spaseno_iz_checkpointa} | "
+            f"Preskočeno: {self.chunk_skips}",
+            "system",
+        )
+
+        with zipfile.ZipFile(self.out_path, "w") as z:
+            mp = self.work_dir / "mimetype"
+            if mp.exists():
+                z.write(mp, "mimetype", compress_type=zipfile.ZIP_STORED)
+            for f in self.work_dir.rglob("*"):
+                if (
+                    f.is_file()
+                    and f.name != "mimetype"
+                    and "checkpoints" not in f.parts
+                ):
+                    z.write(
+                        f,
+                        f.relative_to(self.work_dir),
+                        compress_type=zipfile.ZIP_DEFLATED,
+                    )
+        self.shared_stats.update({"status": "✅ Operacija završena", "pct": 100})
+        self.log(f"📖 EPUB: {self.out_path.name}", "system")
+
+
+# ============================================================================
+# ENTRY POINT
+# ============================================================================
+def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_controls):
+    engine = SkriptorijAllInOne(bookpathstr, modelname, sharedstats, shared_controls)
+    engine.log("🚀 V8 Omni-Core pokrenут...", "system")
+
+    engine.work_dir.mkdir(parents=True, exist_ok=True)
+    engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(engine.book_path, "r") as z:
+        z.extractall(engine.work_dir)
+
+    engine.html_files = sorted(
+        [
+            f
+            for f in engine.work_dir.rglob("*")
+            if f.suffix.lower() in [".html", ".htm", ".xhtml", ".xml"]
+        ],
+        key=lambda x: x.name,
+    )
+
+    for f in engine.html_files:
+        try:
+            engine.global_total_chunks += len(
+                engine.chunk_html(f.read_text("utf-8", errors="ignore"))
+            )
+        except Exception:
+            pass
+
+    async def main_loop():
+        # #11: Analiza knjige
+        if engine.html_files and not engine.knjiga_analizirana:
+            try:
+                intro = engine.html_files[0].read_text("utf-8", errors="ignore")
+                await engine.analiziraj_knjigu(intro)
+            except Exception as e:
+                engine.log(f"Analiza pala: {e}. Nastavljam s defaultima.", "warning")
+
+        for i, hf in enumerate(engine.html_files, 1):
+            if shared_controls.get("stop") or shared_controls.get("reset"):
+                break
+            engine.log(
+                f"📄 Poglavlje {i}/{len(engine.html_files)}: {hf.name}", "system"
+            )
+            await engine.process_single_file_worker(hf)
+
+    asyncio.run(main_loop())
+
+    if not shared_controls.get("stop") and not shared_controls.get("reset"):
+        engine.shared_stats["status"] = "Završno oblikovanje..."
+        for hf in engine.html_files:
+            try:
+                soup = BeautifulSoup(hf.read_text("utf-8"), "html.parser")
+                engine.apply_dropcap_and_toc(soup, hf)
+                hf.write_text(str(soup), encoding="utf-8")
+            except Exception:
+                pass
+        engine.generate_ncx()
+        engine.finalize()
