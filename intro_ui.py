@@ -290,7 +290,7 @@ INTRO_HTML = """
                 if (overlay) overlay.remove();
                 document.body.style.overflow = 'auto';
             } else {
-                // Први пут — postavi flag i pokreni animaciju
+                // Prvi put — postavi flag i pokreni animaciju
                 localStorage.setItem('skriptorij_intro_shown', 'true');
             }
         })();

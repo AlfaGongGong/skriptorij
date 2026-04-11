@@ -25,8 +25,7 @@
     --fn-korektor:  #f59e0b;
     --fn-analyze:   #0ea5e9;
 
-    /* Logo gradient (dark) */
-    --logo-grad: url(#headerLogoGradDark);
+    /* Logo gradient (dark) — used via direct CSS selectors below */
     --logo-stroke-width: 0.7;
 }
 
@@ -54,8 +53,7 @@ body.light-theme {
     --fn-korektor:  #fed7aa;
     --fn-analyze:   #bae6fd;
 
-    /* Logo gradient (light) */
-    --logo-grad: url(#headerLogoGradLight);
+    /* Logo gradient (light) — used via direct CSS selectors below */
     --logo-stroke-width: 0.9;
 }
 
@@ -106,7 +104,6 @@ body {
     width: 40px;
     height: 40px;
     flex-shrink: 0;
-    stroke: var(--logo-grad);
     stroke-width: var(--logo-stroke-width);
     filter: drop-shadow(0 0 8px rgba(0, 243, 255, 0.6));
     transition: filter 0.3s ease;
@@ -116,11 +113,13 @@ body.light-theme .header-logo {
     filter: drop-shadow(0 0 4px rgba(168, 230, 240, 0.5));
 }
 
+/* Apply dark neon gradient to logo paths by default */
 .header-logo path,
 .header-logo line {
     stroke: url(#headerLogoGradDark);
 }
 
+/* Apply light pastel gradient when light theme is active */
 body.light-theme .header-logo path,
 body.light-theme .header-logo line {
     stroke: url(#headerLogoGradLight);
