@@ -33,6 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // #14: Ucitaj ključeve kada se otvori key management panel
+    const keysDetails = document.getElementById('keys-details');
+    if (keysDetails) {
+        keysDetails.addEventListener('toggle', () => {
+            if (keysDetails.open) {
+                loadApiKeys();
+            }
+        });
+    }
 });
 
 // -- Toast notifikacije -------------------------------------------------------
@@ -350,9 +360,12 @@ function updateDashboard() {
 
             const audit = document.getElementById('audit');
             if (audit && d.live_audit) {
-                if (audit.innerHTML !== d.live_audit) {
-                    audit.innerHTML = d.live_audit;
-                    lastAuditHTML = d.live_audit;
+                const safeAudit = (typeof DOMPurify !== 'undefined')
+                    ? DOMPurify.sanitize(d.live_audit, { USE_PROFILES: { html: true } })
+                    : d.live_audit;
+                if (audit.innerHTML !== safeAudit) {
+                    audit.innerHTML = safeAudit;
+                    lastAuditHTML = safeAudit;
 
                     const isScrolledToBottom =
                         audit.scrollHeight - audit.clientHeight <=
@@ -404,7 +417,10 @@ function updateFleetPool() {
             if (!container) return;
 
             if (data.error) {
-                container.innerHTML = '<p style="color: var(--col-danger); font-size:0.85rem;">Greska: ' + data.error + '</p>';
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
+                p.textContent = 'Greška: ' + data.error;
+                container.replaceChildren(p);
                 return;
             }
 
@@ -441,7 +457,12 @@ function updateFleetPool() {
         })
         .catch(e => {
             const container = document.getElementById('fleet-pool-content');
-            if (container) container.innerHTML = '<p style="color: var(--col-danger); font-size:0.85rem;">Greska pri dohvacanju flote: ' + e.message + '</p>';
+            if (container) {
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
+                p.textContent = 'Greška pri dohvaćanju flote.';
+                container.replaceChildren(p);
+            }
         });
 }
 
@@ -451,6 +472,137 @@ function _updateEl(id, val) {
     if (el && el.innerText !== String(val)) {
         el.innerText = val;
     }
+}
+
+// -- #14: API Key Management ------------------------------------------------
+function loadApiKeys() {
+    fetch('/api/keys')
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('keys-list');
+            if (!container) return;
+
+            if (data.error) {
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
+                p.textContent = 'Greška: ' + data.error;
+                container.replaceChildren(p);
+                return;
+            }
+
+            const entries = Object.entries(data);
+            if (entries.length === 0) {
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--text-muted); font-size:0.85rem;';
+                p.textContent = 'Nema konfiguriranih ključeva. Dodajte prvi ključ gore.';
+                container.replaceChildren(p);
+                return;
+            }
+
+            // Build table using DOM to prevent XSS from server-supplied provider names
+            const table = document.createElement('table');
+            table.className = 'fleet-table';
+            table.innerHTML = '<thead><tr><th>Provajder</th><th>Klju\u010devi</th><th>Akcija</th></tr></thead>';
+            const tbody = document.createElement('tbody');
+
+            for (const [prov, keys] of entries) {
+                if (keys.length === 0) {
+                    const tr = document.createElement('tr');
+                    const tdp = document.createElement('td');
+                    tdp.className = 'fleet-prov';
+                    tdp.textContent = prov;
+                    const td2 = document.createElement('td');
+                    td2.colSpan = 2;
+                    td2.style.color = 'var(--text-muted)';
+                    td2.textContent = 'Nema klju\u010deva';
+                    tr.append(tdp, td2);
+                    tbody.appendChild(tr);
+                    continue;
+                }
+                keys.forEach((masked, idx) => {
+                    const tr = document.createElement('tr');
+                    const tdp = document.createElement('td');
+                    tdp.className = 'fleet-prov';
+                    tdp.textContent = idx === 0 ? prov : '';
+                    const tdm = document.createElement('td');
+                    tdm.style.cssText = 'font-family:monospace; color:var(--text-accent);';
+                    tdm.textContent = masked;
+                    const tda = document.createElement('td');
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-danger';
+                    btn.style.cssText = 'padding:3px 10px; font-size:0.75rem;';
+                    btn.textContent = '\uD83D\uDDD1 Obri\u0161i';
+                    btn.addEventListener('click', () => deleteApiKey(prov, idx));
+                    tda.appendChild(btn);
+                    tr.append(tdp, tdm, tda);
+                    tbody.appendChild(tr);
+                });
+            }
+
+            table.appendChild(tbody);
+            container.replaceChildren(table);
+        })
+        .catch(() => {
+            const container = document.getElementById('keys-list');
+            if (container) {
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
+                p.textContent = 'Greška pri dohvaćanju ključeva.';
+                container.replaceChildren(p);
+            }
+        });
+}
+
+function addApiKey() {
+    const provSelect = document.getElementById('key-provider-select');
+    const keyInput = document.getElementById('key-input');
+    const provider = provSelect ? provSelect.value : '';
+    const key = keyInput ? keyInput.value.trim() : '';
+
+    if (!provider) {
+        showToast('\u26A0\uFE0F Odaberi provajdera!', 'warning');
+        return;
+    }
+    if (!key) {
+        showToast('\u26A0\uFE0F Unesi API ključ!', 'warning');
+        return;
+    }
+
+    fetch('/api/keys/' + encodeURIComponent(provider), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: key })
+    })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                showToast('\u274C ' + d.error, 'error');
+                return;
+            }
+            showToast('\u2705 Klju\u010d dodan za ' + d.provider + ': ' + d.masked, 'success');
+            if (keyInput) keyInput.value = '';
+            loadApiKeys();
+            loadModels();
+        })
+        .catch(() => showToast('\u274C Gre\u0161ka pri dodavanju klju\u010da.', 'error'));
+}
+
+function deleteApiKey(provider, idx) {
+    if (!confirm('Obrisati ovaj API ključ?')) return;
+    fetch('/api/keys/' + encodeURIComponent(provider) + '/' + idx, {
+        method: 'DELETE'
+    })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                showToast('\u274C ' + d.error, 'error');
+                return;
+            }
+            showToast('\u2705 Klju\u010d obrisan za ' + d.provider, 'success');
+            loadApiKeys();
+            loadModels();
+        })
+        .catch(() => showToast('\u274C Gre\u0161ka pri brisanju klju\u010da.', 'error'));
 }
 
 // Tastatura shortcut-i

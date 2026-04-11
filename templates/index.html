@@ -143,6 +143,15 @@
                     <a id="download-link" href="#" class="btn btn-primary" style="display:inline-flex; text-decoration:none; max-width: 320px;">
                         ⬇️ Preuzmi Rezultat
                     </a>
+                    <!-- #12: Export dugmad -->
+                    <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                        <a id="export-json-link" href="/api/export/json" class="btn btn-secondary" style="display:inline-flex; text-decoration:none; font-size:0.85rem; padding: 6px 14px;">
+                            📄 JSON Izvještaj
+                        </a>
+                        <a id="export-txt-link" href="/api/export/txt" class="btn btn-secondary" style="display:inline-flex; text-decoration:none; font-size:0.85rem; padding: 6px 14px;">
+                            📋 TXT Izvještaj
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Control Buttons -->
@@ -180,6 +189,35 @@
                     <span style="color: var(--text-muted);">Odaberite operaciju i kliknite na "Pokreni Sistem".</span>
                 </div>
             </div>
+
+            <!-- ═══════════════════ API KEY MANAGEMENT ═══════════════════ -->
+            <div class="panel">
+                <details id="keys-details">
+                    <summary>🔑 API Ključevi — Upravljanje</summary>
+                    <div id="keys-content" style="margin-top: 14px;">
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+                            <select id="key-provider-select" style="flex:1; min-width:120px; background:var(--bg-secondary); color:var(--text-main); border:1px solid var(--col-border); border-radius:4px; padding:6px 10px;">
+                                <option value="">— Odaberi provajdera —</option>
+                                <option value="GEMINI">GEMINI</option>
+                                <option value="GROQ">GROQ</option>
+                                <option value="CEREBRAS">CEREBRAS</option>
+                                <option value="SAMBANOVA">SAMBANOVA</option>
+                                <option value="MISTRAL">MISTRAL</option>
+                                <option value="COHERE">COHERE</option>
+                                <option value="OPENROUTER">OPENROUTER</option>
+                                <option value="GITHUB">GITHUB</option>
+                            </select>
+                            <input type="password" id="key-input" placeholder="API ključ..." style="flex:3; min-width:180px; background:var(--bg-secondary); color:var(--text-main); border:1px solid var(--col-border); border-radius:4px; padding:6px 10px;" />
+                            <button class="btn btn-primary" onclick="addApiKey()" style="padding:6px 14px; font-size:0.85rem;">
+                                ➕ Dodaj
+                            </button>
+                        </div>
+                        <div id="keys-list">
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">Kliknite na "Upravljanje" da učitate ključeve...</p>
+                        </div>
+                    </div>
+                </details>
+            </div>
         </div>
         <!-- /main-ui-wrapper -->
 
@@ -190,6 +228,10 @@
             }
         </style>
 
+        <!-- DOMPurify za XSS zaštitu audit loga -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"
+                integrity="sha512-MdMpKd/FNkUTQJxXHt23f5/clqzPEyiLRCqG37cUCLqJBqrpq+fqhORiNFpJAGsN8bFGFaFbzHLSAOLrFXaA=="
+                crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <!-- Scripts -->
         <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
     </body>

@@ -293,34 +293,140 @@ def add_audit(msg, atype="info", en_text="", shared_stats=None):
 
 
 # ============================================================================
+# TIPOGRAFSKA OBRADA — deterministička B/H/S tipografska pravila
+# ============================================================================
+def _post_process_tipografija(tekst: str) -> str:
+    """Primijeni B/H/S tipografska pravila na gotov tekst."""
+    # Tri točke → elipsa (…) i višestruke točke
+    tekst = re.sub(r'\.\.\.', '…', tekst)
+    tekst = re.sub(r'\.{4,}', '…', tekst)
+
+    # Crtica za dijalog: crtica na početku odlomka (after <p> or start of line)
+    tekst = re.sub(r'(<p[^>]*>)\s*-\s', r'\1— ', tekst)
+    tekst = re.sub(r'(<p[^>]*>)\s*–\s', r'\1— ', tekst)
+
+    # Dvostruki razmaci → jedan razmak (samo u tekstualnim segmentima, izvan HTML tagova)
+    def _fix_spaces(m: re.Match) -> str:
+        return re.sub(r'  +', ' ', m.group())
+
+    tekst = re.sub(r'(?<=>)([^<]+)(?=<)', _fix_spaces, tekst)
+    # Također popravi razmake na početku/kraju dokumenta (izvan tagova)
+    tekst = re.sub(r'^([^<]+)', _fix_spaces, tekst)
+    tekst = re.sub(r'([^>]+)$', _fix_spaces, tekst)
+
+    # Navodnici: zamijeni "..." sa „..." (B/H/S standard)
+    # Koristi HTML-svjesni pristup: samo unutar tekstualnih čvorova (između > i <)
+    def _fix_navodnici(m: re.Match) -> str:
+        return re.sub(r'"([^"]+)"', r'„\1"', m.group())
+
+    tekst = re.sub(r'(?<=>)([^<]+)(?=<)', _fix_navodnici, tekst)
+    # Tekstualni segmenti na početku/kraju dokumenta
+    tekst = re.sub(r'^([^<]+)', _fix_navodnici, tekst)
+    tekst = re.sub(r'([^>]+)$', _fix_navodnici, tekst)
+
+    # Razmak prije interpunkcije (,.:;!?)
+    tekst = re.sub(r'\s+([,;:!?])', r'\1', tekst)
+
+    return tekst
+
+
+# ============================================================================
 # #11 + #12 + #13: SYSTEM PROMPTI — DINAMIČKI
 # ============================================================================
 _PREVODILAC_TEMPLATE = """\
-Ti si precizni prevodilac s engleskog na bosanski/hrvatski jezik.
-PRAVILA:
-1. Zadrži SVE HTML tagove kakvi su — ne mijenjaj ih.
-2. Vrati ISKLJUČIVO prevedeni tekst. Bez komentara, uvoda ili objašnjenja.
-3. IDIOMI: NIKAD ne prevodi idiome doslovno. Koristi ekvivalent:
+Ti si iskusni književni prevodilac s engleskog na bosanski/hrvatski jezik s 20+ godina iskustva. \
+Tvoji prijevodi objavljuje Fraktura, VBZ i Mozaik knjiga.
+
+ŽELJENI REZULTAT: Tekst koji čitalac doživljava kao da je IZVORNO napisan na bosanskom/hrvatskom.
+
+STROGA PRAVILA:
+1. HTML TAGOVI: Zadrži SVE tagove (<p>, <i>, <b>, <em>, <br>, <div>) tačno kakvi su.
+2. ČISTOĆA: Vrati SAMO prevedeni tekst. Nula komentara, nula uvoda, nula objašnjenja.
+3. PRIJEVODIZMI — ZABRANA: Nikad ne prevodi doslovno fraze koje u B/H/S zvuče neprirodno:
+   - "It was..." → ne "Bilo je..." nego nađi prirodniji ekvivalent
+   - "He/She found himself/herself..." → "Zatekao/la se...", "Obreo/la se..."
+   - "There was/were..." → preformuliraj rečenicu bez krutog "postajati/biti"
+   - "As if/As though..." → "Kao da...", "Kao da bi..."
+4. IDIOMI — EKVIVALENTI (ne doslovan prijevod):
    "kick the bucket"→"ispustiti dušu" | "piece of cake"→"mačji kašalj" |
-   "it's raining cats and dogs"→"pada kao iz kabla" | "break a leg"→"sretno" |
-   "bite the bullet"→"prihvatiti gorku istinu" | "under the weather"→"nije dobro" |
+   "raining cats and dogs"→"kiša kao iz kabla" | "break a leg"→"sretno" |
+   "bite the bullet"→"prihvatiti gorku istinu" | "under the weather"→"bolesno/loše" |
    "spill the beans"→"odati tajnu" | "cost an arm and a leg"→"koštati bogatstvo" |
-   "hit the nail on the head"→"pogoditi u metu" | "let the cat out of the bag"→"odati tajnu"
-4. TON: {ton_injekcija}
-5. GLOSAR:\n{glosar_injekcija}
+   "hit the nail on the head"→"pogoditi u metu" | "let the cat out of the bag"→"odati tajnu" |
+   "burn bridges"→"spaliti mostove" | "beat around the bush"→"ići oko vrućeg kaše" |
+   "elephant in the room"→"tema koju svi izbjegavaju" | "once in a blue moon"→"jednom u sto godina" |
+   "barking up the wrong tree"→"udariš u krivu ploču"
+5. DIJALOG: Dijalog prevedi prirodno, prilagodi idiome govornom jeziku.
+6. TON: {ton_injekcija}
+7. GLOSAR LIKOVA I TERMINA (OBAVEZNO KORISTITI):
+{glosar_injekcija}
 """
 
 _LEKTOR_TEMPLATE = """\
-Ti si književni urednik i redaktor u elitnoj izdavačskoj kući.
-KONTEKST: {knjiga_kontekst}
-PRAVILA:
-1. STIL: {stil_injekcija}
-2. JEZIK: Standardni, bogati bosanski/hrvatski. Ispravljaj nespretne konstrukcije i rogobatne prijevode.
-3. KONZISTENTNOST: Prethodni odlomak završava: "{prev_kraj}"
-   Nastavi ISTIM glagolskim vremenom i perspektivom.
-4. FORMAT: Zadrži HTML tagove (<i>, <b>, <em>). Fokus je na tekstu, ne kodu.
-5. ZABRANJENO: Ne koristi fraze poput "Naravno!", "Svakako!", "Evo rezultata:".
+Ti si Glavni urednik i vrhunski književni lektor koji radi za elitnu izdavačku kuću. \
+Tvoj posao je pretvoriti strojni prijevod u tekst koji se čita kao originalna književnost.
+
+KONTEKST KNJIGE: {knjiga_kontekst}
+
+IMPERATIVNA PRAVILA LEKTURE:
+
+1. KNJIŽEVNI STIL ({stil_injekcija}):
+   • Vokabular: koristi bogat, raznovrstan rječnik — izbjegavaj ponavljanje istih glagola i pridjeva
+   • Ritam: izmjenjuj kratke i duge rečenice za prirodan ritam čitanja
+   • Perspektiva: strogo drži zadanu perspektivu pripovijedanja
+   • Registar: prilagodi stil žanru — književni za romansu/dramu, napeti za thriller, poetičan za fantaziju
+
+2. BOSANSKI/HRVATSKI JEZIK — SPECIFIKE:
+   • Futur I (napisat ću) i kondicional (napisao bih) — koristi pravilno, ne miješaj
+   • Zamjenice: ne prekoristuj "on/ona/ono" — zamijeni imenima kad je jasno
+   • Pasiv: zamijeni engleski pasiv aktivnom konstrukcijom gdje god je moguće
+   • Glagolski vid: razlikuj perfektivne i imperfektivne glagole
+
+3. DIJALOG I TIPOGRAFIJA:
+   • Dijalog počinje crticom: — Zdravo, reče on. (NE navodnicima "Zdravo")
+   • Misli likova: u kurzivu <em>Što da radim?</em>
+   • Tri točkice: koristi … (ne ...) za pauze i zamišljenost
+   • Em-crtica — za umetke i naglasak
+
+4. KONZISTENTNOST:
+   • Prethodni odlomak završava: "{prev_kraj}"
+   • Nastavi ISTIM glagolskim vremenom, tonom i perspektivom
+   • Isti lik govori uvijek ISTIM glasom i idiolektom
+
+5. ZABRANJENO:
+   • Uvodni komentari ("Evo prijevoda:", "Naravno!", "Svakako!")
+   • Izlišne rečenice koje nisu u originalu
+   • Prebukvalni prijevodi koji zvuče neprirodno
+
 Vrati ISKLJUČIVO: {{"finalno_polirano": "lektorisani tekst ovdje"}}
+"""
+
+_KOREKTOR_TEMPLATE = """\
+Ti si precizni korektor koji priprema rukopis za tisak. \
+Tekst je već lektoriran — tvoj je zadatak SAMO tehnička ispravnost. Ne mijenjaj stil ni sadržaj.
+
+PROVJERI I ISPRAVI:
+
+1. GRAMATIKA:
+   • Padeži i sklonidba imenica/zamjenica/pridjeva
+   • Slaganje subjekta i predikata u rodu i broju
+   • Glagolska vremena — dosljednost unutar odlomka
+
+2. INTERPUNKCIJA I TIPOGRAFIJA:
+   • Zareze ispred "koji/koja/koje/što" (subordinatne rečenice)
+   • Em-crtica (—) za dijalog, en-crtica (–) za raspone, obična crtica (-) za spojnice
+   • Tri točkice: … (jedan znak, ne tri odvojena)
+   • Navodnici: „tekst" (dolje-gore)
+   • Razmaci: nema dvostrukih razmaka, nema razmaka prije interpunkcije
+
+3. KONZISTENTNOST:
+   • Ista vlastita imena (nema varijacija za isti lik)
+   • Isti termini za iste pojmove
+   • Isti glagolski vid u opisima
+
+4. FORMAT: Zadrži SVE HTML tagove netaknute. Ne dodaj novi sadržaj.
+
+Vrati ISKLJUČIVO: {{"korektura": "korigirani tekst ovdje"}}
 """
 
 _VALIDATOR_SYS = """\
@@ -437,8 +543,14 @@ class SkriptorijAllInOne:
     def _get_prevodilac_prompt(self, glosar_chunk="") -> str:
         ton = self.book_context.get("ton", "neutralan")
         stil = self.book_context.get("stil_pripovijedanja", "3. lice")
+        zanr = self.book_context.get("zanr", "nepoznat")
+        period = self.book_context.get("period", "suvremeni")
+        ton_injekcija = (
+            f"Žanr: {zanr} | Ton: {ton} | Period: {period} | Narativni stil: {stil}. "
+            f"Vokabular i registar prilagodi ovim parametrima — književni jezik, ne novinski."
+        )
         return _PREVODILAC_TEMPLATE.format(
-            ton_injekcija=f"Ton knjige: {ton}. Stil: {stil}. Prilagodi vokabular.",
+            ton_injekcija=ton_injekcija,
             glosar_injekcija=glosar_chunk or self.glosar_tekst or "Nema glosara.",
         )
 
@@ -450,8 +562,11 @@ class SkriptorijAllInOne:
         return _LEKTOR_TEMPLATE.format(
             knjiga_kontekst=f"Žanr: {zanr} | Ton: {ton} | Period: {period}",
             stil_injekcija=f"Prilagodi žanru {zanr} ({ton}). Stil: {stil}. Prirodan ritam.",
-            prev_kraj=(prev_kraj[-200:] if prev_kraj else "—"),
+            prev_kraj=(prev_kraj[-600:] if prev_kraj else "—"),
         )
+
+    def _get_korektor_prompt(self) -> str:
+        return _KOREKTOR_TEMPLATE
 
     # ============================================================================
     # #9: OVERLAP CHUNKING
@@ -505,15 +620,17 @@ class SkriptorijAllInOne:
     # ============================================================================
     async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key):
         try:
-            # #6: asyncio.to_thread umjesto deprecated get_event_loop
-            resp = await asyncio.to_thread(
-                requests.post,
-                url,
-                headers=headers,
-                json=json_payload,
-                timeout=90,
-                verify=False,
-            )
+            # #3: asyncio.timeout sprječava beskonačno čekanje
+            async with asyncio.timeout(120):
+                # #6: asyncio.to_thread umjesto deprecated get_event_loop
+                resp = await asyncio.to_thread(
+                    requests.post,
+                    url,
+                    headers=headers,
+                    json=json_payload,
+                    timeout=90,
+                    verify=False,
+                )
             # #5: Pravi rate-limit podaci iz headera
             self.fleet.analyze_response(prov, key, resp.status_code, resp.headers)
 
@@ -530,6 +647,9 @@ class SkriptorijAllInOne:
                 safe = resp.text[:200].replace("<", "&lt;").replace(">", "&gt;")
                 self.log(f"[{prov_upper}] HTTP {resp.status_code}: {safe}", "tech")
                 return None
+        except TimeoutError:
+            self.log(f"[{prov_upper}] Timeout (120s) — preskačem poziv.", "warning")
+            return None
         except Exception as e:
             self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:100]}", "error")
             return None
@@ -603,7 +723,7 @@ class SkriptorijAllInOne:
 
         # #17: Gemini 2.5 flash | #18: Temperature po ulozi
         if uloga == "LEKTOR":
-            opt_temp = 0.60  # #18: Viša temperatura = bogatiji vokabular
+            opt_temp = 0.65  # Viša temperatura = bogatiji, raznovrsniji vokabular
             pms = []
             for p in svi:
                 up = p.upper()
@@ -622,6 +742,24 @@ class SkriptorijAllInOne:
                 ]:
                     pms.append((up, self.fleet.get_active_model(up) or "default"))
             sys_c = sys_override or self._get_lektor_prompt()
+
+        elif uloga == "KOREKTOR":
+            # Korektor koristi nisku temperaturu za precizne gramatičke ispravke
+            opt_temp = 0.25
+            pms = []
+            for p in svi:
+                up = p.upper()
+                # Preferiramo brze modele za korektor prolaz
+                if up in ["GROQ", "CEREBRAS", "GEMINI"]:
+                    m = (
+                        "gemini-2.5-flash-lite-preview-06-17"
+                        if up == "GEMINI"
+                        else self.fleet.get_active_model(up)
+                    )
+                    if m:
+                        pms.append((up, m))
+                        break  # Samo jedan motor za korektor
+            sys_c = sys_override or self._get_korektor_prompt()
 
         elif uloga == "PREVODILAC":
             opt_temp = 0.18  # #18: Niska temperatura = precizan prijevod
@@ -699,9 +837,29 @@ class SkriptorijAllInOne:
         return None, "N/A"
 
     # ============================================================================
-    # #11: ANALIZA KNJIGE — jednom na početku
+    # #4 + #11: ANALIZA KNJIGE — jednom na početku, rezultat se cachira
     # ============================================================================
     async def analiziraj_knjigu(self, intro_text: str):
+        # #4: Provjeri cache najprije
+        cache_file = self.checkpoint_dir / "book_analysis.json"
+        if cache_file.exists():
+            try:
+                cached = json.loads(cache_file.read_text("utf-8"))
+                self.book_context.update(cached)
+                self.knjiga_analizirana = True
+                self.glosar_tekst = self._build_glosar_tekst()
+                likovi = ", ".join(list(self.book_context.get("likovi", {}).keys())[:5])
+                self.log(
+                    f"📂 Analiza učitana iz cache-a<br>"
+                    f"📚 Žanr: <b>{self.book_context.get('zanr')}</b> | "
+                    f"Ton: <b>{self.book_context.get('ton')}</b><br>"
+                    f"👥 Likovi: {likovi or '—'}",
+                    "system",
+                )
+                return
+            except Exception:
+                pass  # Oštećen cache — ponovi analizu
+
         self.shared_stats["status"] = "ANALIZA KNJIGE..."
         self.log("🔬 Analiziram kontekst: žanr, ton, likovi, glosar...", "system")
         clean = BeautifulSoup(intro_text, "html.parser").get_text()[:2500]
@@ -713,6 +871,8 @@ class SkriptorijAllInOne:
                 self.book_context.update(ctx)
                 self.knjiga_analizirana = True
                 self.glosar_tekst = self._build_glosar_tekst()
+                # #4: Spremi u cache
+                self._atomic_write(cache_file, json.dumps(self.book_context, ensure_ascii=False, indent=2))
                 likovi = ", ".join(list(self.book_context.get("likovi", {}).keys())[:5])
                 self.log(
                     f"✅ Analiza završena ({engine})<br>"
@@ -741,6 +901,11 @@ class SkriptorijAllInOne:
             try:
                 zapamceno = chk_fajl.read_text("utf-8", errors="ignore")
                 if len(zapamceno) > 10 and _detektuj_en_ostatke(zapamceno) < 0.08:
+                    # #5: Log kad se blok učita iz cache-a
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: 💾 Učitan iz cache-a.",
+                        "tech",
+                    )
                     self.spaseno_iz_checkpointa += 1
                     self.global_done_chunks += 1
                     return zapamceno, "DATABASE"
@@ -826,11 +991,71 @@ class SkriptorijAllInOne:
             except Exception:
                 finalno = _agresivno_cisti(raw_l)
 
+        # #1: Ako lektor nije vratio ništa, retry sa drugom temperaturom
+        if not finalno:
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: Lektor nije odgovorio — retry sa alt. temperaturom.",
+                "warning",
+            )
+            retry_lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx)
+            retry_p_lek = (
+                f"IZVORNI TEKST (referenca):\n{chunk[:400]}\n\n"
+                f"TEKST ZA LEKTURU:\n{sirovo}\n\n"
+                f"Izvrši dubinsku lekturu. Uglancaj vokabular i osiguraj književni ton."
+            )
+            # Retry s višom temperaturom za raznovrsnost
+            svi = list(self.fleet.fleet.keys())
+            pms_retry = []
+            for p in svi:
+                up = p.upper()
+                if up in ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL"]:
+                    m_name = (
+                        "gemini-2.5-flash"
+                        if up == "GEMINI"
+                        else (self.fleet.get_active_model(up) or "default")
+                    )
+                    pms_retry.append((up, m_name))
+            for prov_r, model_r in pms_retry:
+                raw_retry, label_r = await self._call_single_provider(
+                    prov_r, model_r, retry_lek_sys, retry_p_lek, 0.80
+                )
+                if raw_retry:
+                    try:
+                        mr = re.search(r"\{.*\}", raw_retry, re.DOTALL)
+                        obj_r = json.loads(mr.group() if mr else raw_retry)
+                        finalno = obj_r.get("finalno_polirano", next(iter(obj_r.values()), ""))
+                    except Exception:
+                        finalno = _agresivno_cisti(raw_retry)
+                    if finalno:
+                        prov2 = label_r
+                        break
+
         if not finalno:
             finalno, prov2 = sirovo, f"{prov1}(FS)"
 
         # #15: Finalni prolaz — AI markeri
         finalno = _ocisti_ai_markere(finalno)
+
+        # #8: Final validation — provjera kvalitete prije čuvanja
+        finalno_tekst = re.sub(r"<[^>]+>", "", finalno)
+        if len(finalno_tekst.strip()) < 20:
+            # Tekst premali — odbaci i koristi original
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ Rezultat premali ({len(finalno_tekst)} znakova) — koristim original.",
+                "warning",
+            )
+            finalno = chunk
+        elif _detektuj_en_ostatke(finalno) > 0.15:
+            # Previše engleskog — cleanup
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: 🧹 Detektovano >15% engleskog — čistim ostatke.",
+                "warning",
+            )
+            # Pokušaj ukloniti engleski tekst agresivnim čišćenjem
+            finalno = _agresivno_cisti(finalno)
+            if _detektuj_en_ostatke(finalno) > 0.15:
+                finalno = sirovo  # Fallback na sirovi prijevod
+
         h_detected = _detektuj_halucinaciju(chunk, finalno, uloga="LEKTOR")
 
         if h_detected:
@@ -850,9 +1075,41 @@ class SkriptorijAllInOne:
                     "warning",
                 )
 
+        # ── KORAK 4: KOREKTOR (print-quality gramatička korektura) ──────────
+        # Pokrenuti samo za blokove s dovoljno sadržaja (>80 znakova teksta)
+        finalno_tekst_len = len(re.sub(r"<[^>]+>", "", finalno).strip())
+        if finalno_tekst_len > 80 and jezik != "HR":
+            kor_prompt = (
+                f"Tekst za korekturu:\n{finalno}"
+            )
+            raw_k, prov3 = await self._call_ai_engine(
+                kor_prompt, chunk_idx, uloga="KOREKTOR", filename=file_name
+            )
+            if raw_k:
+                try:
+                    mk = re.search(r"\{.*\}", raw_k, re.DOTALL)
+                    obj_k = json.loads(mk.group() if mk else raw_k)
+                    korektura = obj_k.get("korektura", next(iter(obj_k.values()), ""))
+                    korektura = _agresivno_cisti(korektura)
+                    # Prihvati korektu samo ako nije halucinirala
+                    if (
+                        korektura
+                        and not _detektuj_halucinaciju(finalno, korektura, uloga="LEKTOR")
+                    ):
+                        finalno = korektura
+                        prov2 = f"{prov2}→{prov3}(K)"
+                except Exception:
+                    pass  # Korektura neuspješna — zadrži lektor verziju
+
+        # ── KORAK 5: TIPOGRAFIJA — deterministička B/H/S pravila ────────────
+        finalno = _post_process_tipografija(finalno)
+
         self._atomic_write(chk_fajl, finalno)
         self.global_done_chunks += 1
         self.stvarno_prevedeno_u_sesiji += 1
+        # #2: Ažuriraj shared_stats za /api/status endpoint
+        self.shared_stats["stvarno_prevedeno"] = self.stvarno_prevedeno_u_sesiji
+        self.shared_stats["spaseno_iz_checkpointa"] = self.spaseno_iz_checkpointa
 
         aud = (
             f"<div style='border-left:4px solid #0ea5e9; background:#0f172a; "
