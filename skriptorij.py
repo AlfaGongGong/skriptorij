@@ -293,34 +293,131 @@ def add_audit(msg, atype="info", en_text="", shared_stats=None):
 
 
 # ============================================================================
+# TIPOGRAFSKA OBRADA — deterministička B/H/S tipografska pravila
+# ============================================================================
+def _post_process_tipografija(tekst: str) -> str:
+    """Primijeni B/H/S tipografska pravila na gotov tekst."""
+    # Tri točke → elipsa (…)
+    tekst = re.sub(r'\.\.\.', '…', tekst)
+    # Višestruke točke (4+) → elipsa
+    tekst = re.sub(r'\.{4,}', '…', tekst)
+
+    # Crtica za dijalog: crtica na početku odlomka (after <p> or start of line)
+    # Zamijeni obične crtice na početku s em-crticom
+    tekst = re.sub(r'(<p[^>]*>)\s*-\s', r'\1— ', tekst)
+    tekst = re.sub(r'(<p[^>]*>)\s*–\s', r'\1— ', tekst)
+
+    # Dvostruki razmaci → jedan razmak (izvan HTML tagova)
+    # Radi samo na tekstu koji nije unutar tagova
+    tekst = re.sub(r'(?<=>)([^<]*)(?=<)', lambda m: re.sub(r'  +', ' ', m.group()), tekst)
+
+    # Navodnici: zamijeni "..." sa „..." (B/H/S standard)
+    # Pažnja: ne mijenjaj navodnici unutar HTML atributa (attr="...")
+    tekst = re.sub(r'(?<!=)"([^"<>]+)"', r'„\1"', tekst)
+
+    # Razmak prije interpunkcije (,.:;!?)
+    tekst = re.sub(r'\s+([,\.;:!?])', r'\1', tekst)
+
+    return tekst
+
+
+# ============================================================================
 # #11 + #12 + #13: SYSTEM PROMPTI — DINAMIČKI
 # ============================================================================
 _PREVODILAC_TEMPLATE = """\
-Ti si precizni prevodilac s engleskog na bosanski/hrvatski jezik.
-PRAVILA:
-1. Zadrži SVE HTML tagove kakvi su — ne mijenjaj ih.
-2. Vrati ISKLJUČIVO prevedeni tekst. Bez komentara, uvoda ili objašnjenja.
-3. IDIOMI: NIKAD ne prevodi idiome doslovno. Koristi ekvivalent:
+Ti si iskusni književni prevodilac s engleskog na bosanski/hrvatski jezik s 20+ godina iskustva. \
+Tvoji prijevodi objavljuje Fraktura, VBZ i Mozaik knjiga.
+
+ŽELJENI REZULTAT: Tekst koji čitalac doživljava kao da je IZVORNO napisan na bosanskom/hrvatskom.
+
+STROGA PRAVILA:
+1. HTML TAGOVI: Zadrži SVE tagove (<p>, <i>, <b>, <em>, <br>, <div>) tačno kakvi su.
+2. ČISTOĆA: Vrati SAMO prevedeni tekst. Nula komentara, nula uvoda, nula objašnjenja.
+3. PRIJEVODIZMI — ZABRANA: Nikad ne prevodi doslovno fraze koje u B/H/S zvuče neprirodno:
+   - "It was..." → ne "Bilo je..." nego nađi prirodniji ekvivalent
+   - "He/She found himself/herself..." → "Zatekao/la se...", "Obreo/la se..."
+   - "There was/were..." → preformuliraj rečenicu bez krutog "postajati/biti"
+   - "As if/As though..." → "Kao da...", "Kao da bi..."
+4. IDIOMI — EKVIVALENTI (ne doslovan prijevod):
    "kick the bucket"→"ispustiti dušu" | "piece of cake"→"mačji kašalj" |
-   "it's raining cats and dogs"→"pada kao iz kabla" | "break a leg"→"sretno" |
-   "bite the bullet"→"prihvatiti gorku istinu" | "under the weather"→"nije dobro" |
+   "raining cats and dogs"→"kiša kao iz kabla" | "break a leg"→"sretno" |
+   "bite the bullet"→"prihvatiti gorku istinu" | "under the weather"→"bolesno/loše" |
    "spill the beans"→"odati tajnu" | "cost an arm and a leg"→"koštati bogatstvo" |
-   "hit the nail on the head"→"pogoditi u metu" | "let the cat out of the bag"→"odati tajnu"
-4. TON: {ton_injekcija}
-5. GLOSAR:\n{glosar_injekcija}
+   "hit the nail on the head"→"pogoditi u metu" | "let the cat out of the bag"→"odati tajnu" |
+   "burn bridges"→"spaliti mostove" | "beat around the bush"→"ići oko vrućeg kaše" |
+   "elephant in the room"→"tema koju svi izbjegavaju" | "once in a blue moon"→"jednom u sto godina" |
+   "barking up the wrong tree"→"udariš u krivu ploču"
+5. DIJALOG: Dijalog prevedi prirodno, prilagodi idiome govornom jeziku.
+6. TON: {ton_injekcija}
+7. GLOSAR LIKOVA I TERMINA (OBAVEZNO KORISTITI):
+{glosar_injekcija}
 """
 
 _LEKTOR_TEMPLATE = """\
-Ti si književni urednik i redaktor u elitnoj izdavačskoj kući.
-KONTEKST: {knjiga_kontekst}
-PRAVILA:
-1. STIL: {stil_injekcija}
-2. JEZIK: Standardni, bogati bosanski/hrvatski. Ispravljaj nespretne konstrukcije i rogobatne prijevode.
-3. KONZISTENTNOST: Prethodni odlomak završava: "{prev_kraj}"
-   Nastavi ISTIM glagolskim vremenom i perspektivom.
-4. FORMAT: Zadrži HTML tagove (<i>, <b>, <em>). Fokus je na tekstu, ne kodu.
-5. ZABRANJENO: Ne koristi fraze poput "Naravno!", "Svakako!", "Evo rezultata:".
+Ti si Glavni urednik i vrhunski književni lektor koji radi za elitnu izdavačku kuću. \
+Tvoj posao je pretvoriti strojni prijevod u tekst koji se čita kao originalna književnost.
+
+KONTEKST KNJIGE: {knjiga_kontekst}
+
+IMPERATIVNA PRAVILA LEKTURE:
+
+1. KNJIŽEVNI STIL ({stil_injekcija}):
+   • Vokabular: koristi bogat, raznovrstan rječnik — izbjegavaj ponavljanje istih glagola i pridjeva
+   • Ritam: izmjenjuj kratke i duge rečenice za prirodan ritam čitanja
+   • Perspektiva: strogo drži zadanu perspektivu pripovijedanja
+   • Registar: prilagodi stil žanru — književni za romansu/dramu, napeti za thriller, poetičan za fantaziju
+
+2. BOSANSKI/HRVATSKI JEZIK — SPECIFIKE:
+   • Futur I (napisat ću) i kondicional (napisao bih) — koristi pravilno, ne miješaj
+   • Zamjenice: ne prekoristuj "on/ona/ono" — zamijeni imenima kad je jasno
+   • Pasiv: zamijeni engleski pasiv aktivnom konstrukcijom gdje god je moguće
+   • Glagolski vid: razlikuj perfektivne i imperfektivne glagole
+
+3. DIJALOG I TIPOGRAFIJA:
+   • Dijalog počinje crticom: — Zdravo, reče on. (NE navodnicima "Zdravo")
+   • Misli likova: u kurzivu <em>Što da radim?</em>
+   • Tri točkice: koristi … (ne ...) za pauze i zamišljenost
+   • Em-crtica — za umetke i naglasak
+
+4. KONZISTENTNOST:
+   • Prethodni odlomak završava: "{prev_kraj}"
+   • Nastavi ISTIM glagolskim vremenom, tonom i perspektivom
+   • Isti lik govori uvijek ISTIM glasom i idiolektom
+
+5. ZABRANJENO:
+   • Uvodni komentari ("Evo prijevoda:", "Naravno!", "Svakako!")
+   • Izlišne rečenice koje nisu u originalu
+   • Prebukvalni prijevodi koji zvuče neprirodno
+
 Vrati ISKLJUČIVO: {{"finalno_polirano": "lektorisani tekst ovdje"}}
+"""
+
+_KOREKTOR_TEMPLATE = """\
+Ti si precizni korektor koji priprema rukopis za tisak. \
+Tekst je već lektoriran — tvoj je zadatak SAMO tehnička ispravnost. Ne mijenjaj stil ni sadržaj.
+
+PROVJERI I ISPRAVI:
+
+1. GRAMATIKA:
+   • Padeži i sklonidba imenica/zamjenica/pridjeva
+   • Slaganje subjekta i predikata u rodu i broju
+   • Glagolska vremena — dosljednost unutar odlomka
+
+2. INTERPUNKCIJA I TIPOGRAFIJA:
+   • Zareze ispred "koji/koja/koje/što" (subordinatne rečenice)
+   • Em-crtica (—) za dijalog, en-crtica (–) za raspone, obična crtica (-) za spojnice
+   • Tri točkice: … (jedan znak, ne tri odvojena)
+   • Navodnici: „tekst" (dolje-gore)
+   • Razmaci: nema dvostrukih razmaka, nema razmaka prije interpunkcije
+
+3. KONZISTENTNOST:
+   • Ista vlastita imena (nema varijacija za isti lik)
+   • Isti termini za iste pojmove
+   • Isti glagolski vid u opisima
+
+4. FORMAT: Zadrži SVE HTML tagove netaknute. Ne dodaj novi sadržaj.
+
+Vrati ISKLJUČIVO: {{"korektura": "korigirani tekst ovdje"}}
 """
 
 _VALIDATOR_SYS = """\
@@ -437,8 +534,14 @@ class SkriptorijAllInOne:
     def _get_prevodilac_prompt(self, glosar_chunk="") -> str:
         ton = self.book_context.get("ton", "neutralan")
         stil = self.book_context.get("stil_pripovijedanja", "3. lice")
+        zanr = self.book_context.get("zanr", "nepoznat")
+        period = self.book_context.get("period", "suvremeni")
+        ton_injekcija = (
+            f"Žanr: {zanr} | Ton: {ton} | Period: {period} | Narativni stil: {stil}. "
+            f"Vokabular i registar prilagodi ovim parametrima — književni jezik, ne novinski."
+        )
         return _PREVODILAC_TEMPLATE.format(
-            ton_injekcija=f"Ton knjige: {ton}. Stil: {stil}. Prilagodi vokabular.",
+            ton_injekcija=ton_injekcija,
             glosar_injekcija=glosar_chunk or self.glosar_tekst or "Nema glosara.",
         )
 
@@ -450,8 +553,11 @@ class SkriptorijAllInOne:
         return _LEKTOR_TEMPLATE.format(
             knjiga_kontekst=f"Žanr: {zanr} | Ton: {ton} | Period: {period}",
             stil_injekcija=f"Prilagodi žanru {zanr} ({ton}). Stil: {stil}. Prirodan ritam.",
-            prev_kraj=(prev_kraj[-200:] if prev_kraj else "—"),
+            prev_kraj=(prev_kraj[-600:] if prev_kraj else "—"),
         )
+
+    def _get_korektor_prompt(self) -> str:
+        return _KOREKTOR_TEMPLATE
 
     # ============================================================================
     # #9: OVERLAP CHUNKING
@@ -608,7 +714,7 @@ class SkriptorijAllInOne:
 
         # #17: Gemini 2.5 flash | #18: Temperature po ulozi
         if uloga == "LEKTOR":
-            opt_temp = 0.60  # #18: Viša temperatura = bogatiji vokabular
+            opt_temp = 0.65  # Viša temperatura = bogatiji, raznovrsniji vokabular
             pms = []
             for p in svi:
                 up = p.upper()
@@ -627,6 +733,24 @@ class SkriptorijAllInOne:
                 ]:
                     pms.append((up, self.fleet.get_active_model(up) or "default"))
             sys_c = sys_override or self._get_lektor_prompt()
+
+        elif uloga == "KOREKTOR":
+            # Korektor koristi nisku temperaturu za precizne gramatičke ispravke
+            opt_temp = 0.25
+            pms = []
+            for p in svi:
+                up = p.upper()
+                # Preferiramo brze modele za korektor prolaz
+                if up in ["GROQ", "CEREBRAS", "GEMINI"]:
+                    m = (
+                        "gemini-2.5-flash-lite-preview-06-17"
+                        if up == "GEMINI"
+                        else self.fleet.get_active_model(up)
+                    )
+                    if m:
+                        pms.append((up, m))
+                        break  # Samo jedan motor za korektor
+            sys_c = sys_override or self._get_korektor_prompt()
 
         elif uloga == "PREVODILAC":
             opt_temp = 0.18  # #18: Niska temperatura = precizan prijevod
@@ -941,6 +1065,35 @@ class SkriptorijAllInOne:
                     f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju (ratio={ratio:.2f}), puštam dalje.",
                     "warning",
                 )
+
+        # ── KORAK 4: KOREKTOR (print-quality gramatička korektura) ──────────
+        # Pokrenuti samo za blokove s dovoljno sadržaja (>80 znakova teksta)
+        finalno_tekst_len = len(re.sub(r"<[^>]+>", "", finalno).strip())
+        if finalno_tekst_len > 80 and jezik != "HR":
+            kor_prompt = (
+                f"Tekst za korekturu:\n{finalno}"
+            )
+            raw_k, prov3 = await self._call_ai_engine(
+                kor_prompt, chunk_idx, uloga="KOREKTOR", filename=file_name
+            )
+            if raw_k:
+                try:
+                    mk = re.search(r"\{.*\}", raw_k, re.DOTALL)
+                    obj_k = json.loads(mk.group() if mk else raw_k)
+                    korektura = obj_k.get("korektura", next(iter(obj_k.values()), ""))
+                    korektura = _agresivno_cisti(korektura)
+                    # Prihvati korektu samo ako nije halucinirala
+                    if (
+                        korektura
+                        and not _detektuj_halucinaciju(finalno, korektura, uloga="LEKTOR")
+                    ):
+                        finalno = korektura
+                        prov2 = f"{prov2}→{prov3}(K)"
+                except Exception:
+                    pass  # Korektura neuspješna — zadrži lektor verziju
+
+        # ── KORAK 5: TIPOGRAFIJA — deterministička B/H/S pravila ────────────
+        finalno = _post_process_tipografija(finalno)
 
         self._atomic_write(chk_fajl, finalno)
         self.global_done_chunks += 1

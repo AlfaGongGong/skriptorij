@@ -201,11 +201,8 @@ def export_result(fmt):
             )
         else:
             return (jsonify({'error': f'Nepoznat format: {fmt}'}), 400)
-    except Exception as e:
-        return (jsonify({'error': str(e)}), 500)
-
-# ============================================================================
-# #14: API KEY MANAGEMENT
+    except Exception:
+        return (jsonify({'error': 'Greška pri generiranju izvještaja'}), 500)
 # ============================================================================
 @app.route('/api/keys', methods=['GET'])
 def list_keys():
@@ -223,8 +220,8 @@ def list_keys():
         return jsonify(result)
     except FileNotFoundError:
         return jsonify({})
-    except Exception as e:
-        return (jsonify({'error': str(e)}), 500)
+    except Exception:
+        return (jsonify({'error': 'Greška pri čitanju konfiguracije'}), 500)
 
 @app.route('/api/keys/<provider>', methods=['POST'])
 def add_key(provider):
@@ -257,8 +254,8 @@ def add_key(provider):
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
         return jsonify({'status': 'ok', 'provider': prov_upper, 'masked': f'...{new_key[-6:]}'})
-    except Exception as e:
-        return (jsonify({'error': str(e)}), 500)
+    except Exception:
+        return (jsonify({'error': 'Greška pri dodavanju ključa'}), 500)
 
 @app.route('/api/keys/<provider>/<int:idx>', methods=['DELETE'])
 def delete_key(provider, idx):
@@ -277,8 +274,8 @@ def delete_key(provider, idx):
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
         return jsonify({'status': 'ok', 'provider': prov_upper})
-    except Exception as e:
-        return (jsonify({'error': str(e)}), 500)
+    except Exception:
+        return (jsonify({'error': 'Greška pri brisanju ključa'}), 500)
 
 @app.route('/control/<action>', methods=['POST'])
 def control_process(action):

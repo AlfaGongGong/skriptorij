@@ -417,7 +417,10 @@ function updateFleetPool() {
             if (!container) return;
 
             if (data.error) {
-                container.innerHTML = '<p style="color: var(--col-danger); font-size:0.85rem;">Greska: ' + data.error + '</p>';
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
+                p.textContent = 'Greška: ' + data.error;
+                container.replaceChildren(p);
                 return;
             }
 
@@ -454,7 +457,12 @@ function updateFleetPool() {
         })
         .catch(e => {
             const container = document.getElementById('fleet-pool-content');
-            if (container) container.innerHTML = '<p style="color: var(--col-danger); font-size:0.85rem;">Greska pri dohvacanju flote: ' + e.message + '</p>';
+            if (container) {
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
+                p.textContent = 'Greška pri dohvaćanju flote.';
+                container.replaceChildren(p);
+            }
         });
 }
 
@@ -475,7 +483,10 @@ function loadApiKeys() {
             if (!container) return;
 
             if (data.error) {
-                container.innerHTML = '<p style="color: var(--col-danger); font-size:0.85rem;">Greska: ' + data.error + '</p>';
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
+                p.textContent = 'Greška: ' + data.error;
+                container.replaceChildren(p);
                 return;
             }
 
@@ -499,7 +510,7 @@ function loadApiKeys() {
                         + '<td class="fleet-prov">' + (idx === 0 ? prov : '') + '</td>'
                         + '<td style="font-family:monospace; color:var(--text-accent);">' + masked + '</td>'
                         + '<td><button class="btn btn-danger" style="padding:3px 10px; font-size:0.75rem;" '
-                        + 'onclick="deleteApiKey(\'' + prov + '\',' + idx + ')">🗑 Obriši</button></td>'
+                        + 'onclick="deleteApiKey(\'' + prov + '\',' + idx + ')">\uD83D\uDDD1 Obri\u0161i</button></td>'
                         + '</tr>';
                 });
             }
@@ -507,9 +518,14 @@ function loadApiKeys() {
             html += '</tbody></table>';
             container.innerHTML = html;
         })
-        .catch(e => {
+        .catch(() => {
             const container = document.getElementById('keys-list');
-            if (container) container.innerHTML = '<p style="color: var(--col-danger); font-size:0.85rem;">Greska: ' + e.message + '</p>';
+            if (container) {
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
+                p.textContent = 'Greška pri dohvaćanju ključeva.';
+                container.replaceChildren(p);
+            }
         });
 }
 
@@ -539,12 +555,12 @@ function addApiKey() {
                 showToast('\u274C ' + d.error, 'error');
                 return;
             }
-            showToast('\u2705 Ključ dodan za ' + d.provider + ': ' + d.masked, 'success');
+            showToast('\u2705 Klju\u010d dodan za ' + d.provider + ': ' + d.masked, 'success');
             if (keyInput) keyInput.value = '';
             loadApiKeys();
             loadModels();
         })
-        .catch(e => showToast('\u274C Greska: ' + e.message, 'error'));
+        .catch(() => showToast('\u274C Gre\u0161ka pri dodavanju klju\u010da.', 'error'));
 }
 
 function deleteApiKey(provider, idx) {
@@ -558,11 +574,11 @@ function deleteApiKey(provider, idx) {
                 showToast('\u274C ' + d.error, 'error');
                 return;
             }
-            showToast('\u2705 Ključ obrisan za ' + d.provider, 'success');
+            showToast('\u2705 Klju\u010d obrisan za ' + d.provider, 'success');
             loadApiKeys();
             loadModels();
         })
-        .catch(e => showToast('\u274C Greska: ' + e.message, 'error'));
+        .catch(() => showToast('\u274C Gre\u0161ka pri brisanju klju\u010da.', 'error'));
 }
 
 // Tastatura shortcut-i
