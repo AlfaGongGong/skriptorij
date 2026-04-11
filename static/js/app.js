@@ -73,11 +73,32 @@ function showToast(message, type) {
 function toggleTheme() {
     const isLight = document.body.classList.toggle('light-theme');
     localStorage.setItem('skriptorij-theme', isLight ? 'light' : 'dark');
+    const btn = document.getElementById('btn-theme');
+    if (btn) btn.textContent = isLight ? '🌙 Tema' : '☀️ Tema';
 }
 
 function applyStoredTheme() {
     if (localStorage.getItem('skriptorij-theme') === 'light') {
         document.body.classList.add('light-theme');
+        const btn = document.getElementById('btn-theme');
+        if (btn) btn.textContent = '🌙 Tema';
+    }
+}
+
+// -- Setup Toggle (dostupan i tokom rada) ------------------------------------
+function toggleSetup() {
+    const setupScreen = document.getElementById('setup-screen');
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    if (!setupScreen) return;
+
+    const isHidden = setupScreen.classList.contains('hidden');
+    if (isHidden) {
+        // Prikaži setup overlay (čuva dashboard ispod)
+        setupScreen.classList.remove('hidden');
+        setupScreen.classList.add('setup-overlay-active');
+    } else {
+        setupScreen.classList.add('hidden');
+        setupScreen.classList.remove('setup-overlay-active');
     }
 }
 
@@ -197,14 +218,14 @@ function loadModels() {
                 models.forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = m;
-                    opt.textContent = m;
-                    if (m === 'QUAD_CORE') opt.selected = true;
+                    opt.textContent = m === 'V8_TURBO' ? '⚡ V8 TURBO (Preporučeno)' : m;
+                    if (m === 'V8_TURBO') opt.selected = true;
                     select.appendChild(opt);
                 });
             } else {
                 const opt = document.createElement('option');
-                opt.value = 'QUAD_CORE';
-                opt.textContent = 'QUAD_CORE (Default)';
+                opt.value = 'V8_TURBO';
+                opt.textContent = '⚡ V8 TURBO (Default)';
                 opt.selected = true;
                 select.appendChild(opt);
             }
@@ -213,7 +234,7 @@ function loadModels() {
             console.error('Greska pri ucitavanju modela:', e);
             const select = document.getElementById('model-select');
             if (select) {
-                select.innerHTML = '<option value="QUAD_CORE" selected>QUAD_CORE (Default)</option>';
+                select.innerHTML = '<option value="V8_TURBO" selected>⚡ V8 TURBO (Default)</option>';
             }
         });
 }
@@ -226,7 +247,7 @@ function startEngine() {
     const btn = document.getElementById('btn-start');
 
     const book = bookSelect ? bookSelect.value : '';
-    const model = modelSelect ? modelSelect.value : 'QUAD_CORE';
+    const model = modelSelect ? modelSelect.value : 'V8_TURBO';
     const mode = modeSelect ? modeSelect.value : 'PREVOD';
 
     if (!book || book === '') {
@@ -281,7 +302,10 @@ function switchToDashboard() {
     const setupScreen = document.getElementById('setup-screen');
     const dashboardScreen = document.getElementById('dashboard-screen');
 
-    if (setupScreen) setupScreen.classList.add('hidden');
+    if (setupScreen) {
+        setupScreen.classList.add('hidden');
+        setupScreen.classList.remove('setup-overlay-active');
+    }
     if (dashboardScreen) dashboardScreen.classList.remove('hidden');
 }
 
@@ -291,7 +315,10 @@ function switchToSetup() {
     const dashboardScreen = document.getElementById('dashboard-screen');
 
     if (dashboardScreen) dashboardScreen.classList.add('hidden');
-    if (setupScreen) setupScreen.classList.remove('hidden');
+    if (setupScreen) {
+        setupScreen.classList.remove('hidden');
+        setupScreen.classList.remove('setup-overlay-active');
+    }
 }
 
 // -- Komande (Pause, Resume, Reset, Stop) ------------------------------------
@@ -603,6 +630,17 @@ function deleteApiKey(provider, idx) {
             loadModels();
         })
         .catch(() => showToast('\u274C Gre\u0161ka pri brisanju klju\u010da.', 'error'));
+}
+
+// -- Drag and Drop za upload --------------------------------------------------
+function handleDrop(event) {
+    event.preventDefault();
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone) dropZone.classList.remove('drag-over');
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+        uploadBook(files[0]);
+    }
 }
 
 // Tastatura shortcut-i

@@ -278,5 +278,22 @@ INTRO_HTML = """
             if (!appStarted) forceStartApp();
         }, 12000);
 
+        // Provjeri localStorage — prikaži animaciju SAMO na prvom učitavanju
+        (function() {
+            const introShown = localStorage.getItem('skriptorij_intro_shown');
+            if (introShown) {
+                // Nije prvi put — preskoči animaciju odmah
+                appStarted = true;
+                const overlay = document.getElementById('intro-overlay');
+                const ui = document.getElementById('main-ui-wrapper');
+                if (ui) { ui.style.display = 'block'; ui.style.opacity = '1'; }
+                if (overlay) overlay.remove();
+                document.body.style.overflow = 'auto';
+            } else {
+                // Први пут — postavi flag i pokreni animaciju
+                localStorage.setItem('skriptorij_intro_shown', 'true');
+            }
+        })();
+
     </script>
 """
