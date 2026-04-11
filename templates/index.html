@@ -34,29 +34,57 @@
             <header class="app-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div id="status-dot" class="dot dot-idle"></div>
-                    <h1>✒️ SKRIPTORIJ V8</h1>
-                    <span class="badge-v6">V8 TURBO</span>
+                    <!-- Multi-color SVG quill logo -->
+                    <svg class="header-logo" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-label="Skriptorij logo">
+                        <defs>
+                            <linearGradient id="headerLogoGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%"   stop-color="#00f3ff"/>
+                                <stop offset="25%"  stop-color="#10b981"/>
+                                <stop offset="50%"  stop-color="#e000ff"/>
+                                <stop offset="75%"  stop-color="#f59e0b"/>
+                                <stop offset="100%" stop-color="#0ea5e9"/>
+                            </linearGradient>
+                            <linearGradient id="headerLogoGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%"   stop-color="#a8e6f0"/>
+                                <stop offset="25%"  stop-color="#a7f3d0"/>
+                                <stop offset="50%"  stop-color="#e9d5ff"/>
+                                <stop offset="75%"  stop-color="#fed7aa"/>
+                                <stop offset="100%" stop-color="#bae6fd"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
+                        <line x1="16" y1="8" x2="2" y2="22"></line>
+                        <line x1="17.5" y1="15" x2="9" y2="15"></line>
+                    </svg>
+                    <h1>SKRIPTORIJ V8</h1>
+                    <span class="badge-v6">⚡ V8 TURBO</span>
                 </div>
                 <div class="header-controls">
                     <span class="status-text" id="ph">IDLE</span>
-                    <button class="btn-theme" onclick="toggleTheme()">
+                    <button id="btn-theme" class="btn-theme" onclick="toggleTheme()">
                         ☀️ Tema
+                    </button>
+                    <button class="btn-setup" onclick="toggleSetup()" title="Konfiguracija">
+                        ⚙️ Setup
                     </button>
                 </div>
             </header>
 
             <!-- ═══════════════════ SETUP SCREEN ═══════════════════ -->
-            <div id="setup-screen" class="panel">
+            <div id="setup-screen" class="panel panel-setup">
                 <h2>⚙️ Konfiguracija Sistema</h2>
 
                 <div class="input-group">
                     <label for="book-file">📁 Upload EPUB / MOBI Fajla</label>
-                    <input
-                        type="file"
-                        id="book-file"
-                        accept=".epub,.mobi"
-                        onchange="uploadBook(this.files[0])"
-                    />
+                    <div id="drop-zone" class="drop-zone" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+                        <input
+                            type="file"
+                            id="book-file"
+                            accept=".epub,.mobi"
+                            onchange="uploadBook(this.files[0])"
+                        />
+                        <span class="drop-zone-hint">🖱️ Prevucite EPUB/MOBI ovdje ili kliknite</span>
+                    </div>
                     <small style="color: var(--text-muted); margin-top: 4px; display: block;">
                         ℹ️ Podržani formati: EPUB, MOBI
                     </small>
@@ -75,7 +103,7 @@
                         <option value="">— Učitavam modele... —</option>
                     </select>
                     <small style="color: var(--text-muted); margin-top: 4px; display: block;">
-                        💡 QUAD_CORE je preporučen za najbolje rezultate
+                        💡 ⚡ V8 TURBO je preporučen za najbolje rezultate
                     </small>
                 </div>
 
