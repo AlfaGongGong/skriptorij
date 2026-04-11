@@ -33,6 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // #14: Ucitaj ključeve kada se otvori key management panel
+    const keysDetails = document.getElementById('keys-details');
+    if (keysDetails) {
+        keysDetails.addEventListener('toggle', () => {
+            if (keysDetails.open) {
+                loadApiKeys();
+            }
+        });
+    }
 });
 
 // -- Toast notifikacije -------------------------------------------------------
@@ -350,9 +360,12 @@ function updateDashboard() {
 
             const audit = document.getElementById('audit');
             if (audit && d.live_audit) {
-                if (audit.innerHTML !== d.live_audit) {
-                    audit.innerHTML = d.live_audit;
-                    lastAuditHTML = d.live_audit;
+                const safeAudit = (typeof DOMPurify !== 'undefined')
+                    ? DOMPurify.sanitize(d.live_audit, { USE_PROFILES: { html: true } })
+                    : d.live_audit;
+                if (audit.innerHTML !== safeAudit) {
+                    audit.innerHTML = safeAudit;
+                    lastAuditHTML = safeAudit;
 
                     const isScrolledToBottom =
                         audit.scrollHeight - audit.clientHeight <=
@@ -451,6 +464,105 @@ function _updateEl(id, val) {
     if (el && el.innerText !== String(val)) {
         el.innerText = val;
     }
+}
+
+// -- #14: API Key Management ------------------------------------------------
+function loadApiKeys() {
+    fetch('/api/keys')
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('keys-list');
+            if (!container) return;
+
+            if (data.error) {
+                container.innerHTML = '<p style="color: var(--col-danger); font-size:0.85rem;">Greska: ' + data.error + '</p>';
+                return;
+            }
+
+            const entries = Object.entries(data);
+            if (entries.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); font-size:0.85rem;">Nema konfiguriranih ključeva. Dodajte prvi ključ gore.</p>';
+                return;
+            }
+
+            let html = '<table class="fleet-table"><thead><tr>'
+                + '<th>Provajder</th><th>Ključevi</th><th>Akcija</th>'
+                + '</tr></thead><tbody>';
+
+            for (const [prov, keys] of entries) {
+                if (keys.length === 0) {
+                    html += '<tr><td class="fleet-prov">' + prov + '</td><td colspan="2" style="color:var(--text-muted)">Nema ključeva</td></tr>';
+                    continue;
+                }
+                keys.forEach((masked, idx) => {
+                    html += '<tr>'
+                        + '<td class="fleet-prov">' + (idx === 0 ? prov : '') + '</td>'
+                        + '<td style="font-family:monospace; color:var(--text-accent);">' + masked + '</td>'
+                        + '<td><button class="btn btn-danger" style="padding:3px 10px; font-size:0.75rem;" '
+                        + 'onclick="deleteApiKey(\'' + prov + '\',' + idx + ')">🗑 Obriši</button></td>'
+                        + '</tr>';
+                });
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        })
+        .catch(e => {
+            const container = document.getElementById('keys-list');
+            if (container) container.innerHTML = '<p style="color: var(--col-danger); font-size:0.85rem;">Greska: ' + e.message + '</p>';
+        });
+}
+
+function addApiKey() {
+    const provSelect = document.getElementById('key-provider-select');
+    const keyInput = document.getElementById('key-input');
+    const provider = provSelect ? provSelect.value : '';
+    const key = keyInput ? keyInput.value.trim() : '';
+
+    if (!provider) {
+        showToast('\u26A0\uFE0F Odaberi provajdera!', 'warning');
+        return;
+    }
+    if (!key) {
+        showToast('\u26A0\uFE0F Unesi API ključ!', 'warning');
+        return;
+    }
+
+    fetch('/api/keys/' + encodeURIComponent(provider), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: key })
+    })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                showToast('\u274C ' + d.error, 'error');
+                return;
+            }
+            showToast('\u2705 Ključ dodan za ' + d.provider + ': ' + d.masked, 'success');
+            if (keyInput) keyInput.value = '';
+            loadApiKeys();
+            loadModels();
+        })
+        .catch(e => showToast('\u274C Greska: ' + e.message, 'error'));
+}
+
+function deleteApiKey(provider, idx) {
+    if (!confirm('Obrisati ovaj API ključ?')) return;
+    fetch('/api/keys/' + encodeURIComponent(provider) + '/' + idx, {
+        method: 'DELETE'
+    })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                showToast('\u274C ' + d.error, 'error');
+                return;
+            }
+            showToast('\u2705 Ključ obrisan za ' + d.provider, 'success');
+            loadApiKeys();
+            loadModels();
+        })
+        .catch(e => showToast('\u274C Greska: ' + e.message, 'error'));
 }
 
 // Tastatura shortcut-i

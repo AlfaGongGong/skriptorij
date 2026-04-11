@@ -505,15 +505,17 @@ class SkriptorijAllInOne:
     # ============================================================================
     async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key):
         try:
-            # #6: asyncio.to_thread umjesto deprecated get_event_loop
-            resp = await asyncio.to_thread(
-                requests.post,
-                url,
-                headers=headers,
-                json=json_payload,
-                timeout=90,
-                verify=False,
-            )
+            # #3: asyncio.timeout sprječava beskonačno čekanje
+            async with asyncio.timeout(120):
+                # #6: asyncio.to_thread umjesto deprecated get_event_loop
+                resp = await asyncio.to_thread(
+                    requests.post,
+                    url,
+                    headers=headers,
+                    json=json_payload,
+                    timeout=90,
+                    verify=False,
+                )
             # #5: Pravi rate-limit podaci iz headera
             self.fleet.analyze_response(prov, key, resp.status_code, resp.headers)
 
@@ -530,6 +532,9 @@ class SkriptorijAllInOne:
                 safe = resp.text[:200].replace("<", "&lt;").replace(">", "&gt;")
                 self.log(f"[{prov_upper}] HTTP {resp.status_code}: {safe}", "tech")
                 return None
+        except TimeoutError:
+            self.log(f"[{prov_upper}] Timeout (120s) — preskačem poziv.", "warning")
+            return None
         except Exception as e:
             self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:100]}", "error")
             return None
@@ -699,9 +704,29 @@ class SkriptorijAllInOne:
         return None, "N/A"
 
     # ============================================================================
-    # #11: ANALIZA KNJIGE — jednom na početku
+    # #4 + #11: ANALIZA KNJIGE — jednom na početku, rezultat se cachira
     # ============================================================================
     async def analiziraj_knjigu(self, intro_text: str):
+        # #4: Provjeri cache najprije
+        cache_file = self.checkpoint_dir / "book_analysis.json"
+        if cache_file.exists():
+            try:
+                cached = json.loads(cache_file.read_text("utf-8"))
+                self.book_context.update(cached)
+                self.knjiga_analizirana = True
+                self.glosar_tekst = self._build_glosar_tekst()
+                likovi = ", ".join(list(self.book_context.get("likovi", {}).keys())[:5])
+                self.log(
+                    f"📂 Analiza učitana iz cache-a<br>"
+                    f"📚 Žanr: <b>{self.book_context.get('zanr')}</b> | "
+                    f"Ton: <b>{self.book_context.get('ton')}</b><br>"
+                    f"👥 Likovi: {likovi or '—'}",
+                    "system",
+                )
+                return
+            except Exception:
+                pass  # Oštećen cache — ponovi analizu
+
         self.shared_stats["status"] = "ANALIZA KNJIGE..."
         self.log("🔬 Analiziram kontekst: žanr, ton, likovi, glosar...", "system")
         clean = BeautifulSoup(intro_text, "html.parser").get_text()[:2500]
@@ -713,6 +738,8 @@ class SkriptorijAllInOne:
                 self.book_context.update(ctx)
                 self.knjiga_analizirana = True
                 self.glosar_tekst = self._build_glosar_tekst()
+                # #4: Spremi u cache
+                self._atomic_write(cache_file, json.dumps(self.book_context, ensure_ascii=False, indent=2))
                 likovi = ", ".join(list(self.book_context.get("likovi", {}).keys())[:5])
                 self.log(
                     f"✅ Analiza završena ({engine})<br>"
@@ -741,6 +768,11 @@ class SkriptorijAllInOne:
             try:
                 zapamceno = chk_fajl.read_text("utf-8", errors="ignore")
                 if len(zapamceno) > 10 and _detektuj_en_ostatke(zapamceno) < 0.08:
+                    # #5: Log kad se blok učita iz cache-a
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: 💾 Učitan iz cache-a.",
+                        "tech",
+                    )
                     self.spaseno_iz_checkpointa += 1
                     self.global_done_chunks += 1
                     return zapamceno, "DATABASE"
@@ -826,11 +858,71 @@ class SkriptorijAllInOne:
             except Exception:
                 finalno = _agresivno_cisti(raw_l)
 
+        # #1: Ako lektor nije vratio ništa, retry sa drugom temperaturom
+        if not finalno:
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: Lektor nije odgovorio — retry sa alt. temperaturom.",
+                "warning",
+            )
+            retry_lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx)
+            retry_p_lek = (
+                f"IZVORNI TEKST (referenca):\n{chunk[:400]}\n\n"
+                f"TEKST ZA LEKTURU:\n{sirovo}\n\n"
+                f"Izvrši dubinsku lekturu. Uglancaj vokabular i osiguraj književni ton."
+            )
+            # Retry s višom temperaturom za raznovrsnost
+            svi = list(self.fleet.fleet.keys())
+            pms_retry = []
+            for p in svi:
+                up = p.upper()
+                if up in ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL"]:
+                    m_name = (
+                        "gemini-2.5-flash"
+                        if up == "GEMINI"
+                        else (self.fleet.get_active_model(up) or "default")
+                    )
+                    pms_retry.append((up, m_name))
+            for prov_r, model_r in pms_retry:
+                raw_retry, label_r = await self._call_single_provider(
+                    prov_r, model_r, retry_lek_sys, retry_p_lek, 0.80
+                )
+                if raw_retry:
+                    try:
+                        mr = re.search(r"\{.*\}", raw_retry, re.DOTALL)
+                        obj_r = json.loads(mr.group() if mr else raw_retry)
+                        finalno = obj_r.get("finalno_polirano", next(iter(obj_r.values()), ""))
+                    except Exception:
+                        finalno = _agresivno_cisti(raw_retry)
+                    if finalno:
+                        prov2 = label_r
+                        break
+
         if not finalno:
             finalno, prov2 = sirovo, f"{prov1}(FS)"
 
         # #15: Finalni prolaz — AI markeri
         finalno = _ocisti_ai_markere(finalno)
+
+        # #8: Final validation — provjera kvalitete prije čuvanja
+        finalno_tekst = re.sub(r"<[^>]+>", "", finalno)
+        if len(finalno_tekst.strip()) < 20:
+            # Tekst premali — odbaci i koristi original
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ Rezultat premali ({len(finalno_tekst)} znakova) — koristim original.",
+                "warning",
+            )
+            finalno = chunk
+        elif _detektuj_en_ostatke(finalno) > 0.15:
+            # Previše engleskog — cleanup
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: 🧹 Detektovano >15% engleskog — čistim ostatke.",
+                "warning",
+            )
+            # Pokušaj ukloniti engleski tekst agresivnim čišćenjem
+            finalno = _agresivno_cisti(finalno)
+            if _detektuj_en_ostatke(finalno) > 0.15:
+                finalno = sirovo  # Fallback na sirovi prijevod
+
         h_detected = _detektuj_halucinaciju(chunk, finalno, uloga="LEKTOR")
 
         if h_detected:
@@ -853,6 +945,9 @@ class SkriptorijAllInOne:
         self._atomic_write(chk_fajl, finalno)
         self.global_done_chunks += 1
         self.stvarno_prevedeno_u_sesiji += 1
+        # #2: Ažuriraj shared_stats za /api/status endpoint
+        self.shared_stats["stvarno_prevedeno"] = self.stvarno_prevedeno_u_sesiji
+        self.shared_stats["spaseno_iz_checkpointa"] = self.spaseno_iz_checkpointa
 
         aud = (
             f"<div style='border-left:4px solid #0ea5e9; background:#0f172a; "
