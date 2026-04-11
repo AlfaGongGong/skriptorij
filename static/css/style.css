@@ -79,6 +79,13 @@ body {
     letter-spacing: 2px;
 }
 
+.header-quill {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 6px rgba(0, 243, 255, 0.6));
+}
+
 .header-controls {
     display: flex;
     align-items: center;
@@ -88,12 +95,28 @@ body {
 .status-text {
     font-family: var(--font-mono);
     font-size: 0.85rem;
-    color: var(--col-warning);
     font-weight: bold;
     padding: 4px 8px;
     background-color: var(--bg-secondary);
     border-radius: 4px;
     border: 1px solid var(--col-border);
+}
+
+/* Status kolorne klase — primjenjuju se dinamički iz app.js */
+.status-idle {
+    color: var(--col-warning);
+}
+
+.status-ok {
+    color: var(--col-success);
+}
+
+.status-warning {
+    color: var(--col-warning);
+}
+
+.status-error {
+    color: var(--col-danger);
 }
 
 .badge-v6 {
@@ -157,6 +180,12 @@ body {
     background-color: var(--col-pause);
     box-shadow: var(--neon-glow) var(--col-pause);
     animation: pulse-pause 2s infinite;
+}
+
+.dot-error {
+    background-color: var(--col-danger);
+    box-shadow: var(--neon-strong) var(--col-danger);
+    animation: pulse-pause 1s infinite;
 }
 
 @keyframes pulse-active {

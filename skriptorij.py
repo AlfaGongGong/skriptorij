@@ -22,7 +22,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString, XMLParsedAsHTMLWarning
-from api_fleet import FleetManager
+from api_fleet import FleetManager, register_active_fleet
 
 try:
     import mobi
@@ -460,6 +460,7 @@ class SkriptorijAllInOne:
         self.shared_stats = shared_stats
         self.shared_controls = shared_controls
         self.fleet = FleetManager(config_path="dev_api.json")
+        register_active_fleet(self.fleet)
 
         self.clean_book_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.book_path.stem)
         self.work_dir = self.book_path.parent / f"_skr_{self.clean_book_name}"

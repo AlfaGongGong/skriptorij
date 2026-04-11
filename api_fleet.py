@@ -8,6 +8,7 @@ import os
 import random
 import time
 from pathlib import Path
+from typing import Optional
 
 # Podrazumijevani modeli po provajderu
 _DEFAULT_MODELS = {
@@ -25,11 +26,41 @@ _DEFAULT_MODELS = {
 _COOLDOWN_429 = 60
 _COOLDOWN_ERROR = 30
 
+# ------------------------------------------------------------------ #
+# Modul-razinski singleton — dijeli stanje s web endpointima
+# ------------------------------------------------------------------ #
+_active_fleet: Optional["FleetManager"] = None
+
+
+def register_active_fleet(fm: "FleetManager") -> None:
+    """Registrira aktivnu FleetManager instancu (poziva processing thread)."""
+    global _active_fleet
+    _active_fleet = fm
+
+
+def get_active_fleet() -> Optional["FleetManager"]:
+    """Vraća aktivnu FleetManager instancu, ili None ako nije registrovana."""
+    return _active_fleet
+
 
 class _KeyState:
     """Interno stanje jednog API ključa."""
 
-    __slots__ = ("key", "cooldown_until", "backoff", "total_requests", "errors")
+    __slots__ = (
+        "key",
+        "cooldown_until",
+        "backoff",
+        "total_requests",
+        "errors",
+        # Rate limit info (minutni i dnevni limiti)
+        "rate_limit_minute",
+        "rate_limit_day",
+        "remaining_minute",
+        "remaining_day",
+        # Praćenje zdravlja
+        "last_success",
+        "last_status_code",
+    )
 
     def __init__(self, key: str):
         self.key = key
@@ -37,10 +68,22 @@ class _KeyState:
         self.backoff: float = 5.0
         self.total_requests: int = 0
         self.errors: int = 0
+        self.rate_limit_minute: int = 0
+        self.rate_limit_day: int = 0
+        self.remaining_minute: int = -1
+        self.remaining_day: int = -1
+        self.last_success: float = 0.0
+        self.last_status_code: int = 0
 
     @property
     def is_available(self) -> bool:
         return time.time() >= self.cooldown_until
+
+    @property
+    def cooldown_remaining(self) -> float:
+        """Preostalo vrijeme hlađenja u sekundama (0 ako je dostupan)."""
+        remaining = self.cooldown_until - time.time()
+        return max(0.0, remaining)
 
     def put_on_cooldown(self, seconds: float):
         self.cooldown_until = time.time() + seconds
@@ -131,8 +174,67 @@ class FleetManager:
             return
 
         state.total_requests += 1
+        state.last_status_code = status_code
+
+        def _hdr(name: str):
+            """Čita header bez obzira na registar slova."""
+            if not hasattr(headers, "get"):
+                return None
+            for h in (name, name.lower(), name.upper()):
+                v = headers.get(h)
+                if v is not None:
+                    return v
+            return None
+
+        def _int_hdr(name: str) -> int:
+            v = _hdr(name)
+            if v is None:
+                return -1
+            try:
+                return int(v)
+            except (ValueError, TypeError):
+                return -1
+
+        # Parsiranje rate-limit headera (Gemini, Groq, OpenRouter, OpenAI stil)
+        for minute_name in (
+            "x-ratelimit-limit-requests",
+            "x-ratelimit-limit-rpm",
+            "ratelimit-limit",
+        ):
+            v = _int_hdr(minute_name)
+            if v >= 0:
+                state.rate_limit_minute = v
+                break
+        for minute_rem_name in (
+            "x-ratelimit-remaining-requests",
+            "x-ratelimit-remaining-rpm",
+            "ratelimit-remaining",
+        ):
+            v = _int_hdr(minute_rem_name)
+            if v >= 0:
+                state.remaining_minute = v
+                break
+        for day_name in (
+            "x-ratelimit-limit-tokens",
+            "x-ratelimit-limit-rpd",
+            "x-daily-limit",
+        ):
+            v = _int_hdr(day_name)
+            if v >= 0:
+                state.rate_limit_day = v
+                break
+        for day_rem_name in (
+            "x-ratelimit-remaining-tokens",
+            "x-ratelimit-remaining-rpd",
+            "x-daily-remaining",
+        ):
+            v = _int_hdr(day_rem_name)
+            if v >= 0:
+                state.remaining_day = v
+                break
 
         if status_code == 200:
+            state.last_success = time.time()
             state.reset_backoff()
             return
 
@@ -141,7 +243,7 @@ class FleetManager:
             # Pokušaj pročitati Retry-After header
             retry_after = 0.0
             for h in ("retry-after", "x-ratelimit-reset-requests", "x-ratelimit-reset"):
-                val = headers.get(h) if hasattr(headers, "get") else None
+                val = _hdr(h)
                 if val:
                     try:
                         retry_after = float(val)
@@ -192,16 +294,56 @@ class FleetManager:
     # ------------------------------------------------------------------ #
     def get_fleet_summary(self) -> dict:
         """
-        Vraća:
-            { "GEMINI": {"active": N, "cooling": M, "total": T}, ... }
+        Vraća detaljan status flote po provajderu:
+            {
+              "GEMINI": {
+                "active": N,
+                "cooling": M,
+                "total": T,
+                "keys": [
+                  {
+                    "masked": "...abc123",
+                    "available": true,
+                    "cooldown_remaining": 0,
+                    "total_requests": 42,
+                    "errors": 1,
+                    "rate_limit_minute": 60,
+                    "remaining_minute": 55,
+                    "rate_limit_day": 1000,
+                    "remaining_day": 980,
+                    "last_status_code": 200,
+                    "last_success_ago": 5.3
+                  }, ...
+                ]
+              }, ...
+            }
         """
+        now = time.time()
         summary = {}
         for prov, bucket in self.fleet.items():
             active = sum(1 for s in bucket.values() if s.is_available)
             total = len(bucket)
+            keys_detail = []
+            for s in bucket.values():
+                masked = ("..." + s.key[-6:]) if len(s.key) > 6 else "***"
+                last_ago = round(now - s.last_success, 1) if s.last_success else None
+                keys_detail.append({
+                    "masked": masked,
+                    "available": s.is_available,
+                    "cooldown_remaining": round(s.cooldown_remaining, 1),
+                    "total_requests": s.total_requests,
+                    "errors": s.errors,
+                    "rate_limit_minute": s.rate_limit_minute if s.rate_limit_minute else None,
+                    "remaining_minute": s.remaining_minute if s.remaining_minute >= 0 else None,
+                    "rate_limit_day": s.rate_limit_day if s.rate_limit_day else None,
+                    "remaining_day": s.remaining_day if s.remaining_day >= 0 else None,
+                    "last_status_code": s.last_status_code if s.last_status_code else None,
+                    "last_success_ago": last_ago,
+                })
             summary[prov] = {
                 "active": active,
                 "cooling": total - active,
                 "total": total,
+                "keys": keys_detail,
             }
         return summary

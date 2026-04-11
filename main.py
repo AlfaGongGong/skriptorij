@@ -118,8 +118,11 @@ def get_status():
 def get_fleet():
     """Vraća detalje flote za Fleet Pool prikaz."""
     try:
-        from api_fleet import FleetManager
-        fm = FleetManager(config_path='dev_api.json')
+        from api_fleet import FleetManager, get_active_fleet
+        # Preferiraj aktivnu instancu koja prati stvarno stanje (cooldowns itd.)
+        fm = get_active_fleet()
+        if fm is None:
+            fm = FleetManager(config_path='dev_api.json')
         return jsonify(fm.get_fleet_summary())
     except Exception as e:
         return (jsonify({'error': str(e)}), 500)
