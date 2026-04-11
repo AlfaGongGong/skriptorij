@@ -492,31 +492,55 @@ function loadApiKeys() {
 
             const entries = Object.entries(data);
             if (entries.length === 0) {
-                container.innerHTML = '<p style="color: var(--text-muted); font-size:0.85rem;">Nema konfiguriranih ključeva. Dodajte prvi ključ gore.</p>';
+                const p = document.createElement('p');
+                p.style.cssText = 'color: var(--text-muted); font-size:0.85rem;';
+                p.textContent = 'Nema konfiguriranih ključeva. Dodajte prvi ključ gore.';
+                container.replaceChildren(p);
                 return;
             }
 
-            let html = '<table class="fleet-table"><thead><tr>'
-                + '<th>Provajder</th><th>Ključevi</th><th>Akcija</th>'
-                + '</tr></thead><tbody>';
+            // Build table using DOM to prevent XSS from server-supplied provider names
+            const table = document.createElement('table');
+            table.className = 'fleet-table';
+            table.innerHTML = '<thead><tr><th>Provajder</th><th>Klju\u010devi</th><th>Akcija</th></tr></thead>';
+            const tbody = document.createElement('tbody');
 
             for (const [prov, keys] of entries) {
                 if (keys.length === 0) {
-                    html += '<tr><td class="fleet-prov">' + prov + '</td><td colspan="2" style="color:var(--text-muted)">Nema ključeva</td></tr>';
+                    const tr = document.createElement('tr');
+                    const tdp = document.createElement('td');
+                    tdp.className = 'fleet-prov';
+                    tdp.textContent = prov;
+                    const td2 = document.createElement('td');
+                    td2.colSpan = 2;
+                    td2.style.color = 'var(--text-muted)';
+                    td2.textContent = 'Nema klju\u010deva';
+                    tr.append(tdp, td2);
+                    tbody.appendChild(tr);
                     continue;
                 }
                 keys.forEach((masked, idx) => {
-                    html += '<tr>'
-                        + '<td class="fleet-prov">' + (idx === 0 ? prov : '') + '</td>'
-                        + '<td style="font-family:monospace; color:var(--text-accent);">' + masked + '</td>'
-                        + '<td><button class="btn btn-danger" style="padding:3px 10px; font-size:0.75rem;" '
-                        + 'onclick="deleteApiKey(\'' + prov + '\',' + idx + ')">\uD83D\uDDD1 Obri\u0161i</button></td>'
-                        + '</tr>';
+                    const tr = document.createElement('tr');
+                    const tdp = document.createElement('td');
+                    tdp.className = 'fleet-prov';
+                    tdp.textContent = idx === 0 ? prov : '';
+                    const tdm = document.createElement('td');
+                    tdm.style.cssText = 'font-family:monospace; color:var(--text-accent);';
+                    tdm.textContent = masked;
+                    const tda = document.createElement('td');
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-danger';
+                    btn.style.cssText = 'padding:3px 10px; font-size:0.75rem;';
+                    btn.textContent = '\uD83D\uDDD1 Obri\u0161i';
+                    btn.addEventListener('click', () => deleteApiKey(prov, idx));
+                    tda.appendChild(btn);
+                    tr.append(tdp, tdm, tda);
+                    tbody.appendChild(tr);
                 });
             }
 
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            table.appendChild(tbody);
+            container.replaceChildren(table);
         })
         .catch(() => {
             const container = document.getElementById('keys-list');

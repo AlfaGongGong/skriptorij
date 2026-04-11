@@ -297,26 +297,35 @@ def add_audit(msg, atype="info", en_text="", shared_stats=None):
 # ============================================================================
 def _post_process_tipografija(tekst: str) -> str:
     """Primijeni B/H/S tipografska pravila na gotov tekst."""
-    # Tri točke → elipsa (…)
+    # Tri točke → elipsa (…) i višestruke točke
     tekst = re.sub(r'\.\.\.', '…', tekst)
-    # Višestruke točke (4+) → elipsa
     tekst = re.sub(r'\.{4,}', '…', tekst)
 
     # Crtica za dijalog: crtica na početku odlomka (after <p> or start of line)
-    # Zamijeni obične crtice na početku s em-crticom
     tekst = re.sub(r'(<p[^>]*>)\s*-\s', r'\1— ', tekst)
     tekst = re.sub(r'(<p[^>]*>)\s*–\s', r'\1— ', tekst)
 
-    # Dvostruki razmaci → jedan razmak (izvan HTML tagova)
-    # Radi samo na tekstu koji nije unutar tagova
-    tekst = re.sub(r'(?<=>)([^<]*)(?=<)', lambda m: re.sub(r'  +', ' ', m.group()), tekst)
+    # Dvostruki razmaci → jedan razmak (samo u tekstualnim segmentima, izvan HTML tagova)
+    def _fix_spaces(m: re.Match) -> str:
+        return re.sub(r'  +', ' ', m.group())
+
+    tekst = re.sub(r'(?<=>)([^<]+)(?=<)', _fix_spaces, tekst)
+    # Također popravi razmake na početku/kraju dokumenta (izvan tagova)
+    tekst = re.sub(r'^([^<]+)', _fix_spaces, tekst)
+    tekst = re.sub(r'([^>]+)$', _fix_spaces, tekst)
 
     # Navodnici: zamijeni "..." sa „..." (B/H/S standard)
-    # Pažnja: ne mijenjaj navodnici unutar HTML atributa (attr="...")
-    tekst = re.sub(r'(?<!=)"([^"<>]+)"', r'„\1"', tekst)
+    # Koristi HTML-svjesni pristup: samo unutar tekstualnih čvorova (između > i <)
+    def _fix_navodnici(m: re.Match) -> str:
+        return re.sub(r'"([^"]+)"', r'„\1"', m.group())
+
+    tekst = re.sub(r'(?<=>)([^<]+)(?=<)', _fix_navodnici, tekst)
+    # Tekstualni segmenti na početku/kraju dokumenta
+    tekst = re.sub(r'^([^<]+)', _fix_navodnici, tekst)
+    tekst = re.sub(r'([^>]+)$', _fix_navodnici, tekst)
 
     # Razmak prije interpunkcije (,.:;!?)
-    tekst = re.sub(r'\s+([,\.;:!?])', r'\1', tekst)
+    tekst = re.sub(r'\s+([,;:!?])', r'\1', tekst)
 
     return tekst
 

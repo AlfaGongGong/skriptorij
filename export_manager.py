@@ -31,7 +31,7 @@ def get_epub_metadata(epub_path: str) -> dict:
             if "META-INF/container.xml" in z.namelist():
                 container = z.read("META-INF/container.xml").decode("utf-8", errors="ignore")
                 import re
-                m = re.search(r'full-path="([^"]+\.opf)"', container)
+                m = re.search(r"full-path=['\"]([^'\"]+\.opf)['\"]", container)
                 if m:
                     opf_name = m.group(1)
 
