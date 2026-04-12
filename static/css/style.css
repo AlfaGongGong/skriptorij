@@ -79,6 +79,17 @@
 
     /* Logo gradient (dark) */
     --logo-stroke-width: 0.7;
+
+    /* Alias variables used throughout the stylesheet */
+    --bg-primary:      #020617;
+    --text-primary:    #cbd5e1;
+    --text-secondary:  #475569;
+    --accent-primary:  #00c8ff;
+    --accent-secondary: #00FF41;
+    --border:          #1e293b;
+    --radius-sm:       6px;
+    --radius-md:       8px;
+    --input-bg:        transparent;
 }
 
 body.light-theme {
