@@ -20,8 +20,15 @@
         />
 
         <!-- Meta tags -->
-        <meta name="theme-color" content="#0f172a" />
-        <meta name="description" content="BOOKLYFI TURBO CHARGED — AI-Powered Book Translation &amp; Refinement Engine" />
+        <meta name="theme-color" content="#020617" />
+        <meta name="description" content="Skriptorij V8 Turbo - Sistem za lekturu i prijevod ePub knjiga" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Skriptorij" />
+
+        <!-- PWA manifest -->
+        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
     </head>
     <body>
         {% if introhtml %}{{ introhtml|safe }}{% endif %}
@@ -296,5 +303,14 @@
                 crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <!-- Scripts -->
         <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+        <!-- PWA: Service Worker registration -->
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/static/sw.js')
+                        .catch(() => { /* SW registration optional */ });
+                });
+            }
+        </script>
     </body>
 </html>
