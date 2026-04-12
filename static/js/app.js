@@ -130,6 +130,55 @@ function toggleSetup() {
     }
 }
 
+// -- 2-Step Wizard Navigation ------------------------------------------------
+function nextSetupStep() {
+    const bookSelect = document.getElementById('book-select');
+    if (!bookSelect || !bookSelect.value) {
+        showToast('⚠️ Odaberi ili uploadaj EPUB fajl prije nastavka!', 'warning');
+        return;
+    }
+    const page1 = document.getElementById('wizard-page-1');
+    const page2 = document.getElementById('wizard-page-2');
+    const ind1  = document.getElementById('ws-indicator-1');
+    const ind2  = document.getElementById('ws-indicator-2');
+    const conn  = document.getElementById('ws-connector-1');
+
+    if (page1) page1.classList.add('hidden');
+    if (page2) page2.classList.remove('hidden');
+    if (ind1) { ind1.classList.remove('active'); ind1.classList.add('completed'); }
+    if (ind2) ind2.classList.add('active');
+    if (conn) conn.classList.add('active');
+}
+
+function prevSetupStep() {
+    const page1 = document.getElementById('wizard-page-1');
+    const page2 = document.getElementById('wizard-page-2');
+    const ind1  = document.getElementById('ws-indicator-1');
+    const ind2  = document.getElementById('ws-indicator-2');
+    const conn  = document.getElementById('ws-connector-1');
+
+    if (page2) page2.classList.add('hidden');
+    if (page1) page1.classList.remove('hidden');
+    if (ind2) ind2.classList.remove('active');
+    if (ind1) { ind1.classList.remove('completed'); ind1.classList.add('active'); }
+    if (conn) conn.classList.remove('active');
+}
+
+// Reset wizard back to step 1
+function _resetWizard() {
+    const page1 = document.getElementById('wizard-page-1');
+    const page2 = document.getElementById('wizard-page-2');
+    const ind1  = document.getElementById('ws-indicator-1');
+    const ind2  = document.getElementById('ws-indicator-2');
+    const conn  = document.getElementById('ws-connector-1');
+
+    if (page2) page2.classList.add('hidden');
+    if (page1) page1.classList.remove('hidden');
+    if (ind1) { ind1.classList.remove('completed'); ind1.classList.add('active'); }
+    if (ind2) ind2.classList.remove('active');
+    if (conn) conn.classList.remove('active');
+}
+
 // -- Provjera statusa na pocetku ---------------------------------------------
 function checkBackendStatus() {
     fetch('/api/status')
@@ -380,6 +429,7 @@ function sendCommand(cmd) {
                     if (dlSection) dlSection.classList.add('hidden');
                     setTimeout(() => {
                         switchToSetup();
+                        _resetWizard();
                         loadBooks();
                         loadModels();
                         const btn = document.getElementById('btn-start');
