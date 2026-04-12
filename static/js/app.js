@@ -11,6 +11,34 @@ const FLEET_BAR_HIGH = 60;
 const FLEET_BAR_MID = 30;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Provjeri localStorage — preskoči intro animaciju na ponovljenim posjetama
+    const introOverlay = document.getElementById('intro-overlay');
+    const mainUI = document.getElementById('main-ui-wrapper');
+    if (introOverlay) {
+        if (localStorage.getItem('skriptorij_intro_shown')) {
+            // Nije prvi put — odmah prikaži UI, ukloni intro overlay
+            introOverlay.remove();
+            if (mainUI) {
+                mainUI.style.display = 'block';
+                mainUI.style.opacity = '1';
+            }
+            document.body.style.overflow = 'auto';
+            // Obavijesti intro skript da ne pokreće animaciju
+            if (typeof appStarted !== 'undefined') { appStarted = true; }
+        } else {
+            // Prvi put — postavi flag i pokreni animaciju
+            localStorage.setItem('skriptorij_intro_shown', 'true');
+            // Sigurnosni fallback: garantovano prikaži UI ako animacija ne završi
+            setTimeout(() => {
+                const overlay = document.getElementById('intro-overlay');
+                const ui = document.getElementById('main-ui-wrapper');
+                if (overlay) overlay.remove();
+                if (ui) { ui.style.display = 'block'; ui.style.opacity = '1'; }
+                document.body.style.overflow = 'auto';
+            }, 13000);
+        }
+    }
+
     applyStoredTheme();
     loadBooks();
     loadModels();
