@@ -23,12 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 mainUI.style.opacity = '1';
             }
             document.body.style.overflow = 'auto';
-            // Obavijesti intro skript da ne pokreće animaciju
-            if (typeof appStarted !== 'undefined') { appStarted = true; }
         } else {
             // Prvi put — postavi flag i pokreni animaciju
             localStorage.setItem('skriptorij_intro_shown', 'true');
-            // Sigurnosni fallback: garantovano prikaži UI ako animacija ne završi
+            // Sigurnosni fallback: pucuje 1s nakon intro failsafe-a (12s) kao zadnja odbrana
             setTimeout(() => {
                 const overlay = document.getElementById('intro-overlay');
                 const ui = document.getElementById('main-ui-wrapper');
