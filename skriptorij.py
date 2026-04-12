@@ -711,7 +711,13 @@ class SkriptorijAllInOne:
         if prov_upper == "COHERE" and "message" in data:
             raw = data["message"]["content"][0]["text"].strip()
         elif "choices" in data:
-            raw = data["choices"][0]["message"].get("content", "").strip()
+            choice = data["choices"][0] if data["choices"] else {}
+            msg = choice.get("message") or {}
+            raw = msg.get("content") or ""
+            raw = raw.strip()
+            if not raw:
+                self.log(f"[{prov_upper}] Prazan odgovor (nema 'message'/'content' u choices).", "tech")
+                return None, None
         else:
             return None, None
 
