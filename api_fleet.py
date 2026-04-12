@@ -60,6 +60,8 @@ class _KeyState:
         # Praćenje zdravlja
         "last_success",
         "last_status_code",
+        # Ručno onemogućen
+        "disabled",
     )
 
     def __init__(self, key: str):
@@ -74,10 +76,11 @@ class _KeyState:
         self.remaining_day: int = -1
         self.last_success: float = 0.0
         self.last_status_code: int = 0
+        self.disabled: bool = False
 
     @property
     def is_available(self) -> bool:
-        return time.time() >= self.cooldown_until
+        return not self.disabled and time.time() >= self.cooldown_until
 
     @property
     def cooldown_remaining(self) -> float:
@@ -277,6 +280,22 @@ class FleetManager:
         return self._models.get(provider.upper())
 
     # ------------------------------------------------------------------ #
+    # Ručno uključivanje / isključivanje ključa
+    # ------------------------------------------------------------------ #
+    def toggle_key(self, provider: str, key: str) -> bool | None:
+        """
+        Toggleuje disabled stanje ključa.
+        Vraća novo stanje disabled (True=onemogućen, False=omogućen),
+        ili None ako ključ nije pronađen.
+        """
+        prov_upper = provider.upper()
+        state = self.fleet.get(prov_upper, {}).get(key)
+        if state is None:
+            return None
+        state.disabled = not state.disabled
+        return state.disabled
+
+    # ------------------------------------------------------------------ #
     # Bilježenje korišćenja (za TTS modul)
     # ------------------------------------------------------------------ #
     def record_usage(self, provider: str, key: str, count: int = 1, success: bool = True):
@@ -329,7 +348,9 @@ class FleetManager:
                 last_ago = round(now - s.last_success, 1) if s.last_success else None
                 keys_detail.append({
                     "masked": masked,
+                    "key": s.key,
                     "available": s.is_available,
+                    "disabled": s.disabled,
                     "cooldown_remaining": round(s.cooldown_remaining, 1),
                     "total_requests": s.total_requests,
                     "errors": s.errors,
