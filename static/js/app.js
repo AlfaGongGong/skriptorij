@@ -605,16 +605,39 @@ function updateFleetPool() {
                         if (k.errors > 0) statsArr.push('<span style="color:var(--col-danger);">ERR\u00a0' + k.errors + '</span>');
 
                         const pill = document.createElement('div');
-                        pill.className = 'fleet-key-pill fleet-key-' + st.cls;
+                        pill.className = 'fleet-key-pill fleet-key-' + st.cls + (k.disabled ? ' fleet-key-disabled' : '');
+                        pill.dataset.key = k.key || '';
+                        pill.dataset.prov = prov;
                         pill.innerHTML =
                             '<div class="fleet-key-top">'
                             +   '<span class="fleet-key-mask">' + (k.masked || '***') + '</span>'
                             +   '<span class="fleet-key-status-badge fleet-badge-' + st.cls + '">'
                             +     st.icon + '\u00a0' + st.label
                             +   '</span>'
+                            +   '<button class="fleet-toggle-btn" title="' + (k.disabled ? 'Uključi ključ' : 'Isključi ključ') + '" aria-label="' + (k.disabled ? 'Uključi ključ' : 'Isključi ključ') + '">'
+                            +     (k.disabled ? '🟢' : '🔴')
+                            +   '</button>'
                             + '</div>'
                             + rateBar
                             + (statsArr.length ? '<div class="fleet-key-stats">' + statsArr.join('<span class="fleet-stat-sep">·</span>') + '</div>' : '');
+
+                        pill.querySelector('.fleet-toggle-btn').addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            const keyVal = pill.dataset.key;
+                            const provVal = pill.dataset.prov;
+                            if (!keyVal) return;
+                            fetch('/api/fleet/toggle', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ provider: provVal, key: keyVal })
+                            })
+                            .then(r => r.json())
+                            .then(res => {
+                                if (res.error) { showToast('Greška: ' + res.error, 'error'); return; }
+                                updateFleetPool();
+                            })
+                            .catch(() => showToast('Greška pri toggleu ključa', 'error'));
+                        });
 
                         keysDiv.appendChild(pill);
                     });

@@ -127,6 +127,24 @@ def get_fleet():
     except Exception as e:
         return (jsonify({'error': str(e)}), 500)
 
+@app.route('/api/fleet/toggle', methods=['POST'])
+def toggle_fleet_key():
+    """Uključuje/isključuje pojedinačni API ključ u floti."""
+    try:
+        from api_fleet import FleetManager, get_active_fleet
+        data = request.get_json()
+        if not data or 'provider' not in data or 'key' not in data:
+            return (jsonify({'error': 'Nedostaju polja provider i/ili key'}), 400)
+        fm = get_active_fleet()
+        if fm is None:
+            fm = FleetManager(config_path='dev_api.json')
+        new_state = fm.toggle_key(data['provider'], data['key'])
+        if new_state is None:
+            return (jsonify({'error': 'Ključ nije pronađen'}), 404)
+        return jsonify({'provider': data['provider'], 'key': data['key'], 'disabled': new_state})
+    except Exception:
+        return (jsonify({'error': 'Interna greška pri toggleu ključa'}), 500)
+
 @app.route('/api/start', methods=['POST'])
 def start_processing():
     global _start_time, _start_pct
