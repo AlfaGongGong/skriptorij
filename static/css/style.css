@@ -1342,3 +1342,30 @@ body.light-theme .fleet-key-masked {
     }
     .fleet-health-bar-wrap { width: 50px; }
 }
+
+/* ============================================================================
+   ACCESSIBILITY — Respect prefers-reduced-motion
+   Disable all non-essential animations for users who prefer reduced motion.
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .app-header h1,
+    .fleet-key-aktivan,
+    .fleet-key-limitiran,
+    .dot-active,
+    .dot-paused,
+    .dot-error {
+        animation: none !important;
+    }
+
+    .progress-bar::after {
+        animation: none !important;
+    }
+}

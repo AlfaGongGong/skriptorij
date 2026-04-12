@@ -1,5 +1,9 @@
 """Middleware paket — error handlers."""
+import logging
+
 from flask import Flask
+
+logger = logging.getLogger(__name__)
 
 
 def register_error_handlers(app: Flask) -> None:
@@ -12,6 +16,7 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(500)
     def server_error(e):
+        logger.exception("Neočekivana interna greška: %s", e)
         return jsonify({"error": "Interna serverska greška"}), 500
 
     @app.errorhandler(400)

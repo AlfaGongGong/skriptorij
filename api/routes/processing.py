@@ -131,8 +131,8 @@ def start_processing():
             )
         thread.start()
         return jsonify({"status": "Started", "file": book, "mode": mode})
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    except ValueError:
+        return jsonify({"error": "Neispravan naziv fajla ili putanja"}), 400
     except Exception:
         SHARED_STATS["status"] = "GREŠKA PRI STARTU"
         return jsonify({"error": "Greška pri pokretanju obrade"}), 500
