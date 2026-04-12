@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  skriptorij:
+    build: .
+    container_name: skriptorij-v8
+    ports:
+      - "8080:8080"
+    volumes:
+      # Trajno čuvanje podataka i konfiguracije
+      - ./data:/app/data
+      - ./dev_api.json:/app/dev_api.json:ro
+      - ./proxies.json:/app/proxies.json:ro
+    environment:
+      - SKRIPTORIJ_PORT=8080
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
