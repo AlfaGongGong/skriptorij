@@ -239,6 +239,7 @@ class FleetManager:
         if status_code == 200:
             state.last_success = time.time()
             state.reset_backoff()
+            state.errors = 0
             return
 
         if status_code == 429:
@@ -305,7 +306,9 @@ class FleetManager:
         if state is None:
             return
         state.total_requests += count
-        if not success:
+        if success:
+            state.errors = 0
+        else:
             state.errors += 1
 
     # ------------------------------------------------------------------ #
