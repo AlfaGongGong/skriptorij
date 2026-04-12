@@ -248,7 +248,7 @@ cp proxies.json.example proxies.json
 
 ### Step 3 — Start the Engine
 
-1. Click **🚀 Pokreni Sistem**
+1. Click **🚀 Pokreni Sistem** *(Start System)*
 2. Watch the **Dashboard** for real-time progress:
    - Progress bar with percentage
    - ETA (estimated time remaining)
