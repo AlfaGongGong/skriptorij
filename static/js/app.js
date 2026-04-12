@@ -107,9 +107,11 @@ function checkBackendStatus() {
     fetch('/api/status')
         .then(r => r.json())
         .then(d => {
-            if (d.status && d.status.toUpperCase() !== 'IDLE') {
+            // Uvijek ažuriraj header dot i status tekst
+            updateDashboard();
+
+            if (d.status && d.status.toUpperCase() !== 'IDLE' && d.status.toUpperCase() !== 'RESETOVANO') {
                 switchToDashboard();
-                updateDashboard();
                 if (pollInterval) clearInterval(pollInterval);
                 pollInterval = setInterval(updateDashboard, 1500);
             }
@@ -407,15 +409,42 @@ function updateDashboard() {
             }
 
             const dot = document.getElementById('status-dot');
+            const statusEl = document.getElementById('ph');
             const statusText = (d.status || '').toUpperCase();
 
+            // Semaphore: GREEN = u toku, YELLOW = idle/upozorenje, RED = greška
             if (dot) {
-                if (statusText.includes('TOKU') || statusText.includes('POKRENUTA')) {
+                if (statusText.includes('TOKU') || statusText.includes('POKRENUTA') || statusText.includes('POKRETANJE')) {
                     dot.className = 'dot dot-active';
                 } else if (statusText === 'PAUZIRANO' || statusText.includes('PAUZA')) {
                     dot.className = 'dot dot-paused';
+                } else if (
+                    statusText.includes('GREŠKA') || statusText.includes('GRESKA') ||
+                    statusText.includes('ERROR') || statusText.includes('ZAUSTAVLJENO')
+                ) {
+                    dot.className = 'dot dot-error';
                 } else {
                     dot.className = 'dot dot-idle';
+                }
+            }
+
+            // Status tekst boja — dinamički semaphore
+            if (statusEl) {
+                statusEl.classList.remove('status-idle', 'status-ok', 'status-warning', 'status-error');
+                if (
+                    statusText.includes('TOKU') || statusText.includes('POKRENUTA') ||
+                    statusText.includes('ZAVRŠEN') || statusText.includes('ZAVRSEN')
+                ) {
+                    statusEl.classList.add('status-ok');
+                } else if (
+                    statusText.includes('GREŠKA') || statusText.includes('GRESKA') ||
+                    statusText.includes('ERROR') || statusText.includes('ZAUSTAVLJENO')
+                ) {
+                    statusEl.classList.add('status-error');
+                } else if (statusText === 'PAUZIRANO' || statusText.includes('PAUZA')) {
+                    statusEl.classList.add('status-warning');
+                } else {
+                    statusEl.classList.add('status-idle');
                 }
             }
 
@@ -428,7 +457,7 @@ function updateDashboard() {
                 dlSection.classList.remove('hidden');
             }
 
-            if (d.pct >= 100 || statusText.includes('ZAVRSEN')) {
+            if (d.pct >= 100 || statusText.includes('ZAVRSEN') || statusText.includes('ZAVRŠEN')) {
                 if (pollInterval) clearInterval(pollInterval);
             }
         })
@@ -457,30 +486,122 @@ function updateFleetPool() {
                 return;
             }
 
-            let html = '<table class="fleet-table"><thead><tr>'
-                + '<th>Provajder</th><th>\u2705 Aktivni</th><th>\uD83D\uDD25 Hladenje</th><th>Kvota %</th>'
-                + '</tr></thead><tbody>';
+            const table = document.createElement('table');
+            table.className = 'fleet-table';
 
-            for (let i = 0; i < providers.length; i++) {
-                const prov = providers[i][0];
-                const info = providers[i][1];
+            const thead = document.createElement('thead');
+            thead.innerHTML = '<tr>'
+                + '<th>Provajder</th>'
+                + '<th>Ključ</th>'
+                + '<th style="color:var(--col-success);">Stanje</th>'
+                + '<th>Zahtjevi</th>'
+                + '<th>Greške</th>'
+                + '<th>Limit/min</th>'
+                + '<th>Preost./min</th>'
+                + '<th>Kvota %</th>'
+                + '</tr>';
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+
+            for (const [prov, info] of providers) {
                 const active = info.active || 0;
-                const cooling = info.cooling || 0;
-                const total = info.total || (active + cooling) || 1;
+                const total = info.total || 1;
                 const pct = Math.round((active / total) * 100);
-                const barColor = pct > FLEET_BAR_HIGH ? 'var(--col-success)' : pct > FLEET_BAR_MID ? 'var(--col-warning)' : 'var(--col-danger)';
+                const barColor = pct > FLEET_BAR_HIGH
+                    ? 'var(--col-success)'
+                    : pct > FLEET_BAR_MID ? 'var(--col-warning)' : 'var(--col-danger)';
 
-                html += '<tr>'
-                    + '<td class="fleet-prov">' + prov + '</td>'
-                    + '<td style="color:var(--col-success); font-weight:bold;">' + active + '</td>'
-                    + '<td style="color:var(--col-warning); font-weight:bold;">' + cooling + '</td>'
-                    + '<td><div class="fleet-bar-bg"><div class="fleet-bar-fill" style="width:' + pct + '%; background:' + barColor + ';"></div></div>'
-                    + '<span style="font-size:0.75rem; color:var(--text-muted);">' + pct + '%</span></td>'
-                    + '</tr>';
+                const keys = info.keys || [];
+
+                if (keys.length === 0) {
+                    // Samo prikaz sažetka bez ključeva
+                    const tr = document.createElement('tr');
+                    const tdProv = document.createElement('td');
+                    tdProv.className = 'fleet-prov';
+                    tdProv.textContent = prov;
+                    const tdSum = document.createElement('td');
+                    tdSum.colSpan = 7;
+                    tdSum.style.color = 'var(--text-muted)';
+                    tdSum.textContent = active + ' / ' + total + ' aktivno';
+                    tr.append(tdProv, tdSum);
+                    tbody.appendChild(tr);
+                    continue;
+                }
+
+                keys.forEach((k, idx) => {
+                    const tr = document.createElement('tr');
+
+                    // Provajder (samo u prvom redu)
+                    const tdProv = document.createElement('td');
+                    tdProv.className = 'fleet-prov';
+                    tdProv.textContent = idx === 0 ? prov : '';
+                    tr.appendChild(tdProv);
+
+                    // Maskirani ključ
+                    const tdKey = document.createElement('td');
+                    tdKey.style.cssText = 'font-family:monospace; color:var(--text-accent); font-size:0.8rem;';
+                    tdKey.textContent = k.masked || '***';
+                    tr.appendChild(tdKey);
+
+                    // Stanje (Aktivan / Hlađenje N s)
+                    const tdState = document.createElement('td');
+                    if (k.available) {
+                        tdState.innerHTML = '<span style="color:var(--col-success);">✅ Aktivan</span>';
+                    } else {
+                        const secs = k.cooldown_remaining > 0 ? Math.ceil(k.cooldown_remaining) + 's' : '';
+                        tdState.innerHTML = '<span style="color:var(--col-warning);">🔥 Hlađenje ' + secs + '</span>';
+                    }
+                    tr.appendChild(tdState);
+
+                    // Ukupni zahtjevi
+                    const tdReq = document.createElement('td');
+                    tdReq.style.color = 'var(--text-muted)';
+                    tdReq.textContent = k.total_requests != null ? k.total_requests : '—';
+                    tr.appendChild(tdReq);
+
+                    // Greške
+                    const tdErr = document.createElement('td');
+                    tdErr.style.color = (k.errors > 0) ? 'var(--col-danger)' : 'var(--text-muted)';
+                    tdErr.textContent = k.errors != null ? k.errors : '—';
+                    tr.appendChild(tdErr);
+
+                    // Limit/min
+                    const tdLim = document.createElement('td');
+                    tdLim.style.color = 'var(--text-muted)';
+                    tdLim.textContent = k.rate_limit_minute != null ? k.rate_limit_minute : '—';
+                    tr.appendChild(tdLim);
+
+                    // Preostalo/min
+                    const tdRem = document.createElement('td');
+                    if (k.remaining_minute != null) {
+                        const remPct = k.rate_limit_minute > 0
+                            ? Math.round((k.remaining_minute / k.rate_limit_minute) * 100)
+                            : null;
+                        tdRem.textContent = k.remaining_minute;
+                        tdRem.style.color = remPct != null
+                            ? (remPct > 50 ? 'var(--col-success)' : remPct > 20 ? 'var(--col-warning)' : 'var(--col-danger)')
+                            : 'var(--text-muted)';
+                    } else {
+                        tdRem.textContent = '—';
+                        tdRem.style.color = 'var(--text-muted)';
+                    }
+                    tr.appendChild(tdRem);
+
+                    // Kvota % (progress bar) — prikazuje se samo u prvom redu provajdera
+                    const tdBar = document.createElement('td');
+                    if (idx === 0) {
+                        tdBar.innerHTML = '<div class="fleet-bar-bg"><div class="fleet-bar-fill" style="width:' + pct + '%; background:' + barColor + ';"></div></div>'
+                            + '<span style="font-size:0.75rem; color:var(--text-muted);">' + pct + '%</span>';
+                    }
+                    tr.appendChild(tdBar);
+
+                    tbody.appendChild(tr);
+                });
             }
 
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            table.appendChild(tbody);
+            container.replaceChildren(table);
         })
         .catch(e => {
             const container = document.getElementById('fleet-pool-content');

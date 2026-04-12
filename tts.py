@@ -9,7 +9,7 @@ import zipfile
 import shutil
 from pathlib import Path
 from bs4 import BeautifulSoup
-from api_fleet import FleetManager
+from api_fleet import FleetManager, register_active_fleet
 
 
 # Endpointi
@@ -46,6 +46,7 @@ class TTSProcessor:
         self.shared_controls = shared_controls
 
         self.fleet = FleetManager()
+        register_active_fleet(self.fleet)
 
         # Checkpoint se čuva pored knjige u data/ folderu
         self.checkpoint_path = self.book_path.parent / "tts_map_checkpoint.json"
