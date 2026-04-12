@@ -17,8 +17,21 @@ def client():
 
 
 def test_index_loads(client):
+    # First visit redirects to /intro (302)
+    resp = client.get("/")
+    assert resp.status_code == 302
+    assert "/intro" in resp.headers["Location"]
+
+    # After intro_seen cookie is set, / returns 200 with index.html
+    client.set_cookie("intro_seen", "true")
     resp = client.get("/")
     assert resp.status_code == 200
+
+
+def test_intro_loads(client):
+    resp = client.get("/intro")
+    assert resp.status_code == 200
+    assert b"intro-overlay" in resp.data
 
 
 def test_status_endpoint(client):

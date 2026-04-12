@@ -1,0 +1,213 @@
+/* ============================================================================
+   BOOKLYFI INTRO — Cinematic Loading Screen Styles
+   ============================================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #020617;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Skip button ─────────────────────────────────────────────────────────── */
+.skip-intro-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999999;
+    color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 20px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(8px);
+    letter-spacing: 0.04em;
+    display: none; /* shown at 2 s via JS */
+}
+.skip-intro-btn:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.3);
+}
+
+/* ── Main overlay ────────────────────────────────────────────────────────── */
+#intro-overlay {
+    position: fixed;
+    inset: 0;
+    background: #020617;
+    z-index: 999999;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Three.js canvas — fills the overlay */
+#intro-threejs-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+/* Digital rain canvas overlay */
+#intro-rain-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 1s ease;
+}
+
+/* ── UI text layer ───────────────────────────────────────────────────────── */
+#intro-ui-layer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Logo text (hidden until phase 6) */
+#intro-logo-text {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #fff;
+    opacity: 0;
+    text-shadow:
+        0 0 20px rgba(96,165,250,0.8),
+        0 0 60px rgba(96,165,250,0.4),
+        0 0 120px rgba(167,139,250,0.3);
+    white-space: nowrap;
+    transform: scale(0.85);
+    transition: opacity 0s, transform 0s;
+}
+#intro-logo-text.visible {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Individual letter spans */
+#intro-logo-text .letter {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#intro-logo-text .letter.in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#intro-subtitle-text {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: clamp(0.85rem, 2vw, 1.2rem);
+    font-weight: 500;
+    letter-spacing: 0.35em;
+    color: rgba(255,255,255,0.7);
+    margin-top: 14px;
+    opacity: 0;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(6,182,212,0.7);
+    transition: opacity 0.6s ease 0.5s;
+}
+#intro-subtitle-text.visible { opacity: 1; }
+
+#intro-loading-text {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: rgba(96,165,250,0.6);
+    margin-top: 36px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+#intro-loading-text.visible { opacity: 1; }
+
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+#intro-progress-wrap {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(320px, 80vw);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+#intro-progress-wrap.visible { opacity: 1; }
+
+#intro-progress-bar-bg {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+#intro-progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px rgba(96,165,250,0.7);
+}
+
+/* ── Bloom / glow pulse overlay ──────────────────────────────────────────── */
+#intro-bloom-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 45%, rgba(96,165,250,0.25) 0%, transparent 65%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+#intro-bloom-overlay.glow {
+    opacity: 1;
+    animation: bloomPulse 0.5s ease-in-out 3;
+}
+
+/* ── Final fade overlay ───────────────────────────────────────────────────── */
+#intro-fade-overlay {
+    position: absolute;
+    inset: 0;
+    background: #020617;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
+    z-index: 20;
+}
+#intro-fade-overlay.fading { opacity: 1; }
+
+/* ── Keyframes ──────────────────────────────────────────────────────────── */
+@keyframes bloomPulse {
+    0%,100% { opacity: 0.3; }
+    50%      { opacity: 1;   }
+}
+
+/* ── Reduced-motion fallback ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    #intro-overlay { animation: none !important; }
+}

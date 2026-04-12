@@ -7,7 +7,7 @@ Uvozi i koristi dijeljeno stanje iz config.settings.
 
 import os
 
-from flask import Flask, render_template
+from flask import Flask, make_response, redirect, render_template, request
 
 
 def create_app() -> Flask:
@@ -25,14 +25,20 @@ def create_app() -> Flask:
     register_blueprints(app)
     register_error_handlers(app)
 
+    # ── Intro ruta ────────────────────────────────────────────────────────────
+    @app.route("/intro")
+    def intro():
+        return render_template("intro.html")
+
     # ── Index ruta ────────────────────────────────────────────────────────────
     @app.route("/")
     def index():
-        try:
-            from intro_ui import INTRO_HTML
-        except ImportError:
-            INTRO_HTML = ""
-        return render_template("index.html", introhtml=INTRO_HTML)
+        # On first visit redirect to /intro; cookie persists for 30 days
+        if not request.cookies.get("intro_seen"):
+            resp = make_response(redirect("/intro"))
+            resp.set_cookie("intro_seen", "true", max_age=3600 * 24 * 30)
+            return resp
+        return render_template("index.html")
 
     return app
 

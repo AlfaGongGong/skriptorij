@@ -31,12 +31,10 @@
         <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
     </head>
     <body>
-        {% if introhtml %}{{ introhtml|safe }}{% endif %}
-
         <!-- Toast notification container -->
         <div id="toast-container" aria-live="polite"></div>
 
-        <div id="main-ui-wrapper" style="{{ 'display:none; opacity:0;' if introhtml else 'display:block; opacity:1;' }} transition: opacity 1.5s ease;">
+        <div id="main-ui-wrapper" style="display:block; opacity:1; transition: opacity 1.5s ease;">
 
             <!-- HEADER -->
             <header class="app-header" role="banner">
