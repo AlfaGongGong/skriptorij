@@ -38,6 +38,9 @@
 
     --logo-stroke-width: 0.8;
 
+    /* Input background */
+    --input-bg: rgba(255, 255, 255, 0.05);
+
     /* Typography */
     --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-mono: "JetBrains Mono", "Fira Code", monospace;
@@ -84,6 +87,9 @@ body.light-theme {
     --fn-analyze:   #67e8f9;
 
     --logo-stroke-width: 0.9;
+
+    /* Input background */
+    --input-bg: #ffffff;
 }
 
 * {
@@ -466,7 +472,7 @@ body.light-theme .setup-overlay-active {
 .input-group input[type="text"] {
     width: 100%;
     padding: 10px 12px;
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--input-bg);
     border: 1px solid var(--border);
     color: var(--text-primary);
     font-family: var(--font-sans);
@@ -478,7 +484,6 @@ body.light-theme .setup-overlay-active {
 
 body.light-theme .input-group select,
 body.light-theme .input-group input[type="text"] {
-    background-color: #ffffff;
     border-color: #d1d5db;
     color: var(--text-primary);
 }

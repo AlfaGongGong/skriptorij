@@ -368,7 +368,13 @@ INTRO_HTML = """
         }
 
         // Check prefers-reduced-motion
-        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const reducedMotion = motionQuery.matches;
+
+        // Also respect real-time changes (e.g., user changes system accessibility settings)
+        motionQuery.addEventListener('change', (e) => {
+            if (e.matches && !appStarted) forceStartApp();
+        });
 
         window.addEventListener('load', () => {
             if (reducedMotion) {
