@@ -115,52 +115,68 @@ def _ocisti_ai_markere(tekst: str) -> str:
 # ============================================================================
 _EN_STOPWORDS = frozenset(
     {
-        "the",
-        "and",
-        "was",
-        "for",
-        "are",
-        "with",
-        "his",
-        "they",
-        "have",
-        "from",
-        "this",
-        "that",
-        "will",
-        "what",
-        "their",
-        "said",
-        "been",
-        "which",
-        "into",
-        "but",
-        "not",
-        "she",
-        "her",
-        "had",
-        "him",
-        "its",
-        "our",
-        "out",
-        "who",
-        "when",
-        "than",
-        "then",
-        "some",
-        "very",
-        "just",
-        "like",
-        "your",
-        "can",
+        # Original stopwords
+        "the", "and", "was", "for", "are", "with", "his", "they", "have",
+        "from", "this", "that", "will", "what", "their", "said", "been",
+        "which", "into", "but", "not", "she", "her", "had", "him", "its",
+        "our", "out", "who", "when", "than", "then", "some", "very", "just",
+        "like", "your", "can",
+        # Common 2-letter English words (critical for short/title texts)
+        "by", "of", "in", "is", "it", "he", "we", "at", "an", "to", "be",
+        "as", "or", "do", "if", "no", "my", "us", "am", "go", "up", "so",
+        "me", "on", "oh",
+        # Common 3-letter English words
+        "all", "one", "has", "any", "new", "now", "how", "old", "did", "say",
+        "get", "let", "two", "see", "too", "try", "may", "own", "way", "day",
+        "man", "big", "got", "set", "few", "off", "yes", "yet", "ago", "far",
+        "add", "age", "air", "bad", "bed", "bit", "box", "boy", "car", "cut",
+        "end", "eye", "fit", "fun", "god", "guy", "hit", "hot", "job", "key",
+        "kid", "law", "leg", "lot", "low", "mad", "mom", "men", "net", "odd",
+        "oil", "pay", "run", "sad", "sit", "six", "sky", "son", "sun", "ten",
+        "top", "toy", "war", "win", "won", "arm", "ask", "act",
+        # Common 4+ letter English words
+        "also", "away", "back", "came", "come", "days", "does", "each", "even",
+        "ever", "eyes", "face", "feel", "find", "gave", "give", "goes", "good",
+        "hand", "here", "home", "keep", "know", "last", "left", "life", "live",
+        "long", "look", "made", "make", "mind", "more", "much", "must", "need",
+        "next", "once", "only", "open", "over", "part", "real", "room", "same",
+        "seem", "show", "side", "take", "tell", "them", "time", "told", "took",
+        "turn", "used", "want", "went", "well", "work", "year", "down", "help",
+        "high", "hold", "knew", "name", "upon", "were", "most", "both", "many",
+        "such", "thus", "after", "before", "while", "those", "these", "every",
+        "could", "would", "should", "about", "there", "still", "under", "again",
+        "right", "other", "place", "think", "three", "voice", "wrote", "years",
+        "hands", "night", "light", "small", "world", "found", "never", "first",
+        "great", "large", "later", "asked", "being", "stand", "heard", "thing",
+        "going", "whole", "young", "given", "point", "taken", "until", "might",
+        "along", "begin", "below", "bring", "built", "called", "cause", "close",
+        "shall", "since", "today", "value", "words", "write", "through",
+        # Common English words often seen in book titles/author sections
+        "published", "library", "division", "copyright", "reserved", "rights",
+        "author", "edition", "chapter", "volume", "series", "press", "books",
+        "fiction", "novel", "story", "tales", "written", "edited", "cover",
     }
 )
+
+# Croatian diacritical characters — strong indicator of Croatian/Bosnian text
+_HR_DIACRITICALS = frozenset("šćčžđŠĆČŽĐ")
 
 
 def _detektuj_en_ostatke(tekst: str) -> float:
     try:
         cist = re.sub(r"<[^>]+>", "", tekst).lower()
-        words = re.findall(r"\b[a-z]{3,}\b", cist)
+
+        # Croatian diacriticals are a strong indicator of Croatian/Bosnian text.
+        # If the text has sufficient diacritical density, it is almost certainly
+        # not English — return 0.0 immediately so it is kept as-is.
+        total_alpha = sum(1 for c in cist if c.isalpha())
+        hr_diacritical_count = sum(1 for c in cist if c in _HR_DIACRITICALS)
+        if total_alpha > 0 and hr_diacritical_count / total_alpha >= 0.02:
+            return 0.0
+
+        # Include 2-letter words to catch short but very common English words
+        # (e.g. "by", "of", "in", "is") that appear in titles and captions.
+        words = re.findall(r"\b[a-z]{2,}\b", cist)
         if not words:
             return 0.0
         return sum(1 for w in words if w in _EN_STOPWORDS) / len(words)
@@ -512,6 +528,11 @@ class SkriptorijAllInOne:
                     pass
 
     def _detect_language(self, text):
+        # Croatian/Bosnian diacriticals (š, ć, č, ž, đ) are definitive proof of
+        # a non-English text — skip the stopword check entirely.
+        cist = re.sub(r"<[^>]+>", "", text)
+        if any(c in _HR_DIACRITICALS for c in cist):
+            return "HR"
         return "EN" if _detektuj_en_ostatke(text) > 0.08 else "HR"
 
     def _build_glosar_tekst(self) -> str:
@@ -928,6 +949,18 @@ class SkriptorijAllInOne:
         # ── KORAK 1: PRIJEVOD ───────────────────────────────────────────
         if jezik == "HR":
             sirovo, prov1 = chunk, "AUTO-HR (Bypass)"
+            # Safety check: if the bypassed chunk has no Croatian diacriticals
+            # AND a notable English word density, warn — it may be untranslated
+            # English that slipped through detection.
+            cist_chunk = re.sub(r"<[^>]+>", "", chunk)
+            if not any(c in _HR_DIACRITICALS for c in cist_chunk):
+                en_score = _detektuj_en_ostatke(chunk)
+                if en_score > 0.05:
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ⚠️ HR-bypass na tekstu bez hrv. dijakritika "
+                        f"(en_score={en_score:.2f}) — moguć EN propust.",
+                        "warning",
+                    )
             self.log(f"[{file_name}] Blok {chunk_idx}: HR, preskačem prijevod.", "info")
         else:
             prev_sys = self._get_prevodilac_prompt(glosar_chunk=rel_glosar)
