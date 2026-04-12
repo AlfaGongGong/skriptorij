@@ -84,7 +84,7 @@ export function renderFleetPool(data) {
             keys.forEach(k => {
                 const st = _fleetKeyStatus(k);
                 let ratePct = null;
-                if (k.rate_limit_minute && k.remaining_minute != null) {
+                if (k.rate_limit_minute && k.remaining_minute !== null && k.remaining_minute !== undefined) {
                     ratePct = Math.round((k.remaining_minute / k.rate_limit_minute) * 100);
                 }
 

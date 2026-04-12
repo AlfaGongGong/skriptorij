@@ -79,19 +79,22 @@ body.light-theme {
     --neon-glow:   none;
     --neon-strong: none;
 
-    /* Light theme neon text-shadows → strong dark outline for readability */
-    --neon-text-cyan:    -1px -1px 0 rgba(0,0,0,0.45), 1px -1px 0 rgba(0,0,0,0.45), -1px 1px 0 rgba(0,0,0,0.45), 1px 1px 0 rgba(0,0,0,0.45);
-    --neon-text-green:   -1px -1px 0 rgba(0,0,0,0.45), 1px -1px 0 rgba(0,0,0,0.45), -1px 1px 0 rgba(0,0,0,0.45), 1px 1px 0 rgba(0,0,0,0.45);
-    --neon-text-magenta: -1px -1px 0 rgba(0,0,0,0.45), 1px -1px 0 rgba(0,0,0,0.45), -1px 1px 0 rgba(0,0,0,0.45), 1px 1px 0 rgba(0,0,0,0.45);
-    --neon-text-amber:   -1px -1px 0 rgba(0,0,0,0.45), 1px -1px 0 rgba(0,0,0,0.45), -1px 1px 0 rgba(0,0,0,0.45), 1px 1px 0 rgba(0,0,0,0.45);
-    --neon-text-red:     -1px -1px 0 rgba(0,0,0,0.45), 1px -1px 0 rgba(0,0,0,0.45), -1px 1px 0 rgba(0,0,0,0.45), 1px 1px 0 rgba(0,0,0,0.45);
+    /* Light theme neon text-shadows → strong dark outline for readability
+       (same outline for all colours — dead tubes are all "off") */
+    --neon-text-outline: -1px -1px 0 rgba(0,0,0,0.45), 1px -1px 0 rgba(0,0,0,0.45), -1px 1px 0 rgba(0,0,0,0.45), 1px 1px 0 rgba(0,0,0,0.45);
+    --neon-text-cyan:    var(--neon-text-outline);
+    --neon-text-green:   var(--neon-text-outline);
+    --neon-text-magenta: var(--neon-text-outline);
+    --neon-text-amber:   var(--neon-text-outline);
+    --neon-text-red:     var(--neon-text-outline);
 
     /* No neon box-shadows — matte appearance */
-    --neon-box-cyan:    0 1px 3px rgba(0,0,0,0.12);
-    --neon-box-green:   0 1px 3px rgba(0,0,0,0.12);
-    --neon-box-amber:   0 1px 3px rgba(0,0,0,0.12);
-    --neon-box-red:     0 1px 3px rgba(0,0,0,0.12);
-    --neon-box-magenta: 0 1px 3px rgba(0,0,0,0.12);
+    --neon-box-outline: 0 1px 3px rgba(0,0,0,0.12);
+    --neon-box-cyan:    var(--neon-box-outline);
+    --neon-box-green:   var(--neon-box-outline);
+    --neon-box-amber:   var(--neon-box-outline);
+    --neon-box-red:     var(--neon-box-outline);
+    --neon-box-magenta: var(--neon-box-outline);
 
     --logo-stroke-width: 0.9;
 }

@@ -1,6 +1,7 @@
 """Pomoćne funkcije — file utilities."""
 import os
 import re
+from typing import Optional
 
 
 def secure_filename(filename: str) -> str:
@@ -19,7 +20,7 @@ def secure_filename(filename: str) -> str:
     return filename.strip("._-") or "knjiga.epub"
 
 
-def safe_path(filename: str, root: str | None = None) -> str:
+def safe_path(filename: str, root: Optional[str] = None) -> str:
     """Vraća sigurnu apsolutnu putanju unutar root direktorija."""
     from config.settings import PROJECTS_ROOT
 

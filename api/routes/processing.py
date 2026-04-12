@@ -133,6 +133,6 @@ def start_processing():
         return jsonify({"status": "Started", "file": book, "mode": mode})
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    except Exception as e:
+    except Exception:
         SHARED_STATS["status"] = "GREŠKA PRI STARTU"
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Greška pri pokretanju obrade"}), 500

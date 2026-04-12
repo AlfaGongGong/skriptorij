@@ -16,8 +16,8 @@ def get_fleet():
         if fm is None:
             fm = FleetManager(config_path=CONFIG_PATH)
         return jsonify(fm.get_fleet_summary())
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        return jsonify({"error": "Greška pri dohvaćanju flote"}), 500
 
 
 @bp.route("/api/fleet/toggle", methods=["POST"])

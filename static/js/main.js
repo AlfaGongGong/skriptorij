@@ -14,6 +14,7 @@ import { LS_INTRO_SHOWN, POLL_INTERVAL_MS, FLEET_POLL_INTERVAL_MS } from './util
 
 let pollInterval     = null;
 let fleetPollActive  = false;
+let fleetIntervalId  = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     // ── Intro handling ─────────────────────────────────────────────────────
@@ -43,10 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const fleetDetails = document.getElementById('fleet-details');
     if (fleetDetails) {
         fleetDetails.addEventListener('toggle', () => {
-            if (fleetDetails.open && !fleetPollActive) {
-                fleetPollActive = true;
-                updateFleetPool();
-                setInterval(updateFleetPool, FLEET_POLL_INTERVAL_MS);
+            if (fleetDetails.open) {
+                if (!fleetIntervalId) {
+                    updateFleetPool();
+                    fleetIntervalId = setInterval(updateFleetPool, FLEET_POLL_INTERVAL_MS);
+                }
+            } else {
+                if (fleetIntervalId) {
+                    clearInterval(fleetIntervalId);
+                    fleetIntervalId = null;
+                }
             }
         });
     }
