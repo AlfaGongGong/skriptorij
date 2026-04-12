@@ -306,10 +306,10 @@ class FleetManager:
         if state is None:
             return
         state.total_requests += count
-        if success:
-            state.errors = 0
-        else:
+        if not success:
             state.errors += 1
+        else:
+            state.errors = 0
 
     # ------------------------------------------------------------------ #
     # Sažetak flote (za /api/fleet endpoint i UI)
