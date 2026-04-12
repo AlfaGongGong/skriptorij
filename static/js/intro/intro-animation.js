@@ -61,6 +61,10 @@ class IntroAnimation {
             return;
         }
 
+        // Hide the CSS pre-loader — the real animation is starting
+        const preLoad = document.getElementById('intro-pre-load');
+        if (preLoad) preLoad.classList.add('hidden');
+
         document.body.style.overflow = 'hidden';
 
         // Show skip button after 2 s

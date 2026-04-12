@@ -57,6 +57,14 @@
         <div id="intro-bloom-overlay" aria-hidden="true"></div>
         <div id="intro-fade-overlay"  aria-hidden="true"></div>
 
+        <!-- Pre-animation loader — visible immediately (CSS only, no JS needed).
+             Hidden by intro-animation.js once the 3D scene starts. -->
+        <div id="intro-pre-load" aria-hidden="true">
+            <span class="ipl-dot"></span>
+            <span class="ipl-dot"></span>
+            <span class="ipl-dot"></span>
+        </div>
+
         <!-- Skip button (shown after 2 s) -->
         <button class="skip-intro-btn" id="skip-intro-btn"
                 onclick="skipIntro()" aria-label="Preskoči intro">

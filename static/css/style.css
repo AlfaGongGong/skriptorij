@@ -878,6 +878,8 @@ body.light-theme .error-text {
     font-family: var(--font-mono);
     height: 400px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding: 15px;
     border-radius: 8px;
     border: 1px solid var(--border);
@@ -1079,6 +1081,8 @@ body.light-theme .toast-error   { background: #fef2f2; color: #b91c1c; box-shado
     margin-top: 8px;
     max-height: 400px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding-right: 4px;
 }
 
@@ -1399,6 +1403,18 @@ body.light-theme .fleet-key-disabled {
 }
 
 /* ── Fleet key management table ───────────────────────────────────── */
+#keys-list {
+    max-height: 320px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+#keys-list::-webkit-scrollbar { width: 6px; }
+#keys-list::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 4px; }
+#keys-list::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 4px; }
+#keys-list::-webkit-scrollbar-thumb:hover { background: var(--accent-secondary); }
+
 .fleet-table {
     width: 100%;
     border-collapse: collapse;

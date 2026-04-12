@@ -239,6 +239,7 @@ class FleetManager:
         if status_code == 200:
             state.last_success = time.time()
             state.reset_backoff()
+            state.errors = 0
             return
 
         if status_code == 429:
@@ -307,6 +308,8 @@ class FleetManager:
         state.total_requests += count
         if not success:
             state.errors += 1
+        else:
+            state.errors = 0
 
     # ------------------------------------------------------------------ #
     # Sažetak flote (za /api/fleet endpoint i UI)
