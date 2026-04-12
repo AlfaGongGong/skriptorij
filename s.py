@@ -121,7 +121,7 @@ def _url_daisy():
 # ============================================================================
 # GLOBALS & MREŽNE POSTAVKE
 # ============================================================================
-_GLOBAL_DOOR = asyncio.Lock()
+_GLOBAL_DOOR = None
 _LAST_CALLS = {
     "GEMINI": 0.0,
     "GROQ": 0.0,
@@ -131,6 +131,15 @@ _LAST_CALLS = {
     "COHERE": 0.0,
 }
 MIN_GAP = 12.0
+
+
+async def _ensure_global_lock():
+    """Lazy initialization of asyncio Lock in the current event loop."""
+    global _GLOBAL_DOOR
+    if _GLOBAL_DOOR is None:
+        _GLOBAL_DOOR = asyncio.Lock()
+    return _GLOBAL_DOOR
+
 
 BASE_PATH = Path("/storage/emulated/0/termux/Termux_ai_lektor")
 PROJECTS_ROOT = BASE_PATH / "format_projects"
@@ -530,7 +539,8 @@ class FormaterAllInOne:
                             if prov_upper == "CEREBRAS":
                                 payload["max_completion_tokens"] = 2500
 
-                        async with _GLOBAL_DOOR:
+                        lock = await _ensure_global_lock()
+                        async with lock:
                             razmak = time.time() - _LAST_CALLS.get(prov_upper, 0)
                             if razmak < MIN_GAP:
                                 await asyncio.sleep(MIN_GAP - razmak)

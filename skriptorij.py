@@ -76,9 +76,17 @@ def _url_daisy():
 # ============================================================================
 # GLOBALNI RATE LIMITER
 # ============================================================================
-_GLOBAL_DOOR = asyncio.Lock()
+_GLOBAL_DOOR = None
 _LAST_CALLS = {}
 MIN_GAP = 2.3
+
+
+async def _ensure_global_lock():
+    """Lazy initialization of asyncio Lock in the current event loop."""
+    global _GLOBAL_DOOR
+    if _GLOBAL_DOOR is None:
+        _GLOBAL_DOOR = asyncio.Lock()
+    return _GLOBAL_DOOR
 
 
 # ============================================================================
@@ -716,7 +724,8 @@ class SkriptorijAllInOne:
             if prov_upper == "CEREBRAS":
                 payload["max_completion_tokens"] = payload.pop("max_tokens")
 
-        async with _GLOBAL_DOOR:
+        lock = await _ensure_global_lock()
+        async with lock:
             elapsed = time.time() - _LAST_CALLS.get(f"{prov_upper}:{model}", 0)
             if elapsed < MIN_GAP:
                 await asyncio.sleep(MIN_GAP - elapsed)
