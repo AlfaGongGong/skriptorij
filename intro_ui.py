@@ -1,585 +1,871 @@
 # ============================================================================
-# BOOKLYFI INTRO ANIMATION — 3D Page Flip (VERSION 3 TURBO)
+# BOOKLYFI INTRO ANIMATION — EMERGENCE (Three.js Cinematic, 12s)
 # ============================================================================
 
 INTRO_HTML = """
-    <style>
-        /* Skip button */
-        .skip-intro-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999999;
-            color: rgba(255,255,255,0.6);
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            padding: 8px 18px;
-            font-family: 'Inter', -apple-system, sans-serif;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(4px);
-        }
-        .skip-intro-btn:hover {
-            color: #fff;
-            background: rgba(255,255,255,0.15);
-            border-color: rgba(255,255,255,0.3);
-        }
+<style>
+/* ── Skip button ─────────────────────────────────────────────────────────── */
+.skip-intro-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999999;
+    color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 20px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(8px);
+    letter-spacing: 0.04em;
+    display: none; /* shown at 2s via JS */
+}
+.skip-intro-btn:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.3);
+}
 
-        /* ── Keyframe animations ────────────────────────────────── */
-        @keyframes bgGradientShift {
-            0%   { background-position: 0% 0%; }
-            33%  { background-position: 100% 50%; }
-            66%  { background-position: 50% 100%; }
-            100% { background-position: 0% 0%; }
-        }
+/* ── Overlay ──────────────────────────────────────────────────────────────── */
+#intro-overlay {
+    position: fixed;
+    inset: 0;
+    background: #020617;
+    z-index: 999999;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
 
-        @keyframes logoEntrance {
-            0%   { transform: scale(0.3) rotate(10deg); opacity: 0; }
-            60%  { transform: scale(1.08) rotate(-2deg); opacity: 1; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
+/* Three.js canvas fills overlay */
+#intro-threejs-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
 
-        @keyframes textSlideIn {
-            0%   { transform: translateX(-60px); opacity: 0; }
-            100% { transform: translateX(0);     opacity: 1; }
-        }
+/* ── Digital Rain canvas overlay ─────────────────────────────────────────── */
+#intro-rain-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 1s ease;
+}
 
-        @keyframes glowPulse {
-            0%, 100% { filter: drop-shadow(0 0 10px rgba(96,165,250,0.4)); }
-            50%       { filter: drop-shadow(0 0 30px rgba(96,165,250,0.9)) drop-shadow(0 0 60px rgba(167,139,250,0.5)); }
-        }
+/* ── UI layer (logo text) ─────────────────────────────────────────────────── */
+#intro-ui-layer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+}
 
-        @keyframes introFadeIn {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-        }
+/* Logo text (hidden until phase 6) */
+#intro-logo-text {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #fff;
+    opacity: 0;
+    text-shadow:
+        0 0 20px rgba(96,165,250,0.8),
+        0 0 60px rgba(96,165,250,0.4),
+        0 0 120px rgba(167,139,250,0.3);
+    white-space: nowrap;
+    transform: scale(0.85);
+    transition: opacity 0s, transform 0s;
+}
+#intro-logo-text.visible {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+/* individual letter spans */
+#intro-logo-text .letter {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+#intro-logo-text .letter.in {
+    opacity: 1;
+    transform: translateY(0);
+}
 
-        @keyframes bookFloat {
-            0%, 100% { transform: translateY(0px); }
-            50%       { transform: translateY(-8px); }
-        }
+#intro-subtitle-text {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: clamp(0.85rem, 2vw, 1.2rem);
+    font-weight: 500;
+    letter-spacing: 0.35em;
+    color: rgba(255,255,255,0.7);
+    margin-top: 14px;
+    opacity: 0;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(6,182,212,0.7);
+    transition: opacity 0.6s ease 0.5s;
+}
+#intro-subtitle-text.visible { opacity: 1; }
 
-        @keyframes particleBurst {
-            0%   { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
-        }
+#intro-loading-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: rgba(96,165,250,0.6);
+    margin-top: 36px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+#intro-loading-text.visible { opacity: 1; }
 
-        /* Overlay */
-        #intro-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: #0a0e27;
-            z-index: 999999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            transition: opacity 1.2s ease;
-            animation: introFadeIn 0.5s ease forwards;
-        }
+/* Loading bar */
+#intro-progress-wrap {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(320px, 80vw);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+#intro-progress-wrap.visible { opacity: 1; }
+#intro-progress-bar-bg {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+#intro-progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px rgba(96,165,250,0.7);
+}
 
-        /* Animated gradient background */
-        #intro-bg {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse at 20% 30%, rgba(96,165,250,0.18) 0%, transparent 55%),
-                        radial-gradient(ellipse at 80% 70%, rgba(167,139,250,0.15) 0%, transparent 55%),
-                        radial-gradient(ellipse at 50% 90%, rgba(74,222,128,0.06) 0%, transparent 40%);
-            background-size: 200% 200%;
-            opacity: 0;
-            transition: opacity 1s ease;
-            animation: bgGradientShift 8s ease-in-out infinite;
-        }
-        #intro-bg.visible { opacity: 1; }
+/* ── Final fade overlay ───────────────────────────────────────────────────── */
+#intro-fade-overlay {
+    position: absolute;
+    inset: 0;
+    background: #020617;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
+    z-index: 20;
+}
+#intro-fade-overlay.fading { opacity: 1; }
 
-        /* Particles canvas */
-        #intro-particles {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 1;
-        }
+/* ── Bloom / glow pulse overlay ──────────────────────────────────────────── */
+#intro-bloom-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 45%, rgba(96,165,250,0.25) 0%, transparent 65%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+#intro-bloom-overlay.glow { opacity: 1; animation: bloomPulse 0.5s ease-in-out 3; }
 
-        /* Burst particles container */
-        #intro-burst-particles {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 2;
-            overflow: hidden;
-        }
+@keyframes bloomPulse {
+    0%,100% { opacity: 0.3; }
+    50%      { opacity: 1; }
+}
 
-        .burst-particle {
-            position: absolute;
-            border-radius: 50%;
-            animation: particleBurst 1.2s ease-out forwards;
-        }
+/* ── Reduced motion fallback ──────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    #intro-overlay { animation: none !important; }
+}
+</style>
 
-        /* Book stage */
-        #intro-book-stage {
-            position: relative;
-            z-index: 10;
-            perspective: 1200px;
-            width: 280px;
-            height: 340px;
-            opacity: 0;
-            transform: scale(0.3) rotate(10deg) translateY(20px);
-            transition: none;
-        }
-        #intro-book-stage.visible {
-            opacity: 1;
-            transform: scale(1) rotate(0deg) translateY(0);
-            animation: logoEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-                       bookFloat 3s ease-in-out 1.5s infinite;
-        }
+<!-- ─── Three.js CDN ─────────────────────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"></script>
 
-        /* Book base (back cover + spine) */
-        #intro-book-base {
-            position: absolute;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            transform-style: preserve-3d;
-        }
+<!-- ─── Intro DOM ──────────────────────────────────────────────────────────── -->
+<div id="intro-overlay" role="dialog" aria-label="Uvodni ekran" aria-modal="true">
+    <canvas id="intro-rain-canvas"></canvas>
+    <canvas id="intro-threejs-canvas"></canvas>
 
-        .book-cover {
-            position: absolute;
-            width: 100%; height: 100%;
-            background: linear-gradient(135deg, #1e293b 0%, #0a0e27 100%);
-            border: 1px solid rgba(96,165,250,0.4);
-            border-radius: 2px 8px 8px 2px;
-            box-shadow:
-                -6px 0 12px rgba(0,0,0,0.4),
-                0 4px 20px rgba(0,0,0,0.3),
-                inset 0 0 30px rgba(96,165,250,0.04);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .book-cover-logo {
-            width: 60px;
-            height: 60px;
-            opacity: 0.35;
-            animation: glowPulse 3s ease-in-out infinite;
-        }
-
-        /* Page flip wrapper */
-        .page-flip-wrapper {
-            position: absolute;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            transform-style: preserve-3d;
-            transform-origin: left center;
-            transition: transform 1.4s cubic-bezier(0.645, 0.045, 0.355, 1.000);
-        }
-
-        .page-flip-wrapper.flipped {
-            transform: rotateY(-180deg);
-        }
-
-        .page-face {
-            position: absolute;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            border-radius: 2px 8px 8px 2px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            overflow: hidden;
-        }
-
-        .page-front {
-            background: linear-gradient(160deg, #1e3a5f 0%, #1e293b 100%);
-            border: 1px solid rgba(96,165,250,0.25);
-            box-shadow: 2px 0 8px rgba(0,0,0,0.3);
-        }
-
-        .page-back {
-            background: linear-gradient(160deg, #1a1040 0%, #1e293b 100%);
-            border: 1px solid rgba(167,139,250,0.25);
-            transform: rotateY(180deg);
-            box-shadow: -2px 0 8px rgba(0,0,0,0.3);
-        }
-
-        /* Page line decorations */
-        .page-lines {
-            position: absolute;
-            width: 72%;
-            top: 20%;
-        }
-
-        .page-line {
-            height: 1px;
-            background: rgba(255,255,255,0.05);
-            margin-bottom: 10px;
-            border-radius: 1px;
-        }
-
-        /* Text that slides in on each page */
-        .intro-brand-text {
-            font-family: 'Inter', -apple-system, sans-serif;
-            font-weight: 700;
-            text-align: center;
-            opacity: 0;
-            transform: translateX(-40px);
-            transition: none;
-            position: relative;
-            z-index: 1;
-        }
-
-        .intro-brand-text.visible {
-            opacity: 1;
-            transform: translateX(0);
-            animation: textSlideIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-
-        .intro-brand-title {
-            font-size: 2rem;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1.1;
-            margin-bottom: 4px;
-        }
-
-        .intro-brand-sub {
-            font-size: 1rem;
-            color: rgba(255,255,255,0.7);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .intro-brand-tagline {
-            font-size: 0.72rem;
-            color: rgba(167,139,250,0.85);
-            letter-spacing: 1px;
-            margin-top: 8px;
-            font-weight: 500;
-        }
-
-        /* Logo glow pulse at end */
-        #intro-glow-pulse {
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(96,165,250,0.12) 0%, rgba(167,139,250,0.06) 40%, transparent 70%);
-            transform: scale(0);
-            transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 1s ease;
-            opacity: 0;
-            z-index: 0;
-        }
-
-        #intro-glow-pulse.pulse {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        /* Spine shadow */
-        .book-spine {
-            position: absolute;
-            left: -6px;
-            top: 2px;
-            width: 6px;
-            height: calc(100% - 4px);
-            background: linear-gradient(to right, #050a1a, #141929);
-            border-radius: 2px 0 0 2px;
-            box-shadow: -2px 0 6px rgba(0,0,0,0.5);
-        }
-
-        /* Horizontal scan lines for depth */
-        .page-scan-line {
-            position: absolute;
-            left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(96,165,250,0.15), transparent);
-            animation: scanMove 4s linear infinite;
-        }
-
-        @keyframes scanMove {
-            0%   { top: 0%; }
-            100% { top: 100%; }
-        }
-    </style>
-
-    <div id="intro-overlay">
-        <div id="intro-bg"></div>
-        <canvas id="intro-particles"></canvas>
-        <div id="intro-burst-particles"></div>
-
-        <div id="intro-glow-pulse"></div>
-
-        <!-- Book Stage -->
-        <div id="intro-book-stage">
-            <!-- Spine -->
-            <div class="book-spine"></div>
-
-            <!-- Book back cover (always visible) -->
-            <div class="book-cover" id="intro-book-base">
-                <svg class="book-cover-logo" viewBox="0 0 32 32" fill="none" stroke="rgba(96,165,250,0.5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="4" y="4" width="16" height="24" rx="2"/>
-                    <line x1="4" y1="9" x2="20" y2="9"/>
-                    <polygon points="22,4 16,18 21,18 15,28 28,13 23,13" stroke="rgba(167,139,250,0.5)"/>
-                </svg>
-            </div>
-
-            <!-- Page flip 1: reveals BOOKLYFI -->
-            <div class="page-flip-wrapper" id="intro-page-1">
-                <div class="page-face page-front">
-                    <div class="page-scan-line"></div>
-                    <div class="page-lines">
-                        <div class="page-line"></div>
-                        <div class="page-line" style="width:85%;"></div>
-                        <div class="page-line" style="width:70%;"></div>
-                        <div class="page-line" style="width:90%;"></div>
-                        <div class="page-line" style="width:60%;"></div>
-                    </div>
-                </div>
-                <div class="page-face page-back">
-                    <div class="intro-brand-text" id="intro-text-1">
-                        <div class="intro-brand-title">BOOKLYFI</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Page flip 2: reveals TURBO CHARGED -->
-            <div class="page-flip-wrapper" id="intro-page-2">
-                <div class="page-face page-front">
-                    <div class="page-scan-line" style="animation-delay:2s"></div>
-                    <div class="page-lines">
-                        <div class="page-line"></div>
-                        <div class="page-line" style="width:80%;"></div>
-                        <div class="page-line" style="width:95%;"></div>
-                        <div class="page-line" style="width:75%;"></div>
-                        <div class="page-line" style="width:55%;"></div>
-                    </div>
-                </div>
-                <div class="page-face page-back">
-                    <div class="intro-brand-text" id="intro-text-2">
-                        <div class="intro-brand-sub">TURBO CHARGED ⚡</div>
-                        <div class="intro-brand-tagline">AI-Powered Book Translation &amp; Refinement</div>
-                    </div>
-                </div>
-            </div>
+    <div id="intro-ui-layer">
+        <div id="intro-logo-text" aria-live="polite">
+            <span class="letter" data-l="B">B</span><span
+                  class="letter" data-l="O">O</span><span
+                  class="letter" data-l="O">O</span><span
+                  class="letter" data-l="K">K</span><span
+                  class="letter" data-l="L">L</span><span
+                  class="letter" data-l="Y">Y</span><span
+                  class="letter" data-l="F">F</span><span
+                  class="letter" data-l="I">I</span>
         </div>
-
-        <button class="skip-intro-btn" onclick="forceStartApp()" aria-label="Preskoči animaciju">Preskoči →</button>
+        <div id="intro-subtitle-text">TURBO CHARGED &thinsp;&#9889;</div>
+        <div id="intro-loading-text">Initializing BOOKLYFI&hellip;</div>
     </div>
 
-    <script>
-        let appStarted = false;
-        let particleAnimReq = null;
+    <div id="intro-progress-wrap" aria-hidden="true">
+        <div id="intro-progress-bar-bg">
+            <div id="intro-progress-bar-fill"></div>
+        </div>
+    </div>
 
-        // ── Background particle system (ambient floaters) ──
-        function initParticles() {
-            const canvas = document.getElementById('intro-particles');
-            if (!canvas) return null;
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+    <div id="intro-bloom-overlay" aria-hidden="true"></div>
+    <div id="intro-fade-overlay" aria-hidden="true"></div>
 
-            const count = Math.min(80, Math.floor(window.innerWidth / 15));
-            const particles = [];
+    <button class="skip-intro-btn" id="skip-intro-btn"
+            onclick="skipIntro()" aria-label="Preskoči intro">
+        Preskoči
+    </button>
+</div>
 
-            const colors = ['96,165,250', '167,139,250', '74,222,128', '251,191,36', '248,113,113'];
+<!-- ─── Intro Animation Script ────────────────────────────────────────────── -->
+<script>
+(function () {
+"use strict";
 
-            for (let i = 0; i < count; i++) {
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    r: Math.random() * 2.8 + 0.4,
-                    dx: (Math.random() - 0.5) * 0.5,
-                    dy: -(Math.random() * 0.4 + 0.1), // mostly drift upward
-                    alpha: Math.random() * 0.35 + 0.05,
-                    color: color,
-                    twinkleSpeed: Math.random() * 0.02 + 0.005,
-                    twinklePhase: Math.random() * Math.PI * 2
-                });
+// ── Respect prefers-reduced-motion ───────────────────────────────────────────
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    forceStartApp();
+    return;
+}
+
+// ── WebGL availability check ──────────────────────────────────────────────────
+function webglAvailable() {
+    try {
+        const canvas = document.createElement('canvas');
+        return !!(window.WebGLRenderingContext &&
+            (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+    } catch(e) { return false; }
+}
+if (!webglAvailable() || typeof THREE === 'undefined') {
+    // CSS-only fallback: just fade in app after 2s
+    setTimeout(forceStartApp, 2000);
+    return;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ═════════════════════════════════════════════════════════════════════════════
+const TOTAL_DURATION = 12000; // ms
+const IS_MOBILE = window.innerWidth < 640;
+const PARTICLE_COUNT = IS_MOBILE ? 2200 : 5000;
+const TRAIL_COUNT = IS_MOBILE ? 600 : 1400;
+
+let startTime = null;
+let rafId = null;
+let appStarted = false;
+
+// Three.js
+let scene, camera, renderer, particleMesh, trailMesh, pointLight, ambientLight;
+let positions, velocities, targets, colors, sizes, trails;
+let bookTargets = [];
+let logoTargets = [];
+let phase = 0;
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  DIGITAL RAIN (Canvas 2D)
+// ═════════════════════════════════════════════════════════════════════════════
+const rainCanvas = document.getElementById('intro-rain-canvas');
+const rainCtx = rainCanvas.getContext('2d');
+const RAIN_CHARS = '@#$%*01234⚡∞≡→∆Ω∑∏√π';
+let rainColumns = [], rainDrops = [], rainActive = true;
+
+function initRain() {
+    rainCanvas.width  = window.innerWidth;
+    rainCanvas.height = window.innerHeight;
+    const colW = 18;
+    const cols = Math.floor(rainCanvas.width / colW);
+    rainColumns = Array.from({length: cols}, (_, i) => ({
+        x: i * colW + 9,
+        y: Math.random() * -400,
+        speed: 1.5 + Math.random() * 2.5,
+        chars: Array.from({length: 20}, () => RAIN_CHARS[Math.floor(Math.random() * RAIN_CHARS.length)])
+    }));
+}
+
+function renderRain(t) {
+    rainCtx.fillStyle = 'rgba(2,6,23,0.18)';
+    rainCtx.fillRect(0, 0, rainCanvas.width, rainCanvas.height);
+
+    const alpha = Math.max(0, 1 - (t - 800) / 1400);
+    if (alpha <= 0) {
+        if (rainActive) {
+            rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+            rainActive = false;
+        }
+        return;
+    }
+
+    rainCtx.font = '14px "JetBrains Mono", monospace';
+    for (const col of rainColumns) {
+        col.y += col.speed;
+        if (col.y > rainCanvas.height) col.y = -240;
+        for (let j = 0; j < col.chars.length; j++) {
+            const cy = col.y - j * 16;
+            if (cy < -20 || cy > rainCanvas.height + 20) continue;
+            const fade = j === 0 ? 1 : (1 - j / col.chars.length) * 0.7;
+            const g = j === 0
+                ? `rgba(224,242,254,${fade * alpha})`
+                : `rgba(96,165,250,${fade * alpha * 0.8})`;
+            rainCtx.fillStyle = g;
+            // mutate chars occasionally
+            if (Math.random() < 0.01)
+                col.chars[j] = RAIN_CHARS[Math.floor(Math.random() * RAIN_CHARS.length)];
+            rainCtx.fillText(col.chars[j], col.x, cy);
+        }
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  THREE.JS SETUP
+// ═════════════════════════════════════════════════════════════════════════════
+function initThree() {
+    const W = window.innerWidth, H = window.innerHeight;
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera(70, W / H, 0.1, 2000);
+    camera.position.set(0, 0, 100);
+
+    renderer = new THREE.WebGLRenderer({
+        canvas: document.getElementById('intro-threejs-canvas'),
+        antialias: !IS_MOBILE,
+        alpha: true
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H);
+    renderer.setClearColor(0x020617, 1);
+
+    // Lights
+    ambientLight = new THREE.AmbientLight(0x60a5fa, 0.4);
+    scene.add(ambientLight);
+    pointLight = new THREE.PointLight(0x60a5fa, 3, 200);
+    pointLight.position.set(0, 0, 50);
+    scene.add(pointLight);
+
+    buildParticleSystem();
+    buildTrailSystem();
+}
+
+// ── Particle system ──────────────────────────────────────────────────────────
+function buildParticleSystem() {
+    const geo = new THREE.BufferGeometry();
+    positions  = new Float32Array(PARTICLE_COUNT * 3);
+    velocities = new Float32Array(PARTICLE_COUNT * 3);
+    targets    = new Float32Array(PARTICLE_COUNT * 3);
+    colors     = new Float32Array(PARTICLE_COUNT * 3);
+    sizes      = new Float32Array(PARTICLE_COUNT);
+
+    // Scatter particles randomly (start state)
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const si = i * 3;
+        const r = 200 + Math.random() * 200;
+        const theta = Math.random() * Math.PI * 2;
+        const phi   = Math.acos(2 * Math.random() - 1);
+        positions[si]   = r * Math.sin(phi) * Math.cos(theta);
+        positions[si+1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[si+2] = r * Math.cos(phi) - 100;
+        velocities[si]   = 0;
+        velocities[si+1] = 0;
+        velocities[si+2] = 0;
+        targets[si]   = positions[si];
+        targets[si+1] = positions[si+1];
+        targets[si+2] = positions[si+2];
+        colors[si]   = 0.37;
+        colors[si+1] = 0.65;
+        colors[si+2] = 0.98;
+        sizes[i] = IS_MOBILE ? 1.2 : 1.6;
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('size',     new THREE.BufferAttribute(sizes, 1));
+
+    const mat = new THREE.PointsMaterial({
+        size: IS_MOBILE ? 1.4 : 1.8,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    particleMesh = new THREE.Points(geo, mat);
+    scene.add(particleMesh);
+}
+
+// ── Trail system ─────────────────────────────────────────────────────────────
+function buildTrailSystem() {
+    const geo = new THREE.BufferGeometry();
+    trails = new Float32Array(TRAIL_COUNT * 3);
+    const tc = new Float32Array(TRAIL_COUNT * 3);
+    const ts = new Float32Array(TRAIL_COUNT);
+    for (let i = 0; i < TRAIL_COUNT; i++) {
+        trails[i*3]   = (Math.random()-0.5)*400;
+        trails[i*3+1] = (Math.random()-0.5)*400;
+        trails[i*3+2] = (Math.random()-0.5)*200;
+        tc[i*3]   = 0.02;
+        tc[i*3+1] = 0.71;
+        tc[i*3+2] = 0.83;
+        ts[i] = IS_MOBILE ? 0.6 : 0.9;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(trails, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(tc, 3));
+    geo.setAttribute('size',     new THREE.BufferAttribute(ts, 1));
+    const mat = new THREE.PointsMaterial({
+        size: 0.9,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    trailMesh = new THREE.Points(geo, mat);
+    scene.add(trailMesh);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  TARGET GENERATORS
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Book silhouette (3D cuboid made of voxel positions)
+function genBookTargets() {
+    const pts = [];
+    const W=28, H=38, D=8;
+    for (let i=0; i<PARTICLE_COUNT; i++) {
+        let x, y, z;
+        const r = Math.random();
+        if (r < 0.35) {
+            // cover face
+            x = (Math.random()-0.5)*W;
+            y = (Math.random()-0.5)*H;
+            z = D/2 + (Math.random()-0.5)*1.5;
+        } else if (r < 0.55) {
+            // spine
+            x = -W/2 + (Math.random()-0.5)*2;
+            y = (Math.random()-0.5)*H;
+            z = (Math.random()-0.5)*D;
+        } else if (r < 0.70) {
+            // back cover
+            x = (Math.random()-0.5)*W;
+            y = (Math.random()-0.5)*H;
+            z = -D/2 + (Math.random()-0.5)*1.5;
+        } else if (r < 0.85) {
+            // pages (right edge)
+            x = W/2 + (Math.random()-0.5)*1.5;
+            y = (Math.random()-0.5)*H;
+            z = (Math.random()-0.5)*D;
+        } else {
+            // top/bottom edges
+            const top = Math.random() < 0.5;
+            x = (Math.random()-0.5)*W;
+            y = top ? H/2 : -H/2;
+            z = (Math.random()-0.5)*D;
+        }
+        pts.push(x, y, z);
+    }
+    return pts;
+}
+
+// Logo text shape (horizontal bars approximating 8 letters "BOOKLYFI")
+function genLogoTargets() {
+    // 8 letter blocks, each ~10 units wide, ~15 tall
+    const pts = [];
+    const letW = 8, letH = 14, spacing = 12;
+    const totalW = 8 * spacing;
+    const startX = -totalW / 2 + spacing/2;
+
+    // Simple pixel font for each letter — 5×7 bitmaps
+    const FONT = {
+        B: [[1,1,1,0],[1,0,0,1],[1,1,1,0],[1,0,0,1],[1,1,1,0]],
+        O: [[1,1,1,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,1,1,1]],
+        K: [[1,0,0,1],[1,0,1,0],[1,1,0,0],[1,0,1,0],[1,0,0,1]],
+        L: [[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,1,1,1]],
+        Y: [[1,0,0,1],[1,0,0,1],[0,1,1,0],[0,1,0,0],[0,1,0,0]],
+        F: [[1,1,1,1],[1,0,0,0],[1,1,1,0],[1,0,0,0],[1,0,0,0]],
+        I: [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[1,1,1]],
+    };
+    const letters = ['B','O','O','K','L','Y','F','I'];
+    const ppLetter = Math.floor(PARTICLE_COUNT / letters.length);
+
+    for (let li = 0; li < letters.length; li++) {
+        const lx = startX + li * spacing;
+        const bitmap = FONT[letters[li]];
+        const rows = bitmap.length;
+        const cols = bitmap[0].length;
+        for (let p = 0; p < ppLetter; p++) {
+            const ri = Math.floor(Math.random() * rows);
+            const ci = Math.floor(Math.random() * cols);
+            if (bitmap[ri][ci]) {
+                pts.push(
+                    lx + (ci / (cols-1) - 0.5) * letW + (Math.random()-0.5)*0.8,
+                    (0.5 - ri / (rows-1)) * letH  + (Math.random()-0.5)*0.8,
+                    (Math.random()-0.5)*2
+                );
+            } else {
+                // push to random offscreen — will never be "visible" (transparent)
+                const scatter = 250;
+                pts.push(
+                    (Math.random()-0.5)*scatter,
+                    (Math.random()-0.5)*scatter,
+                    (Math.random()-0.5)*scatter*0.5
+                );
             }
+        }
+    }
+    // pad to exactly PARTICLE_COUNT
+    while (pts.length < PARTICLE_COUNT * 3) {
+        pts.push((Math.random()-0.5)*200,(Math.random()-0.5)*200,(Math.random()-0.5)*100);
+    }
+    return pts.slice(0, PARTICLE_COUNT * 3);
+}
 
-            let frame = 0;
-            function drawParticles() {
-                if (appStarted) return;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                frame++;
-                particles.forEach(p => {
-                    // Twinkle effect
-                    const twinkle = Math.sin(frame * p.twinkleSpeed + p.twinklePhase) * 0.15;
-                    const alpha = Math.max(0.02, p.alpha + twinkle);
+// ═════════════════════════════════════════════════════════════════════════════
+//  LERP HELPERS
+// ═════════════════════════════════════════════════════════════════════════════
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function easeOut(t) { return 1 - Math.pow(1-t, 3); }
+function easeIn(t) { return t * t * t; }
 
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(' + p.color + ',' + alpha + ')';
-                    ctx.fill();
+// ═════════════════════════════════════════════════════════════════════════════
+//  MAIN ANIMATION LOOP
+// ═════════════════════════════════════════════════════════════════════════════
+function animate(ts) {
+    rafId = requestAnimationFrame(animate);
+    if (!startTime) startTime = ts;
+    const elapsed = ts - startTime; // ms
+    const t = Math.min(elapsed / TOTAL_DURATION, 1.0); // 0..1
 
-                    p.x += p.dx;
-                    p.y += p.dy;
+    updateProgress(t);
+    updatePhases(elapsed, t, ts);
 
-                    // Wrap around
-                    if (p.x < -5) p.x = canvas.width + 5;
-                    if (p.x > canvas.width + 5) p.x = -5;
-                    if (p.y < -5) p.y = canvas.height + 5;
-                    if (p.y > canvas.height + 5) p.y = canvas.height + 5;
-                });
-                particleAnimReq = requestAnimationFrame(drawParticles);
+    if (rainActive) renderRain(elapsed);
+
+    renderer.render(scene, camera);
+}
+
+// ── Progress bar & loading text ───────────────────────────────────────────────
+function updateProgress(t) {
+    const fill = document.getElementById('intro-progress-bar-fill');
+    if (fill) fill.style.width = (t * 100).toFixed(1) + '%';
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  PHASE LOGIC
+// ═════════════════════════════════════════════════════════════════════════════
+let _bookTargetsArr = null;
+let _logoTargetsArr = null;
+let _phaseInited = {};
+
+function updatePhases(elapsed, t, ts) {
+    const pos = particleMesh.geometry.attributes.position.array;
+    const col = particleMesh.geometry.attributes.color.array;
+    const sz  = particleMesh.geometry.attributes.size.array;
+    const trailPos = trailMesh.geometry.attributes.position.array;
+    const pMat = particleMesh.material;
+    const tMat = trailMesh.material;
+
+    // ── Phase 1 · 0-1 s · Digital rain + particles fade in ────────────────────
+    if (elapsed < 1000) {
+        if (!_phaseInited[1]) {
+            _phaseInited[1] = true;
+        }
+        pMat.opacity = lerp(0, 0.3, elapsed / 1000);
+        // particles scattered — no movement yet
+
+    // ── Phase 2 · 1-3 s · Book assembly ───────────────────────────────────────
+    } else if (elapsed < 3000) {
+        if (!_phaseInited[2]) {
+            _phaseInited[2] = true;
+            _bookTargetsArr = genBookTargets();
+            document.getElementById('intro-progress-wrap').classList.add('visible');
+        }
+        const p2 = (elapsed - 1000) / 2000;
+        const ease = easeInOut(p2);
+        pMat.opacity = lerp(0.3, 0.9, p2);
+        tMat.opacity = lerp(0, 0.15, p2);
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const si = i * 3;
+            const bt = _bookTargetsArr;
+            pos[si]   = lerp(pos[si],   bt[si],   0.04 + 0.03*ease);
+            pos[si+1] = lerp(pos[si+1], bt[si+1], 0.04 + 0.03*ease);
+            pos[si+2] = lerp(pos[si+2], bt[si+2], 0.04 + 0.03*ease);
+            // Color: blue → cyan
+            col[si]   = lerp(col[si],   0.37, 0.03);
+            col[si+1] = lerp(col[si+1], 0.65, 0.03);
+            col[si+2] = lerp(col[si+2], 0.98, 0.03);
+            sz[i] = IS_MOBILE ? lerp(sz[i], 1.2, 0.02) : lerp(sz[i], 1.6, 0.02);
+        }
+        // Gentle book rotation
+        particleMesh.rotation.y = Math.sin(elapsed * 0.0008) * 0.3;
+        particleMesh.rotation.x = Math.sin(elapsed * 0.0005) * 0.12;
+
+    // ── Phase 3 · 3-5 s · Book dissolution — pages scatter ───────────────────
+    } else if (elapsed < 5000) {
+        if (!_phaseInited[3]) {
+            _phaseInited[3] = true;
+            // Assign random scatter velocities
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const si = i * 3;
+                const angle = Math.random() * Math.PI * 2;
+                const lift  = (Math.random()-0.5)*0.8 + 0.3;
+                const speed = 0.4 + Math.random() * 1.2;
+                velocities[si]   = Math.cos(angle) * speed;
+                velocities[si+1] = lift * speed;
+                velocities[si+2] = (Math.random()-0.5) * speed * 0.6;
             }
+        }
+        const p3 = (elapsed - 3000) / 2000;
+        pMat.opacity = lerp(0.9, 0.75, p3);
+        tMat.opacity = lerp(0.15, 0.45, p3);
 
-            drawParticles();
+        particleMesh.rotation.y += 0.005;
+        particleMesh.rotation.x += 0.002;
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const si = i * 3;
+            // explode out from book
+            pos[si]   += velocities[si]   * 0.9;
+            pos[si+1] += velocities[si+1] * 0.9;
+            pos[si+2] += velocities[si+2] * 0.9;
+            // drift trails behind
+            trailPos[si]   = pos[si]   - velocities[si]   * 3;
+            trailPos[si+1] = pos[si+1] - velocities[si+1] * 3;
+            trailPos[si+2] = pos[si+2] - velocities[si+2] * 3;
+            // Color → white/bright cyan
+            col[si]   = lerp(col[si],   0.9, 0.015);
+            col[si+1] = lerp(col[si+1], 0.95, 0.015);
+            col[si+2] = lerp(col[si+2], 1.0, 0.015);
+            sz[i] = lerp(sz[i], IS_MOBILE ? 1.8 : 2.4, 0.012);
         }
 
-        // ── Burst particle effect on page flip ──
-        function spawnBurstParticles(intensity) {
-            const container = document.getElementById('intro-burst-particles');
-            if (!container) return;
-
-            const cx = window.innerWidth / 2;
-            const cy = window.innerHeight / 2;
-            const count = intensity === 2 ? 30 : 18;
-            const colors = ['#60a5fa', '#a78bfa', '#4ade80', '#fbbf24', '#f87171', '#ffffff'];
-
-            for (let i = 0; i < count; i++) {
-                const el = document.createElement('div');
-                el.className = 'burst-particle';
-
-                const size = Math.random() * 6 + 2;
-                const angle = (Math.random() * 360) * Math.PI / 180;
-                const dist = (Math.random() * 200 + 80) * (intensity === 2 ? 1.5 : 1);
-                const tx = Math.cos(angle) * dist;
-                const ty = Math.sin(angle) * dist;
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const delay = Math.random() * 0.3;
-                const dur = Math.random() * 0.6 + 0.8;
-
-                el.style.cssText = [
-                    'width:' + size + 'px',
-                    'height:' + size + 'px',
-                    'background:' + color,
-                    'left:' + (cx - size/2) + 'px',
-                    'top:' + (cy - size/2) + 'px',
-                    '--tx:' + tx + 'px',
-                    '--ty:' + ty + 'px',
-                    'animation-duration:' + dur + 's',
-                    'animation-delay:' + delay + 's',
-                    'box-shadow: 0 0 ' + (size * 2) + 'px ' + color
-                ].join(';');
-
-                container.appendChild(el);
-                setTimeout(() => el.remove(), (dur + delay + 0.2) * 1000);
-            }
+    // ── Phase 4 · 5-7 s · Spiral / helix flow ─────────────────────────────────
+    } else if (elapsed < 7000) {
+        if (!_phaseInited[4]) {
+            _phaseInited[4] = true;
+            particleMesh.rotation.set(0, 0, 0);
         }
+        const p4 = (elapsed - 5000) / 2000;
+        tMat.opacity = lerp(0.45, 0.3, p4);
+        pMat.opacity = lerp(0.75, 0.85, p4);
 
-        function forceStartApp() {
-            if (appStarted) return;
-            appStarted = true;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const si = i * 3;
+            const phase_i = (i / PARTICLE_COUNT) * Math.PI * 2;
+            const speed4  = 0.002 + (i % 7) * 0.0003;
+            // spiral
+            const angle   = elapsed * speed4 + phase_i;
+            const radius  = 30 + 40 * ((i % 100) / 100);
+            const helixY  = Math.sin(elapsed * 0.001 + phase_i * 0.3) * 25;
 
-            if (particleAnimReq) cancelAnimationFrame(particleAnimReq);
+            const tx = Math.cos(angle) * radius;
+            const ty = helixY + Math.sin(angle * 0.5 + phase_i) * 15;
+            const tz = Math.sin(angle) * radius * 0.4 + Math.cos(elapsed * 0.0006 + phase_i) * 20;
 
-            const overlay = document.getElementById('intro-overlay');
-            const ui = document.getElementById('main-ui-wrapper');
+            pos[si]   = lerp(pos[si],   tx, 0.025);
+            pos[si+1] = lerp(pos[si+1], ty, 0.025);
+            pos[si+2] = lerp(pos[si+2], tz, 0.025);
 
-            if (ui) {
-                ui.style.display = 'block';
-                void ui.offsetWidth;
-                ui.style.opacity = '1';
-            }
+            trailPos[si]   = pos[si]   - (tx - pos[si]) * 2;
+            trailPos[si+1] = pos[si+1] - (ty - pos[si+1]) * 2;
+            trailPos[si+2] = pos[si+2] - (tz - pos[si+2]) * 2;
 
-            if (overlay) {
-                overlay.style.opacity = '0';
-                setTimeout(() => {
-                    document.body.style.overflow = 'auto';
-                    overlay.remove();
-                }, 1200);
-            }
+            // Color: blue / purple swirl
+            const hue = (i / PARTICLE_COUNT + elapsed * 0.00008) % 1;
+            col[si]   = lerp(0.37, 0.65, Math.abs(Math.sin(hue * Math.PI)));
+            col[si+1] = lerp(0.55, 0.82, Math.abs(Math.cos(hue * Math.PI)));
+            col[si+2] = 0.97;
+            sz[i] = IS_MOBILE ? 1.4 : 1.8;
         }
+        // Camera drift
+        camera.position.x = Math.sin(elapsed * 0.00025) * 8;
+        camera.position.y = Math.cos(elapsed * 0.0002) * 4;
+        camera.lookAt(0, 0, 0);
 
-        // Check prefers-reduced-motion
-        const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-        const reducedMotion = motionQuery.matches;
+    // ── Phase 5 · 7-9 s · Logo convergence ────────────────────────────────────
+    } else if (elapsed < 9000) {
+        if (!_phaseInited[5]) {
+            _phaseInited[5] = true;
+            _logoTargetsArr = genLogoTargets();
+        }
+        const p5 = (elapsed - 7000) / 2000;
+        const ease5 = easeInOut(p5);
+        pMat.opacity = lerp(0.85, 1.0, p5);
+        tMat.opacity = lerp(0.3, 0.1, p5);
 
-        // Respect real-time changes
-        motionQuery.addEventListener('change', (e) => {
-            if (e.matches && !appStarted) forceStartApp();
-        });
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const si = i * 3;
+            const lt = _logoTargetsArr;
+            const speed = 0.06 + 0.04 * ease5;
+            pos[si]   = lerp(pos[si],   lt[si],   speed);
+            pos[si+1] = lerp(pos[si+1], lt[si+1], speed);
+            pos[si+2] = lerp(pos[si+2], lt[si+2], speed);
+            // Color → bright blue/white
+            col[si]   = lerp(col[si],   0.6, 0.03);
+            col[si+1] = lerp(col[si+1], 0.8, 0.03);
+            col[si+2] = lerp(col[si+2], 1.0, 0.03);
+            sz[i] = lerp(sz[i], IS_MOBILE ? 1.0 : 1.3, 0.025);
+        }
+        // Dynamic point light intensity
+        pointLight.intensity = 3 + Math.sin(elapsed * 0.005) * 1.5;
+        // Camera zoom in
+        camera.position.z = lerp(camera.position.z, 75, 0.015);
+        camera.position.x = lerp(camera.position.x, 0, 0.05);
+        camera.position.y = lerp(camera.position.y, 0, 0.05);
+        camera.lookAt(0, 0, 0);
 
-        window.addEventListener('load', () => {
-            if (reducedMotion) {
-                forceStartApp();
-                return;
-            }
-
-            document.body.style.overflow = 'hidden';
-            initParticles();
-
-            // ── Animation timeline (8 seconds total) ──
-            // T=0.5s : bg gradient fades in
-            // T=1.0s : book appears with entrance animation
-            // T=2.2s : page 1 flips → BOOKLYFI + burst particles
-            // T=4.2s : page 2 flips → TURBO CHARGED + more burst particles
-            // T=6.2s : glow pulse blooms
-            // T=7.8s : fade to UI
-
+    // ── Phase 6 · 9-10 s · Text assembly ─────────────────────────────────────
+    } else if (elapsed < 10000) {
+        if (!_phaseInited[6]) {
+            _phaseInited[6] = true;
+            // Show logo text container
+            document.getElementById('intro-logo-text').classList.add('visible');
+            document.getElementById('intro-loading-text').classList.add('visible');
+            // Stagger letters
+            const letters = document.querySelectorAll('#intro-logo-text .letter');
+            letters.forEach((el, i) => {
+                setTimeout(() => el.classList.add('in'), i * 80);
+            });
+            // Subtitle
             setTimeout(() => {
-                const bg = document.getElementById('intro-bg');
-                if (bg) bg.classList.add('visible');
-            }, 500);
+                document.getElementById('intro-subtitle-text').classList.add('visible');
+            }, 700);
+        }
+        const p6 = (elapsed - 9000) / 1000;
+        pMat.opacity = lerp(1.0, 0.55, p6);
+        tMat.opacity = lerp(0.1, 0.0, p6);
+        // subtle orbit around logo
+        const angle6 = elapsed * 0.001;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const si = i * 3;
+            const lt = _logoTargetsArr;
+            pos[si]   = lerp(pos[si],   lt[si],   0.03);
+            pos[si+1] = lerp(pos[si+1], lt[si+1], 0.03);
+            pos[si+2] = lerp(pos[si+2], lt[si+2], 0.03);
+        }
+        pointLight.intensity = 4 + Math.sin(elapsed * 0.01) * 2;
 
-            setTimeout(() => {
-                const stage = document.getElementById('intro-book-stage');
-                if (stage) stage.classList.add('visible');
-            }, 1000);
+    // ── Phase 7 · 10-11 s · Glow crescendo ────────────────────────────────────
+    } else if (elapsed < 11000) {
+        if (!_phaseInited[7]) {
+            _phaseInited[7] = true;
+            document.getElementById('intro-bloom-overlay').classList.add('glow');
+        }
+        const p7 = (elapsed - 10000) / 1000;
+        pMat.opacity = lerp(0.55, 0.2, p7);
+        // Pulse point light
+        pointLight.intensity = 6 + Math.sin(elapsed * 0.03) * 3;
 
-            setTimeout(() => {
-                const page = document.getElementById('intro-page-1');
-                if (page) page.classList.add('flipped');
-                spawnBurstParticles(1);
-                setTimeout(() => {
-                    const t = document.getElementById('intro-text-1');
-                    if (t) t.classList.add('visible');
-                }, 600);
-            }, 2200);
+    // ── Phase 8 · 11-12 s · Fade out ─────────────────────────────────────────
+    } else if (elapsed < 12000) {
+        if (!_phaseInited[8]) {
+            _phaseInited[8] = true;
+            document.getElementById('intro-fade-overlay').classList.add('fading');
+        }
+        const p8 = (elapsed - 11000) / 1000;
+        pMat.opacity = Math.max(0, lerp(0.2, 0, p8));
+        tMat.opacity = 0;
 
-            setTimeout(() => {
-                const page = document.getElementById('intro-page-2');
-                if (page) page.classList.add('flipped');
-                spawnBurstParticles(2);
-                setTimeout(() => {
-                    const t = document.getElementById('intro-text-2');
-                    if (t) t.classList.add('visible');
-                }, 600);
-            }, 4200);
+    // ── Done ─────────────────────────────────────────────────────────────────
+    } else {
+        forceStartApp();
+        return;
+    }
 
-            setTimeout(() => {
-                const glow = document.getElementById('intro-glow-pulse');
-                if (glow) {
-                    glow.classList.add('pulse');
-                    spawnBurstParticles(1);
-                    setTimeout(() => {
-                        glow.style.transition = 'opacity 0.8s ease';
-                        glow.style.opacity = '0';
-                    }, 800);
-                }
-            }, 6200);
+    // Invalidate buffer geometries
+    particleMesh.geometry.attributes.position.needsUpdate = true;
+    particleMesh.geometry.attributes.color.needsUpdate    = true;
+    particleMesh.geometry.attributes.size.needsUpdate     = true;
+    if (_phaseInited[3] || _phaseInited[4]) {
+        trailMesh.geometry.attributes.position.needsUpdate = true;
+    }
+}
 
-            setTimeout(() => {
-                forceStartApp();
-            }, 7800);
-        });
+// ═════════════════════════════════════════════════════════════════════════════
+//  PUBLIC: Skip & Force Start
+// ═════════════════════════════════════════════════════════════════════════════
+window.skipIntro = function() {
+    forceStartApp();
+};
 
-        // Absolute fail-safe
-        setTimeout(() => {
-            if (!appStarted) forceStartApp();
-        }, 11000);
-    </script>
+function forceStartApp() {
+    if (appStarted) return;
+    appStarted = true;
+    if (rafId) cancelAnimationFrame(rafId);
+
+    // Fade then remove overlay
+    const overlay = document.getElementById('intro-overlay');
+    const fadeEl  = document.getElementById('intro-fade-overlay');
+    if (fadeEl) fadeEl.classList.add('fading');
+    setTimeout(() => {
+        if (overlay) overlay.remove();
+        const mainUI = document.getElementById('main-ui-wrapper');
+        if (mainUI) {
+            mainUI.style.display = 'block';
+            requestAnimationFrame(() => {
+                mainUI.style.opacity = '1';
+                document.body.style.overflow = '';
+            });
+        }
+        // Cleanup Three.js
+        if (renderer) {
+            renderer.dispose();
+            if (particleMesh) { particleMesh.geometry.dispose(); particleMesh.material.dispose(); }
+            if (trailMesh) { trailMesh.geometry.dispose(); trailMesh.material.dispose(); }
+        }
+    }, 1300);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  RESIZE
+// ═════════════════════════════════════════════════════════════════════════════
+function onResize() {
+    const W = window.innerWidth, H = window.innerHeight;
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W, H);
+    rainCanvas.width  = W;
+    rainCanvas.height = H;
+    initRain();
+}
+window.addEventListener('resize', onResize, {passive: true});
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  BOOT
+// ═════════════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function bootIntro() {
+    document.body.style.overflow = 'hidden';
+
+    // Show skip button after 2 s
+    setTimeout(() => {
+        const btn = document.getElementById('skip-intro-btn');
+        if (btn) btn.style.display = 'block';
+    }, 2000);
+
+    initRain();
+    initThree();
+    requestAnimationFrame(animate);
+
+    // Hard failsafe — always show UI after 14s
+    setTimeout(() => { if (!appStarted) forceStartApp(); }, 14000);
+}, {once: true});
+
+})();
+</script>
 """
-
