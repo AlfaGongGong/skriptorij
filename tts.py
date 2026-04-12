@@ -35,7 +35,7 @@ def _url_gemini_base(model, key):
 
 MIN_GAP = 0.4
 _LAST_CALLS = {}
-_GLOBAL_DOOR = asyncio.Lock()
+_GLOBAL_DOOR = None
 
 
 class TTSProcessor:
