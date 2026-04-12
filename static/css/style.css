@@ -51,6 +51,17 @@
 
     /* Logo gradient (dark) */
     --logo-stroke-width: 0.7;
+
+    /* Alias variables used throughout the stylesheet */
+    --bg-primary:      #020617;
+    --text-primary:    #cbd5e1;
+    --text-secondary:  #475569;
+    --accent-primary:  #00c8ff;
+    --accent-secondary: #00FF41;
+    --border:          #1e293b;
+    --radius-sm:       6px;
+    --radius-md:       8px;
+    --input-bg:        transparent;
 }
 
 body.light-theme {
@@ -100,6 +111,16 @@ body.light-theme {
 
     /* Input background */
     --input-bg: #ffffff;
+
+    /* Alias variables used throughout the stylesheet */
+    --bg-primary:      #f1f5f9;
+    --text-primary:    #1e293b;
+    --text-secondary:  #64748b;
+    --accent-primary:  #0369a1;
+    --accent-secondary: #15803d;
+    --border:          #cbd5e1;
+    --radius-sm:       6px;
+    --radius-md:       8px;
 }
 
 /* ============================================================================
