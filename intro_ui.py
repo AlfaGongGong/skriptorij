@@ -131,10 +131,15 @@ INTRO_HTML = """
             
             if (!isScreenFull && drops[columns - 1] * fontSize > canvas.height) {
                 isScreenFull = true;
-                fullFrameStart = frame; 
+                fullFrameStart = frame;
+                // Odmah redistribuiraj sve kapljice nasumično po visini ekrana
+                // za ravnomjeran kontinuiran tok u fazi normalnog pada
+                for (let k = 0; k < columns; k++) {
+                    drops[k] = -Math.floor(Math.random() * canvas.height / fontSize);
+                }
             }
             
-            let glitchStart = isScreenFull ? fullFrameStart + 100 : 999999; 
+            let glitchStart = isScreenFull ? fullFrameStart + 180 : 999999; 
             let quillStart = glitchStart + 60;
             let exitStart = quillStart + 180; 
             let evolutionStart = exitStart + Math.floor(columns * 1.5) + 60; 
@@ -200,18 +205,22 @@ INTRO_HTML = """
                 
                 if (yPos > canvas.height) {
                     if (frame > exitStart) {
+                        // Izlazni val lijevo → desno: kolona 0 izlazi prva
                         let waveDelay = canvas.width > 768 ? 1.0 : 1.5;
-                        let myExitFrame = exitStart + (columns - 1 - i) * waveDelay;
+                        let myExitFrame = exitStart + i * waveDelay;
                         
                         if (frame > myExitFrame && !isInsideQuill(x, 0)) {
                             drops[i] = -999; 
                         } else {
                             drops[i] = Math.random() * -20; 
                         }
-                    } else if (isScreenFull) {
-                        drops[i] = Math.random() * -50; 
+                    } else if (!isScreenFull) {
+                        // Faza 1 — jedinstven ulazni val: parkiraj kolonu daleko iznad
+                        // ekrana da se ne pojavi ponovo dok traje dijagonalni prolaz
+                        drops[i] = -500;
                     } else {
-                        drops[i] = 0; 
+                        // Faza 2/3 — normalni pad: kratko čekanje za kontinuiran tok
+                        drops[i] = Math.random() * -10; 
                     }
                 } else {
                     drops[i] += (frame > exitStart) ? 1.5 : 0.8;
