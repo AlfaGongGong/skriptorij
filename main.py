@@ -98,15 +98,15 @@ def upload_book():
 
 @app.route('/api/dev_models')
 def dev_models():
-    """Čita modele iz dev_api.json — vraća provajdere + QUAD_CORE opciju."""
+    """Čita modele iz dev_api.json — vraća provajdere + V8_TURBO opciju."""
     try:
         with open('dev_api.json') as f:
             data = json.load(f)
         skip = {'EPUB_BACKGROUND', 'PROXIES', 'PROXIES_OFF'}
-        models = ['QUAD_CORE'] + [k for k in data.keys() if k.upper() not in skip]
+        models = ['V8_TURBO'] + [k for k in data.keys() if k.upper() not in skip]
         return jsonify(models)
     except Exception:
-        return jsonify(['QUAD_CORE', 'GEMINI', 'GROQ', 'CEREBRAS'])
+        return jsonify(['V8_TURBO', 'GEMINI', 'GROQ', 'CEREBRAS'])
 
 @app.route('/api/status')
 def get_status():
@@ -135,7 +135,7 @@ def start_processing():
         if not data or 'book' not in data:
             return (jsonify({'error': 'Nije odabran fajl'}), 400)
         book = secure_filename(data['book'])
-        model = data.get('model', 'QUAD_CORE')
+        model = data.get('model', 'V8_TURBO')
         mode = data.get('mode', 'PREVOD').upper()
         book_path = _safe_path(book)
         if not os.path.exists(book_path):
