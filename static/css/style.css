@@ -1175,8 +1175,8 @@ body.light-theme .fleet-rate-bar-bg {
 
 /* Disabled key pill */
 .fleet-key-disabled {
-    opacity: 0.45;
-    filter: grayscale(0.7);
+    opacity: 0.6;
+    filter: grayscale(0.6);
     animation: none !important;
     box-shadow: none !important;
 }

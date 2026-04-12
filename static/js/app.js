@@ -614,7 +614,7 @@ function updateFleetPool() {
                             +   '<span class="fleet-key-status-badge fleet-badge-' + st.cls + '">'
                             +     st.icon + '\u00a0' + st.label
                             +   '</span>'
-                            +   '<button class="fleet-toggle-btn" title="' + (k.disabled ? 'Uključi ključ' : 'Isključi ključ') + '" aria-label="' + (k.disabled ? 'Uključi' : 'Isključi') + '">'
+                            +   '<button class="fleet-toggle-btn" title="' + (k.disabled ? 'Uključi ključ' : 'Isključi ključ') + '" aria-label="' + (k.disabled ? 'Uključi ključ' : 'Isključi ključ') + '">'
                             +     (k.disabled ? '🟢' : '🔴')
                             +   '</button>'
                             + '</div>'

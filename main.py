@@ -142,8 +142,8 @@ def toggle_fleet_key():
         if new_state is None:
             return (jsonify({'error': 'Ključ nije pronađen'}), 404)
         return jsonify({'provider': data['provider'], 'key': data['key'], 'disabled': new_state})
-    except Exception as e:
-        return (jsonify({'error': str(e)}), 500)
+    except Exception:
+        return (jsonify({'error': 'Interna greška pri toggleu ključa'}), 500)
 
 @app.route('/api/start', methods=['POST'])
 def start_processing():
