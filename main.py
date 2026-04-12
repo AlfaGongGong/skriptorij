@@ -18,12 +18,8 @@ from app import app
 from config.settings import PORT, SHARED_STATS, SHARED_CONTROLS
 from config.logging_config import configure_logging
 
-# Introspect intro
-try:
-    from intro_ui import INTRO_HTML as _INTRO_HTML  # noqa: F401
-    _INTRO_LOADED = True
-except ImportError:
-    _INTRO_LOADED = False
+# Introspect intro — standalone /intro route is always active via app.py
+_INTRO_LOADED = True
 
 
 # ============================================================================
