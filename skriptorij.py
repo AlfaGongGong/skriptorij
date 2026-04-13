@@ -23,7 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString, XMLParsedAsHTMLWarning
 from api_fleet import FleetManager, register_active_fleet
-from css_stripper import apply_uniform_styling, SKRIPTORIJ_ORNAMENT
+from css_stripper import apply_uniform_styling, remap_html_classes, SKRIPTORIJ_ORNAMENT
 
 try:
     import mobi
@@ -1357,9 +1357,10 @@ class SkriptorijAllInOne:
                     ):
                         if f.suffix.lower() in [".html", ".htm", ".xhtml", ".xml"]:
                             try:
-                                soup = BeautifulSoup(
+                                raw = remap_html_classes(
                                     f.read_text("utf-8", errors="ignore"), "html.parser"
                                 )
+                                soup = BeautifulSoup(raw, "html.parser")
                                 self.apply_dropcap_and_toc(soup, f, samo_dropcap=True)
                                 z.writestr(
                                     str(f.relative_to(self.work_dir)),
