@@ -8,7 +8,6 @@
 
 import argparse
 import json
-import os
 import sys
 import zipfile
 from collections import defaultdict
@@ -275,12 +274,12 @@ def process_directory(epub_dir: Path, dry_run: bool = False,
     return serializable
 
 
-def replace_epub_css_files(epub_dir: Path) -> str | None:
+def replace_epub_css_files(epub_dir: Path) -> str:
     """
     Zamijeni sve CSS fajlove u epub_dir uniformnim CSS-om.
 
     Ako nema CSS fajlova, kreira novi na standardnoj putanji.
-    Vraća relativnu putanju primarnog CSS fajla (ili None pri grešci).
+    Vraća relativnu putanju primarnog CSS fajla.
     """
     css_files = sorted(epub_dir.rglob("*.css"))
 
@@ -297,7 +296,7 @@ def replace_epub_css_files(epub_dir: Path) -> str | None:
         primary_css.write_text(SKRIPTORIJ_UNIFORM_CSS, encoding="utf-8")
         print(f"  [CSS] Kreiran novi: {primary_css.relative_to(epub_dir)}")
 
-    return str(primary_css.relative_to(epub_dir)).replace("\\", "/")
+    return primary_css.relative_to(epub_dir).as_posix()
 
 
 def ensure_css_link(html_path: Path, css_abs_path: Path) -> None:
@@ -310,12 +309,11 @@ def ensure_css_link(html_path: Path, css_abs_path: Path) -> None:
     parser = _choose_parser(html_path)
     soup = BeautifulSoup(text, parser)
 
-    css_rel = os.path.relpath(css_abs_path, html_path.parent).replace("\\", "/")
+    css_rel = css_abs_path.relative_to(html_path.parent, walk_up=True).as_posix()
 
     existing = soup.find("link", attrs={"rel": "stylesheet"})
     if existing:
         existing["href"] = css_rel
-        existing.attrs.pop("type", None)
         existing["type"] = "text/css"
     else:
         head = soup.find("head")
@@ -336,18 +334,27 @@ def remap_html_classes(html_text: str, parser: str) -> str:
       • h1/h2/h3/h4/h5/h6 → skr-heading
       • p                  → skr-body
       • ostalo             → bez klase
-    Inline style atributi se također brišu.
+
+    Uniformne skr-* klase (dodane od strane skriptorija) se čuvaju.
+    Inline style atributi se brišu.
     """
     soup = BeautifulSoup(html_text, parser)
 
     for tag in soup.find_all(True):
         tag.attrs.pop("style", None)
-        tag.attrs.pop("class", None)
 
-        if tag.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
-            tag["class"] = ["skr-heading"]
-        elif tag.name == "p":
-            tag["class"] = ["skr-body"]
+        existing_classes = tag.get("class") or []
+        # Preserve any classes already added by skriptorij (skr-*)
+        skr_classes = [c for c in existing_classes if c.startswith("skr-")]
+
+        if skr_classes:
+            tag["class"] = skr_classes
+        else:
+            tag.attrs.pop("class", None)
+            if tag.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+                tag["class"] = ["skr-heading"]
+            elif tag.name == "p":
+                tag["class"] = ["skr-body"]
 
     return str(soup)
 
