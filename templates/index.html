@@ -40,28 +40,8 @@
             <header class="app-header" role="banner">
                 <div class="header-brand">
                     <div id="status-dot" class="dot dot-idle" aria-hidden="true"></div>
-                    <!-- BOOKLYFI Logo: book + lightning bolt -->
-                    <svg class="header-logo" viewBox="0 0 32 32" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-label="BOOKLYFI logo" role="img">
-                        <defs>
-                            <linearGradient id="headerLogoGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%"   stop-color="#3b82f6"/>
-                                <stop offset="50%"  stop-color="#8b5cf6"/>
-                                <stop offset="100%" stop-color="#06b6d4"/>
-                            </linearGradient>
-                            <linearGradient id="headerLogoGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%"   stop-color="#2563eb"/>
-                                <stop offset="50%"  stop-color="#7c3aed"/>
-                                <stop offset="100%" stop-color="#0891b2"/>
-                            </linearGradient>
-                        </defs>
-                        <!-- Book silhouette -->
-                        <rect x="4" y="4" width="16" height="24" rx="2"/>
-                        <line x1="4" y1="9" x2="20" y2="9"/>
-                        <line x1="7" y1="13" x2="17" y2="13"/>
-                        <line x1="7" y1="17" x2="14" y2="17"/>
-                        <!-- Lightning bolt (AI element) -->
-                        <polygon points="22,4 16,18 21,18 15,28 28,13 23,13"/>
-                    </svg>
+                    <!-- V8 Turbo Book logo -->
+                    <img class="header-logo" src="{{ url_for('static', filename='img/V8_book_turbo.svg') }}" alt="Skriptorij V8 Turbo logo" />
                     <h1>BOOKLYFI</h1>
                     <span class="badge-v6">⚡ TURBO CHARGED</span>
                     <span class="header-tagline">AI-Powered Book Translation &amp; Refinement Engine</span>
