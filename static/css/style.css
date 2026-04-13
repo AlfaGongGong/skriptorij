@@ -78,7 +78,6 @@
     --neon-box-magenta: 0 0 8px rgba(167,139,250,0.4), 0 0 20px rgba(167,139,250,0.2);
 
     /* Logo gradient (dark) */
-    --logo-stroke-width: 0.7;
 
     /* Alias variables used throughout the stylesheet */
     --bg-primary:      #020617;
@@ -158,8 +157,6 @@ body.light-theme {
     --neon-box-amber:   var(--neon-box-outline);
     --neon-box-red:     var(--neon-box-outline);
     --neon-box-magenta: var(--neon-box-outline);
-
-    --logo-stroke-width: 0.9;
 }
 
 /* ============================================================================
@@ -320,12 +317,11 @@ body.light-theme .app-header h1 {
     animation: none;
 }
 
-/* BOOKLYFI logo mark in header */
+/* V8 Turbo Book logo in header */
 .header-logo {
     width: 36px;
     height: 36px;
     flex-shrink: 0;
-    stroke-width: var(--logo-stroke-width);
     filter: drop-shadow(0 0 6px rgba(96,165,250,0.5));
     transition: filter 0.3s ease;
 }
@@ -336,20 +332,6 @@ body:not(.light-theme) .header-logo {
 
 body.light-theme .header-logo {
     filter: drop-shadow(0 0 3px rgba(37,99,235,0.4));
-}
-
-.header-logo path,
-.header-logo line,
-.header-logo rect,
-.header-logo polygon {
-    stroke: url(#headerLogoGradDark);
-}
-
-body.light-theme .header-logo path,
-body.light-theme .header-logo line,
-body.light-theme .header-logo rect,
-body.light-theme .header-logo polygon {
-    stroke: url(#headerLogoGradLight);
 }
 
 .header-brand {
