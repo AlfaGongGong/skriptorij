@@ -43,7 +43,8 @@ class IntroAnimation {
         this.IS_MOBILE      = window.innerWidth < 640;
         this.PARTICLE_COUNT = this.IS_MOBILE ? 2200 : 5000;
         this.TRAIL_COUNT    = this.IS_MOBILE ? 600  : 1400;
-        this.TOTAL_DURATION = 12000; // ms
+        this.TOTAL_DURATION      = 12000; // ms
+        this.PRELOAD_FADE_MS     = 400;   // must match CSS transition on #intro-pre-load
     }
 
     // =========================================================================
@@ -73,10 +74,6 @@ class IntroAnimation {
             return;
         }
 
-        // Hide the CSS pre-loader — the real animation is starting
-        const preLoad = document.getElementById('intro-pre-load');
-        if (preLoad) preLoad.classList.add('hidden');
-
         document.body.style.overflow = 'hidden';
 
         // Show skip button after 2 s
@@ -85,8 +82,18 @@ class IntroAnimation {
             if (btn) btn.style.display = 'block';
         }, 2000);
 
-        this.rain = new DigitalRain(document.getElementById('intro-rain-canvas'));
-        this._initThree();
+        try {
+            this.rain = new DigitalRain(document.getElementById('intro-rain-canvas'));
+            this._initThree();
+        } catch (e) {
+            // Three.js initialisation failed — keep dots visible as fallback and redirect
+            this._restorePreload();
+            setTimeout(() => this._finish(), 2000);
+            return;
+        }
+
+        // Kick off the loop; the pre-loader dots are hidden only after the first frame
+        // successfully renders so the user always sees the CSS fallback briefly.
         this.rafId = requestAnimationFrame(ts => this._animate(ts));
 
         // Hard failsafe — always proceed after 14 s
@@ -239,7 +246,32 @@ class IntroAnimation {
 
         if (this.rain && this.rain.active) this.rain.render(elapsed);
 
-        this.renderer.render(this.scene, this.camera);
+        try {
+            this.renderer.render(this.scene, this.camera);
+        } catch (e) {
+            // WebGL render failed — cancel loop, restore dots, redirect shortly
+            cancelAnimationFrame(this.rafId);
+            this._restorePreload();
+            if (!this.appStarted) setTimeout(() => this._finish(), 2000);
+            return;
+        }
+
+        // Hide the CSS pre-loader on the first successfully rendered frame
+        if (!this._preloadHidden) {
+            this._preloadHidden = true;
+            const preLoad = document.getElementById('intro-pre-load');
+            if (preLoad) preLoad.classList.add('fading-out');
+            setTimeout(() => {
+                if (preLoad) preLoad.classList.add('hidden');
+            }, this.PRELOAD_FADE_MS);
+        }
+    }
+
+    _restorePreload() {
+        const preLoad = document.getElementById('intro-pre-load');
+        if (preLoad) {
+            preLoad.classList.remove('fading-out', 'hidden');
+        }
     }
 
     _updateProgress(t) {
