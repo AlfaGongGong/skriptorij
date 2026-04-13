@@ -1599,6 +1599,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 f"📄 Poglavlje {i}/{len(engine.html_files)}: {hf.name}", "system"
             )
             await engine.process_single_file_worker(hf)
+            engine.buildlive_epub()
 
     asyncio.run(main_loop())
 
