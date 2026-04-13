@@ -549,12 +549,13 @@ const FLEET_PROV_ICONS = {
 };
 
 function _fleetKeyStatus(k) {
+    if (k.disabled) {
+        return { cls: 'blokiran', label: 'BLOKIRAN', icon: '🔴' };
+    }
     if (k.available) {
         return { cls: 'aktivan', label: 'AKTIVAN', icon: '✅' };
     }
-    if (k.errors > 2) {
-        return { cls: 'blokiran', label: 'BLOKIRAN', icon: '🔴' };
-    }
+    // Na cooldownu (rate-limit ili privremena greška)
     const secs = k.cooldown_remaining > 0 ? ' ' + Math.ceil(k.cooldown_remaining) + 's' : '';
     return { cls: 'limitiran', label: 'LIMITIRAN' + secs, icon: '⏳' };
 }

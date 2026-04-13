@@ -1403,7 +1403,12 @@ body.light-theme .fleet-key-disabled {
 }
 
 /* ── Fleet key management table ───────────────────────────────────── */
+#keys-content {
+    overflow: hidden;
+}
+
 #keys-list {
+    display: block;
     max-height: 320px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
