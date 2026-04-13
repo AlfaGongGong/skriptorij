@@ -797,15 +797,15 @@ class SkriptorijAllInOne:
                 try:
                     err_body = resp.json()
                     err_msg = err_body.get("error", {}).get("message", "")
-                    # Gemini ponekad piše "Retry after Xs" u poruci
-                    m = re.search(r"retry\s+after\s+(\d+)", err_msg, re.IGNORECASE)
+                    # Gemini ponekad piše "Retry after Xs" u poruci (cijeli i decimalni)
+                    m = re.search(r"retry\s+after\s+([\d.]+)", err_msg, re.IGNORECASE)
                     if m:
                         body_retry = float(m.group(1))
-                    # Gemini može vratiti i "retryDelay" u details
+                    # Gemini može vratiti i "retryDelay" u details (npr. "60s" ili "60.5s")
                     for detail in err_body.get("error", {}).get("details", []):
                         rd = detail.get("retryDelay", "")
                         if rd:
-                            m2 = re.search(r"(\d+)", str(rd))
+                            m2 = re.search(r"([\d.]+)", str(rd))
                             if m2:
                                 body_retry = max(body_retry, float(m2.group(1)))
                                 break
@@ -879,7 +879,7 @@ class SkriptorijAllInOne:
                 # RPM: ako je < 50 % minutnog kvota preostalo, rasporedi ravnomjernije
                 if key_state.rate_limit_minute > 0 and key_state.remaining_minute > 0:
                     if key_state.remaining_minute < key_state.rate_limit_minute * 0.5:
-                        safe_rpm_gap = 60.0 / max(key_state.remaining_minute, 1)
+                        safe_rpm_gap = 60.0 / key_state.remaining_minute
                         gap = max(gap, safe_rpm_gap)
                 # RPD: ako je < 50 % dnevnog kvota preostalo, linearno povećaj gap
                 if key_state.rate_limit_day > 0 and key_state.remaining_day > 0:

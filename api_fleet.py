@@ -25,6 +25,10 @@ _DEFAULT_MODELS = {
 # Cooldown nakon rate-limit greške (sekunde)
 _COOLDOWN_429 = 90
 _COOLDOWN_ERROR = 30
+# Faktor eskalacije cooldowna po grešci i maksimalni cooldown/backoff
+_COOLDOWN_ESCALATION = 1.5
+_COOLDOWN_MAX = 600.0
+_BACKOFF_MAX = 300.0
 
 # ------------------------------------------------------------------ #
 # Modul-razinski singleton — dijeli stanje s web endpointima
@@ -90,10 +94,10 @@ class _KeyState:
 
     def put_on_cooldown(self, seconds: float):
         # Eskalacija: svaka naredna 429 na istom ključu povećava cooldown
-        # (× 1.5 po grešci, max 10 min). Sprječava blokadu ključa.
-        escalated = min(seconds * (1.5 ** max(0, self.errors - 1)), 600.0)
+        # (_COOLDOWN_ESCALATION po grešci, max _COOLDOWN_MAX). Sprječava blokadu ključa.
+        escalated = min(seconds * (_COOLDOWN_ESCALATION ** max(0, self.errors - 1)), _COOLDOWN_MAX)
         self.cooldown_until = time.time() + escalated
-        self.backoff = min(self.backoff * 2, 300.0)
+        self.backoff = min(self.backoff * 2, _BACKOFF_MAX)
 
     def reset_backoff(self):
         self.backoff = max(5.0, self.backoff * 0.5)

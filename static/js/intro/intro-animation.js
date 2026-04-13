@@ -41,9 +41,9 @@ class IntroAnimation {
 
         // Responsive constants
         this.IS_MOBILE      = window.innerWidth < 640;
-        this.PARTICLE_COUNT = this.IS_MOBILE ? 2200 : 5000;
-        this.TRAIL_COUNT    = this.IS_MOBILE ? 600  : 1400;
-        this.TOTAL_DURATION      = 12000; // ms
+        this.PARTICLE_COUNT = this.IS_MOBILE ? 3500 : 9000;
+        this.TRAIL_COUNT    = this.IS_MOBILE ? 1000 : 2500;
+        this.TOTAL_DURATION      = 13000; // ms
         this.PRELOAD_FADE_MS     = 400;   // must match CSS transition on #intro-pre-load
     }
 
@@ -96,8 +96,8 @@ class IntroAnimation {
         // successfully renders so the user always sees the CSS fallback briefly.
         this.rafId = requestAnimationFrame(ts => this._animate(ts));
 
-        // Hard failsafe — always proceed after 14 s
-        setTimeout(() => { if (!this.appStarted) this._finish(); }, 14000);
+        // Hard failsafe — always proceed after 15 s
+        setTimeout(() => { if (!this.appStarted) this._finish(); }, 15000);
     }
 
     // =========================================================================
@@ -169,7 +169,7 @@ class IntroAnimation {
             this.colors[si]   = 0.37;
             this.colors[si+1] = 0.65;
             this.colors[si+2] = 0.98;
-            this.sizes[i] = this.IS_MOBILE ? 1.2 : 1.6;
+            this.sizes[i] = this.IS_MOBILE ? 0.7 : 0.9;
         }
 
         geo.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
@@ -177,7 +177,7 @@ class IntroAnimation {
         geo.setAttribute('size',     new THREE.BufferAttribute(this.sizes,     1));
 
         const mat = new THREE.PointsMaterial({
-            size:          this.IS_MOBILE ? 1.4 : 1.8,
+            size:          this.IS_MOBILE ? 0.8 : 1.0,
             vertexColors:  true,
             transparent:   true,
             opacity:       0,
@@ -204,7 +204,7 @@ class IntroAnimation {
             tc[i*3]   = 0.02;
             tc[i*3+1] = 0.71;
             tc[i*3+2] = 0.83;
-            ts[i] = this.IS_MOBILE ? 0.6 : 0.9;
+            ts[i] = this.IS_MOBILE ? 0.4 : 0.6;
         }
 
         geo.setAttribute('position', new THREE.BufferAttribute(this.trails, 3));
@@ -212,7 +212,7 @@ class IntroAnimation {
         geo.setAttribute('size',     new THREE.BufferAttribute(ts, 1));
 
         const mat = new THREE.PointsMaterial({
-            size:          0.9,
+            size:          0.6,
             vertexColors:  true,
             transparent:   true,
             opacity:       0,
@@ -295,15 +295,15 @@ class IntroAnimation {
         if (elapsed < 1000) {
             pMat.opacity = lerp(0, 0.6, elapsed / 1000);
 
-        // ── Phase 2 · 1-3 s · Book assembly ──────────────────────────────────
-        } else if (elapsed < 3000) {
+        // ── Phase 2 · 1-4 s · Book assembly (usporen za jasniju siluetu) ────────
+        } else if (elapsed < 4000) {
             if (!this._phaseInited[2]) {
                 this._phaseInited[2]  = true;
                 this._bookTargetsArr  = genBookTargets(this.PARTICLE_COUNT);
                 const pw = document.getElementById('intro-progress-wrap');
                 if (pw) pw.classList.add('visible');
             }
-            const p2   = (elapsed - 1000) / 2000;
+            const p2   = (elapsed - 1000) / 3000;
             const ease = this._easeInOut(p2);
             pMat.opacity = lerp(0.6, 0.9, p2);
             tMat.opacity = lerp(0, 0.15, p2);
@@ -311,20 +311,20 @@ class IntroAnimation {
             const bt = this._bookTargetsArr;
             for (let i = 0; i < this.PARTICLE_COUNT; i++) {
                 const si = i * 3;
-                const sp = 0.04 + 0.03 * ease;
+                const sp = 0.03 + 0.02 * ease;
                 pos[si]   = lerp(pos[si],   bt[si],   sp);
                 pos[si+1] = lerp(pos[si+1], bt[si+1], sp);
                 pos[si+2] = lerp(pos[si+2], bt[si+2], sp);
                 col[si]   = lerp(col[si],   0.37, 0.03);
                 col[si+1] = lerp(col[si+1], 0.65, 0.03);
                 col[si+2] = lerp(col[si+2], 0.98, 0.03);
-                sz[i] = this.IS_MOBILE ? lerp(sz[i], 1.2, 0.02) : lerp(sz[i], 1.6, 0.02);
+                sz[i] = this.IS_MOBILE ? lerp(sz[i], 0.7, 0.015) : lerp(sz[i], 0.9, 0.015);
             }
             this.particleMesh.rotation.y = Math.sin(elapsed * 0.0008) * 0.3;
             this.particleMesh.rotation.x = Math.sin(elapsed * 0.0005) * 0.12;
 
-        // ── Phase 3 · 3-5 s · Dissolution — pages scatter ────────────────────
-        } else if (elapsed < 5000) {
+        // ── Phase 3 · 4-6 s · Dissolution — pages scatter ────────────────────
+        } else if (elapsed < 6000) {
             if (!this._phaseInited[3]) {
                 this._phaseInited[3] = true;
                 for (let i = 0; i < this.PARTICLE_COUNT; i++) {
@@ -337,7 +337,7 @@ class IntroAnimation {
                     this.velocities[si+2] = (Math.random() - 0.5) * speed * 0.6;
                 }
             }
-            const p3 = (elapsed - 3000) / 2000;
+            const p3 = (elapsed - 4000) / 2000;
             pMat.opacity = lerp(0.9, 0.75, p3);
             tMat.opacity = lerp(0.15, 0.45, p3);
             this.particleMesh.rotation.y += 0.005;
@@ -356,16 +356,16 @@ class IntroAnimation {
                 col[si]   = lerp(col[si],   0.9,  0.015);
                 col[si+1] = lerp(col[si+1], 0.95, 0.015);
                 col[si+2] = lerp(col[si+2], 1.0,  0.015);
-                sz[i] = lerp(sz[i], this.IS_MOBILE ? 1.8 : 2.4, 0.012);
+                sz[i] = lerp(sz[i], this.IS_MOBILE ? 1.2 : 1.6, 0.012);
             }
 
-        // ── Phase 4 · 5-7 s · Spiral / helix flow ────────────────────────────
-        } else if (elapsed < 7000) {
+        // ── Phase 4 · 6-8 s · Spiral / helix flow ────────────────────────────
+        } else if (elapsed < 8000) {
             if (!this._phaseInited[4]) {
                 this._phaseInited[4] = true;
                 this.particleMesh.rotation.set(0, 0, 0);
             }
-            const p4 = (elapsed - 5000) / 2000;
+            const p4 = (elapsed - 6000) / 2000;
             tMat.opacity = lerp(0.45, 0.3, p4);
             pMat.opacity = lerp(0.75, 0.85, p4);
 
@@ -391,19 +391,19 @@ class IntroAnimation {
                 col[si]   = lerp(0.37, 0.65, Math.abs(Math.sin(hue * Math.PI)));
                 col[si+1] = lerp(0.55, 0.82, Math.abs(Math.cos(hue * Math.PI)));
                 col[si+2] = 0.97;
-                sz[i] = this.IS_MOBILE ? 1.4 : 1.8;
+                sz[i] = this.IS_MOBILE ? 0.8 : 1.0;
             }
             this.camera.position.x = Math.sin(elapsed * 0.00025) * 8;
             this.camera.position.y = Math.cos(elapsed * 0.0002)  * 4;
             this.camera.lookAt(0, 0, 0);
 
-        // ── Phase 5 · 7-9 s · Logo convergence ───────────────────────────────
-        } else if (elapsed < 9000) {
+        // ── Phase 5 · 8-10 s · Logo convergence ──────────────────────────────
+        } else if (elapsed < 10000) {
             if (!this._phaseInited[5]) {
                 this._phaseInited[5] = true;
                 this._logoTargetsArr = genLogoTargets(this.PARTICLE_COUNT);
             }
-            const p5    = (elapsed - 7000) / 2000;
+            const p5    = (elapsed - 8000) / 2000;
             const ease5 = this._easeInOut(p5);
             pMat.opacity = lerp(0.85, 1.0, p5);
             tMat.opacity = lerp(0.3,  0.1, p5);
@@ -418,7 +418,7 @@ class IntroAnimation {
                 col[si]   = lerp(col[si],   0.6, 0.03);
                 col[si+1] = lerp(col[si+1], 0.8, 0.03);
                 col[si+2] = lerp(col[si+2], 1.0, 0.03);
-                sz[i]     = lerp(sz[i], this.IS_MOBILE ? 1.0 : 1.3, 0.025);
+                sz[i]     = lerp(sz[i], this.IS_MOBILE ? 0.6 : 0.8, 0.025);
             }
             this.pointLight.intensity = 3 + Math.sin(elapsed * 0.005) * 1.5;
             this.camera.position.z    = lerp(this.camera.position.z, 75, 0.015);
@@ -426,8 +426,8 @@ class IntroAnimation {
             this.camera.position.y    = lerp(this.camera.position.y, 0,  0.05);
             this.camera.lookAt(0, 0, 0);
 
-        // ── Phase 6 · 9-10 s · Text assembly ─────────────────────────────────
-        } else if (elapsed < 10000) {
+        // ── Phase 6 · 10-11 s · Text assembly ────────────────────────────────
+        } else if (elapsed < 11000) {
             if (!this._phaseInited[6]) {
                 this._phaseInited[6] = true;
                 const logoEl = document.getElementById('intro-logo-text');
@@ -441,7 +441,7 @@ class IntroAnimation {
                     if (sub) sub.classList.add('visible');
                 }, 700);
             }
-            const p6 = (elapsed - 9000) / 1000;
+            const p6 = (elapsed - 10000) / 1000;
             pMat.opacity = lerp(1.0, 0.55, p6);
             tMat.opacity = lerp(0.1, 0.0,  p6);
 
@@ -454,25 +454,25 @@ class IntroAnimation {
             }
             this.pointLight.intensity = 4 + Math.sin(elapsed * 0.01) * 2;
 
-        // ── Phase 7 · 10-11 s · Glow crescendo ───────────────────────────────
-        } else if (elapsed < 11000) {
+        // ── Phase 7 · 11-12 s · Glow crescendo ───────────────────────────────
+        } else if (elapsed < 12000) {
             if (!this._phaseInited[7]) {
                 this._phaseInited[7] = true;
                 const bloom = document.getElementById('intro-bloom-overlay');
                 if (bloom) bloom.classList.add('glow');
             }
-            const p7 = (elapsed - 10000) / 1000;
+            const p7 = (elapsed - 11000) / 1000;
             pMat.opacity = lerp(0.55, 0.2, p7);
             this.pointLight.intensity = 6 + Math.sin(elapsed * 0.03) * 3;
 
-        // ── Phase 8 · 11-12 s · Fade out ─────────────────────────────────────
-        } else if (elapsed < 12000) {
+        // ── Phase 8 · 12-13 s · Fade out ─────────────────────────────────────
+        } else if (elapsed < 13000) {
             if (!this._phaseInited[8]) {
                 this._phaseInited[8] = true;
                 const fadeEl = document.getElementById('intro-fade-overlay');
                 if (fadeEl) fadeEl.classList.add('fading');
             }
-            const p8 = (elapsed - 11000) / 1000;
+            const p8 = (elapsed - 12000) / 1000;
             pMat.opacity = Math.max(0, lerp(0.2, 0, p8));
             tMat.opacity = 0;
 
