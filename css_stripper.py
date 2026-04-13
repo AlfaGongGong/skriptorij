@@ -8,6 +8,7 @@
 
 import argparse
 import json
+import os
 import sys
 import zipfile
 from collections import defaultdict
@@ -23,6 +24,120 @@ HTML_SUFFIXES = {".html", ".htm", ".xhtml", ".xml"}
 
 # ── Putanja do data foldera ───────────────────────────────────────────────────
 DATA_DIR = Path(__file__).parent / "data"
+
+# ── Uniformni ornament koji se ubacuje ispod naslova poglavlja ────────────────
+SKRIPTORIJ_ORNAMENT = "─── ✦ ─── ✦ ─── ✦ ───"
+
+# ── Uniformni CSS za sve knjige ───────────────────────────────────────────────
+SKRIPTORIJ_UNIFORM_CSS = """\
+/* ═══════════════════════════════════════════════════════════════
+   SKRIPTORIJ — Uniformni stil za sve knjige
+   Font: pisaća mašina | Tekst: crn, justified | Dropcap: crveni
+   ═══════════════════════════════════════════════════════════════ */
+
+@charset "UTF-8";
+
+/* Osnova dokumenta */
+html, body {
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+    font-size: 1em;
+    color: #000000;
+    background: #ffffff;
+    margin: 0;
+    padding: 0;
+    text-align: justify;
+}
+
+/* ─── Oznaka "POGLAVLJE XX" ──────────────────────────────────── */
+.skr-chapter-label {
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+    font-size: 0.85em;
+    font-weight: normal;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    text-align: center;
+    color: #000000;
+    margin: 0 0 0.8em 0;
+    text-indent: 0;
+    page-break-before: always;
+    break-before: page;
+    padding-top: 15vh;
+}
+
+/* ─── Naslov poglavlja ───────────────────────────────────────── */
+h1, h2, h3,
+.skr-heading {
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+    font-size: 1.3em;
+    font-weight: bold;
+    text-align: center;
+    text-transform: uppercase;
+    color: #000000;
+    margin: 0.2em 0 0.6em;
+    text-indent: 0;
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+/* ─── Ukras (ornament) ───────────────────────────────────────── */
+.skr-ornament {
+    font-family: serif;
+    font-size: 1em;
+    text-align: center;
+    color: #333333;
+    margin: 0.5em 0 3em;
+    letter-spacing: 0.25em;
+    text-indent: 0;
+}
+
+/* ─── Obični paragraf ────────────────────────────────────────── */
+p,
+.skr-body {
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+    font-size: 1em;
+    line-height: 1.7;
+    text-align: justify;
+    text-indent: 1.5em;
+    margin: 0;
+    color: #000000;
+}
+
+/* ─── Prvi paragraf poglavlja (sa dropcapom, bez uvlake) ─────── */
+p.skr-chapter-first,
+.skr-chapter-first {
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+    font-size: 1em;
+    line-height: 1.7;
+    text-align: justify;
+    text-indent: 0;
+    margin: 1.8em 0 0;
+    color: #000000;
+    overflow: hidden;
+}
+
+/* ─── Dropcap ────────────────────────────────────────────────── */
+.skr-dropcap {
+    float: left;
+    font-family: Georgia, 'Times New Roman', 'Book Antiqua', serif;
+    font-size: 3.6em;
+    line-height: 0.78;
+    margin-right: 0.08em;
+    margin-bottom: -0.05em;
+    color: #cc0000;
+    font-weight: bold;
+}
+
+/* ─── Naslovi koji stoje sami na stranici ────────────────────── */
+.skr-title-page {
+    page-break-before: always;
+    break-before: page;
+    page-break-after: always;
+    break-after: page;
+    display: block;
+    text-align: center;
+    padding-top: 40vh;
+}
+"""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -94,12 +209,14 @@ def merge_maps(target: dict, source: dict) -> None:
         target[tag]["ids"].update(info["ids"])
 
 
-def process_directory(epub_dir: Path, dry_run: bool = False) -> dict:
+def process_directory(epub_dir: Path, dry_run: bool = False,
+                      inject_uniform: bool = False) -> dict:
     """
     Obradi sve HTML/XHTML fajlove u direktoriju raspakovanog epuba.
 
     Vraća globalnu CSS mapu i ispisuje statistike.
     Sprema css_map.json u epub_dir.
+    Ako je inject_uniform=True, primjenjuje uniformni CSS stil.
     """
     html_files = sorted(
         f for f in epub_dir.rglob("*") if f.suffix.lower() in HTML_SUFFIXES
@@ -152,7 +269,120 @@ def process_directory(epub_dir: Path, dry_run: bool = False) -> dict:
     print(f"\n  Ukupno uklonjen style atributa: {total_styles_removed}")
     print(f"  Tagovi s klasama/id-evima:       {len(serializable)}")
 
+    if not dry_run and inject_uniform:
+        apply_uniform_styling(epub_dir)
+
     return serializable
+
+
+def replace_epub_css_files(epub_dir: Path) -> str | None:
+    """
+    Zamijeni sve CSS fajlove u epub_dir uniformnim CSS-om.
+
+    Ako nema CSS fajlova, kreira novi na standardnoj putanji.
+    Vraća relativnu putanju primarnog CSS fajla (ili None pri grešci).
+    """
+    css_files = sorted(epub_dir.rglob("*.css"))
+
+    if css_files:
+        for css_file in css_files:
+            css_file.write_text(SKRIPTORIJ_UNIFORM_CSS, encoding="utf-8")
+            print(f"  [CSS] Zamijenjen: {css_file.relative_to(epub_dir)}")
+        primary_css = css_files[0]
+    else:
+        # Nema CSS-a — kreiraj novi
+        css_dir = epub_dir / "OEBPS" / "css"
+        css_dir.mkdir(parents=True, exist_ok=True)
+        primary_css = css_dir / "skriptorij.css"
+        primary_css.write_text(SKRIPTORIJ_UNIFORM_CSS, encoding="utf-8")
+        print(f"  [CSS] Kreiran novi: {primary_css.relative_to(epub_dir)}")
+
+    return str(primary_css.relative_to(epub_dir)).replace("\\", "/")
+
+
+def ensure_css_link(html_path: Path, css_abs_path: Path) -> None:
+    """
+    Osiguraj da HTML fajl ima <link rel="stylesheet"> koji pokazuje
+    na css_abs_path. Ako postoji stara veza, ažuriraj putanju; ako ne,
+    dodaj je u <head>.
+    """
+    text = html_path.read_text("utf-8", errors="ignore")
+    parser = _choose_parser(html_path)
+    soup = BeautifulSoup(text, parser)
+
+    css_rel = os.path.relpath(css_abs_path, html_path.parent).replace("\\", "/")
+
+    existing = soup.find("link", attrs={"rel": "stylesheet"})
+    if existing:
+        existing["href"] = css_rel
+        existing.attrs.pop("type", None)
+        existing["type"] = "text/css"
+    else:
+        head = soup.find("head")
+        if head:
+            link = soup.new_tag("link")
+            link["rel"] = "stylesheet"
+            link["type"] = "text/css"
+            link["href"] = css_rel
+            head.append(link)
+
+    html_path.write_text(str(soup), encoding="utf-8")
+
+
+def remap_html_classes(html_text: str, parser: str) -> str:
+    """
+    Ukloni sve postojeće klase iz HTML tagova i dodaj uniformne klase
+    prema tipu taga:
+      • h1/h2/h3/h4/h5/h6 → skr-heading
+      • p                  → skr-body
+      • ostalo             → bez klase
+    Inline style atributi se također brišu.
+    """
+    soup = BeautifulSoup(html_text, parser)
+
+    for tag in soup.find_all(True):
+        tag.attrs.pop("style", None)
+        tag.attrs.pop("class", None)
+
+        if tag.name in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            tag["class"] = ["skr-heading"]
+        elif tag.name == "p":
+            tag["class"] = ["skr-body"]
+
+    return str(soup)
+
+
+def apply_uniform_styling(epub_dir: Path) -> str | None:
+    """
+    Glavni ulaz: zamijeni CSS, remapiraj klase u HTML fajlovima i
+    osiguraj da svaki HTML fajl linka uniformni CSS.
+
+    Vraća relativnu putanju primarnog CSS fajla ili None.
+    """
+    print(f"\n  🎨 Primjena uniformnog stila u: {epub_dir}")
+
+    css_rel = replace_epub_css_files(epub_dir)
+    if css_rel is None:
+        return None
+
+    css_abs = epub_dir / css_rel
+
+    html_files = sorted(
+        f for f in epub_dir.rglob("*") if f.suffix.lower() in HTML_SUFFIXES
+    )
+
+    for html_path in html_files:
+        try:
+            text = html_path.read_text("utf-8", errors="ignore")
+            parser = _choose_parser(html_path)
+            new_text = remap_html_classes(text, parser)
+            html_path.write_text(new_text, encoding="utf-8")
+            ensure_css_link(html_path, css_abs)
+            print(f"  [HTML] Uniformne klase: {html_path.relative_to(epub_dir)}")
+        except Exception as exc:
+            print(f"  [ERR] {html_path.name}: {exc}", file=sys.stderr)
+
+    return css_rel
 
 
 def find_epub_dirs(root: Path) -> list[Path]:
@@ -220,12 +450,21 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="FILE",
         help="Spremi globalnu CSS mapu u navedeni JSON fajl (uz css_map.json u epub dir-u).",
     )
+    p.add_argument(
+        "--inject-uniform",
+        action="store_true",
+        help=(
+            "Primijeni uniformni CSS stil: zamijeni sve CSS fajlove uniformnim, "
+            "remapiraj klase u HTML fajlovima i osiguraj CSS link u svakom fajlu."
+        ),
+    )
     return p
 
 
 def main() -> int:
     args = build_parser().parse_args()
     dry_run: bool = args.dry_run
+    inject_uniform: bool = getattr(args, "inject_uniform", False)
 
     # ── Odredi šta treba obraditi ─────────────────────────────────────────────
     target = Path(args.path).resolve() if args.path else DATA_DIR.resolve()
@@ -283,7 +522,8 @@ def main() -> int:
         print(f"\n{'='*60}")
         print(f"📂 Obrađujem: {epub_dir}")
         print(f"{'='*60}")
-        dir_map = process_directory(epub_dir, dry_run=dry_run)
+        dir_map = process_directory(epub_dir, dry_run=dry_run,
+                                        inject_uniform=inject_uniform)
         merge_maps(combined_map, dir_map)
 
     # Serializuj combined_map (skupovi → liste)

@@ -23,6 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString, XMLParsedAsHTMLWarning
 from api_fleet import FleetManager, register_active_fleet
+from css_stripper import apply_uniform_styling, SKRIPTORIJ_ORNAMENT
 
 try:
     import mobi
@@ -71,6 +72,26 @@ def _url_github():
 
 def _url_daisy():
     return "http://www.daisy.org/z3986/2005/ncx/"
+
+
+# ============================================================================
+# RIMSKI BROJEVI
+# ============================================================================
+def _to_roman(n: int) -> str:
+    """Pretvori cijeli broj u rimski brojevni zapis (npr. 3 → 'III')."""
+    if n < 1:
+        return str(n)
+    vals = [
+        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+    ]
+    result = ""
+    for val, sym in vals:
+        while n >= val:
+            result += sym
+            n -= val
+    return result
 
 
 # ============================================================================
@@ -1352,19 +1373,19 @@ class SkriptorijAllInOne:
             pass
 
     def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
-        """Primijeni dropcap i dodaj u TOC."""
+        """Primijeni uniformni stil poglavlja: naslov, ornament, dropcap, TOC."""
         needs_dropcap = True
 
         # ════════════════════════════════════════════════════════════
-        # PETLJA 1: Zaglavlja (h1, h2, h3) — Dodaj u TOC
+        # PETLJA 1: Zaglavlja (h1, h2, h3) — Uniformni stil + TOC
         # ════════════════════════════════════════════════════════════
         for heading in soup.find_all(["h1", "h2", "h3"]):
             t = heading.get_text(strip=True)
 
-            # Preskoči ako je naslov prazan, sadrži "ZADATAK:" ili je premao
+            # Preskoči ako je naslov prazan, sadrži "ZADATAK:" ili je predugačak
             if not t or "ZADATAK:" in t.upper() or len(t) > 100:
                 heading.name = "p"
-                continue  # ✅ SADA JE U PETLJI!
+                continue
 
             tid = heading.get("id")
             if not samo_dropcap:
@@ -1373,28 +1394,41 @@ class SkriptorijAllInOne:
                 self.toc_entries.append(
                     {
                         "title": t,
-                        "abs_path": str(
-                            html_file
-                        ),  # ✅ FIX: Koristi parametar html_file
+                        "abs_path": str(html_file),
                         "anchor": tid,
                     }
                 )
             elif not tid:
                 tid = f"live_ch_{random.randint(1000, 9999)}"
 
-            heading["style"] = (
-                "page-break-before:always; text-align:center; padding-top:10vh; "
-                "margin-bottom:15vh; font-family:serif; text-transform:uppercase;"
-            )
+            # Ukloni stare inline stilove i klase; dodaj uniformne
+            heading.attrs.pop("style", None)
+            heading["class"] = ["skr-heading"]
             heading["id"] = tid
+
+            # Dodaj oznaku poglavlja (POGLAVLJE I, II, ...) ispred naslova
+            label = soup.new_tag("p", attrs={"class": "skr-chapter-label"})
+            ch_str = _to_roman(self.chapter_counter) if not samo_dropcap else ""
+            label.string = f"POGLAVLJE {ch_str}".strip()
+            heading.insert_before(label)
+
+            # Dodaj ukras ispod naslova
+            ornament = soup.new_tag("div", attrs={"class": "skr-ornament"})
+            ornament.string = SKRIPTORIJ_ORNAMENT
+            heading.insert_after(ornament)
+
             needs_dropcap = True
 
         # ════════════════════════════════════════════════════════════
-        # PETLJA 2: Paragrafи — Dodaj dropcap na prvi paragraf
+        # PETLJA 2: Paragrafi — Dropcap na prvi paragraf poglavlja
         # ════════════════════════════════════════════════════════════
         for p in soup.find_all("p"):
             if not needs_dropcap:
                 break
+
+            # Preskoči "POGLAVLJE" labele
+            if "skr-chapter-label" in (p.get("class") or []):
+                continue
 
             if len(p.get_text(strip=True)) > 40:
                 # Pronađi prvi NavigableString čvor sa tekstom
@@ -1407,28 +1441,23 @@ class SkriptorijAllInOne:
                     None,
                 )
 
-                if node:  # ✅ FIX: Provjera da node postoji
+                if node:
                     c = node.string.lstrip()
                     if not c:
                         continue
 
-                    # Kreiraj dropcap span
-                    s = soup.new_tag(
-                        "span",
-                        attrs={
-                            "style": (
-                                "float:left; font-size:3.5em; line-height:0.8; "
-                                "margin-right:0.1em; font-weight:bold;"
-                            )
-                        },
-                    )
+                    # Kreiraj dropcap span sa CSS klasom (crveni, dekorativni font)
+                    s = soup.new_tag("span", attrs={"class": "skr-dropcap"})
 
                     # Ako počinje sa navodnicima, uzmi 2 znaka
                     o = 2 if c[0] in ["'", '"', "„", "\u201c"] else 1
                     s.string = c[:o]
                     node.replace_with(c[o:])
                     p.insert(0, s)
-                    needs_dropcap = False  # ✅ FIX: Sada je dostupna varijabla
+
+                    # Označi paragraf kao prvi u poglavlju (bez uvlake)
+                    p["class"] = ["skr-chapter-first"]
+                    needs_dropcap = False
 
     def generate_ncx(self):
         """Generiši NCX (Table of Contents) za EPUB."""
@@ -1571,6 +1600,13 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
     else:
         with zipfile.ZipFile(engine.book_path, "r") as z:
             z.extractall(engine.work_dir)
+
+    # Primijeni uniformni CSS stil odmah nakon raspakivanja
+    try:
+        apply_uniform_styling(engine.work_dir)
+        engine.log("🎨 Uniformni CSS primijenjen.", "system")
+    except Exception as _css_err:
+        engine.log(f"CSS styling upozorenje: {_css_err}", "warning")
 
     engine.html_files = sorted(
         [
