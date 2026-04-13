@@ -42,7 +42,7 @@
                     <div id="status-dot" class="dot dot-idle" aria-hidden="true"></div>
                     <!-- V8 Turbo Book logo -->
                     <img class="header-logo" src="{{ url_for('static', filename='img/V8_book_turbo.svg') }}" alt="Skriptorij V8 Turbo logo" />
-                    <h1>BOOKLYFI</h1>
+                    <h1 id="app-logo-title"><span class="neon-letter">B</span><span class="neon-letter">O</span><span class="neon-letter">O</span><span class="neon-letter">K</span><span class="neon-letter">L</span><span class="neon-letter">Y</span><span class="neon-letter">F</span><span class="neon-letter">I</span></h1>
                     <span class="badge-v6">⚡ TURBO CHARGED</span>
                     <span class="header-tagline">AI-Powered Book Translation &amp; Refinement Engine</span>
                 </div>
@@ -269,6 +269,11 @@
             .hidden {
                 display: none !important;
             }
+            /* Neon letter flash — override parent background-clip:text per letter */
+            #app-logo-title .neon-letter {
+                display: inline-block;
+                transition: text-shadow 0.12s ease;
+            }
         </style>
 
         <!-- DOMPurify za XSS zaštitu audit loga -->
@@ -277,6 +282,46 @@
                 crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <!-- Scripts -->
         <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+        <!-- Neon logo letter flash — random color bursts while app runs -->
+        <script>
+        (function () {
+            // SVG logo colour palette: blue, purple, green, amber, red, cyan
+            var NEON = ['#60a5fa','#a78bfa','#4ade80','#fbbf24','#f87171','#06b6d4'];
+            var _timer = null;
+            var _letters = null;
+
+            function flash() {
+                if (!_letters || !_letters.length) return;
+
+                // Flash 1 or 2 random letters
+                var count = Math.random() < 0.4 ? 2 : 1;
+                for (var k = 0; k < count; k++) {
+                    var idx   = Math.floor(Math.random() * _letters.length);
+                    var color = NEON[Math.floor(Math.random() * NEON.length)];
+                    var shadow = '0 0 6px ' + color + ', 0 0 18px ' + color + ', 0 0 36px ' + color;
+                    var el    = _letters[idx];
+                    el.style.setProperty('-webkit-text-fill-color', color);
+                    el.style.textShadow = shadow;
+                    (function (target) {
+                        setTimeout(function () {
+                            target.style.removeProperty('-webkit-text-fill-color');
+                            target.style.textShadow = '';
+                        }, 180 + Math.random() * 320);
+                    })(el);
+                }
+                _timer = setTimeout(flash, 120 + Math.random() * 480);
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                _letters = document.querySelectorAll('#app-logo-title .neon-letter');
+                setTimeout(flash, 600);
+            });
+
+            window.addEventListener('beforeunload', function () {
+                if (_timer) clearTimeout(_timer);
+            });
+        })();
+        </script>
         <!-- PWA: Service Worker registration -->
         <script>
             if ('serviceWorker' in navigator) {

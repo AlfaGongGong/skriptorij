@@ -20,8 +20,10 @@
     <!-- ── Intro overlay ──────────────────────────────────────────────────── -->
     <div id="intro-overlay" role="dialog" aria-label="Uvodni ekran" aria-modal="true">
 
-        <!-- Digital rain canvas (Phase 1) -->
-        <canvas id="intro-rain-canvas"></canvas>
+        <!-- V8 Book Turbo ghost background -->
+        <div id="intro-svg-bg" aria-hidden="true">
+            <img src="{{ url_for('static', filename='img/V8_book_turbo.svg') }}" alt="">
+        </div>
 
         <!-- Three.js WebGL canvas -->
         <canvas id="intro-threejs-canvas"></canvas>
