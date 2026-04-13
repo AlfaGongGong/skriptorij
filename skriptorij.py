@@ -78,7 +78,20 @@ def _url_daisy():
 # ============================================================================
 _GLOBAL_DOOR = None
 _LAST_CALLS = {}
-MIN_GAP = 2.3
+# Minimalni razmak između poziva — po provajderu (sekunde).
+# Gemini free tier: 15 RPM → 4s; koristimo 5s za sigurnosnu marginu.
+# Klíč je prov_upper (ne model!) da bi oba Gemini modela dijelila isti timer.
+_PROVIDER_MIN_GAP = {
+    "GEMINI":     5.0,
+    "GROQ":       3.0,
+    "CEREBRAS":   2.5,
+    "SAMBANOVA":  3.0,
+    "MISTRAL":    3.0,
+    "COHERE":     3.0,
+    "OPENROUTER": 3.0,
+    "GITHUB":     5.0,
+}
+MIN_GAP = 3.0  # fallback za nepoznate provajdere
 
 
 async def _ensure_global_lock():
@@ -779,11 +792,31 @@ class SkriptorijAllInOne:
             if resp.status_code == 200:
                 return resp.json()
             elif resp.status_code == 429:
+                # Pokušaj pročitati retry delay iz response body-a (Gemini API stil)
+                body_retry = 0.0
+                try:
+                    err_body = resp.json()
+                    err_msg = err_body.get("error", {}).get("message", "")
+                    # Gemini ponekad piše "Retry after Xs" u poruci (cijeli i decimalni)
+                    m = re.search(r"retry\s+after\s+([\d.]+)", err_msg, re.IGNORECASE)
+                    if m:
+                        body_retry = float(m.group(1))
+                    # Gemini može vratiti i "retryDelay" u details (npr. "60s" ili "60.5s")
+                    for detail in err_body.get("error", {}).get("details", []):
+                        rd = detail.get("retryDelay", "")
+                        if rd:
+                            m2 = re.search(r"([\d.]+)", str(rd))
+                            if m2:
+                                body_retry = max(body_retry, float(m2.group(1)))
+                                break
+                except Exception:
+                    pass
                 backoff = self.fleet.get_backoff_for_provider(prov_upper)
+                wait = max(backoff, body_retry, 5.0)
                 self.log(
-                    f"[{prov_upper}] 429 Rate limit. Čekam {backoff:.0f}s ⏳", "warning"
+                    f"[{prov_upper}] 429 Rate limit. Čekam {wait:.0f}s ⏳", "warning"
                 )
-                await asyncio.sleep(max(backoff, 5))
+                await asyncio.sleep(wait)
                 return None
             else:
                 safe = resp.text[:200].replace("<", "&lt;").replace(">", "&gt;")
@@ -838,28 +871,27 @@ class SkriptorijAllInOne:
 
         lock = await _ensure_global_lock()
         async with lock:
-            # Adaptive throttle: start with the global minimum gap, then widen
-            # it when rate-limit headers signal low remaining capacity.
-            gap = MIN_GAP
+            # Adaptive throttle: počni s per-provajder minimumom, pa proširi
+            # kad rate-limit headeri signaliziraju niski preostali kapacitet.
+            gap = _PROVIDER_MIN_GAP.get(prov_upper, MIN_GAP)
             key_state = self.fleet.fleet.get(prov_upper, {}).get(key)
             if key_state is not None:
-                # RPM: if < 30 % of per-minute quota remains, spread the rest
-                # of the requests evenly across the remainder of the minute.
+                # RPM: ako je < 50 % minutnog kvota preostalo, rasporedi ravnomjernije
                 if key_state.rate_limit_minute > 0 and key_state.remaining_minute > 0:
-                    if key_state.remaining_minute < key_state.rate_limit_minute * 0.3:
+                    if key_state.remaining_minute < key_state.rate_limit_minute * 0.5:
                         safe_rpm_gap = 60.0 / key_state.remaining_minute
                         gap = max(gap, safe_rpm_gap)
-                # RPD: if < 30 % of daily quota remains, scale up the gap
-                # linearly from 1× at 30 % remaining to 5× at 0 % remaining.
+                # RPD: ako je < 50 % dnevnog kvota preostalo, linearno povećaj gap
                 if key_state.rate_limit_day > 0 and key_state.remaining_day > 0:
                     rpd_ratio = key_state.remaining_day / key_state.rate_limit_day
-                    if rpd_ratio < 0.3:
-                        rpd_multiplier = 1.0 + (0.3 - rpd_ratio) / 0.3 * 4.0
-                        gap = max(gap, MIN_GAP * rpd_multiplier)
-            elapsed = time.time() - _LAST_CALLS.get(f"{prov_upper}:{model}", 0)
+                    if rpd_ratio < 0.5:
+                        rpd_multiplier = 1.0 + (0.5 - rpd_ratio) / 0.5 * 4.0
+                        gap = max(gap, _PROVIDER_MIN_GAP.get(prov_upper, MIN_GAP) * rpd_multiplier)
+            # Ključ je per-provajder (ne per-model) da oba Gemini modela dijele timer
+            elapsed = time.time() - _LAST_CALLS.get(prov_upper, 0)
             if elapsed < gap:
                 await asyncio.sleep(gap - elapsed)
-            _LAST_CALLS[f"{prov_upper}:{model}"] = time.time()
+            _LAST_CALLS[prov_upper] = time.time()
 
         data = await self._async_http_post(
             url, headers, payload, prov_upper, prov_upper, key
