@@ -847,17 +847,6 @@ function deleteApiKey(provider, idx) {
         .catch(() => showToast('\u274C Gre\u0161ka pri brisanju klju\u010da.', 'error'));
 }
 
-// -- Drag and Drop za upload --------------------------------------------------
-function handleDrop(event) {
-    event.preventDefault();
-    const dropZone = document.getElementById('drop-zone');
-    if (dropZone) dropZone.classList.remove('drag-over');
-    const files = event.dataTransfer.files;
-    if (files && files.length > 0) {
-        uploadBook(files[0]);
-    }
-}
-
 // Tastatura shortcut-i
 document.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey) {

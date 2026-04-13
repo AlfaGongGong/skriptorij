@@ -78,24 +78,20 @@
                     <h2>📁 Odabir Knjige</h2>
 
                     <div class="input-group">
-                        <label for="book-file">Upload EPUB / MOBI Fajla</label>
-                        <div id="drop-zone" class="drop-zone" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                            <label for="book-select" style="margin:0;">📚 Odaberi Knjigu</label>
+                            <label for="book-file" class="btn btn-secondary" style="font-size:0.8rem; padding:4px 12px; cursor:pointer; margin:0;" title="Uploadaj novu EPUB/MOBI knjiga">
+                                📂 Upload
+                            </label>
                             <input
                                 type="file"
                                 id="book-file"
                                 accept=".epub,.mobi"
                                 onchange="uploadBook(this.files[0])"
-                                aria-label="Odaberi EPUB ili MOBI fajl"
+                                style="display:none;"
+                                aria-label="Odaberi EPUB ili MOBI fajl za upload"
                             />
-                            <span class="drop-zone-hint">🖱️ Prevucite EPUB/MOBI ovdje ili kliknite za upload</span>
                         </div>
-                        <small style="color: var(--text-muted); margin-top: 6px; display: block; font-size: 0.8rem;">
-                            Podržani formati: EPUB, MOBI
-                        </small>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="book-select">📚 Odaberi Knjigu</label>
                         <select id="book-select" aria-label="Odaberi knjigu za obradu">
                             <option value="">— Učitavam listu knjiga... —</option>
                         </select>
