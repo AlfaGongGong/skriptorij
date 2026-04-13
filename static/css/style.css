@@ -928,6 +928,13 @@ details {
     background-color: var(--bg-secondary);
 }
 
+/* When open, allow scrollable children (e.g. #keys-list) to function.
+   overflow: visible removes the clipping context so overflow-y: auto on
+   children creates its own independent scroll container. */
+details[open] {
+    overflow: visible;
+}
+
 details summary {
     outline: none;
     cursor: pointer;

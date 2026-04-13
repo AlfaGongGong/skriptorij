@@ -726,9 +726,27 @@ class SkriptorijAllInOne:
 
         lock = await _ensure_global_lock()
         async with lock:
+            # Adaptive throttle: start with the global minimum gap, then widen
+            # it when rate-limit headers signal low remaining capacity.
+            gap = MIN_GAP
+            key_state = self.fleet.fleet.get(prov_upper, {}).get(key)
+            if key_state is not None:
+                # RPM: if < 30 % of per-minute quota remains, spread the rest
+                # of the requests evenly across the remainder of the minute.
+                if key_state.rate_limit_minute > 0 and key_state.remaining_minute > 0:
+                    if key_state.remaining_minute < key_state.rate_limit_minute * 0.3:
+                        safe_rpm_gap = 60.0 / key_state.remaining_minute
+                        gap = max(gap, safe_rpm_gap)
+                # RPD: if < 30 % of daily quota remains, scale up the gap
+                # linearly from 1× at 30 % remaining to 5× at 0 % remaining.
+                if key_state.rate_limit_day > 0 and key_state.remaining_day > 0:
+                    rpd_ratio = key_state.remaining_day / key_state.rate_limit_day
+                    if rpd_ratio < 0.3:
+                        rpd_multiplier = 1.0 + (0.3 - rpd_ratio) / 0.3 * 4.0
+                        gap = max(gap, MIN_GAP * rpd_multiplier)
             elapsed = time.time() - _LAST_CALLS.get(f"{prov_upper}:{model}", 0)
-            if elapsed < MIN_GAP:
-                await asyncio.sleep(MIN_GAP - elapsed)
+            if elapsed < gap:
+                await asyncio.sleep(gap - elapsed)
             _LAST_CALLS[f"{prov_upper}:{model}"] = time.time()
 
         data = await self._async_http_post(
