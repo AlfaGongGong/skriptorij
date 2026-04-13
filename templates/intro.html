@@ -14,10 +14,6 @@
 
     <!-- Intro styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}">
-
-    <!-- Preload Three.js -->
-    <link rel="preload" as="script"
-          href="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js">
 </head>
 <body>
 
@@ -72,8 +68,8 @@
         </button>
     </div>
 
-    <!-- ── Three.js (CDN) ─────────────────────────────────────────────────── -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js" defer></script>
+    <!-- ── Three.js (local, r160 — last UMD build) ──────────────────────── -->
+    <script src="{{ url_for('static', filename='js/intro/three.min.js') }}"></script>
 
     <!-- ── Intro animation modules ───────────────────────────────────────── -->
     <script src="{{ url_for('static', filename='js/intro/particle-system.js') }}"></script>
