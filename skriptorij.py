@@ -119,6 +119,60 @@ def _ocisti_ai_markere(tekst: str) -> str:
 
 
 # ============================================================================
+# #19: JSON OMOTAČ ČIŠĆENJE — regex fallback za kad JSON parse ne uspije
+# ============================================================================
+# Navodnici: standardni " i tipografski „ " ' ' (koje tipografija može ubaciti)
+_JSON_OMOTAC_RE = re.compile(
+    r'^\s*\{\s*'
+    r'["\u201c\u201d\u201e\u2018\u2019]?'   # opcionalni otvorni navodnik ključa
+    r'[\w_]+'                                 # naziv ključa (npr. finalno_polirano)
+    r'["\u201c\u201d\u201e\u2018\u2019]?'   # opcionalni zatvorni navodnik ključa
+    r'\s*:\s*'
+    r'["\u201c\u201d\u201e\u2018\u2019]'    # otvorni navodnik vrijednosti
+    r'(.*)'                                   # sadržaj (greedy — hvata sve do zadnjeg)
+    r'["\u201c\u201d\u201e\u2018\u2019]'    # zatvorni navodnik vrijednosti
+    r'\s*\}\s*$',
+    re.DOTALL,
+)
+
+
+def _cisti_json_wrapper(tekst: str) -> str:
+    """Izvadi tekst iz JSON omotača koji AI ponekad vraća umjesto čistog teksta.
+
+    Podržava standardne i tipografske navodnike (jer tipografska obrada može
+    pretvoriti " u „ prije nego što se otkrije problem).
+
+    Primjeri:
+      {"finalno_polirano": "tekst"}  →  "tekst"
+      {„finalno_polirano": „tekst"}  →  "tekst"
+      {"korektura": "<p>tekst</p>"}  →  "<p>tekst</p>"
+    """
+    if not tekst:
+        return tekst
+    stripped = tekst.strip()
+    if not stripped.startswith('{'):
+        return tekst
+    # Korak 1: standardni JSON parse
+    try:
+        obj = json.loads(stripped)
+        if isinstance(obj, dict) and obj:
+            val = (
+                obj.get("finalno_polirano")
+                or obj.get("korektura")
+                or next(iter(obj.values()), "")
+            )
+            if isinstance(val, str) and val.strip():
+                return val.strip()
+    except Exception:
+        pass
+    # Korak 2: regex fallback — hvata i tipografske navodnike
+    m = _JSON_OMOTAC_RE.match(stripped)
+    if m:
+        return m.group(1)
+    return tekst
+
+
+# ============================================================================
 # DETEKCIJA ENGLESKOG
 # ============================================================================
 _EN_STOPWORDS = frozenset(
@@ -247,6 +301,8 @@ def _detektuj_halucinaciju(original: str, prijevod: str, uloga: str = "LEKTOR") 
 def _agresivno_cisti(tekst: str) -> str:
     if not tekst:
         return ""
+    # Najprije ukloni JSON omotač (ako postoji)
+    tekst = _cisti_json_wrapper(tekst)
     patterns = [
         r"https?://googleusercontent\.com/immersive_entry_chip/\d+",
         r"```(?:html|json|text|xml)?\s*",
@@ -1422,14 +1478,54 @@ class SkriptorijAllInOne:
 
 
 # ============================================================================
-# ENTRY POINT
+# #19: RETROAKTIVNO ČIŠĆENJE CHECKPOINT FAJLOVA
 # ============================================================================
+def _retroaktivno_cisti_chk_fajlove(checkpoint_dir: Path, log_fn=None) -> int:
+    """Skenira sve .chk fajlove i uklanja JSON omotače koje AI ponekad vraća.
+
+    Pokreće se pri svakom lansiranju prije obrade, kako bi stari zagađeni
+    blokovi bili automatski popravljeni. Vraća broj popravljenih fajlova.
+    """
+    if not checkpoint_dir.exists():
+        return 0
+    popravljeno = 0
+    for chk in checkpoint_dir.glob("*.chk"):
+        try:
+            sadrzaj = chk.read_text("utf-8", errors="ignore")
+            ocisceno = _cisti_json_wrapper(sadrzaj.strip())
+            if ocisceno != sadrzaj.strip():
+                # Upiši popravljenu verziju (atomski: tmp → replace)
+                tmp = chk.with_suffix(f".tmp_{random.randint(10000, 99999)}")
+                try:
+                    tmp.write_text(ocisceno, encoding="utf-8")
+                    tmp.replace(chk)
+                    popravljeno += 1
+                    if log_fn:
+                        log_fn(f"🧹 CHK sanacija: {chk.name}", "tech")
+                except Exception as e:
+                    if tmp.exists():
+                        try:
+                            tmp.unlink()
+                        except Exception:
+                            pass
+                    if log_fn:
+                        log_fn(f"⚠️ CHK sanacija neuspješna ({chk.name}): {e}", "warning")
+        except Exception:
+            continue
+    if popravljeno and log_fn:
+        log_fn(f"✅ Retroaktivna CHK sanacija: {popravljeno} fajl(ov)a popravljeno.", "system")
+    return popravljeno
+
+
 def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_controls):
     engine = SkriptorijAllInOne(bookpathstr, modelname, sharedstats, shared_controls)
     engine.log("🚀 V8 Omni-Core pokrenут...", "system")
 
     engine.work_dir.mkdir(parents=True, exist_ok=True)
     engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    # #19: Retroaktivno očisti stare .chk fajlove od JSON omotača
+    _retroaktivno_cisti_chk_fajlove(engine.checkpoint_dir, log_fn=engine.log)
 
     # MOBI podrška — konverzija u EPUB/HTML prije obrade
     if engine.book_path.suffix.lower() == ".mobi":
