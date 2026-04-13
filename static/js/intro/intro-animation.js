@@ -34,9 +34,10 @@ class IntroAnimation {
         this.rain = null;
 
         // Timing
-        this.startTime  = null;
-        this.rafId      = null;
-        this.appStarted = false;
+        this.startTime       = null;
+        this.rafId           = null;
+        this.appStarted      = false;
+        this._threeRetryCount = 0;
 
         // Responsive constants
         this.IS_MOBILE      = window.innerWidth < 640;
@@ -55,9 +56,20 @@ class IntroAnimation {
             return;
         }
 
-        // Require WebGL + Three.js
-        if (!this._webglAvailable() || typeof THREE === 'undefined') {
+        // Require WebGL
+        if (!this._webglAvailable()) {
             setTimeout(() => this._finish(), 2000);
+            return;
+        }
+
+        // Wait for Three.js (deferred script may still be loading) — retry up to 20×200ms
+        if (typeof THREE === 'undefined') {
+            if (this._threeRetryCount < 20) {
+                this._threeRetryCount++;
+                setTimeout(() => this.init(), 200);
+            } else {
+                setTimeout(() => this._finish(), 2000);
+            }
             return;
         }
 
