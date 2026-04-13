@@ -122,7 +122,8 @@ class IntroAnimation {
         });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.setSize(W, H);
-        this.renderer.setClearColor(0x020617, 1);
+        // Transparent clear so the digital-rain canvas underneath shows through
+        this.renderer.setClearColor(0x000000, 0);
 
         this.ambientLight = new THREE.AmbientLight(0x60a5fa, 0.4);
         this.scene.add(this.ambientLight);
@@ -260,7 +261,7 @@ class IntroAnimation {
 
         // ── Phase 1 · 0-1 s · Digital rain + particles fade in ───────────────
         if (elapsed < 1000) {
-            pMat.opacity = lerp(0, 0.3, elapsed / 1000);
+            pMat.opacity = lerp(0, 0.6, elapsed / 1000);
 
         // ── Phase 2 · 1-3 s · Book assembly ──────────────────────────────────
         } else if (elapsed < 3000) {
@@ -272,7 +273,7 @@ class IntroAnimation {
             }
             const p2   = (elapsed - 1000) / 2000;
             const ease = this._easeInOut(p2);
-            pMat.opacity = lerp(0.3, 0.9, p2);
+            pMat.opacity = lerp(0.6, 0.9, p2);
             tMat.opacity = lerp(0, 0.15, p2);
 
             const bt = this._bookTargetsArr;
