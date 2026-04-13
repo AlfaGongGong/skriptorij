@@ -212,6 +212,8 @@ html, body {
     align-items: center;
     z-index: 15;
     pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.4s ease;
 }
 
 .ipl-dot {
@@ -232,6 +234,7 @@ html, body {
     40%            { opacity: 1;   transform: scale(1);   }
 }
 
+#intro-pre-load.fading-out { opacity: 0; }
 #intro-pre-load.hidden { display: none; }
 
 /* ── Keyframes ──────────────────────────────────────────────────────────── */
