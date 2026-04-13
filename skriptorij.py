@@ -110,6 +110,24 @@ _AI_TELLS_PATTERNS = [
     r"Rado (?:sam|ću) (?:pomoći|prevesti)[!.]?",
 ]
 
+# Placeholder tekstovi koji AI ponekad doslovno vrati iz template-a
+_PLACEHOLDER_STRINGS = frozenset({
+    "lektorisani tekst ovdje",
+    "korigirani tekst ovdje",
+    "<ovdje_idi_lektorirani_tekst>",
+    "<ovdje_idi_korigirani_tekst>",
+    "ovdje_idi_lektorirani_tekst",
+    "ovdje_idi_korigirani_tekst",
+    "tekst ovdje",
+    "vaš tekst ovdje",
+})
+
+
+def _je_placeholder(tekst: str) -> bool:
+    """Vraća True ako tekst izgleda kao echo-back AI template placeholdera."""
+    cist = re.sub(r"<[^>]+>", "", tekst).strip().lower()
+    return cist in _PLACEHOLDER_STRINGS
+
 
 def _ocisti_ai_markere(tekst: str) -> str:
     for p in _AI_TELLS_PATTERNS:
@@ -122,16 +140,17 @@ def _ocisti_ai_markere(tekst: str) -> str:
 # #19: JSON OMOTAČ ČIŠĆENJE — regex fallback za kad JSON parse ne uspije
 # ============================================================================
 # Navodnici: standardni " i tipografski „ " ' ' (koje tipografija može ubaciti)
+_QUOTE_CHARS = r'["\u201c\u201d\u201e\u2018\u2019]'
 _JSON_OMOTAC_RE = re.compile(
     r'^\s*\{\s*'
-    r'["\u201c\u201d\u201e\u2018\u2019]?'   # opcionalni otvorni navodnik ključa
-    r'[\w_]+'                                 # naziv ključa (npr. finalno_polirano)
-    r'["\u201c\u201d\u201e\u2018\u2019]?'   # opcionalni zatvorni navodnik ključa
-    r'\s*:\s*'
-    r'["\u201c\u201d\u201e\u2018\u2019]'    # otvorni navodnik vrijednosti
-    r'(.*)'                                   # sadržaj (greedy — hvata sve do zadnjeg)
-    r'["\u201c\u201d\u201e\u2018\u2019]'    # zatvorni navodnik vrijednosti
-    r'\s*\}\s*$',
+    + _QUOTE_CHARS + r'?'            # opcionalni otvorni navodnik ključa
+    + r'[\w_]+'                      # naziv ključa (npr. finalno_polirano)
+    + _QUOTE_CHARS + r'?'            # opcionalni zatvorni navodnik ključa
+    + r'\s*:\s*'
+    + _QUOTE_CHARS                   # otvorni navodnik vrijednosti
+    + r'([\s\S]*?)'                  # sadržaj (non-greedy, multiline)
+    + _QUOTE_CHARS + r'?'            # zatvorni navodnik vrijednosti (opcionalan)
+    + r'\s*\}\s*$',
     re.DOTALL,
 )
 
@@ -168,7 +187,9 @@ def _cisti_json_wrapper(tekst: str) -> str:
     # Korak 2: regex fallback — hvata i tipografske navodnike
     m = _JSON_OMOTAC_RE.match(stripped)
     if m:
-        return m.group(1)
+        extracted = m.group(1).strip()
+        if extracted:
+            return extracted
     return tekst
 
 
@@ -311,6 +332,11 @@ def _agresivno_cisti(tekst: str) -> str:
         r"GLOSAR:.*?\n",
         r"SYSTEM:.*?\n",
         r"\*\*(.*?)\*\*",
+        # Zaostali JSON omotači koje regex/json.loads nije uhvatio —
+        # uklanjamo samo cijeli obrazac {ključ: "vrijednost"} da se ne zahvate legitimni sadržaji
+        r'^\s*\{["\u201c\u201d\u201e]?[\w_]+["\u201c\u201d\u201e]?\s*:\s*["\u201c\u201d\u201e]([\s\S]*?)["\u201c\u201d\u201e]\s*\}\s*$',
+        # Placeholder natpisi iz AI template-a
+        r"<OVDJE_IDI_[A-Z_]+>",
     ]
     for p in patterns:
         tekst = re.sub(
@@ -478,7 +504,8 @@ IMPERATIVNA PRAVILA LEKTURE:
    • Izlišne rečenice koje nisu u originalu
    • Prebukvalni prijevodi koji zvuče neprirodno
 
-Vrati ISKLJUČIVO: {{"finalno_polirano": "lektorisani tekst ovdje"}}
+Vrati ISKLJUČIVO JSON objekt: {{"finalno_polirano": "<OVDJE_IDI_LEKTORIRANI_TEKST>"}}
+Zamijeni <OVDJE_IDI_LEKTORIRANI_TEKST> stvarnim lektoriranim sadržajem. Ne ponavljaj ovu uputu.
 """
 
 _KOREKTOR_TEMPLATE = """\
@@ -506,7 +533,8 @@ PROVJERI I ISPRAVI:
 
 4. FORMAT: Zadrži SVE HTML tagove netaknute. Ne dodaj novi sadržaj.
 
-Vrati ISKLJUČIVO: {{"korektura": "korigirani tekst ovdje"}}
+Vrati ISKLJUČIVO JSON objekt: {{"korektura": "<OVDJE_IDI_KORIGIRANI_TEKST>"}}
+Zamijeni <OVDJE_IDI_KORIGIRANI_TEKST> stvarnim korigiranim sadržajem. Ne ponavljaj ovu uputu.
 """
 
 _VALIDATOR_SYS = """\
@@ -1111,11 +1139,15 @@ class SkriptorijAllInOne:
             try:
                 m = re.search(r"\{.*\}", raw_l, re.DOTALL)
                 obj = json.loads(m.group() if m else raw_l)
-                finalno = obj.get("finalno_polirano", next(iter(obj.values()), ""))
+                kandidat = obj.get("finalno_polirano", next(iter(obj.values()), ""))
+                if not _je_placeholder(kandidat):
+                    finalno = kandidat
             except Exception:
-                finalno = _agresivno_cisti(raw_l)
+                kandidat = _agresivno_cisti(raw_l)
+                if not _je_placeholder(kandidat):
+                    finalno = kandidat
 
-        # #1: Ako lektor nije vratio ništa, retry sa drugom temperaturom
+        # #1: Ako lektor nije vratio ništa (ili placeholder), retry sa drugom temperaturom
         if not finalno:
             self.log(
                 f"[{file_name}] Blok {chunk_idx}: Lektor nije odgovorio — retry sa alt. temperaturom.",
@@ -1147,9 +1179,13 @@ class SkriptorijAllInOne:
                     try:
                         mr = re.search(r"\{.*\}", raw_retry, re.DOTALL)
                         obj_r = json.loads(mr.group() if mr else raw_retry)
-                        finalno = obj_r.get("finalno_polirano", next(iter(obj_r.values()), ""))
+                        kandidat_r = obj_r.get("finalno_polirano", next(iter(obj_r.values()), ""))
+                        if not _je_placeholder(kandidat_r):
+                            finalno = kandidat_r
                     except Exception:
-                        finalno = _agresivno_cisti(raw_retry)
+                        kandidat_r = _agresivno_cisti(raw_retry)
+                        if not _je_placeholder(kandidat_r):
+                            finalno = kandidat_r
                     if finalno:
                         prov2 = label_r
                         break
@@ -1215,9 +1251,10 @@ class SkriptorijAllInOne:
                     obj_k = json.loads(mk.group() if mk else raw_k)
                     korektura = obj_k.get("korektura", next(iter(obj_k.values()), ""))
                     korektura = _agresivno_cisti(korektura)
-                    # Prihvati korektu samo ako nije halucinirala
+                    # Prihvati korektu samo ako nije halucinirala i nije placeholder
                     if (
                         korektura
+                        and not _je_placeholder(korektura)
                         and not _detektuj_halucinaciju(finalno, korektura, uloga="LEKTOR")
                     ):
                         finalno = korektura
@@ -1260,6 +1297,9 @@ class SkriptorijAllInOne:
         chunks = self.chunk_html(raw_html, max_words=250)
         if not chunks:
             return
+
+        # Parsuj original da bismo sačuvali <head> i strukturu dokumenta
+        orig_soup = BeautifulSoup(raw_html, "html.parser")
 
         self.shared_stats["current_file"] = file_name
         self.shared_stats["total_file_chunks"] = len(chunks)
@@ -1316,7 +1356,17 @@ class SkriptorijAllInOne:
                     f"{self.global_done_chunks} / {self.global_total_chunks}"
                 )
 
-        file_path.write_text("".join(final_parts), encoding="utf-8")
+        # Upiši prevedeni sadržaj natrag u fajl, čuvajući <head> i strukturu dokumenta
+        body = orig_soup.body
+        if body:
+            body.clear()
+            translated_soup = BeautifulSoup("".join(final_parts), "html.parser")
+            for child in list(translated_soup.children):
+                body.append(child.extract())
+            file_path.write_text(str(orig_soup), encoding="utf-8")
+        else:
+            # Fallback: nema <body> taga — upiši direktno
+            file_path.write_text("".join(final_parts), encoding="utf-8")
 
     # ============================================================================
     # OBLIKOVANJE + NCX + FINALIZACIJA
@@ -1523,6 +1573,50 @@ def _retroaktivno_cisti_chk_fajlove(checkpoint_dir: Path, log_fn=None) -> int:
     return popravljeno
 
 
+# CSS atributi koji nose boje/fontove hardkodirane u inline styleu
+_INLINE_COLOUR_PROPS = re.compile(
+    r'\b(?:color|background(?:-color)?|font-(?:color|size)|text-decoration-color)\s*:[^;"}]+[;]?',
+    re.IGNORECASE,
+)
+
+
+def _ukloni_inline_stilove(html_fajlovi: list, log_fn=None) -> int:
+    """Ukloni inline style atribute koji sadrže boje ili fontove iz epub HTML fajlova.
+
+    Čisti color, background-color i sl. iz style="" atributa.
+    Ako style ostane prazan nakon čišćenja, atribut se u potpunosti ukloni.
+    Vraća broj modificiranih fajlova.
+    """
+    modificirano = 0
+    for fajl in html_fajlovi:
+        try:
+            original = fajl.read_text("utf-8", errors="ignore")
+            if 'style=' not in original:
+                continue
+            parser = "xml" if fajl.suffix.lower() in {".xhtml", ".xml"} else "html.parser"
+            soup = BeautifulSoup(original, parser)
+            izmijenjeno = False
+            for tag in soup.find_all(True):
+                stil = tag.get("style", "")
+                if not stil:
+                    continue
+                novi_stil = _INLINE_COLOUR_PROPS.sub("", stil).strip(" ;")
+                if novi_stil != stil:
+                    izmijenjeno = True
+                    if novi_stil:
+                        tag["style"] = novi_stil
+                    else:
+                        del tag["style"]
+            if izmijenjeno:
+                fajl.write_text(str(soup), encoding="utf-8")
+                modificirano += 1
+        except Exception:
+            continue
+    if modificirano and log_fn:
+        log_fn(f"🎨 Inline stilovi očišćeni u {modificirano} HTML fajl(ov)a.", "tech")
+    return modificirano
+
+
 def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_controls):
     engine = SkriptorijAllInOne(bookpathstr, modelname, sharedstats, shared_controls)
     engine.log("🚀 V8 Omni-Core pokrenут...", "system")
@@ -1580,6 +1674,11 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
         ],
         key=lambda x: x.name,
     )
+
+    # Ukloni inline colour/style atribute iz raspakovanih HTML fajlova.
+    # Originalni epub može imati hardkodirane style="color:red" i sl. koje
+    # nisu dio CSS fajla — uklanjamo ih da ne zagade izlazni epub.
+    _ukloni_inline_stilove(engine.html_files, engine.log)
 
     for f in engine.html_files:
         try:
