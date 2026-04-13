@@ -1,8 +1,12 @@
 """Centralne postavke i dijeljeno stanje aplikacije."""
 import os
+import uuid
 
 # ── Server ────────────────────────────────────────────────────────────────────
 PORT: int = int(os.environ.get("SKRIPTORIJ_PORT", 8080))
+
+# Unique ID for this server process — changes on every restart
+SERVER_RUN_ID: str = str(uuid.uuid4())
 
 # ── Putanje ───────────────────────────────────────────────────────────────────
 PROJECTS_ROOT: str = os.path.join(os.getcwd(), "data")

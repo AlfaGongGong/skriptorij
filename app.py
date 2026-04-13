@@ -33,10 +33,14 @@ def create_app() -> Flask:
     # ── Index ruta ────────────────────────────────────────────────────────────
     @app.route("/")
     def index():
-        # On first visit redirect to /intro; cookie persists for 30 days
-        if not request.cookies.get("intro_seen"):
+        from config.settings import SERVER_RUN_ID
+
+        # Show intro on every new server start; suppress on page-refresh
+        # (browser keeps the session cookie while the process stays alive)
+        if request.cookies.get("intro_seen_run") != SERVER_RUN_ID:
             resp = make_response(redirect("/intro"))
-            resp.set_cookie("intro_seen", "true", max_age=3600 * 24 * 30)
+            # No max_age → session cookie; cleared when browser tab/session ends
+            resp.set_cookie("intro_seen_run", SERVER_RUN_ID)
             return resp
         return render_template("index.html")
 
