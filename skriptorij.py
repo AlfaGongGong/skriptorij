@@ -564,6 +564,7 @@ class SkriptorijAllInOne:
         self.stvarno_prevedeno_u_sesiji = self.spaseno_iz_checkpointa = 0
         self.chunk_skips = 0
         self.html_files = []
+        self._last_live_epub_time = 0.0
 
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.log(f"V8 Engine inicijaliziran za: {self.book_path.name}", "tech")
@@ -1279,6 +1280,11 @@ class SkriptorijAllInOne:
 
             if (i + 1) % 10 == 0:
                 self.buildlive_epub()
+
+            now = time.monotonic()
+            if now - self._last_live_epub_time >= 300:
+                self.buildlive_epub()
+                self._last_live_epub_time = now
 
             self.shared_stats["current_chunk_idx"] = i + 1
             self.shared_stats["active_engine"] = eng
