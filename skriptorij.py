@@ -474,6 +474,9 @@ Tvoj posao je pretvoriti strojni prijevod u tekst koji se čita kao originalna k
 
 KONTEKST KNJIGE: {knjiga_kontekst}
 
+GLOSAR LIKOVA I TERMINA (OBAVEZNO POŠTOVATI — ne mijenjaj ova imena ni pojmove):
+{glosar_injekcija}
+
 IMPERATIVNA PRAVILA LEKTURE:
 
 1. KNJIŽEVNI STIL ({stil_injekcija}):
@@ -503,6 +506,11 @@ IMPERATIVNA PRAVILA LEKTURE:
    • Uvodni komentari ("Evo prijevoda:", "Naravno!", "Svakako!")
    • Izlišne rečenice koje nisu u originalu
    • Prebukvalni prijevodi koji zvuče neprirodno
+   • Mijenjanje ili uklanjanje vlastitih imena i pojmova iz glosara
+
+6. HTML FORMAT:
+   • Zadrži SVE HTML tagove (<p>, <em>, <i>, <b>, <br>, <div>) netaknute i na originalnim pozicijama
+   • Ne dodaj, ne uklanjaj i ne premještaj tagove
 
 Vrati ISKLJUČIVO JSON objekt: {{"finalno_polirano": "<OVDJE_IDI_LEKTORIRANI_TEKST>"}}
 Zamijeni <OVDJE_IDI_LEKTORIRANI_TEKST> stvarnim lektoriranim sadržajem. Ne ponavljaj ovu uputu.
@@ -543,6 +551,24 @@ Provjeri da li prijevod vjerno prenosi SMISAO originalnog engleskog teksta.
 Gledaj samo smisao i nijanse — ne gledaj stil.
 Vrati ISKLJUČIVO JSON: {"ok": true/false, "razlog": "kratko objašnjenje ako nije ok"}
 """
+
+_POST_LEKTOR_VALIDATOR_SYS = """\
+Ti si kontrolor kvalitete lekture.
+Dobijаš PRIJEVOD (sirovi, prije lekture) i LEKTORIRANI TEKST (nakon lekture).
+Provjeri da li je lektura POGORŠALA tekst na jedan od ovih načina:
+1. Izbrisane su rečenice ili dijelovi sadržaja koji postoje u prijevodu
+2. Dodan je sadržaj koji ne postoji u prijevodu (izmišljene rečenice, opisi)
+3. Promijenjeni su nazivi likova ili ključni termini
+4. Tekst je na engleskom ili sadrži mnogo engleskih riječi umjesto bosanskog/hrvatskog
+Ako je lektura ispravna (poboljšala stil, gramatiku, ritam) — vrati ok=true.
+Vrati ISKLJUČIVO JSON: {"ok": true/false, "razlog": "kratko objašnjenje ako nije ok"}
+"""
+
+# Post-lektor validator thresholds
+_PLV_MIN_TEXT_LEN = 40          # minimum chars in sirovi to bother validating
+_PLV_MIN_LENGTH_RATIO = 0.80    # rollback if lektorirani is <80% of sirovi
+_PLV_MAX_LENGTH_RATIO = 1.30    # rollback if lektorirani is >130% of sirovi
+_PLV_MAX_ENGLISH_RATIO = 0.05   # rollback if >5% English words after lektura
 
 _ANALIZA_SYS = """\
 Pročitaj priloženi uvodni tekst knjige i ekstraktuj:
@@ -669,7 +695,7 @@ class SkriptorijAllInOne:
             glosar_injekcija=glosar_chunk or self.glosar_tekst or "Nema glosara.",
         )
 
-    def _get_lektor_prompt(self, prev_kraj="") -> str:
+    def _get_lektor_prompt(self, prev_kraj="", glosar_injekcija="") -> str:
         zanr = self.book_context.get("zanr", "nepoznat")
         ton = self.book_context.get("ton", "neutralan")
         stil = self.book_context.get("stil_pripovijedanja", "3. lice")
@@ -678,6 +704,7 @@ class SkriptorijAllInOne:
             knjiga_kontekst=f"Žanr: {zanr} | Ton: {ton} | Period: {period}",
             stil_injekcija=f"Prilagodi žanru {zanr} ({ton}). Stil: {stil}. Prirodan ritam.",
             prev_kraj=(prev_kraj[-600:] if prev_kraj else "—"),
+            glosar_injekcija=glosar_injekcija or "Nema specifičnog glosara.",
         )
 
     def _get_korektor_prompt(self) -> str:
@@ -770,7 +797,7 @@ class SkriptorijAllInOne:
             return None
 
     async def _call_single_provider(
-        self, prov_upper, model, sys_content, user_prompt, opt_temp
+        self, prov_upper, model, sys_content, user_prompt, opt_temp, max_tokens=2048
     ):
         key = self.fleet.get_best_key(prov_upper)
         if not key:
@@ -784,7 +811,7 @@ class SkriptorijAllInOne:
         payload = {
             "model": model,
             "temperature": opt_temp,
-            "max_tokens": 2048,
+            "max_tokens": max_tokens,
             "messages": messages,
         }
 
@@ -862,30 +889,45 @@ class SkriptorijAllInOne:
         svi = list(self.fleet.fleet.keys())
 
         # #17: Gemini 2.5 flash | #18: Temperature po ulozi
+        prioritetni_redosljed = False  # False = shuffle; LEKTOR postavlja na True (fiksni prioritet)
+        opt_max_tokens = 2048  # Povećava se za LEKTOR i KOREKTOR
         if uloga == "LEKTOR":
             opt_temp = 0.65  # Viša temperatura = bogatiji, raznovrsniji vokabular
-            pms = []
+            opt_max_tokens = 4096
+            prioritetni_redosljed = True
+            # Primarni: Gemini Flash + veliki modeli ostalih provajdera (jakost > brzina)
+            # Rezervni: Flash-Lite i mali modeli kao fallback
+            primarne = []
+            rezervne = []
+            # Eksplicitni prioritetni redosljed za primarne: Gemini Flash prvi
+            _PRIMARNI_REDOSLJED = ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GROQ", "OPENROUTER"]
+            _REZERVNI = ["CEREBRAS"]
+            svi_upper = {p.upper() for p in svi}
+            for up in _PRIMARNI_REDOSLJED:
+                if up not in svi_upper:
+                    continue
+                if up == "GEMINI":
+                    primarne.append(("GEMINI", "gemini-2.5-flash"))
+                else:
+                    m = self.fleet.get_active_model(up)
+                    if m:
+                        primarne.append((up, m))
             for p in svi:
                 up = p.upper()
                 if up == "GEMINI":
-                    pms += [
-                        ("GEMINI", "gemini-2.5-flash"),
-                        ("GEMINI", "gemini-2.5-flash-lite-preview-06-17"),
-                    ]
-                elif up in [
-                    "GROQ",
-                    "CEREBRAS",
-                    "SAMBANOVA",
-                    "MISTRAL",
-                    "OPENROUTER",
-                    "COHERE",
-                ]:
-                    pms.append((up, self.fleet.get_active_model(up) or "default"))
+                    rezervne.append(("GEMINI", "gemini-2.5-flash-lite-preview-06-17"))
+                elif up in _REZERVNI:
+                    m = self.fleet.get_active_model(up)
+                    if m:
+                        rezervne.append((up, m))
+            random.shuffle(rezervne)
+            pms = primarne + rezervne
             sys_c = sys_override or self._get_lektor_prompt()
 
         elif uloga == "KOREKTOR":
             # Korektor koristi nisku temperaturu za precizne gramatičke ispravke
             opt_temp = 0.25
+            opt_max_tokens = 4096
             pms = []
             for p in svi:
                 up = p.upper()
@@ -953,7 +995,8 @@ class SkriptorijAllInOne:
         else:
             return None, "N/A"
 
-        random.shuffle(pms)
+        if not prioritetni_redosljed:
+            random.shuffle(pms)
         if not pms:
             return None, "N/A"
 
@@ -962,7 +1005,7 @@ class SkriptorijAllInOne:
                 return None, "N/A"
             for prov_upper, model in pms:
                 raw, label = await self._call_single_provider(
-                    prov_upper, model, sys_c, prompt, opt_temp
+                    prov_upper, model, sys_c, prompt, opt_temp, max_tokens=opt_max_tokens
                 )
                 if raw:
                     return raw, label
@@ -1124,11 +1167,13 @@ class SkriptorijAllInOne:
                     pass
 
         # ── KORAK 3: LEKTOR ──────────────────────────────────────────────
-        lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx)
+        lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx, glosar_injekcija=rel_glosar)
         p_lek = (
-            f"IZVORNI TEKST (referenca):\n{chunk[:400]}\n\n"
+            f"IZVORNI TEKST (referenca):\n{chunk}\n\n"
             f"TEKST ZA LEKTURU:\n{sirovo}\n\n"
-            f"Izvrši dubinsku lekturu. Uglancaj vokabular i osiguraj književni ton."
+            f"Izvrši dubinsku lekturu: (a) ispravi kalkirane i doslovno prevedene konstrukcije, "
+            f"(b) uskladi glagolska vremena unutar odlomka, "
+            f"(c) poboljšaj ritam dijaloga da zvuči prirodno na bosanskom/hrvatskom."
         )
         raw_l, prov2 = await self._call_ai_engine(
             p_lek, chunk_idx, uloga="LEKTOR", filename=file_name, sys_override=lek_sys
@@ -1153,27 +1198,30 @@ class SkriptorijAllInOne:
                 f"[{file_name}] Blok {chunk_idx}: Lektor nije odgovorio — retry sa alt. temperaturom.",
                 "warning",
             )
-            retry_lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx)
+            retry_lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx, glosar_injekcija=rel_glosar)
             retry_p_lek = (
-                f"IZVORNI TEKST (referenca):\n{chunk[:400]}\n\n"
+                f"IZVORNI TEKST (referenca):\n{chunk}\n\n"
                 f"TEKST ZA LEKTURU:\n{sirovo}\n\n"
-                f"Izvrši dubinsku lekturu. Uglancaj vokabular i osiguraj književni ton."
+                f"Izvrši dubinsku lekturu: (a) ispravi kalkirane i doslovno prevedene konstrukcije, "
+                f"(b) uskladi glagolska vremena unutar odlomka, "
+                f"(c) poboljšaj ritam dijaloga da zvuči prirodno na bosanskom/hrvatskom."
             )
-            # Retry s višom temperaturom za raznovrsnost
+            # Retry s višom temperaturom za raznovrsnost — koristi iste prioritetne provajdere
             svi = list(self.fleet.fleet.keys())
+            svi_upper = {p.upper() for p in svi}
             pms_retry = []
-            for p in svi:
-                up = p.upper()
-                if up in ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL"]:
-                    m_name = (
-                        "gemini-2.5-flash"
-                        if up == "GEMINI"
-                        else (self.fleet.get_active_model(up) or "default")
-                    )
-                    pms_retry.append((up, m_name))
+            for up in ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GROQ"]:
+                if up not in svi_upper:
+                    continue
+                m_name = (
+                    "gemini-2.5-flash"
+                    if up == "GEMINI"
+                    else (self.fleet.get_active_model(up) or "default")
+                )
+                pms_retry.append((up, m_name))
             for prov_r, model_r in pms_retry:
                 raw_retry, label_r = await self._call_single_provider(
-                    prov_r, model_r, retry_lek_sys, retry_p_lek, 0.80
+                    prov_r, model_r, retry_lek_sys, retry_p_lek, 0.80, max_tokens=4096
                 )
                 if raw_retry:
                     try:
@@ -1235,10 +1283,61 @@ class SkriptorijAllInOne:
                     "warning",
                 )
 
+        # ── KORAK 3b: POST-LEKTOR VALIDATOR (selektivni) ─────────────────────
+        # Pokrenuti samo kad lektura pokazuje sumnjive metrike:
+        #   • >20% kraći od sirovog prijevoda (lektor možda izbrisao rečenice)
+        #   • >30% duži od sirovog prijevoda (lektor možda dodao sadržaj)
+        #   • >5% engleskih riječi u lektoriranom tekstu (regresija na engleski)
+        sirovo_len = len(re.sub(r"<[^>]+>", "", sirovo).strip())
+        lektorirani_len = len(re.sub(r"<[^>]+>", "", finalno).strip())
+        plv_ratio = lektorirani_len / sirovo_len if sirovo_len > 0 else 1.0
+        plv_en = _detektuj_en_ostatke(finalno)
+        plv_treba = (
+            sirovo_len > _PLV_MIN_TEXT_LEN
+            and finalno != sirovo
+            and (
+                plv_ratio < _PLV_MIN_LENGTH_RATIO
+                or plv_ratio > _PLV_MAX_LENGTH_RATIO
+                or plv_en > _PLV_MAX_ENGLISH_RATIO
+            )
+        )
+        if plv_treba:
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: 🔍 Post-lektor validator (ratio={plv_ratio:.2f}, en={plv_en:.2f})",
+                "validator",
+            )
+            plv_prompt = (
+                f"PRIJEVOD (sirovi, prije lekture):\n{sirovo}\n\n"
+                f"LEKTORIRANI TEKST:\n{finalno}"
+            )
+            plv_raw, _ = await self._call_ai_engine(
+                plv_prompt,
+                chunk_idx,
+                uloga="VALIDATOR",
+                filename=file_name,
+                sys_override=_POST_LEKTOR_VALIDATOR_SYS,
+            )
+            if plv_raw:
+                try:
+                    m_plv = re.search(r"\{.*\}", plv_raw, re.DOTALL)
+                    plv_obj = json.loads(m_plv.group() if m_plv else plv_raw)
+                    if not plv_obj.get("ok", True):
+                        razlog_plv = plv_obj.get("razlog", "nepoznat razlog")
+                        self.log(
+                            f"[{file_name}] Blok {chunk_idx}: ↩️ Post-lektor rollback ({razlog_plv}) — čuvam sirovi prijevod.",
+                            "warning",
+                        )
+                        finalno = sirovo
+                except Exception as exc:
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ⚠️ Post-lektor validator parse greška: {exc}",
+                        "warning",
+                    )
+
         # ── KORAK 4: KOREKTOR (print-quality gramatička korektura) ──────────
         # Pokrenuti samo za blokove s dovoljno sadržaja (>80 znakova teksta)
         finalno_tekst_len = len(re.sub(r"<[^>]+>", "", finalno).strip())
-        if finalno_tekst_len > 80 and jezik != "HR":
+        if finalno_tekst_len > 80:
             kor_prompt = (
                 f"Tekst za korekturu:\n{finalno}"
             )
