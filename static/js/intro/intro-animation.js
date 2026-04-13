@@ -83,7 +83,7 @@ class IntroAnimation {
         }, 2000);
 
         try {
-            this.rain = new DigitalRain(document.getElementById('intro-rain-canvas'));
+            // Digital rain removed — V8 SVG ghost background replaces it
             this._initThree();
         } catch (e) {
             // Three.js initialisation failed — keep dots visible as fallback and redirect
