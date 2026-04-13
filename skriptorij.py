@@ -552,6 +552,18 @@ Gledaj samo smisao i nijanse — ne gledaj stil.
 Vrati ISKLJUČIVO JSON: {"ok": true/false, "razlog": "kratko objašnjenje ako nije ok"}
 """
 
+_POST_LEKTOR_VALIDATOR_SYS = """\
+Ti si kontrolor kvalitete lekture.
+Dobijаš PRIJEVOD (sirovi, prije lekture) i LEKTORIRANI TEKST (nakon lekture).
+Provjeri da li je lektura POGORŠALA tekst na jedan od ovih načina:
+1. Izbrisane su rečenice ili dijelovi sadržaja koji postoje u prijevodu
+2. Dodan je sadržaj koji ne postoji u prijevodu (izmišljene rečenice, opisi)
+3. Promijenjeni su nazivi likova ili ključni termini
+4. Tekst je na engleskom ili sadrži mnogo engleskih riječi umjesto bosanskog/hrvatskog
+Ako je lektura ispravna (poboljšala stil, gramatiku, ritam) — vrati ok=true.
+Vrati ISKLJUČIVO JSON: {"ok": true/false, "razlog": "kratko objašnjenje ako nije ok"}
+"""
+
 _ANALIZA_SYS = """\
 Pročitaj priloženi uvodni tekst knjige i ekstraktuj:
 1. Žanr i ton (npr: dark fantasy, thriller, romantika, SF, historijski)
@@ -1264,6 +1276,50 @@ class SkriptorijAllInOne:
                     f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju (ratio={ratio:.2f}), puštam dalje.",
                     "warning",
                 )
+
+        # ── KORAK 3b: POST-LEKTOR VALIDATOR (selektivni) ─────────────────────
+        # Pokrenuti samo kad lektura pokazuje sumnjive metrike:
+        #   • >20% kraći od sirovog prijevoda (lektor možda izbrisao rečenice)
+        #   • >30% duži od sirovog prijevoda (lektor možda dodao sadržaj)
+        #   • >5% engleskih riječi u lektoriranom tekstu (regresija na engleski)
+        sirovo_len = len(re.sub(r"<[^>]+>", "", sirovo).strip())
+        finalno_len_plv = len(re.sub(r"<[^>]+>", "", finalno).strip())
+        _plv_ratio = finalno_len_plv / sirovo_len if sirovo_len > 0 else 1.0
+        _plv_en = _detektuj_en_ostatke(finalno)
+        _plv_treba = (
+            sirovo_len > 40
+            and finalno != sirovo
+            and (_plv_ratio < 0.80 or _plv_ratio > 1.30 or _plv_en > 0.05)
+        )
+        if _plv_treba:
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: 🔍 Post-lektor validator (ratio={_plv_ratio:.2f}, en={_plv_en:.2f})",
+                "validator",
+            )
+            plv_prompt = (
+                f"PRIJEVOD (sirovi, prije lekture):\n{sirovo[:1000]}\n\n"
+                f"LEKTORIRANI TEKST:\n{finalno[:1000]}"
+            )
+            plv_raw, _ = await self._call_ai_engine(
+                plv_prompt,
+                chunk_idx,
+                uloga="VALIDATOR",
+                filename=file_name,
+                sys_override=_POST_LEKTOR_VALIDATOR_SYS,
+            )
+            if plv_raw:
+                try:
+                    m_plv = re.search(r"\{.*\}", plv_raw, re.DOTALL)
+                    plv_obj = json.loads(m_plv.group() if m_plv else plv_raw)
+                    if not plv_obj.get("ok", True):
+                        razlog_plv = plv_obj.get("razlog", "nepoznat razlog")
+                        self.log(
+                            f"[{file_name}] Blok {chunk_idx}: ↩️ Post-lektor rollback ({razlog_plv}) — čuvam sirovi prijevod.",
+                            "warning",
+                        )
+                        finalno = sirovo
+                except Exception:
+                    pass
 
         # ── KORAK 4: KOREKTOR (print-quality gramatička korektura) ──────────
         # Pokrenuti samo za blokove s dovoljno sadržaja (>80 znakova teksta)
