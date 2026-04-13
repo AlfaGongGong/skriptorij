@@ -564,6 +564,12 @@ Ako je lektura ispravna (poboljšala stil, gramatiku, ritam) — vrati ok=true.
 Vrati ISKLJUČIVO JSON: {"ok": true/false, "razlog": "kratko objašnjenje ako nije ok"}
 """
 
+# Post-lektor validator thresholds
+_PLV_MIN_TEXT_LEN = 40          # minimum chars in sirovi to bother validating
+_PLV_MIN_LENGTH_RATIO = 0.80    # rollback if lektorirani is <80% of sirovi
+_PLV_MAX_LENGTH_RATIO = 1.30    # rollback if lektorirani is >130% of sirovi
+_PLV_MAX_ENGLISH_RATIO = 0.05   # rollback if >5% English words after lektura
+
 _ANALIZA_SYS = """\
 Pročitaj priloženi uvodni tekst knjige i ekstraktuj:
 1. Žanr i ton (npr: dark fantasy, thriller, romantika, SF, historijski)
@@ -1283,22 +1289,26 @@ class SkriptorijAllInOne:
         #   • >30% duži od sirovog prijevoda (lektor možda dodao sadržaj)
         #   • >5% engleskih riječi u lektoriranom tekstu (regresija na engleski)
         sirovo_len = len(re.sub(r"<[^>]+>", "", sirovo).strip())
-        finalno_len_plv = len(re.sub(r"<[^>]+>", "", finalno).strip())
-        _plv_ratio = finalno_len_plv / sirovo_len if sirovo_len > 0 else 1.0
-        _plv_en = _detektuj_en_ostatke(finalno)
-        _plv_treba = (
-            sirovo_len > 40
+        lektorirani_len = len(re.sub(r"<[^>]+>", "", finalno).strip())
+        plv_ratio = lektorirani_len / sirovo_len if sirovo_len > 0 else 1.0
+        plv_en = _detektuj_en_ostatke(finalno)
+        plv_treba = (
+            sirovo_len > _PLV_MIN_TEXT_LEN
             and finalno != sirovo
-            and (_plv_ratio < 0.80 or _plv_ratio > 1.30 or _plv_en > 0.05)
+            and (
+                plv_ratio < _PLV_MIN_LENGTH_RATIO
+                or plv_ratio > _PLV_MAX_LENGTH_RATIO
+                or plv_en > _PLV_MAX_ENGLISH_RATIO
+            )
         )
-        if _plv_treba:
+        if plv_treba:
             self.log(
-                f"[{file_name}] Blok {chunk_idx}: 🔍 Post-lektor validator (ratio={_plv_ratio:.2f}, en={_plv_en:.2f})",
+                f"[{file_name}] Blok {chunk_idx}: 🔍 Post-lektor validator (ratio={plv_ratio:.2f}, en={plv_en:.2f})",
                 "validator",
             )
             plv_prompt = (
-                f"PRIJEVOD (sirovi, prije lekture):\n{sirovo[:1000]}\n\n"
-                f"LEKTORIRANI TEKST:\n{finalno[:1000]}"
+                f"PRIJEVOD (sirovi, prije lekture):\n{sirovo}\n\n"
+                f"LEKTORIRANI TEKST:\n{finalno}"
             )
             plv_raw, _ = await self._call_ai_engine(
                 plv_prompt,
@@ -1318,8 +1328,11 @@ class SkriptorijAllInOne:
                             "warning",
                         )
                         finalno = sirovo
-                except Exception:
-                    pass
+                except Exception as exc:
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ⚠️ Post-lektor validator parse greška: {exc}",
+                        "warning",
+                    )
 
         # ── KORAK 4: KOREKTOR (print-quality gramatička korektura) ──────────
         # Pokrenuti samo za blokove s dovoljno sadržaja (>80 znakova teksta)
