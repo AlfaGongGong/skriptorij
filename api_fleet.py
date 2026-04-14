@@ -13,14 +13,19 @@ from typing import Optional
 
 # Podrazumijevani modeli po provajderu
 _DEFAULT_MODELS = {
-    "GEMINI": "gemini-2.5-flash",
-    "GROQ": "llama-3.3-70b-versatile",
-    "CEREBRAS": "llama3.1-8b",
-    "SAMBANOVA": "Meta-Llama-3.3-70B-Instruct",
-    "MISTRAL": "mistral-large-latest",
-    "COHERE": "command-a-03-2025",
-    "OPENROUTER": "meta-llama/llama-3.3-70b-instruct:free",
-    "GITHUB": "gpt-4o-mini",
+    "GEMINI":      "gemini-2.5-flash",
+    "GROQ":        "llama-3.3-70b-versatile",
+    "CEREBRAS":    "llama3.1-8b",
+    "SAMBANOVA":   "Meta-Llama-3.3-70B-Instruct",
+    "MISTRAL":     "mistral-large-latest",
+    "COHERE":      "command-a-03-2025",
+    "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
+    "GITHUB":      "Phi-4",
+    "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
+    "CHUTES":      "deepseek-ai/DeepSeek-V3-0324",
+    "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
+    "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
 }
 
 # Cooldown nakon rate-limit greške (sekunde)
@@ -30,14 +35,19 @@ _COOLDOWN_429 = 90
 # Koriste se kada API ne vraća rate-limit headere (remaining_minute == -1).
 # Postavljeni ispod stvarnih limita kao sigurnosna margina.
 _KNOWN_FREE_RPM: dict[str, int] = {
-    "GEMINI":     12,   # free tier: 15 RPM → koristimo 12
-    "GROQ":       25,   # varira po modelu, konzervativna procjena
-    "CEREBRAS":   25,
-    "SAMBANOVA":  15,
-    "MISTRAL":     4,   # free tier: veoma ograničen
-    "COHERE":     15,
-    "OPENROUTER":  8,   # free modeli: uski limiti
-    "GITHUB":     12,
+    "GEMINI":      12,   # free tier: 15 RPM → koristimo 12
+    "GROQ":        25,   # varira po modelu, konzervativna procjena
+    "CEREBRAS":    25,
+    "SAMBANOVA":   15,
+    "MISTRAL":      4,   # free tier: veoma ograničen
+    "COHERE":      15,
+    "OPENROUTER":   8,   # free modeli: uski limiti
+    "GITHUB":      12,   # GitHub Models: ~15 RPM
+    "TOGETHER":    10,   # Together AI free tier: konzervativna procjena
+    "FIREWORKS":   10,   # Fireworks AI free tier
+    "CHUTES":      15,   # Chutes AI: liberalniji besplatni tier
+    "HUGGINGFACE":  8,   # HF Inference API besplatni tier
+    "KLUSTER":     10,   # Kluster AI besplatni tier
 }
 
 def _today_midnight_ts() -> float:

@@ -1,0 +1,74 @@
+{
+  "_comment": "Kopirajte ovaj fajl u dev_api.json i popunite ključeve. Provajderi bez ključeva su automatski nevidljivi u dashboardu.",
+
+  "GEMINI": {
+    "keys": ["AIza..."],
+    "model": "gemini-2.5-flash"
+  },
+
+  "GROQ": {
+    "keys": ["gsk_..."],
+    "model": "llama-3.3-70b-versatile"
+  },
+
+  "CEREBRAS": {
+    "keys": ["csk-..."],
+    "model": "llama3.1-8b"
+  },
+
+  "SAMBANOVA": {
+    "keys": ["..."],
+    "model": "Meta-Llama-3.3-70B-Instruct"
+  },
+
+  "MISTRAL": {
+    "keys": ["..."],
+    "model": "mistral-large-latest"
+  },
+
+  "COHERE": {
+    "keys": ["..."],
+    "model": "command-a-03-2025"
+  },
+
+  "OPENROUTER": {
+    "keys": ["sk-or-v1-..."],
+    "model": "meta-llama/llama-3.3-70b-instruct:free"
+  },
+
+  "GITHUB": {
+    "_comment": "Koristite GitHub Personal Access Token (PAT) umjesto API ključa. Pristup: github.com/settings/tokens",
+    "keys": ["ghp_..."],
+    "model": "Phi-4"
+  },
+
+  "TOGETHER": {
+    "_comment": "Registracija: together.xyz — besplatni kredit pri registraciji",
+    "keys": ["..."],
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+  },
+
+  "FIREWORKS": {
+    "_comment": "Registracija: fireworks.ai — besplatni kredit pri registraciji",
+    "keys": ["fw_..."],
+    "model": "accounts/fireworks/models/llama-v3p3-70b-instruct"
+  },
+
+  "CHUTES": {
+    "_comment": "Registracija: chutes.ai — potpuno besplatan tier (GitHub login). DeepSeek V3 i R1 dostupni.",
+    "keys": ["..."],
+    "model": "deepseek-ai/DeepSeek-V3-0324"
+  },
+
+  "HUGGINGFACE": {
+    "_comment": "Koristite HuggingFace Access Token. Registracija: huggingface.co/settings/tokens",
+    "keys": ["hf_..."],
+    "model": "meta-llama/Llama-3.3-70B-Instruct"
+  },
+
+  "KLUSTER": {
+    "_comment": "Registracija: kluster.ai — besplatni krediti pri registraciji",
+    "keys": ["..."],
+    "model": "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo"
+  }
+}

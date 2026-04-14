@@ -69,6 +69,26 @@ def _url_github():
     return "https://models.inference.ai.azure.com/chat/completions"
 
 
+def _url_together():
+    return "https://api.together.xyz/v1/chat/completions"
+
+
+def _url_fireworks():
+    return "https://api.fireworks.ai/inference/v1/chat/completions"
+
+
+def _url_chutes():
+    return "https://llm.chutes.ai/v1/chat/completions"
+
+
+def _url_huggingface():
+    return "https://router.huggingface.co/v1/chat/completions"
+
+
+def _url_kluster():
+    return "https://api.kluster.ai/v1/chat/completions"
+
+
 def _url_daisy():
     return "http://www.daisy.org/z3986/2005/ncx/"
 
@@ -82,14 +102,19 @@ _LAST_CALLS = {}
 # Gemini free tier: 15 RPM → 4s; koristimo 5s za sigurnosnu marginu.
 # Klíč je prov_upper (ne model!) da bi oba Gemini modela dijelila isti timer.
 _PROVIDER_MIN_GAP = {
-    "GEMINI":     5.0,
-    "GROQ":       3.0,
-    "CEREBRAS":   2.5,
-    "SAMBANOVA":  3.0,
-    "MISTRAL":    3.0,
-    "COHERE":     3.0,
-    "OPENROUTER": 3.0,
-    "GITHUB":     5.0,
+    "GEMINI":      5.0,
+    "GROQ":        3.0,
+    "CEREBRAS":    2.5,
+    "SAMBANOVA":   3.0,
+    "MISTRAL":     3.0,
+    "COHERE":      3.0,
+    "OPENROUTER":  3.0,
+    "GITHUB":      5.0,
+    "TOGETHER":    4.0,
+    "FIREWORKS":   4.0,
+    "CHUTES":      3.5,
+    "HUGGINGFACE": 4.0,
+    "KLUSTER":     4.0,
 }
 MIN_GAP = 3.0  # fallback za nepoznate provajdere
 
@@ -920,12 +945,17 @@ class SkriptorijAllInOne:
             headers["Accept"] = "application/json"
         else:
             url_map = {
-                "GROQ": _url_groq(),
-                "CEREBRAS": _url_cerebras(),
-                "SAMBANOVA": _url_samba(),
-                "MISTRAL": _url_mistral(),
-                "OPENROUTER": _url_openrouter(),
-                "GITHUB": _url_github(),
+                "GROQ":        _url_groq(),
+                "CEREBRAS":    _url_cerebras(),
+                "SAMBANOVA":   _url_samba(),
+                "MISTRAL":     _url_mistral(),
+                "OPENROUTER":  _url_openrouter(),
+                "GITHUB":      _url_github(),
+                "TOGETHER":    _url_together(),
+                "FIREWORKS":   _url_fireworks(),
+                "CHUTES":      _url_chutes(),
+                "HUGGINGFACE": _url_huggingface(),
+                "KLUSTER":     _url_kluster(),
             }
             url = url_map.get(prov_upper, _url_groq())
             headers["Authorization"] = f"Bearer {key.strip()}"
@@ -1015,7 +1045,11 @@ class SkriptorijAllInOne:
             primarne = []
             rezervne = []
             # Eksplicitni prioritetni redosljed za primarne: Gemini Flash prvi
-            _PRIMARNI_REDOSLJED = ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GROQ", "OPENROUTER"]
+            _PRIMARNI_REDOSLJED = [
+                "GEMINI", "MISTRAL", "COHERE", "SAMBANOVA",
+                "TOGETHER", "FIREWORKS", "CHUTES", "HUGGINGFACE", "KLUSTER",
+                "GROQ", "OPENROUTER", "GITHUB",
+            ]
             _REZERVNI = ["CEREBRAS"]
             svi_upper = {p.upper() for p in svi}
             for up in _PRIMARNI_REDOSLJED:
@@ -1070,6 +1104,12 @@ class SkriptorijAllInOne:
                     "GEMINI",
                     "MISTRAL",
                     "OPENROUTER",
+                    "TOGETHER",
+                    "FIREWORKS",
+                    "CHUTES",
+                    "HUGGINGFACE",
+                    "KLUSTER",
+                    "GITHUB",
                 ]:
                     m = (
                         "gemini-2.5-flash"
@@ -1099,7 +1139,7 @@ class SkriptorijAllInOne:
             pms = []
             for p in svi:
                 up = p.upper()
-                if up in ["GEMINI", "GROQ", "CEREBRAS"]:
+                if up in ["GEMINI", "GROQ", "CEREBRAS", "TOGETHER", "FIREWORKS", "CHUTES", "KLUSTER"]:
                     m = (
                         "gemini-2.5-flash"
                         if up == "GEMINI"
@@ -1208,7 +1248,11 @@ class SkriptorijAllInOne:
         (None, None) ako svi pokušaji propadnu — tada pozivač zadrži sirovi.
         """
         TEMP_LADDER = [0.50, 0.70, 0.85, 0.95]
-        PROV_REDOSLJED = ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GROQ", "CEREBRAS", "OPENROUTER"]
+        PROV_REDOSLJED = [
+            "GEMINI", "MISTRAL", "COHERE", "SAMBANOVA",
+            "TOGETHER", "FIREWORKS", "CHUTES", "HUGGINGFACE", "KLUSTER",
+            "GROQ", "CEREBRAS", "OPENROUTER", "GITHUB",
+        ]
         svi_upper = {p.upper() for p in self.fleet.fleet.keys()}
 
         lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx, glosar_injekcija=rel_glosar)
