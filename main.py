@@ -12,6 +12,7 @@ import threading
 import time
 import logging
 import webbrowser
+import traceback
 
 # Uvoz fabrike aplikacije i dijeljenog stanja
 from app import app
@@ -21,6 +22,56 @@ from config.logging_config import configure_logging
 # Introspect intro — standalone /intro route is always active via app.py
 _INTRO_LOADED = True
 
+# ANSI boje
+_GREEN  = "\x1b[1;92m"
+_RED    = "\x1b[1;91m"
+_BRED   = "\x1b[1;97;41m"
+_YELLOW = "\x1b[1;93m"
+_CYAN   = "\x1b[1;96m"
+_RESET  = "\x1b[0m"
+
+_AUDIT_INTERVAL = 300  # sekundi (5 minuta)
+
+
+# ============================================================================
+# FLASK AUDIT THREAD
+# ============================================================================
+def _flask_audit_loop(port: int) -> None:
+    """Svakih 5 minuta provjerava dostupnost Flask servera i ispisuje u terminal."""
+    import urllib.request
+    import urllib.error
+
+    url = f"http://127.0.0.1:{port}/api/status"
+
+    # Sačekaj da se server podigne prije prvog audita
+    time.sleep(15)
+
+    while True:
+        ts = time.strftime("%H:%M:%S")
+        try:
+            with urllib.request.urlopen(url, timeout=5) as resp:
+                code = resp.getcode()
+                status = SHARED_STATS.get("status", "?")
+                pct    = SHARED_STATS.get("pct", 0)
+                engine = SHARED_STATS.get("active_engine", "---")
+                sys.stdout.write(
+                    f"{_GREEN}[AUDIT {ts}] ✅ Flask OK (HTTP {code}) | "
+                    f"status={status} | pct={pct}% | engine={engine}{_RESET}\n"
+                )
+                sys.stdout.flush()
+        except urllib.error.URLError as exc:
+            sys.stdout.write(
+                f"{_BRED}[AUDIT {ts}] ❌ FLASK NEDOSTUPAN — {exc.reason}{_RESET}\n"
+            )
+            sys.stdout.flush()
+        except Exception as exc:
+            sys.stdout.write(
+                f"{_RED}[AUDIT {ts}] ⚠️  Audit greška: {type(exc).__name__}: {exc}{_RESET}\n"
+            )
+            sys.stdout.flush()
+
+        time.sleep(_AUDIT_INTERVAL)
+
 
 # ============================================================================
 # GRACEFUL SHUTDOWN
@@ -29,7 +80,7 @@ def _graceful_shutdown(signum, frame):
     """Postavi stop flag i završi aktivnu obradu."""
     SHARED_CONTROLS["stop"] = True
     SHARED_STATS["status"] = "ZAUSTAVLJENO"
-    print("\n\x1b[1;93m[SHUTDOWN] Signal primljen — čekam završetak tekuće obrade...\x1b[0m")
+    print(f"\n{_YELLOW}[SHUTDOWN] Signal primljen — čekam završetak tekuće obrade...{_RESET}")
     sys.exit(0)
 
 
@@ -49,13 +100,14 @@ if __name__ == "__main__":
     print("\x1b[1;91m  ___) |   <| |  | | |_) | || (_) | |  | | |\x1b[0m")
     print("\x1b[1;91m |____/|_|\\_\\_|  |_| .__/ \\__\\___/|_|  |_| |\x1b[0m")
     print("\x1b[1;91m                   |_|                      \x1b[0m")
-    print("\x1b[1;92m" + "=" * 48 + "\x1b[0m")
-    print("\x1b[1;96m  🚀 SKRIPTORIJ V8 TURBO - SERVER AKTIVAN 🚀  \x1b[0m")
-    print("\x1b[1;92m" + "=" * 48 + "\x1b[0m")
-    print(f"\x1b[1;93m [INFO]\x1b[0m http://127.0.0.1:{PORT}")
+    print(f"{_GREEN}" + "=" * 48 + f"{_RESET}")
+    print(f"{_CYAN}  🚀 SKRIPTORIJ V8 TURBO - SERVER AKTIVAN 🚀  {_RESET}")
+    print(f"{_GREEN}" + "=" * 48 + f"{_RESET}")
+    print(f"{_YELLOW} [INFO]{_RESET} http://127.0.0.1:{PORT}")
     if _INTRO_LOADED:
-        print("\x1b[1;95m [INFO] Kinematski intro: AKTIVAN\x1b[0m")
-    print("\n\x1b[1;31m >>> CTRL+C za zaustavljanje <<<\x1b[0m\n")
+        print(f"\x1b[1;95m [INFO] Kinematski intro: AKTIVAN{_RESET}")
+    print(f"\x1b[1;96m [INFO] Flask audit: svakih {_AUDIT_INTERVAL // 60} min{_RESET}")
+    print(f"\n{_RED} >>> CTRL+C za zaustavljanje <<<{_RESET}\n")
 
     def open_browser():
         time.sleep(1.5)
@@ -68,4 +120,22 @@ if __name__ == "__main__":
             pass
 
     threading.Thread(target=open_browser, daemon=True).start()
-    app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
+
+    # Pokretanje audit threada
+    threading.Thread(
+        target=_flask_audit_loop,
+        args=(PORT,),
+        daemon=True,
+        name="flask-audit",
+    ).start()
+
+    try:
+        app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
+    except Exception as exc:
+        sys.stdout.write(
+            f"{_BRED}[KRITIČNA GREŠKA] Flask server se nije pokrenuo: "
+            f"{type(exc).__name__}: {exc}{_RESET}\n"
+        )
+        sys.stdout.write(traceback.format_exc())
+        sys.stdout.flush()
+        sys.exit(1)
