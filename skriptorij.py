@@ -695,6 +695,8 @@ class SkriptorijAllInOne:
         self.shared_stats = shared_stats
         self.shared_controls = shared_controls
         self.fleet = FleetManager(config_path="dev_api.json")
+        # Osvježi fleet iz diska — pokupa ključeve dodane od prethodnog pokretanja
+        self.fleet.reload()
         register_active_fleet(self.fleet)
 
         self.clean_book_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.book_path.stem)

@@ -9,6 +9,17 @@ from config.settings import CONFIG_PATH
 bp = Blueprint("keys", __name__)
 
 
+def _reload_active_fleet() -> None:
+    """Osvježava aktivni fleet iz diska ako postoji (tiho ignorira greške)."""
+    try:
+        from api_fleet import get_active_fleet
+        fm = get_active_fleet()
+        if fm is not None:
+            fm.reload()
+    except Exception:
+        pass
+
+
 @bp.route("/api/keys", methods=["GET"])
 def list_keys():
     """Vraća listu provajdera i maskiran prikaz ključeva."""
@@ -33,7 +44,7 @@ def list_keys():
 
 @bp.route("/api/keys/<provider>", methods=["POST"])
 def add_key(provider):
-    """Dodaje novi API ključ za provajdera."""
+    """Dodaje novi API ključ za provajdera i odmah aktivira provajdera u floti."""
     data = request.get_json()
     if not data or "key" not in data:
         return jsonify({"error": 'Nedostaje "key" polje'}), 400
@@ -64,6 +75,8 @@ def add_key(provider):
             cfg[prov_upper].setdefault("keys", []).append(new_key)
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
+        # Odmah aktiviraj novi ključ u aktivnoj floti (bez restarta)
+        _reload_active_fleet()
         return jsonify(
             {"status": "ok", "provider": prov_upper, "masked": f"...{new_key[-6:]}"}
         )
@@ -73,7 +86,7 @@ def add_key(provider):
 
 @bp.route("/api/keys/<provider>/<int:idx>", methods=["DELETE"])
 def delete_key(provider, idx):
-    """Briše API ključ po indeksu za dati provajder."""
+    """Briše API ključ po indeksu za dati provajder i osvježava flotu."""
     prov_upper = re.sub(r"[^A-Z0-9_]", "", provider.upper())
     try:
         with open(CONFIG_PATH, encoding="utf-8") as f:
@@ -90,6 +103,8 @@ def delete_key(provider, idx):
         keys_list.pop(idx)
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
+        # Odmah ukloni obrisani ključ iz aktivne flote (bez restarta)
+        _reload_active_fleet()
         return jsonify({"status": "ok", "provider": prov_upper})
     except Exception:
         return jsonify({"error": "Greška pri brisanju ključa"}), 500
