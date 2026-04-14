@@ -459,7 +459,7 @@ class FleetManager:
                     "last_success_ago": last_ago,
                     # Interno praćeni podaci (uvijek dostupni, neovisno o headerima)
                     "rpm_used_internal": rpm_used,
-                    "rpm_limit_effective": rpm_limit,
+                    "rpm_limit_internal": rpm_limit,
                 })
 
             # Ukupno dnevno zdravlje provajdera (% preostalog dnevnog kvota)
