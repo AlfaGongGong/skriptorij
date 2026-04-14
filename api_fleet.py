@@ -13,7 +13,7 @@ from typing import Optional
 
 # Podrazumijevani modeli po provajderu
 _DEFAULT_MODELS = {
-    "GEMINI":      "gemini-2.5-flash",
+    "GEMINI":      "gemini-flash-latest",
     "GROQ":        "llama-3.3-70b-versatile",
     "CEREBRAS":    "llama3.1-8b",
     "SAMBANOVA":   "Meta-Llama-3.3-70B-Instruct",
@@ -26,6 +26,8 @@ _DEFAULT_MODELS = {
     "CHUTES":      "deepseek-ai/DeepSeek-V3-0324",
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
+    # Gemma: bez sistemskog prompta i JSON moda — samo plaintext
+    "GEMMA":       "gemma-3-27b-it",
 }
 
 # Cooldown nakon rate-limit greške (sekunde)
@@ -48,6 +50,7 @@ _KNOWN_FREE_RPM: dict[str, int] = {
     "CHUTES":      15,   # Chutes AI: liberalniji besplatni tier
     "HUGGINGFACE":  8,   # HF Inference API besplatni tier
     "KLUSTER":     10,   # Kluster AI besplatni tier
+    "GEMMA":        5,   # Gemma via Together/Groq — konzervativna procjena
 }
 
 def _today_midnight_ts() -> float:
@@ -385,6 +388,12 @@ class FleetManager:
                         pass
             cooldown = max(retry_after, _COOLDOWN_429)
             state.put_on_cooldown(cooldown)
+            self._provider_backoff[prov_upper] = state.backoff
+
+        elif status_code == 425:
+            # "Too Early" / overloaded — tretiramo kao blagu verziju rate-limita
+            state.errors += 1
+            state.put_on_cooldown(_COOLDOWN_429 // 2)
             self._provider_backoff[prov_upper] = state.backoff
 
         elif status_code in (401, 403):

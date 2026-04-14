@@ -78,24 +78,26 @@ function genBookTargets(count) {
 
 /**
  * Generates PARTICLE_COUNT * 3 positions forming the text "BOOKLYFI"
- * using a 5-row pixel-font bitmap for each letter.
+ * using a 7-row pixel-font bitmap for each letter.
+ * All particles are placed on ON pixels for dense, clear letter formation.
  * @param {number} count - Total particle count
  * @returns {number[]} Flat [x,y,z, x,y,z, …] array
  */
 function genLogoTargets(count) {
     const pts = [];
-    const letW = 8, letH = 14, spacing = 12;
+    const letW = 10, letH = 18, spacing = 14;
     const totalW = 8 * spacing;
     const startX = -totalW / 2 + spacing / 2;
 
+    // 7-row bitmaps for clearer, denser letter formation
     const FONT = {
-        B: [[1,1,1,0],[1,0,0,1],[1,1,1,0],[1,0,0,1],[1,1,1,0]],
-        O: [[1,1,1,1],[1,0,0,1],[1,0,0,1],[1,0,0,1],[1,1,1,1]],
-        K: [[1,0,0,1],[1,0,1,0],[1,1,0,0],[1,0,1,0],[1,0,0,1]],
-        L: [[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,1,1,1]],
-        Y: [[1,0,0,1],[1,0,0,1],[0,1,1,0],[0,1,0,0],[0,1,0,0]],
-        F: [[1,1,1,1],[1,0,0,0],[1,1,1,0],[1,0,0,0],[1,0,0,0]],
-        I: [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[1,1,1]],
+        B: [[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0]],
+        O: [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+        K: [[1,0,0,0,1],[1,0,0,1,0],[1,0,1,0,0],[1,1,0,0,0],[1,0,1,0,0],[1,0,0,1,0],[1,0,0,0,1]],
+        L: [[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1]],
+        Y: [[1,0,0,0,1],[1,0,0,0,1],[0,1,0,1,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]],
+        F: [[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0]],
+        I: [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[0,1,0],[1,1,1]],
     };
     const letters = ['B','O','O','K','L','Y','F','I'];
     const ppLetter = Math.floor(count / letters.length);
@@ -105,30 +107,32 @@ function genLogoTargets(count) {
         const bitmap = FONT[letters[li]];
         const rows = bitmap.length;
         const cols = bitmap[0].length;
-        for (let p = 0; p < ppLetter; p++) {
-            const ri = Math.floor(Math.random() * rows);
-            const ci = Math.floor(Math.random() * cols);
-            if (bitmap[ri][ci]) {
-                pts.push(
-                    lx + (ci / (cols - 1) - 0.5) * letW + (Math.random() - 0.5) * 0.8,
-                    (0.5 - ri / (rows - 1)) * letH   + (Math.random() - 0.5) * 0.8,
-                    (Math.random() - 0.5) * 2
-                );
-            } else {
-                const sc = 250;
-                pts.push(
-                    (Math.random() - 0.5) * sc,
-                    (Math.random() - 0.5) * sc,
-                    (Math.random() - 0.5) * sc * 0.5
-                );
+
+        // Collect all ON pixel positions for this letter
+        const onPixels = [];
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (bitmap[r][c]) onPixels.push([r, c]);
             }
         }
+        if (onPixels.length === 0) continue;
+
+        // Place all particles for this letter on ON pixels only → dense, clear letters
+        for (let p = 0; p < ppLetter; p++) {
+            const [ri, ci] = onPixels[Math.floor(Math.random() * onPixels.length)];
+            pts.push(
+                lx + (ci / (cols - 1) - 0.5) * letW + (Math.random() - 0.5) * 0.6,
+                (0.5 - ri / (rows - 1)) * letH   + (Math.random() - 0.5) * 0.6,
+                (Math.random() - 0.5) * 1.5
+            );
+        }
     }
+    // Fill any remaining particles with subtle scatter around the logo area
     while (pts.length < count * 3) {
         pts.push(
-            (Math.random() - 0.5) * 200,
-            (Math.random() - 0.5) * 200,
-            (Math.random() - 0.5) * 100
+            (Math.random() - 0.5) * totalW * 1.5,
+            (Math.random() - 0.5) * letH * 1.5,
+            (Math.random() - 0.5) * 20
         );
     }
     return pts.slice(0, count * 3);
