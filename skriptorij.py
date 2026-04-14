@@ -1188,6 +1188,81 @@ class SkriptorijAllInOne:
             self.log("Analiza nije dala odgovor. Nastavljam s defaultima.", "warning")
 
     # ============================================================================
+    # SIROVI PREVOD SPAŠAVAČ — retry lektor kada bi blok završio kao sirovi prevod
+    # ============================================================================
+    async def _spasi_od_sirovog(
+        self,
+        sirovo: str,
+        chunk: str,
+        chunk_idx: int,
+        file_name: str,
+        prev_ctx: str,
+        rel_glosar: str,
+        razlog: str,
+    ):
+        """Pokušaj lekturu na alternativnim provajderima s eskalacijom temperature.
+
+        Poziva se svaki put kad bi blok inače pao na sirovi prijevod (halucinacija,
+        engleski ostaci, post-validator rollback). Iterira kroz sve dostupne
+        provajdere na četiri razine temperature. Vraća (finalno, label) ili
+        (None, None) ako svi pokušaji propadnu — tada pozivač zadrži sirovi.
+        """
+        TEMP_LADDER = [0.50, 0.70, 0.85, 0.95]
+        PROV_REDOSLJED = ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GROQ", "CEREBRAS", "OPENROUTER"]
+        svi_upper = {p.upper() for p in self.fleet.fleet.keys()}
+
+        lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx, glosar_injekcija=rel_glosar)
+        p_lek = (
+            f"IZVORNI TEKST (referenca):\n{chunk}\n\n"
+            f"TEKST ZA LEKTURU:\n{sirovo}\n\n"
+            f"Prethodni pokušaj lekture bio je neprihvatljiv ({razlog}). "
+            f"Izvrši kompletnu ponovnu lekturu: ispravi sve greške, "
+            f"ukloni engleske ostatke i vrati prirodan bosanski/hrvatski tekst."
+        )
+
+        for temp in TEMP_LADDER:
+            for up in PROV_REDOSLJED:
+                if up not in svi_upper:
+                    continue
+                if self.shared_controls.get("stop") or self.shared_controls.get("reset"):
+                    return None, None
+                m_name = (
+                    "gemini-2.5-flash"
+                    if up == "GEMINI"
+                    else (self.fleet.get_active_model(up) or "default")
+                )
+                raw_s, label_s = await self._call_single_provider(
+                    up, m_name, lek_sys, p_lek, temp, max_tokens=4096
+                )
+                if not raw_s:
+                    continue
+                try:
+                    ms = re.search(r"\{.*\}", raw_s, re.DOTALL)
+                    obj_s = json.loads(ms.group() if ms else raw_s)
+                    kand = _agresivno_cisti(obj_s.get("finalno_polirano", next(iter(obj_s.values()), "")))
+                except Exception:
+                    kand = _agresivno_cisti(raw_s)
+
+                if (
+                    kand
+                    and not _je_placeholder(kand)
+                    and _detektuj_en_ostatke(kand) <= 0.12
+                    and not _detektuj_halucinaciju(chunk, kand, uloga="LEKTOR")
+                ):
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ✅ Spašeno od sirovog "
+                        f"(temp={temp}, {label_s}) | razlog: {razlog}",
+                        "info",
+                    )
+                    return kand, label_s
+
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: ⛔ Svi rescue pokušaji propalim — zadržavam sirovi.",
+            "warning",
+        )
+        return None, None
+
+    # ============================================================================
     # #14: TROSTEPENI PIPELINE: Prijevod → Validator → Lektor
     # ============================================================================
     async def process_chunk_with_ai(
@@ -1377,7 +1452,16 @@ class SkriptorijAllInOne:
             # Pokušaj ukloniti engleski tekst agresivnim čišćenjem
             finalno = _agresivno_cisti(finalno)
             if _detektuj_en_ostatke(finalno) > 0.15:
-                finalno = sirovo  # Fallback na sirovi prijevod
+                # Agresivno čišćenje nije pomoglo — pokušaj rescue lektor
+                spas, spas_label = await self._spasi_od_sirovog(
+                    sirovo, chunk, chunk_idx, file_name, prev_ctx, rel_glosar,
+                    "previše engleskog i nakon čišćenja"
+                )
+                if spas:
+                    finalno = spas
+                    prov2 = spas_label
+                else:
+                    finalno = sirovo  # Fallback na sirovi prijevod ako rescue propadne
 
         h_detected = _detektuj_halucinaciju(chunk, finalno, uloga="LEKTOR")
 
@@ -1388,10 +1472,18 @@ class SkriptorijAllInOne:
 
             if ratio < 0.08 or ratio > 6.0:
                 self.log(
-                    f"[{file_name}] Blok {chunk_idx}: ⚡ GIGANTSKA halucinacija (ratio={ratio:.2f}) — SPAŠAVAM SIROVI PREVOD!",
+                    f"[{file_name}] Blok {chunk_idx}: ⚡ GIGANTSKA halucinacija (ratio={ratio:.2f}) — pokušavam rescue!",
                     "error",
                 )
-                finalno = sirovo
+                spas, spas_label = await self._spasi_od_sirovog(
+                    sirovo, chunk, chunk_idx, file_name, prev_ctx, rel_glosar,
+                    f"gigantska halucinacija ratio={ratio:.2f}"
+                )
+                if spas:
+                    finalno = spas
+                    prov2 = spas_label
+                else:
+                    finalno = sirovo  # Posljednji fallback
             else:
                 self.log(
                     f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju (ratio={ratio:.2f}), puštam dalje.",
