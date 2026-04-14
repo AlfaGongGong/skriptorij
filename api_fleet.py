@@ -70,6 +70,10 @@ _COOLDOWN_ERROR = 30
 _COOLDOWN_ESCALATION = 1.5
 _COOLDOWN_MAX = 600.0
 _BACKOFF_MAX = 300.0
+# Prag Retry-After iznad kojeg smatramo da je dnevna kvota iscrpljena (sekunde)
+_DAILY_QUOTA_RETRY_AFTER = 3600
+# Broj uzastopnih 429 grešaka nakon kojeg zaključavamo ključ do ponoći
+_DAILY_QUOTA_ERRORS_THRESHOLD = 5
 
 # ------------------------------------------------------------------ #
 # Modul-razinski singleton — dijeli stanje s web endpointima
@@ -399,11 +403,11 @@ class FleetManager:
                         break
                     except (ValueError, TypeError):
                         pass
-            if retry_after > 3600:
+            if retry_after > _DAILY_QUOTA_RETRY_AFTER:
                 # Dugi Retry-After (>1h) znači iscrpljenost dnevne kvote, ne RPM —
                 # koristimo ga direktno bez eskalacije (ne prolazi kroz put_on_cooldown)
                 state.cooldown_until = time.time() + retry_after
-            elif state.errors >= 5:
+            elif state.errors >= _DAILY_QUOTA_ERRORS_THRESHOLD:
                 # Ponavljajuće 429 greške (≥5) — vjerovatno iscrpljena dnevna kvota,
                 # ne samo RPM. Zaključaj ključ do ponoći kad se kvote resetuju.
                 state.cooldown_until = _next_midnight_ts()

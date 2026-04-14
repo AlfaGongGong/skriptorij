@@ -22,7 +22,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString, XMLParsedAsHTMLWarning
-from api_fleet import FleetManager, register_active_fleet
+from api_fleet import FleetManager, register_active_fleet, _DAILY_QUOTA_RETRY_AFTER
 
 try:
     import mobi
@@ -999,7 +999,7 @@ class SkriptorijAllInOne:
                 # Ključ je već stavljen na cooldown u analyze_response — ne čekamo ovdje,
                 # jer bi to blokiralo pokušaj sljedećeg provajdera u petlji.
                 key_state = self.fleet.fleet.get(prov_upper, {}).get(key)
-                if key_state and key_state.cooldown_remaining > 3600:
+                if key_state and key_state.cooldown_remaining > _DAILY_QUOTA_RETRY_AFTER:
                     self.log(
                         f"[{prov_upper}] HTTP {resp.status_code} Dnevna kvota iscrpljena — ključ zaključan do ponoći 🔒", "warning"
                     )
