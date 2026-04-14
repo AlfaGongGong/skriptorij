@@ -427,10 +427,13 @@ class FormaterAllInOne:
                     if resp.status_code == 200:
                         return resp.json()
                     if resp.status_code == 429:
+                        backoff = self.fleet.get_backoff_for_provider(prov_upper)
+                        wait = max(backoff, 30.0) + random.uniform(0, 10.0)
                         self.log(
-                            f"[{prov_upper}] 429 Limit. ⬇️ Čekam (<span class='cd-timer text-amber-500 font-bold'>10</span> sec) ⏳",
+                            f"[{prov_upper}] 429 Limit. ⬇️ Čekam (<span class='cd-timer text-amber-500 font-bold'>{wait:.0f}</span> sec) ⏳",
                             "warning",
                         )
+                        await asyncio.sleep(wait)
                         return None
                 except Exception:
                     pass
@@ -449,10 +452,13 @@ class FormaterAllInOne:
             if resp.status_code == 200:
                 return resp.json()
             if resp.status_code == 429:
+                backoff = self.fleet.get_backoff_for_provider(prov_upper)
+                wait = max(backoff, 45.0) + random.uniform(0, 15.0)
                 self.log(
-                    f"[{prov_upper}] 429 Limit. ⬇️ Čekam (<span class='cd-timer text-amber-500 font-bold'>25</span> sec) ⏳",
+                    f"[{prov_upper}] 429 Limit. ⬇️ Čekam (<span class='cd-timer text-amber-500 font-bold'>{wait:.0f}</span> sec) ⏳",
                     "warning",
                 )
+                await asyncio.sleep(wait)
                 return None
             if resp.status_code in [401, 403]:
                 return None
@@ -558,10 +564,14 @@ class FormaterAllInOne:
 
                         lock = await _ensure_global_lock()
                         async with lock:
+                            # Humanizacija: nasumični jitter tako da zahtjevi ne idu u
+                            # pravilnim impulsima koji izgledaju botovski
+                            effective_gap = MIN_GAP + random.uniform(1.0, 4.0)
                             razmak = time.time() - _LAST_CALLS.get(prov_upper, 0)
-                            if razmak < MIN_GAP:
-                                await asyncio.sleep(MIN_GAP - razmak)
+                            if razmak < effective_gap:
+                                await asyncio.sleep(effective_gap - razmak)
                             _LAST_CALLS[prov_upper] = time.time()
+                            self.fleet.record_request(prov_upper, key)
 
                         data = await self._async_http_post(
                             url, headers, payload, prov, prov_upper, key
