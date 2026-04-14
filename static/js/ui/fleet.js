@@ -46,11 +46,17 @@ export function renderFleetPool(data) {
     for (const [prov, info] of providers) {
         const active = info.active || 0;
         const total  = info.total  || 1;
-        const pct    = Math.round((active / total) * 100);
-        const color  = _fleetHealthColor(pct);
-        const keys   = info.keys || [];
-        const icon   = FLEET_PROV_ICONS[prov] || '🛡️';
-        const keyWord = total === 1 ? 'ključ' : total < 5 ? 'ključa' : 'ključeva';
+        const availPct = Math.round((active / total) * 100);
+        // Koristi dnevni % zdravlja ako je dostupan, inače aktivan/ukupno
+        const dayPct   = (info.day_health_pct != null) ? info.day_health_pct : null;
+        const pct      = dayPct != null ? dayPct : availPct;
+        const color    = _fleetHealthColor(pct);
+        const keys     = info.keys || [];
+        const icon     = FLEET_PROV_ICONS[prov] || '🛡️';
+        const keyWord  = total === 1 ? 'ključ' : total < 5 ? 'ključa' : 'ključeva';
+        const dayLabel = dayPct != null
+            ? `<span class="fleet-day-label" title="Dnevna kvota (resetuje se u ponoć)">📅 ${dayPct}%</span>`
+            : '';
 
         const card = document.createElement('details');
         card.className = 'fleet-card';
@@ -64,6 +70,7 @@ export function renderFleetPool(data) {
                 <span class="fleet-card-icon">${icon}</span>
                 <span class="fleet-card-name">${prov}</span>
                 <span class="fleet-card-count">[${total}\u00a0${keyWord}]</span>
+                ${dayLabel}
             </div>
             <div class="fleet-card-meta">
                 <div class="fleet-health-bar-wrap">
@@ -71,7 +78,7 @@ export function renderFleetPool(data) {
                         <div class="fleet-health-bar-fill" style="width:${pct}%;background:${color};"></div>
                     </div>
                 </div>
-                <span class="fleet-health-pct" style="color:${color};">${pct}%</span>
+                <span class="fleet-health-pct" style="color:${color};">${availPct}%</span>
                 <span class="fleet-chevron">▼</span>
             </div>`;
         card.appendChild(summary);
@@ -88,14 +95,22 @@ export function renderFleetPool(data) {
                 if (k.rate_limit_minute && k.remaining_minute !== null && k.remaining_minute !== undefined) {
                     ratePct = Math.round((k.remaining_minute / k.rate_limit_minute) * 100);
                 }
+                let dayRatePct = null;
+                if (k.rate_limit_day && k.remaining_day !== null && k.remaining_day !== undefined) {
+                    dayRatePct = Math.round((k.remaining_day / k.rate_limit_day) * 100);
+                }
 
                 const rateBar = ratePct != null
-                    ? `<div class="fleet-rate-bar-bg"><div class="fleet-rate-bar-fill" style="width:${ratePct}%;"></div></div>`
+                    ? `<div class="fleet-rate-bar-bg" title="Minutna kvota: ${ratePct}%"><div class="fleet-rate-bar-fill" style="width:${ratePct}%;"></div></div>`
+                    : '';
+                const dayBar = dayRatePct != null
+                    ? `<div class="fleet-rate-bar-bg fleet-day-bar-bg" title="Dnevna kvota: ${dayRatePct}%"><div class="fleet-rate-bar-fill fleet-day-bar-fill" style="width:${dayRatePct}%;"></div></div>`
                     : '';
 
                 const statsArr = [];
                 if (k.total_requests != null) statsArr.push(`REQ\u00a0${k.total_requests}`);
-                if (k.remaining_minute != null) statsArr.push(`REM\u00a0${k.remaining_minute}`);
+                if (k.remaining_minute != null) statsArr.push(`RPM\u00a0${k.remaining_minute}`);
+                if (k.remaining_day != null) statsArr.push(`<span class="fleet-stat-day">RPD\u00a0${k.remaining_day}</span>`);
                 if (k.errors > 0) statsArr.push(`<span style="color:var(--col-danger);">ERR\u00a0${k.errors}</span>`);
 
                 const pill = document.createElement('div');
@@ -112,6 +127,7 @@ export function renderFleetPool(data) {
                         <button class="fleet-toggle-btn" title="${toggleTitle}" aria-label="${toggleTitle}">${toggleIcon}</button>
                     </div>
                     ${rateBar}
+                    ${dayBar}
                     ${statsArr.length ? `<div class="fleet-key-stats">${statsArr.join('<span class="fleet-stat-sep">·</span>')}</div>` : ''}`;
 
                 pill.querySelector('.fleet-toggle-btn').addEventListener('click', function(e) {

@@ -144,6 +144,23 @@ async def _ensure_global_lock():
 BASE_PATH = Path("/storage/emulated/0/termux/Termux_ai_lektor")
 PROJECTS_ROOT = BASE_PATH / "format_projects"
 
+
+def _to_roman(n: int) -> str:
+    """Pretvori cijeli broj u rimski broj (I, II, III, IV...)."""
+    if n < 1:
+        return str(n)
+    vals = [
+        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+    ]
+    result = ""
+    for v, s in vals:
+        while n >= v:
+            result += s
+            n -= v
+    return result
+
 audit_logs = []
 
 
@@ -681,15 +698,42 @@ class FormaterAllInOne:
 
     def _inject_background(self, new_soup):
         style = new_soup.new_tag("style")
-        bg_url = (
-            "file:///"
-            + "storage/emulated/0/Download/photo-1637325258040-d2f09636ecf6.jpeg"
-        )
-        # OVDJE JE POPRAVLJEN CSS F-STRING BUG (Duplane zagrade {{ i }})
+        # Tekstura ostarjelog papira — kodirana CSS-om, bez slike
         style.string = (
-            f"body {{ background-image: url('{bg_url}') !important; background-size: cover !important; background-attachment: fixed !important; color: #1a1a1a !important; font-family: 'Georgia', serif; }} "
-            "p { line-height: 1.75 !important; text-indent: 1.8em !important; margin-bottom: 0.8em !important; font-size: 1.15em !important; text-align: justify; } "
-            "h2 { page-break-before: always; text-align: center; color: #8b0000; font-family: serif; font-size: 2.5em; font-weight: bold; padding-top: 25vh; line-height: 1.2; margin-bottom: 2.5em; text-transform: uppercase; letter-spacing: 0.1em; }"
+            "body {"
+            "  background-color: #f4ede0 !important;"
+            "  background-image:"
+            "    repeating-linear-gradient("
+            "      0deg, transparent, transparent 97%, rgba(139,90,43,0.07) 100%),"
+            "    repeating-linear-gradient("
+            "      90deg, transparent, transparent 98%, rgba(139,90,43,0.04) 100%),"
+            "    radial-gradient(ellipse at 18% 18%, rgba(180,140,90,0.15) 0%, transparent 52%),"
+            "    radial-gradient(ellipse at 82% 82%, rgba(160,110,60,0.12) 0%, transparent 48%),"
+            "    radial-gradient(ellipse at 50% 50%,"
+            "      rgba(245,230,205,0) 38%, rgba(180,130,70,0.08) 100%)"
+            "    !important;"
+            "  background-size: 100% 24px, 24px 100%, 100% 100%, 100% 100%, 100% 100% !important;"
+            "  background-attachment: fixed !important;"
+            "  color: #1a1008 !important;"
+            "  font-family: Georgia, 'Palatino Linotype', Palatino, serif;"
+            "}"
+            "p {"
+            "  line-height: 1.85 !important;"
+            "  text-indent: 1.8em !important;"
+            "  margin-bottom: 0.8em !important;"
+            "  font-size: 1.15em !important;"
+            "  text-align: justify;"
+            "}"
+            "h2 {"
+            "  text-align: center;"
+            "  color: #8b0000;"
+            "  font-family: Georgia, 'Palatino Linotype', Palatino, serif;"
+            "  font-size: 2.2em;"
+            "  font-weight: bold;"
+            "  line-height: 1.25;"
+            "  text-transform: uppercase;"
+            "  letter-spacing: 0.1em;"
+            "}"
         )
         new_soup.head.append(style)
 
@@ -697,6 +741,7 @@ class FormaterAllInOne:
         needs_dropcap = True
         for h2 in soup.find_all("h2"):
             self.chapter_counter += 1
+            roman = _to_roman(self.chapter_counter)
             tag_id = f"skr_h_{self.chapter_counter}"
             h2["id"] = tag_id
             self.toc_entries.append(
@@ -706,9 +751,44 @@ class FormaterAllInOne:
                     "anchor": tag_id,
                 }
             )
+
+            # Prijelom stranice + gornji ukras
             h2.insert_before(
                 soup.new_tag("div", style="page-break-before: always; height: 1px;")
             )
+            top_orn = soup.new_tag("div", attrs={"style": (
+                "text-align:center; color:#8b0000; font-size:1.1em; "
+                "letter-spacing:0.4em; margin-top:2.5em; margin-bottom:0.4em; opacity:0.75;"
+            )})
+            top_orn.string = "\u2767 \u2726 \u2767"
+            h2.insert_before(top_orn)
+
+            # Rimski broj iznad naslova
+            roman_el = soup.new_tag("div", attrs={"style": (
+                "text-align:center; font-family:Georgia,'Palatino Linotype',Palatino,serif; "
+                "font-size:0.85em; color:#8b0000; letter-spacing:0.55em; "
+                "text-transform:uppercase; margin-bottom:0.5em;"
+            )})
+            roman_el.string = f"\u2014 {roman} \u2014"
+            h2.insert_before(roman_el)
+
+            # Stil h2
+            h2["style"] = (
+                "text-align: center; color: #8b0000; "
+                "font-family: Georgia, 'Palatino Linotype', Palatino, serif; "
+                "font-size: 2em; font-weight: bold; "
+                "line-height: 1.25; text-transform: uppercase; "
+                "letter-spacing: 0.1em; margin-bottom: 0.5em;"
+            )
+
+            # Donji ukras ispod naslova
+            bot_orn = soup.new_tag("div", attrs={"style": (
+                "text-align:center; color:#8b0000; font-size:0.95em; "
+                "letter-spacing:0.4em; margin-bottom:2em; opacity:0.75;"
+            )})
+            bot_orn.string = "\u2726 \u2726 \u2726"
+            h2.insert_after(bot_orn)
+
             needs_dropcap = True
 
         for p in soup.find_all("p"):
@@ -729,19 +809,23 @@ class FormaterAllInOne:
                     span = soup.new_tag(
                         "span",
                         attrs={
-                            "style": "float: left; font-size: 4em; line-height: 0.8; margin-right: 0.1em; color: #8b0000; font-family: 'Old English Text MT', cursive; font-weight: bold;"
+                            "style": (
+                                "float: left; font-size: 4em; line-height: 0.8; "
+                                "margin-right: 0.1em; margin-bottom: 0.05em; color: #8b0000; "
+                                "font-family: Georgia, 'Palatino Linotype', Palatino, serif; "
+                                "font-weight: bold;"
+                            )
                         },
                     )
                     offset = (
                         2
-                        if content[0] in ["'", '"', "“", "‘", "„"] and len(content) > 1
+                        if content[0] in ["'", '"', "\u201d", "\u2018", "\u201e"] and len(content) > 1
                         else 1
                     )
                     span.string = content[:offset]
                     first_node.replace_with(content[offset:])
                     p.insert(0, span)
                     needs_dropcap = False
-
     async def _process_single_file_worker(self, html_path):
         if self.shared_controls["stop"] or self.shared_controls["reset"]:
             return False

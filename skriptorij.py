@@ -598,6 +598,69 @@ Vrati ISKLJUČIVO JSON:
 
 
 # ============================================================================
+# EPUB TIPOGRAFIJA — POMOĆNE FUNKCIJE
+# ============================================================================
+def _to_roman(n: int) -> str:
+    """Pretvori cijeli broj u rimski broj (I, II, III, IV...)."""
+    if n < 1:
+        return str(n)
+    vals = [
+        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
+        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+    ]
+    result = ""
+    for v, s in vals:
+        while n >= v:
+            result += s
+            n -= v
+    return result
+
+
+# CSS tekstura ostarjelog papira (kodirana, bez slika)
+_EPUB_PAPER_CSS = (
+    "body {"
+    "  background-color: #f4ede0 !important;"
+    "  background-image:"
+    "    repeating-linear-gradient("
+    "      0deg, transparent, transparent 97%, rgba(139,90,43,0.07) 100%),"
+    "    repeating-linear-gradient("
+    "      90deg, transparent, transparent 98%, rgba(139,90,43,0.04) 100%),"
+    "    radial-gradient(ellipse at 18% 18%, rgba(180,140,90,0.15) 0%, transparent 52%),"
+    "    radial-gradient(ellipse at 82% 82%, rgba(160,110,60,0.12) 0%, transparent 48%),"
+    "    radial-gradient(ellipse at 50% 50%,"
+    "      rgba(245,230,205,0) 38%, rgba(180,130,70,0.08) 100%)"
+    "    !important;"
+    "  background-size: 100% 24px, 24px 100%, 100% 100%, 100% 100%, 100% 100% !important;"
+    "  background-attachment: fixed !important;"
+    "  color: #1a1008 !important;"
+    "  font-family: Georgia, 'Palatino Linotype', Palatino, serif;"
+    "}"
+    "p {"
+    "  line-height: 1.85 !important;"
+    "  text-indent: 1.8em !important;"
+    "  margin-bottom: 0.75em !important;"
+    "  font-size: 1.1em !important;"
+    "  text-align: justify;"
+    "}"
+)
+
+
+def _inject_epub_global_css(soup) -> None:
+    """Ubaci globalni CSS (papirna tekstura + tipografija) u <head> dokumenta."""
+    head = soup.find("head")
+    if head is None:
+        html_tag = soup.find("html")
+        if html_tag:
+            head = soup.new_tag("head")
+            html_tag.insert(0, head)
+    if head is not None:
+        style_tag = soup.new_tag("style")
+        style_tag.string = _EPUB_PAPER_CSS
+        head.append(style_tag)
+
+
+# ============================================================================
 # KLASA
 # ============================================================================
 class SkriptorijAllInOne:
@@ -1505,6 +1568,8 @@ class SkriptorijAllInOne:
     def buildlive_epub(self):
         try:
             live_epub = self.book_path.parent / f"(LIVE)_{self.clean_book_name}.epub"
+            # Reset brojača poglavlja za ovaj prolaz live EPUB-a
+            self._live_chapter_idx = 0
             with zipfile.ZipFile(live_epub, "w", zipfile.ZIP_DEFLATED) as z:
                 m_path = self.work_dir / "mimetype"
                 if m_path.exists():
@@ -1533,45 +1598,85 @@ class SkriptorijAllInOne:
             pass
 
     def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
-        """Primijeni dropcap i dodaj u TOC."""
+        """Primijeni dropcap, romanizovana poglavlja, ukrase i dodaj u TOC."""
         needs_dropcap = True
 
+        # Ubaci globalni CSS (papirna tekstura) u <head>
+        _inject_epub_global_css(soup)
+
         # ════════════════════════════════════════════════════════════
-        # PETLJA 1: Zaglavlja (h1, h2, h3) — Dodaj u TOC
+        # PETLJA 1: Zaglavlja (h1, h2, h3) — Romanizacija + Ukrasi
         # ════════════════════════════════════════════════════════════
         for heading in soup.find_all(["h1", "h2", "h3"]):
             t = heading.get_text(strip=True)
 
-            # Preskoči ako je naslov prazan, sadrži "ZADATAK:" ili je premao
+            # Preskoči ako je naslov prazan, sadrži "ZADATAK:" ili je predugačak
             if not t or "ZADATAK:" in t.upper() or len(t) > 100:
                 heading.name = "p"
-                continue  # ✅ SADA JE U PETLJI!
+                continue
 
-            tid = heading.get("id")
-            if not samo_dropcap:
+            # Odredi broj poglavlja
+            if samo_dropcap:
+                self._live_chapter_idx = getattr(self, "_live_chapter_idx", 0) + 1
+                chap_num = self._live_chapter_idx
+                tid = f"live_ch_{chap_num}_{random.randint(100, 999)}"
+            else:
                 self.chapter_counter += 1
-                tid = f"skr_ch_{self.chapter_counter}"
-                self.toc_entries.append(
-                    {
-                        "title": t,
-                        "abs_path": str(
-                            html_file
-                        ),  # ✅ FIX: Koristi parametar html_file
-                        "anchor": tid,
-                    }
-                )
-            elif not tid:
-                tid = f"live_ch_{random.randint(1000, 9999)}"
+                chap_num = self.chapter_counter
+                tid = f"skr_ch_{chap_num}"
+                self.toc_entries.append({
+                    "title": t,
+                    "abs_path": str(html_file),
+                    "anchor": tid,
+                })
 
+            roman = _to_roman(chap_num)
+
+            # Omotač koji drži cijelo zaglavlje (prisilni prijelom stranice na vrhu)
+            wrapper = soup.new_tag("div", attrs={"style": (
+                "page-break-before:always; text-align:center; "
+                "padding-top:15vh; margin-bottom:4vh;"
+            )})
+            heading.wrap(wrapper)
+
+            # Rimski broj iznad naslova
+            roman_el = soup.new_tag("div", attrs={"style": (
+                "font-family:Georgia,'Palatino Linotype',Palatino,serif; "
+                "font-size:0.9em; color:#8b0000; letter-spacing:0.55em; "
+                "text-transform:uppercase; margin-bottom:0.55em;"
+            )})
+            roman_el.string = f"\u2014 {roman} \u2014"
+            heading.insert_before(roman_el)
+
+            # Gornji ukras iznad naslova (iznad rimskog broja)
+            top_orn = soup.new_tag("div", attrs={"style": (
+                "color:#8b0000; font-size:1.1em; letter-spacing:0.4em; "
+                "margin-bottom:0.4em; opacity:0.75;"
+            )})
+            top_orn.string = "\u2767 \u2726 \u2767"
+            roman_el.insert_before(top_orn)
+
+            # Stil samog naslova
             heading["style"] = (
-                "page-break-before:always; text-align:center; padding-top:10vh; "
-                "margin-bottom:15vh; font-family:serif; text-transform:uppercase;"
+                "text-align:center; "
+                "font-family:Georgia,'Palatino Linotype',Palatino,serif; "
+                "font-size:1.9em; font-weight:bold; text-transform:uppercase; "
+                "letter-spacing:0.13em; color:#2c1810; margin-bottom:0.5em;"
             )
             heading["id"] = tid
+
+            # Donji ukras ispod naslova
+            bot_orn = soup.new_tag("div", attrs={"style": (
+                "color:#8b0000; font-size:0.95em; letter-spacing:0.4em; "
+                "margin-top:0.6em; opacity:0.75;"
+            )})
+            bot_orn.string = "\u2726 \u2726 \u2726"
+            heading.insert_after(bot_orn)
+
             needs_dropcap = True
 
         # ════════════════════════════════════════════════════════════
-        # PETLJA 2: Paragrafи — Dodaj dropcap na prvi paragraf
+        # PETLJA 2: Paragrafi — Dodaj dropcap na prvi paragraf
         # ════════════════════════════════════════════════════════════
         for p in soup.find_all("p"):
             if not needs_dropcap:
@@ -1588,28 +1693,30 @@ class SkriptorijAllInOne:
                     None,
                 )
 
-                if node:  # ✅ FIX: Provjera da node postoji
+                if node:
                     c = node.string.lstrip()
                     if not c:
                         continue
 
-                    # Kreiraj dropcap span
+                    # Kreiraj dropcap span — dekorativni serif font, tamnocrvena boja
                     s = soup.new_tag(
                         "span",
                         attrs={
                             "style": (
-                                "float:left; font-size:3.5em; line-height:0.8; "
-                                "margin-right:0.1em; font-weight:bold;"
+                                "float:left; font-size:3.8em; line-height:0.8; "
+                                "margin-right:0.08em; margin-bottom:0.05em; "
+                                "font-family:Georgia,'Palatino Linotype',Palatino,serif; "
+                                "font-weight:bold; color:#8b0000;"
                             )
                         },
                     )
 
-                    # Ako počinje sa navodnicima, uzmi 2 znaka
-                    o = 2 if c[0] in ["'", '"', "„", "\u201c"] else 1
+                    # Ako počinje navodnicima, uzmi 2 znaka
+                    o = 2 if c[0] in ["'", '"', "\u201e", "\u201c"] else 1
                     s.string = c[:o]
                     node.replace_with(c[o:])
                     p.insert(0, s)
-                    needs_dropcap = False  # ✅ FIX: Sada je dostupna varijabla
+                    needs_dropcap = False
 
     def generate_ncx(self):
         """Generiši NCX (Table of Contents) za EPUB."""

@@ -7,6 +7,7 @@ import json
 import os
 import random
 import time
+from datetime import datetime, date
 from pathlib import Path
 from typing import Optional
 
@@ -18,12 +19,17 @@ _DEFAULT_MODELS = {
     "SAMBANOVA": "Meta-Llama-3.3-70B-Instruct",
     "MISTRAL": "mistral-large-latest",
     "COHERE": "command-a-03-2025",
-    "OPENROUTER": "meta-llama/llama-3.3-70b-instruct",
+    "OPENROUTER": "meta-llama/llama-3.3-70b-instruct:free",
     "GITHUB": "gpt-4o-mini",
 }
 
 # Cooldown nakon rate-limit greške (sekunde)
 _COOLDOWN_429 = 90
+
+def _today_midnight_ts() -> float:
+    """Vraća Unix timestamp ponoći tekućeg dana (lokalno)."""
+    d = date.today()
+    return datetime(d.year, d.month, d.day).timestamp()
 _COOLDOWN_ERROR = 30
 # Faktor eskalacije cooldowna po grešci i maksimalni cooldown/backoff
 _COOLDOWN_ESCALATION = 1.5
@@ -61,6 +67,8 @@ class _KeyState:
         "rate_limit_day",
         "remaining_minute",
         "remaining_day",
+        # Dnevni reset — timestamp ponoći kada je dan zadnji put resetovan
+        "day_reset_at",
         # Praćenje zdravlja
         "last_success",
         "last_status_code",
@@ -78,6 +86,7 @@ class _KeyState:
         self.rate_limit_day: int = 0
         self.remaining_minute: int = -1
         self.remaining_day: int = -1
+        self.day_reset_at: float = _today_midnight_ts()
         self.last_success: float = 0.0
         self.last_status_code: int = 0
         self.disabled: bool = False
@@ -101,6 +110,17 @@ class _KeyState:
 
     def reset_backoff(self):
         self.backoff = max(5.0, self.backoff * 0.5)
+
+    def reset_day_if_needed(self) -> None:
+        """Resetuje dnevnu kvotu ako je nastupila nova ponoć (lokalno)."""
+        midnight = _today_midnight_ts()
+        if midnight > self.day_reset_at:
+            self.day_reset_at = midnight
+            # Ako znamo ukupnu dnevnu kvotu, vrati je na maksimum
+            if self.rate_limit_day > 0:
+                self.remaining_day = self.rate_limit_day
+            else:
+                self.remaining_day = -1
 
 
 class FleetManager:
@@ -185,6 +205,9 @@ class FleetManager:
 
         state.total_requests += 1
         state.last_status_code = status_code
+
+        # Resetuj dnevnu kvotu ako je nastupila nova ponoć
+        state.reset_day_if_needed()
 
         def _hdr(name: str):
             """Čita header bez obzira na registar slova."""
@@ -356,6 +379,8 @@ class FleetManager:
             total = len(bucket)
             keys_detail = []
             for s in bucket.values():
+                # Provjeri dnevni reset za svaki ključ (i pri dohvaćanju stanja)
+                s.reset_day_if_needed()
                 masked = ("..." + s.key[-6:]) if len(s.key) > 6 else "***"
                 last_ago = round(now - s.last_success, 1) if s.last_success else None
                 keys_detail.append({
@@ -373,10 +398,26 @@ class FleetManager:
                     "last_status_code": s.last_status_code if s.last_status_code else None,
                     "last_success_ago": last_ago,
                 })
+
+            # Ukupno dnevno zdravlje provajdera (% preostalog dnevnog kvota)
+            keys_with_day = [
+                s for s in bucket.values()
+                if s.rate_limit_day > 0 and s.remaining_day >= 0
+            ]
+            if keys_with_day:
+                day_health_pct = round(
+                    sum(s.remaining_day for s in keys_with_day)
+                    / sum(s.rate_limit_day for s in keys_with_day)
+                    * 100
+                )
+            else:
+                day_health_pct = None
+
             summary[prov] = {
                 "active": active,
                 "cooling": total - active,
                 "total": total,
+                "day_health_pct": day_health_pct,
                 "keys": keys_detail,
             }
         return summary
