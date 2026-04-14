@@ -4,8 +4,88 @@
   "GEMINI": {
     "_info": "console.cloud.google.com/apis/credentials → API Keys",
     "keys": [],
-    "model": "gemini-2.5-flash"
+    "model": "gemini-flash-latest"
   },
+
+  "GROQ": {
+    "_info": "console.groq.com/keys",
+    "keys": [],
+    "model": "llama-3.3-70b-versatile"
+  },
+
+  "CEREBRAS": {
+    "_info": "cloud.cerebras.ai → API Keys",
+    "keys": [],
+    "model": "llama3.1-8b"
+  },
+
+  "SAMBANOVA": {
+    "_info": "cloud.sambanova.ai → API Authorization",
+    "keys": [],
+    "model": "Meta-Llama-3.3-70B-Instruct"
+  },
+
+  "MISTRAL": {
+    "_info": "console.mistral.ai/api-keys",
+    "keys": [],
+    "model": "mistral-large-latest"
+  },
+
+  "COHERE": {
+    "_info": "dashboard.cohere.com/api-keys",
+    "keys": [],
+    "model": "command-a-03-2025"
+  },
+
+  "OPENROUTER": {
+    "_info": "openrouter.ai/keys",
+    "keys": [],
+    "model": "meta-llama/llama-3.3-70b-instruct:free"
+  },
+
+  "GITHUB": {
+    "_info": "github.com/settings/tokens — Personal Access Token (classic), scope: bez posebnih prava",
+    "keys": [],
+    "model": "Phi-4"
+  },
+
+  "TOGETHER": {
+    "_info": "api.together.xyz/settings/api-keys — besplatni kredit pri registraciji",
+    "keys": [],
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+  },
+
+  "FIREWORKS": {
+    "_info": "fireworks.ai/account/api-keys — besplatni kredit pri registraciji",
+    "keys": [],
+    "model": "accounts/fireworks/models/llama-v3p3-70b-instruct"
+  },
+
+  "CHUTES": {
+    "_info": "chutes.ai → Settings → API Tokens — potpuno besplatan tier (GitHub login)",
+    "keys": [],
+    "model": "deepseek-ai/DeepSeek-V3-0324"
+  },
+
+  "HUGGINGFACE": {
+    "_info": "huggingface.co/settings/tokens — Access Token (Read ili Fine-grained)",
+    "keys": [],
+    "model": "meta-llama/Llama-3.3-70B-Instruct"
+  },
+
+  "KLUSTER": {
+    "_info": "kluster.ai → API Keys — besplatni krediti pri registraciji",
+    "keys": [],
+    "model": "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo"
+  },
+
+  "GEMMA": {
+    "_info": "api.together.xyz/settings/api-keys — Gemma-3-27b-it via Together AI. NAPOMENA: ne podržava system prompt ni JSON mode — koristi se samo kao zadnji fallback.",
+    "keys": [],
+    "model": "google/gemma-3-27b-it"
+  }
+}
+
 
   "GROQ": {
     "_info": "console.groq.com/keys",

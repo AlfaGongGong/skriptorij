@@ -89,6 +89,11 @@ def _url_kluster():
     return "https://api.kluster.ai/v1/chat/completions"
 
 
+def _url_gemma():
+    # Gemma-3-27b-it via Together AI (OpenAI-compatible)
+    return "https://api.together.xyz/v1/chat/completions"
+
+
 def _url_daisy():
     return "http://www.daisy.org/z3986/2005/ncx/"
 
@@ -115,6 +120,7 @@ _PROVIDER_MIN_GAP = {
     "CHUTES":      3.5,
     "HUGGINGFACE": 4.0,
     "KLUSTER":     4.0,
+    "GEMMA":       5.0,
 }
 MIN_GAP = 3.0  # fallback za nepoznate provajdere
 
@@ -659,14 +665,23 @@ _EPUB_PAPER_CSS = (
     "  background-size: 100% 24px, 24px 100%, 100% 100%, 100% 100%, 100% 100% !important;"
     "  background-attachment: fixed !important;"
     "  color: #1a1008 !important;"
-    "  font-family: Georgia, 'Palatino Linotype', Palatino, serif;"
+    "  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif !important;"
+    "  font-size: 1em !important;"
     "}"
     "p {"
     "  line-height: 1.85 !important;"
     "  text-indent: 1.8em !important;"
     "  margin-bottom: 0.75em !important;"
-    "  font-size: 1.1em !important;"
-    "  text-align: justify;"
+    "  font-size: 1.05em !important;"
+    "  text-align: justify !important;"
+    "  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif !important;"
+    "}"
+    # Normalizuj inline elemente da nasljeđuju veličinu i porodicu fonta od <p>
+    # jer originalni EPUB može imati <span style="font-size:xx-small"> i sl.
+    # koji unose vizualnu nekonzistentnost unutar paragrafa.
+    "span, em, i, b, strong, cite, abbr {"
+    "  font-size: inherit !important;"
+    "  font-family: inherit !important;"
     "}"
 )
 
@@ -686,8 +701,64 @@ def _inject_epub_global_css(soup) -> None:
 
 
 # ============================================================================
-# KLASA
+# EPUB PRE-PROCESSING — čišćenje izvora
 # ============================================================================
+# Rimski brojevi koji se pojavljuju sami (naslov poglavlja, numeracija u tekstu).
+# Zahtijeva barem jedan ne-nul token da bi izbjeglo match praznog stringa.
+_ROMAN_NUMERAL_RE = re.compile(
+    r'(?<![A-Za-z])'
+    r'(?=[MDCLXVI])'  # pozitivni lookahead: mora početi rimskim slovom
+    r'(?:M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3}))'
+    r'(?![A-Za-z])',
+)
+
+def _ocisti_epub_html(html: str) -> str:
+    """Čisti jedan EPUB HTML fajl od uobičajenih artefakata:
+    - uklanja vode/vertikalne-tab/\r znakove na početku tekst-nodova unutar tagova
+    - uklanja samostalne rimske brojeve koji su naslovi (npr. <p>IV</p>)
+    - popravlja rečenice/paragrafe koji počinju sa '- ' → '— '
+    Vraća očišćeni HTML string.
+    """
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+
+        for tag in soup.find_all(True):
+            # --- Čišćenje \n na početku tekst-nodova unutar svakog taga ---
+            for node in list(tag.children):
+                if isinstance(node, NavigableString):
+                    # Ukloni samo ASCII kontrolne praznine na početku tekst-noda
+                    # (ne space niti '/' — to bi oštetilo normalan sadržaj)
+                    cleaned = re.sub(r'^[\n\r\t\v]+', '', str(node))
+                    if cleaned != str(node):
+                        node.replace_with(NavigableString(cleaned))
+
+            # --- Ukloni paragrafe/headinge koji su SAMO rimski broj ---
+            if tag.name in ("p", "h1", "h2", "h3", "h4", "h5", "h6"):
+                t = tag.get_text(strip=True)
+                # Rimski broj od 1 do 3999, samostalan
+                m = _ROMAN_NUMERAL_RE.fullmatch(t)
+                if m and t:  # cijeli sadržaj je rimski broj
+                    tag.decompose()
+                    continue
+
+            # --- Paragrafi koji počinju sa '- ' → '— ' ---
+            if tag.name == "p":
+                first = next(
+                    (n for n in tag.children if isinstance(n, NavigableString) and n.strip()),
+                    None,
+                )
+                if first:
+                    s = str(first)
+                    if re.match(r'^\s*-\s+', s):
+                        node_new = re.sub(r'^\s*-\s+', '— ', s)
+                        first.replace_with(NavigableString(node_new))
+
+        return str(soup)
+    except Exception:
+        return html
+
+
+
 class SkriptorijAllInOne:
     def __init__(self, book_path, model_name, shared_stats, shared_controls):
         self.book_path = Path(book_path)
@@ -881,17 +952,15 @@ class SkriptorijAllInOne:
 
             if resp.status_code == 200:
                 return resp.json()
-            elif resp.status_code == 429:
-                # Pokušaj pročitati retry delay iz response body-a (Gemini API stil)
+            elif resp.status_code in (429, 425):
+                # 429 = Rate limit; 425 = Too Early / overloaded (Gemini stilovi)
                 body_retry = 0.0
                 try:
                     err_body = resp.json()
                     err_msg = err_body.get("error", {}).get("message", "")
-                    # Gemini ponekad piše "Retry after Xs" u poruci (cijeli i decimalni)
                     m = re.search(r"retry\s+after\s+([\d.]+)", err_msg, re.IGNORECASE)
                     if m:
                         body_retry = float(m.group(1))
-                    # Gemini može vratiti i "retryDelay" u details (npr. "60s" ili "60.5s")
                     for detail in err_body.get("error", {}).get("details", []):
                         rd = detail.get("retryDelay", "")
                         if rd:
@@ -904,7 +973,7 @@ class SkriptorijAllInOne:
                 backoff = self.fleet.get_backoff_for_provider(prov_upper)
                 wait = max(backoff, body_retry, 5.0)
                 self.log(
-                    f"[{prov_upper}] 429 Rate limit. Čekam {wait:.0f}s ⏳", "warning"
+                    f"[{prov_upper}] HTTP {resp.status_code} Rate limit / Too Early. Čekam {wait:.0f}s ⏳", "warning"
                 )
                 await asyncio.sleep(wait)
                 return None
@@ -927,10 +996,18 @@ class SkriptorijAllInOne:
             return None, None
 
         headers = {"Content-Type": "application/json"}
-        messages = [
-            {"role": "system", "content": sys_content},
-            {"role": "user", "content": user_prompt},
-        ]
+
+        # Gemma ne podržava sistemski prompt ni JSON mode —
+        # sistem sadržaj se ubacuje u user poruku
+        if prov_upper == "GEMMA":
+            combined = f"{sys_content}\n\n{user_prompt}" if sys_content else user_prompt
+            messages = [{"role": "user", "content": combined}]
+        else:
+            messages = [
+                {"role": "system", "content": sys_content},
+                {"role": "user", "content": user_prompt},
+            ]
+
         payload = {
             "model": model,
             "temperature": opt_temp,
@@ -958,6 +1035,7 @@ class SkriptorijAllInOne:
                 "CHUTES":      _url_chutes(),
                 "HUGGINGFACE": _url_huggingface(),
                 "KLUSTER":     _url_kluster(),
+                "GEMMA":       _url_gemma(),
             }
             url = url_map.get(prov_upper, _url_groq())
             headers["Authorization"] = f"Bearer {key.strip()}"
@@ -1034,126 +1112,108 @@ class SkriptorijAllInOne:
         self, prompt, chunk_idx, uloga="LEKTOR", filename="", sys_override=None
     ):
         svi = list(self.fleet.fleet.keys())
+        svi_upper = {p.upper() for p in svi}
 
-        # #17: Gemini 2.5 flash | #18: Temperature po ulozi
-        prioritetni_redosljed = False  # False = shuffle; LEKTOR postavlja na True (fiksni prioritet)
         opt_max_tokens = 2048  # Povećava se za LEKTOR i KOREKTOR
+
         if uloga == "LEKTOR":
             opt_temp = 0.65  # Viša temperatura = bogatiji, raznovrsniji vokabular
             opt_max_tokens = 4096
-            prioritetni_redosljed = True
-            # Primarni: Gemini Flash + veliki modeli ostalih provajdera (jakost > brzina)
-            # Rezervni: Flash-Lite i mali modeli kao fallback
-            primarne = []
-            rezervne = []
-            # Eksplicitni prioritetni redosljed za primarne: Gemini Flash prvi
-            _PRIMARNI_REDOSLJED = [
-                "GEMINI", "MISTRAL", "COHERE", "SAMBANOVA",
-                "TOGETHER", "FIREWORKS", "CHUTES", "HUGGINGFACE", "KLUSTER",
-                "GROQ", "OPENROUTER", "GITHUB",
-            ]
-            _REZERVNI = ["CEREBRAS"]
-            svi_upper = {p.upper() for p in svi}
-            for up in _PRIMARNI_REDOSLJED:
-                if up not in svi_upper:
-                    continue
-                if up == "GEMINI":
-                    primarne.append(("GEMINI", "gemini-2.5-flash"))
-                else:
-                    m = self.fleet.get_active_model(up)
+            # Grupiši provajdere po kvaliteti i rasporedi ravnomjernije (bez forsiranja GEMINI)
+            # Tier 1: visoka kvaliteta (veliki modeli)
+            _TIER1 = ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "TOGETHER", "CHUTES"]
+            # Tier 2: srednja kvaliteta
+            _TIER2 = ["FIREWORKS", "HUGGINGFACE", "KLUSTER", "GROQ"]
+            # Tier 3: fallback (brzi/mali modeli, ne-JSON)
+            _TIER3 = ["OPENROUTER", "GITHUB", "CEREBRAS", "GEMMA"]
+            pms = []
+            for tier in (_TIER1, _TIER2, _TIER3):
+                tier_pms = []
+                for up in tier:
+                    if up not in svi_upper:
+                        continue
+                    # GEMMA ne podržava JSON — koristi samo kao zadnji fallback
+                    if up == "GEMMA":
+                        m = self.fleet.get_active_model(up)
+                        if m:
+                            tier_pms.append((up, m))
+                        continue
+                    m = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
                     if m:
-                        primarne.append((up, m))
-            for p in svi:
-                up = p.upper()
-                if up == "GEMINI":
-                    rezervne.append(("GEMINI", "gemini-2.5-flash-lite-preview-06-17"))
-                elif up in _REZERVNI:
-                    m = self.fleet.get_active_model(up)
-                    if m:
-                        rezervne.append((up, m))
-            random.shuffle(rezervne)
-            pms = primarne + rezervne
+                        tier_pms.append((up, m))
+                # Miješaj unutar svakog tier-a da se opterećenje ravnomjerno dijeli
+                random.shuffle(tier_pms)
+                pms.extend(tier_pms)
             sys_c = sys_override or self._get_lektor_prompt()
 
         elif uloga == "KOREKTOR":
             # Korektor koristi nisku temperaturu za precizne gramatičke ispravke
             opt_temp = 0.25
             opt_max_tokens = 4096
+            # Pokušaj prvi dostupni brzi model, po preferenci
+            _KOREKTOR_PREF = ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "COHERE",
+                               "TOGETHER", "SAMBANOVA", "FIREWORKS", "CHUTES",
+                               "HUGGINGFACE", "KLUSTER", "OPENROUTER", "GITHUB"]
             pms = []
-            for p in svi:
-                up = p.upper()
-                # Preferiramo brze modele za korektor prolaz
-                if up in ["GROQ", "CEREBRAS", "GEMINI"]:
-                    m = (
-                        "gemini-2.5-flash-lite-preview-06-17"
-                        if up == "GEMINI"
-                        else self.fleet.get_active_model(up)
-                    )
-                    if m:
-                        pms.append((up, m))
-                        break  # Samo jedan motor za korektor
+            for up in _KOREKTOR_PREF:
+                if up not in svi_upper:
+                    continue
+                m = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
+                if m:
+                    pms.append((up, m))
+                    break  # Samo jedan motor za korektor
             sys_c = sys_override or self._get_korektor_prompt()
 
         elif uloga == "PREVODILAC":
-            opt_temp = 0.18  # #18: Niska temperatura = precizan prijevod
+            opt_temp = 0.18  # Niska temperatura = precizan prijevod
+            _PREV_PROV = [
+                "GROQ", "CEREBRAS", "SAMBANOVA", "GEMINI", "MISTRAL",
+                "OPENROUTER", "TOGETHER", "FIREWORKS", "CHUTES",
+                "HUGGINGFACE", "KLUSTER", "GITHUB", "GEMMA",
+            ]
             pms = []
-            for p in svi:
-                up = p.upper()
-                if up in [
-                    "GROQ",
-                    "CEREBRAS",
-                    "SAMBANOVA",
-                    "GEMINI",
-                    "MISTRAL",
-                    "OPENROUTER",
-                    "TOGETHER",
-                    "FIREWORKS",
-                    "CHUTES",
-                    "HUGGINGFACE",
-                    "KLUSTER",
-                    "GITHUB",
-                ]:
-                    m = (
-                        "gemini-2.5-flash"
-                        if up == "GEMINI"
-                        else (self.fleet.get_active_model(up) or "default")
-                    )
-                    pms.append((up, m))
+            for up in _PREV_PROV:
+                if up not in svi_upper:
+                    continue
+                m = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
+                if m:
+                    pms.append((up, m or "default"))
+            random.shuffle(pms)
             sys_c = sys_override or self._get_prevodilac_prompt()
 
         elif uloga == "VALIDATOR":
             opt_temp = 0.05
+            # Validator treba JSON — Gemma se isključuje
+            _VAL_PREF = ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "TOGETHER",
+                         "SAMBANOVA", "FIREWORKS", "CHUTES", "HUGGINGFACE",
+                         "KLUSTER", "OPENROUTER", "GITHUB"]
             pms = []
-            for p in svi:
-                up = p.upper()
-                if up in ["GROQ", "CEREBRAS", "GEMINI"]:
-                    m = (
-                        "gemini-2.5-flash-lite-preview-06-17"
-                        if up == "GEMINI"
-                        else self.fleet.get_active_model(up)
-                    )
+            for up in _VAL_PREF:
+                if up not in svi_upper:
+                    continue
+                m = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
+                if m:
                     pms.append((up, m))
                     break
             sys_c = _VALIDATOR_SYS
 
         elif uloga == "ANALIZA":
             opt_temp = 0.1
+            # Analiza treba JSON — Gemma se isključuje
+            _ANALIZA_PREF = ["GEMINI", "GROQ", "CEREBRAS", "TOGETHER",
+                              "FIREWORKS", "CHUTES", "KLUSTER", "MISTRAL",
+                              "COHERE", "SAMBANOVA"]
             pms = []
-            for p in svi:
-                up = p.upper()
-                if up in ["GEMINI", "GROQ", "CEREBRAS", "TOGETHER", "FIREWORKS", "CHUTES", "KLUSTER"]:
-                    m = (
-                        "gemini-2.5-flash"
-                        if up == "GEMINI"
-                        else self.fleet.get_active_model(up)
-                    )
+            for up in _ANALIZA_PREF:
+                if up not in svi_upper:
+                    continue
+                m = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
+                if m:
                     pms.append((up, m))
             sys_c = _ANALIZA_SYS
         else:
             return None, "N/A"
 
-        if not prioritetni_redosljed:
-            random.shuffle(pms)
         if not pms:
             return None, "N/A"
 
@@ -1272,11 +1332,9 @@ class SkriptorijAllInOne:
                     continue
                 if self.shared_controls.get("stop") or self.shared_controls.get("reset"):
                     return None, None
-                m_name = (
-                    "gemini-2.5-flash"
-                    if up == "GEMINI"
-                    else (self.fleet.get_active_model(up) or "default")
-                )
+                m_name = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
+                if not m_name:
+                    m_name = "default"
                 raw_s, label_s = await self._call_single_provider(
                     up, m_name, lek_sys, p_lek, temp, max_tokens=4096
                 )
@@ -1449,12 +1507,8 @@ class SkriptorijAllInOne:
             for up in ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GROQ"]:
                 if up not in svi_upper:
                     continue
-                m_name = (
-                    "gemini-2.5-flash"
-                    if up == "GEMINI"
-                    else (self.fleet.get_active_model(up) or "default")
-                )
-                pms_retry.append((up, m_name))
+                m_name = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
+                pms_retry.append((up, m_name or "default"))
             for prov_r, model_r in pms_retry:
                 raw_retry, label_r = await self._call_single_provider(
                     prov_r, model_r, retry_lek_sys, retry_p_lek, 0.80, max_tokens=4096
@@ -1788,8 +1842,6 @@ class SkriptorijAllInOne:
                     "anchor": tid,
                 })
 
-            roman = _to_roman(chap_num)
-
             # Omotač koji drži cijelo zaglavlje (prisilni prijelom stranice na vrhu)
             wrapper = soup.new_tag("div", attrs={"style": (
                 "page-break-before:always; text-align:center; "
@@ -1797,29 +1849,21 @@ class SkriptorijAllInOne:
             )})
             heading.wrap(wrapper)
 
-            # Rimski broj iznad naslova
-            roman_el = soup.new_tag("div", attrs={"style": (
-                "font-family:Georgia,'Palatino Linotype',Palatino,serif; "
-                "font-size:0.9em; color:#8b0000; letter-spacing:0.55em; "
-                "text-transform:uppercase; margin-bottom:0.55em;"
-            )})
-            roman_el.string = f"\u2014 {roman} \u2014"
-            heading.insert_before(roman_el)
-
-            # Gornji ukras iznad naslova (iznad rimskog broja)
+            # Gornji ukras iznad naslova — ukrasna kaligrafska linija
             top_orn = soup.new_tag("div", attrs={"style": (
                 "color:#8b0000; font-size:1.1em; letter-spacing:0.4em; "
-                "margin-bottom:0.4em; opacity:0.75;"
+                "margin-bottom:0.6em; opacity:0.80;"
             )})
             top_orn.string = "\u2767 \u2726 \u2767"
-            roman_el.insert_before(top_orn)
+            heading.insert_before(top_orn)
 
-            # Stil samog naslova
+            # Stil samog naslova — kaligrafski italic serif, tamnocrvena boja
             heading["style"] = (
                 "text-align:center; "
-                "font-family:Georgia,'Palatino Linotype',Palatino,serif; "
-                "font-size:1.9em; font-weight:bold; text-transform:uppercase; "
-                "letter-spacing:0.13em; color:#2c1810; margin-bottom:0.5em;"
+                "font-family:'Palatino Linotype',Palatino,'Book Antiqua',Georgia,serif; "
+                "font-size:2.0em; font-weight:bold; font-style:italic; "
+                "font-variant:small-caps; letter-spacing:0.10em; "
+                "color:#8b0000; margin-bottom:0.5em;"
             )
             heading["id"] = tid
 
@@ -1856,15 +1900,16 @@ class SkriptorijAllInOne:
                     if not c:
                         continue
 
-                    # Kreiraj dropcap span — dekorativni serif font, tamnocrvena boja
+                    # Kreiraj dropcap span — ukrasni kaligrafski serif, tamnocrvena boja
                     s = soup.new_tag(
                         "span",
                         attrs={
                             "style": (
-                                "float:left; font-size:3.8em; line-height:0.8; "
-                                "margin-right:0.08em; margin-bottom:0.05em; "
-                                "font-family:Georgia,'Palatino Linotype',Palatino,serif; "
-                                "font-weight:bold; color:#8b0000;"
+                                "float:left; font-size:4.2em; line-height:0.78; "
+                                "margin-right:0.06em; margin-bottom:0.02em; "
+                                "font-family:'Palatino Linotype',Palatino,"
+                                "'Book Antiqua',Georgia,serif; "
+                                "font-style:italic; font-weight:bold; color:#8b0000;"
                             )
                         },
                     )
@@ -2075,6 +2120,20 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
     # Originalni epub može imati hardkodirane style="color:red" i sl. koje
     # nisu dio CSS fajla — uklanjamo ih da ne zagade izlazni epub.
     _ukloni_inline_stilove(engine.html_files, engine.log)
+
+    # Pre-processing: ukloni \n na početku tagova, rimske brojeve, popravi '-' poglavlja
+    ocisceno_html = 0
+    for hf in engine.html_files:
+        try:
+            original = hf.read_text("utf-8", errors="ignore")
+            cleaned = _ocisti_epub_html(original)
+            if cleaned != original:
+                hf.write_text(cleaned, encoding="utf-8")
+                ocisceno_html += 1
+        except Exception:
+            pass
+    if ocisceno_html:
+        engine.log(f"🧹 HTML pre-processing: {ocisceno_html} fajl(ov)a očišćeno.", "tech")
 
     for f in engine.html_files:
         try:

@@ -94,20 +94,10 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, _graceful_shutdown)
     signal.signal(signal.SIGINT, _graceful_shutdown)
 
-    print("\x1b[1;91m  ____  _         _       _             _ _ \x1b[0m")
-    print("\x1b[1;91m / ___|| | ___ __(_)_ __ | |_ ___  _ __(_) |\x1b[0m")
-    print("\x1b[1;91m \\___ \\| |/ / '__| | '_ \\| __/ _ \\| '__| | |\x1b[0m")
-    print("\x1b[1;91m  ___) |   <| |  | | |_) | || (_) | |  | | |\x1b[0m")
-    print("\x1b[1;91m |____/|_|\\_\\_|  |_| .__/ \\__\\___/|_|  |_| |\x1b[0m")
-    print("\x1b[1;91m                   |_|                      \x1b[0m")
-    print(f"{_GREEN}" + "=" * 48 + f"{_RESET}")
-    print(f"{_CYAN}  🚀 SKRIPTORIJ V8 TURBO - SERVER AKTIVAN 🚀  {_RESET}")
-    print(f"{_GREEN}" + "=" * 48 + f"{_RESET}")
-    print(f"{_YELLOW} [INFO]{_RESET} http://127.0.0.1:{PORT}")
+    print(f"{_GREEN}[BOOKLYFI]{_RESET} Initializing server on http://127.0.0.1:{PORT}…")
     if _INTRO_LOADED:
-        print(f"\x1b[1;95m [INFO] Kinematski intro: AKTIVAN{_RESET}")
-    print(f"\x1b[1;96m [INFO] Flask audit: svakih {_AUDIT_INTERVAL // 60} min{_RESET}")
-    print(f"\n{_RED} >>> CTRL+C za zaustavljanje <<<{_RESET}\n")
+        print(f"{_CYAN}[BOOKLYFI]{_RESET} Intro animation: ACTIVE")
+    print(f"{_YELLOW}[BOOKLYFI]{_RESET} Press CTRL+C to stop.\n")
 
     def open_browser():
         time.sleep(1.5)
