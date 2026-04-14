@@ -402,8 +402,8 @@ class FleetManager:
             state.put_on_cooldown(3600.0)
 
         elif status_code == 412:
-            # 412 = Precondition Failed — Fireworks: nalog suspendiran (billing/spending limit)
-            # Trajni problem na razini naloga — onemogući ključ odmah
+            # 412 = standardno "Precondition Failed", ali Fireworks ga koristi za suspenziju
+            # naloga (billing/spending limit). Trajni problem na razini naloga — onemogući ključ.
             state.errors += 1
             state.disabled = True
 

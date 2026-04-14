@@ -1003,7 +1003,8 @@ class SkriptorijAllInOne:
                 )
                 return None
             elif resp.status_code == 412:
-                # 412 = nalog suspendiran (npr. Fireworks billing/spending limit)
+                # 412 = Fireworks-specifično: nalog suspendiran (billing/spending limit)
+                # (standardni HTTP 412 = "Precondition Failed" — različita semantika)
                 # Ključ je onemogućen u analyze_response — samo logiraj jasno
                 self.log(
                     f"[{prov_upper}] HTTP 412 Nalog suspendiran / billing limit — ključ onemogućen ⛔", "error"
