@@ -13,14 +13,19 @@ from typing import Optional
 
 # Podrazumijevani modeli po provajderu
 _DEFAULT_MODELS = {
-    "GEMINI": "gemini-2.5-flash",
-    "GROQ": "llama-3.3-70b-versatile",
-    "CEREBRAS": "llama3.1-8b",
-    "SAMBANOVA": "Meta-Llama-3.3-70B-Instruct",
-    "MISTRAL": "mistral-large-latest",
-    "COHERE": "command-a-03-2025",
-    "OPENROUTER": "meta-llama/llama-3.3-70b-instruct:free",
-    "GITHUB": "gpt-4o-mini",
+    "GEMINI":      "gemini-2.5-flash",
+    "GROQ":        "llama-3.3-70b-versatile",
+    "CEREBRAS":    "llama3.1-8b",
+    "SAMBANOVA":   "Meta-Llama-3.3-70B-Instruct",
+    "MISTRAL":     "mistral-large-latest",
+    "COHERE":      "command-a-03-2025",
+    "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
+    "GITHUB":      "Phi-4",
+    "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
+    "CHUTES":      "deepseek-ai/DeepSeek-V3-0324",
+    "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
+    "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
 }
 
 # Cooldown nakon rate-limit greške (sekunde)
@@ -30,14 +35,19 @@ _COOLDOWN_429 = 90
 # Koriste se kada API ne vraća rate-limit headere (remaining_minute == -1).
 # Postavljeni ispod stvarnih limita kao sigurnosna margina.
 _KNOWN_FREE_RPM: dict[str, int] = {
-    "GEMINI":     12,   # free tier: 15 RPM → koristimo 12
-    "GROQ":       25,   # varira po modelu, konzervativna procjena
-    "CEREBRAS":   25,
-    "SAMBANOVA":  15,
-    "MISTRAL":     4,   # free tier: veoma ograničen
-    "COHERE":     15,
-    "OPENROUTER":  8,   # free modeli: uski limiti
-    "GITHUB":     12,
+    "GEMINI":      12,   # free tier: 15 RPM → koristimo 12
+    "GROQ":        25,   # varira po modelu, konzervativna procjena
+    "CEREBRAS":    25,
+    "SAMBANOVA":   15,
+    "MISTRAL":      4,   # free tier: veoma ograničen
+    "COHERE":      15,
+    "OPENROUTER":   8,   # free modeli: uski limiti
+    "GITHUB":      12,   # GitHub Models: ~15 RPM
+    "TOGETHER":    10,   # Together AI free tier: konzervativna procjena
+    "FIREWORKS":   10,   # Fireworks AI free tier
+    "CHUTES":      15,   # Chutes AI: liberalniji besplatni tier
+    "HUGGINGFACE":  8,   # HF Inference API besplatni tier
+    "KLUSTER":     10,   # Kluster AI besplatni tier
 }
 
 def _today_midnight_ts() -> float:
@@ -156,6 +166,7 @@ class FleetManager:
         self._key_rotation: dict[str, int] = {}
         # Interno praćenje zahtjeva: {key_str: [timestamp, ...]} — sliding window
         self._req_window: dict[str, list[float]] = {}
+        self._config_path = config_path
         self._load(config_path)
 
     # ------------------------------------------------------------------ #
@@ -195,6 +206,64 @@ class FleetManager:
             self.fleet[prov_upper] = {k: _KeyState(k) for k in keys}
             if model:
                 self._models[prov_upper] = model
+
+    def reload(self, config_path: Optional[str] = None) -> None:
+        """
+        Osvježava fleet iz konfiguracijskog fajla bez gubljenja in-memory statistike.
+
+        • Novi ključevi se dodaju s čistim _KeyState.
+        • Postojeći ključevi zadržavaju cooldown, grešake, RPM prozor itd.
+        • Ključevi koji su uklonjeni iz fajla brišu se iz fleet-a.
+        • Provajderi s praznom listom ključeva se uklanjaju iz fleet-a (nestaju s dashboarda).
+        """
+        path = config_path or self._config_path
+        skip = {"EPUB_BACKGROUND", "PROXIES", "PROXIES_OFF"}
+        try:
+            p = Path(path)
+            if not p.exists():
+                return
+            with open(p, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            return
+
+        seen_providers: set[str] = set()
+
+        for provider, value in data.items():
+            if provider.upper() in skip:
+                continue
+            prov_upper = provider.upper()
+
+            if isinstance(value, list):
+                keys = [k for k in value if isinstance(k, str) and k.strip()]
+                model = _DEFAULT_MODELS.get(prov_upper)
+            elif isinstance(value, dict):
+                keys = [k for k in value.get("keys", []) if isinstance(k, str) and k.strip()]
+                model = value.get("model") or _DEFAULT_MODELS.get(prov_upper)
+            else:
+                continue
+
+            if not keys:
+                # Provajder bez ključeva — ukloni iz fleet-a (postaje nevidljiv)
+                self.fleet.pop(prov_upper, None)
+                continue
+
+            seen_providers.add(prov_upper)
+
+            existing_bucket = self.fleet.get(prov_upper, {})
+            new_bucket: dict[str, _KeyState] = {}
+            for k in keys:
+                # Sačuvaj postojeće stanje ako ključ već postoji, inače novi _KeyState
+                new_bucket[k] = existing_bucket.get(k, _KeyState(k))
+            self.fleet[prov_upper] = new_bucket
+
+            if model:
+                self._models[prov_upper] = model
+
+        # Ukloni provajdere koji više nisu u fajlu
+        for prov in list(self.fleet.keys()):
+            if prov not in seen_providers:
+                del self.fleet[prov]
 
     # ------------------------------------------------------------------ #
     # Odabir najboljeg ključa
