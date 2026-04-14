@@ -676,7 +676,9 @@ _EPUB_PAPER_CSS = (
     "  text-align: justify !important;"
     "  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif !important;"
     "}"
-    # Normalizuj inline elemente da nasljeđuju veličinu fonta
+    # Normalizuj inline elemente da nasljeđuju veličinu i porodicu fonta od <p>
+    # jer originalni EPUB može imati <span style="font-size:xx-small"> i sl.
+    # koji unose vizualnu nekonzistentnost unutar paragrafa.
     "span, em, i, b, strong, cite, abbr {"
     "  font-size: inherit !important;"
     "  font-family: inherit !important;"
@@ -701,9 +703,11 @@ def _inject_epub_global_css(soup) -> None:
 # ============================================================================
 # EPUB PRE-PROCESSING — čišćenje izvora
 # ============================================================================
-# Rimski brojevi koji se pojavljuju sami (naslov poglavlja, numeracija u tekstu)
+# Rimski brojevi koji se pojavljuju sami (naslov poglavlja, numeracija u tekstu).
+# Zahtijeva barem jedan ne-nul token da bi izbjeglo match praznog stringa.
 _ROMAN_NUMERAL_RE = re.compile(
     r'(?<![A-Za-z])'
+    r'(?=[MDCLXVI])'  # pozitivni lookahead: mora početi rimskim slovom
     r'(?:M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3}))'
     r'(?![A-Za-z])',
 )
@@ -722,7 +726,9 @@ def _ocisti_epub_html(html: str) -> str:
             # --- Čišćenje \n na početku tekst-nodova unutar svakog taga ---
             for node in list(tag.children):
                 if isinstance(node, NavigableString):
-                    cleaned = re.sub(r'^[\n\r\t\v /]+', '', str(node))
+                    # Ukloni samo ASCII kontrolne praznine na početku tekst-noda
+                    # (ne space niti '/' — to bi oštetilo normalan sadržaj)
+                    cleaned = re.sub(r'^[\n\r\t\v]+', '', str(node))
                     if cleaned != str(node):
                         node.replace_with(NavigableString(cleaned))
 
