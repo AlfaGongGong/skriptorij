@@ -700,6 +700,48 @@ def _inject_epub_global_css(soup) -> None:
         head.append(style_tag)
 
 
+def _zamijeni_epub_css(html_fajlovi: list, work_dir, log_fn=None) -> int:
+    """Zamijeni sadržaj CSS fajlova na koje HTML fajlovi upućuju s našim CSS-om.
+
+    Skenira sve HTML fajlove, pronalazi <link rel="stylesheet" href="..."> tagove,
+    prepisuje pronađene CSS fajlove s _EPUB_PAPER_CSS sadržajem (zadržava originalni
+    naziv fajla). Vraća broj zamijenjenih CSS fajlova.
+    """
+    work_dir_resolved = Path(work_dir).resolve()
+    zamijenjeni: set = set()
+    for fajl in html_fajlovi:
+        try:
+            parser = "xml" if fajl.suffix.lower() in {".xhtml", ".xml"} else "html.parser"
+            soup = BeautifulSoup(fajl.read_text("utf-8", errors="ignore"), parser)
+            for link in soup.find_all("link"):
+                # Provjeri rel kao listu tokena (HTML5: može biti lista ili string)
+                rel = link.get("rel", [])
+                if isinstance(rel, str):
+                    rel = rel.split()
+                if "stylesheet" not in rel:
+                    continue
+                href = link.get("href", "")
+                if not href or not href.lower().endswith(".css"):
+                    continue
+                # Pretvori relativni put u apsolutni (u odnosu na HTML fajl)
+                css_path = (fajl.parent / href).resolve()
+                # Sigurnosna provjera: css_path mora biti unutar work_dir
+                try:
+                    css_path.relative_to(work_dir_resolved)
+                except ValueError:
+                    continue  # Pokušaj izlaska iz work_dir — preskačemo
+                if css_path in zamijenjeni:
+                    continue
+                if css_path.exists():
+                    css_path.write_text(_EPUB_PAPER_CSS, encoding="utf-8")
+                    zamijenjeni.add(css_path)
+        except Exception:
+            continue
+    if zamijenjeni and log_fn:
+        log_fn(f"🎨 EPUB CSS zamijenjen u {len(zamijenjeni)} fajl(ov)a.", "tech")
+    return len(zamijenjeni)
+
+
 # ============================================================================
 # EPUB PRE-PROCESSING — čišćenje izvora
 # ============================================================================
@@ -954,28 +996,11 @@ class SkriptorijAllInOne:
                 return resp.json()
             elif resp.status_code in (429, 425):
                 # 429 = Rate limit; 425 = Too Early / overloaded (Gemini stilovi)
-                body_retry = 0.0
-                try:
-                    err_body = resp.json()
-                    err_msg = err_body.get("error", {}).get("message", "")
-                    m = re.search(r"retry\s+after\s+([\d.]+)", err_msg, re.IGNORECASE)
-                    if m:
-                        body_retry = float(m.group(1))
-                    for detail in err_body.get("error", {}).get("details", []):
-                        rd = detail.get("retryDelay", "")
-                        if rd:
-                            m2 = re.search(r"([\d.]+)", str(rd))
-                            if m2:
-                                body_retry = max(body_retry, float(m2.group(1)))
-                                break
-                except Exception:
-                    pass
-                backoff = self.fleet.get_backoff_for_provider(prov_upper)
-                wait = max(backoff, body_retry, 5.0)
+                # Ključ je već stavljen na cooldown u analyze_response — ne čekamo ovdje,
+                # jer bi to blokiralo pokušaj sljedećeg provajdera u petlji.
                 self.log(
-                    f"[{prov_upper}] HTTP {resp.status_code} Rate limit / Too Early. Čekam {wait:.0f}s ⏳", "warning"
+                    f"[{prov_upper}] HTTP {resp.status_code} Rate limit / Too Early — preskačem na sljedeći motor ⏭️", "warning"
                 )
-                await asyncio.sleep(wait)
                 return None
             else:
                 safe = resp.text[:200].replace("<", "&lt;").replace(">", "&gt;")
@@ -1150,7 +1175,7 @@ class SkriptorijAllInOne:
             # Korektor koristi nisku temperaturu za precizne gramatičke ispravke
             opt_temp = 0.25
             opt_max_tokens = 4096
-            # Pokušaj prvi dostupni brzi model, po preferenci
+            # Gradirana lista preferenci — svi dostupni provajderi kao rezerva
             _KOREKTOR_PREF = ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "COHERE",
                                "TOGETHER", "SAMBANOVA", "FIREWORKS", "CHUTES",
                                "HUGGINGFACE", "KLUSTER", "OPENROUTER", "GITHUB"]
@@ -1161,7 +1186,6 @@ class SkriptorijAllInOne:
                 m = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
                 if m:
                     pms.append((up, m))
-                    break  # Samo jedan motor za korektor
             sys_c = sys_override or self._get_korektor_prompt()
 
         elif uloga == "PREVODILAC":
@@ -1183,7 +1207,7 @@ class SkriptorijAllInOne:
 
         elif uloga == "VALIDATOR":
             opt_temp = 0.05
-            # Validator treba JSON — Gemma se isključuje
+            # Validator treba JSON — Gemma se isključuje; svi provajderi kao rezerva
             _VAL_PREF = ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "TOGETHER",
                          "SAMBANOVA", "FIREWORKS", "CHUTES", "HUGGINGFACE",
                          "KLUSTER", "OPENROUTER", "GITHUB"]
@@ -1194,7 +1218,6 @@ class SkriptorijAllInOne:
                 m = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-flash-latest"
                 if m:
                     pms.append((up, m))
-                    break
             sys_c = _VALIDATOR_SYS
 
         elif uloga == "ANALIZA":
@@ -2120,6 +2143,11 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
     # Originalni epub može imati hardkodirane style="color:red" i sl. koje
     # nisu dio CSS fajla — uklanjamo ih da ne zagade izlazni epub.
     _ukloni_inline_stilove(engine.html_files, engine.log)
+
+    # Zamijeni sadržaj CSS fajlova na koje HTML fajlovi upućuju s našim
+    # prilagođenim stilovima — zadržavamo originalni naziv fajla da <link>
+    # reference u HTML-u nastave funkcionirati.
+    _zamijeni_epub_css(engine.html_files, engine.work_dir, engine.log)
 
     # Pre-processing: ukloni \n na početku tagova, rimske brojeve, popravi '-' poglavlja
     ocisceno_html = 0
