@@ -7,7 +7,7 @@ import json
 import os
 import random
 import time
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -56,6 +56,12 @@ _KNOWN_FREE_RPM: dict[str, int] = {
 def _today_midnight_ts() -> float:
     """Vraća Unix timestamp ponoći tekućeg dana (lokalno)."""
     d = date.today()
+    return datetime(d.year, d.month, d.day).timestamp()
+
+
+def _next_midnight_ts() -> float:
+    """Vraća Unix timestamp ponoći sljedećeg dana (lokalno) — trenutak reseta dnevnih kvota."""
+    d = date.today() + timedelta(days=1)
     return datetime(d.year, d.month, d.day).timestamp()
 
 
@@ -374,6 +380,13 @@ class FleetManager:
             state.errors = 0
             return
 
+        # Dnevna kvota iscrpljena (headeri signaliziraju 0 preostalih) — čekaj do ponoći
+        if state.rate_limit_day > 0 and state.remaining_day == 0:
+            state.errors += 1
+            state.cooldown_until = _next_midnight_ts()
+            self._provider_backoff[prov_upper] = state.backoff
+            return
+
         if status_code == 429:
             state.errors += 1
             # Pokušaj pročitati Retry-After header
@@ -386,8 +399,17 @@ class FleetManager:
                         break
                     except (ValueError, TypeError):
                         pass
-            cooldown = max(retry_after, _COOLDOWN_429)
-            state.put_on_cooldown(cooldown)
+            if retry_after > 3600:
+                # Dugi Retry-After (>1h) znači iscrpljenost dnevne kvote, ne RPM —
+                # koristimo ga direktno bez eskalacije (ne prolazi kroz put_on_cooldown)
+                state.cooldown_until = time.time() + retry_after
+            elif state.errors >= 5:
+                # Ponavljajuće 429 greške (≥5) — vjerovatno iscrpljena dnevna kvota,
+                # ne samo RPM. Zaključaj ključ do ponoći kad se kvote resetuju.
+                state.cooldown_until = _next_midnight_ts()
+            else:
+                cooldown = max(retry_after, _COOLDOWN_429)
+                state.put_on_cooldown(cooldown)
             self._provider_backoff[prov_upper] = state.backoff
 
         elif status_code == 425:

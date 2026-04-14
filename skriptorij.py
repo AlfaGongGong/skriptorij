@@ -998,9 +998,15 @@ class SkriptorijAllInOne:
                 # 429 = Rate limit; 425 = Too Early / overloaded (Gemini stilovi)
                 # Ključ je već stavljen na cooldown u analyze_response — ne čekamo ovdje,
                 # jer bi to blokiralo pokušaj sljedećeg provajdera u petlji.
-                self.log(
-                    f"[{prov_upper}] HTTP {resp.status_code} Rate limit / Too Early — preskačem na sljedeći motor ⏭️", "warning"
-                )
+                key_state = self.fleet.fleet.get(prov_upper, {}).get(key)
+                if key_state and key_state.cooldown_remaining > 3600:
+                    self.log(
+                        f"[{prov_upper}] HTTP {resp.status_code} Dnevna kvota iscrpljena — ključ zaključan do ponoći 🔒", "warning"
+                    )
+                else:
+                    self.log(
+                        f"[{prov_upper}] HTTP {resp.status_code} Rate limit / Too Early — preskačem na sljedeći motor ⏭️", "warning"
+                    )
                 return None
             elif resp.status_code == 412:
                 # 412 = Fireworks-specifično: nalog suspendiran (billing/spending limit)
