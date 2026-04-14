@@ -401,6 +401,18 @@ class FleetManager:
             state.errors += 1
             state.put_on_cooldown(3600.0)
 
+        elif status_code == 412:
+            # 412 = Precondition Failed — Fireworks: nalog suspendiran (billing/spending limit)
+            # Trajni problem na razini naloga — onemogući ključ odmah
+            state.errors += 1
+            state.disabled = True
+
+        elif status_code == 424:
+            # 424 = Failed Dependency — GitHub: upstream greška veze (transijentna)
+            # Tretiramo kao privremenu serversku grešku s cooldownom
+            state.errors += 1
+            state.put_on_cooldown(_COOLDOWN_ERROR)
+
         elif status_code >= 500:
             state.errors += 1
             state.put_on_cooldown(_COOLDOWN_ERROR)

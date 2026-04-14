@@ -1002,6 +1002,19 @@ class SkriptorijAllInOne:
                     f"[{prov_upper}] HTTP {resp.status_code} Rate limit / Too Early — preskačem na sljedeći motor ⏭️", "warning"
                 )
                 return None
+            elif resp.status_code == 412:
+                # 412 = nalog suspendiran (npr. Fireworks billing/spending limit)
+                # Ključ je onemogućen u analyze_response — samo logiraj jasno
+                self.log(
+                    f"[{prov_upper}] HTTP 412 Nalog suspendiran / billing limit — ključ onemogućen ⛔", "error"
+                )
+                return None
+            elif resp.status_code == 424:
+                # 424 = Failed Dependency — GitHub: upstream greška veze (transijentna)
+                self.log(
+                    f"[{prov_upper}] HTTP 424 Upstream greška veze — preskačem na sljedeći motor ⏭️", "warning"
+                )
+                return None
             else:
                 safe = resp.text[:200].replace("<", "&lt;").replace(">", "&gt;")
                 self.log(f"[{prov_upper}] HTTP {resp.status_code}: {safe}", "tech")
