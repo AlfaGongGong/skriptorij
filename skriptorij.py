@@ -1619,7 +1619,7 @@ class SkriptorijAllInOne:
             if samo_dropcap:
                 self._live_chapter_idx = getattr(self, "_live_chapter_idx", 0) + 1
                 chap_num = self._live_chapter_idx
-                tid = f"live_ch_{chap_num}_{random.randint(100, 999)}"
+                tid = f"live_ch_{chap_num}_{random.randint(1000, 9999)}"
             else:
                 self.chapter_counter += 1
                 chap_num = self.chapter_counter

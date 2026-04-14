@@ -30,6 +30,8 @@ def _today_midnight_ts() -> float:
     """Vraća Unix timestamp ponoći tekućeg dana (lokalno)."""
     d = date.today()
     return datetime(d.year, d.month, d.day).timestamp()
+
+
 _COOLDOWN_ERROR = 30
 # Faktor eskalacije cooldowna po grešci i maksimalni cooldown/backoff
 _COOLDOWN_ESCALATION = 1.5

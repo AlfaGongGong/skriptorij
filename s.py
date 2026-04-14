@@ -819,7 +819,7 @@ class FormaterAllInOne:
                     )
                     offset = (
                         2
-                        if content[0] in ["'", '"', "\u201d", "\u2018", "\u201e"] and len(content) > 1
+                        if content[0] in ["'", '"', "\u201e", "\u201c", "\u2018"] and len(content) > 1
                         else 1
                     )
                     span.string = content[:offset]
