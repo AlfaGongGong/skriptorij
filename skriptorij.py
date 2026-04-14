@@ -950,11 +950,29 @@ class SkriptorijAllInOne:
                     if rpd_ratio < 0.5:
                         rpd_multiplier = 1.0 + (0.5 - rpd_ratio) / 0.5 * 4.0
                         gap = max(gap, _PROVIDER_MIN_GAP.get(prov_upper, MIN_GAP) * rpd_multiplier)
+
+            # Interno RPM praćenje — aktivira se kada headeri nisu dostupni.
+            # Ako smo iskoristili ≥ 80 % poznatog free-tier limita u zadnjoj minuti,
+            # proširujemo gap da sačuvamo preostali kapacitet.
+            rpm_used = self.fleet.get_rpm_used(prov_upper, key)
+            rpm_limit = self.fleet.get_effective_rpm_limit(prov_upper, key)
+            if rpm_limit > 0 and rpm_used >= int(rpm_limit * 0.8):
+                # Rasporedi preostale zahtjeve ravnomjerno do kraja minute
+                remaining_rpm = max(1, rpm_limit - rpm_used)
+                internal_gap = 60.0 / remaining_rpm
+                gap = max(gap, internal_gap)
+
+            # Humanizacija: nasumični jitter (±30 % baze) da spriječimo pravilne
+            # impulse koji izgledaju botovski i mogu se bolje podudariti s burst-prozorima
+            gap += random.uniform(0.5, gap * 0.3 + 1.0)
+
             # Ključ je per-provajder (ne per-model) da oba Gemini modela dijele timer
             elapsed = time.time() - _LAST_CALLS.get(prov_upper, 0)
             if elapsed < gap:
                 await asyncio.sleep(gap - elapsed)
             _LAST_CALLS[prov_upper] = time.time()
+            # Zabilježi zahtjev u interno sliding-window brojilo
+            self.fleet.record_request(prov_upper, key)
 
         data = await self._async_http_post(
             url, headers, payload, prov_upper, prov_upper, key

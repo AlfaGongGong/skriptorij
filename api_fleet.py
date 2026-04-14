@@ -26,6 +26,20 @@ _DEFAULT_MODELS = {
 # Cooldown nakon rate-limit greške (sekunde)
 _COOLDOWN_429 = 90
 
+# Konzervativni poznati free-tier RPM limiti po provajderu.
+# Koriste se kada API ne vraća rate-limit headere (remaining_minute == -1).
+# Postavljeni ispod stvarnih limita kao sigurnosna margina.
+_KNOWN_FREE_RPM: dict[str, int] = {
+    "GEMINI":     12,   # free tier: 15 RPM → koristimo 12
+    "GROQ":       25,   # varira po modelu, konzervativna procjena
+    "CEREBRAS":   25,
+    "SAMBANOVA":  15,
+    "MISTRAL":     4,   # free tier: veoma ograničen
+    "COHERE":     15,
+    "OPENROUTER":  8,   # free modeli: uski limiti
+    "GITHUB":     12,
+}
+
 def _today_midnight_ts() -> float:
     """Vraća Unix timestamp ponoći tekućeg dana (lokalno)."""
     d = date.today()
@@ -138,6 +152,10 @@ class FleetManager:
         self.fleet: dict[str, dict[str, _KeyState]] = {}
         self._models: dict[str, str] = dict(_DEFAULT_MODELS)
         self._provider_backoff: dict[str, float] = {}
+        # Round-robin rotacija unutar iste tier-grupe ključeva
+        self._key_rotation: dict[str, int] = {}
+        # Interno praćenje zahtjeva: {key_str: [timestamp, ...]} — sliding window
+        self._req_window: dict[str, list[float]] = {}
         self._load(config_path)
 
     # ------------------------------------------------------------------ #
@@ -182,7 +200,11 @@ class FleetManager:
     # Odabir najboljeg ključa
     # ------------------------------------------------------------------ #
     def get_best_key(self, provider: str) -> str | None:
-        """Vraća napremijer dostupan API ključ za provajdera, ili None."""
+        """
+        Vraća API ključ za provajdera koristeći round-robin rotaciju unutar
+        tier-grupe s najmanje grešaka.  Ključevi se ravnomjerno dijele tako da
+        se dnevna kvota troši proporcionalno, a ne samo na jednom ključu.
+        """
         prov_upper = provider.upper()
         bucket = self.fleet.get(prov_upper)
         if not bucket:
@@ -190,9 +212,13 @@ class FleetManager:
         available = [s for s in bucket.values() if s.is_available]
         if not available:
             return None
-        # Preferiraj ključ s najmanje grešaka
-        chosen = min(available, key=lambda s: s.errors)
-        return chosen.key
+        # Grupiši po broju grešaka — preferiraj ključeve s najmanje grešaka
+        min_errors = min(s.errors for s in available)
+        top_tier = [s for s in available if s.errors == min_errors]
+        # Round-robin unutar top-tier: distribuira opterećenje
+        idx = self._key_rotation.get(prov_upper, 0) % len(top_tier)
+        self._key_rotation[prov_upper] = idx + 1
+        return top_tier[idx].key
 
     # ------------------------------------------------------------------ #
     # Analiza HTTP odgovora (rate-limit headeri)
@@ -309,8 +335,38 @@ class FleetManager:
         return self._provider_backoff.get(provider.upper(), 10.0)
 
     # ------------------------------------------------------------------ #
-    # Aktivni model za provajdera
+    # Interno praćenje zahtjeva (RPM sliding window)
     # ------------------------------------------------------------------ #
+    def record_request(self, provider: str, key: str) -> None:
+        """
+        Bilježi timestamp zahtjeva za dati ključ (RPM sliding window).
+        Poziva se neposredno prije slanja HTTP zahtjeva, neovisno o HTTP statusu.
+        """
+        now = time.time()
+        window = self._req_window.setdefault(key, [])
+        window.append(now)
+        # Zadrži samo zadnje 2 minute da spriječimo rast memorije
+        self._req_window[key] = [t for t in window if now - t < 120.0]
+
+    def get_rpm_used(self, provider: str, key: str) -> int:
+        """Vraća broj zahtjeva poslatih ovim ključem u posljednjih 60 sekundi."""
+        now = time.time()
+        window = self._req_window.get(key, [])
+        return sum(1 for t in window if now - t < 60.0)
+
+    def get_effective_rpm_limit(self, provider: str, key: str) -> int:
+        """
+        Vraća efektivni RPM limit za dati ključ:
+        • Ako su rate-limit headeri dostupni (rate_limit_minute > 0), koristi ih.
+        • Inače, vraća konzervativni _KNOWN_FREE_RPM za provajdera.
+        """
+        prov_upper = provider.upper()
+        state = self.fleet.get(prov_upper, {}).get(key)
+        if state is not None and state.rate_limit_minute > 0:
+            return state.rate_limit_minute
+        return _KNOWN_FREE_RPM.get(prov_upper, 10)
+
+
     def get_active_model(self, provider: str) -> str | None:
         return self._models.get(provider.upper())
 
@@ -385,6 +441,8 @@ class FleetManager:
                 s.reset_day_if_needed()
                 masked = ("..." + s.key[-6:]) if len(s.key) > 6 else "***"
                 last_ago = round(now - s.last_success, 1) if s.last_success else None
+                rpm_used = self.get_rpm_used(prov, s.key)
+                rpm_limit = self.get_effective_rpm_limit(prov, s.key)
                 keys_detail.append({
                     "masked": masked,
                     "key": s.key,
@@ -399,6 +457,9 @@ class FleetManager:
                     "remaining_day": s.remaining_day if s.remaining_day != -1 else None,
                     "last_status_code": s.last_status_code if s.last_status_code else None,
                     "last_success_ago": last_ago,
+                    # Interno praćeni podaci (uvijek dostupni, neovisno o headerima)
+                    "rpm_used_internal": rpm_used,
+                    "rpm_limit_effective": rpm_limit,
                 })
 
             # Ukupno dnevno zdravlje provajdera (% preostalog dnevnog kvota)
