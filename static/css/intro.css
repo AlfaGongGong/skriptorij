@@ -73,7 +73,7 @@ html, body {
     justify-content: center;
     pointer-events: none;
     z-index: 0;
-    opacity: 0.06;
+    opacity: 0.1;
     overflow: hidden;
     animation: svgBgBreath 6s ease-in-out infinite;
 }

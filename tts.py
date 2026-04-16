@@ -1,5 +1,3 @@
-# import os
-# import time
 import json
 import random
 import re
@@ -7,93 +5,43 @@ import asyncio
 import requests
 import zipfile
 import shutil
+import os
 from pathlib import Path
 from bs4 import BeautifulSoup
 from api_fleet import FleetManager, register_active_fleet
 
-
-# Endpointi
-def _url_groq():
-    return "https://api.groq.com/openai/v1/chat/completions"
-
-
-def _url_cerebras():
-    return "https://api.cerebras.ai/v1/chat/completions"
-
-
-def _url_samba():
-    return "https://api.sambanova.ai/v1/chat/completions"
-
-
-def _url_mistral():
-    return "https://api.mistral.ai/v1/chat/completions"
-
-
+# ============================================================================
+# API ENDPOINTI
+# ============================================================================
 def _url_gemini_base(model, key):
     return f"https://generativelanguage.googleapis.com/v1beta/{model}:generateContent?key={key}"
 
-
 MIN_GAP = 0.4
-_LAST_CALLS = {}
-_GLOBAL_DOOR = None
 
-
+# ============================================================================
+# GLAVNA LOGIKA: TTS PROCESSOR
+# ============================================================================
 class TTSProcessor:
     def __init__(self, book_path, provider, shared_stats, shared_controls):
         self.book_path = Path(book_path)
-        self.provider = provider.upper()
+        self.provider = provider.upper() if provider else "AUTO_FLEET"
         self.shared_stats = shared_stats
         self.shared_controls = shared_controls
 
-        self.fleet = FleetManager()
+        self.fleet = FleetManager(config_path="dev_api.json")
+        self.fleet.reload()
         register_active_fleet(self.fleet)
 
-        # Checkpoint se čuva pored knjige u data/ folderu
+        # Checkpoint se čuva pored knjige
         self.checkpoint_path = self.book_path.parent / "tts_map_checkpoint.json"
         self.phonetic_dictionary = self._load_checkpoint()
 
         self.hr_stopwords = {
-            "da",
-            "ne",
-            "je",
-            "su",
-            "se",
-            "bi",
-            "će",
-            "te",
-            "ili",
-            "ako",
-            "za",
-            "na",
-            "od",
-            "do",
-            "iz",
-            "sa",
-            "uz",
-            "kroz",
-            "prema",
-            "kao",
-            "što",
-            "koji",
-            "koja",
-            "koje",
-            "kako",
-            "tako",
-            "samo",
-            "sve",
-            "svi",
-            "ima",
-            "nema",
-            "bio",
-            "bila",
-            "bili",
-            "kad",
-            "onda",
-            "tamo",
-            "ovdje",
-            "onaj",
-            "ova",
-            "ovo",
+            "da", "ne", "je", "su", "se", "bi", "će", "te", "ili", "ako",
+            "za", "na", "od", "do", "iz", "sa", "uz", "kroz", "prema", "kao",
+            "što", "koji", "koja", "koje", "kako", "tako", "samo", "sve", "svi",
+            "ima", "nema", "bio", "bila", "bili", "kad", "onda", "tamo", "ovdje",
+            "onaj", "ova", "ovo",
         }
         self.rejected_count = 0
 
@@ -105,9 +53,8 @@ class TTSProcessor:
         elif tip == "system":
             html = f"<div class='audit-card p-3 border-l-sky-500'><span class='text-sky-500 font-bold uppercase text-[10px] block'>Sistem</span><span class='text-gray-300'>{msg}</span></div>"
         else:
-            html = (
-                f"<div class='p-2 text-gray-400 border-b border-gray-800'>{msg}</div>"
-            )
+            html = f"<div class='p-2 text-gray-400 border-b border-gray-800'>{msg}</div>"
+        
         self.shared_stats["live_audit"] += html
 
     def _load_checkpoint(self):
@@ -126,9 +73,8 @@ class TTSProcessor:
         except Exception:
             pass
 
-    async def _async_http_post(
-        self, url, headers, payload, prov_exact, prov_upper, key
-    ):
+    async def _async_http_post(self, url, headers, payload, prov_upper, key):
+        """Mrežni sloj usklađen sa V8 Omni-Core FleetManagerom"""
         timeout_tuple = (15.0, 120.0)
         try:
             resp = await asyncio.to_thread(
@@ -139,45 +85,51 @@ class TTSProcessor:
                 timeout=timeout_tuple,
                 verify=False,
             )
-            self.fleet.record_usage(
-                prov_exact, key, 1, success=(resp.status_code == 200)
-            )
+            
+            if hasattr(self.fleet, 'analyze_response'):
+                self.fleet.analyze_response(prov_upper, key, resp.status_code, resp.headers)
+            if hasattr(self.fleet, 'record_request'):
+                self.fleet.record_request(prov_upper, key)
+
             if resp.status_code == 200:
                 return resp.json()
-            return None
-        except Exception:
+            elif resp.status_code in (429, 425):
+                self.log(f"[{prov_upper}] API Mreža preopterećena (HTTP {resp.status_code})", "warning")
+                return None
+            else:
+                self.log(f"[{prov_upper}] Greška servera (HTTP {resp.status_code})", "error")
+                return None
+        except Exception as e:
+            self.log(f"[{prov_upper}] Mrežni Timeout / Greška veze", "warning")
             return None
 
     async def _call_ai_batch(self, batch_words, batch_idx, total_batches):
-        providers = (
-            [
-                p
-                for p in self.fleet.fleet.keys()
-                if p.upper()
-                in [
-                    "CEREBRAS",
-                    "MISTRAL",
-                    "COHERE",
-                    "GROQ",
-                    "SAMBANOVA",
-                    "GEMINI",
-                    "GITHUB",
-                ]
+        # ⚡ KLJUČNI FIX: V8_TURBO je sada na listi auto-flota
+        auto_fleet_names = ["AUTO_FLEET", "QUAD_CORE", "V6_TURBO", "V8_TURBO", "V8_OMNI_CORE", "OMNI_CORE"]
+        dozvoljeni_motori = ["CEREBRAS", "MISTRAL", "COHERE", "GROQ", "SAMBANOVA", "GEMINI", "GITHUB", "TOGETHER", "FIREWORKS", "CHUTES", "KLUSTER", "HUGGINGFACE"]
+        
+        if self.provider in auto_fleet_names:
+            providers = [
+                p for p in self.fleet.fleet.keys()
+                if p.upper() in dozvoljeni_motori
             ]
-            if self.provider == "V6_TURBO"
-            else [self.provider]
-        )
+        else:
+            providers = [self.provider] if self.provider in self.fleet.fleet.keys() else []
+
+        if not providers:
+            self.log(f"⚠️ Nema dostupnih ključeva za traženi motor ({self.provider})! Preskačem API.", "error")
+            return False
+
         random.shuffle(providers)
-
         words_str = "\n".join(batch_words)
-
-        for _ in range(3):
+        
+        for attempt in range(4):
             if self.shared_controls.get("stop") or self.shared_controls.get("reset"):
                 return False
 
             for prov in providers:
                 prov_upper = prov.upper()
-                key = self.fleet.get_best_key(prov)
+                key = self.fleet.get_best_key(prov_upper)
                 if not key:
                     continue
 
@@ -203,28 +155,29 @@ class TTSProcessor:
                             "generationConfig": {"temperature": opt_temp},
                         }
                     else:
-                        if prov_upper == "CEREBRAS":
-                            api_model = "llama3.1-70b"
-                        elif prov_upper == "SAMBANOVA":
-                            api_model = "Qwen2.5-72B-Instruct"
-                        elif prov_upper == "GITHUB":
-                            api_model = "gpt-4o"
-                        else:
-                            api_model = "llama-3.3-70b-versatile"
+                        api_model = self.fleet.get_active_model(prov_upper)
+                        if not api_model:
+                            if prov_upper == "CEREBRAS": api_model = "llama3.1-70b"
+                            elif prov_upper == "SAMBANOVA": api_model = "Meta-Llama-3.1-70B-Instruct"
+                            elif prov_upper == "GITHUB": api_model = "gpt-4o"
+                            else: api_model = "llama-3.3-70b-versatile"
 
-                        url = (
-                            _url_cerebras()
-                            if prov_upper == "CEREBRAS"
-                            else (
-                                _url_samba()
-                                if prov_upper == "SAMBANOVA"
-                                else (
-                                    _url_groq()
-                                    if prov_upper == "GROQ"
-                                    else "https://models.inference.ai.azure.com/chat/completions"
-                                )
-                            )
-                        )
+                        url_map = {
+                            "GROQ":        "https://api.groq.com/openai/v1/chat/completions",
+                            "CEREBRAS":    "https://api.cerebras.ai/v1/chat/completions",
+                            "SAMBANOVA":   "https://api.sambanova.ai/v1/chat/completions",
+                            "MISTRAL":     "https://api.mistral.ai/v1/chat/completions",
+                            "OPENROUTER":  "https://openrouter.ai/api/v1/chat/completions",
+                            "GITHUB":      "https://models.inference.ai.azure.com/chat/completions",
+                            "TOGETHER":    "https://api.together.xyz/v1/chat/completions",
+                            "FIREWORKS":   "https://api.fireworks.ai/inference/v1/chat/completions",
+                            "CHUTES":      "https://llm.chutes.ai/v1/chat/completions",
+                            "HUGGINGFACE": "https://router.huggingface.co/v1/chat/completions",
+                            "KLUSTER":     "https://api.kluster.ai/v1/chat/completions",
+                            "GEMMA":       "https://api.together.xyz/v1/chat/completions",
+                        }
+                        
+                        url = url_map.get(prov_upper, url_map["GROQ"])
                         headers["Authorization"] = f"Bearer {key.strip()}"
                         payload = {
                             "model": api_model,
@@ -235,17 +188,22 @@ class TTSProcessor:
                             "temperature": opt_temp,
                         }
 
-                    data = await self._async_http_post(
-                        url, headers, payload, prov, prov_upper, key
-                    )
+                    # SLANJE HTTP ZAHTJEVA
+                    data = await self._async_http_post(url, headers, payload, prov_upper, key)
                     self.shared_stats["current_worker"] = "NONE"
 
                     if data:
-                        raw = (
-                            data["candidates"][0]["content"]["parts"][0]["text"].strip()
-                            if prov_upper == "GEMINI"
-                            else data["choices"][0]["message"]["content"].strip()
-                        )
+                        raw = ""
+                        try:
+                            if prov_upper == "GEMINI":
+                                raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                            else:
+                                raw = data["choices"][0]["message"]["content"].strip()
+                        except Exception:
+                            continue
+
+                        if not raw:
+                            continue
 
                         if "SKIP" in raw.upper() and len(raw) < 10:
                             return True
@@ -263,14 +221,18 @@ class TTSProcessor:
 
                         if found_this_batch:
                             self.log(
-                                f"✅ Paket {batch_idx}: Ulovljeno {len(found_this_batch)} novih fonetizacija.<br><small class='text-gray-500'>{', '.join(found_this_batch[:5])}...</small>"
+                                f"✅ Mreža {prov_upper} ulovila {len(found_this_batch)} novih riječi.<br><small class='text-gray-500'>{', '.join(found_this_batch[:5])}...</small>"
                             )
+                        else:
+                            self.log(f"⚡ Mreža {prov_upper} nije detektovala strane riječi u ovom bloku.", "system")
 
                         self._save_checkpoint()
                         return True
-                except Exception:
+                except Exception as e:
                     pass
             await asyncio.sleep(1)
+        
+        self.log(f"⚠️ Preskočen blok {batch_idx} jer su svi motori zauzeti ili preopterećeni.", "warning")
         return False
 
     def _extract_and_filter_words(self, text):
@@ -297,12 +259,21 @@ class TTSProcessor:
         return list(filtered)
 
     def _save_moon_reader_filter(self):
+        """
+        Kreira .ttsfilter za Moon+ Reader, gasi ukrase i mapira velika slova u mala.
+        """
         filter_name = f"(TTS)_{self.book_path.stem}.ttsfilter"
-        # ⚡ LINIJA ZA DIREKTNO SPAŠAVANJE FILTERA NA IZVORNO MJESTO KNJIGE
         filter_path = self.book_path.parent / filter_name
 
-        lines = ["~ ♦ ~#->#.", "~♦️~#->#.", "♦#->#."]
-        for char in "ABCČĆDĐEFGHIJKLMNOPQRSŠTUVWXYZZŽ":
+        lines = [
+            "~ ♦ ~#-># ",
+            "~♦️~#-># ",
+            "♦#-># ",
+            "❧ ✦ ❧❧ ✦ ❧*❧ ✦ ❧*❧ ✦ ❧❧ ✦ ❧❧ ✦ ❧*❧ ✦ ❧*❧ ✦ ❧#-># ",
+            "------------#-># "
+        ]
+
+        for char in "ABCČĆDĐEFGHIJKLMNOPQRSŠTUVWXYZŽ":
             lines.append(f"{char}#->#{char.lower()}")
 
         lines.append("\n// --- AI FONETIZACIJA ---")
@@ -314,7 +285,8 @@ class TTSProcessor:
 
         if self.checkpoint_path.exists():
             self.checkpoint_path.unlink()
-        self.log(f"🟢 GOTOVO! Filter kreiran na putanji: {filter_path}", "system")
+            
+        self.log(f"🟢 GOTOVO! Moon+ Reader Filter kreiran:<br><small class='text-sky-300'>{filter_path.name}</small>", "system")
 
     async def run(self):
         self.shared_stats["status"] = "SKENIRANJE EPUB-A..."
@@ -337,7 +309,7 @@ class TTSProcessor:
                             + " "
                         )
         except Exception as e:
-            self.log(f"Greška: {e}", "error")
+            self.log(f"Greška prilikom čitanja EPUB arhive: {e}", "error")
             return
 
         self.shared_stats["status"] = "LOKALNI FILTER..."
@@ -351,14 +323,14 @@ class TTSProcessor:
             "system",
         )
 
-        batch_size = 200
+        batch_size = 150
         batches = [
             suspicious[i : i + batch_size]
             for i in range(0, len(suspicious), batch_size)
         ]
         total_b = len(batches)
 
-        self.shared_stats["status"] = "V6 TURBO BATCH..."
+        self.shared_stats["status"] = "API MREŽA AKTIVNA..."
         for idx, batch in enumerate(batches, 1):
             if self.shared_controls.get("stop") or self.shared_controls.get("reset"):
                 break
@@ -370,7 +342,6 @@ class TTSProcessor:
             self.shared_stats["status"] = "PAKOVANJE KNJIGE"
 
             out_name = f"(TTS)_{self.book_path.stem}.epub"
-            # ⚡ LINIJA ZA DIREKTNO SPAŠAVANJE EPUB-A NA IZVORNO MJESTO KNJIGE
             final_epub = self.book_path.parent / out_name
 
             with zipfile.ZipFile(final_epub, "w", zipfile.ZIP_DEFLATED) as z:
@@ -379,15 +350,17 @@ class TTSProcessor:
                         z.write(f, f.relative_to(self.work_dir))
 
             self._save_moon_reader_filter()
+            
             self.shared_stats["status"] = "ZAVRŠENO"
             self.shared_stats["pct"] = 100
             self.shared_stats["active_engine"] = "---"
             self.shared_stats["current_worker"] = "---"
-            self.shared_stats["output_file"] = out_name
 
         shutil.rmtree(self.work_dir, ignore_errors=True)
 
-
+# ============================================================================
+# ENTRY POINT
+# ============================================================================
 def start_from_master(book_path, model, shared_stats, shared_controls):
     processor = TTSProcessor(book_path, model, shared_stats, shared_controls)
     asyncio.run(processor.run())

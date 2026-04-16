@@ -3,6 +3,7 @@ import json
 import os
 import threading
 import time
+import traceback
 
 from flask import Blueprint, jsonify, request
 
@@ -90,13 +91,20 @@ def start_processing():
         data = request.get_json()
         if not data or "book" not in data:
             return jsonify({"error": "Nije odabran fajl"}), 400
+            
         book = secure_filename(data["book"])
         model = data.get("model", "V8_TURBO")
-        mode = data.get("mode", "PREVOD").upper()
+        
+        # JS sada šalje "tool", a ranije je bio "mode". Hvatamo oba za svaki slučaj!
+        tool = data.get("tool", data.get("mode", "skriptorij")).upper()
+        
         book_path = safe_path(book)
         if not os.path.exists(book_path):
-            return jsonify({"error": f"Fajl '{book}' ne postoji na serveru"}), 404
+            return jsonify({"error": f"Fajl '{book}' ne postoji na putanji: {book_path}"}), 404
+            
         SHARED_CONTROLS.update({"pause": False, "stop": False, "reset": False})
+        
+        trenutni_audit = SHARED_STATS.get("live_audit", "")
         SHARED_STATS.update(
             {
                 "status": "POKRETANJE...",
@@ -104,18 +112,21 @@ def start_processing():
                 "active_engine": model,
                 "pct": 0,
                 "ok": "0 / 0",
-                "live_audit": f"Inicijalizacija za: {book}\n",
+                "live_audit": trenutni_audit + f"<div class='p-2 text-sky-400'>Sistem: Inicijalizacija modula '{tool}' za: {book}</div>\n",
                 "output_file": "",
             }
         )
+        
         _start_time = time.time()
         _start_pct = 0
+        
         try:
             with open(os.path.join(PROJECTS_ROOT, "last_book.json"), "w") as f:
                 json.dump({"last_book": book}, f)
         except Exception:
             pass
-        if mode == "TTS":
+            
+        if tool == "TTS":
             from tts import start_from_master as start_tts
             thread = threading.Thread(
                 target=start_tts,
@@ -129,10 +140,20 @@ def start_processing():
                 args=(book_path, model, SHARED_STATS, SHARED_CONTROLS),
                 daemon=True,
             )
+            
         thread.start()
-        return jsonify({"status": "Started", "file": book, "mode": mode})
-    except ValueError:
-        return jsonify({"error": "Neispravan naziv fajla ili putanja"}), 400
-    except Exception:
-        SHARED_STATS["status"] = "GREŠKA PRI STARTU"
-        return jsonify({"error": "Greška pri pokretanju obrade"}), 500
+        return jsonify({"status": "Started", "file": book, "tool": tool})
+        
+    except ValueError as ve:
+        return jsonify({"error": f"Neispravan format podataka: {ve}"}), 400
+    except Exception as e:
+        # HVATANJE PRAVE GREŠKE!
+        err_msg = traceback.format_exc()
+        trenutni_audit = SHARED_STATS.get("live_audit", "")
+        
+        SHARED_STATS["status"] = "KRITIČNA GREŠKA"
+        SHARED_STATS["live_audit"] = trenutni_audit + f"<div class='audit-card p-3 border-l-red-500'><span class='text-red-500 font-bold uppercase block'>Backend Greška</span><span class='text-gray-300'>{str(e)}</span></div>"
+        
+        print(f"\n\x1b[1;97;41m[FATAL ERROR]\x1b[0m\n{err_msg}\n")
+        # Sada na frontendu pop-up prikazuje stvarni razlog greške!
+        return jsonify({"error": str(e)}), 500

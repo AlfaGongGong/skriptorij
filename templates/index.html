@@ -1,335 +1,528 @@
 <!doctype html>
 <html lang="hr">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>BOOKLYFI TURBO CHARGED ⚡📚</title>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BOOKLIFY — AI Book Engine</title>
 
-        <!-- Preconnect for fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
-            rel="stylesheet"
-        />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
-        <!-- Styles -->
-        <link
-            rel="stylesheet"
-            href="{{ url_for('static', filename='css/style.css') }}"
-        />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 
-        <!-- Meta tags -->
-        <meta name="theme-color" content="#020617" />
-        <meta name="description" content="Skriptorij V8 Turbo - Sistem za lekturu i prijevod ePub knjiga" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Skriptorij" />
+    <meta name="theme-color" content="#030711" />
+    <meta name="description" content="BOOKLIFY — AI-Powered Book Translation & Refinement Engine" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Booklify" />
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+</head>
+<body>
 
-        <!-- PWA manifest -->
-        <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
-    </head>
-    <body>
-        <!-- Toast notification container -->
-        <div id="toast-container" aria-live="polite"></div>
+    <div id="toast-container" aria-live="polite"></div>
 
-        <div id="main-ui-wrapper" style="display:block; opacity:1; transition: opacity 1.5s ease;">
+    <div id="main-ui-wrapper" style="display:block; opacity:1; transition: opacity 1.5s ease;">
 
-            <!-- HEADER -->
-            <header class="app-header" role="banner">
-                <div class="header-brand">
-                    <div id="status-dot" class="dot dot-idle" aria-hidden="true"></div>
-                    <!-- V8 Turbo Book logo -->
-                    <img class="header-logo" src="{{ url_for('static', filename='img/V8_book_turbo.svg') }}" alt="Skriptorij V8 Turbo logo" />
-                    <h1 id="app-logo-title"><span class="neon-letter">B</span><span class="neon-letter">O</span><span class="neon-letter">O</span><span class="neon-letter">K</span><span class="neon-letter">L</span><span class="neon-letter">Y</span><span class="neon-letter">F</span><span class="neon-letter">I</span></h1>
-                    <span class="badge-v6">⚡ TURBO CHARGED</span>
+        <!-- ═══ HEADER ═══ -->
+        <header class="app-header" role="banner">
+            <div class="header-brand">
+                <div id="status-dot" class="dot dot-idle" aria-hidden="true"></div>
+                <img class="header-logo"
+                     src="{{ url_for('static', filename='img/V8_book_turbo.svg') }}"
+                     alt="Booklify logo" />
+                <div class="header-title-group">
+                    <h1 id="app-logo-title">
+                        <span class="neon-letter">B</span><span class="neon-letter">O</span><span class="neon-letter">O</span><span class="neon-letter">K</span><span class="neon-letter">L</span><span class="neon-letter">Y</span><span class="neon-letter">F</span><span class="neon-letter">I</span>
+                    </h1>
                     <span class="header-tagline">AI-Powered Book Translation &amp; Refinement Engine</span>
                 </div>
-                <div class="header-controls">
-                    <span class="status-text" id="ph" aria-live="polite">IDLE</span>
-                    <button id="btn-theme" class="btn-theme" onclick="toggleTheme()" aria-label="Promijeni temu">
-                        ☀️ Tema
-                    </button>
-                    <button class="btn-setup" onclick="toggleSetup()" title="Konfiguracija" aria-label="Otvori konfiguraciju">
-                        ⚙️ Setup
-                    </button>
+            </div>
+            <div class="header-controls">
+                <span class="status-text" id="ph" aria-live="polite">IDLE</span>
+                <button id="btn-theme" class="btn-icon" onclick="toggleTheme()" aria-label="Promijeni temu" title="Promijeni temu">☀️</button>
+                <button class="btn-icon" onclick="toggleSetup()" title="Setup" aria-label="Otvori konfiguraciju">⚙️</button>
+                <button class="btn-keys-trigger" id="btn-keys-trigger" onclick="toggleKeysDrawer()" aria-label="API Ključevi">
+                    🔑&nbsp;<span id="keys-count-badge" class="keys-count-badge">0</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ═══ SETUP SCREEN ═══ -->
+        <div id="setup-screen" class="panel panel-setup" role="main">
+
+            <div class="wizard-steps" aria-label="Koraci konfiguracije">
+                <div class="wizard-step active" id="ws-indicator-1">
+                    <span class="wizard-step-num" aria-hidden="true">1</span>
+                    <span class="wizard-step-label">Knjiga</span>
                 </div>
-            </header>
-
-            <!-- ═══════════════════ SETUP SCREEN (2-Step Wizard) ═══════════════════ -->
-            <div id="setup-screen" class="panel panel-setup" role="main">
-
-                <!-- Wizard Step Indicators -->
-                <div class="wizard-steps" aria-label="Koraci">
-                    <div class="wizard-step active" id="ws-indicator-1">
-                        <span class="wizard-step-num" aria-hidden="true">1</span>
-                        <span class="wizard-step-label">Knjiga</span>
-                    </div>
-                    <div class="wizard-step-connector" id="ws-connector-1"></div>
-                    <div class="wizard-step" id="ws-indicator-2">
-                        <span class="wizard-step-num" aria-hidden="true">2</span>
-                        <span class="wizard-step-label">Konfiguracija</span>
-                    </div>
-                </div>
-
-                <!-- Step 1: Book Selection -->
-                <div id="wizard-page-1">
-                    <h2>📁 Odabir Knjige</h2>
-
-                    <div class="input-group">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                            <label for="book-select" style="margin:0;">📚 Odaberi Knjigu</label>
-                            <label for="book-file" class="btn btn-secondary" style="font-size:0.8rem; padding:4px 12px; cursor:pointer; margin:0;" title="Uploadaj novu EPUB/MOBI knjiga">
-                                📂 Upload
-                            </label>
-                            <input
-                                type="file"
-                                id="book-file"
-                                accept=".epub,.mobi"
-                                onchange="uploadBook(this.files[0])"
-                                style="display:none;"
-                                aria-label="Odaberi EPUB ili MOBI fajl za upload"
-                            />
-                        </div>
-                        <select id="book-select" aria-label="Odaberi knjigu za obradu">
-                            <option value="">— Učitavam listu knjiga... —</option>
-                        </select>
-                    </div>
-
-                    <div class="wizard-nav">
-                        <span></span>
-                        <button class="btn btn-primary" onclick="nextSetupStep()" aria-label="Idi na sljedeći korak">
-                            Dalje →
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Step 2: Configuration -->
-                <div id="wizard-page-2" class="hidden">
-                    <h2>⚙️ Konfiguracija Sistema</h2>
-
-                    <div class="input-group">
-                        <label for="model-select">🤖 Model / Motor</label>
-                        <select id="model-select" aria-label="Odaberi AI model">
-                            <option value="">— Učitavam modele... —</option>
-                        </select>
-                        <small style="color: var(--text-muted); margin-top: 6px; display: block; font-size: 0.8rem;">
-                            ⚡ V8 TURBO je preporučen za najbolje rezultate
-                        </small>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="mode-select">⚡ Način Rada</label>
-                        <select id="mode-select" aria-label="Odaberi način rada">
-                            <option value="PREVOD" selected>🌐 PREVOD — Prijevod + Lektura (engleski → bosanski/hrvatski)</option>
-                            <option value="TTS">🔊 TTS — Fonetski Filter za Text-to-Speech čitače</option>
-                        </select>
-                        <small style="color: var(--text-muted); margin-top: 6px; display: block; font-size: 0.8rem;">
-                            TTS mod generiše .ttsfilter fajl za Moon+ Reader
-                        </small>
-                    </div>
-
-                    <div class="wizard-nav">
-                        <button class="btn-ghost" onclick="prevSetupStep()" aria-label="Idi na prethodni korak">
-                            ← Nazad
-                        </button>
-                        <button id="btn-start" class="btn btn-primary" onclick="startEngine()" aria-label="Pokreni sistem">
-                            🚀 Pokreni Sistem
-                        </button>
-                    </div>
+                <div class="wizard-step-connector" id="ws-connector-1"></div>
+                <div class="wizard-step" id="ws-indicator-2">
+                    <span class="wizard-step-num" aria-hidden="true">2</span>
+                    <span class="wizard-step-label">Konfiguracija</span>
                 </div>
             </div>
 
-            <!-- ═══════════════════ DASHBOARD SCREEN ═══════════════════ -->
-            <div id="dashboard-screen" class="panel hidden" role="region" aria-label="Status operacije">
-                <h2>📊 Status Operacije</h2>
-
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <span class="stat-label">🔧 Motor</span>
-                        <span id="ae" class="stat-value time-glow">---</span>
+            <!-- Step 1: Book -->
+            <div id="wizard-page-1">
+                <h2>📁 Odabir Knjige</h2>
+                <div class="input-group">
+                    <div class="input-label-row">
+                        <label for="book-select">📚 Odaberi Knjigu</label>
+                        <label for="book-file" class="btn btn-ghost btn-sm" title="Upload nove knjige" style="cursor:pointer;">
+                            📂 Upload
+                        </label>
+                        <input type="file" id="book-file" accept=".epub,.mobi"
+                               onchange="uploadBook(this.files[0])"
+                               style="display:none;"
+                               aria-label="Odaberi EPUB ili MOBI fajl" />
                     </div>
-                    <div class="stat-box">
-                        <span class="stat-label">📄 Fajl</span>
-                        <span id="bi" class="stat-value">---</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">✅ Obrađeno</span>
-                        <span id="ok" class="stat-value">0 / 0</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">⏭️ Preskočeno</span>
-                        <span id="skp" class="stat-value">0</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">🟢 Aktivni Ključevi</span>
-                        <span id="fleet-active" class="stat-value" style="color: var(--success);">0</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">🔥 Na Hlađenju</span>
-                        <span id="fleet-cooling" class="stat-value" style="color: var(--warning);">0</span>
-                    </div>
+                    <select id="book-select" aria-label="Odaberi knjigu za obradu">
+                        <option value="">— Učitavam listu knjiga... —</option>
+                    </select>
                 </div>
-
-                <!-- Progress Bar -->
-                <div class="progress-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Napredak obrade">
-                    <div id="fill" class="progress-bar" style="width: 0%;"></div>
-                </div>
-
-                <div class="time-glow" style="text-align: center; margin-bottom: 20px; font-size: 1rem;">
-                    Završeno: <span id="pct" style="font-weight: 700; font-size: 1.2rem;">0%</span>
-                    &nbsp;|&nbsp; ETA: <span id="est">--:--:--</span>
-                </div>
-
-                <!-- Download button -->
-                <div id="download-section" class="hidden" style="text-align: center; margin-bottom: 16px;">
-                    <a id="download-link" href="#" class="btn btn-primary" style="display:inline-flex; text-decoration:none; max-width: 320px;">
-                        ⬇️ Preuzmi Rezultat
-                    </a>
-                    <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-                        <a id="export-json-link" href="/api/export/json" class="btn btn-secondary" style="display:inline-flex; text-decoration:none; font-size:0.82rem; padding: 6px 14px; flex: 0 1 auto;">
-                            📄 JSON Izvještaj
-                        </a>
-                        <a id="export-txt-link" href="/api/export/txt" class="btn btn-secondary" style="display:inline-flex; text-decoration:none; font-size:0.82rem; padding: 6px 14px; flex: 0 1 auto;">
-                            📋 TXT Izvještaj
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Control Buttons -->
-                <div class="button-group">
-                    <button class="btn btn-pause" onclick="sendCommand('pause')" aria-label="Pauziraj obradu">
-                        ⏸ Pauziraj
-                    </button>
-                    <button class="btn btn-secondary" onclick="sendCommand('resume')" aria-label="Nastavi obradu">
-                        ▶️ Nastavi
-                    </button>
-                    <button class="btn btn-warning" onclick="sendCommand('reset')" aria-label="Resetuj sistem">
-                        🔄 Reset
-                    </button>
-                    <button class="btn btn-danger" onclick="sendCommand('stop')" aria-label="Zaustavi sistem">
-                        ⏹ Ugasi
-                    </button>
+                <div class="wizard-nav">
+                    <span></span>
+                    <button class="btn btn-primary" onclick="nextSetupStep()">Dalje →</button>
                 </div>
             </div>
 
-            <!-- ═══════════════════ FLEET POOL ═══════════════════ -->
-            <div class="panel" role="region" aria-label="Fleet Pool">
-                <details id="fleet-details">
-                    <summary>🛡️ Fleet Pool — Zdravlje API Ključeva</summary>
-                    <div id="fleet-pool-content" style="margin-top: 12px;">
-                        <p style="color: var(--text-muted); font-size: 0.85rem;">Kliknite da učitate status flote...</p>
-                    </div>
-                </details>
-            </div>
-
-            <!-- ═══════════════════ AUDIT LOG ═══════════════════ -->
-            <div class="panel" role="region" aria-label="Dnevnik operacija">
-                <h2>📋 Dnevnik Operacija</h2>
-                <div id="audit" class="terminal-window" aria-live="polite" aria-label="Log poruke">
-                    <span style="color: var(--success);">➜ Sistem spreman.</span><br>
-                    <span style="color: var(--text-muted);">Odaberite operaciju i kliknite na "Pokreni Sistem".</span>
+            <!-- Step 2: Config -->
+            <div id="wizard-page-2" class="hidden">
+                <h2>⚙️ Konfiguracija Sistema</h2>
+                <div class="input-group">
+                    <label for="model-select">🤖 Model / Motor</label>
+                    <select id="model-select" aria-label="Odaberi AI model">
+                        <option value="">— Učitavam modele... —</option>
+                    </select>
+                    <small class="input-hint">⚡ V8 TURBO je preporučen za najbolje rezultate</small>
                 </div>
-            </div>
-
-            <!-- ═══════════════════ API KEY MANAGEMENT ═══════════════════ -->
-            <div class="panel" role="region" aria-label="Upravljanje API ključevima">
-                <details id="keys-details">
-                    <summary>🔑 API Ključevi — Upravljanje</summary>
-                    <div id="keys-content" style="margin-top: 14px;">
-                        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-                            <select id="key-provider-select" aria-label="Odaberi provajdera" style="flex:1; min-width:120px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; font-size:0.88rem;">
-                                <option value="">— Odaberi provajdera —</option>
-                                <option value="GEMINI">GEMINI</option>
-                                <option value="GROQ">GROQ</option>
-                                <option value="CEREBRAS">CEREBRAS</option>
-                                <option value="SAMBANOVA">SAMBANOVA</option>
-                                <option value="MISTRAL">MISTRAL</option>
-                                <option value="COHERE">COHERE</option>
-                                <option value="OPENROUTER">OPENROUTER</option>
-                                <option value="GITHUB">GITHUB</option>
-                            </select>
-                            <input type="password" id="key-input" placeholder="API ključ..." aria-label="Unesi API ključ" style="flex:3; min-width:180px; background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; font-size:0.88rem;" />
-                            <button class="btn btn-primary" onclick="addApiKey()" style="flex:0 1 auto; padding:8px 16px; font-size:0.85rem;" aria-label="Dodaj API ključ">
-                                ➕ Dodaj
-                            </button>
-                        </div>
-                        <div id="keys-list">
-                            <p style="color: var(--text-muted); font-size: 0.85rem;">Kliknite na "Upravljanje" da učitate ključeve...</p>
-                        </div>
-                    </div>
-                </details>
+                <div class="input-group">
+                    <label for="mode-select">⚡ Način Rada</label>
+                    <select id="mode-select" aria-label="Odaberi način rada">
+                        <option value="PREVOD" selected>🌐 PREVOD — Prijevod + Lektura (engleski → bosanski/hrvatski)</option>
+                        <option value="TTS">🔊 TTS — Fonetski Filter za Text-to-Speech čitače</option>
+                    </select>
+                    <small class="input-hint">TTS mod generiše .ttsfilter fajl za Moon+ Reader</small>
+                </div>
+                <div class="wizard-nav">
+                    <button class="btn btn-ghost" onclick="prevSetupStep()">← Nazad</button>
+                    <button id="btn-start" class="btn btn-primary btn-launch" onclick="startEngine()">
+                        🚀 Pokreni Sistem
+                    </button>
+                </div>
             </div>
         </div>
-        <!-- /main-ui-wrapper -->
 
-        <!-- Inline styles -->
-        <style>
-            .hidden {
-                display: none !important;
+        <!-- ═══ DASHBOARD SCREEN ═══ -->
+        <div id="dashboard-screen" class="panel hidden" role="region" aria-label="Status operacije">
+            <h2>📊 Status Operacije</h2>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">🔧 Motor</span>
+                    <span id="ae" class="stat-value time-glow">---</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">📄 Fajl</span>
+                    <span id="bi" class="stat-value">---</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">✅ Obrađeno</span>
+                    <span id="ok" class="stat-value">0 / 0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">⏭️ Preskočeno</span>
+                    <span id="skp" class="stat-value">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">🟢 Aktivni Ključevi</span>
+                    <span id="fleet-active" class="stat-value" style="color:var(--success);">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">🔥 Na Hlađenju</span>
+                    <span id="fleet-cooling" class="stat-value" style="color:var(--warning);">0</span>
+                </div>
+            </div>
+
+            <div class="progress-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Napredak obrade">
+                <div id="fill" class="progress-bar" style="width:0%;"></div>
+            </div>
+            <div class="progress-label">
+                Završeno: <span id="pct" class="progress-pct">0%</span>
+                &nbsp;·&nbsp; ETA: <span id="est">--:--:--</span>
+            </div>
+
+            <div id="download-section" class="hidden download-section">
+                <a id="download-link" href="#" class="btn btn-primary" style="text-decoration:none; display:inline-flex;">
+                    ⬇️ Preuzmi Rezultat
+                </a>
+                <div class="export-row">
+                    <a id="export-json-link" href="/api/export/json" class="btn btn-ghost btn-sm" style="text-decoration:none;">📄 JSON Izvještaj</a>
+                    <a id="export-txt-link" href="/api/export/txt" class="btn btn-ghost btn-sm" style="text-decoration:none;">📋 TXT Izvještaj</a>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-pause"     onclick="sendCommand('pause')"  aria-label="Pauziraj">⏸ Pauziraj</button>
+                <button class="btn btn-secondary"  onclick="sendCommand('resume')" aria-label="Nastavi">▶️ Nastavi</button>
+                <button class="btn btn-warning"    onclick="sendCommand('reset')"  aria-label="Reset">🔄 Reset</button>
+                <button class="btn btn-danger"     onclick="sendCommand('stop')"   aria-label="Zaustavi">⏹ Ugasi</button>
+            </div>
+        </div>
+
+        <!-- ═══ AUDIT LOG ═══ -->
+        <div class="panel" role="region" aria-label="Dnevnik operacija">
+            <h2>📋 Dnevnik Operacija</h2>
+            <div id="audit" class="terminal-window" aria-live="polite" aria-label="Log poruke">
+                <span style="color:var(--success);">➜ Sistem spreman.</span><br>
+                <span style="color:var(--text-muted);">Odaberite operaciju i kliknite na "Pokreni Sistem".</span>
+            </div>
+        </div>
+
+        <!-- ═══ PROVIDER FLEET & KEYS ═══ -->
+        <div class="panel panel-fleet" id="panel-fleet" role="region" aria-label="API Ključevi i Fleet">
+
+            <div class="fleet-panel-toprow">
+                <h2>🛡️ Provider Fleet</h2>
+                <div class="fleet-summary" id="fleet-summary-badges">
+                    <!-- JS fills: badge counts -->
+                </div>
+            </div>
+
+            <!-- Add Key -->
+            <div class="key-add-card">
+                <div class="key-add-inputs">
+                    <div class="key-input-wrap">
+                        <input type="password"
+                               id="key-input"
+                               class="key-input-field"
+                               placeholder="Unesi API ključ (provajder se automatski prepoznaje)…"
+                               oninput="autoDetectProvider(this.value)"
+                               autocomplete="off"
+                               spellcheck="false"
+                               aria-label="API ključ" />
+                        <span id="key-detect-label" class="key-detect-label" aria-live="polite"></span>
+                    </div>
+                    <!-- Hidden select — kept for app.js compatibility -->
+                    <select id="key-provider-select"
+                            aria-hidden="true"
+                            class="js-compat-hidden"
+                            tabindex="-1">
+                        <option value="">—</option>
+                        <option value="GEMINI">GEMINI</option>
+                        <option value="GROQ">GROQ</option>
+                        <option value="CEREBRAS">CEREBRAS</option>
+                        <option value="SAMBANOVA">SAMBANOVA</option>
+                        <option value="MISTRAL">MISTRAL</option>
+                        <option value="COHERE">COHERE</option>
+                        <option value="OPENROUTER">OPENROUTER</option>
+                        <option value="GITHUB">GITHUB</option>
+                        <option value="ANTHROPIC">ANTHROPIC</option>
+                        <option value="OPENAI">OPENAI</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-add-key" onclick="addApiKey()" aria-label="Dodaj API ključ">
+                    ➕ Dodaj
+                </button>
+            </div>
+
+            <!-- Provider Tabs -->
+            <div class="provider-tabs-wrap">
+                <div id="provider-tabs" class="provider-tabs" role="tablist" aria-label="Provajderi">
+                    <span class="prov-tabs-empty">Nema dodanih ključeva</span>
+                </div>
+            </div>
+
+            <!-- Selected Provider Mini Panel -->
+            <div id="selected-provider-panel" class="selected-prov-panel" aria-live="polite">
+                <!-- JS renders key rows here when a tab is selected -->
+            </div>
+
+            <!-- Hidden legacy containers — app.js writes here, JS bridge reads it -->
+            <div id="keys-content" class="js-compat-hidden" aria-hidden="true">
+                <div id="keys-list"></div>
+            </div>
+            <div id="fleet-pool-content" class="js-compat-hidden" aria-hidden="true"></div>
+
+        </div>
+        <!-- /panel-fleet -->
+
+    </div><!-- /main-ui-wrapper -->
+
+    <!-- ═══ INLINE OVERRIDES ═══ -->
+    <style>
+        .hidden { display: none !important; }
+        .js-compat-hidden {
+            position: absolute;
+            width: 1px; height: 1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        #app-logo-title .neon-letter {
+            display: inline-block;
+            transition: text-shadow 0.1s ease;
+        }
+    </style>
+
+    <!-- DOMPurify -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"
+            integrity="sha512-MdMpKd/FNkUTQJxXHt23f5/clqzPEyiLRCqG37cUCLqJBqrpq+fqhORiNFpJAGsN8bFGFaFbzHLSAOLrFXaA=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- App JS (Flask) -->
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+
+    <!-- ═══ INLINE SCRIPTS ═══ -->
+    <script>
+    /* ─── HDD-style BOOKLIFY blink ────────────────────────────────────────
+       Letters flash ONLY while status-dot has class dot-active
+       (engine running) — behaves like a drive activity LED              */
+    (function () {
+        var NEON   = ['#60a5fa','#a78bfa','#4ade80','#fbbf24','#f87171','#06b6d4'];
+        var _timer = null;
+        var _letters = null;
+
+        function isEngineActive() {
+            var dot = document.getElementById('status-dot');
+            return dot && dot.classList.contains('dot-active');
+        }
+
+        function flash() {
+            if (!_letters || !_letters.length) {
+                _timer = setTimeout(flash, 500);
+                return;
             }
-            /* Neon letter flash — override parent background-clip:text per letter */
-            #app-logo-title .neon-letter {
-                display: inline-block;
-                transition: text-shadow 0.12s ease;
+            if (!isEngineActive()) {
+                _timer = setTimeout(flash, 350);
+                return;
             }
-        </style>
+            var count = Math.random() < 0.35 ? 2 : 1;
+            for (var k = 0; k < count; k++) {
+                var idx   = Math.floor(Math.random() * _letters.length);
+                var color = NEON[Math.floor(Math.random() * NEON.length)];
+                var el    = _letters[idx];
+                el.style.setProperty('-webkit-text-fill-color', color);
+                el.style.textShadow = '0 0 6px ' + color + ', 0 0 18px ' + color;
+                (function (target) {
+                    setTimeout(function () {
+                        target.style.removeProperty('-webkit-text-fill-color');
+                        target.style.textShadow = '';
+                    }, 90 + Math.random() * 220);
+                })(el);
+            }
+            _timer = setTimeout(flash, 70 + Math.random() * 280);
+        }
 
-        <!-- DOMPurify za XSS zaštitu audit loga -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"
-                integrity="sha512-MdMpKd/FNkUTQJxXHt23f5/clqzPEyiLRCqG37cUCLqJBqrpq+fqhORiNFpJAGsN8bFGFaFbzHLSAOLrFXaA=="
-                crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-        <!-- Scripts -->
-        <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
-        <!-- Neon logo letter flash — random color bursts while app runs -->
-        <script>
-        (function () {
-            // SVG logo colour palette: blue, purple, green, amber, red, cyan
-            var NEON = ['#60a5fa','#a78bfa','#4ade80','#fbbf24','#f87171','#06b6d4'];
-            var _timer = null;
-            var _letters = null;
+        document.addEventListener('DOMContentLoaded', function () {
+            _letters = document.querySelectorAll('#app-logo-title .neon-letter');
+            _timer = setTimeout(flash, 800);
+        });
+        window.addEventListener('beforeunload', function () {
+            if (_timer) clearTimeout(_timer);
+        });
+    })();
 
-            function flash() {
-                if (!_letters || !_letters.length) return;
+    /* ─── Provider auto-detect from API key prefix ───────────────────── */
+    function autoDetectProvider(val) {
+        var k   = (val || '').trim();
+        var lbl = document.getElementById('key-detect-label');
+        var sel = document.getElementById('key-provider-select');
 
-                // Flash 1 or 2 random letters
-                var count = Math.random() < 0.4 ? 2 : 1;
-                for (var k = 0; k < count; k++) {
-                    var idx   = Math.floor(Math.random() * _letters.length);
-                    var color = NEON[Math.floor(Math.random() * NEON.length)];
-                    var shadow = '0 0 6px ' + color + ', 0 0 18px ' + color + ', 0 0 36px ' + color;
-                    var el    = _letters[idx];
-                    el.style.setProperty('-webkit-text-fill-color', color);
-                    el.style.textShadow = shadow;
-                    (function (target) {
-                        setTimeout(function () {
-                            target.style.removeProperty('-webkit-text-fill-color');
-                            target.style.textShadow = '';
-                        }, 180 + Math.random() * 320);
-                    })(el);
+        if (!k) {
+            if (lbl) { lbl.textContent = ''; lbl.className = 'key-detect-label'; }
+            return;
+        }
+
+        var detected = '';
+        if      (k.startsWith('AIza'))                                            detected = 'GEMINI';
+        else if (k.startsWith('gsk_'))                                            detected = 'GROQ';
+        else if (k.startsWith('sk-ant-'))                                         detected = 'ANTHROPIC';
+        else if (k.startsWith('sk-or-'))                                          detected = 'OPENROUTER';
+        else if (k.startsWith('sk-proj-') || (k.startsWith('sk-') && k.length > 40 && !k.startsWith('sk-ant') && !k.startsWith('sk-or')))
+                                                                                   detected = 'OPENAI';
+        else if (k.startsWith('co_'))                                             detected = 'COHERE';
+        else if (k.startsWith('csk-'))                                            detected = 'CEREBRAS';
+        else if (k.startsWith('r8_'))                                             detected = 'REPLICATE';
+        else if (k.startsWith('sb-') || k.startsWith('SN-'))                     detected = 'SAMBANOVA';
+        else if (/^[a-f0-9]{32}$/i.test(k))                                      detected = 'MISTRAL';
+        else if (k.startsWith('github_pat_') || k.startsWith('ghp_'))            detected = 'GITHUB';
+
+        if (detected && sel) {
+            /* Ensure option exists (for unknown providers) */
+            var exists = Array.from(sel.options).some(function (o) { return o.value === detected; });
+            if (!exists) {
+                var opt = document.createElement('option');
+                opt.value = opt.textContent = detected;
+                sel.appendChild(opt);
+            }
+            sel.value = detected;
+        }
+
+        if (lbl) {
+            if (detected) {
+                lbl.textContent  = '↳ ' + detected;
+                lbl.className    = 'key-detect-label key-detect-found';
+            } else {
+                lbl.textContent  = '↳ Nepoznat provajder';
+                lbl.className    = 'key-detect-label key-detect-unknown';
+            }
+        }
+    }
+
+    /* ─── Provider Tabs & Mini Panel ─────────────────────────────────── */
+    var _activeProv = null;
+
+    function selectProviderTab(provName) {
+        _activeProv = provName;
+        document.querySelectorAll('.prov-tab').forEach(function (t) {
+            t.classList.toggle('prov-tab-active', t.dataset.prov === provName);
+            t.setAttribute('aria-selected', t.dataset.prov === provName ? 'true' : 'false');
+        });
+        renderProviderMiniPanel();
+    }
+
+    function renderProviderMiniPanel() {
+        var panel = document.getElementById('selected-provider-panel');
+        if (!panel) return;
+
+        if (!_activeProv) {
+            panel.innerHTML = '<p class="prov-panel-hint">Odaberite provajdera iznad da vidite ključeve</p>';
+            return;
+        }
+
+        /* Parse hidden keys-list (app.js renders a table there) */
+        var keysList = document.getElementById('keys-list');
+        var rows = keysList ? Array.from(keysList.querySelectorAll('tbody tr')) : [];
+        var provRows = rows.filter(function (row) {
+            var cells = row.querySelectorAll('td');
+            return cells.length >= 1 && cells[0].textContent.trim().toUpperCase() === _activeProv;
+        });
+
+        if (!provRows.length) {
+            panel.innerHTML = '<p class="prov-panel-hint">Nema ključeva za <strong>' + _activeProv + '</strong> — dodajte ključ gore</p>';
+            return;
+        }
+
+        var html = '<div class="prov-keys-list">';
+        provRows.forEach(function (row) {
+            var cells    = row.querySelectorAll('td');
+            var masked   = cells[1] ? cells[1].textContent.trim() : '—';
+            var status   = cells[2] ? cells[2].textContent.trim() : '';
+            var statCls  = 'key-s-unknown';
+            if (/aktiv/i.test(status))   statCls = 'key-s-active';
+            if (/limit/i.test(status))   statCls = 'key-s-limited';
+            if (/blokirain/i.test(status)) statCls = 'key-s-blocked';
+
+            /* Grab toggle & delete buttons if app.js already rendered them */
+            var toggleBtn = row.querySelector('.fleet-toggle-btn');
+            var deleteBtn = row.querySelector('button[onclick*="delete"], button[onclick*="remove"], button[title*="riši"], button[title*="briši"]');
+
+            html += '<div class="prov-key-row">';
+            html += '  <span class="prov-key-dot ' + statCls + '"></span>';
+            html += '  <span class="prov-key-masked">' + masked + '</span>';
+            html += '  <span class="prov-key-badge ' + statCls + '">' + (status || '?') + '</span>';
+            html += '  <div class="prov-key-actions">';
+            if (toggleBtn)  html += toggleBtn.outerHTML;
+            if (deleteBtn)  html += '<button class="prov-key-del" onclick="' + (deleteBtn.getAttribute('onclick') || '') + '" title="Obriši ključ">✕</button>';
+            html += '  </div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        panel.innerHTML = html;
+    }
+
+    /* Re-read keys-list whenever app.js mutates it */
+    function refreshProviderTabs() {
+        var keysList = document.getElementById('keys-list');
+        var counts   = {};
+
+        if (keysList) {
+            keysList.querySelectorAll('tbody tr').forEach(function (row) {
+                var cells = row.querySelectorAll('td');
+                if (cells.length >= 1) {
+                    var p = cells[0].textContent.trim().toUpperCase();
+                    if (p) counts[p] = (counts[p] || 0) + 1;
                 }
-                _timer = setTimeout(flash, 120 + Math.random() * 480);
-            }
-
-            document.addEventListener('DOMContentLoaded', function () {
-                _letters = document.querySelectorAll('#app-logo-title .neon-letter');
-                setTimeout(flash, 600);
             });
+        }
 
-            window.addEventListener('beforeunload', function () {
-                if (_timer) clearTimeout(_timer);
+        /* Also scan fleet-pool-content for provider names */
+        var fleetContent = document.getElementById('fleet-pool-content');
+        if (fleetContent) {
+            fleetContent.querySelectorAll('.fleet-card-name').forEach(function (el) {
+                var p = el.textContent.trim().toUpperCase();
+                if (p && !counts[p]) counts[p] = 0;
             });
-        })();
-        </script>
-        <!-- PWA: Service Worker registration -->
-        <script>
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/static/sw.js')
-                        .catch(() => { /* SW registration optional */ });
-                });
-            }
-        </script>
-    </body>
+        }
+
+        var provList = Object.keys(counts);
+        var badge    = document.getElementById('keys-count-badge');
+        if (badge) badge.textContent = provList.length;
+
+        var tabs = document.getElementById('provider-tabs');
+        if (!tabs) return;
+
+        if (!provList.length) {
+            tabs.innerHTML = '<span class="prov-tabs-empty">Nema dodanih ključeva</span>';
+            /* clear mini panel */
+            var p = document.getElementById('selected-provider-panel');
+            if (p) p.innerHTML = '';
+            return;
+        }
+
+        tabs.innerHTML = provList.map(function (name) {
+            var isActive = name === _activeProv;
+            var cnt      = counts[name];
+            return '<button class="prov-tab' + (isActive ? ' prov-tab-active' : '') + '"'
+                 + ' role="tab" aria-selected="' + isActive + '"'
+                 + ' data-prov="' + name + '"'
+                 + ' onclick="selectProviderTab(\'' + name + '\')">'
+                 + name
+                 + (cnt > 0 ? '<span class="prov-tab-count">' + cnt + '</span>' : '')
+                 + '</button>';
+        }).join('');
+
+        /* Refresh mini panel if selected tab is still valid */
+        if (_activeProv) renderProviderMiniPanel();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var watchTargets = [
+            document.getElementById('keys-list'),
+            document.getElementById('fleet-pool-content')
+        ];
+        if (window.MutationObserver) {
+            watchTargets.forEach(function (target) {
+                if (target) {
+                    new MutationObserver(refreshProviderTabs)
+                        .observe(target, { childList: true, subtree: true, characterData: true });
+                }
+            });
+        }
+        refreshProviderTabs();
+    });
+
+    /* ─── Keys Drawer toggle (header button) ─────────────────────────── */
+    function toggleKeysDrawer() {
+        var panel = document.getElementById('panel-fleet');
+        if (!panel) return;
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        panel.classList.add('fleet-highlight');
+        setTimeout(function () { panel.classList.remove('fleet-highlight'); }, 1200);
+    }
+    </script>
+
+    <!-- PWA Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/static/sw.js').catch(function () {});
+            });
+        }
+    </script>
+</body>
 </html>

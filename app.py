@@ -5,7 +5,7 @@ Kreira i konfigurira Flask instancu s registrovanim Blueprint rutama.
 Uvozi i koristi dijeljeno stanje iz config.settings.
 """
 
-import os
+
 
 from flask import Flask, make_response, redirect, render_template, request
 
