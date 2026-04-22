@@ -1,6 +1,8 @@
 """Centralne postavke i dijeljeno stanje aplikacije."""
+
 import os
 import uuid
+from pathlib import Path
 
 # ── Server ────────────────────────────────────────────────────────────────────
 PORT: int = int(os.environ.get("SKRIPTORIJ_PORT", 8080))
@@ -13,6 +15,9 @@ PROJECTS_ROOT: str = os.path.join(os.getcwd(), "data")
 os.makedirs(PROJECTS_ROOT, exist_ok=True)
 
 CONFIG_PATH: str = os.environ.get("SKRIPTORIJ_CONFIG", "dev_api.json")
+
+# Definisanje putanje za uvoz fajlova
+INPUT_DIR: Path = Path("/storage/emulated/0/termux/Skriptorij/data")
 
 # ── Dijeljeno stanje (zajednički rječnik između Flask threada i processing threada) ─
 SHARED_STATS: dict = {

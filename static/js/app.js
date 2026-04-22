@@ -1,863 +1,230 @@
 // ============================================================================
-// SKRIPTORIJ V8 TURBO -- app.js (Enhanced)
+// SKRIPTORIJ V10.2 — KOMPLETNI APP.JS (SA SPREMANJEM STANJA I NEON ANIMACIJOM)
 // ============================================================================
+console.log('✅ BOOKLYFI app.js učitan');
 
+// ---------- GLOBALNE ----------
 let pollInterval = null;
-let fleetPollInterval = null;
-let isRunning = false;
-let lastAuditHTML = '';
+let _activeTab = 'status';
 
-const FLEET_BAR_HIGH = 60;
-const FLEET_BAR_MID = 30;
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Provjeri localStorage — preskoči intro animaciju na ponovljenim posjetama
-    const introOverlay = document.getElementById('intro-overlay');
-    const mainUI = document.getElementById('main-ui-wrapper');
-    if (introOverlay) {
-        if (localStorage.getItem('skriptorij_intro_shown')) {
-            // Nije prvi put — odmah prikaži UI, ukloni intro overlay
-            introOverlay.remove();
-            if (mainUI) {
-                mainUI.style.display = 'block';
-                mainUI.style.opacity = '1';
-            }
-            document.body.style.overflow = 'auto';
-            // Obavijesti intro skript da ne pokreće animaciju
-            if (typeof appStarted !== 'undefined') { appStarted = true; }
-        } else {
-            // Prvi put — postavi flag i pokreni animaciju
-            localStorage.setItem('skriptorij_intro_shown', 'true');
-            // Sigurnosni fallback: garantovano prikaži UI ako animacija ne završi
-            setTimeout(() => {
-                const overlay = document.getElementById('intro-overlay');
-                const ui = document.getElementById('main-ui-wrapper');
-                if (overlay) overlay.remove();
-                if (ui) { ui.style.display = 'block'; ui.style.opacity = '1'; }
-                document.body.style.overflow = 'auto';
-            }, 13000);
-        }
-    }
-
-    applyStoredTheme();
-    loadBooks();
-    loadModels();
-    checkBackendStatus();
-
-    // Ucitaj fleet kada se otvori panel
-    const fleetDetails = document.getElementById('fleet-details');
-    if (fleetDetails) {
-        fleetDetails.addEventListener('toggle', () => {
-            if (fleetDetails.open) {
-                updateFleetPool();
-                if (!fleetPollInterval) {
-                    fleetPollInterval = setInterval(updateFleetPool, 5000);
-                }
-            } else {
-                if (fleetPollInterval) {
-                    clearInterval(fleetPollInterval);
-                    fleetPollInterval = null;
-                }
-            }
-        });
-    }
-
-    // #14: Ucitaj ključeve kada se otvori key management panel
-    const keysDetails = document.getElementById('keys-details');
-    if (keysDetails) {
-        keysDetails.addEventListener('toggle', () => {
-            if (keysDetails.open) {
-                loadApiKeys();
-            }
-        });
-    }
-});
-
-// -- Toast notifikacije -------------------------------------------------------
-function showToast(message, type) {
-    type = type || 'info';
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = 'toast toast-' + type;
-    toast.textContent = message;
-
-    container.appendChild(toast);
-
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            toast.classList.add('toast-visible');
-        });
-    });
-
-    setTimeout(() => {
-        toast.classList.remove('toast-visible');
-        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-    }, 4000);
-}
-
-// -- Tema -- cuvanje u localStorage ------------------------------------------
+// ---------- TEMA ----------
 function toggleTheme() {
-    const isLight = document.body.classList.toggle('light-theme');
-    localStorage.setItem('skriptorij-theme', isLight ? 'light' : 'dark');
-    const btn = document.getElementById('btn-theme');
-    if (btn) btn.textContent = isLight ? '🌙 Tema' : '☀️ Tema';
+    document.body.classList.toggle('light-theme');
+    localStorage.setItem('skriptorij-theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+    saveAppState();
 }
-
 function applyStoredTheme() {
-    if (localStorage.getItem('skriptorij-theme') === 'light') {
-        document.body.classList.add('light-theme');
-        const btn = document.getElementById('btn-theme');
-        if (btn) btn.textContent = '🌙 Tema';
-    }
+    if (localStorage.getItem('skriptorij-theme') === 'light') document.body.classList.add('light-theme');
 }
 
-// -- Setup Toggle (dostupan i tokom rada) ------------------------------------
-function toggleSetup() {
-    const setupScreen = document.getElementById('setup-screen');
-    const dashboardScreen = document.getElementById('dashboard-screen');
-    if (!setupScreen) return;
-
-    const isHidden = setupScreen.classList.contains('hidden');
-    if (isHidden) {
-        // Prikaži setup overlay (čuva dashboard ispod)
-        setupScreen.classList.remove('hidden');
-        setupScreen.classList.add('setup-overlay-active');
-    } else {
-        setupScreen.classList.add('hidden');
-        setupScreen.classList.remove('setup-overlay-active');
-    }
+// ---------- SPREMANJE STANJA ----------
+function saveAppState() {
+    const state = {
+        selectedBook: document.getElementById('book-select')?.value || '',
+        selectedModel: document.getElementById('model-select')?.value || 'V8_TURBO',
+        selectedMode: document.getElementById('mode-select')?.value || 'PREVOD',
+        currentWizardStep: document.getElementById('wizard-page-2')?.classList.contains('hidden') ? 1 : 2,
+        dashboardVisible: !document.getElementById('dashboard-screen')?.classList.contains('hidden'),
+        currentTab: _activeTab || 'status',
+        theme: document.body.classList.contains('light-theme') ? 'light' : 'dark'
+    };
+    localStorage.setItem('skriptorij_app_state', JSON.stringify(state));
 }
-
-// -- 2-Step Wizard Navigation ------------------------------------------------
-function nextSetupStep() {
-    const bookSelect = document.getElementById('book-select');
-    if (!bookSelect || !bookSelect.value) {
-        showToast('⚠️ Odaberi ili uploadaj EPUB fajl prije nastavka!', 'warning');
-        return;
-    }
-    const page1 = document.getElementById('wizard-page-1');
-    const page2 = document.getElementById('wizard-page-2');
-    const ind1  = document.getElementById('ws-indicator-1');
-    const ind2  = document.getElementById('ws-indicator-2');
-    const conn  = document.getElementById('ws-connector-1');
-
-    if (page1) page1.classList.add('hidden');
-    if (page2) page2.classList.remove('hidden');
-    if (ind1) { ind1.classList.remove('active'); ind1.classList.add('completed'); }
-    if (ind2) ind2.classList.add('active');
-    if (conn) conn.classList.add('active');
-}
-
-function prevSetupStep() {
-    const page1 = document.getElementById('wizard-page-1');
-    const page2 = document.getElementById('wizard-page-2');
-    const ind1  = document.getElementById('ws-indicator-1');
-    const ind2  = document.getElementById('ws-indicator-2');
-    const conn  = document.getElementById('ws-connector-1');
-
-    if (page2) page2.classList.add('hidden');
-    if (page1) page1.classList.remove('hidden');
-    if (ind2) ind2.classList.remove('active');
-    if (ind1) { ind1.classList.remove('completed'); ind1.classList.add('active'); }
-    if (conn) conn.classList.remove('active');
-}
-
-// Reset wizard back to step 1
-function _resetWizard() {
-    const page1 = document.getElementById('wizard-page-1');
-    const page2 = document.getElementById('wizard-page-2');
-    const ind1  = document.getElementById('ws-indicator-1');
-    const ind2  = document.getElementById('ws-indicator-2');
-    const conn  = document.getElementById('ws-connector-1');
-
-    if (page2) page2.classList.add('hidden');
-    if (page1) page1.classList.remove('hidden');
-    if (ind1) { ind1.classList.remove('completed'); ind1.classList.add('active'); }
-    if (ind2) ind2.classList.remove('active');
-    if (conn) conn.classList.remove('active');
-}
-
-// -- Provjera statusa na pocetku ---------------------------------------------
-function checkBackendStatus() {
-    fetch('/api/status')
-        .then(r => r.json())
-        .then(d => {
-            // Uvijek ažuriraj header dot i status tekst
-            updateDashboard();
-
-            if (d.status && d.status.toUpperCase() !== 'IDLE' && d.status.toUpperCase() !== 'RESETOVANO') {
-                switchToDashboard();
-                if (pollInterval) clearInterval(pollInterval);
-                pollInterval = setInterval(updateDashboard, 1500);
+function restoreAppState() {
+    const saved = localStorage.getItem('skriptorij_app_state');
+    if (!saved) return false;
+    try {
+        const state = JSON.parse(saved);
+        setTimeout(() => {
+            const bookSelect = document.getElementById('book-select');
+            if (bookSelect && state.selectedBook && Array.from(bookSelect.options).some(o => o.value === state.selectedBook)) {
+                bookSelect.value = state.selectedBook;
             }
-        })
-        .catch(e => console.error('Status check error:', e));
-}
-
-// -- Ucitavanje knjiga -------------------------------------------------------
-function loadBooks() {
-    fetch('/api/books')
-        .then(r => r.json())
-        .then(d => {
-            const select = document.getElementById('book-select');
-            if (!select) return;
-
-            select.innerHTML = '<option value="">-- Odaberi knjigu --</option>';
-
-            if (d.books && d.books.length > 0) {
-                d.books.forEach(b => {
-                    const opt = document.createElement('option');
-                    opt.value = b.path;
-                    opt.textContent = b.name;
-                    if (d.last_book && b.path === d.last_book) {
-                        opt.selected = true;
-                    }
-                    select.appendChild(opt);
-                });
-            } else {
-                const opt = document.createElement('option');
-                opt.value = '';
-                opt.textContent = 'Nema dostupnih EPUB fajlova';
-                opt.disabled = true;
-                select.appendChild(opt);
-            }
-        })
-        .catch(e => console.error('Greska pri ucitavanju knjiga:', e));
-}
-
-// -- Upload knjige -----------------------------------------------------------
-function uploadBook(file) {
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const btn = document.getElementById('btn-start');
-    const fileInput = document.getElementById('book-file');
-
-    if (btn) btn.innerText = '\u23F3 Uploadujem...';
-    if (btn) btn.disabled = true;
-
-    fetch('/api/upload_book', {
-        method: 'POST',
-        body: formData
-    })
-        .then(r => r.json())
-        .then(d => {
-            if (d.error) {
-                showToast('\u274C Greska pri uploadu: ' + d.error, 'error');
-                if (btn) btn.disabled = false;
-                return;
-            }
-
-            showToast('\u2705 Uspjesno uploadovano: ' + d.name, 'success');
-            loadBooks();
-
-            // Automatski odaberi uploadanu knjigu
+        }, 500);
+        setTimeout(() => {
+            const ms = document.getElementById('model-select'); if (ms && state.selectedModel) ms.value = state.selectedModel;
+            const md = document.getElementById('mode-select'); if (md && state.selectedMode) md.value = state.selectedMode;
+        }, 300);
+        if (state.currentWizardStep === 2) {
             setTimeout(() => {
-                const select = document.getElementById('book-select');
-                if (select) {
-                    Array.from(select.options).forEach(opt => {
-                        if (opt.textContent === d.name) {
-                            opt.selected = true;
-                        }
-                    });
-                }
-            }, 300);
-
-            if (fileInput) fileInput.value = '';
-            if (btn) {
-                btn.innerText = '\uD83D\uDE80 Pokreni Sistem';
-                btn.disabled = false;
-            }
-        })
-        .catch(e => {
-            console.error('Upload greska:', e);
-            showToast('\u274C Greska pri uploadu: ' + e.message, 'error');
-            if (btn) {
-                btn.innerText = '\uD83D\uDE80 Pokreni Sistem';
-                btn.disabled = false;
-            }
-        });
-}
-
-// -- Ucitavanje modela -------------------------------------------------------
-function loadModels() {
-    fetch('/api/dev_models')
-        .then(r => r.json())
-        .then(models => {
-            const select = document.getElementById('model-select');
-            if (!select) return;
-
-            select.innerHTML = '';
-
-            if (Array.isArray(models) && models.length > 0) {
-                models.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m;
-                    opt.textContent = m === 'V8_TURBO' ? '⚡ V8 TURBO (Preporučeno)' : m;
-                    if (m === 'V8_TURBO') opt.selected = true;
-                    select.appendChild(opt);
-                });
-            } else {
-                const opt = document.createElement('option');
-                opt.value = 'V8_TURBO';
-                opt.textContent = '⚡ V8 TURBO (Default)';
-                opt.selected = true;
-                select.appendChild(opt);
-            }
-        })
-        .catch(e => {
-            console.error('Greska pri ucitavanju modela:', e);
-            const select = document.getElementById('model-select');
-            if (select) {
-                select.innerHTML = '<option value="V8_TURBO" selected>⚡ V8 TURBO (Default)</option>';
-            }
-        });
-}
-
-// -- Pokretanje sistema ------------------------------------------------------
-function startEngine() {
-    const bookSelect = document.getElementById('book-select');
-    const modelSelect = document.getElementById('model-select');
-    const modeSelect = document.getElementById('mode-select');
-    const btn = document.getElementById('btn-start');
-
-    const book = bookSelect ? bookSelect.value : '';
-    const model = modelSelect ? modelSelect.value : 'V8_TURBO';
-    const mode = modeSelect ? modeSelect.value : 'PREVOD';
-
-    if (!book || book === '') {
-        showToast('\u26A0\uFE0F Odaberi ili uploadaj EPUB fajl prije pokretanja!', 'warning');
-        return;
-    }
-
-    if (btn) {
-        btn.innerText = '\u23F3 Inicijalizacija...';
-        btn.disabled = true;
-    }
-
-    isRunning = true;
-
-    fetch('/api/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ book: book, model: model, mode: mode })
-    })
-        .then(r => r.json())
-        .then(d => {
-            if (d.error) {
-                showToast('\u274C Greska pri pokretanju: ' + d.error, 'error');
-                if (btn) {
-                    btn.innerText = '\uD83D\uDE80 Pokreni Sistem';
-                    btn.disabled = false;
-                }
-                isRunning = false;
-                return;
-            }
-
-            switchToDashboard();
-
-            if (pollInterval) clearInterval(pollInterval);
-            pollInterval = setInterval(updateDashboard, 1500);
-
-            updateDashboard();
-        })
-        .catch(e => {
-            console.error('Start greska:', e);
-            showToast('\u274C Greska pri spajanju sa serverom: ' + e.message, 'error');
-            if (btn) {
-                btn.innerText = '\uD83D\uDE80 Pokreni Sistem';
-                btn.disabled = false;
-            }
-            isRunning = false;
-        });
-}
-
-// -- Prebacivanje na dashboard ------------------------------------------------
-function switchToDashboard() {
-    const setupScreen = document.getElementById('setup-screen');
-    const dashboardScreen = document.getElementById('dashboard-screen');
-
-    if (setupScreen) {
-        setupScreen.classList.add('hidden');
-        setupScreen.classList.remove('setup-overlay-active');
-    }
-    if (dashboardScreen) dashboardScreen.classList.remove('hidden');
-}
-
-// -- Prebacivanje na setup ----------------------------------------------------
-function switchToSetup() {
-    const setupScreen = document.getElementById('setup-screen');
-    const dashboardScreen = document.getElementById('dashboard-screen');
-
-    if (dashboardScreen) dashboardScreen.classList.add('hidden');
-    if (setupScreen) {
-        setupScreen.classList.remove('hidden');
-        setupScreen.classList.remove('setup-overlay-active');
-    }
-}
-
-// -- Komande (Pause, Resume, Reset, Stop) ------------------------------------
-function sendCommand(cmd) {
-    fetch('/control/' + cmd, {
-        method: 'POST'
-    })
-        .then(r => r.json())
-        .then(d => {
-            const dot = document.getElementById('status-dot');
-
-            switch (cmd) {
-                case 'pause':
-                    if (dot) dot.className = 'dot dot-paused';
-                    break;
-                case 'resume':
-                    if (dot) dot.className = 'dot dot-active';
-                    break;
-                case 'stop':
-                    if (dot) dot.className = 'dot dot-idle';
-                    if (pollInterval) clearInterval(pollInterval);
-                    isRunning = false;
-                    break;
-                case 'reset':
-                    if (pollInterval) clearInterval(pollInterval);
-                    isRunning = false;
-                    if (dot) dot.className = 'dot dot-idle';
-                    const dlSection = document.getElementById('download-section');
-                    if (dlSection) dlSection.classList.add('hidden');
-                    setTimeout(() => {
-                        switchToSetup();
-                        _resetWizard();
-                        loadBooks();
-                        loadModels();
-                        const btn = document.getElementById('btn-start');
-                        if (btn) {
-                            btn.innerText = '\uD83D\uDE80 Pokreni Sistem';
-                            btn.disabled = false;
-                        }
-                    }, 500);
-                    break;
-            }
-        })
-        .catch(e => console.error('Komanda greska:', e));
-}
-
-// -- Azuriranje dashboard-a --------------------------------------------------
-function updateDashboard() {
-    fetch('/api/status')
-        .then(r => r.json())
-        .then(d => {
-            _updateEl('ph', d.status || 'IDLE');
-            _updateEl('ae', d.active_engine || '---');
-            _updateEl('bi', d.current_file || '---');
-            _updateEl('ok', d.ok || '0 / 0');
-            _updateEl('skp', d.skipped || '0');
-            _updateEl('pct', (d.pct || 0) + '%');
-            _updateEl('est', d.est || '--:--:--');
-
-            _updateEl('fleet-active', d.fleet_active || 0);
-            _updateEl('fleet-cooling', d.fleet_cooling || 0);
-
-            const fill = document.getElementById('fill');
-            if (fill) {
-                fill.style.width = (d.pct || 0) + '%';
-            }
-
-            const audit = document.getElementById('audit');
-            if (audit && d.live_audit) {
-                const safeAudit = (typeof DOMPurify !== 'undefined')
-                    ? DOMPurify.sanitize(d.live_audit, { USE_PROFILES: { html: true } })
-                    : d.live_audit;
-                if (audit.innerHTML !== safeAudit) {
-                    audit.innerHTML = safeAudit;
-                    lastAuditHTML = safeAudit;
-
-                    const isScrolledToBottom =
-                        audit.scrollHeight - audit.clientHeight <=
-                        audit.scrollTop + 50;
-
-                    if (isScrolledToBottom) {
-                        setTimeout(() => {
-                            audit.scrollTop = audit.scrollHeight;
-                        }, 50);
-                    }
-                }
-            }
-
-            const dot = document.getElementById('status-dot');
-            const statusEl = document.getElementById('ph');
-            const statusText = (d.status || '').toUpperCase();
-
-            // Semaphore: GREEN = u toku, YELLOW = idle/upozorenje, RED = greška
-            if (dot) {
-                if (statusText.includes('TOKU') || statusText.includes('POKRENUTA') || statusText.includes('POKRETANJE')) {
-                    dot.className = 'dot dot-active';
-                } else if (statusText === 'PAUZIRANO' || statusText.includes('PAUZA')) {
-                    dot.className = 'dot dot-paused';
-                } else if (
-                    statusText.includes('GREŠKA') || statusText.includes('GRESKA') ||
-                    statusText.includes('ERROR') || statusText.includes('ZAUSTAVLJENO')
-                ) {
-                    dot.className = 'dot dot-error';
-                } else {
-                    dot.className = 'dot dot-idle';
-                }
-            }
-
-            // Status tekst boja — dinamički semaphore
-            if (statusEl) {
-                statusEl.classList.remove('status-idle', 'status-ok', 'status-warning', 'status-error');
-                if (
-                    statusText.includes('TOKU') || statusText.includes('POKRENUTA') ||
-                    statusText.includes('ZAVRŠEN') || statusText.includes('ZAVRSEN')
-                ) {
-                    statusEl.classList.add('status-ok');
-                } else if (
-                    statusText.includes('GREŠKA') || statusText.includes('GRESKA') ||
-                    statusText.includes('ERROR') || statusText.includes('ZAUSTAVLJENO')
-                ) {
-                    statusEl.classList.add('status-error');
-                } else if (statusText === 'PAUZIRANO' || statusText.includes('PAUZA')) {
-                    statusEl.classList.add('status-warning');
-                } else {
-                    statusEl.classList.add('status-idle');
-                }
-            }
-
-            // Download dugme -- prikazuje se kad je output_file postavljen
-            const dlSection = document.getElementById('download-section');
-            const dlLink = document.getElementById('download-link');
-            if (dlSection && dlLink && d.output_file) {
-                dlLink.href = '/api/download/' + encodeURIComponent(d.output_file);
-                dlLink.textContent = '\u2B07\uFE0F Preuzmi: ' + d.output_file;
-                dlSection.classList.remove('hidden');
-            }
-
-            if (d.pct >= 100 || statusText.includes('ZAVRSEN') || statusText.includes('ZAVRŠEN')) {
+                document.getElementById('wizard-page-1')?.classList.add('hidden');
+                document.getElementById('wizard-page-2')?.classList.remove('hidden');
+                document.getElementById('ws-indicator-1')?.classList.replace('active', 'completed');
+                document.getElementById('ws-indicator-2')?.classList.add('active');
+            }, 100);
+        }
+        if (state.dashboardVisible) {
+            setTimeout(() => {
+                document.getElementById('setup-screen')?.classList.add('hidden');
+                document.getElementById('dashboard-screen')?.classList.remove('hidden');
                 if (pollInterval) clearInterval(pollInterval);
-            }
-        })
-        .catch(e => console.error('Dashboard greska:', e));
+                pollInterval = setInterval(updateDashboard, 2000);
+                updateDashboard();
+            }, 200);
+        }
+        if (state.currentTab) setTimeout(() => switchTab(state.currentTab), 150);
+        return true;
+    } catch (e) { return false; }
 }
 
-// -- Fleet Pool --------------------------------------------------------------
-const FLEET_PROV_ICONS = {
-    GROQ: '⚡', GEMINI: '♊', SAMBANOVA: '🧠', OPENROUTER: '🔀',
-    MISTRAL: '💫', COHERE: '🌐', CEREBRAS: '🔬', GITHUB: '🐙'
-};
-
-function _fleetKeyStatus(k) {
-    if (k.disabled) {
-        return { cls: 'blokiran', label: 'BLOKIRAN', icon: '🔴' };
-    }
-    if (k.available) {
-        return { cls: 'aktivan', label: 'AKTIVAN', icon: '✅' };
-    }
-    // Na cooldownu (rate-limit ili privremena greška)
-    const secs = k.cooldown_remaining > 0 ? ' ' + Math.ceil(k.cooldown_remaining) + 's' : '';
-    return { cls: 'limitiran', label: 'LIMITIRAN' + secs, icon: '⏳' };
+// ---------- TABOVI ----------
+function switchTab(tab) {
+    _activeTab = tab;
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel-active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+    document.getElementById('tab-' + tab)?.classList.add('tab-panel-active');
+    document.getElementById('tbtn-' + tab)?.classList.add('tab-active');
+    if (tab === 'fleet') updateFleetPool();
+    if (tab === 'keys') loadApiKeys();
+    if (tab === 'log') { const a = document.getElementById('audit'); if(a) a.scrollTop = a.scrollHeight; }
+    saveAppState();
 }
 
-function _fleetHealthColor(pct) {
-    if (pct > FLEET_BAR_HIGH) return '#00FF41';
-    if (pct > FLEET_BAR_MID)  return '#f59e0b';
-    return '#ff2a00';
+// ---------- SETUP ----------
+function toggleSetup() {
+    const s = document.getElementById('setup-screen'), d = document.getElementById('dashboard-screen');
+    if (!s) return;
+    if (s.classList.contains('hidden')) { s.classList.remove('hidden'); d?.classList.add('hidden'); }
+    else { s.classList.add('hidden'); d?.classList.remove('hidden'); }
+    saveAppState();
+}
+function nextSetupStep() {
+    if (!document.getElementById('book-select')?.value) { alert('⚠️ Odaberi knjigu!'); return; }
+    document.getElementById('wizard-page-1')?.classList.add('hidden');
+    document.getElementById('wizard-page-2')?.classList.remove('hidden');
+    document.getElementById('ws-indicator-1')?.classList.replace('active', 'completed');
+    document.getElementById('ws-indicator-2')?.classList.add('active');
+    saveAppState();
+}
+function prevSetupStep() {
+    document.getElementById('wizard-page-2')?.classList.add('hidden');
+    document.getElementById('wizard-page-1')?.classList.remove('hidden');
+    document.getElementById('ws-indicator-2')?.classList.remove('active');
+    document.getElementById('ws-indicator-1')?.classList.replace('completed', 'active');
+    saveAppState();
 }
 
+// ---------- KNJIGE ----------
+function loadBooks() {
+    fetch('/api/books').then(r=>r.json()).then(d=>{
+        const s=document.getElementById('book-select'); if(!s)return;
+        s.innerHTML='<option value="">-- Odaberi knjigu --</option>';
+        (d.books||[]).forEach(b=>s.add(new Option(b.name,b.path)));
+        if(d.last_book) s.value=d.last_book;
+        setTimeout(saveAppState, 500);
+    }).catch(e=>console.error(e));
+}
+function loadModels() {
+    fetch('/api/dev_models').then(r=>r.json()).then(m=>{
+        const s=document.getElementById('model-select'); if(!s)return;
+        s.innerHTML=''; (m||[]).forEach(x=>s.add(new Option(x==='V8_TURBO'?'⚡ V8 TURBO':x,x)));
+        s.value='V8_TURBO';
+    });
+}
+function _initUploadListener() {
+    const i=document.getElementById('book-file');
+    i?.addEventListener('change', e=>{
+        const f=e.target.files[0]; if(!f)return;
+        const fd=new FormData(); fd.append('file',f);
+        fetch('/api/upload_book',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+            if(d.error) throw new Error(d.error); loadBooks(); alert('✅ Uploadovano: '+d.name);
+        }).catch(e=>alert('❌ '+e.message));
+        i.value='';
+    });
+}
+
+// ---------- ENGINE ----------
+function startEngine() {
+    const book=document.getElementById('book-select')?.value, model=document.getElementById('model-select')?.value||'V8_TURBO', mode=document.getElementById('mode-select')?.value||'PREVOD';
+    if(!book){alert('⚠️ Odaberi knjigu!');return;}
+    const btn=document.getElementById('btn-start'); if(btn){btn.innerText='⏳ Inicijalizacija...';btn.disabled=true;}
+    fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({book,model,mode})})
+        .then(r=>r.json()).then(d=>{if(d.error)throw new Error(d.error); switchToDashboard();})
+        .catch(e=>{alert('❌ '+e.message); if(btn){btn.innerText='🚀 Pokreni Sistem';btn.disabled=false;}});
+}
+function switchToDashboard() {
+    document.getElementById('setup-screen')?.classList.add('hidden');
+    document.getElementById('dashboard-screen')?.classList.remove('hidden');
+    if(pollInterval)clearInterval(pollInterval);
+    pollInterval=setInterval(updateDashboard,2000);
+    updateDashboard();
+    saveAppState();
+}
+function updateDashboard() {
+    fetch('/api/status').then(r=>r.json()).then(d=>{
+        document.getElementById('ph').textContent=d.status||'IDLE';
+        document.getElementById('ae').textContent=d.active_engine||'---';
+        document.getElementById('bi').textContent=d.current_file||'---';
+        document.getElementById('ok').textContent=d.ok||'0/0';
+        document.getElementById('pct').textContent=(d.pct||0)+'%';
+        document.getElementById('fill').style.width=(d.pct||0)+'%';
+        const dot=document.getElementById('status-dot'), s=(d.status||'').toUpperCase();
+        if(dot) dot.className='dot '+(s.includes('TOKU')?'dot-active':s==='PAUZIRANO'?'dot-paused':'dot-idle');
+        const audit=document.getElementById('audit'); if(audit&&d.live_audit){ audit.innerHTML=d.live_audit; audit.scrollTop=audit.scrollHeight; }
+    });
+}
+function sendCommand(cmd){ fetch('/control/'+cmd,{method:'POST'}).catch(e=>console.error); }
+
+// ---------- FLEET ----------
 function updateFleetPool() {
-    fetch('/api/fleet')
-        .then(r => r.json())
-        .then(data => {
-            const container = document.getElementById('fleet-pool-content');
-            if (!container) return;
-
-            if (data.error) {
-                container.innerHTML = '<p style="color:var(--col-danger);font-size:0.85rem;">Greška: ' + data.error + '</p>';
-                return;
-            }
-
-            const providers = Object.entries(data);
-            if (providers.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">Nema konfiguriranih provajdera.</p>';
-                return;
-            }
-
-            // Preserve open state of existing cards
-            const openStates = {};
-            container.querySelectorAll('.fleet-card[data-prov]').forEach(el => {
-                openStates[el.dataset.prov] = el.open;
+    fetch('/api/fleet').then(r=>r.json()).then(data=>{
+        const c=document.getElementById('fleet-cards-container'); if(!c)return;
+        let h='';
+        for(const [p,info] of Object.entries(data)){
+            const active=info.active||0, total=info.total||0, keys=info.keys||[];
+            const icon=active>0?'🟢':(total-active>0?'🟡':'🔴');
+            h+=`<details class="fleet-card"><summary class="fleet-card-header"><span class="fleet-card-icon">${icon}</span><span class="fleet-card-name">${p}</span><span class="fleet-card-count">${active}/${total}</span><span class="fleet-chevron">▼</span></summary><div class="fleet-keys-grid">`;
+            keys.forEach(k=>{
+                const status=k.available?'aktivan':(k.cooldown_remaining>0?'limitiran':'blokiran');
+                h+=`<div class="fleet-key-pill fleet-key-${status}"><span>${k.masked}</span><span>${k.available?'✅':(k.cooldown_remaining>0?'⏳':'🔴')}</span></div>`;
             });
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'fleet-cards';
-
-            for (const [prov, info] of providers) {
-                const active = info.active || 0;
-                const total  = info.total  || 1;
-                const pct    = Math.round((active / total) * 100);
-                const color  = _fleetHealthColor(pct);
-                const keys   = info.keys || [];
-                const icon   = FLEET_PROV_ICONS[prov] || '🛡️';
-
-                const keyWord = total === 1 ? 'ključ' : total < 5 ? 'ključa' : 'ključeva';
-
-                const card = document.createElement('details');
-                card.className = 'fleet-card';
-                card.dataset.prov = prov;
-                if (openStates[prov]) card.open = true;
-
-                // ── Header (summary) ──────────────────────────────────────
-                const summary = document.createElement('summary');
-                summary.className = 'fleet-card-header';
-                summary.innerHTML =
-                    '<div class="fleet-card-title">'
-                    +   '<span class="fleet-card-icon">' + icon + '</span>'
-                    +   '<span class="fleet-card-name">' + prov + '</span>'
-                    +   '<span class="fleet-card-count">[' + total + '\u00a0' + keyWord + ']</span>'
-                    + '</div>'
-                    + '<div class="fleet-card-meta">'
-                    +   '<div class="fleet-health-bar-wrap">'
-                    +     '<div class="fleet-health-bar-bg">'
-                    +       '<div class="fleet-health-bar-fill" style="width:' + pct + '%;background:' + color + ';"></div>'
-                    +     '</div>'
-                    +   '</div>'
-                    +   '<span class="fleet-health-pct" style="color:' + color + ';">' + pct + '%</span>'
-                    +   '<span class="fleet-chevron">▼</span>'
-                    + '</div>';
-                card.appendChild(summary);
-
-                // ── Key pills ─────────────────────────────────────────────
-                const keysDiv = document.createElement('div');
-                keysDiv.className = 'fleet-keys-grid';
-
-                if (keys.length === 0) {
-                    keysDiv.innerHTML = '<span style="color:var(--text-muted);font-size:0.8rem;">'
-                        + active + '\u00a0/\u00a0' + total + ' aktivno</span>';
-                } else {
-                    keys.forEach(k => {
-                        const st = _fleetKeyStatus(k);
-
-                        let ratePct = null;
-                        if (k.rate_limit_minute && k.remaining_minute != null) {
-                            ratePct = Math.round((k.remaining_minute / k.rate_limit_minute) * 100);
-                        }
-
-                        const rateBar = ratePct != null
-                            ? '<div class="fleet-rate-bar-bg">'
-                              + '<div class="fleet-rate-bar-fill" style="width:' + ratePct + '%;"></div>'
-                              + '</div>'
-                            : '';
-
-                        const statsArr = [];
-                        if (k.total_requests != null) statsArr.push('REQ\u00a0' + k.total_requests);
-                        if (k.remaining_minute != null) statsArr.push('REM\u00a0' + k.remaining_minute);
-                        if (k.errors > 0) statsArr.push('<span style="color:var(--col-danger);">ERR\u00a0' + k.errors + '</span>');
-
-                        const pill = document.createElement('div');
-                        pill.className = 'fleet-key-pill fleet-key-' + st.cls + (k.disabled ? ' fleet-key-disabled' : '');
-                        pill.dataset.key = k.key || '';
-                        pill.dataset.prov = prov;
-                        pill.innerHTML =
-                            '<div class="fleet-key-top">'
-                            +   '<span class="fleet-key-mask">' + (k.masked || '***') + '</span>'
-                            +   '<span class="fleet-key-status-badge fleet-badge-' + st.cls + '">'
-                            +     st.icon + '\u00a0' + st.label
-                            +   '</span>'
-                            +   '<button class="fleet-toggle-btn" title="' + (k.disabled ? 'Uključi ključ' : 'Isključi ključ') + '" aria-label="' + (k.disabled ? 'Uključi ključ' : 'Isključi ključ') + '">'
-                            +     (k.disabled ? '🟢' : '🔴')
-                            +   '</button>'
-                            + '</div>'
-                            + rateBar
-                            + (statsArr.length ? '<div class="fleet-key-stats">' + statsArr.join('<span class="fleet-stat-sep">·</span>') + '</div>' : '');
-
-                        pill.querySelector('.fleet-toggle-btn').addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            const keyVal = pill.dataset.key;
-                            const provVal = pill.dataset.prov;
-                            if (!keyVal) return;
-                            fetch('/api/fleet/toggle', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ provider: provVal, key: keyVal })
-                            })
-                            .then(r => r.json())
-                            .then(res => {
-                                if (res.error) { showToast('Greška: ' + res.error, 'error'); return; }
-                                updateFleetPool();
-                            })
-                            .catch(() => showToast('Greška pri toggleu ključa', 'error'));
-                        });
-
-                        keysDiv.appendChild(pill);
-                    });
-                }
-
-                card.appendChild(keysDiv);
-                wrapper.appendChild(card);
-            }
-
-            container.replaceChildren(wrapper);
-        })
-        .catch(() => {
-            const container = document.getElementById('fleet-pool-content');
-            if (container) {
-                container.innerHTML = '<p style="color:var(--col-danger);font-size:0.85rem;">Greška pri dohvaćanju flote.</p>';
-            }
-        });
-}
-
-// -- Helper funkcije ---------------------------------------------------------
-function _updateEl(id, val) {
-    const el = document.getElementById(id);
-    if (el && el.innerText !== String(val)) {
-        el.innerText = val;
-    }
-}
-
-// -- #14: API Key Management ------------------------------------------------
-function loadApiKeys() {
-    fetch('/api/keys')
-        .then(r => r.json())
-        .then(data => {
-            const container = document.getElementById('keys-list');
-            if (!container) return;
-
-            if (data.error) {
-                const p = document.createElement('p');
-                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
-                p.textContent = 'Greška: ' + data.error;
-                container.replaceChildren(p);
-                return;
-            }
-
-            const entries = Object.entries(data);
-            if (entries.length === 0) {
-                const p = document.createElement('p');
-                p.style.cssText = 'color: var(--text-muted); font-size:0.85rem;';
-                p.textContent = 'Nema konfiguriranih ključeva. Dodajte prvi ključ gore.';
-                container.replaceChildren(p);
-                return;
-            }
-
-            // Build table using DOM to prevent XSS from server-supplied provider names
-            const table = document.createElement('table');
-            table.className = 'fleet-table';
-            table.innerHTML = '<thead><tr><th>Provajder</th><th>Klju\u010devi</th><th>Akcija</th></tr></thead>';
-            const tbody = document.createElement('tbody');
-
-            for (const [prov, keys] of entries) {
-                if (keys.length === 0) {
-                    const tr = document.createElement('tr');
-                    const tdp = document.createElement('td');
-                    tdp.className = 'fleet-prov';
-                    tdp.textContent = prov;
-                    const td2 = document.createElement('td');
-                    td2.colSpan = 2;
-                    td2.style.color = 'var(--text-muted)';
-                    td2.textContent = 'Nema klju\u010deva';
-                    tr.append(tdp, td2);
-                    tbody.appendChild(tr);
-                    continue;
-                }
-                keys.forEach((masked, idx) => {
-                    const tr = document.createElement('tr');
-                    const tdp = document.createElement('td');
-                    tdp.className = 'fleet-prov';
-                    tdp.textContent = idx === 0 ? prov : '';
-                    const tdm = document.createElement('td');
-                    tdm.style.cssText = 'font-family:monospace; color:var(--text-accent);';
-                    tdm.textContent = masked;
-                    const tda = document.createElement('td');
-                    const btn = document.createElement('button');
-                    btn.className = 'btn btn-danger';
-                    btn.style.cssText = 'padding:3px 10px; font-size:0.75rem;';
-                    btn.textContent = '\uD83D\uDDD1 Obri\u0161i';
-                    btn.addEventListener('click', () => deleteApiKey(prov, idx));
-                    tda.appendChild(btn);
-                    tr.append(tdp, tdm, tda);
-                    tbody.appendChild(tr);
-                });
-            }
-
-            table.appendChild(tbody);
-            container.replaceChildren(table);
-        })
-        .catch(() => {
-            const container = document.getElementById('keys-list');
-            if (container) {
-                const p = document.createElement('p');
-                p.style.cssText = 'color: var(--col-danger); font-size:0.85rem;';
-                p.textContent = 'Greška pri dohvaćanju ključeva.';
-                container.replaceChildren(p);
-            }
-        });
-}
-
-function addApiKey() {
-    const provSelect = document.getElementById('key-provider-select');
-    const keyInput = document.getElementById('key-input');
-    const provider = provSelect ? provSelect.value : '';
-    const key = keyInput ? keyInput.value.trim() : '';
-
-    if (!provider) {
-        showToast('\u26A0\uFE0F Odaberi provajdera!', 'warning');
-        return;
-    }
-    if (!key) {
-        showToast('\u26A0\uFE0F Unesi API ključ!', 'warning');
-        return;
-    }
-
-    fetch('/api/keys/' + encodeURIComponent(provider), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: key })
-    })
-        .then(r => r.json())
-        .then(d => {
-            if (d.error) {
-                showToast('\u274C ' + d.error, 'error');
-                return;
-            }
-            showToast('\u2705 Klju\u010d dodan za ' + d.provider + ': ' + d.masked, 'success');
-            if (keyInput) keyInput.value = '';
-            loadApiKeys();
-            loadModels();
-        })
-        .catch(() => showToast('\u274C Gre\u0161ka pri dodavanju klju\u010da.', 'error'));
-}
-
-function deleteApiKey(provider, idx) {
-    if (!confirm('Obrisati ovaj API ključ?')) return;
-    fetch('/api/keys/' + encodeURIComponent(provider) + '/' + idx, {
-        method: 'DELETE'
-    })
-        .then(r => r.json())
-        .then(d => {
-            if (d.error) {
-                showToast('\u274C ' + d.error, 'error');
-                return;
-            }
-            showToast('\u2705 Klju\u010d obrisan za ' + d.provider, 'success');
-            loadApiKeys();
-            loadModels();
-        })
-        .catch(() => showToast('\u274C Gre\u0161ka pri brisanju klju\u010da.', 'error'));
-}
-
-// Tastatura shortcut-i
-document.addEventListener('keydown', e => {
-    if (e.ctrlKey || e.metaKey) {
-        const setupScreen = document.getElementById('setup-screen');
-        if (e.key === 'Enter' && setupScreen && !setupScreen.classList.contains('hidden')) {
-            e.preventDefault();
-            startEngine();
+            h+='</div></details>';
         }
-        if (e.key === ' ') {
-            e.preventDefault();
-            sendCommand('pause');
+        c.innerHTML=h||'<p style="padding:20px;text-align:center;">Nema provajdera</p>';
+        const badge=document.getElementById('fleet-total-count'); if(badge) badge.textContent=Object.values(data).reduce((s,i)=>s+(i.active||0),0);
+    });
+}
+
+// ---------- API KLJUČEVI ----------
+function loadApiKeys(){ fetch('/api/keys').then(r=>r.json()).then(d=>{ const c=document.getElementById('keys-list'); if(!c)return; let h='<table class="fleet-table">'; Object.entries(d).forEach(([p,keys])=>keys.forEach(k=>h+=`<tr><td>${p}</td><td>${k}</td><td><button class="btn btn-danger btn-sm" onclick="deleteApiKey('${p}','${k}')">🗑</button></td></tr>`)); c.innerHTML=h+'</table>'; }); }
+function addApiKey(){ const p=document.getElementById('key-provider-select')?.value, k=document.getElementById('key-input')?.value.trim(); if(!p||!k){alert('⚠️ Popuni polja');return;} fetch('/api/keys/'+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k})}).then(r=>r.json()).then(d=>{if(d.error)throw new Error(d.error); alert('✅ Dodano'); document.getElementById('key-input').value=''; loadApiKeys(); }).catch(e=>alert('❌ '+e.message)); }
+function deleteApiKey(p,k){ if(!confirm('Obrisati?'))return; fetch('/api/keys/'+p+'/'+k,{method:'DELETE'}).then(()=>loadApiKeys()); }
+
+// ---------- NEON ANIMACIJA ----------
+(function() {
+    const NEON = ["#60a5fa", "#a78bfa", "#4ade80", "#fbbf24", "#f87171", "#06b6d4"];
+    let letters = null, timer = null;
+    function flash() {
+        if (!letters?.length) { letters = document.querySelectorAll("#app-logo-title .neon-letter"); if (!letters.length) return; }
+        const count = Math.random() < 0.4 ? 2 : 1;
+        for (let k = 0; k < count; k++) {
+            const idx = Math.floor(Math.random() * letters.length);
+            const color = NEON[Math.floor(Math.random() * NEON.length)];
+            const shadow = `0 0 6px ${color}, 0 0 18px ${color}, 0 0 36px ${color}`;
+            const el = letters[idx];
+            el.style.setProperty("-webkit-text-fill-color", color);
+            el.style.textShadow = shadow;
+            setTimeout(() => { el.style.removeProperty("-webkit-text-fill-color"); el.style.textShadow = ""; }, 180 + Math.random() * 320);
         }
+        timer = setTimeout(flash, 120 + Math.random() * 480);
     }
+    document.addEventListener("DOMContentLoaded", () => { letters = document.querySelectorAll("#app-logo-title .neon-letter"); if (letters.length) setTimeout(flash, 600); });
+    window.addEventListener("beforeunload", () => { if (timer) clearTimeout(timer); });
+})();
+
+// ---------- EKSPORTI I INIT ----------
+window.toggleTheme=toggleTheme; window.switchTab=switchTab; window.toggleSetup=toggleSetup;
+window.nextSetupStep=nextSetupStep; window.prevSetupStep=prevSetupStep; window.startEngine=startEngine;
+window.sendCommand=sendCommand; window.addApiKey=addApiKey; window.deleteApiKey=deleteApiKey;
+
+document.addEventListener('DOMContentLoaded', ()=>{
+    applyStoredTheme();
+    const restored = restoreAppState();
+    loadBooks(); loadModels(); _initUploadListener();
+    if (!restored) switchTab('status');
+    updateFleetPool();
+    setInterval(()=>{ if(_activeTab==='fleet') updateFleetPool(); }, 10000);
+    setInterval(()=>{ if(!document.getElementById('setup-screen')?.classList.contains('hidden')) updateDashboard(); }, 3000);
+    window.addEventListener('beforeunload', saveAppState);
+    setInterval(saveAppState, 10000);
 });

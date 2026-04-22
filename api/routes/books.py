@@ -32,9 +32,21 @@ def upload_book():
     if not f.filename:
         return jsonify({"error": "Prazno ime fajla"}), 400
     filename = secure_filename(f.filename)
-    path = safe_path(filename)
+    try:
+        path = safe_path(filename)
+    except Exception:
+        # Fallback ako safe_path ne postoji
+        path = os.path.join(PROJECTS_ROOT, filename)
+    os.makedirs(PROJECTS_ROOT, exist_ok=True)
     f.save(path)
-    return jsonify({"status": "ok", "name": filename})
+    # Sačuvaj kao last_book
+    try:
+        import json as _json
+        with open(os.path.join(PROJECTS_ROOT, "last_book.json"), "w") as lf:
+            _json.dump({"last_book": filename}, lf)
+    except Exception:
+        pass
+    return jsonify({"status": "ok", "name": filename, "path": filename})
 
 
 @bp.route("/api/download/<path:filename>")

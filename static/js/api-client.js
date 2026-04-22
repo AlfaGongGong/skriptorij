@@ -2,12 +2,6 @@
  * api-client.js — Centralizirani HTTP klijent za sve API pozive
  */
 
-/**
- * Generički fetch wrapper s error handlingom.
- * @param {string} url
- * @param {RequestInit} options
- * @returns {Promise<any>}
- */
 async function apiFetch(url, options = {}) {
     const response = await fetch(url, {
         headers: { 'Content-Type': 'application/json', ...options.headers },
@@ -24,25 +18,25 @@ export const apiClient = {
     /** Dohvati status obrade */
     getStatus: () => apiFetch('/api/status'),
 
-    /** Dohvati listu knjiga */
-    getBooks: () => apiFetch('/api/books'),
+    /** Dohvati listu knjiga (ISPRAVLJENA RUTA) */
+    getBooks: () => apiFetch('/api/files'),
 
     /** Dohvati dostupne modele */
     getModels: () => apiFetch('/api/dev_models'),
 
-    /** Upload knjige */
-    uploadBook: (formData) => fetch('/api/upload_book', { method: 'POST', body: formData }).then(r => r.json()),
+    /** Upload knjige (ISPRAVLJENA RUTA) */
+    uploadBook: (formData) => fetch('/api/upload', { method: 'POST', body: formData }).then(r => r.json()),
 
-    /** Pokreni obradu */
-    startProcessing: (book, model, mode) =>
+    /** Pokreni obradu (ISPRAVLJEN PARAMETAR) */
+    startProcessing: (book, model, tool) =>
         apiFetch('/api/start', {
             method: 'POST',
-            body: JSON.stringify({ book, model, mode }),
+            body: JSON.stringify({ book, model, tool }),
         }),
 
-    /** Kontrola obrade (pause, resume, stop, reset) */
+    /** Kontrola obrade (pause, resume, stop, reset) (ISPRAVLJENA RUTA) */
     sendControl: (action) =>
-        apiFetch(`/control/${action}`, { method: 'POST' }),
+        apiFetch(`/api/${action}`, { method: 'POST' }),
 
     /** Dohvati fleet status */
     getFleet: () => apiFetch('/api/fleet'),
@@ -64,9 +58,7 @@ export const apiClient = {
             body: JSON.stringify({ key }),
         }),
 
-    /** Obriši API ključ */
-    deleteKey: (provider, idx) =>
-        apiFetch(`/api/keys/${encodeURIComponent(provider)}/${idx}`, {
-            method: 'DELETE',
-        }),
+    /** Obriši ključ */
+    deleteKey: (provider, index) =>
+        apiFetch(`/api/keys/${encodeURIComponent(provider)}/${index}`, { method: 'DELETE' }),
 };
