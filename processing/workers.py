@@ -52,7 +52,8 @@ async def process_single_file_worker(self, file_path):
 
         self.shared_stats["current_chunk_idx"] = i + 1
         if self.global_total_chunks > 0:
-            self.global_done_chunks += 1
+            # NAPOMENA: global_done_chunks se inkrementira u pipeline.py (process_chunk_with_ai)
+            # Ovdje samo ažuriramo UI prikaz na osnovu trenutnog stanja
             self.shared_stats["pct"] = int((self.global_done_chunks / self.global_total_chunks) * 100)
             self.shared_stats["ok"] = f"{self.global_done_chunks} / {self.global_total_chunks}"
 

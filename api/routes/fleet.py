@@ -32,11 +32,9 @@ def toggle_fleet_key():
         fm = get_active_fleet()
         if fm is None:
             fm = FleetManager(config_path=CONFIG_PATH)
-        new_state = fm.toggle_key(data["provider"], data["key"])
-        if new_state is None:
-            return jsonify({"error": "Ključ nije pronađen"}), 404
-        return jsonify(
-            {"provider": data["provider"], "key": data["key"], "disabled": new_state}
-        )
+        result = fm.toggle_key(data["provider"], data["key"])
+        if result is None or "error" in result:
+            return jsonify({"error": result.get("error", "Ključ nije pronađen") if result else "Ključ nije pronađen"}), 404
+        return jsonify(result)
     except Exception:
         return jsonify({"error": "Interna greška pri toggleu ključa"}), 500

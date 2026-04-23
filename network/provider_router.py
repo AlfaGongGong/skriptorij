@@ -6,25 +6,30 @@ from network.http_client import _call_single_provider
 
 # Prioriteti optimizovani za free tier
 PROVIDER_PRIORITY = {
-    "PREVODILAC": ["GROQ", "CEREBRAS", "SAMBANOVA", "TOGETHER", "FIREWORKS"],
+    "PREVODILAC": ["CEREBRAS", "SAMBANOVA", "TOGETHER", "FIREWORKS"],
     "LEKTOR": ["GEMINI", "MISTRAL", "GEMMA"],  # GEMMA kao fallback
-    "KOREKTOR": ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL"],
-    "VALIDATOR": ["GROQ", "CEREBRAS", "GEMINI"],
+    "KOREKTOR": ["CEREBRAS", "GEMINI", "MISTRAL"],
+    "VALIDATOR": ["CEREBRAS", "GEMINI"],
     "GUARDIAN": ["GEMINI", "MISTRAL"],
     "POLISH": ["GEMINI", "MISTRAL"],
-    "ANALIZA": ["GEMINI", "GROQ", "CEREBRAS"],
-    "CHAPTER_SUMMARY": ["GROQ", "CEREBRAS", "GEMINI"],
-    "GLOSAR_UPDATE": ["GEMINI", "GROQ"],
+    "ANALIZA": ["GEMINI", "CEREBRAS"],
+    "CHAPTER_SUMMARY": ["CEREBRAS", "GEMINI"],
+    "GLOSAR_UPDATE": ["GEMINI", ],
 }
 
 # Model mapping
 MODEL_MAP = {
-    "GEMINI": "gemini-2.0-flash",
-    "GEMMA": "google/gemma-3-27b-it",  # besplatan na Together/OpenRouter
-    "MISTRAL": "mistral-small-latest",
-    "GROQ": "llama-3.1-8b-instant",
-    "CEREBRAS": "llama3.3-70b",
+    "CEREBRAS": "gpt-oss-20b",
     "SAMBANOVA": "Meta-Llama-3.1-70B-Instruct",
+    "MISTRAL": "mistral-small-latest",
+    "TOGETHER": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
+    "GROQ": "llama-3.1-8b-instant",
+    "GEMINI": "gemini-2.0-flash",
+    "OPENROUTER": "meta-llama/llama-3.2-3b-instruct:free",
+    "COHERE": "command-r-08-2024",
+    "CHUTES": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    "HUGGINGFACE": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "KLUSTER": "klusterai/Meta-Llama-3.1-8B-Instruct-Turbo",
 }
 
 async def _call_ai_engine(self, prompt, chunk_idx, uloga="LEKTOR", filename="", sys_override=None, tip_bloka="naracija"):
@@ -33,7 +38,7 @@ async def _call_ai_engine(self, prompt, chunk_idx, uloga="LEKTOR", filename="", 
     pms = []
 
     # Odabir provajdera prema ulozi
-    preferred = PROVIDER_PRIORITY.get(uloga, ["GEMINI", "GROQ"])
+    preferred = PROVIDER_PRIORITY.get(uloga, ["GEMINI", ])
     for up in preferred:
         if up in svi_upper:
             model = MODEL_MAP.get(up, self.fleet.get_active_model(up))

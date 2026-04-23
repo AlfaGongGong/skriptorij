@@ -1,668 +1,175 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="hr">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>BOOKLYFI TURBO CHARGED ⚡📚</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            rel="stylesheet"
-            href="{{ url_for('static', filename='css/style.css') }}"
-        />
-        <meta name="theme-color" content="#020617" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta
-            name="apple-mobile-web-app-status-bar-style"
-            content="black-translucent"
-        />
-        <meta name="apple-mobile-web-app-title" content="Skriptorij" />
-        <link
-            rel="manifest"
-            href="{{ url_for('static', filename='manifest.json') }}"
-        />
-    </head>
-    <body>
-        <div id="toast-container" aria-live="polite"></div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKLYFI ⚡ Turbo</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <meta name="theme-color" content="#030711">
+</head>
+<body>
+<div id="toast-container" aria-live="polite"></div>
 
-        <div id="main-ui-wrapper">
-            <!-- HEADER -->
-            <header class="app-header" role="banner">
-                <div class="header-brand">
-                    <div id="status-dot" class="dot dot-idle"></div>
-                    <img
-                        class="header-logo"
-                        src="{{ url_for('static', filename='img/V8_book_turbo.svg') }}"
-                        alt="Logo"
-                    />
-                    <h1 id="app-logo-title">
-                        <span class="neon-letter">B</span
-                        ><span class="neon-letter">O</span
-                        ><span class="neon-letter">O</span
-                        ><span class="neon-letter">K</span
-                        ><span class="neon-letter">L</span
-                        ><span class="neon-letter">Y</span
-                        ><span class="neon-letter">F</span
-                        ><span class="neon-letter">I</span>
-                    </h1>
-                    <span class="header-tagline"
-                        >AI-Powered Book Translation &amp; Refinement
-                        Engine</span
-                    >
-                </div>
-                <div class="header-controls">
-                    <span class="status-text" id="ph">IDLE</span>
-                    <button
-                        id="btn-theme"
-                        class="btn-theme"
-                        onclick="toggleTheme()"
-                    >
-                        ☀️ Tema
-                    </button>
-                    <button class="btn-setup" onclick="toggleSetup()">
-                        ⚙️ Setup
-                    </button>
-                </div>
-            </header>
+<div id="main-ui-wrapper">
 
-            <!-- ═══════ SETUP SCREEN ═══════ -->
-            <div id="setup-screen" class="panel panel-setup" role="main">
-                <div class="wizard-steps" aria-label="Koraci">
-                    <div class="wizard-step active" id="ws-indicator-1">
-                        <span class="wizard-step-num">1</span
-                        ><span class="wizard-step-label">Knjiga</span>
-                    </div>
-                    <div
-                        class="wizard-step-connector"
-                        id="ws-connector-1"
-                    ></div>
-                    <div class="wizard-step" id="ws-indicator-2">
-                        <span class="wizard-step-num">2</span
-                        ><span class="wizard-step-label">Konfiguracija</span>
-                    </div>
-                </div>
-
-                <!-- Korak 1: Odabir knjige -->
-                <div id="wizard-page-1">
-                    <h2>📁 Odabir Knjige</h2>
-                    <div class="input-group">
-                        <div
-                            style="
-                                display: flex;
-                                align-items: center;
-                                justify-content: space-between;
-                                margin-bottom: 6px;
-                            "
-                        >
-                            <label for="book-select" style="margin: 0"
-                                >📚 Odaberi Knjigu</label
-                            >
-                            <div
-                                style="
-                                    position: relative;
-                                    overflow: hidden;
-                                    display: inline-block;
-                                "
-                            >
-                                <button
-                                    class="btn btn-secondary"
-                                    style="
-                                        font-size: 0.8rem;
-                                        padding: 4px 12px;
-                                        cursor: pointer;
-                                    "
-                                    tabindex="-1"
-                                    aria-hidden="true"
-                                >
-                                    <span class="upload-btn-label"
-                                        >📂 Upload</span
-                                    >
-                                </button>
-                                <input
-                                    type="file"
-                                    id="book-file"
-                                    accept=".epub,.mobi"
-                                    aria-label="Odaberi EPUB ili MOBI fajl za upload"
-                                    style="
-                                        position: absolute;
-                                        top: 0;
-                                        left: 0;
-                                        width: 100%;
-                                        height: 100%;
-                                        opacity: 0;
-                                        cursor: pointer;
-                                        font-size: 100px;
-                                    "
-                                />
-                            </div>
-                        </div>
-                        <select
-                            id="book-select"
-                            aria-label="Odaberi knjigu za obradu"
-                            onchange="loadBookCover(this.value)"
-                        >
-                            <option value="">
-                                — Učitavam listu knjiga... —
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Book Cover Preview -->
-                    <div
-                        id="book-cover-preview"
-                        class="hidden"
-                        style="
-                            margin-top: 16px;
-                            padding: 12px;
-                            background: var(--bg-tertiary);
-                            border-radius: var(--radius-md);
-                            border: 1px solid var(--border);
-                        "
-                    >
-                        <div
-                            style="
-                                display: flex;
-                                gap: 12px;
-                                align-items: center;
-                            "
-                        >
-                            <div style="font-size: 2rem">📖</div>
-                            <div>
-                                <div
-                                    id="book-title-display"
-                                    style="
-                                        font-weight: 600;
-                                        color: var(--text-primary);
-                                    "
-                                ></div>
-                                <div
-                                    id="book-size-display"
-                                    style="
-                                        font-size: 0.8rem;
-                                        color: var(--text-muted);
-                                    "
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="wizard-nav">
-                        <span></span>
-                        <button
-                            class="btn btn-primary"
-                            onclick="nextSetupStep()"
-                        >
-                            Dalje →
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Korak 2: Konfiguracija -->
-                <div id="wizard-page-2" class="hidden">
-                    <h2>⚙️ Konfiguracija Sistema</h2>
-
-                    <!-- Preset dugmad -->
-                    <div
-                        class="preset-selector"
-                        style="display: flex; gap: 8px; margin-bottom: 20px"
-                    >
-                        <button class="preset-btn btn-sm" data-preset="fast">
-                            ⚡ Brzi
-                        </button>
-                        <button class="preset-btn btn-sm" data-preset="premium">
-                            💎 Premium
-                        </button>
-                        <button class="preset-btn btn-sm" data-preset="free">
-                            🆓 Free
-                        </button>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="model-select">🤖 Model / Motor</label>
-                        <select id="model-select" aria-label="Odaberi AI model">
-                            <option value="">— Učitavam modele... —</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label for="mode-select">⚡ Način Rada</label>
-                        <select
-                            id="mode-select"
-                            aria-label="Odaberi način rada"
-                        >
-                            <option value="PREVOD" selected>
-                                🌐 PREVOD — Prijevod + Lektura (engleski →
-                                bosanski/hrvatski)
-                            </option>
-                            <option value="TTS">
-                                🔊 TTS — Fonetski Filter za Text-to-Speech
-                                čitače
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Validation warning -->
-                    <div
-                        id="validation-warning"
-                        class="hidden"
-                        style="
-                            background: rgba(239, 68, 68, 0.1);
-                            border-left: 3px solid var(--error);
-                            padding: 10px 14px;
-                            border-radius: var(--radius-sm);
-                            margin-bottom: 18px;
-                        "
-                    >
-                        <span style="color: var(--error); font-weight: 600"
-                            >⚠️ Nema aktivnih API ključeva</span
-                        >
-                        <div
-                            id="validation-message"
-                            style="
-                                font-size: 0.82rem;
-                                color: var(--text-secondary);
-                                margin-top: 4px;
-                            "
-                        ></div>
-                    </div>
-
-                    <div class="wizard-nav">
-                        <button class="btn-ghost" onclick="prevSetupStep()">
-                            ← Nazad
-                        </button>
-                        <button
-                            id="btn-start"
-                            class="btn btn-primary btn-launch"
-                            onclick="startEngine()"
-                        >
-                            🚀 Pokreni Sistem
-                        </button>
-                    </div>
-                </div>
+    <header class="app-header">
+        <div class="header-brand">
+            <img src="/static/img/V8_book_turbo.svg" alt="logo" class="header-logo">
+            <h1 id="app-logo-title">BOOKLYFI</h1>
+        </div>
+        <div class="header-controls">
+            <div class="status-badge">
+                <span class="dot dot-idle" id="status-dot"></span>
+                <span class="status-text" id="status-text">IDLE</span>
             </div>
+            <button class="btn-icon" onclick="toggleTheme()">🌙</button>
+            <button class="btn-icon" onclick="showSetup()">⚙️</button>
+        </div>
+    </header>
 
-            <!-- ═══════ DASHBOARD SCREEN ═══════ -->
-            <div
-                id="dashboard-screen"
-                class="panel hidden"
-                role="region"
-                aria-label="Status operacije"
-            >
-                <h2>📊 Status Operacije</h2>
-
-                <!-- Pipeline indikator -->
-                <div class="pipeline-steps">
-                    <div class="pipeline-step" id="step-analyze">
-                        <span class="step-icon">🔬</span>Analiza
-                    </div>
-                    <div class="pipeline-step" id="step-translate">
-                        <span class="step-icon">🌐</span>Prevod
-                    </div>
-                    <div class="pipeline-step" id="step-lektor">
-                        <span class="step-icon">✍️</span>Lektor
-                    </div>
-                    <div class="pipeline-step" id="step-done">
-                        <span class="step-icon">✅</span>Gotovo
-                    </div>
-                </div>
-
-                <!-- Live chunk preview -->
-                <div id="live-chunk-preview" class="live-chunk-preview hidden">
-                    <div
-                        style="
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 12px;
-                        "
-                    >
-                        <div>
-                            <span style="color: var(--text-muted)">EN:</span>
-                            <span id="preview-en">—</span>
-                        </div>
-                        <div>
-                            <span style="color: var(--text-muted)">HR:</span>
-                            <span id="preview-hr">—</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <span class="stat-label">🔧 Motor</span
-                        ><span id="ae" class="stat-value time-glow">---</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">📄 Fajl</span
-                        ><span id="bi" class="stat-value">---</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">✅ Obrađeno</span
-                        ><span id="ok" class="stat-value">0 / 0</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">⏭️ Preskočeno</span
-                        ><span id="skp" class="stat-value">0</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">🟢 Aktivni</span
-                        ><span
-                            id="fleet-active"
-                            class="stat-value"
-                            style="color: var(--success)"
-                            >0</span
-                        >
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">🔥 Hlađenje</span
-                        ><span
-                            id="fleet-cooling"
-                            class="stat-value"
-                            style="color: var(--warning)"
-                            >0</span
-                        >
-                    </div>
-                </div>
-
-                <div
-                    class="progress-container"
-                    role="progressbar"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-valuenow="0"
-                >
-                    <div id="fill" class="progress-bar" style="width: 0%"></div>
-                </div>
-
-                <div
-                    class="time-glow"
-                    style="
-                        text-align: center;
-                        margin: 10px 0 16px;
-                        font-size: 1rem;
-                    "
-                >
-                    Završeno:
-                    <span id="pct" style="font-weight: 700; font-size: 1.2rem"
-                        >0%</span
-                    >
-                    &nbsp;|&nbsp; ETA: <span id="est">--:--:--</span>
-                </div>
-
-                <div
-                    id="autosave-status"
-                    class="hidden"
-                    style="
-                        text-align: center;
-                        margin-bottom: 12px;
-                        padding: 8px 14px;
-                        background: rgba(16, 185, 129, 0.08);
-                        border: 1px solid rgba(16, 185, 129, 0.2);
-                        border-radius: 6px;
-                    "
-                >
-                    <span
-                        id="autosave-msg"
-                        style="
-                            font-size: 0.82rem;
-                            color: var(--success);
-                            font-family: var(--font-mono);
-                        "
-                        >✅ EPUB automatski sačuvan</span
-                    >
-                </div>
-
-                <div
-                    style="
-                        display: flex;
-                        gap: 8px;
-                        justify-content: center;
-                        flex-wrap: wrap;
-                        margin-bottom: 14px;
-                    "
-                >
-                    <a
-                        id="export-json-link"
-                        href="/api/export/json"
-                        class="btn btn-secondary"
-                        style="
-                            text-decoration: none;
-                            font-size: 0.82rem;
-                            padding: 6px 14px;
-                        "
-                        >📄 JSON Izvještaj</a
-                    >
-                    <a
-                        id="export-txt-link"
-                        href="/api/export/txt"
-                        class="btn btn-secondary"
-                        style="
-                            text-decoration: none;
-                            font-size: 0.82rem;
-                            padding: 6px 14px;
-                        "
-                        >📋 TXT Izvještaj</a
-                    >
-                </div>
-
-                <div class="button-group">
-                    <button
-                        class="btn btn-pause"
-                        onclick="sendCommand('pause')"
-                    >
-                        ⏸ Pauziraj
-                    </button>
-                    <button
-                        class="btn btn-secondary"
-                        onclick="sendCommand('resume')"
-                    >
-                        ▶️ Nastavi
-                    </button>
-                    <button
-                        class="btn btn-warning"
-                        onclick="sendCommand('reset')"
-                    >
-                        🔄 Reset
-                    </button>
-                    <button
-                        class="btn btn-danger"
-                        onclick="sendCommand('stop')"
-                    >
-                        ⏹ Ugasi
-                    </button>
-                </div>
+    <section id="setup-panel" class="panel panel-setup">
+        <div class="wizard-steps">
+            <div class="wizard-step active" id="step-1">
+                <div class="wizard-step-num">1</div><span class="wizard-step-label">Knjiga</span>
             </div>
-
-            <!-- ═══════ INFO SLIDESHOW (4 taba) ═══════ -->
-            <div
-                class="panel panel-slideshow"
-                role="region"
-                aria-label="Info paneli"
-            >
-                <div class="tab-nav" role="tablist">
-                    <button
-                        class="tab-btn tab-active"
-                        role="tab"
-                        aria-selected="true"
-                        id="tbtn-status"
-                        onclick="switchTab('status')"
-                    >
-                        📊 Status
-                    </button>
-                    <button
-                        class="tab-btn"
-                        role="tab"
-                        aria-selected="false"
-                        id="tbtn-fleet"
-                        onclick="switchTab('fleet')"
-                    >
-                        🛡️ Flota
-                        <span
-                            id="fleet-total-count"
-                            class="keys-count-badge"
-                            style="margin-left: 4px"
-                            >0</span
-                        >
-                    </button>
-                    <button
-                        class="tab-btn"
-                        role="tab"
-                        aria-selected="false"
-                        id="tbtn-log"
-                        onclick="switchTab('log')"
-                    >
-                        📋 Dnevnik
-                    </button>
-                    <button
-                        class="tab-btn"
-                        role="tab"
-                        aria-selected="false"
-                        id="tbtn-keys"
-                        onclick="switchTab('keys')"
-                    >
-                        🔑 Ključevi
-                    </button>
-                </div>
-
-                <div
-                    id="tab-status"
-                    class="tab-panel tab-panel-active"
-                    role="tabpanel"
-                >
-                    <p
-                        style="
-                            color: var(--text-muted);
-                            font-size: 0.85rem;
-                            margin-top: 8px;
-                        "
-                    >
-                        Statistike i napredak obrade prikazani su u panelu
-                        <strong>Status Operacije</strong>.
-                    </p>
-                </div>
-
-                <div id="tab-fleet" class="tab-panel" role="tabpanel">
-                    <div
-                        id="fleet-pool-content"
-                        style="margin-top: 8px; padding: 4px 0"
-                    >
-                        <div id="fleet-cards-container" class="fleet-cards">
-                            <p
-                                style="
-                                    text-align: center;
-                                    padding: 30px 20px;
-                                    color: var(--text-muted);
-                                "
-                            >
-                                Učitavam status flote...
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="tab-log" class="tab-panel" role="tabpanel">
-                    <div
-                        id="audit"
-                        class="terminal-window"
-                        style="margin-top: 8px; user-select: text; cursor: text"
-                        oncopy="return true;"
-                    >
-                        <span style="color: var(--success)"
-                            >➜ Sistem spreman.</span
-                        ><br />
-                        <span style="color: var(--text-muted)"
-                            >Odaberite operaciju i kliknite na "Pokreni
-                            Sistem".</span
-                        >
-                    </div>
-                </div>
-
-                <div id="tab-keys" class="tab-panel" role="tabpanel">
-                    <div
-                        style="
-                            display: flex;
-                            gap: 8px;
-                            margin-bottom: 12px;
-                            flex-wrap: wrap;
-                        "
-                    >
-                        <select
-                            id="key-provider-select"
-                            style="
-                                flex: 1;
-                                min-width: 120px;
-                                background: var(--bg-secondary);
-                                color: var(--text-primary);
-                                border: 1px solid var(--border);
-                                border-radius: var(--radius-sm);
-                                padding: 8px 10px;
-                            "
-                        >
-                            <option value="">— Odaberi provajdera —</option>
-                            <option value="GEMINI">GEMINI</option>
-                            <option value="GROQ">GROQ</option>
-                            <option value="CEREBRAS">CEREBRAS</option>
-                            <option value="SAMBANOVA">SAMBANOVA</option>
-                            <option value="MISTRAL">MISTRAL</option>
-                            <option value="COHERE">COHERE</option>
-                            <option value="OPENROUTER">OPENROUTER</option>
-                            <option value="GITHUB">GITHUB</option>
-                            <option value="TOGETHER">TOGETHER</option>
-                            <option value="FIREWORKS">FIREWORKS</option>
-                            <option value="CHUTES">CHUTES</option>
-                            <option value="HUGGINGFACE">HUGGINGFACE</option>
-                            <option value="KLUSTER">KLUSTER</option>
-                        </select>
-                        <input
-                            type="password"
-                            id="key-input"
-                            placeholder="API ključ..."
-                            style="
-                                flex: 3;
-                                min-width: 180px;
-                                background: var(--bg-secondary);
-                                color: var(--text-primary);
-                                border: 1px solid var(--border);
-                                border-radius: var(--radius-sm);
-                                padding: 8px 10px;
-                            "
-                        />
-                        <button
-                            class="btn btn-primary"
-                            onclick="addApiKey()"
-                            style="flex: 0 1 auto; padding: 8px 16px"
-                        >
-                            ➕ Dodaj
-                        </button>
-                    </div>
-                    <div id="keys-list">
-                        <p style="color: var(--text-muted)">
-                            Kliknite tab "Ključevi" za učitavanje...
-                        </p>
-                    </div>
-                </div>
+            <div class="wizard-step-connector"></div>
+            <div class="wizard-step" id="step-2">
+                <div class="wizard-step-num">2</div><span class="wizard-step-label">Konfiguracija</span>
             </div>
         </div>
 
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
-        
-        <script
-            type="module"
-            src="{{ url_for('static', filename='js/app.js') }}"
-        ></script>
+        <!-- STEP 1: Knjiga -->
+        <div id="wizard-page-1">
+            <h2 class="panel-title">📁 Odabir Knjige</h2>
 
-        <!-- Neon logo flash (ostaje isti) -->
-        <script>
-            (function () {
-                /*...*/
-            })();
-        </script>
-        <script>
-            if ("serviceWorker" in navigator)
-                navigator.serviceWorker.register("/static/sw.js");
-        </script>
-    </body>
+            <div class="input-group">
+                <label>📚 Odaberi Knjigu</label>
+                <div style="display:flex; gap:8px;">
+                    <div class="select-wrapper" style="flex:1;">
+                        <select id="book-select">
+                            <option value="">— Učitavam listu knjiga... —</option>
+                        </select>
+                    </div>
+                    <!-- STARI PROVERENI UPLOAD -->
+                    <div style="position:relative; overflow:hidden; display:inline-block;">
+                        <button class="btn btn-secondary" style="white-space:nowrap; height:100%; padding:10px 16px;" tabindex="-1">📂 Upload</button>
+                        <input type="file" id="file-input" accept=".epub,.mobi" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:100px;">
+                    </div>
+                </div>
+                <p class="upload-status" id="upload-status" style="margin-top:6px; color:var(--emerald); font-size:0.8rem;"></p>
+            </div>
+
+            <div class="wizard-nav">
+                <div></div>
+                <button class="btn btn-primary" onclick="wizardNext()">Dalje →</button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Konfiguracija -->
+        <div id="wizard-page-2" class="hidden">
+            <h2 class="panel-title">⚙️ Konfiguracija</h2>
+
+            <div class="tier-pills">
+                <button class="tier-pill active" data-tier="all">Sve</button>
+                <button class="tier-pill" data-tier="fast">⚡ Brzi</button>
+                <button class="tier-pill" data-tier="quality">💎 Premium</button>
+                <button class="tier-pill" data-tier="free">🆓 Free</button>
+            </div>
+
+            <div class="input-group">
+                <label for="model-select">🤖 Model / Motor</label>
+                <div class="select-wrapper">
+                    <select id="model-select"><option value="">— Učitavam modele... —</option></select>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>⚡ Način Rada</label>
+                <div class="mode-cards">
+                    <label class="mode-card active">
+                        <input type="radio" name="mode" value="PREVOD" checked hidden>
+                        <span class="mode-icon">🌐</span><span class="mode-name">PREVOD</span><span class="mode-desc">Prijevod + Lektura</span>
+                    </label>
+                    <label class="mode-card">
+                        <input type="radio" name="mode" value="TTS" hidden>
+                        <span class="mode-icon">🔊</span><span class="mode-name">TTS</span><span class="mode-desc">Fonetski Filter</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="alert alert-warning hidden" id="no-keys-warning">⚠️ Nema aktivnih API ključeva.</div>
+
+            <div class="wizard-nav">
+                <button class="btn btn-ghost" onclick="wizardBack()">← Nazad</button>
+                <button class="btn btn-launch" id="btn-start" onclick="startProcessing()">🚀 Pokreni Sistem</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard (isti kao pre) -->
+    <section id="dashboard-panel" class="panel hidden">
+        <h2 class="panel-title">📊 Status Operacije</h2>
+        <div class="pipeline-steps">
+            <div class="pipe-step" id="pipe-analiza">🔬 Analiza</div>
+            <div class="pipe-step" id="pipe-prevod">🌐 Prevod</div>
+            <div class="pipe-step" id="pipe-lektor">✍️ Lektor</div>
+            <div class="pipe-step" id="pipe-gotovo">✅ Gotovo</div>
+        </div>
+        <div class="live-preview" id="live-preview">
+            <div class="preview-row"><span class="preview-label">EN</span><span class="preview-text" id="preview-en">—</span></div>
+            <div class="preview-row"><span class="preview-label hr">HR</span><span class="preview-text" id="preview-hr">—</span></div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box"><span class="stat-label">Motor</span><span class="stat-value" id="stat-engine">---</span></div>
+            <div class="stat-box"><span class="stat-label">Fajl</span><span class="stat-value" id="stat-file">---</span></div>
+            <div class="stat-box"><span class="stat-label">Obrađeno</span><span class="stat-value" id="stat-ok">0/0</span></div>
+            <div class="stat-box"><span class="stat-label">Preskočeno</span><span class="stat-value" id="stat-skipped">0</span></div>
+            <div class="stat-box"><span class="stat-label">Aktivni</span><span class="stat-value" id="stat-fleet-active">0</span></div>
+            <div class="stat-box"><span class="stat-label">Hlađenje</span><span class="stat-value" id="stat-fleet-cooling">0</span></div>
+        </div>
+        <div class="progress-section">
+            <div class="progress-meta">
+                <span id="progress-pct-text">Završeno: 0%</span>
+                <span id="progress-eta">ETA: --:--:--</span>
+            </div>
+            <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+        </div>
+        <div class="control-bar">
+            <button class="btn btn-pause" onclick="sendControl('pause')">⏸ Pauziraj</button>
+            <button class="btn btn-secondary" onclick="sendControl('resume')">▶️ Nastavi</button>
+            <button class="btn btn-secondary" onclick="sendControl('reset')">🔄 Reset</button>
+            <button class="btn btn-danger" onclick="sendControl('stop')">⏹ Zaustavi</button>
+        </div>
+    </section>
+
+    <!-- Tabs panel (isti) -->
+    <section class="panel">
+        <nav class="tab-nav">
+            <button class="tab-btn tab-active" onclick="switchTab('tab-status')">📊 Status</button>
+            <button class="tab-btn" onclick="switchTab('tab-fleet')">🛡️ Flota <span class="badge" id="fleet-total-count">0</span></button>
+            <button class="tab-btn" onclick="switchTab('tab-audit')">📋 Dnevnik</button>
+            <button class="tab-btn" onclick="switchTab('tab-keys')">🔑 Ključevi</button>
+        </nav>
+        <div class="tab-panel tab-panel-active" id="tab-status"><p class="tab-hint">Statistike su u panelu iznad.</p></div>
+        <div class="tab-panel hidden" id="tab-fleet"><div id="fleet-cards-container"><div class="loading-spinner"><div class="spinner"></div><span>Učitavanje flote...</span></div></div></div>
+        <div class="tab-panel hidden" id="tab-audit"><div class="terminal-window" id="audit-log">Sistem spreman.</div></div>
+        <div class="tab-panel hidden" id="tab-keys">
+            <div class="keys-add-form">
+                <select id="key-provider-select">
+                    <option value="">— Provajder —</option>
+                    <option>GEMINI</option><option>GROQ</option><option>CEREBRAS</option><option>SAMBANOVA</option>
+                    <option>MISTRAL</option><option>COHERE</option><option>OPENROUTER</option>
+                    <option>TOGETHER</option><option>CHUTES</option><option>HUGGINGFACE</option><option>KLUSTER</option>
+                </select>
+                <input type="password" id="key-value-input" placeholder="API ključ">
+                <button class="btn btn-primary btn-sm" onclick="addKey()">➕ Dodaj</button>
+            </div>
+            <div id="keys-list-container"><p class="tab-hint">Kliknite tab za učitavanje...</p></div>
+        </div>
+    </section>
+
+</div>
+
+<script src="/static/js/app-all.js?v=2"></script>
+</body>
 </html>

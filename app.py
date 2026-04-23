@@ -87,3 +87,6 @@ def create_app() -> Flask:
 
 # Globalna instanca za direktno pokretanje
 app = create_app()
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=False, use_reloader=False)
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0

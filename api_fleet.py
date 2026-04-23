@@ -30,6 +30,11 @@ def register_active_fleet(fleet):
     _active_fleet = fleet
 
 
+def get_active_fleet():
+    """Vraća aktivnu FleetManager instancu (registriranu od engine-a)."""
+    return _active_fleet
+
+
 # ── #1: Smart routing po ulozi
 ROLE_PREFERRED_PROVIDERS = {
     "LEKTOR": ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "TOGETHER", "CHUTES"],
@@ -285,23 +290,24 @@ class FleetManager:
                 )
 
     def _resolve_models(self):
+        """Modeli prema zvaničnoj dokumentaciji – Maj 2026."""
         self.resolved_models = {
-            "GROQ": "llama-3.3-70b-versatile",
-            "CEREBRAS": "llama3.3-70b",
-            "SAMBANOVA": "Meta-Llama-3.3-70B-Instruct",
+            "CEREBRAS": "mistralai/Mistral-Small-24B-Instruct-2501",
+            "SAMBANOVA": "DeepSeek-V3.1",
+            "GROQ": "llama-3.1-8b-instant",
+            "GEMINI": "gemini-2.0-flash",
             "MISTRAL": "mistral-small-latest",
-            "GITHUB": "gpt-4o-mini",
+            "TOGETHER": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
+            "OPENROUTER": "meta-llama/llama-3.3-70b-instruct:free",
             "COHERE": "command-r-08-2024",
-            "OPENROUTER": "openai/gpt-4o-mini",
-            "TOGETHER": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-            "FIREWORKS": "accounts/fireworks/models/llama-v3p1-70b-instruct",
             "CHUTES": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
             "HUGGINGFACE": "meta-llama/Meta-Llama-3-8B-Instruct",
-            "KLUSTER": "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
-            "GEMMA": "google/gemma-3-27b-it",
-            "GEMINI": "gemini-2.0-flash",
+            "KLUSTER": "klusterai/Meta-Llama-3.1-8B-Instruct-Turbo",
         }
-
+        self.fallback_models = {
+            "CEREBRAS": ['mistralai/Mistral-Small-24B-Instruct-2501', 'zai-org/GLM-4.7', 'openai/gpt-oss-20b'],
+            "SAMBANOVA": ['Meta-Llama-3.3-70B-Instruct', 'gpt-oss-120b', 'Llama-4-Maverick-17B-128E-Instruct'],
+        }
     def _save_state(self):
         state = {
             p: {ks.key: ks.to_dict() for ks in keys} for p, keys in self.fleet.items()
@@ -507,7 +513,6 @@ class FleetManager:
         with self.lock:
             ks = self._find_key(prov_u, key_val)
             if not ks:
-                # Pokušaj po masked vrijednosti
                 for k in self.fleet.get(prov_u, []):
                     if k.masked == key_val:
                         ks = k
@@ -520,7 +525,7 @@ class FleetManager:
                 ks.cooldown_until = 0.0
                 ks.health = max(ks.health, 30.0)
             self._save_state()
-            return {"ok": True, "disabled": ks.disabled, "provider": prov_u}
+            return {"ok": True, "disabled": ks.disabled, "provider": prov_u, "masked": ks.masked}
 
     # ── Fleet summary & UI ──────────────────────────────────────────────────
 

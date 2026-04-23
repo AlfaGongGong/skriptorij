@@ -17,7 +17,15 @@ os.makedirs(PROJECTS_ROOT, exist_ok=True)
 CONFIG_PATH: str = os.environ.get("SKRIPTORIJ_CONFIG", "dev_api.json")
 
 # Definisanje putanje za uvoz fajlova
-INPUT_DIR: Path = Path("/storage/emulated/0/termux/Skriptorij/data")
+# INPUT_DIR: automatski odredi platformu
+# Termux (Android): /storage/emulated/0/termux/Skriptorij/data
+# Linux/Windows: ~/Skriptorij/data ili env varijabla SKRIPTORIJ_INPUT_DIR
+_termux_path = Path("/storage/emulated/0/termux/Skriptorij/data")
+_default_path = Path.home() / "Skriptorij" / "data"
+INPUT_DIR: Path = Path(
+    os.environ.get("SKRIPTORIJ_INPUT_DIR", str(_termux_path if _termux_path.parent.parent.exists() else _default_path))
+)
+os.makedirs(INPUT_DIR, exist_ok=True)
 
 # ── Dijeljeno stanje (zajednički rječnik između Flask threada i processing threada) ─
 SHARED_STATS: dict = {
