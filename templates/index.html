@@ -1,175 +1,1956 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOOKLYFI ⚡ Turbo</title>
-    <link rel="stylesheet" href="/static/css/style.css?v=4">
-    <meta name="theme-color" content="#030711">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BOOKLYFI ⚡ Turbo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#030711">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   BOOKLYFI — DESIGN SYSTEM
+   Aesthetic: Techno-noir editorial — dark command center
+   Fonts: Syne (display) + JetBrains Mono (data) + Space Mono (accent)
+═══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Core palette */
+  --bg-0: #050810;
+  --bg-1: #090d18;
+  --bg-2: #0d1220;
+  --bg-3: #121828;
+  --bg-4: #1a2236;
+  --bg-glass: rgba(9, 13, 24, 0.72);
+
+  /* Brand accent — electric indigo/cyan */
+  --accent: #6366f1;
+  --accent-2: #06b6d4;
+  --accent-glow: rgba(99,102,241,0.35);
+  --accent-2-glow: rgba(6,182,212,0.25);
+
+  /* State colors */
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.15);
+  --amber: #f59e0b;
+  --amber-dim: rgba(245,158,11,0.15);
+  --rose: #f43f5e;
+  --rose-dim: rgba(244,63,94,0.15);
+
+  /* Text */
+  --tx-1: #f0f4ff;
+  --tx-2: #94a3b8;
+  --tx-3: #475569;
+  --tx-4: #1e293b;
+
+  /* Borders */
+  --border: rgba(255,255,255,0.07);
+  --border-2: rgba(255,255,255,0.12);
+
+  /* Sizes */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+
+  /* Transitions */
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --t-fast: 150ms;
+  --t-med: 280ms;
+  --t-slow: 480ms;
+
+  /* Font families */
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-accent: 'Space Mono', monospace;
+}
+
+/* Light theme overrides */
+body.light {
+  --bg-0: #f0f4fc;
+  --bg-1: #e8edf8;
+  --bg-2: #dde4f0;
+  --bg-3: #d1daea;
+  --bg-4: #c4cedf;
+  --bg-glass: rgba(240,244,252,0.8);
+  --tx-1: #0f172a;
+  --tx-2: #334155;
+  --tx-3: #64748b;
+  --tx-4: #94a3b8;
+  --border: rgba(0,0,0,0.07);
+  --border-2: rgba(0,0,0,0.12);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-display);
+  background: var(--bg-0);
+  color: var(--tx-1);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* Grid background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: -30vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80vw;
+  height: 60vh;
+  background: radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Layout ── */
+#app {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+
+/* ── Header ── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+  position: sticky;
+  top: 0;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 0 8px var(--accent));
+  transition: filter var(--t-med) var(--ease);
+}
+
+.brand-logo.engine-active {
+  animation: logo-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% { filter: drop-shadow(0 0 6px var(--accent)); }
+  50% { filter: drop-shadow(0 0 20px var(--accent)) drop-shadow(0 0 40px var(--accent-2)); }
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--tx-1) 0%, var(--accent-2) 50%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  user-select: none;
+}
+
+.brand-tag {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Status badge */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-idle   { background: var(--tx-3); }
+.dot-active { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.4s ease-in-out infinite; }
+.dot-paused { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.dot-error  { background: var(--rose);  box-shadow: 0 0 6px var(--rose); }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Icon buttons */
+.btn-icon {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all var(--t-fast) var(--ease);
+  color: var(--tx-2);
+}
+.btn-icon:hover {
+  background: var(--bg-3);
+  border-color: var(--border-2);
+  color: var(--tx-1);
+}
+
+/* ── Cards / Panels ── */
+.card {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 28px;
+  margin-bottom: 16px;
+  transition: border-color var(--t-med) var(--ease);
+}
+
+.card:hover { border-color: var(--border-2); }
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* ── Wizard steps ── */
+.wizard-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 32px;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--tx-3);
+  transition: color var(--t-med) var(--ease);
+}
+
+.step-item.active { color: var(--tx-1); }
+.step-item.done { color: var(--green); }
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition: all var(--t-med) var(--ease);
+  flex-shrink: 0;
+}
+
+.step-item.active .step-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.step-item.done .step-num {
+  background: var(--green-dim);
+  border-color: var(--green);
+}
+
+.step-connector {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  margin: 0 10px;
+}
+
+/* ── Form controls ── */
+label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--tx-2);
+  margin-bottom: 8px;
+}
+
+select, input[type="text"], input[type="password"] {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--tx-1);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+select:focus, input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.form-group { margin-bottom: 20px; }
+
+/* ── Upload zone ── */
+.upload-zone {
+  border: 1.5px dashed var(--border-2);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  background: var(--bg-2);
+  position: relative;
+}
+
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(99,102,241,0.05);
+}
+
+.upload-zone .upload-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.upload-zone .upload-text { font-size: 0.82rem; color: var(--tx-2); }
+.upload-zone .upload-hint { font-size: 0.72rem; color: var(--tx-3); margin-top: 4px; font-family: var(--font-mono); }
+
+#upload-status {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  margin-top: 10px;
+  min-height: 18px;
+  color: var(--tx-2);
+  transition: color var(--t-fast);
+}
+
+/* ── Mode cards ── */
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mode-card {
+  padding: 16px;
+  background: var(--bg-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.mode-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  opacity: 0;
+  transition: opacity var(--t-med) var(--ease);
+}
+
+.mode-card:hover { border-color: var(--border-2); transform: translateY(-1px); }
+.mode-card.active { border-color: var(--accent); }
+.mode-card.active::before { opacity: 0.08; }
+
+.mode-card input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+
+.mode-icon { font-size: 1.5rem; margin-bottom: 6px; }
+.mode-label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; }
+.mode-desc { font-size: 0.7rem; color: var(--tx-3); margin-top: 3px; font-family: var(--font-mono); }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: var(--r-md);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn-primary:hover { background: #5558e3; box-shadow: 0 4px 16px var(--accent-glow); }
+
+.btn-launch {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  border: none;
+  padding: 13px 28px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 24px var(--accent-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-launch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(255,255,255,0.12) 50%, transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s var(--ease);
+}
+
+.btn-launch:hover::after { transform: translateX(100%); }
+.btn-launch:hover { box-shadow: 0 6px 32px rgba(99,102,241,0.5); transform: translateY(-1px); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--tx-2);
+  border-color: var(--border-2);
+}
+.btn-ghost:hover { background: var(--bg-2); color: var(--tx-1); }
+
+.btn-secondary {
+  background: var(--bg-3);
+  color: var(--tx-2);
+  border-color: var(--border);
+}
+.btn-secondary:hover { background: var(--bg-4); color: var(--tx-1); }
+
+.btn-danger {
+  background: var(--rose-dim);
+  color: var(--rose);
+  border-color: rgba(244,63,94,0.3);
+}
+.btn-danger:hover { background: rgba(244,63,94,0.25); }
+
+.btn-sm { padding: 6px 12px; font-size: 0.76rem; }
+.btn-full { width: 100%; }
+
+.btn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+/* ── Progress ── */
+.progress-track {
+  height: 6px;
+  background: var(--bg-3);
+  border-radius: 100px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 100px;
+  transition: width 0.6s var(--ease);
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 8px var(--accent-2);
+}
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--tx-3);
+  margin-top: 6px;
+}
+
+/* ── Stats grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.stat-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  font-family: var(--font-mono);
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--tx-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Pipeline ── */
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+
+.pipe-step {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--tx-3);
+  transition: color var(--t-med) var(--ease);
+  position: relative;
+  padding: 6px 4px;
+}
+
+.pipe-step::after {
+  content: '›';
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--tx-4);
+  font-size: 1rem;
+}
+
+.pipe-step:last-child::after { display: none; }
+
+.pipe-step .pipe-icon { display: block; font-size: 1.1rem; margin-bottom: 3px; }
+
+.pipe-step.active {
+  color: var(--accent-2);
+}
+
+.pipe-step.active .pipe-icon {
+  animation: spin-glow 2s linear infinite;
+}
+
+@keyframes spin-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px var(--accent-2)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 10px var(--accent-2)); transform: scale(1.1); }
+}
+
+.pipe-step.done { color: var(--green); }
+
+/* ── Tabs ── */
+.tab-nav {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-2);
+  border-radius: var(--r-md);
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--tx-3);
+  transition: all var(--t-fast) var(--ease);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.tab-btn:hover { color: var(--tx-1); background: var(--bg-3); }
+
+.tab-btn.active {
+  background: var(--bg-0);
+  color: var(--tx-1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.fleet-badge {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 100px;
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fade-in var(--t-med) var(--ease); }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Fleet cards ── */
+.fleet-provider {
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.fleet-provider:hover { border-color: var(--border-2); }
+
+.fleet-provider-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.fleet-prov-icon { font-size: 1rem; }
+.fleet-prov-name { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; flex: 1; letter-spacing: 0.06em; }
+.fleet-prov-count { font-family: var(--font-mono); font-size: 0.7rem; color: var(--tx-3); }
+
+.fleet-health-bar {
+  width: 60px;
+  height: 4px;
+  background: var(--bg-4);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.fleet-health-fill { height: 100%; border-radius: 100px; transition: width 0.5s var(--ease); }
+.fleet-health-fill.good { background: var(--green); }
+.fleet-health-fill.warn { background: var(--amber); }
+.fleet-health-fill.low  { background: var(--rose); }
+
+.fleet-chevron {
+  font-size: 0.7rem;
+  color: var(--tx-3);
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.fleet-provider[open] .fleet-chevron { transform: rotate(180deg); }
+
+.fleet-keys-grid {
+  padding: 10px 14px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Key pills */
+.key-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  white-space: nowrap;
+}
+
+.key-pill.ok   { border-color: rgba(16,185,129,0.3); color: var(--green); background: var(--green-dim); }
+.key-pill.warn { border-color: rgba(245,158,11,0.3); color: var(--amber); background: var(--amber-dim); }
+.key-pill.err  { border-color: rgba(244,63,94,0.3);  color: var(--rose);  background: var(--rose-dim); }
+.key-pill.off  { border-color: var(--border); color: var(--tx-3); background: transparent; }
+
+.key-pill:hover { filter: brightness(1.3); transform: scale(1.03); }
+
+.key-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+/* ── Audit log ── */
+.audit-log {
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--tx-2);
+  max-height: 320px;
+  overflow-y: auto;
+  line-height: 1.7;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-4) transparent;
+}
+
+.audit-log::-webkit-scrollbar { width: 4px; }
+.audit-log::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 2px; }
+
+/* ── API Keys panel ── */
+.keys-add-form {
+  display: grid;
+  grid-template-columns: 160px 1fr auto;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 20px;
+}
+
+.keys-list { display: flex; flex-direction: column; gap: 6px; }
+
+.key-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.key-row:hover { border-color: var(--border-2); }
+
+.key-provider-badge {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.key-value { font-family: var(--font-mono); font-size: 0.78rem; color: var(--tx-2); flex: 1; }
+
+.key-del {
+  background: none;
+  border: none;
+  color: var(--tx-3);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  transition: all var(--t-fast) var(--ease);
+  line-height: 1;
+}
+
+.key-del:hover { color: var(--rose); background: var(--rose-dim); }
+
+/* ── Control bar ── */
+.control-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Toast ── */
+#toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 11px 18px;
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  border: 1px solid;
+  backdrop-filter: blur(16px);
+  animation: toast-in var(--t-med) var(--ease);
+  pointer-events: all;
+  max-width: 320px;
+}
+
+.toast-success { background: var(--green-dim); border-color: rgba(16,185,129,0.3); color: var(--green); }
+.toast-error   { background: var(--rose-dim);  border-color: rgba(244,63,94,0.3);  color: var(--rose); }
+.toast-info    { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.3); color: var(--accent); }
+.toast-warning { background: var(--amber-dim); border-color: rgba(245,158,11,0.3); color: var(--amber); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0)  scale(1); }
+}
+
+.toast.removing {
+  animation: toast-out var(--t-med) var(--ease) forwards;
+}
+
+@keyframes toast-out {
+  to { opacity: 0; transform: translateX(20px) scale(0.9); }
+}
+
+/* ── Live preview ── */
+.live-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.preview-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px;
+}
+
+.preview-box-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+}
+
+.preview-box-text {
+  font-size: 0.78rem;
+  color: var(--tx-2);
+  line-height: 1.5;
+  max-height: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* ── Download strip ── */
+.download-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.1));
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: var(--r-lg);
+  margin-bottom: 16px;
+}
+
+.download-strip-icon { font-size: 1.4rem; }
+.download-strip-text { flex: 1; font-size: 0.82rem; color: var(--green); font-family: var(--font-mono); }
+
+/* ── Hidden ── */
+.hidden { display: none !important; }
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* ── Loading ── */
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.loading-dots span {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes dot-bounce {
+  0%, 100% { transform: scaleY(1); opacity: 0.4; }
+  40% { transform: scaleY(1.6); opacity: 1; }
+}
+
+/* ── Scrollbar global ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--tx-4); }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .mode-grid { grid-template-columns: 1fr; }
+  .keys-add-form { grid-template-columns: 1fr; }
+  .live-preview-grid { grid-template-columns: 1fr; }
+  .pipeline { flex-wrap: wrap; }
+  .pipe-step { min-width: 40%; }
+  .brand-tag { display: none; }
+  .brand-title { font-size: 1.3rem; }
+}
+
+/* ── Number anim ── */
+@keyframes num-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; color: var(--accent-2); }
+}
+
+.num-update { animation: num-flash 0.4s ease-in-out; }
+</style>
 </head>
+
 <body>
 <div id="toast-container" aria-live="polite"></div>
 
-<div id="main-ui-wrapper">
+<div id="app">
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header class="app-header">
+    <div class="brand">
+      <img src="/static/img/V8_book_turbo.svg" alt="logo" class="brand-logo" id="brand-logo">
+      <h1 class="brand-title" id="brand-title">BOOKLYFI</h1>
+      <span class="brand-tag">TURBO V10</span>
+    </div>
+    <div class="header-right">
+      <div class="status-badge">
+        <span class="dot dot-idle" id="status-dot"></span>
+        <span id="status-text" style="font-size:0.72rem;font-family:var(--font-mono)">IDLE</span>
+      </div>
+      <button class="btn-icon" onclick="toggleTheme()" title="Promijeni temu" id="theme-btn">🌙</button>
+      <button class="btn-icon" onclick="showSetup()" title="Postavljanje">⚙</button>
+    </div>
+  </header>
 
-    <header class="app-header">
-        <div class="header-brand">
-            <img src="/static/img/V8_book_turbo.svg" alt="logo" class="header-logo">
-            <h1 id="app-logo-title">BOOKLYFI</h1>
-        </div>
-        <div class="header-controls">
-            <div class="status-badge">
-                <span class="dot dot-idle" id="status-dot"></span>
-                <span class="status-text" id="status-text">IDLE</span>
-            </div>
-            <button class="btn-icon" onclick="toggleTheme()">🌙</button>
-            <button class="btn-icon" onclick="showSetup()">⚙️</button>
-        </div>
-    </header>
+  <!-- ═══════════ SETUP ═══════════ -->
+  <section id="setup-panel">
 
-    <section id="setup-panel" class="panel panel-setup">
-        <div class="wizard-steps">
-            <div class="wizard-step active" id="step-1">
-                <div class="wizard-step-num">1</div><span class="wizard-step-label">Knjiga</span>
-            </div>
-            <div class="wizard-step-connector"></div>
-            <div class="wizard-step" id="step-2">
-                <div class="wizard-step-num">2</div><span class="wizard-step-label">Konfiguracija</span>
-            </div>
-        </div>
+    <!-- Wizard steps indicator -->
+    <div class="wizard-steps">
+      <div class="step-item active" id="step-1">
+        <div class="step-num">1</div>
+        <span>Knjiga</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" id="step-2">
+        <div class="step-num">2</div>
+        <span>Konfiguracija</span>
+      </div>
+    </div>
 
-        <!-- STEP 1: Knjiga -->
-        <div id="wizard-page-1">
-            <h2 class="panel-title">📁 Odabir Knjige</h2>
+    <!-- Page 1: Book selection -->
+    <div id="wizard-page-1">
+      <div class="card">
+        <div class="card-title">📁 Odabir izvorne knjige</div>
 
-            <div class="input-group">
-                <label>📚 Odaberi Knjigu</label>
-                <div style="display:flex; gap:8px;">
-                    <div class="select-wrapper" style="flex:1;">
-                        <select id="book-select">
-                            <option value="">— Učitavam listu knjiga... —</option>
-                        </select>
-                    </div>
-                    <!-- STARI PROVERENI UPLOAD -->
-                    <div style="position:relative; overflow:hidden; display:inline-block;">
-                        <button class="btn btn-secondary" style="white-space:nowrap; height:100%; padding:10px 16px;" tabindex="-1">📂 Upload</button>
-                        <input type="file" id="file-input" accept=".epub,.mobi" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:100px;">
-                    </div>
-                </div>
-                <p class="upload-status" id="upload-status" style="margin-top:6px; color:var(--emerald); font-size:0.8rem;"></p>
-            </div>
-
-            <div class="wizard-nav">
-                <div></div>
-                <button class="btn btn-primary" onclick="wizardNext()">Dalje →</button>
-            </div>
+        <div class="form-group">
+          <label>Dostupne knjige</label>
+          <select id="book-select" onchange="onBookChange(this.value)">
+            <option value="">— Učitavam katalog... —</option>
+          </select>
         </div>
 
-        <!-- STEP 2: Konfiguracija -->
-        <div id="wizard-page-2" class="hidden">
-            <h2 class="panel-title">⚙️ Konfiguracija</h2>
+        <div class="divider"></div>
 
-            <div class="tier-pills">
-                <button class="tier-pill active" data-tier="all">Sve</button>
-                <button class="tier-pill" data-tier="fast">⚡ Brzi</button>
-                <button class="tier-pill" data-tier="quality">💎 Premium</button>
-                <button class="tier-pill" data-tier="free">🆓 Free</button>
+        <label>Upload nove knjige</label>
+        <div class="upload-zone" id="upload-zone" onclick="triggerUpload()">
+          <div class="upload-icon">📚</div>
+          <div class="upload-text">Klikni ili prevuci EPUB / MOBI fajl</div>
+          <div class="upload-hint">Max 200 MB · EPUB · MOBI</div>
+          <input type="file" id="file-input" accept=".epub,.mobi" style="display:none;">
+        </div>
+        <div id="upload-status"></div>
+
+        <div class="btn-row">
+          <div></div>
+          <button class="btn btn-primary" onclick="wizardNext()">Dalje →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 2: Configuration -->
+    <div id="wizard-page-2" class="hidden">
+      <div class="card">
+        <div class="card-title">⚙ Konfiguracija motora</div>
+
+        <div class="form-group">
+          <label>AI Model / Tier</label>
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;" id="tier-pills">
+            <button class="btn btn-sm btn-secondary active-tier" data-tier="all" onclick="filterTier(this,'all')">Sve</button>
+            <button class="btn btn-sm btn-ghost" data-tier="fast" onclick="filterTier(this,'fast')">⚡ Brzi</button>
+            <button class="btn btn-sm btn-ghost" data-tier="quality" onclick="filterTier(this,'quality')">🏆 Kvalitet</button>
+            <button class="btn btn-sm btn-ghost" data-tier="free" onclick="filterTier(this,'free')">🆓 Free</button>
+          </div>
+          <select id="model-select">
+            <option value="V10_TURBO">V10_TURBO (preporučeno)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Način rada</label>
+          <div class="mode-grid">
+            <div class="mode-card active" onclick="selectMode(this,'FUSION')">
+              <input type="radio" name="mode" value="FUSION" checked>
+              <div class="mode-icon">⚡</div>
+              <div class="mode-label">PREVOD+LEKTURA</div>
+              <div class="mode-desc">Jedan prolaz</div>
             </div>
-
-            <div class="input-group">
-                <label for="model-select">🤖 Model / Motor</label>
-                <div class="select-wrapper">
-                    <select id="model-select"><option value="">— Učitavam modele... —</option></select>
-                </div>
+            <div class="mode-card" onclick="selectMode(this,'PREVOD')">
+              <input type="radio" name="mode" value="PREVOD" checked>
+              <div class="mode-icon">🌐</div>
+              <div class="mode-label">PREVOD</div>
+              <div class="mode-desc">EN → BS/HR/SR</div>
             </div>
-
-            <div class="input-group">
-                <label>⚡ Način Rada</label>
-                <div class="mode-cards">
-                    <label class="mode-card active">
-                        <input type="radio" name="mode" value="PREVOD" checked hidden>
-                        <span class="mode-icon">🌐</span><span class="mode-name">PREVOD</span><span class="mode-desc">Prijevod + Lektura</span>
-                    </label>
-                    <label class="mode-card">
-                        <input type="radio" name="mode" value="TTS" hidden>
-                        <span class="mode-icon">🔊</span><span class="mode-name">TTS</span><span class="mode-desc">Fonetski Filter</span>
-                    </label>
-                </div>
+            <div class="mode-card" onclick="selectMode(this,'TTS')">
+              <input type="radio" name="mode" value="TTS">
+              <div class="mode-icon">🔊</div>
+              <div class="mode-label">TTS</div>
+              <div class="mode-desc">Text-to-Speech</div>
             </div>
-
-            <div class="alert alert-warning hidden" id="no-keys-warning">⚠️ Nema aktivnih API ključeva.</div>
-
-            <div class="wizard-nav">
-                <button class="btn btn-ghost" onclick="wizardBack()">← Nazad</button>
-                <button class="btn btn-launch" id="btn-start" onclick="startProcessing()">🚀 Pokreni Sistem</button>
+            <div class="mode-card" onclick="selectMode(this,'LEKTURA')">
+              <input type="radio" name="mode" value="LEKTURA">
+              <div class="mode-icon">✍</div>
+              <div class="mode-label">LEKTURA</div>
+              <div class="mode-desc">Samo lektura</div>
             </div>
-        </div>
-    </section>
-
-    <!-- Dashboard (isti kao pre) -->
-    <section id="dashboard-panel" class="panel hidden">
-        <h2 class="panel-title">📊 Status Operacije</h2>
-        <div class="pipeline-steps">
-            <div class="pipe-step" id="pipe-analiza">🔬 Analiza</div>
-            <div class="pipe-step" id="pipe-prevod">🌐 Prevod</div>
-            <div class="pipe-step" id="pipe-lektor">✍️ Lektor</div>
-            <div class="pipe-step" id="pipe-gotovo">✅ Gotovo</div>
-        </div>
-        <div class="live-preview" id="live-preview">
-            <div class="preview-row"><span class="preview-label">EN</span><span class="preview-text" id="preview-en">—</span></div>
-            <div class="preview-row"><span class="preview-label hr">HR</span><span class="preview-text" id="preview-hr">—</span></div>
-        </div>
-        <div class="stats-grid">
-            <div class="stat-box"><span class="stat-label">Motor</span><span class="stat-value" id="stat-engine">---</span></div>
-            <div class="stat-box"><span class="stat-label">Fajl</span><span class="stat-value" id="stat-file">---</span></div>
-            <div class="stat-box"><span class="stat-label">Obrađeno</span><span class="stat-value" id="stat-ok">0/0</span></div>
-            <div class="stat-box"><span class="stat-label">Preskočeno</span><span class="stat-value" id="stat-skipped">0</span></div>
-            <div class="stat-box"><span class="stat-label">Aktivni</span><span class="stat-value" id="stat-fleet-active">0</span></div>
-            <div class="stat-box"><span class="stat-label">Hlađenje</span><span class="stat-value" id="stat-fleet-cooling">0</span></div>
-        </div>
-        <div class="progress-section">
-            <div class="progress-meta">
-                <span id="progress-pct-text">Završeno: 0%</span>
-                <span id="progress-eta">ETA: --:--:--</span>
+            <div class="mode-card" onclick="selectMode(this,'RETRO')">
+              <input type="radio" name="mode" value="RETRO">
+              <div class="mode-icon">🔁</div>
+              <div class="mode-label">RETRO</div>
+              <div class="mode-desc">Re-lektura</div>
             </div>
-            <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+          </div>
         </div>
-        <div class="control-bar">
-            <button class="btn btn-pause" onclick="sendControl('pause')">⏸ Pauziraj</button>
-            <button class="btn btn-secondary" onclick="sendControl('resume')">▶️ Nastavi</button>
-            <button class="btn btn-secondary" onclick="sendControl('reset')">🔄 Reset</button>
-            <button class="btn btn-danger" onclick="sendControl('stop')">⏹ Zaustavi</button>
-        </div>
-    </section>
 
-    <!-- Tabs panel (isti) -->
-    <section class="panel">
-        <nav class="tab-nav">
-            <button class="tab-btn tab-active" onclick="switchTab('tab-status')">📊 Status</button>
-            <button class="tab-btn" onclick="switchTab('tab-fleet')">🛡️ Flota <span class="badge" id="fleet-total-count">0</span></button>
-            <button class="tab-btn" onclick="switchTab('tab-audit')">📋 Dnevnik</button>
-            <button class="tab-btn" onclick="switchTab('tab-keys')">🔑 Ključevi</button>
-        </nav>
-        <div class="tab-panel tab-panel-active" id="tab-status"><p class="tab-hint">Statistike su u panelu iznad.</p></div>
-        <div class="tab-panel hidden" id="tab-fleet"><div id="fleet-cards-container"><div class="loading-spinner"><div class="spinner"></div><span>Učitavanje flote...</span></div></div></div>
-        <div class="tab-panel hidden" id="tab-audit"><div class="terminal-window" id="audit-log">Sistem spreman.</div></div>
-        <div class="tab-panel hidden" id="tab-keys">
-            <div class="keys-add-form">
-                <select id="key-provider-select">
-                    <option value="">— Provajder —</option>
-                    <option>GEMINI</option><option>GROQ</option><option>CEREBRAS</option><option>SAMBANOVA</option>
-                    <option>MISTRAL</option><option>COHERE</option><option>OPENROUTER</option>
-                    <option>TOGETHER</option><option>CHUTES</option><option>HUGGINGFACE</option><option>KLUSTER</option>
-                </select>
-                <input type="password" id="key-value-input" placeholder="API ključ">
-                <button class="btn btn-primary btn-sm" onclick="addKey()">➕ Dodaj</button>
-            </div>
-            <div id="keys-list-container"><p class="tab-hint">Kliknite tab za učitavanje...</p></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="wizardBack()">← Nazad</button>
+          <button class="btn btn-launch" id="btn-start" onclick="startProcessing()">🚀 Pokreni Sistem</button>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
+  <!-- ═══════════ DASHBOARD ═══════════ -->
+  <section id="dashboard-panel" class="hidden">
+
+    <!-- Download strip -->
+    <div class="download-strip hidden" id="download-strip">
+      <div class="download-strip-icon">✅</div>
+      <div class="download-strip-text">Obrada završena! Knjiga je spremna.</div>
+      <a class="btn btn-sm btn-primary" href="/api/download" target="_blank">⬇ Preuzmi EPUB</a>
+      <a class="btn btn-sm btn-ghost" href="/api/download_live" target="_blank">📖 Live preview</a>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="card" style="padding:16px;">
+      <div class="pipeline" id="pipeline">
+        <div class="pipe-step" id="pipe-analiza">
+          <span class="pipe-icon">🔬</span>Analiza
+        </div>
+        <div class="pipe-step" id="pipe-prevod">
+          <span class="pipe-icon">🌐</span>Prevod
+        </div>
+        <div class="pipe-step" id="pipe-lektor">
+          <span class="pipe-icon">✍</span>Lektor
+        </div>
+        <div class="pipe-step" id="pipe-korektor">
+          <span class="pipe-icon">📐</span>Korektor
+        </div>
+        <div class="pipe-step" id="pipe-gotovo">
+          <span class="pipe-icon">✅</span>Gotovo
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="card">
+      <div class="card-title">📊 Progres obrade</div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">Motor</div>
+          <div class="stat-value" id="stat-engine">---</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Fajl</div>
+          <div class="stat-value" id="stat-file">---</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Obrađeno</div>
+          <div class="stat-value" id="stat-ok">0 / 0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Preskočeno</div>
+          <div class="stat-value" id="stat-skipped">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Aktivni ključevi</div>
+          <div class="stat-value" id="stat-fleet-active">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Na hlađenju</div>
+          <div class="stat-value" id="stat-fleet-cooling">0</div>
+        </div>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="progress-meta">
+        <span id="progress-pct-text">Završeno: 0%</span>
+        <span id="progress-eta">ETA: --:--:--</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Live preview -->
+      <div class="live-preview-grid" id="live-preview-block" style="display:none;">
+        <div class="preview-box">
+          <div class="preview-box-label">🇬🇧 Originalni tekst</div>
+          <div class="preview-box-text" id="preview-en">—</div>
+        </div>
+        <div class="preview-box">
+          <div class="preview-box-label">🇧🇦 Prevedeni tekst</div>
+          <div class="preview-box-text" id="preview-hr">—</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="control-bar">
+        <button class="btn btn-secondary btn-sm" onclick="sendControl('pause')" id="btn-pause">⏸ Pauziraj</button>
+        <button class="btn btn-secondary btn-sm hidden" onclick="sendControl('resume')" id="btn-resume">▶ Nastavi</button>
+        <button class="btn btn-secondary btn-sm" onclick="sendControl('reset')">🔄 Reset</button>
+        <button class="btn btn-danger btn-sm" onclick="sendControl('stop')">⏹ Zaustavi</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSetup()" style="margin-left:auto;">⚙ Setup</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ TABS ═══════════ -->
+  <div class="card" style="padding:20px;">
+    <nav class="tab-nav" role="tablist">
+      <button class="tab-btn active" data-tab="tab-fleet" onclick="switchTab('tab-fleet')">
+        🛡 Flota <span class="fleet-badge" id="fleet-total-count">0</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-audit" onclick="switchTab('tab-audit')">
+        📋 Dnevnik
+      </button>
+      <button class="tab-btn" data-tab="tab-keys" onclick="switchTab('tab-keys')">
+        🔑 Ključevi
+      </button>
+    </nav>
+
+    <!-- Fleet tab -->
+    <div class="tab-panel active" id="tab-fleet">
+      <div id="fleet-cards-container">
+        <div style="text-align:center;padding:30px;color:var(--tx-3);font-family:var(--font-mono);font-size:0.78rem;">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+          <div style="margin-top:8px;">Učitavam fleet...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit tab -->
+    <div class="tab-panel" id="tab-audit">
+      <div class="audit-log" id="audit-log">
+        <span style="color:var(--tx-3)">// Sistem spreman. Pokreni obradu za live log.</span>
+      </div>
+    </div>
+
+    <!-- Keys tab -->
+    <div class="tab-panel" id="tab-keys">
+      <div class="card-title" style="margin-bottom:16px;">Dodaj API ključ</div>
+      <div class="keys-add-form">
+        <div>
+          <label>Provajder</label>
+          <select id="key-provider-select">
+            <option value="">— Odaberi —</option>
+            <option value="GEMINI">♊ GEMINI</option>
+            <option value="GROQ">⚡ GROQ</option>
+            <option value="CEREBRAS">🔬 CEREBRAS</option>
+            <option value="MISTRAL">💫 MISTRAL</option>
+            <option value="SAMBANOVA">🧠 SAMBANOVA</option>
+            <option value="OPENROUTER">🔀 OPENROUTER</option>
+            <option value="COHERE">🌐 COHERE</option>
+            <option value="TOGETHER">🤝 TOGETHER</option>
+            <option value="FIREWORKS">🎆 FIREWORKS</option>
+            <option value="CHUTES">🪣 CHUTES</option>
+            <option value="HUGGINGFACE">🤗 HUGGINGFACE</option>
+            <option value="KLUSTER">🔗 KLUSTER</option>
+          </select>
+        </div>
+        <div>
+          <label>API Ključ</label>
+          <input type="password" id="key-value-input" placeholder="sk-…" autocomplete="new-password">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-primary btn-sm" id="btn-add-key" onclick="addKey()">➕ Dodaj</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="keys-list" id="keys-list-container">
+        <div style="color:var(--tx-3);font-family:var(--font-mono);font-size:0.76rem;">Učitavam ključeve...</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script src="/static/js/app-all.js?v=2"></script>
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   BOOKLYFI — Kompletni JS (moderniziran, bez modula)
+   Kompatibilan s Flask backendom, vanilla JS, bez dependencyja
+═══════════════════════════════════════════════════════════════ */
+
+'use strict';
+
+/* ── State ── */
+const STATE = {
+  step: 1,
+  book: null,
+  model: 'V10_TURBO',
+  mode: 'PREVOD',
+  processing: false,
+  paused: false,
+  startTime: null,
+  lastPct: 0,
+};
+
+/* ── Theme ── */
+(function initTheme() {
+  const saved = localStorage.getItem('bf_theme');
+  if (saved === 'light') document.body.classList.add('light');
+  document.getElementById('theme-btn').textContent = saved === 'light' ? '🌙' : '☀';
+})();
+
+function toggleTheme() {
+  const light = document.body.classList.toggle('light');
+  localStorage.setItem('bf_theme', light ? 'light' : 'dark');
+  document.getElementById('theme-btn').textContent = light ? '🌙' : '☀';
+}
+
+/* ── Toast ── */
+function showToast(msg, type = 'info', duration = 3500) {
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  tc.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('removing');
+    t.addEventListener('animationend', () => t.remove());
+  }, duration);
+}
+
+/* ── Wizard ── */
+function wizardNext() {
+  const book = document.getElementById('book-select')?.value;
+  if (!book) { showToast('Odaberi ili upload-aj knjigu!', 'warning'); return; }
+  STATE.book = book;
+  localStorage.setItem('bf_last_book', book);
+  setStep(2);
+}
+
+function wizardBack() { setStep(1); }
+
+function setStep(n) {
+  STATE.step = n;
+  document.getElementById('wizard-page-1')?.classList.toggle('hidden', n !== 1);
+  document.getElementById('wizard-page-2')?.classList.toggle('hidden', n !== 2);
+
+  const s1 = document.getElementById('step-1');
+  const s2 = document.getElementById('step-2');
+  s1?.classList.toggle('active', n === 1);
+  s1?.classList.toggle('done', n > 1);
+  s2?.classList.toggle('active', n === 2);
+}
+
+function showSetup() {
+  document.getElementById('setup-panel')?.classList.remove('hidden');
+  document.getElementById('dashboard-panel')?.classList.add('hidden');
+}
+
+function showDashboard() {
+  document.getElementById('setup-panel')?.classList.add('hidden');
+  document.getElementById('dashboard-panel')?.classList.remove('hidden');
+}
+
+function onBookChange(val) {
+  STATE.book = val;
+  if (val) localStorage.setItem('bf_last_book', val);
+}
+
+/* ── Mode select ── */
+function selectMode(card, mode) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  const r = card.querySelector('input[type="radio"]');
+  if (r) r.checked = true;
+  STATE.mode = mode;
+}
+
+/* ── Model tier filter ── */
+const TIER_MAP = {
+  fast:    ['CEREBRAS','GROQ','SAMBANOVA'],
+  quality: ['GEMINI','MISTRAL','COHERE'],
+  free:    ['V10_TURBO','V8_TURBO','OPENROUTER','TOGETHER','FIREWORKS','CHUTES','HUGGINGFACE','KLUSTER','GEMMA'],
+};
+
+function filterTier(btn, tier) {
+  document.querySelectorAll('#tier-pills .btn').forEach(b => {
+    b.classList.remove('btn-primary','active-tier');
+    b.classList.add('btn-ghost');
+  });
+  btn.classList.remove('btn-ghost');
+  btn.classList.add('btn-primary','active-tier');
+
+  const sel = document.getElementById('model-select');
+  if (!sel) return;
+  const allowed = TIER_MAP[tier];
+  Array.from(sel.options).forEach(opt => {
+    if (!opt.value) return;
+    opt.hidden = allowed ? !allowed.some(t => opt.value.toUpperCase().includes(t)) : false;
+  });
+}
+
+/* ── Upload ── */
+function triggerUpload() {
+  document.getElementById('file-input')?.click();
+}
+
+(function setupUpload() {
+  const zone = document.getElementById('upload-zone');
+  const input = document.getElementById('file-input');
+  const status = document.getElementById('upload-status');
+  if (!zone || !input) return;
+
+  input.addEventListener('change', () => { if (input.files[0]) doUpload(input.files[0]); });
+
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) doUpload(e.dataTransfer.files[0]);
+  });
+
+  async function doUpload(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['epub','mobi'].includes(ext)) { showToast('Podržani formati: EPUB, MOBI', 'error'); return; }
+    status.textContent = `⏳ Upload: ${file.name}…`;
+    status.style.color = 'var(--tx-2)';
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const r = await fetch('/api/upload_book', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+      status.textContent = `✅ ${d.name || file.name}`;
+      status.style.color = 'var(--green)';
+      showToast(`"${d.name || file.name}" uspješno učitana!`, 'success');
+      await loadBooks();
+      const sel = document.getElementById('book-select');
+      if (sel) { sel.value = d.name || file.name; STATE.book = sel.value; }
+    } catch(e) {
+      status.textContent = `❌ ${e.message}`;
+      status.style.color = 'var(--rose)';
+      showToast('Upload nije uspio: ' + e.message, 'error');
+    }
+  }
+})();
+
+/* ── Load books / models ── */
+async function loadBooks() {
+  const sel = document.getElementById('book-select');
+  if (!sel) return;
+  try {
+    // Try both endpoints for compatibility
+    let files = [];
+    try {
+      const r = await fetch('/api/books');
+      const d = await r.json();
+      files = d.books ? d.books.map(b => b.name || b) : (d.files || []);
+    } catch(_) {
+      const r2 = await fetch('/api/files');
+      const d2 = await r2.json();
+      files = d2.files || [];
+    }
+    const last = localStorage.getItem('bf_last_book');
+    sel.innerHTML = '<option value="">— Odaberi knjigu —</option>';
+    if (files.length === 0) {
+      sel.innerHTML += '<option disabled>Nema EPUB/MOBI fajlova</option>';
+    } else {
+      files.forEach(f => {
+        const name = typeof f === 'string' ? f : (f.name || f.path || f);
+        const path = typeof f === 'string' ? f : (f.path || f.name || f);
+        const opt = new Option(name, path);
+        sel.appendChild(opt);
+      });
+    }
+    if (last) {
+      if (Array.from(sel.options).some(o => o.value === last)) {
+        sel.value = last;
+        STATE.book = last;
+      }
+    }
+  } catch(e) { console.warn('[loadBooks]', e); }
+}
+
+async function loadModels() {
+  const sel = document.getElementById('model-select');
+  if (!sel) return;
+  try {
+    const r = await fetch('/api/dev_models');
+    const models = await r.json();
+    sel.innerHTML = '';
+    (models || []).forEach(m => sel.appendChild(new Option(m, m)));
+    if (sel.options.length > 0) {
+      sel.value = Array.from(sel.options).find(o => o.value.includes('TURBO'))?.value || sel.options[0].value;
+      STATE.model = sel.value;
+    }
+  } catch(_) {
+    sel.innerHTML = '<option value="V10_TURBO">V10_TURBO</option>';
+  }
+}
+
+/* ── Start processing ── */
+async function startProcessing() {
+  const book  = STATE.book || document.getElementById('book-select')?.value;
+  const model = document.getElementById('model-select')?.value || STATE.model;
+  const mode  = document.querySelector('input[name="mode"]:checked')?.value || STATE.mode;
+
+  if (!book) { showToast('Odaberi knjigu!', 'warning'); setStep(1); return; }
+
+  const btn = document.getElementById('btn-start');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Pokrećem…'; }
+
+  try {
+    const r = await fetch('/api/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ book, model, mode })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    STATE.processing = true;
+    STATE.paused = false;
+    STATE.startTime = Date.now();
+    STATE.lastPct = 0;
+    showDashboard();
+    showToast(`Pokrenuto: ${book} [${model}]`, 'success');
+    updateControlBtns();
+  } catch(e) {
+    showToast('Greška: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Pokreni Sistem'; }
+  }
+}
+
+/* ── Control ── */
+async function sendControl(action) {
+  try {
+    await fetch(`/control/${action}`, { method: 'POST' });
+    const msgs = { pause:'Pauzirano', resume:'Nastavljeno', stop:'Zaustavljeno', reset:'Sistem resetovan' };
+    const types = { pause:'warning', resume:'success', stop:'error', reset:'info' };
+    showToast(msgs[action] || action, types[action] || 'info');
+
+    if (action === 'pause')  { STATE.paused = true; }
+    if (action === 'resume') { STATE.paused = false; }
+    if (action === 'stop')   { STATE.processing = false; }
+    if (action === 'reset')  { STATE.processing = false; STATE.paused = false; STATE.startTime = null; showSetup(); }
+    updateControlBtns();
+  } catch(e) { showToast('Greška: ' + e.message, 'error'); }
+}
+
+function updateControlBtns() {
+  document.getElementById('btn-pause')?.classList.toggle('hidden', STATE.paused);
+  document.getElementById('btn-resume')?.classList.toggle('hidden', !STATE.paused);
+}
+
+/* ── Polling ── */
+let _pollTimer = null;
+
+function startPolling() {
+  if (_pollTimer) clearInterval(_pollTimer);
+  _pollTimer = setInterval(pollStatus, 2000);
+  pollStatus();
+  pollFleet();
+}
+
+async function pollStatus() {
+  try {
+    const r = await fetch('/api/status');
+    if (!r.ok) return;
+    const d = await r.json();
+    updateStatus(d);
+  } catch(_) {}
+}
+
+async function pollFleet() {
+  try {
+    const r = await fetch('/api/fleet');
+    if (!r.ok) return;
+    const d = await r.json();
+    renderFleet(d);
+  } catch(_) {}
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.textContent !== String(val)) {
+    el.textContent = val;
+    el.classList.remove('num-update');
+    void el.offsetWidth;
+    el.classList.add('num-update');
+  }
+}
+
+function updateStatus(s) {
+  if (!s) return;
+
+  const st = (s.status || 'IDLE').toUpperCase();
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  const logo = document.getElementById('brand-logo');
+
+  // Dot color
+  if (dot) {
+    dot.className = 'dot';
+    if (st.includes('TOKU') || st.includes('POKRETANJE')) {
+      dot.classList.add('dot-active');
+      logo?.classList.add('engine-active');
+    } else if (st === 'PAUZIRANO') {
+      dot.classList.add('dot-paused');
+      logo?.classList.remove('engine-active');
+    } else if (st.includes('GREŠKA')) {
+      dot.classList.add('dot-error');
+      logo?.classList.remove('engine-active');
+    } else {
+      dot.classList.add('dot-idle');
+      logo?.classList.remove('engine-active');
+    }
+  }
+  if (txt) txt.textContent = st;
+
+  // Stats
+  setVal('stat-engine', s.active_engine || '---');
+  setVal('stat-file', s.current_file || '---');
+  setVal('stat-ok', s.ok || '0 / 0');
+  setVal('stat-skipped', s.skipped || '0');
+  setVal('stat-fleet-active', s.fleet_active || '0');
+  setVal('stat-fleet-cooling', s.fleet_cooling || '0');
+
+  // Progress
+  const pct = Math.min(100, Math.max(0, s.pct || 0));
+  const bar = document.getElementById('progress-bar');
+  if (bar) bar.style.width = pct + '%';
+  setVal('progress-pct-text', `Završeno: ${pct}%`);
+
+  // ETA
+  if (STATE.startTime && pct > 0 && pct < 100) {
+    const elapsed = (Date.now() - STATE.startTime) / 1000;
+    const eta = elapsed / (pct / 100) - elapsed;
+    document.getElementById('progress-eta').textContent = `ETA: ${fmtTime(eta)} | ⏱ ${fmtTime(elapsed)}`;
+  } else if (s.est) {
+    document.getElementById('progress-eta').textContent = `ETA: ${s.est}`;
+  }
+
+  // Pipeline
+  updatePipeline(st, pct);
+
+  // Audit
+  if (s.live_audit) {
+    const log = document.getElementById('audit-log');
+    if (log) { log.innerHTML = s.live_audit; log.scrollTop = log.scrollHeight; }
+    extractPreview(s.live_audit);
+  }
+
+  // Download strip
+  document.getElementById('download-strip')?.classList.toggle('hidden', !s.output_file);
+
+  // Restore start btn
+  if (pct >= 100 || st === 'ZAUSTAVLJENO' || st === 'IDLE') {
+    STATE.processing = false;
+    const btn = document.getElementById('btn-start');
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Pokreni Sistem'; }
+  }
+
+  // Show dashboard if processing
+  if (st.includes('TOKU') || st.includes('POKRETANJE')) {
+    if (!document.getElementById('dashboard-panel').classList.contains('hidden') === false) {
+      showDashboard();
+    }
+  }
+}
+
+function fmtTime(secs) {
+  if (!secs || secs < 0) return '--:--:--';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function updatePipeline(status, pct) {
+  const steps = ['pipe-analiza','pipe-prevod','pipe-lektor','pipe-korektor','pipe-gotovo'];
+  steps.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active','done');
+  });
+
+  if (pct >= 100) {
+    steps.forEach(id => document.getElementById(id)?.classList.add('done'));
+    return;
+  }
+  if (status.includes('ANALIZ')) {
+    document.getElementById('pipe-analiza')?.classList.add('active');
+  } else if (pct < 30) {
+    document.getElementById('pipe-analiza')?.classList.add('done');
+    document.getElementById('pipe-prevod')?.classList.add('active');
+  } else if (pct < 60) {
+    ['pipe-analiza','pipe-prevod'].forEach(id => document.getElementById(id)?.classList.add('done'));
+    document.getElementById('pipe-lektor')?.classList.add('active');
+  } else if (pct < 85) {
+    ['pipe-analiza','pipe-prevod','pipe-lektor'].forEach(id => document.getElementById(id)?.classList.add('done'));
+    document.getElementById('pipe-korektor')?.classList.add('active');
+  } else {
+    ['pipe-analiza','pipe-prevod','pipe-lektor','pipe-korektor'].forEach(id => document.getElementById(id)?.classList.add('done'));
+    document.getElementById('pipe-gotovo')?.classList.add('active');
+  }
+}
+
+function extractPreview(html) {
+  const m = html.match(/EN:\s*([^<\n]{5,120}).*?HR:\s*([^<\n]{5,120})/s);
+  if (m) {
+    document.getElementById('preview-en').textContent = m[1].trim();
+    document.getElementById('preview-hr').textContent = m[2].trim();
+    document.getElementById('live-preview-block').style.display = 'grid';
+  }
+}
+
+/* ── Tabs ── */
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === tabId));
+  if (tabId === 'tab-fleet') pollFleet();
+  if (tabId === 'tab-keys') loadKeys();
+}
+
+/* ── Fleet renderer ── */
+const PROV_ICONS = {
+  GEMINI:'♊', GROQ:'⚡', CEREBRAS:'🔬', SAMBANOVA:'🧠',
+  MISTRAL:'💫', COHERE:'🌐', OPENROUTER:'🔀', GITHUB:'🐙',
+  TOGETHER:'🤝', FIREWORKS:'🎆', CHUTES:'🪣', HUGGINGFACE:'🤗',
+  KLUSTER:'🔗', GEMMA:'🔷',
+};
+
+function renderFleet(data) {
+  const c = document.getElementById('fleet-cards-container');
+  if (!c) return;
+
+  const entries = Object.entries(data || {});
+  if (entries.length === 0) {
+    c.innerHTML = '<div style="text-align:center;padding:24px;color:var(--tx-3);font-family:var(--font-mono);font-size:0.76rem;">Nema provajdera u floti.</div>';
+    return;
+  }
+
+  let totalActive = 0;
+  let html = '';
+
+  for (const [prov, info] of entries) {
+    const active = info.active || 0;
+    const total  = info.total  || 0;
+    const keys   = info.keys   || [];
+    totalActive += active;
+
+    const pct      = total > 0 ? Math.round((active / total) * 100) : 0;
+    const barCls   = pct >= 60 ? 'good' : (pct >= 30 ? 'warn' : 'low');
+    const icon     = PROV_ICONS[prov.toUpperCase()] || '🔑';
+    const avgH     = keys.length > 0
+      ? Math.round(keys.reduce((s,k) => s + (k.health || 0), 0) / keys.length) : 0;
+
+    const keyPills = keys.map(k => {
+      const avail   = k.available && !k.disabled;
+      const cooling = !k.available && !k.disabled && k.cooldown_remaining > 0;
+      const disabled = k.disabled;
+
+      let cls = avail ? 'ok' : (cooling ? 'warn' : (disabled ? 'off' : 'err'));
+      let icon2 = avail ? '✓' : (cooling ? `⏳${Math.ceil(k.cooldown_remaining)}s` : (disabled ? '○' : '✕'));
+
+      return `<div class="key-pill ${cls}" title="Toggle: ${k.masked}\nHealth: ${k.health}%\nReq/min: ${k.remaining_minute}/${k.rate_limit_minute}" onclick="toggleKey('${prov}','${k.masked}')">
+        <span class="key-dot"></span>
+        <span>${k.masked}</span>
+        <span style="opacity:0.6;font-size:0.62rem">${icon2}</span>
+      </div>`;
+    }).join('');
+
+    html += `
+    <details class="fleet-provider">
+      <summary class="fleet-provider-header" style="list-style:none;" onclick="event.preventDefault();this.closest('details').toggleAttribute('open')">
+        <span class="fleet-prov-icon">${icon}</span>
+        <span class="fleet-prov-name">${prov}</span>
+        <div class="fleet-health-bar"><div class="fleet-health-fill ${barCls}" style="width:${pct}%"></div></div>
+        <span class="fleet-prov-count">${active}/${total} · ${avgH}%</span>
+        <span class="fleet-chevron">▾</span>
+      </summary>
+      <div class="fleet-keys-grid">${keyPills || '<span style="color:var(--tx-3);font-size:0.74rem;font-family:var(--font-mono)">Nema ključeva</span>'}</div>
+    </details>`;
+  }
+
+  c.innerHTML = html;
+  document.getElementById('fleet-total-count').textContent = totalActive;
+}
+
+async function toggleKey(provider, key) {
+  try {
+    const r = await fetch('/api/fleet/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, key })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    showToast(`${provider}: ${d.disabled ? '🔴 onemogućen' : '🟢 aktiviran'}`, d.disabled ? 'warning' : 'success');
+    pollFleet();
+  } catch(e) { showToast('Toggle greška: ' + e.message, 'error'); }
+}
+
+/* ── API Keys ── */
+async function loadKeys() {
+  const container = document.getElementById('keys-list-container');
+  if (!container) return;
+  container.innerHTML = '<div style="color:var(--tx-3);font-family:var(--font-mono);font-size:0.76rem;">Učitavam...</div>';
+  try {
+    const r = await fetch('/api/keys');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const entries = Object.entries(data || {});
+    if (entries.length === 0) {
+      container.innerHTML = '<div style="color:var(--tx-3);font-family:var(--font-mono);font-size:0.76rem;">Nema unesenih API ključeva.</div>';
+      return;
+    }
+    let html = '';
+    entries.forEach(([prov, keys]) => {
+      (keys || []).forEach((masked, idx) => {
+        html += `<div class="key-row">
+          <span class="key-provider-badge">${PROV_ICONS[prov.toUpperCase()] || '🔑'} ${prov}</span>
+          <span class="key-value">${masked}</span>
+          <button class="key-del" title="Obriši ključ" onclick="deleteKey('${prov}', ${idx})">✕</button>
+        </div>`;
+      });
+    });
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--rose);font-family:var(--font-mono);font-size:0.76rem;">❌ ${e.message}</div>`;
+  }
+}
+
+async function addKey() {
+  const prov = document.getElementById('key-provider-select')?.value;
+  const key  = document.getElementById('key-value-input')?.value?.trim();
+  if (!prov) { showToast('Odaberi provajdera!', 'warning'); return; }
+  if (!key || key.length < 8) { showToast('Ključ mora imati bar 8 znakova.', 'warning'); return; }
+
+  const btn = document.getElementById('btn-add-key');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+
+  try {
+    const r = await fetch(`/api/keys/${encodeURIComponent(prov)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    showToast(`Ključ za ${prov} dodan!`, 'success');
+    document.getElementById('key-value-input').value = '';
+    await loadKeys();
+    pollFleet();
+  } catch(e) {
+    showToast('Greška: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '➕ Dodaj'; }
+  }
+}
+
+async function deleteKey(provider, index) {
+  if (!confirm(`Obrisati ključ #${index} za ${provider}?`)) return;
+  try {
+    const r = await fetch(`/api/keys/${encodeURIComponent(provider)}/${index}`, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    showToast(`Ključ za ${provider} obrisan.`, 'info');
+    await loadKeys();
+    pollFleet();
+  } catch(e) { showToast('Greška: ' + e.message, 'error'); }
+}
+
+/* ── Neon title animation ── */
+(function neonTitle() {
+  const el = document.getElementById('brand-title');
+  if (!el) return;
+  const palette = ['#6366f1','#06b6d4','#10b981','#f59e0b','#f43f5e','#a78bfa'];
+  let idx = 0;
+  function flash() {
+    const c = palette[idx++ % palette.length];
+    el.style.textShadow = `0 0 8px ${c}60, 0 0 24px ${c}40`;
+    setTimeout(() => { el.style.textShadow = ''; }, 180 + Math.random() * 220);
+    setTimeout(flash, 600 + Math.random() * 1200);
+  }
+  setTimeout(flash, 800);
+})();
+
+/* ── Expose globals for onclick ── */
+window.toggleTheme    = toggleTheme;
+window.showSetup      = showSetup;
+window.wizardNext     = wizardNext;
+window.wizardBack     = wizardBack;
+window.startProcessing= startProcessing;
+window.sendControl    = sendControl;
+window.switchTab      = switchTab;
+window.addKey         = addKey;
+window.deleteKey      = deleteKey;
+window.toggleKey      = toggleKey;
+window.selectMode     = selectMode;
+window.filterTier     = filterTier;
+window.triggerUpload  = triggerUpload;
+window.onBookChange   = onBookChange;
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', async function() {
+  // Load data
+  await Promise.allSettled([loadBooks(), loadModels()]);
+
+  // Check if already processing
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    updateStatus(d);
+    const st = (d.status || 'IDLE').toUpperCase();
+    if (st.includes('TOKU') || st.includes('POKRETANJE')) {
+      showDashboard();
+      STATE.processing = true;
+      if (!STATE.startTime) STATE.startTime = Date.now() - ((d.pct || 0) / 100) * 60000;
+    }
+  } catch(_) {}
+
+  // Start polling
+  startPolling();
+
+  // Fleet polling every 20s
+  setInterval(pollFleet, 20000);
+});
+</script>
 </body>
 </html>

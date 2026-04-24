@@ -1,0 +1,193 @@
+================================================================================
+BOOKLYFI TURBO CHARGED
+AI-Powered Book Translation & Refinement Engine
+================================================================================
+
+1. SAZETAK APLIKACIJE
+--------------------------------------------------------------------------------
+BOOKLYFI je napredni sistem za automatsko prevodjenje i lekturu EPUB/MOBI knjiga
+sa engleskog na bosanski/hrvatski jezik. Koristi flotu od 50+ besplatnih API
+kljuceva rasporedjenih preko vise AI provajdera (Gemini, Groq, Mistral,
+Sambanova, OpenRouter, Cohere, Chutes, HuggingFace, Kluster) sa automatskim
+failover-om i pametnim rutiranjem.
+
+Kljucne funkcionalnosti:
+- Upload i odabir knjiga (EPUB/MOBI)
+- Vise AI provajdera sa automatskim prebacivanjem
+- Live dashboard sa progresom, ETA, pipeline koracima
+- Fleet menadzer sa health barovima, toggle dugmadima
+- Checkpoint sistem - nastavlja obradu od mesta prekida
+- Neon animacije na BOOKLYFI naslovu
+- Potpuno responzivan - radi na desktopu i Androidu
+
+2. NACIN RADA
+--------------------------------------------------------------------------------
+2.1 Frontend (HTML/CSS/JS)
+- index.html - Glavni interfejs sa wizardom (2 koraka), dashboardom i tabovima
+- style.css - Dark tema sa glassmorphism efektima, neon akcentima, responzivan
+- app-clean.js - Sva logika: upload, odabir knjiga, pokretanje obrade, dashboard
+  polling, fleet panel, ETA, pipeline animacija
+
+2.2 Backend (Flask + Python)
+- main.py - Ulazna tacka, pokrece Flask server
+- app.py - Flask aplikacijska fabrika, definise rute
+- api_fleet.py - Fleet Manager: upravljanje API kljucevima, health scoring,
+  automatsko deaktiviranje
+- skriptorij.py - Glavni engine za obradu knjiga (monolit, 3600+ linija)
+- run.py - Wrapper za modularni engine (importuje module)
+
+2.3 Modularni engine (core/, network/, processing/, epub/, utils/)
+- core/ - Osnovne klase i funkcije (engine, text_utils, quality, prompts,
+  chunking)
+- network/ - HTTP klijent, provider router, URL generatori, rate limiter
+- processing/ - Pipeline za obradu (pipeline, workers, parallel, rescue, retro)
+- epub/ - EPUB parser, stilizovanje, pakovanje
+- utils/ - Logovanje, ciscenje checkpointa, file utilities
+
+2.4 Tok obrade
+1. Korisnik uploaduje ili odabira EPUB/MOBI knjigu
+2. Odabira model (V8_TURBO koristi sve provajdere)
+3. Klikom na "Pokreni Sistem" backend:
+   - Raspakuje EPUB u radni direktorijum
+   - Analizira knjigu (zanr, ton, likovi, glosar)
+   - Deli HTML fajlove na chunkove od ~800 reci
+   - Svaki chunk prolazi kroz pipeline:
+     - Prevodilac (brzi modeli: Groq, Cerebras)
+     - Validator (provera semanticke vernosti)
+     - Lektor (kvalitetni modeli: Gemini, Mistral)
+     - Korektor (gramatika)
+     - Guardian (konzistentnost)
+     - Polish (finalni stil)
+   - Rezultati se kesiraju u .chk fajlove
+   - Na kraju se pakuje novi EPUB
+4. Frontend prikazuje progres u realnom vremenu
+
+2.5 Fleet Manager
+- Svaki API kljuc ima health score (RPM + RPD)
+- Automatsko deaktiviranje nakon 3 greske u 30s
+- 402/403/401 -> trajno deaktiviranje
+- 429 sa retry-after > 1h -> dnevni limit, deaktiviranje na 23h
+- Toggle dugmad za rucno ukljucivanje/iskljucivanje
+
+3. STRUKTURA PROJEKTA (FILE TREE)
+--------------------------------------------------------------------------------
+skriptorij/
+├── main.py                    # Ulazna tacka
+├── app.py                     # Flask app factory
+├── api_fleet.py               # Fleet Manager
+├── skriptorij.py              # Glavni engine (monolit)
+├── run.py                     # Wrapper za modularni engine
+├── tts.py                     # TTS procesor
+├── export_manager.py          # Export izvestaja
+├── requirements.txt           # Python zavisnosti
+├── dev_api.json               # API kljucevi (NIKAD NE COMMITUJ!)
+│
+├── core/
+│   ├── engine.py              # Klasa SkriptorijAllInOne
+│   ├── prompts.py             # Svi AI promptovi
+│   ├── text_utils.py          # Cistaci teksta, detekcije
+│   ├── quality.py             # Quality scoring
+│   └── chunking.py            # Chunking HTML-a
+│
+├── network/
+│   ├── http_client.py         # HTTP zahtevi sa retry logikom
+│   ├── provider_router.py     # Odabir provajdera po ulozi
+│   ├── provider_urls.py       # URL endpointi za API-je
+│   └── rate_limiter.py        # Rate limiting
+│
+├── processing/
+│   ├── pipeline.py            # Glavni pipeline obrade
+│   ├── workers.py             # Worker za fajlove
+│   ├── parallel.py            # Paralelna obrada chunkova
+│   ├── rescue.py              # Rescue mehanizam
+│   └── retro.py               # Retroaktivna re-lektura
+│
+├── epub/
+│   ├── parser.py              # EPUB parser
+│   ├── styling.py             # CSS injekcija
+│   └── packager.py            # Pakovanje EPUB-a
+│
+├── utils/
+│   ├── logging.py             # Logovanje
+│   ├── checkpoint_cleaner.py  # Ciscenje checkpointa
+│   └── file_utils.py          # File utilities
+│
+├── templates/
+│   └── index.html             # Glavni HTML
+│
+├── static/
+│   ├── css/
+│   │   └── style.css          # Kompletan CSS
+│   ├── js/
+│   │   ├── app-clean.js       # Glavni JS (spojeni moduli)
+│   │   ├── app.js             # Originalni modularni JS
+│   │   ├── api-client.js      # API klijent
+│   │   ├── services/
+│   │   │   ├── polling.js
+│   │   │   ├── storage.js
+│   │   │   └── theme.js
+│   │   └── ui/
+│   │       ├── fleet.js
+│   │       └── notifications.js
+│   └── img/
+│       └── V8_book_turbo.svg  # Logo
+│
+├── data/                      # Podaci o knjigama
+│   ├── *.epub                 # EPUB fajlovi
+│   ├── _skr_*/               # Radni direktorijumi sa checkpointima
+│   └── (LIVE)_*.epub          # Live preview EPUB-ovi
+│
+└── config/
+    └── settings.py            # Podesavanja (putanje, port)
+
+4. GLAVNE SKRIPTE KOJE RADE
+--------------------------------------------------------------------------------
+| Fajl                    | Funkcija              | Status |
+|-------------------------|-----------------------|--------|
+| main.py                 | Pokretanje servera    | OK     |
+| app.py                  | Flask rute            | OK     |
+| api_fleet.py            | Fleet menadzer        | OK     |
+| skriptorij.py           | Glavni engine         | OK     |
+| templates/index.html    | Frontend HTML         | OK     |
+| static/css/style.css    | Kompletan CSS         | OK     |
+| static/js/app-clean.js  | Sva JS logika         | OK     |
+| core/engine.py          | Modularni engine      | OK     |
+| network/http_client.py  | HTTP sa retry         | OK     |
+| processing/pipeline.py  | Pipeline obrade       | OK     |
+
+5. KAKO POKRENUTI
+--------------------------------------------------------------------------------
+1. Instalirati zavisnosti:
+   pip install -r requirements.txt
+
+2. Konfigurisati API kljuceve u dev_api.json
+
+3. Pokrenuti server:
+   python main.py
+
+4. Otvoriti browser:
+   http://127.0.0.1:8080
+
+6. PREDLOG ZA SLANJE NA REVIZIJU
+--------------------------------------------------------------------------------
+Za kompletnu reviziju projekta poslati sledece fajlove:
+
+  - PROJECT_SUMMARY.txt (ovaj dokument)
+  - FILE_TREE.txt (struktura projekta)
+  - main.py
+  - app.py
+  - api_fleet.py
+  - skriptorij.py
+  - templates/index.html
+  - static/css/style.css
+  - static/js/app-clean.js
+  - core/engine.py
+  - core/prompts.py
+  - network/http_client.py
+  - processing/pipeline.py
+  - requirements.txt
+
+Preporucena komanda za pakovanje:
+  zip -r booklyfi_review.zip PROJECT_SUMMARY.txt FILE_TREE.txt main.py app.py api_fleet.py skriptorij.py templates/index.html static/css/style.css static/js/app-clean.js core/ network/ processing/ epub/ utils/ requirements.txt
+
+================================================================================

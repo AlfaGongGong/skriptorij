@@ -64,7 +64,7 @@ def _safe_get_model(fleet, prov_upper, default=None):
         return (
             default
             if default is not None
-            else ("gemma-3-27b-it" if prov_upper == "GEMINI" else None)
+            else ("gemini-2.5-flash" if prov_upper == "GEMINI" else None)
         )
 
 

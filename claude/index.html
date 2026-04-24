@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKLYFI ⚡</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=5">
+    <meta name="theme-color" content="#030711">
+</head>
+<body>
+<div id="toast-container" aria-live="polite"></div>
+
+<div id="main-ui-wrapper">
+    <header class="app-header">
+        <div class="header-brand">
+            <img src="/static/img/V8_book_turbo.svg" alt="logo" class="header-logo">
+            <h1 id="app-logo-title">BOOKLYFI</h1>
+        </div>
+        <div class="header-controls">
+            <div class="status-badge">
+                <span class="dot dot-idle" id="status-dot"></span>
+                <span class="status-text" id="status-text">IDLE</span>
+            </div>
+            <button class="btn-icon" onclick="toggleTheme()">🌙</button>
+            <button class="btn-icon" onclick="showSetup()">⚙️</button>
+        </div>
+    </header>
+
+    <section id="setup-panel" class="panel panel-setup">
+        <div class="wizard-steps">
+            <div class="wizard-step active" id="step-1"><div class="wizard-step-num">1</div>Knjiga</div>
+            <div class="wizard-step-connector"></div>
+            <div class="wizard-step" id="step-2"><div class="wizard-step-num">2</div>Konfiguracija</div>
+        </div>
+
+        <div id="wizard-page-1">
+            <h2>📁 Odabir Knjige</h2>
+            <div style="margin-bottom:16px;">
+                <label>📚 Odaberi Knjigu</label>
+                <select id="book-select" style="width:100%;padding:12px;margin-top:6px;">
+                    <option value="">-- Učitavam knjige... --</option>
+                </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">📂 Upload EPUB/MOBI</button>
+                <input type="file" id="file-input" accept=".epub,.mobi" style="display:none;">
+                <span id="upload-status" style="font-size:0.85rem;"></span>
+            </div>
+            <div style="text-align:right;">
+                <button class="btn btn-primary" onclick="wizardNext()">Dalje →</button>
+            </div>
+        </div>
+
+        <div id="wizard-page-2" class="hidden">
+            <h2>⚙️ Konfiguracija</h2>
+            <div style="margin-bottom:16px;">
+                <label>🤖 Model</label>
+                <select id="model-select" style="width:100%;padding:12px;margin-top:6px;"></select>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label>⚡ Način rada</label>
+                <div style="display:flex;gap:8px;margin-top:6px;">
+                    <label style="flex:1;padding:12px;border:2px solid var(--sky);border-radius:8px;text-align:center;">
+                        <input type="radio" name="mode" value="PREVOD" checked> 🌐 PREVOD
+                    </label>
+                    <label style="flex:1;padding:12px;border:1px solid var(--border);border-radius:8px;text-align:center;">
+                        <input type="radio" name="mode" value="TTS"> 🔊 TTS
+                    </label>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+                <button class="btn btn-ghost" onclick="wizardBack()">← Nazad</button>
+                <button class="btn btn-launch" id="btn-start">🚀 Pokreni Sistem</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="dashboard-panel" class="panel hidden">
+        <h2>📊 Status Operacije</h2>
+        <div class="pipeline-steps">
+            <div class="pipe-step" id="pipe-analiza">🔬 Analiza</div>
+            <div class="pipe-step" id="pipe-prevod">🌐 Prevod</div>
+            <div class="pipe-step" id="pipe-lektor">✍️ Lektor</div>
+            <div class="pipe-step" id="pipe-gotovo">✅ Gotovo</div>
+        </div>
+        <div id="live-preview" class="hidden"><span>EN:</span> <span id="preview-en">—</span> | <span>HR:</span> <span id="preview-hr">—</span></div>
+        <div class="stats-grid">
+            <div class="stat-box"><span>Motor</span><span id="stat-engine">---</span></div>
+            <div class="stat-box"><span>Fajl</span><span id="stat-file">---</span></div>
+            <div class="stat-box"><span>Obrađeno</span><span id="stat-ok">0/0</span></div>
+            <div class="stat-box"><span>Preskočeno</span><span id="stat-skipped">0</span></div>
+            <div class="stat-box"><span>Aktivni</span><span id="stat-fleet-active">0</span></div>
+            <div class="stat-box"><span>Hlađenje</span><span id="stat-fleet-cooling">0</span></div>
+        </div>
+        <div class="progress-section">
+            <div class="progress-meta">
+                <span id="progress-pct-text">Završeno: 0%</span>
+                <span id="progress-eta">ETA: --:--:--</span>
+            </div>
+            <div class="progress-container"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+        </div>
+        <div class="control-bar">
+            <button class="btn btn-pause" onclick="sendControl('pause')">⏸ Pauziraj</button>
+            <button class="btn btn-secondary" onclick="sendControl('resume')">▶️ Nastavi</button>
+            <button class="btn btn-secondary" onclick="sendControl('reset')">🔄 Reset</button>
+            <button class="btn btn-danger" onclick="sendControl('stop')">⏹ Zaustavi</button>
+        </div>
+    </section>
+
+    <section class="panel">
+        <nav class="tab-nav">
+            <button class="tab-btn tab-active" onclick="switchTab('tab-status')">📊 Status</button>
+            <button class="tab-btn" onclick="switchTab('tab-fleet')">🛡️ Flota <span id="fleet-total-count">0</span></button>
+            <button class="tab-btn" onclick="switchTab('tab-audit')">📋 Dnevnik</button>
+            <button class="tab-btn" onclick="switchTab('tab-keys')">🔑 Ključevi</button>
+        </nav>
+        <div class="tab-panel tab-panel-active" id="tab-status"><p>Statistike su u panelu iznad.</p></div>
+        <div class="tab-panel hidden" id="tab-fleet"><div id="fleet-cards-container">Učitavanje...</div></div>
+        <div class="tab-panel hidden" id="tab-audit"><div class="terminal-window" id="audit-log">Sistem spreman.</div></div>
+        <div class="tab-panel hidden" id="tab-keys">
+            <select id="key-provider-select" style="margin-bottom:8px;">
+                <option value="">-- Provajder --</option>
+                <option>GEMINI</option><option>GROQ</option><option>MISTRAL</option>
+                <option>SAMBANOVA</option><option>OPENROUTER</option><option>COHERE</option>
+            </select>
+            <input type="password" id="key-value-input" placeholder="API ključ" style="margin-bottom:8px;">
+            <button class="btn btn-primary" onclick="addKey()">➕ Dodaj</button>
+            <div id="keys-list-container"></div>
+        </div>
+    </section>
+</div>
+
+<script src="/static/js/app-clean.js?v=2"></script>
+</body>
+</html>

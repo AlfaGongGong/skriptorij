@@ -1,0 +1,67 @@
+================================================================================
+BOOKLYFI TURBO CHARGED
+AI-Powered Book Translation & Refinement Engine
+================================================================================
+
+SAŽETAK
+--------------------------------------------------------------------------------
+BOOKLYFI je napredni sistem za automatsko prevođenje i lekturu EPUB/MOBI knjiga
+sa engleskog na bosanski/hrvatski jezik. Koristi flotu od 50+ besplatnih API
+ključeva preko više AI provajdera sa automatskim failover-om i pametnim
+rutiranjem modela.
+
+FUNKCIONALNOSTI
+--------------------------------------------------------------------------------
+- Upload i odabir knjiga (EPUB/MOBI)
+- Više AI provajdera sa automatskim prebacivanjem
+- Live dashboard sa progresom, ETA, pipeline koracima
+- Fleet manager sa health barovima, toggle dugmadima za ključeve
+- Checkpoint sistem - nastavlja obradu od mesta prekida
+- Neon animacije na BOOKLYFI naslovu
+- Potpuno responzivan - radi na desktopu i Androidu
+- Automatska rotacija modela za Google API (Gemma → Gemini Flash Lite)
+
+ARHITEKTURA
+--------------------------------------------------------------------------------
+Frontend: HTML5 + CSS3 + vanilla JavaScript (app-clean.js)
+Backend: Flask + Python 3.13
+Engine: Modularni pipeline (core/, network/, processing/, epub/, utils/)
+AI Provideri: Gemini, Groq, Mistral, Sambanova, OpenRouter, Cohere, Chutes,
+              HuggingFace, Kluster, Together
+
+INSTALACIJA I POKRETANJE
+--------------------------------------------------------------------------------
+1. pip install -r requirements.txt
+2. Konfigurisati API ključeve u dev_api.json
+3. python main.py
+4. Otvoriti http://127.0.0.1:8080
+
+GLAVNI FAJLOVI
+--------------------------------------------------------------------------------
+main.py              - Ulazna tačka servera
+app.py               - Flask aplikacija sa svim /api/* rutama
+api_fleet.py         - Fleet Manager (API ključevi, health, limiti)
+run.py               - Wrapper za modularni engine
+core/engine.py       - Klasa SkriptorijAllInOne
+core/prompts.py      - AI promptovi za sve uloge
+network/http_client.py - HTTP zahtevi sa retry logikom
+network/provider_router.py - Odabir provajdera po ulozi
+processing/pipeline.py - Glavni pipeline obrade
+templates/index.html - Frontend HTML
+static/css/style.css - Kompletan CSS (dark theme, neon akcenti)
+static/js/app-clean.js - Sva JavaScript logika
+
+STATUS (April 2026)
+--------------------------------------------------------------------------------
+✅ Upload i odabir knjiga
+✅ Pokretanje i praćenje obrade
+✅ Dashboard sa ETA, pipeline koracima, live preview
+✅ Fleet panel sa health barovima i toggle dugmadima
+✅ API ključevi (dodavanje, brisanje)
+✅ Dnevnik (audit log) sa automatskim skrolom
+✅ Spremanje stanja na refresh
+✅ Neon animacije
+✅ Google model rotacija (Gemma 3 27B → Gemini Flash Lite)
+✅ Checkpoint sistem za nastavak obrade
+
+================================================================================

@@ -295,7 +295,7 @@ class FleetManager:
             "CEREBRAS": "mistralai/Mistral-Small-24B-Instruct-2501",
             "SAMBANOVA": "DeepSeek-V3.1",
             "GROQ": "llama-3.1-8b-instant",
-            "GEMINI": "gemma-3-27b-it",
+            "GEMINI": "gemini-2.0-flash",
             "MISTRAL": "mistral-small-latest",
             "TOGETHER": "meta-llama/Llama-3.2-3B-Instruct-Turbo",
             "OPENROUTER": "meta-llama/llama-3.3-70b-instruct:free",
@@ -579,24 +579,3 @@ class FleetManager:
             if ks.key == key_str:
                 return ks
         return None
-# ===== GOOGLE MODEL ROTATION =====
-# Svaki ključ dobija listu modela sa limitima
-GOOGLE_MODEL_POOL = [
-    {"model": "gemma-3-27b-it",         "rpm": 30, "rpd": 14400},   # RADI (200)
-    {"model": "gemini-2.5-flash-lite",  "rpm": 10, "rpd": 20},      # RADI (200)
-    {"model": "gemini-2.0-flash",       "rpm": 15, "rpd": 1500},    # 429 ali može da se oporavi
-]
-
-def get_google_model_for_key(key_index):
-    """Vraća model za dati ključ na osnovu indeksa i rotacije."""
-    # Svaki ključ počinje sa različitim modelom da se rasporedi load
-    model_index = key_index % len(GOOGLE_MODEL_POOL)
-    return GOOGLE_MODEL_POOL[model_index]
-
-def get_next_google_model(current_model):
-    """Vraća sljedeći model u pool-u kad je trenutni potrošen."""
-    for i, m in enumerate(GOOGLE_MODEL_POOL):
-        if m["model"] == current_model:
-            next_idx = (i + 1) % len(GOOGLE_MODEL_POOL)
-            return GOOGLE_MODEL_POOL[next_idx]
-    return GOOGLE_MODEL_POOL[0]  # fallback na prvi
