@@ -1,0 +1,52 @@
+# API ključevi (NIKAD NE COMMITUJ)
+dev_api.json
+api_state.json
+proxies.json
+*.key
+*.pem
+
+# Backup fajlovi
+*.backup
+*.bak
+backups/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Podaci o knjigama (preveliki)
+data/*.epub
+data/*.mobi
+data/_skr_*/
+data/(LIVE)_*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logovi
+*.log
+
+# Jednokratne patch skripte
+fix.sh
+fixpy.py
+
+# Runtime fajlovi
+last_book.json
+
+# Kompletan kod export
+PROJEKAT_KOMPLETAN_KOD_*.txt
+
+# Environment
+env
+*.bak_*
+*.backup_*

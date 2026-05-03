@@ -1,0 +1,1207 @@
+<!doctype html>
+<html lang="bs">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
+        <title>BOOKLYFI ⚡ Turbo</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="manifest" href="/static/manifest.json" />
+        <meta name="theme-color" content="#030711" />
+        <!-- Pazi na putanju: /static/css/style.css -->
+        <link rel="stylesheet" href="/static/css/style.css" />
+    </head>
+    <body>
+        <div id="toast-container" aria-live="polite"></div>
+
+        <!-- DOWNLOAD MODAL -->
+        <div
+            class="modal-overlay"
+            id="download-modal"
+            role="dialog"
+            aria-modal="true"
+        >
+            <div class="modal modal-friendly">
+                <div class="modal-icon">📥</div>
+                <div class="modal-title">Preuzmi djelimičan prijevod?</div>
+                <div class="modal-body" id="modal-body-text">
+                    Obrada još nije gotova. Preuzet ćeš ono što je do sada
+                    završeno — ostatak knjige ostaje na originalnom jeziku.
+                </div>
+                <div class="modal-pct-bar">
+                    <div
+                        class="modal-pct-fill"
+                        id="modal-pct-fill"
+                        style="width: 0%"
+                    ></div>
+                </div>
+                <div class="modal-pct-label" id="modal-pct-label">
+                    0% završeno
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-sm" id="btn-close-download-modal">
+                        ⏳ Sačekaj kraj
+                    </button>
+                    <button
+                        class="btn btn-sm btn-success"
+                        id="btn-confirm-download-live"
+                    >
+                        ⬇ Preuzmi što ima
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="app">
+            <!-- HEADER -->
+            <header class="app-header">
+                <div class="brand">
+                    <img
+                        src="/static/img/V8_book_turbo.svg"
+                        alt="Booklyfi logo"
+                        class="brand-logo"
+                        id="brand-logo"
+                    />
+                    <div class="brand-text">
+                        <h1 class="brand-title" id="brand-title">BOOKLYFI</h1>
+                        <span class="brand-tag">TURBO V10</span>
+                    </div>
+                </div>
+                <div class="header-controls">
+                    <div class="status-badge">
+                        <span class="dot dot-idle" id="status-dot"></span>
+                        <span id="status-text" class="status-text"
+                            >SPREMAN</span
+                        >
+                    </div>
+                    <button
+                        class="btn-icon"
+                        id="theme-btn"
+                        title="Promijeni temu"
+                    >
+                        🌙
+                    </button>
+                    <!-- Live quality indikator -->
+                    <div id="quality-live-badge" class="ql-badge">
+                        <div
+                            class="ql-ring"
+                            data-val="—"
+                            style="--ql-pct: 0%"
+                        ></div>
+                        <div class="ql-text">
+                            <span class="ql-score-main">—</span>
+                            <span class="ql-score-sub">—</span>
+                        </div>
+                    </div>
+                    <button
+                        class="btn-icon"
+                        id="btn-show-setup"
+                        title="Postavke"
+                    >
+                        ⚙
+                    </button>
+                </div>
+            </header>
+
+            <!-- SETUP PANEL -->
+            <section id="setup-panel">
+                <div class="wizard-steps">
+                    <div class="wizard-step active" id="step-1">
+                        <span class="wizard-step-num">1</span>
+                        <span>Odabir knjige</span>
+                    </div>
+                    <div class="wizard-step-connector"></div>
+                    <div class="wizard-step" id="step-2">
+                        <span class="wizard-step-num">2</span>
+                        <span>Pokretanje</span>
+                    </div>
+                </div>
+
+                <!-- KORAK 1 -->
+                <div id="wizard-page-1">
+                    <div class="card">
+                        <div class="card-title">
+                            📚 Odaberi ili učitaj knjigu
+                        </div>
+                        <div class="form-group">
+                            <label>Dostupne knjige</label>
+                            <select id="book-select">
+                                <option value="">
+                                    — Učitavam katalog... —
+                                </option>
+                            </select>
+                        </div>
+                        <div
+                            style="
+                                height: 1px;
+                                background: var(--bd);
+                                margin: 16px 0;
+                            "
+                        ></div>
+                        <label>Ili učitaj novu knjigu (EPUB / MOBI)</label>
+                        <div class="upload-zone" id="upload-zone">
+                            <div class="upload-icon">📖</div>
+                            <div class="upload-label">
+                                Klikni ili prevuci fajl ovdje
+                            </div>
+                            <div class="upload-sub">.epub ili .mobi</div>
+                            <input
+                                type="file"
+                                id="file-input"
+                                accept=".epub,.mobi"
+                            />
+                        </div>
+                        <div id="upload-status" class="upload-status"></div>
+                        <div
+                            id="guide-after-upload"
+                            class="guide-banner hidden"
+                        >
+                            <div class="guide-icon">✅</div>
+                            <div class="guide-text">
+                                <div class="guide-title">
+                                    Knjiga je učitana!
+                                </div>
+                                <div class="guide-sub">
+                                    Klikni "Dalje" da odabereš model i pokreneš
+                                    prijevod.
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-sm guide-action">
+                                Dalje →
+                            </button>
+                        </div>
+                        <div class="wizard-nav">
+                            <div></div>
+                            <button
+                                class="btn btn-primary"
+                                id="btn-wizard-next"
+                            >
+                                Dalje →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KORAK 2 -->
+                <div id="wizard-page-2" class="hidden">
+                    <div class="card">
+                        <div class="card-title">⚙ Odaberi model i pokreni</div>
+                        <div
+                            id="selected-book-info"
+                            style="
+                                display: flex;
+                                align-items: center;
+                                gap: 10px;
+                                padding: 10px 14px;
+                                background: rgba(99, 102, 241, 0.08);
+                                border: 1px solid rgba(99, 102, 241, 0.2);
+                                border-radius: var(--r-md);
+                                margin-bottom: 16px;
+                            "
+                        >
+                            <span>📘</span>
+                            <span
+                                id="selected-book-name"
+                                style="
+                                    font-family: var(--font-mono);
+                                    font-size: 0.8rem;
+                                    color: var(--accent-2);
+                                    font-weight: 600;
+                                "
+                                >—</span
+                            >
+                            <button
+                                class="btn btn-sm"
+                                style="margin-left: auto; font-size: 0.68rem"
+                                id="btn-wizard-back"
+                            >
+                                Promijeni
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label>AI model</label>
+                            <div class="tier-pills" id="tier-pills">
+                                <span class="tier-pill active" data-tier="all"
+                                    >Sve</span
+                                >
+                                <span class="tier-pill" data-tier="fast"
+                                    >⚡ Brzi</span
+                                >
+                                <span class="tier-pill" data-tier="quality"
+                                    >🏆 Kvalitet</span
+                                >
+                                <span class="tier-pill" data-tier="free"
+                                    >🆓 Besplatni</span
+                                >
+                            </div>
+                            <select id="model-select">
+                                <option value="V10_TURBO">
+                                    V10_TURBO (preporučeno)
+                                </option>
+                            </select>
+                        </div>
+                        <div class="auto-mode-box">
+                            <div
+                                class="auto-mode-display"
+                                id="auto-mode-display"
+                            >
+                                <span class="auto-mode-icon" id="auto-mode-icon"
+                                    >🤖</span
+                                >
+                                <div>
+                                    <span
+                                        class="auto-mode-label"
+                                        id="auto-mode-label"
+                                        >Automatski mod</span
+                                    >
+                                    <p
+                                        class="auto-mode-desc"
+                                        id="auto-mode-desc"
+                                    >
+                                        Sistem određuje: prevod, lektura ili
+                                        retro obrada
+                                    </p>
+                                </div>
+                            </div>
+                            <div
+                                style="
+                                    margin-top: 8px;
+                                    padding-top: 8px;
+                                    border-top: 1px solid var(--bd);
+                                "
+                            >
+                                <span
+                                    style="
+                                        font-size: 0.7rem;
+                                        color: var(--tx-3);
+                                    "
+                                >
+                                    Trebaš TTS filter za Moon+ Reader?
+                                    <button
+                                        id="btn-select-tts"
+                                        style="
+                                            background: none;
+                                            border: none;
+                                            color: var(--accent-2);
+                                            cursor: pointer;
+                                            font-size: 0.7rem;
+                                            text-decoration: underline;
+                                        "
+                                    >
+                                        Klikni ovdje
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                        <div id="tts-panel" class="hidden">
+                            <div
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 8px;
+                                    margin-bottom: 6px;
+                                "
+                            >
+                                <span>🔊</span>
+                                <span
+                                    style="
+                                        font-size: 0.82rem;
+                                        font-weight: 700;
+                                        color: var(--accent-2);
+                                    "
+                                    >TTS mod aktiviran</span
+                                >
+                                <button
+                                    id="btn-cancel-tts"
+                                    style="
+                                        margin-left: auto;
+                                        background: none;
+                                        border: none;
+                                        color: var(--tx-3);
+                                        cursor: pointer;
+                                        font-size: 0.8rem;
+                                    "
+                                >
+                                    ✕ Otkaži
+                                </button>
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--tx-3)">
+                                Generisaće .ttsfilter output kompatibilan sa
+                                Moon+ Reader i drugim TTS aplikacijama.
+                            </div>
+                        </div>
+                        <button class="btn btn-launch" id="btn-start">
+                            🚀 Pokreni
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DASHBOARD -->
+            <section id="dashboard-panel" class="hidden">
+                <div class="download-strip hidden" id="download-strip">
+                    <div class="download-strip-icon">✅</div>
+                    <div class="download-strip-info">
+                        <div
+                            class="download-strip-title"
+                            id="download-strip-title"
+                        >
+                            Prijevod završen!
+                        </div>
+                        <div
+                            class="download-strip-subtitle"
+                            id="download-strip-subtitle"
+                        >
+                            EPUB je spreman za preuzimanje
+                        </div>
+                    </div>
+                    <div class="download-strip-btns">
+                        <a
+                            class="btn btn-success btn-sm"
+                            href="/api/download"
+                            id="btn-download-final"
+                            >⬇ EPUB</a
+                        >
+                        <button class="btn btn-sm" id="btn-download-live">
+                            📋 Djelimično
+                        </button>
+                    </div>
+                </div>
+                <div class="card" style="padding: 14px">
+                    <div class="pipeline" id="pipeline">
+                        <div class="pipe-step" id="pipe-analiza">
+                            <span class="pipe-icon">🔬</span>Analiza
+                        </div>
+                        <div class="pipe-step" id="pipe-prevod">
+                            <span class="pipe-icon">🌐</span>Prevod
+                        </div>
+                        <div class="pipe-step" id="pipe-lektor">
+                            <span class="pipe-icon">✍</span>Lektor
+                        </div>
+                        <div class="pipe-step" id="pipe-korektor">
+                            <span class="pipe-icon">📐</span>Korektor
+                        </div>
+                        <div class="pipe-step" id="pipe-gotovo">
+                            <span class="pipe-icon">✅</span>Gotovo
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📊 Napredak obrade</div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Motor</div>
+                            <div class="stat-value" id="stat-engine">---</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Fajl</div>
+                            <div class="stat-value" id="stat-file">---</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Obrađeno</div>
+                            <div class="stat-value" id="stat-ok">0 / 0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Preskočeno</div>
+                            <div class="stat-value" id="stat-skipped">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Aktivni ključevi</div>
+                            <div class="stat-value" id="stat-fleet-active">
+                                0
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Kvalitet</div>
+                            <div
+                                class="stat-value"
+                                id="stat-avg-quality"
+                                style="color: var(--accent-2)"
+                            >
+                                —
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-track">
+                        <div
+                            class="progress-fill"
+                            id="progress-bar"
+                            style="width: 0%"
+                        ></div>
+                    </div>
+                    <div class="progress-meta">
+                        <span id="progress-pct-text">Završeno: 0%</span>
+                        <span id="progress-eta">ETA: --:--:--</span>
+                    </div>
+                    <div
+                        style="
+                            height: 1px;
+                            background: var(--bd);
+                            margin: 14px 0;
+                        "
+                    ></div>
+                    <div
+                        class="live-preview-grid"
+                        id="live-preview-block"
+                        style="display: none"
+                    >
+                        <div class="preview-box">
+                            <div class="preview-box-label" id="preview-en-label">🇬🇧 Original</div>
+                            <div class="preview-box-text" id="preview-en">
+                                —
+                            </div>
+                        </div>
+                        <div class="preview-box">
+                            <div class="preview-box-label">🇧🇦 Prijevod</div>
+                            <div class="preview-box-text" id="preview-hr">
+                                —
+                            </div>
+                        </div>
+                    </div>
+                    <div class="control-bar">
+                        <button class="btn btn-sm" id="btn-pause">
+                            ⏸ Pauziraj
+                        </button>
+                        <button class="btn btn-sm hidden" id="btn-resume">
+                            ▶ Nastavi
+                        </button>
+                        <button class="btn btn-sm" id="btn-reset">
+                            🔄 Resetuj
+                        </button>
+                        <button class="btn btn-sm btn-danger" id="btn-stop">
+                            ⏹ Zaustavi
+                        </button>
+                        <button
+                            class="btn btn-sm"
+                            id="btn-show-setup-dashboard"
+                            style="margin-left: auto"
+                        >
+                            ⚙ Postavi novo
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TABS -->
+            <div class="card" style="padding: 16px">
+                <nav class="tab-nav">
+                    <button class="tab-btn active" data-tab="tab-fleet">
+                        🛡 Flota
+                        <span class="badge" id="fleet-total-count">0</span>
+                    </button>
+                    <button class="tab-btn" data-tab="tab-quality">
+                        🎯 Kvalitet
+                        <span
+                            class="badge badge-amber hidden"
+                            id="quality-badge"
+                            >0</span
+                        >
+                    </button>
+                    <button class="tab-btn" data-tab="tab-history">
+                        📚 Historija
+                    </button>
+                    <button class="tab-btn" data-tab="tab-epub">
+                        👁 Pregled
+                    </button>
+                    <button class="tab-btn" data-tab="tab-review">
+                        ✏ Revizija <span class="badge" id="review-count">0</span
+                        ><span
+                            class="badge hidden"
+                            id="review-badge"
+                            style="
+                                background: var(--amber);
+                                color: #000;
+                                margin-left: 3px;
+                            "
+                        ></span>
+                    </button>
+                    <button class="tab-btn" data-tab="tab-expert">
+                        🔬 Stručnjak
+                    </button>
+                </nav>
+
+                <!-- Fleet tab -->
+                <div class="tab-panel active" id="tab-fleet">
+                    <div id="fleet-simple-summary">
+                        <div class="fleet-summary-box ok">
+                            <div
+                                class="fleet-summary-value"
+                                id="fleet-ok-count"
+                            >
+                                0
+                            </div>
+                            <div class="fleet-summary-label">
+                                Aktivnih ključeva
+                            </div>
+                        </div>
+                        <div class="fleet-summary-box warn">
+                            <div
+                                class="fleet-summary-value"
+                                id="fleet-cooling-count"
+                            >
+                                0
+                            </div>
+                            <div class="fleet-summary-label">
+                                Hladi se (čekanje)
+                            </div>
+                        </div>
+                        <div class="fleet-summary-box err">
+                            <div
+                                class="fleet-summary-value"
+                                id="fleet-err-count"
+                            >
+                                0
+                            </div>
+                            <div class="fleet-summary-label">Grešaka</div>
+                        </div>
+                    </div>
+                    <div id="fleet-cards-container">
+                        <div
+                            style="
+                                text-align: center;
+                                padding: 20px;
+                                color: var(--tx-3);
+                            "
+                        >
+                            Učitavam flotu...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quality tab -->
+                <div class="tab-panel" id="tab-quality">
+                    <div
+                        id="quality-loading"
+                        style="
+                            text-align: center;
+                            padding: 24px;
+                            color: var(--tx-3);
+                            font-size: 0.78rem;
+                        "
+                    >
+                        Nema podataka. Pokreni obradu da se generišu quality
+                        scores.
+                    </div>
+                    <div id="quality-content" class="hidden">
+                        <div
+                            id="qs-grade-display"
+                            class="qs-grade excellent"
+                            style="margin-bottom: 14px"
+                        >
+                            <span id="qs-grade-emoji">🌟</span>
+                            <span id="qs-grade-text"
+                                >Odlično — prijevod je spreman za štampu</span
+                            >
+                            <span
+                                id="qs-grade-score"
+                                style="
+                                    margin-left: auto;
+                                    font-family: var(--font-mono);
+                                    font-size: 0.78rem;
+                                    opacity: 0.7;
+                                "
+                            ></span>
+                        </div>
+                        <div
+                            style="
+                                display: flex;
+                                align-items: center;
+                                gap: 16px;
+                                margin-bottom: 16px;
+                                flex-wrap: wrap;
+                            "
+                        >
+                            <div
+                                id="qs-avg-ring"
+                                class="qs-avg-ring"
+                                data-val="—"
+                                style="--ring-pct: 0%"
+                            ></div>
+                            <div style="flex: 1; min-width: 200px">
+                                <div
+                                    style="
+                                        font-size: 0.7rem;
+                                        color: var(--tx-3);
+                                        font-family: var(--font-mono);
+                                        margin-bottom: 4px;
+                                    "
+                                >
+                                    PROSJEČNA OCJENA
+                                </div>
+                                <div
+                                    style="
+                                        font-size: 1.8rem;
+                                        font-weight: 800;
+                                        font-family: var(--font-mono);
+                                        color: var(--tx-1);
+                                    "
+                                    id="qs-avg-big"
+                                >
+                                    —
+                                </div>
+                                <div
+                                    style="
+                                        font-size: 0.7rem;
+                                        color: var(--tx-3);
+                                        margin-top: 2px;
+                                    "
+                                    id="qs-total-label"
+                                >
+                                    — blokova ocijenjeno
+                                </div>
+                            </div>
+                            <div
+                                style="
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 6px;
+                                "
+                            >
+                                <button
+                                    class="btn btn-sm"
+                                    id="btn-refresh-quality"
+                                >
+                                    🔄 Osvježi
+                                </button>
+                                <button
+                                    id="btn-send-marked"
+                                    class="btn btn-sm hidden"
+                                    style="
+                                        border-color: var(--amber);
+                                        color: var(--amber);
+                                    "
+                                >
+                                    🔧 Relektura označenih
+                                </button>
+                            </div>
+                        </div>
+                        <div class="quality-summary-grid">
+                            <div class="qs-box qs-excellent">
+                                <div class="qs-box-val" id="qs-excellent">
+                                    0
+                                </div>
+                                <div class="qs-box-label">
+                                    🌟 Odlično<br />≥ 8.5
+                                </div>
+                            </div>
+                            <div class="qs-box qs-good">
+                                <div class="qs-box-val" id="qs-good">0</div>
+                                <div class="qs-box-label">
+                                    ✅ Dobro<br />6.5–8.5
+                                </div>
+                            </div>
+                            <div class="qs-box qs-poor qs-box-clickable" id="qs-box-poor" title="Klikni da označiš sve blokove koji trebaju retro" onclick="selectBadBlocks('poor')">
+                                <div class="qs-box-val" id="qs-poor">0</div>
+                                <div class="qs-box-label">
+                                    ⚠ Treba retro<br />4.0–6.5
+                                </div>
+                                <div class="qs-box-hint">↗ Označi sve</div>
+                            </div>
+                            <div class="qs-box qs-critical qs-box-clickable" id="qs-box-critical" title="Klikni da označiš sve kritične blokove" onclick="selectBadBlocks('critical')">
+                                <div class="qs-box-val" id="qs-critical">0</div>
+                                <div class="qs-box-label">
+                                    🔴 Kritično<br />&lt; 4.0
+                                </div>
+                                <div class="qs-box-hint">↗ Označi sve</div>
+                            </div>
+                        </div>
+                        <div id="qs-refix-bar" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px;margin-bottom:12px;flex-wrap:wrap">
+                            <span id="qs-refix-info" style="font-size:0.75rem;font-family:var(--font-mono);color:var(--amber);flex:1">0 blokova označeno</span>
+                            <button class="btn btn-sm" onclick="selectBadBlocks('all')" style="border-color:var(--rose);color:var(--rose)">🔴 + Kritični</button>
+                            <button class="btn btn-sm" onclick="clearMarkedBlocks()" style="border-color:var(--tx-3);color:var(--tx-3)">✕ Poništi</button>
+                            <button class="btn btn-sm" onclick="sendMarkedForRefix()" style="background:var(--amber);border-color:var(--amber);color:#000;font-weight:700">🔧 Pošalji na relekturu</button>
+                        </div>
+                        <div style="margin-bottom: 16px">
+                            <div
+                                style="
+                                    display: flex;
+                                    justify-content: space-between;
+                                    font-size: 0.7rem;
+                                    color: var(--tx-3);
+                                    font-family: var(--font-mono);
+                                    margin-bottom: 4px;
+                                "
+                            >
+                                <span>Blokovi spremni za štampu</span
+                                ><span id="qs-print-ready-pct">0%</span>
+                            </div>
+                            <div class="progress-track" style="height: 8px">
+                                <div
+                                    class="progress-fill"
+                                    id="qs-print-ready-bar"
+                                    style="
+                                        width: 0%;
+                                        background: linear-gradient(
+                                            90deg,
+                                            var(--emerald),
+                                            var(--accent-2)
+                                        );
+                                    "
+                                ></div>
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                font-size: 0.7rem;
+                                color: var(--tx-3);
+                                font-family: var(--font-mono);
+                                margin-bottom: 8px;
+                                letter-spacing: 0.06em;
+                                text-transform: uppercase;
+                            "
+                        >
+                            Pregled po poglavljima
+                        </div>
+                        <div id="qs-files-container"></div>
+                    </div>
+                </div>
+
+                <!-- History tab -->
+                <div class="tab-panel" id="tab-history">
+                    <div
+                        id="history-empty"
+                        style="
+                            text-align: center;
+                            padding: 24px;
+                            color: var(--tx-3);
+                            font-size: 0.78rem;
+                        "
+                    >
+                        Historija prijevoda će se prikazati ovdje. Svaki
+                        završeni prijevod se čuva automatski.
+                    </div>
+                    <div id="history-list"></div>
+                </div>
+
+                <!-- EPUB preview tab -->
+                <div class="tab-panel" id="tab-epub">
+                    <div
+                        id="epub-no-content"
+                        style="
+                            text-align: center;
+                            padding: 24px;
+                            color: var(--tx-3);
+                            font-size: 0.78rem;
+                        "
+                    >
+                        <div style="font-size: 2rem; margin-bottom: 8px">
+                            📖
+                        </div>
+                        <div>
+                            Pregled prevedenog EPUB-a bit će dostupan nakon
+                            završetka obrade.
+                        </div>
+                        <div
+                            style="
+                                font-size: 0.68rem;
+                                margin-top: 6px;
+                                color: var(--tx-3);
+                                font-family: var(--font-mono);
+                            "
+                        >
+                            Možeš i preuzeti EPUB i otvoriti ga u svom readeru.
+                        </div>
+                    </div>
+                    <div id="epub-reader-wrap" class="hidden">
+                        <div class="epub-reader-toolbar">
+                            <span id="epub-chapter-label">—</span>
+                            <button class="btn btn-sm" id="btn-prev-chapter">
+                                ◀
+                            </button>
+                            <button class="btn btn-sm" id="btn-next-chapter">
+                                ▶
+                            </button>
+                            <button class="btn btn-sm" id="btn-reload-epub">
+                                🔄
+                            </button>
+                        </div>
+                        <div id="epub-content"></div>
+                    </div>
+                </div>
+
+                <!-- Review tab (bez modala unutar panela!) -->
+                <div class="tab-panel" id="tab-review">
+                                            <!-- MULTI-SELECT TOOLBAR (Faza 2.4) -->
+                        <div id="review-multiselect-bar" class="review-multiselect-bar">
+                            <span class="review-multiselect-count" id="review-multi-count">0 označeno</span>
+                            <button class="review-select-all-btn" id="btn-review-select-all">☑ Sve</button>
+                            <button class="review-select-all-btn" id="btn-review-deselect-all">☐ Poništi</button>
+                            <button class="btn btn-sm btn-danger" id="btn-delete-selected" style="font-size:0.65rem;padding:3px 9px">
+                                🗑 Obriši označene (<span id="review-multi-count2">0</span>)
+                            </button>
+                        </div>
+<div
+                        style="
+                            display: grid;
+                            grid-template-columns: 200px 1fr;
+                            gap: 12px;
+                            height: 520px;
+                        "
+                    >
+                        <div
+                            id="review-list"
+                            style="
+                                overflow-y: auto;
+                                border-right: 1px solid var(--bd);
+                                padding-right: 8px;
+                            "
+                        >
+                            <div
+                                style="
+                                    color: var(--tx-3);
+                                    text-align: center;
+                                    padding: 20px;
+                                "
+                            >
+                                Kliknite tab za učitavanje...
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                display: flex;
+                                flex-direction: column;
+                                gap: 8px;
+                                min-height: 0;
+                            "
+                        >
+                            <div
+                                id="review-filename"
+                                style="
+                                    font-family: monospace;
+                                    font-size: 0.75rem;
+                                    color: var(--tx-2);
+                                    flex-shrink: 0;
+                                "
+                            >
+                                —
+                            </div>
+                            <div
+                                id="review-empty-banner"
+                                style="
+                                    display: none;
+                                    align-items: center;
+                                    gap: 10px;
+                                    padding: 10px 14px;
+                                    background: rgba(244, 63, 94, 0.12);
+                                    border: 1px solid rgba(244, 63, 94, 0.35);
+                                    border-radius: 8px;
+                                    font-family: monospace;
+                                    font-size: 0.78rem;
+                                    color: var(--rose);
+                                    flex-shrink: 0;
+                                "
+                            >
+                                ⚠ <strong>Blok nije preveden</strong> — upiši
+                                prijevod ručno ili pošalji na reprocessing.
+                            </div>
+                            <div
+                                id="review-legend"
+                                style="
+                                    display: none;
+                                    gap: 10px;
+                                    flex-wrap: wrap;
+                                    flex-shrink: 0;
+                                "
+                            >
+                                <span
+                                    style="
+                                        font-size: 0.62rem;
+                                        color: var(--tx-3);
+                                        font-family: monospace;
+                                        letter-spacing: 0.05em;
+                                        text-transform: uppercase;
+                                        align-self: center;
+                                    "
+                                    >Oznake:</span
+                                >
+                                <span
+                                    style="
+                                        background: rgba(244, 63, 94, 0.18);
+                                        border: 1px solid rgba(244, 63, 94, 0.4);
+                                        color: var(--rose);
+                                        padding: 2px 7px;
+                                        border-radius: 4px;
+                                        font-size: 0.65rem;
+                                        font-family: monospace;
+                                    "
+                                    >EN riječ</span
+                                >
+                                <span
+                                    style="
+                                        background: rgba(245, 158, 11, 0.18);
+                                        border: 1px solid
+                                            rgba(245, 158, 11, 0.4);
+                                        color: var(--amber);
+                                        padding: 2px 7px;
+                                        border-radius: 4px;
+                                        font-size: 0.65rem;
+                                        font-family: monospace;
+                                    "
+                                    >Anglicizam</span
+                                >
+                                <span
+                                    style="
+                                        background: rgba(99, 102, 241, 0.18);
+                                        border: 1px solid
+                                            rgba(99, 102, 241, 0.4);
+                                        color: var(--accent);
+                                        padding: 2px 7px;
+                                        border-radius: 4px;
+                                        font-size: 0.65rem;
+                                        font-family: monospace;
+                                    "
+                                    >Neprirodan red</span
+                                >
+                            </div>
+                            <div
+                                id="review-preview-panel"
+                                style="
+                                    display: none;
+                                    flex: 0 0 auto;
+                                    max-height: 160px;
+                                    overflow-y: auto;
+                                    background: var(--bg-2);
+                                    border: 1px solid var(--bd);
+                                    border-radius: 8px;
+                                    padding: 10px 12px;
+                                    font-family: monospace;
+                                    font-size: 0.78rem;
+                                    line-height: 1.7;
+                                    color: var(--tx-1);
+                                    white-space: pre-wrap;
+                                    word-break: break-word;
+                                "
+                            ></div>
+                            <textarea
+                                id="review-text"
+                                style="
+                                    flex: 1;
+                                    background: var(--bg-2);
+                                    border: 1px solid var(--bd);
+                                    border-radius: 8px;
+                                    color: var(--tx-1);
+                                    padding: 10px;
+                                    font-family: monospace;
+                                    font-size: 0.78rem;
+                                    resize: none;
+                                    min-height: 0;
+                                "
+                            ></textarea>
+                            <div
+                                style="
+                                    display: flex;
+                                    gap: 4px;
+                                    flex-shrink: 0;
+                                    flex-wrap: wrap;
+                                    align-items: center;
+                                "
+                            >
+                                <button
+                                    class="btn btn-sm"
+                                    id="btn-tab-prev-review"
+                                >
+                                    ◀
+                                </button>
+                                <button
+                                    class="btn btn-sm"
+                                    id="btn-tab-next-review"
+                                >
+                                    ▶
+                                </button>
+                                <button
+                                    class="btn btn-sm btn-primary"
+                                    id="btn-save-review-tab"
+                                >
+                                    💾 Sačuvaj
+                                </button>
+                                <span
+                                    id="review-hint-count"
+                                    style="
+                                        font-family: monospace;
+                                        font-size: 0.65rem;
+                                        color: var(--tx-3);
+                                        margin-left: 4px;
+                                    "
+                                ></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expert tab (Fleet + Audit + Keys) -->
+                <div class="tab-panel" id="tab-expert">
+                    <div
+                        style="display: flex; flex-direction: column; gap: 16px"
+                    >
+                        <div>
+                            <div
+                                style="
+                                    font-size: 0.72rem;
+                                    font-weight: 700;
+                                    letter-spacing: 0.1em;
+                                    text-transform: uppercase;
+                                    color: var(--tx-3);
+                                    margin-bottom: 8px;
+                                "
+                            >
+                                🛡 Fleet — detalji po provajderu
+                            </div>
+                            <div id="expert-fleet-container">
+                                <div
+                                    style="
+                                        text-align: center;
+                                        padding: 20px;
+                                        color: var(--tx-3);
+                                    "
+                                >
+                                    Učitavam fleet...
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div
+                                style="
+                                    font-size: 0.72rem;
+                                    font-weight: 700;
+                                    letter-spacing: 0.1em;
+                                    text-transform: uppercase;
+                                    color: var(--tx-3);
+                                    margin-bottom: 8px;
+                                "
+                            >
+                                📋 Sistemski dnevnik
+                            </div>
+                            <div class="audit-log" id="audit-log">
+                                <span style="color: var(--tx-3)"
+                                    >Sistem spreman.</span
+                                >
+                            </div>
+                            <div id="audit-scroll-indicator">
+                                <span>⏸ Autoscroll pauziran</span>
+                                <button
+                                    id="btn-audit-resume"
+                                    style="
+                                        background: rgba(245, 158, 11, 0.2);
+                                        border: 1px solid
+                                            rgba(245, 158, 11, 0.4);
+                                        color: var(--amber);
+                                        border-radius: 4px;
+                                        padding: 2px 8px;
+                                        cursor: pointer;
+                                        font-size: 0.65rem;
+                                    "
+                                >
+                                    ↓ Na kraj
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <div
+                                style="
+                                    font-size: 0.72rem;
+                                    font-weight: 700;
+                                    letter-spacing: 0.1em;
+                                    text-transform: uppercase;
+                                    color: var(--tx-3);
+                                    margin-bottom: 8px;
+                                "
+                            >
+                                🔑 API ključevi
+                            </div>
+                            <div class="keys-add-form">
+                                <select
+                                    id="key-provider-select"
+                                    style="flex: 1; min-width: 120px"
+                                >
+                                    <option value="">
+                                        — Odaberi provajdera —
+                                    </option>
+                                    <option value="GEMINI">♊ GEMINI</option>
+                                    <option value="GROQ">⚡ GROQ</option>
+                                    <option value="CEREBRAS">
+                                        🔬 CEREBRAS
+                                    </option>
+                                    <option value="MISTRAL">💫 MISTRAL</option>
+                                    <option value="SAMBANOVA">
+                                        🧠 SAMBANOVA
+                                    </option>
+                                    <option value="OPENROUTER">
+                                        🔀 OPENROUTER
+                                    </option>
+                                    <option value="COHERE">🌐 COHERE</option>
+                                    <option value="TOGETHER">
+                                        🤝 TOGETHER
+                                    </option>
+                                    <option value="CHUTES">🪣 CHUTES</option>
+                                    <option value="HUGGINGFACE">
+                                        🤗 HUGGINGFACE
+                                    </option>
+                                    <option value="KLUSTER">🔗 KLUSTER</option>
+                                </select>
+                                <input
+                                    type="password"
+                                    id="key-value-input"
+                                    placeholder="Upiši API ključ"
+                                    class="key-input"
+                                />
+                                <button
+                                    class="btn btn-primary btn-sm"
+                                    id="btn-add-key"
+                                >
+                                    ➕ Dodaj
+                                </button>
+                            </div>
+                            <div id="keys-list-container">
+                                <div
+                                    style="
+                                        color: var(--tx-3);
+                                        font-size: 0.75rem;
+                                    "
+                                >
+                                    Učitavam ključeve...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /.card tabs -->
+        </div>
+        <!-- /#app -->
+
+        <!-- Ispravljena putanja do main.js -->
+        <script src="/static/js/main.js"></script>
+
+        
+        
+
+    <!-- REVIEW MODAL - USKLAĐEN -->
+    <div id="review-modal" class="modal-overlay" style="display:none; z-index:99999;">
+        <div class="review-modal-container" style="padding:14px; gap:10px; max-height:90vh; overflow-y:auto;">
+            <div class="review-modal-header" style="padding:10px 14px; gap:8px;">
+                <h2 class="review-modal-title" style="overflow:hidden; word-break:break-word; white-space:normal; flex:1; min-width:0;">
+                    ✍️ <span id="review-modal-stem" class="review-modal-stem" style="word-break:break-all; overflow-wrap:anywhere;">—</span>
+                </h2>
+                <button id="btn-close-review-modal" class="review-modal-close" style="flex-shrink:0; margin-left:8px;">✕</button>
+            </div>
+            <div class="review-modal-nav">
+                <button id="btn-modal-prev-review" class="btn-rev btn-rev-secondary">◀ Prethodni</button>
+                <button id="btn-modal-next-review" class="btn-rev btn-rev-secondary">Sljedeći ▶</button>
+            </div>
+            <textarea id="review-textarea" class="review-modal-textarea" placeholder="Učitavam prijevod..."></textarea>
+            <div class="review-modal-actions">
+                <button id="btn-save-review" class="btn-rev btn-rev-primary review-modal-save">💾 Sačuvaj</button>
+                <button id="btn-delete-empty-block" class="btn-rev btn-rev-danger review-modal-delete">🗑 Obriši</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
