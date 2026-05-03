@@ -50,3 +50,4 @@ PROJEKAT_KOMPLETAN_KOD_*.txt
 env
 *.bak_*
 *.backup_*
+node_modules/
