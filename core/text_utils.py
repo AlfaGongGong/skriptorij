@@ -204,20 +204,36 @@ def _post_process_tipografija(tekst: str) -> str:
     """
     # Tri tačke
     tekst = re.sub(r"(?<!\.)\.\.\.(?!\.)", "…", tekst)
-    tekst = re.sub(r"(?<![.\…])\.\.(?![.\…])", ".", tekst)
+    tekst = re.sub(r"(?<![.\u2026])\.\.(?![.\u2026])", ".", tekst)
 
-    # Dijalog em-crtica
+    # Četiri+ tačke → …
+    tekst = re.sub(r"\.{4,}", "…", tekst)
+
+    # Dijalog em-crtica — na početku linije
     tekst = re.sub(r"(?m)^\s*--\s*", "— ", tekst)
-    tekst = re.sub(r"(?m)^\s*-\s+(?=[A-ZČĆŠŽĐ])", "— ", tekst)
+    tekst = re.sub(r"(?m)^\s*-\s+(?=[A-ZČĆŠŽĐ\u201e\"])", "— ", tekst)
+
+    # Em-crtica mid-sentence: " -- " ili "--" između slova/zareza → " — "
+    tekst = re.sub(r"(?<=[^\s\n])--(?=[^\s\n])", "—", tekst)
+    tekst = re.sub(r"\s+--\s+", " — ", tekst)
 
     # En-crtica za raspone brojeva
     tekst = re.sub(r"(\d)\s*-\s*(\d)", r"\1–\2", tekst)
 
-    # Em-crtica bez razmaka → s razmacima
-    tekst = re.sub(r"(?<=[^\s\n])—(?=[^\s\n])", " — ", tekst)
+    # Em-crtica bez razmaka → s razmacima (ne na početku linije)
+    tekst = re.sub(r"(?<=[^\s\n\u2014])—(?=[^\s\n\u2014])", " — ", tekst)
+
+    # Navodnici: ASCII "..." → BS/HR standard „..." u tekstualnom sadržaju
+    # Isključuje HTML atribute (ne smije biti < > unutar navodnika)
+    tekst = re.sub(r'"([^"<>\n\r]{1,400})"', r'„\1"', tekst)
+    # Zamijeni zaostale dvostruke navodnike koji nisu dio HTML-a
+    tekst = re.sub(r'\u201c([^"\u201c\u201d<>\n\r]{1,400})\u201d', r'„\1"', tekst)
 
     # Whitespace ispred interpunkcije
     tekst = re.sub(r"\s+([,;:!?])", r"\1", tekst)
+
+    # Dvostruki razmaci → jedan
+    tekst = re.sub(r"  +", " ", tekst)
 
     return tekst
 
@@ -231,6 +247,7 @@ def _automatska_korekcija(tekst: str) -> str:
     # NAPOMENA: korekcije se primjenjuju samo na text nodove, HTML tagovi ostaju
     def _korigiraj_cist(cist: str) -> str:
         zamjene = [
+            # ── Modalni kalkovi (da + prezent → infinitiv) ──────────────────
             (r"\bbio\s+je\s+u\s+stanju\s+da\b",         "mogao je"),
             (r"\bbila\s+je\s+u\s+stanju\s+da\b",         "mogla je"),
             (r"\bnije\s+bio\s+u\s+mogu[ćc]nosti\b",      "nije mogao"),
@@ -238,9 +255,34 @@ def _automatska_korekcija(tekst: str) -> str:
             (r"\buspio\s+je\s+da\s+uradi\b",              "uspio je uraditi"),
             (r"\bpokušao\s+je\s+da\b",                    "pokušao je"),
             (r"\bpokušala\s+je\s+da\b",                   "pokušala je"),
+            (r"\bodlučio\s+je\s+da\b",                    "odlučio je"),
+            (r"\bodlučila\s+je\s+da\b",                   "odlučila je"),
+            (r"\bhtio\s+je\s+da\b",                       "htio je"),
+            (r"\bhtjela\s+je\s+da\b",                     "htjela je"),
+            (r"\bmorao\s+je\s+da\b",                      "morao je"),
+            (r"\bmorala\s+je\s+da\b",                     "morala je"),
+            (r"\bmorao\s+sam\s+da\b",                     "morao sam"),
+            (r"\bmorala\s+sam\s+da\b",                    "morala sam"),
+            (r"\bznao\s+je\s+da\b\s+(?=\w+i\b)",         "znao je"),
+            # ── Srpski oblici → HR ───────────────────────────────────────────
+            (r"\bsaglasan\b",                              "suglasan"),
+            (r"\bsaglasnost\b",                            "suglasnost"),
+            (r"\bpreduzeti\b",                             "poduzeti"),
+            (r"\bpreduzeo\b",                              "poduzeo"),
+            (r"\bpreduzeće\b",                             "poduzeće"),
+            (r"\bpreduzima\b",                             "poduzima"),
+            (r"\buočio\s+je\s+da\b",                      "uočio je kako"),
+            # ── Fraze/kalkovi ─────────────────────────────────────────────────
             (r"\bu\s+pogledu\s+toga\b",                   "što se toga tiče"),
             (r"\bimati\s+u\s+vidu\b",                     "imati na umu"),
             (r"\bna\s+kraju\s+krajeva\b",                 "naposljetku"),
+            (r"\bu\s+cilju\s+toga\s+da\b",               "kako bi"),
+            (r"\bs\s+ciljem\s+da\b",                      "s namjerom da"),
+            (r"\bu\s+smislu\s+toga\b",                    "u tom smislu"),
+            (r"\bkao\s+rezultat\s+toga\b",               "stoga"),
+            (r"\bprovesti\s+u\s+djelo\b",                "ostvariti"),
+            (r"\bkoristeć[ia]\s+se\b",                    "koristeći"),
+            (r"\bod\s+strane\s+(\w+)a\b",                r"od \1a"),  # samo glajšanje
         ]
         for pattern, zamjena in zamjene:
             cist = re.sub(pattern, zamjena, cist, flags=re.IGNORECASE)
