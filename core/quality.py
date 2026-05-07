@@ -185,7 +185,9 @@ def _izracunaj_heuristicki_score(tekst: str) -> tuple[float, list[str]]:
         razlozi.append("Višestruke tačke (elipsa?)")
 
     # ── Finalna ocjena ───────────────────────────────────────────────────────
-    ocjena = max(1.0, min(10.0, 9.2 - kazne))
+    # Base 9.8: savršeno čist tekst (nula grešaka) dobija 9.8 heuristički.
+    # Ostavlja 0.2 "prostora" za kompozitni AI uplift do 10.0.
+    ocjena = max(1.0, min(10.0, 9.8 - kazne))
 
     if not razlozi and ocjena >= 7.5:
         razlozi.append("Bez heurističkih problema")
@@ -349,11 +351,15 @@ async def _scoruj_kvalitetu(
             )
 
     # ── 4. Kompozitni score ───────────────────────────────────────────────────
+    # Težine: AI 75% / heuristika 25%.
+    # Razlog: heuristika hvata samo vidljive greške (EN ostatci, kalkovi, tipografija).
+    # AI ocjenjuje književni kvalitet, stil i nijanse — to je dominantni signal.
+    # Za 9.9: heur=9.8 (nula grešaka) + ai=9.9 → 9.8*0.25 + 9.9*0.75 = 9.875 ≈ 9.9 ✓
     if ai_score is not None:
-        kompozitni = round(heur_score * 0.35 + ai_score * 0.65, 1)
+        kompozitni = round(heur_score * 0.25 + ai_score * 0.75, 1)
     else:
-        # Bez AI potvrde — konzervativniji (ne kažnjavamo previše, samo nismo sigurni)
-        kompozitni = round(heur_score * 0.85, 1)
+        # Bez AI potvrde — blago konzervativno (ne kažnjavamo previše)
+        kompozitni = round(heur_score * 0.90, 1)
 
     kompozitni -= relektura_kazna
     return round(max(1.0, min(10.0, kompozitni)), 1)

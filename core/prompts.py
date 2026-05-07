@@ -32,18 +32,27 @@ PRAVILA (sva obavezna):
    "bio je u stanju da"→"mogao je" | "uspio je da uradi"→"uspio je uraditi"
    "nije bio u mogućnosti"→"nije mogao" | pasiv→aktiv gdje zvuči bolje
    Varij dijalog: reče/odvrati/promrmlja/upita/šapnu/dobaci
+   KRITIČNO: NIKAD "glagol + da + prezent" — uvijek infinitiv!
+   Ispravno: "pokušao je kazati" NE "pokušao je da kaže"
+   Ispravno: "uspio je pobjeći" NE "uspio je da pobjegne"
 
 3. KNJIŽEVNI STIL:
    Ritam: izmjenjuj kratke i duge rečenice
    Epiteti: "rekao tiho"→"prošaptao" | "hodao sporo"→"vukao se"
    Vokabular: bogat, raznovrstan — nikad ista oznaka dva puta u odlomku
 
-4. GRAMATIKA:
+4. GRAMATIKA I IJEKAVICA (obavezna!):
    Futur: "radit ću" | Kondicional: "radio bih"
    Zarezi ispred: koji/koja/koje/što/jer/da
-   Navodnici: „ovako" | Dijalog: — em-crtica | Tri tačke: … (U+2026)
+   IJEKAVICA OBAVEZNA: "lijepo" ne "lepo" | "bijel" ne "beo" | "vidjeti" ne "videti"
+   Srpski oblici ZABRANJENI: preduzeti→poduzeti | saglasan→suglasan | preduzimati→poduzimati
 
-5. HTML: Zadrži SVE tagove tačno (<p>, <em>, <i>, <b>, <br>)
+5. TIPOGRAFIJA (obavezno!):
+   Navodnici: „ovako" (U+201E otvara, U+201C zatvara) — NIKAD ASCII "ovako"
+   Dijalog: — em-crtica (U+2014) | Tri tačke: … (U+2026, jedan znak)
+   Nikad razmak ispred interpunkcije: točno, ne točno .
+
+6. HTML: Zadrži SVE tagove tačno (<p>, <em>, <i>, <b>, <br>)
 
 IZLAZ: SAMO finalni tekst. Nula komentara. Nula uvoda. Nula JSON omotača.
 """
@@ -84,19 +93,24 @@ KONTEKST: {knjiga_kontekst} | TIP: {tip_bloka}
 {tip_bloka_instrukcije}
 STILSKI VODIC: {stilski_vodic}
 GLOSAR (ne mijenjaj nikad): {glosar_injekcija}
-PRETHODNI ODLOMAK: "{prev_kraj}"
+PRETHODNI ODLOMAK: „{prev_kraj}"
 KONTEKST POGLAVLJA: {chapter_summary}
 
-PRAVILA:
+PRAVILA (sva obavezna):
 1. SADRZAJ — svaka informacija, nijansa i emocija mora ostati. Nista ne dodajes, nista ne brisas.
 2. KALKOVI — ispravi odmah:
    "bio je u stanju da"→"mogao je" | "uspio je da uradi"→"uspio je uraditi"
-   "nije bio u mogucnosti"→"nije mogao" | pasiv→aktiv gdje zvuci bolje
+   "nije bio u mogucnosti"→"nije mogao" | "odlucio je da"→"odlucio je" + infinitiv
+   KRITIČNO: NIKAD "glagol + da + prezent" — uvijek infinitiv!
+   PRIMJERI: "pokušao je da kaže"→"pokušao je kazati" | "htio je da ode"→"htio je otići"
    "rekao je" svaki put→varij: rece/odvrati/promrmlja/upita/uzviknu/prosaputa/dobaci
-3. STIL — bogat vokabular, izmjenjuj kratke i duge recenice, nikad ista oznaka dva puta u odlomku.
-4. GRAMATIKA — futur: "radit cu" | kondicional: "radio bih" | zarezi ispred: koji/koja/sto/jer/da
-5. TIPOGRAFIJA — navodnici: "ovako" | dijalog: — em-crtica | tri tacke: … | bez razmaka ispred znaka
-6. HTML — zadrzi SVE tagove tacno (<p>, <em>, <i>, <b>, <br>). Ne mijenjaj strukturu.
+3. IJEKAVICA — obavezno:
+   "vidjeti" ne "videti" | "lijepo" ne "lepo" | "bijel" ne "beo" | "tijelo" ne "telo"
+   Srpski oblici ZABRANJEN: preduzeti→poduzeti | saglasan→suglasan
+4. STIL — bogat vokabular, izmjenjuj kratke i duge recenice, nikad ista oznaka dva puta u odlomku.
+5. GRAMATIKA — futur: "radit cu" | kondicional: "radio bih" | zarezi ispred: koji/koja/sto/jer/da
+6. TIPOGRAFIJA — navodnici: „ovako" (U+201E/U+201C) NIKAD ASCII "ovako" | dijalog: — em-crtica (U+2014) | tri tacke: … (U+2026) | bez razmaka ispred znaka
+7. HTML — zadrzi SVE tagove tacno (<p>, <em>, <i>, <b>, <br>). Ne mijenjaj strukturu.
 
 Vrati ISKLJUCIVO JSON: {{"finalno_polirano": "LEKTORIRANI_TEKST_OVDJE"}}
 """
@@ -166,10 +180,18 @@ PROVJERI I ISPRAVI SVAKU KATEGORIJU:
 2. GLAGOLSKA VREMENA I VIDOVI
    - Futur I: "radit ću"; kondicional I: "radio bih"
    - Glagolski vidovi: svršeni/nesvršeni — dosljednost kroz odlomak
-   - GREŠKA: modalni glagol + "da" + prezent -> modal + infinitiv
-     Primjeri: "uspio je da uradi" -> "uspio je uraditi"; "pokušao je da kaže" -> "pokušao je kazati"
+   - KRITIČNO — modalni glagol + "da" + prezent → modal + infinitiv UVIJEK:
+     "uspio je da uradi" → "uspio je uraditi"
+     "pokušao je da kaže" → "pokušao je kazati"
+     "odlučio je da ode" → "odlučio je otići"
+     "htio je da pita" → "htio je pitati"
 
-3. INTERPUNKCIJA
+3. IJEKAVICA (obavezna!)
+   - "vidjeti" ne "videti" | "lijepo" ne "lepo" | "bijel" ne "beo" | "tijelo" ne "telo"
+   - "vjetar" ne "vetar" | "djeca" ne "deca" | "mjesto" ne "mesto"
+   - ZABRANJENA srpska leksika: preduzeti→poduzeti | saglasan→suglasan | preduzimati→poduzimati
+
+4. INTERPUNKCIJA
    - Zarez OBAVEZNO ispred: koji/koja/koje/što/jer/da (zavisna surečenica)
    - Zarez NE ispred "i" između dviju surečenica (osim nabrajanja 3+)
    - Em-crtica (—) za dijalog i stanku; en-crtica (–) za raspon (str. 10–15)
@@ -177,11 +199,12 @@ PROVJERI I ISPRAVI SVAKU KATEGORIJU:
    - Nikad razmak ISPRED znaka interpunkcije
    - Nikad dvostruki razmaci
 
-4. NAVODNICI
+5. NAVODNICI (kritično!)
    - Otvaranje: „ (U+201E — na dnu), zatvaranje: " (U+201C — gore lijevo)
+   - ZABRANJEN ASCII: "ovako" ili 'ovako' — zamijeni s „ovako"
    - Ugniježđeni navodnici: ‚unutarnji' (U+201A i U+2018)
 
-5. KONZISTENTNOST
+6. KONZISTENTNOST
    - Imena likova i termini: identični kroz cijeli tekst
    - Titule i forme obraćanja: dosljedne
 

@@ -38,12 +38,12 @@ MODEL_MAP = {
 }
 
 TEMP_MAP = {
-    "PREVODILAC":      0.32,
-    "LEKTOR":          0.45,
+    "PREVODILAC":      0.52,
+    "LEKTOR":          0.62,
     "KOREKTOR":        0.15,
     "VALIDATOR":       0.05,
     "GUARDIAN":        0.10,
-    "POLISH":          0.68,
+    "POLISH":          0.72,
     "ANALIZA":         0.10,
     "CHAPTER_SUMMARY": 0.30,
     "GLOSAR_UPDATE":   0.10,
