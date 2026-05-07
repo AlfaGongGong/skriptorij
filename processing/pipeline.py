@@ -209,7 +209,21 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             )
             finalno = chunk
         else:
-            finalno = _post_process_tipografija(cist_priv)
+            finalno = cist_priv
+
+        # Korak 3.5: KOREKTOR — gramatika, ijekavica, interpunkcija, navodnici
+        kor_sys = self._get_korektor_prompt()
+        raw_kor, prov_kor = await self._call_ai_engine(
+            finalno, chunk_idx, uloga="KOREKTOR",
+            filename=file_name, sys_override=kor_sys, tip_bloka=tip_bloka,
+        )
+        if raw_kor:
+            kor_cist = _smart_extract(raw_kor)
+            if kor_cist and not _je_placeholder_lokalni(kor_cist) and not _detektuj_halucinaciju(finalno, kor_cist, "LEKTOR"):
+                finalno = kor_cist
+                prov_l = f"{prov_l}+KOR/{prov_kor}"
+
+        finalno = _post_process_tipografija(finalno)
 
         # Korak 4: Spremi .lektura.chk i finalni .chk
         _chk_write(self, file_name, chunk_idx, finalno, "lektura")
@@ -289,17 +303,28 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     if not finalno:
         finalno = sirovo
 
-    # Korak 4: Rescue ako ima previše engleskog
-    if _detektuj_en_ostatke(finalno) > 0.15:
+    # Korak 4: Rescue ako ima previše engleskog (threshold snižen na 0.10)
+    if _detektuj_en_ostatke(finalno) > 0.10:
         spas, _ = await _spasi_od_sirovog(
             self, sirovo, chunk, chunk_idx, file_name,
-            prev_ctx, rel_glosar, "en>15%", tip_bloka,
+            prev_ctx, rel_glosar, "en>10%", tip_bloka,
         )
         if spas:
             finalno = spas
 
     if _detektuj_halucinaciju(chunk, finalno):
         self.log(f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju", "warning")
+
+    # Korak 4.5: KOREKTOR — gramatika, ijekavica, interpunkcija, navodnici
+    kor_sys = self._get_korektor_prompt()
+    raw_kor, prov_kor = await self._call_ai_engine(
+        finalno, chunk_idx, uloga="KOREKTOR",
+        filename=file_name, sys_override=kor_sys, tip_bloka=tip_bloka,
+    )
+    if raw_kor:
+        kor_cist = _smart_extract(raw_kor)
+        if kor_cist and not _je_placeholder_lokalni(kor_cist) and not _detektuj_halucinaciju(finalno, kor_cist, "LEKTOR"):
+            finalno = kor_cist
 
     finalno = _post_process_tipografija(_agresivno_cisti(finalno))
 
@@ -314,7 +339,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     self.stvarno_prevedeno_u_sesiji += 1
 
     await _quality_scoring(self, finalno, chunk, chunk_idx, file_name,
-                            tip_bloka, f"{prov1}→{prov2}",
+                            tip_bloka, f"{prov1}→{prov2}→KOR",
                             tip_ocjenjivanja="prevod")
 
     aud = (
@@ -323,7 +348,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         f"HR: {BeautifulSoup(finalno, 'html.parser').get_text()[:50]}…"
     )
     self.log("", "accordion", en_text=aud)
-    return finalno, f"{prov1}→{prov2}"
+    return finalno, f"{prov1}→{prov2}→KOR"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

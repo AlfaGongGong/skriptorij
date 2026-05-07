@@ -9,6 +9,7 @@ from flask import (
     request, jsonify, send_file,
 )
 from api_fleet import FleetManager
+from utils.file_utils import secure_filename as _secure_filename
 
 # ── Fleet singleton ───────────────────────────────────────────────────────────
 _fleet_fallback = FleetManager(config_path="dev_api.json")
@@ -170,10 +171,11 @@ def create_app() -> Flask:
             ext = Path(f.filename).suffix.lower()
             if ext not in {".epub", ".mobi"}:
                 return jsonify({"error": f"Nepodržani format: {ext}"}), 400
-            dest = Path(INPUT_DIR) / f.filename
+            safe_name = _secure_filename(f.filename)
+            dest = Path(INPUT_DIR) / safe_name
             dest.parent.mkdir(parents=True, exist_ok=True)
             f.save(dest)
-            return jsonify({"ok": True, "name": f.filename, "path": str(dest)})
+            return jsonify({"ok": True, "name": safe_name, "path": str(dest)})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
