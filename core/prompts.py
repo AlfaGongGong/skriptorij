@@ -41,10 +41,10 @@ PRAVILA (sva obavezna):
    Epiteti: "rekao tiho"→"prošaptao" | "hodao sporo"→"vukao se"
    Vokabular: bogat, raznovrstan — nikad ista oznaka dva puta u odlomku
 
-4. GRAMATIKA I IJEKAVICA:
+4. GRAMATIKA I IJEKAVICA (obavezna!):
    Futur: "radit ću" | Kondicional: "radio bih"
    Zarezi ispred: koji/koja/koje/što/jer/da
-   OBAVEZNO IJEKAVICA: "lijepo" ne "lepo" | "bijel" ne "beo" | "vidjeti" ne "videti"
+   IJEKAVICA OBAVEZNA: "lijepo" ne "lepo" | "bijel" ne "beo" | "vidjeti" ne "videti"
    Srpski oblici ZABRANJENI: preduzeti→poduzeti | saglasan→suglasan | preduzimati→poduzimati
 
 5. TIPOGRAFIJA (obavezno!):
