@@ -13,6 +13,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from core.text_utils import (
     _agresivno_cisti,
+    _smart_extract,
     _post_process_tipografija,
     _detektuj_halucinaciju,
     _detektuj_en_ostatke,
@@ -147,7 +148,9 @@ async def retroaktivna_relektura_v10(
             p_lek, chunk_idx, uloga="LEKTOR",
             filename=file_name, sys_override=lek_sys, tip_bloka=tip_bloka,
         )
-        finalno = _agresivno_cisti(raw_l) if raw_l else old_text_raw
+        # B-retro FIX: _smart_extract pravilno parsira JSON {"finalno_polirano": "..."}
+        # _agresivno_cisti nije parsiralo JSON → pisalo je raw JSON u .chk
+        finalno = _smart_extract(raw_l) if raw_l else old_text_raw
 
         # B12 FIX: GUARDIAN i POLISH samo ako lektor zaista nešto promijenio
         # i ako tekst nije haluciniran
