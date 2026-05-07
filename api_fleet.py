@@ -135,6 +135,8 @@ class KeyState:
             return False
         # BUG#6 FIX: resetuj RPM prije provjere
         self._reset_rpm_if_needed()
+        if not isinstance(self.remaining_minute, int) or self.remaining_minute <= 0:
+            return False
         return True
 
     @property
@@ -650,7 +652,7 @@ GOOGLE_MODEL_POOL = [
     {"model": "gemma-3-27b-it",        "rpm": 30, "rpd": 14400},
     {"model": "gemma-3-12b-it",        "rpm": 30, "rpd": 14400},
     {"model": "gemma-3-4b-it",         "rpm": 30, "rpd": 14400},
-    {"model": "gemini-2.5-flash-lite", "rpm": 10, "rpd": 500},
+    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},
 ]
 
 
