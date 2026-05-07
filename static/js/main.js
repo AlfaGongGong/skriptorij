@@ -694,15 +694,16 @@ function updateStatus(s) {
 
     setVal("stat-engine", s.active_engine || "---");
     // FIX 1.2 — truncate long filename, show full in tooltip
-    (function() {
+    (function () {
         const raw = s.current_file || "---";
-        const el  = document.getElementById("stat-file");
+        if (s.current_file) window._currentBook = s.current_file;
+        const el = document.getElementById("stat-file");
         if (!el) return;
-        el.textContent = raw.length > 26
-            ? raw.slice(0, 11) + "…" + raw.slice(-11)
-            : raw;
-        el.title       = raw;
-        el.style.cssText += ";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:block;";
+        el.textContent =
+            raw.length > 26 ? raw.slice(0, 11) + "…" + raw.slice(-11) : raw;
+        el.title = raw;
+        el.style.cssText +=
+            ";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:block;";
     })();
     setVal("stat-ok", s.ok || "0 / 0");
     setVal("stat-skipped", s.skipped || "0");
@@ -871,14 +872,18 @@ function updateAuditLog(html) {
 function extractPreview(html) {
     // FIX 1.1 — vise paterna, fallback, nikad ne skriva ako ima sadrzaja
     const block = document.getElementById("live-preview-block");
-    const enEl  = document.getElementById("preview-en");
-    const hrEl  = document.getElementById("preview-hr");
+    const enEl = document.getElementById("preview-en");
+    const hrEl = document.getElementById("preview-hr");
     if (!block || !enEl || !hrEl) return;
 
     // Skini HTML tagove, normaliziraj whitespace
-    const flat = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const flat = html
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 
-    let mEn = null, mHr = null;
+    let mEn = null,
+        mHr = null;
 
     // Patern A — EN: ... HR:/BS: ...
     const pA = flat.match(/EN:\s*(.{5,220}?)(?=(?:HR|BS|BHS):|$)/i);
@@ -896,13 +901,17 @@ function extractPreview(html) {
 
     // Patern C — strelica →  (samo prijevod bez originala)
     if (!mHr) {
-        const pE = flat.match(/\u2192\s*([A-Z\u0160\u0110\u010c\u0106\u017d\"\'][^\u2192]{10,200})/);
+        const pE = flat.match(
+            /\u2192\s*([A-Z\u0160\u0110\u010c\u0106\u017d\"\'][^\u2192]{10,200})/
+        );
         if (pE) mHr = pE[1].trim().slice(0, 200);
     }
 
     // Patern D — zadnji log entry koji ima vise od 20 slova BHS abecede
     if (!mHr) {
-        const pF = flat.match(/([A-Z\u0160\u0110\u010c\u0106\u017da-z\u0161\u0111\u010d\u0107\u017e ,.!?]{20,200})\s*$/);
+        const pF = flat.match(
+            /([A-Z\u0160\u0110\u010c\u0106\u017da-z\u0161\u0111\u010d\u0107\u017e ,.!?]{20,200})\s*$/
+        );
         if (pF) mHr = pF[1].trim().slice(0, 200);
     }
 
@@ -910,7 +919,7 @@ function extractPreview(html) {
     if (mHr) hrEl.textContent = mHr;
 
     // Prikazi blok ako ima BILO STA korisnog
-    block.style.display = (mEn || mHr) ? "grid" : "none";
+    block.style.display = mEn || mHr ? "grid" : "none";
 
     // Ažuriraj EN label — ako nema originala, prikaži indikator
     const enLabel = document.getElementById("preview-en-label");
@@ -1218,7 +1227,6 @@ function switchTab(tabId) {
         loadKeys();
     }
     if (tabId === "tab-quality") loadQualityScores();
-    if (tabId === "tab-review") { loadReview(); }
     if (tabId === "tab-history") renderHistory();
     if (tabId === "tab-epub") loadEpubPreview();
 }
@@ -1293,7 +1301,6 @@ async function updateLiveQuality() {
         badge.classList.remove("has-data");
     }
 }
-const _markedForReview = new Set();
 
 function _getQualityGrade(avg) {
     if (avg >= 8.5)
@@ -1459,6 +1466,8 @@ async function loadQualityScores() {
     }
 }
 
+const _markedForReview = new Set();
+
 function _updateRefixBar() {
     const bar = document.getElementById("qs-refix-bar");
     const info = document.getElementById("qs-refix-info");
@@ -1466,7 +1475,9 @@ function _updateRefixBar() {
     const n = _markedForReview.size;
     if (n > 0) {
         if (bar) bar.style.display = "flex";
-        if (info) info.textContent = n + " blok" + (n === 1 ? "" : "a") + " oznaceno za relekturu";
+        if (info)
+            info.textContent =
+                n + " blok" + (n === 1 ? "" : "a") + " oznaceno za relekturu";
         if (btn) btn.classList.remove("hidden");
     } else {
         if (bar) bar.style.display = "none";
@@ -1474,20 +1485,24 @@ function _updateRefixBar() {
     }
     const qualBadge = document.getElementById("quality-badge");
     if (qualBadge) {
-        if (n > 0) { qualBadge.textContent = n; qualBadge.classList.remove("hidden"); }
-        else { qualBadge.classList.add("hidden"); }
+        if (n > 0) {
+            qualBadge.textContent = n;
+            qualBadge.classList.remove("hidden");
+        } else {
+            qualBadge.classList.add("hidden");
+        }
     }
 }
 
 function selectBadBlocks(tip) {
     const pills = document.querySelectorAll(".qs-block-pill[data-stem]");
-    pills.forEach(function(pill) {
+    pills.forEach(function (pill) {
         const m = pill.textContent.match(/[\d.]+$/);
         const score = m ? parseFloat(m[0]) : 10;
         let treba = false;
-        if (tip === "poor")     treba = score >= 4.0 && score < 6.5;
+        if (tip === "poor") treba = score >= 4.0 && score < 6.5;
         if (tip === "critical") treba = score < 4.0;
-        if (tip === "all")      treba = score < 6.5;
+        if (tip === "all") treba = score < 6.5;
         if (treba) {
             _markedForReview.add(pill.dataset.stem);
             pill.style.outline = "2px solid var(--amber)";
@@ -1495,9 +1510,17 @@ function selectBadBlocks(tip) {
     });
     const poorBox = document.getElementById("qs-box-poor");
     const critBox = document.getElementById("qs-box-critical");
-    if (poorBox) poorBox.classList.toggle("qs-selected", tip === "poor" || tip === "all");
-    if (critBox) critBox.classList.toggle("qs-selected", tip === "critical" || tip === "all");
-    document.querySelectorAll(".qs-blocks-grid.hidden").forEach(function(g) {
+    if (poorBox)
+        poorBox.classList.toggle(
+            "qs-selected",
+            tip === "poor" || tip === "all"
+        );
+    if (critBox)
+        critBox.classList.toggle(
+            "qs-selected",
+            tip === "critical" || tip === "all"
+        );
+    document.querySelectorAll(".qs-blocks-grid.hidden").forEach(function (g) {
         g.classList.remove("hidden");
     });
     _updateRefixBar();
@@ -1505,9 +1528,11 @@ function selectBadBlocks(tip) {
 
 function clearMarkedBlocks() {
     _markedForReview.clear();
-    document.querySelectorAll(".qs-block-pill[data-stem]").forEach(function(el) {
-        el.style.outline = "";
-    });
+    document
+        .querySelectorAll(".qs-block-pill[data-stem]")
+        .forEach(function (el) {
+            el.style.outline = "";
+        });
     const poorBox = document.getElementById("qs-box-poor");
     const critBox = document.getElementById("qs-box-critical");
     if (poorBox) poorBox.classList.remove("qs-selected");
@@ -1554,7 +1579,9 @@ async function sendMarkedForRefix() {
             .querySelectorAll(".qs-block-pill[data-stem]")
             .forEach(el => (el.style.outline = ""));
         document.getElementById("qs-box-poor")?.classList.remove("qs-selected");
-        document.getElementById("qs-box-critical")?.classList.remove("qs-selected");
+        document
+            .getElementById("qs-box-critical")
+            ?.classList.remove("qs-selected");
         _updateRefixBar();
         showDashboard();
     } catch (e) {
@@ -1568,7 +1595,9 @@ async function sendMarkedForRefix() {
 // ═══════════════════════════════════════════════════════════
 function refreshQualityBlock(stem, action) {
     // FIX FAZA2 refreshQualityBlock — potpuni DOM sync
-    const pill = document.querySelector(`.qs-block-pill[data-stem="${CSS.escape(stem)}"]`);
+    const pill = document.querySelector(
+        `.qs-block-pill[data-stem="${CSS.escape(stem)}"]`
+    );
 
     if (action === "deleted") {
         if (pill) {
@@ -1586,17 +1615,19 @@ function refreshQualityBlock(stem, action) {
     } else if (action === "fixed") {
         if (pill) {
             const blokNum = stem.split("_blok_")[1] || "?";
-            pill.className   = "qs-block-pill excellent";
+            pill.className = "qs-block-pill excellent";
             pill.style.outline = "2px solid var(--emerald)";
-            pill.title       = `${stem}: 10.0/10 — ručno sačuvano`;
-            pill.innerHTML   = `B${parseInt(blokNum) || blokNum} 10.0`;
-            const fileItem   = pill.closest(".qs-file-item");
+            pill.title = `${stem}: 10.0/10 — ručno sačuvano`;
+            pill.innerHTML = `B${parseInt(blokNum) || blokNum} 10.0`;
+            const fileItem = pill.closest(".qs-file-item");
             if (fileItem) _recalcFileAvg(fileItem);
         }
     }
 
     // Ažuriraj quality-badge na tabu
-    const badPills = document.querySelectorAll(".qs-block-pill.poor, .qs-block-pill.critical");
+    const badPills = document.querySelectorAll(
+        ".qs-block-pill.poor, .qs-block-pill.critical"
+    );
     const badge = document.getElementById("quality-badge");
     if (badge) {
         if (badPills.length > 0) {
@@ -1615,808 +1646,43 @@ function _recalcFileAvg(fileItem) {
     // Preračunaj prosječnu ocjenu fajla iz trenutnih pill-ova
     const pills = fileItem.querySelectorAll(".qs-block-pill");
     if (!pills.length) return;
-    let total = 0, count = 0;
+    let total = 0,
+        count = 0;
     pills.forEach(p => {
         // Izvuci broj iz teksta "B3 7.0"
         const m = p.textContent.match(/([\d.]+)\s*$/);
-        if (m) { total += parseFloat(m[1]); count++; }
+        if (m) {
+            total += parseFloat(m[1]);
+            count++;
+        }
     });
     if (!count) return;
     const avg = (total / count).toFixed(1);
     const avgEl = fileItem.querySelector(".qs-file-avg");
     if (avgEl) {
         avgEl.textContent = avg + "/10";
-        const color = avg >= 8.5 ? "var(--emerald)"
-                    : avg >= 6.5 ? "var(--accent-2)"
-                    : avg >= 4.0 ? "var(--amber)"
+        const color =
+            avg >= 8.5
+                ? "var(--emerald)"
+                : avg >= 6.5
+                  ? "var(--accent-2)"
+                  : avg >= 4.0
+                    ? "var(--amber)"
                     : "var(--rose)";
         avgEl.style.color = color;
     }
 }
 
-// ═══════════════ REVIZIJA ═══════════════════════════
-let _reviewItems = [],
-    _multiDeleteSet = new Set(),
-    _reviewIdx = 0;
-function _stripHtml(str) {
-    return str
-        .replace(/<[^>]+>/g, " ")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&nbsp;/g, " ")
-        .replace(/\s{2,}/g, " ");
-}
-const _EN_WHITELIST = new Set([
-    "laptop",
-    "tablet",
-    "smartphone",
-    "bluetooth",
-    "touch",
-    "router",
-    "modem",
-    "software",
-    "hardware",
-    "cloud",
-    "cookie",
-    "spam",
-    "phishing",
-    "login",
-    "logout",
-    "reset",
-    "update",
-    "upgrade",
-    "settings",
-    "interface",
-    "dashboard",
-    "plugin",
-    "widget",
-    "icon",
-    "avatar",
-    "emoji",
-    "gif",
-    "jpeg",
-    "png",
-    "cookie",
-    "cache",
-    "browser",
-    "server",
-    "hosting",
-    "domain",
-    "database",
-    "backup",
-    "encrypt",
-    // geografija/marke koje nemaju prevod
-    "wikipedia",
-    "google",
-    "facebook",
-    "instagram",
-    "twitter",
-    "youtube",
-    "whatsapp",
-    "telegram",
-    "spotify",
-    "netflix",
-    "amazon",
-    "paypal",
-    "bitcoin",
-    "ethereum",
-    "blockchain",
-    "mode",
-    "zoom",
-    "drag",
-    "drop",
-    "team",
-    "manager",
-    "coach",
-    "sport",
-    "golf",
-    "poker",
-    "jazz",
-    "rock",
-    "pop",
-    "bus",
-    "taxi",
-    "hotel",
-    "bar",
-    "pizza",
-    "pasta",
-    "espresso",
-    "latte",
-    "coca",
-    "okay",
-    "bye",
-    "wow",
-    "yes",
-    "no",
-    "hey",
-    "hi",
-    "oh",
-    "ah",
-    "hmm",
-    "err",
-    "uh",
-    "mr",
-    "mrs",
-    "dr",
-    "prof",
-    "vs",
-    "etc",
-    "aka",
-    "asap",
-    "fyi",
-    "diy",
-    "tv",
-    "pc",
-    "it",
-    "hr",
-    "bh",
-    "rs",
-    "eu",
-    "un",
-    "nato",
-    "cia",
-    "fbi",
-    "nba",
-    "nfl",
-    "u",
-    "i",
-    "a",
-    "o",
-    "s",
-    "k",
-    "z",
-    "bi",
-    "ga",
-    "mu",
-    "mi",
-    "ti",
-    "si",
-    "te",
-    "se",
-    "su",
-    "na",
-    "za",
-    "od",
-    "do",
-    "po",
-    "uz",
-    "iz",
-    "ni",
-    "li",
-    "pa",
-    "to",
-    "ta",
-    "taj",
-    "tog",
-    "tom",
-    "tek",
-    "vec",
-    "jos",
-    "bas",
-    "pak",
-    "jer",
-    "ali",
-    "ili",
-    "kad",
-    "ako",
-    "dok",
-    "sto",
-    "bez",
-    "nad",
-    "pod",
-    "pre",
-    "pri",
-    "sve",
-    "nit",
-    "sem",
-    "osim",
-    "kroz",
-    "radi",
-    "oko",
-    "iza",
-    "ispod",
-    "iznad",
-    "ima",
-    "nem",
-    "bio",
-    "bila",
-    "bilo",
-    "jes",
-    "sam",
-    "smo",
-    "ste",
-    "ce",
-    "ces",
-    "cemo",
-    "cete",
-    "da",
-    "ne",
-    "je",
-    "cu"
-]);
-const _BHS_SUFFIX_RE =
-    /(?:ić|čić|džić|šić|ski|ska|ske|sko|ški|šta|šte|štu|nja|nje|nji|nju|ost|ošću|osti|stvo|stava|anjem|enjem|avanjem|ivanjem|avati|ivati|ovati|irati|isati|ujući|avajući|avao|avala|avale|avali|ovala|ovale|ovali|ujem|uješ|ujemo|ujete|ujući|uje)[^a-zA-Z]?$/i;
-const _ANGLICIZMI_FRAZE = [
-    // ── Kalkulirani izrazi (calques) ─────────────────────────────────────────
-    { phrase: "u momentu",            reason: "Kalk — 'in the moment' → u trenutku" },
-    { phrase: "u ovom momentu",       reason: "Kalk → u ovom trenutku" },
-    { phrase: "dolazi sa",            reason: "Kalk — 'comes with' → dolazi uz / sadrži" },
-    { phrase: "ova knjiga je o",      reason: "Kalk — 'this book is about' → govori o" },
-    { phrase: "ja lično",             reason: "Kalk — 'personally, I' → osobno / lično (bez 'ja')" },
-    { phrase: "na kraju krajeva",     reason: "Kalk — 'at the end of the day'" },
-    { phrase: "napraviti razliku",    reason: "Kalk — 'make a difference' → promijeniti nešto" },
-    { phrase: "napraviti smisao",     reason: "Kalk — 'make sense' → ima smisla" },
-    { phrase: "praviti razliku",      reason: "Kalk — 'make a difference'" },
-    { phrase: "uzeti za gotovo",      reason: "Kalk — 'take for granted' → podrazumijevati" },
-    { phrase: "na kraju dana",        reason: "Kalk — 'at the end of the day' → naposljetku" },
-    { phrase: "napraviti odluku",     reason: "Kalk — 'make a decision' → donijeti odluku" },
-    { phrase: "donijeti odluku",      reason: "Ispravno ✓ — samo provjeri kontekst" },
-    { phrase: "napraviti grešku",     reason: "Kalk — 'make a mistake' → pogriješiti / napraviti pogrešku" },
-    { phrase: "imati smisla",         reason: "Kalk — 'to make sense' — ok ako znači 'ima logike'" },
-    { phrase: "imati svrhu",          reason: "Kalk — 'to have a purpose' → služiti svrsi" },
-    { phrase: "uzeti akciju",         reason: "Kalk — 'take action' → djelovati / poduzeti mjere" },
-    { phrase: "dati sve od sebe",     reason: "Kalk — 'give it your all' — prihvatljivo, ali pazi" },
-    { phrase: "biti tu za",           reason: "Kalk — 'be there for' → podržati / stajati uz" },
-    { phrase: "ostati jak",           reason: "Kalk — 'stay strong' → ostati čvrst / izdržati" },
-    { phrase: "kretati se naprijed",  reason: "Kalk — 'move forward' → napredovati / ići dalje" },
-    { phrase: "idi naprijed",         reason: "Kalk — 'go ahead' → slobodno / nastavi" },
-    { phrase: "na kraju dana",        reason: "Kalk — 'at the end of the day'" },
-    { phrase: "otvoriti vrata",       reason: "Metafora 'open doors' — ok, ali pazi na pretjeranu upotrebu" },
-    { phrase: "zatvori vrata",        reason: "Metafora — provjeris kontekst" },
-    { phrase: "uzeti kontrolu",       reason: "Kalk — 'take control' → preuzeti kontrolu" },
-    { phrase: "dati smisao",          reason: "Kalk — 'give meaning' → pridati smisao" },
-    { phrase: "izgubiti fokus",       reason: "Anglicizam — fokus/focus → izgubiti nit / koncentraciju" },
-    { phrase: "ostati fokusiran",     reason: "Anglicizam — → ostati usredotočen / sabran" },
-    { phrase: "biti inspirisan",      reason: "Srbizam/anglicizam → biti inspiriran" },
-    { phrase: "biti motivisan",       reason: "Srbizam → biti motiviran" },
-    { phrase: "biti šokiran",         reason: "Srbizam → biti šokiran (BS ok) ili zapanjen" },
-    { phrase: "super stvar",          reason: "Anglicizam 'super' → odlično / izvrsno" },
-    { phrase: "cool stvar",           reason: "Anglicizam → zanimljivo / lijepo" },
-    { phrase: "biti cool",            reason: "Anglicizam → biti kul / dobar / u redu" },
-    { phrase: "okej",                 reason: "Anglicizam — u redu / dobro (okej prihvatljivo u razgovoru)" },
-
-    // ── Pogrešne kolokacije ───────────────────────────────────────────────────
-    { phrase: "uraditi razliku",      reason: "Pogrešna kolokacija → napraviti razliku / promijeniti situaciju" },
-    { phrase: "uraditi grešku",       reason: "Pogrešna kolokacija → pogriješiti" },
-    { phrase: "raditi grešku",        reason: "Pogrešna kolokacija → griješiti / praviti greške" },
-    { phrase: "uzeti odluku",         reason: "Pogrešna kolokacija → donijeti odluku" },
-    { phrase: "dati odluku",          reason: "Pogrešna kolokacija → donijeti odluku" },
-    { phrase: "staviti napor",        reason: "Kalk 'put effort' → uložiti napor / trud" },
-    { phrase: "napraviti napor",      reason: "Kalk 'make an effort' → uložiti napor" },
-    { phrase: "igrati ulogu",         reason: "Kalk 'play a role' — ok ali: imati ulogu / biti važan" },
-    { phrase: "odigrati ulogu",       reason: "Prihvatljivo ✓" },
-    { phrase: "baci svjetlo",         reason: "Kalk 'shed light' → rasvijetliti / pojasniti" },
-    { phrase: "baciti svjetlo",       reason: "Kalk 'shed light' → rasvijetliti / pojasniti" },
-    { phrase: "u svjetlu toga",       reason: "Kalk 'in light of' → s obzirom na to" },
-    { phrase: "dovesti do zaključka", reason: "Kalk 'lead to the conclusion' → zaključiti / izvesti zaključak" },
-    { phrase: "na osnovu toga",       reason: "Srbizam → na temelju toga / na osnovi toga (BS: on osnovu ok)" },
-    { phrase: "u skladu sa tim",      reason: "Srbizam → u skladu s time" },
-    { phrase: "iz tog razloga",       reason: "Potencijalni kalk — ok, ali može biti: stoga / zato" },
-
-    // ── Genitivna metafora (imati X) ─────────────────────────────────────────
-    { phrase: "imati problema",       reason: "Genitivna metafora — ok u BS, pazi na kontekst" },
-    { phrase: "imati sreće",          reason: "Genitivna metafora — ok ✓" },
-    { phrase: "imati vremena",        reason: "Genitivna metafora — ok ✓" },
-    { phrase: "imati razloga",        reason: "Genitivna metafora — ok, provjeri kontekst" },
-    { phrase: "nema razloga",         reason: "Prihvatljivo ✓" },
-    { phrase: "imati osjećaja",       reason: "Kalk 'have feelings' → osjećati / imati emocija" },
-
-    // ── Pogrešna upotreba internacionalizama ──────────────────────────────────
-    { phrase: "pozitivna energija",   reason: "Anglicizam/new-age kalk → pozitivan stav / raspoloženje" },
-    { phrase: "negativna energija",   reason: "Anglicizam → negativno raspoloženje / loša atmosfera" },
-    { phrase: "visoke vibracije",     reason: "Anglicizam 'high vibes' → dobro raspoloženje" },
-    { phrase: "manifestovati",        reason: "Anglicizam 'manifest' → ostvariti / privući" },
-    { phrase: "manifestirati",        reason: "Anglicizam — u ovom kontekstu: ostvariti / privući" },
-    { phrase: "biti autentičan",      reason: "Anglicizam 'authentic' → biti iskren / biti svoj" },
-    { phrase: "svoja priča",          reason: "Kalk 'your story' — prihvatljivo ali čest kalk" },
-    { phrase: "tvoja priča",          reason: "Kalk 'your story' — prihvatljivo ali čest kalk" },
-    { phrase: "live your best life",  reason: "Neprevedena EN fraza → živi punim plućima" },
-
-    // ── Prijedložni anglicizmi (FIX 2.2 gramatika) ───────────────────────────
-    { phrase: "ovisiti od",           reason: "Pogrešan prijedlog → ovisiti o / zavisiti od (BS)" },
-    { phrase: "zavisi od toga",       reason: "Zavisi — ok u BS, ali pazi: ovisi o tome (HR)" },
-    { phrase: "sastoji od",           reason: "Provjeri: sastoji se od ✓" },
-    { phrase: "različit od",          reason: "Srbizam → različit od (BS ok) / različit od (HR: drugačiji od)" },
-    { phrase: "zadovoljan sa",        reason: "Pogrešan prijedlog → zadovoljan čime / zadovoljan time" },
-    { phrase: "siguran sa",           reason: "Pogrešan prijedlog → siguran u to / siguran u sebe" },
-    { phrase: "ponosan sa",           reason: "Pogrešan prijedlog → ponosan na" },
-    { phrase: "ponosan na",           reason: "Ispravno ✓" },
-    { phrase: "ljubazan sa",          reason: "Pogrešan prijedlog → ljubazan prema" },
-    { phrase: "sretan sa",            reason: "Pogrešan prijedlog → sretan zbog / sretan s (nečim)" },
-    { phrase: "suočiti sa",           reason: "Provjeri: suočiti se s (čime) ✓" },
-    { phrase: "baviti sa",            reason: "Pogrešno → baviti se (čime) ✓" },
-];
-
-// ── FIX 2.2: Gramatički checker BS/HR ────────────────────────────────────────
-const _GRAMATIKA_PRAVILA = [
-    // Modalni glagoli: "mogu da radim" → srbizam u BS/HR
-    {
-        re: /(mogu|možeš|može|možemo|možete|mogu|moram|moraš|mora|moramo|morate|moraju|smijem|smiješ|smije|smijemo|smijete|smiju|trebam|trebaš|treba|trebamo|trebate|trebaju|hoću|hoćeš|hoće|hoćemo|hoćete|hoće)\s+da\s+\w+/gi,
-        type: "gramatika",
-        reason: "Srbizam: modalni glagol + 'da' + infinitiv → u BS/HR: modalni + infinitiv (mogu raditi, moram ići)"
-    },
-    // Futur II u neodgovarajućem kontekstu (budem + glagol u ind. prezentu)
-    {
-        re: /budem\s+\w+(ao|la|lo|li|le|la)/gi,
-        type: "gramatika",
-        reason: "Futur II (budem radio) — provjeri je li kontekst uvjetna rečenica; inače koristiti futur I"
-    },
-    // Pogrešna upotreba "biti" + prijedlog "od" umjesto "iz"
-    {
-        re: /porijeklom\s+od/gi,
-        type: "gramatika",
-        reason: "Pogrešno: 'porijeklom od' → porijeklom iz (mjesta/države)"
-    },
-    // "što" umjesto "koji/koja/koje" u relativnim klauzama (prekomjerna upotreba)
-    {
-        re: /,\s*što\s+je\s+(bio|bila|bilo|bio|imao|imala|imalo)/gi,
-        type: "gramatika",
-        reason: "Provjeri: 'što je bio/imao' — možda bolje 'koji je bio/imao'"
-    },
-    // Pasiv s "od strane" (pretjerana upotreba — kalk)
-    {
-        re: /od\s+strane\s+\w+/gi,
-        type: "gramatika",
-        reason: "Kalk 'od strane' (by X) — razmotri aktiv: X je uradio / X je napravio"
-    },
-    // Pogrešni prijedlog: "ovisiti od" (trebalo bi "ovisiti o")
-    {
-        re: /ovis[a-zšđčćž]+\s+od/gi,
-        type: "gramatika",
-        reason: "Pogrešan prijedlog: 'ovisiti od' → ovisiti o (čemu)"
-    },
-    // "isti kao i" — dvostruki veznik
-    {
-        re: /isti\s+kao\s+i/gi,
-        type: "gramatika",
-        reason: "Dvostruki veznik: 'isti kao i' → isti kao (bez 'i')"
-    },
-    // Anglicizam u sintaksi: "za razliku od toga što" umjesto "za razliku od"
-    {
-        re: /za\s+razliku\s+od\s+toga\s+što/gi,
-        type: "gramatika",
-        reason: "Razvučena konstrukcija → za razliku od + genitiv"
-    },
-    // "u isto vrijeme" — ok, ali često prekomjerno
-    {
-        re: /u\s+isto\s+vrijeme/gi,
-        type: "gramatika",
-        reason: "Provjeri: 'u isto vrijeme' — može biti: istovremeno / u isti mah"
-    },
-];
-
-function _gramatikaCheck(text) {
-    const hits = [];
-    for (const pravilo of _GRAMATIKA_PRAVILA) {
-        pravilo.re.lastIndex = 0;
-        let m;
-        while ((m = pravilo.re.exec(text)) !== null) {
-            hits.push({
-                start:  m.index,
-                end:    m.index + m[0].length,
-                word:   m[0],
-                type:   pravilo.type,
-                reason: pravilo.reason
-            });
-        }
-    }
-    return hits;
-}
-const _EN_WORD_RE = /\b([A-Za-z]{4,})\b/g;
-function _heuristicScan(rawText) {
-    const highlights = [];
-    const text = _stripHtml(rawText);
-    const textLower = text.toLowerCase();
-    let m;
-    _EN_WORD_RE.lastIndex = 0;
-    while ((m = _EN_WORD_RE.exec(text)) !== null) {
-        const word = m[1];
-        const wl = word.toLowerCase();
-        if (_EN_WHITELIST.has(wl)) continue;
-        if (/\d/.test(word)) continue;
-        if (/^[A-Z]{2,5}$/.test(word)) continue;
-        if (_BHS_SUFFIX_RE.test(word)) continue;
-        if (word.length <= 3) continue;
-        highlights.push({
-            start: m.index,
-            end: m.index + word.length,
-            word,
-            type: "en_word",
-            reason: `Vjerovatno neprevedena EN riječ: "${word}"`
-        });
-    }
-    for (const entry of _ANGLICIZMI_FRAZE) {
-        let pos = textLower.indexOf(entry.phrase);
-        while (pos !== -1) {
-            highlights.push({
-                start: pos,
-                end: pos + entry.phrase.length,
-                word: entry.phrase,
-                type: "anglicizam",
-                reason: entry.reason
-            });
-            pos = textLower.indexOf(entry.phrase, pos + 1);
-        }
-    }
-    // FIX 2.2: Dodaj gramatičke provjere
-    const gramHits = _gramatikaCheck(text);
-    highlights.push(...gramHits);
-
-    highlights.sort((a, b) => a.start - b.start);
-    const deduped = [];
-    let lastEnd = -1;
-    for (const h of highlights) {
-        if (h.start >= lastEnd) {
-            deduped.push(h);
-            lastEnd = h.end;
-        }
-    }
-    return deduped;
-}
-function _renderHighlights(text, highlights) {
-    const S = {
-        en_word: {
-            bg: "rgba(244,63,94,0.22)",
-            border: "rgba(244,63,94,0.55)",
-            color: "var(--rose)"
-        },
-        anglicizam: {
-            bg: "rgba(245,158,11,0.22)",
-            border: "rgba(245,158,11,0.55)",
-            color: "var(--amber)"
-        },
-        word_order: {
-            bg: "rgba(99,102,241,0.22)",
-            border: "rgba(99,102,241,0.55)",
-            color: "var(--accent)"
-        },
-        gramatika: {
-            bg: "rgba(6,182,212,0.18)",
-            border: "rgba(6,182,212,0.55)",
-            color: "var(--accent-2)"
-        }
-    };
-    if (!highlights.length) return _e(text);
-    let html = "",
-        cursor = 0;
-    for (const h of highlights) {
-        if (h.start > cursor) html += _e(text.slice(cursor, h.start));
-        const s = S[h.type] || S.en_word;
-        html += `<span data-tip="${_ea(h.reason)}" style="background:${s.bg};border-bottom:2px solid ${s.border};color:${s.color};border-radius:2px;padding:0 2px;cursor:help">${_e(text.slice(h.start, h.end))}</span>`;
-        cursor = h.end;
-    }
-    if (cursor < text.length) html += _e(text.slice(cursor));
-    return html;
-}
-function _e(s) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-function _ea(s) {
-    return s.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
-
-
-function closeReviewModal() {
-    const modal = document.getElementById("review-modal");
-    if (modal) modal.style.display = "none";
-}
-
-function closeModal(id) {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove("open");
-}
-function _renderReviewListUI() {
-    const listEl = document.getElementById("review-list");
-    if (!listEl) return;
-    const badge = document.getElementById("review-count");
-    if (badge) badge.textContent = _reviewItems.length;
-    if (_reviewItems.length === 0) {
-        listEl.innerHTML =
-            '<div style="color:var(--tx-3);text-align:center;padding:20px;font-size:0.75rem">Nema blokova za reviziju.</div>';
-        return;
-    }
-    listEl.innerHTML = _reviewItems
-        .map((item, i) => {
-            const scoreStr =
-                item.score != null
-                    ? ` · ${Number(item.score).toFixed(1)}/10`
-                    : "";
-            const isMarked = _markedForReview.has(item.stem || "");
-            return `<div style="padding:7px 8px;border-radius:6px;cursor:pointer;font-size:0.72rem;font-family:monospace;margin-bottom:3px;background:${
-                i === _reviewIdx ? "var(--bg-3)" : "transparent"
-            };border-left:3px solid ${
-                isMarked
-                    ? "var(--amber)"
-                    : i === _reviewIdx
-                      ? "var(--sky)"
-                      : "transparent"
-            }" data-index="${i}">${item.file}${scoreStr}<br><span style="color:var(--amber);font-size:0.62rem">${
-                item.reason || ""
-            }</span></div>`;
-        })
-        .join("");
-    listEl.querySelectorAll("[data-index]").forEach(el => {
-        el.addEventListener("click", () => {
-            selectReview(parseInt(el.dataset.index));
-        });
-    });
-}
-
-async function loadReview() {
-    const listEl = document.getElementById("review-list");
-    if (!listEl) return;
-
-    // Pokaži loading state
-    listEl.innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:16px;font-size:0.75rem">⏳ Učitavam blokove za reviziju...</div>';
-
-    try {
-        // Threshold 6.0 — svi blokovi ispod ove ocjene se automatski prikazuju
-        const threshold = 6.0;
-        const r = await fetch(`/api/review/list?threshold=${threshold}`);
-        const ct = r.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-            listEl.innerHTML =
-                '<div style="color:var(--rose);padding:12px">❌ Server nije vratio JSON. Provjeri Flask log.</div>';
-            return;
-        }
-        let items = await r.json();
-
-        // Filtriraj override-ove (lokalno brisanje/spašavanje)
-        const overrides = getOverrides();
-        items = Array.isArray(items)
-            ? items.filter(i => {
-                const stem = i.stem || i.file;
-                return stem && !overrides[stem];
-            })
-            : [];
-
-        _reviewItems = items;
-        _renderReviewListUI();
-
-        // Ažuriraj review badge na tabu
-        const badge = document.getElementById("review-count");
-        if (badge) badge.textContent = items.length;
-
-        // Automatski otvori prvi loš blok ako postoji
-        if (items.length > 0 && _reviewIdx === 0) {
-            // Ne otvori modal automatski — samo selektuj u listi
-            _renderReviewListUI();
-        }
-    } catch (e) {
-        listEl.innerHTML = `<div style="color:var(--rose);padding:12px">❌ ${e.message}</div>`;
-    }
-}
-
-
-// ── FIX 2.4: Problem banner za blokove score ≤ 2 ─────────────────────────────
-function _buildProblemBanner(item, text) {
-    // Analizira reason i tekst bloka → vraća HTML banner
-    const reason = (item.reason || "").toLowerCase();
-    const score  = item.score != null ? Number(item.score) : 10;
-
-    if (score > 2) return "";  // samo za kritično loše
-
-    const tags = [];
-
-    if (!text || text.trim().length < 10) {
-        tags.push({ cls: "tag-empty",        label: "PRAZNO",       icon: "⬜" });
-    }
-    if (/neprevedeno|untranslated|english|original/i.test(reason)) {
-        tags.push({ cls: "tag-untranslated", label: "NEPREVEDENO",  icon: "🔤" });
-    }
-    const enWordMatches = (text || "").match(/\b[A-Za-z]{4,}\b/g) || [];
-    const enCount = enWordMatches.filter(w => {
-        const wl = w.toLowerCase();
-        // Grubo filtriraj whitelist
-        return !["the","and","for","with","that","this","from","have","been","will",
-                 "not","but","are","can","was","its","your","you","they","their",
-                 "which","when","what","how","also","than","then","more","some",
-                 "into","over","out","has","had","him","her","his","she","he"].includes(wl);
-    }).length;
-    if (enCount >= 3) {
-        tags.push({ cls: "tag-en",           label: `EN RIJEČ×${enCount}`,  icon: "🇬🇧" });
-    }
-    const kalkCount = _ANGLICIZMI_FRAZE.filter(f =>
-        (text || "").toLowerCase().includes(f.phrase)
-    ).length;
-    if (kalkCount >= 2) {
-        tags.push({ cls: "tag-kalk",         label: `KALK×${kalkCount}`,    icon: "⚠" });
-    }
-    if (/loš|slab|kratk|nedovoljn/i.test(reason)) {
-        tags.push({ cls: "tag-poor",         label: "LOŠA OCJENA",  icon: "🔴" });
-    }
-    // Default ako nema specifičnih tagova
-    if (tags.length === 0) {
-        tags.push({ cls: "tag-poor",         label: "KRITIČNO",     icon: "🔴" });
-    }
-
-    const tagsHtml = tags.map(t =>
-        `<span class="problem-tag ${t.cls}">${t.icon} ${t.label}</span>`
-    ).join("");
-
-    return `<div class="problem-banner">
-        <div class="problem-banner-row">
-            <span class="problem-banner-icon">⚠️</span>
-            <span class="problem-banner-title">Kritičan blok — score ${score.toFixed(1)}/10</span>
-        </div>
-        <div class="problem-banner-tags">${tagsHtml}</div>
-        ${item.reason ? `<div class="problem-banner-reason">${_e(item.reason)}</div>` : ""}
-    </div>`;
-}
-
-async function selectReview(idx) {
-    _reviewIdx = idx;
-    const item = _reviewItems[idx];
-    if (!item) return;
-    _renderReviewListUI();
-
-    const stemLabel = (item.file || item.stem || "—");
-    document.getElementById("review-modal-stem").textContent = stemLabel;
-
-    // FIX 2.4: problem banner u modalu
-    let bannerEl = document.getElementById("review-problem-banner");
-    if (!bannerEl) {
-        bannerEl = document.createElement("div");
-        bannerEl.id = "review-problem-banner";
-        const modalContainer = document.querySelector(".review-modal-container");
-        const ta2 = document.getElementById("review-textarea");
-        if (modalContainer && ta2) modalContainer.insertBefore(bannerEl, ta2);
-    }
-    // Banner se popunjava nakon što učitamo tekst (dole u try bloku)
-
-    const ta = document.getElementById("review-textarea");
-    if (ta) {
-        ta.value = "Učitavam...";
-        ta.style.display = "block";
-        ta.style.height = "400px";
-    }
-
-    const modal = document.getElementById("review-modal");
-    if (modal) {
-        modal.style.display = "flex";
-        modal.style.alignItems = "center";
-        modal.style.justifyContent = "center";
-        modal.style.position = "fixed";
-        modal.style.top = "0";
-        modal.style.left = "0";
-        modal.style.width = "100vw";
-        modal.style.height = "100vh";
-    }
-
-    let text = "";
-    try {
-        const r = await fetch(`/api/review/chunk/${encodeURIComponent(item.stem || item.file)}`);
-        const ct = r.headers.get("content-type") || "";
-        if (ct.includes("application/json")) {
-            const d = await r.json();
-            text = d.text !== undefined ? d.text : "";
-        } else {
-            text = await r.text();
-        }
-    } catch (e) {
-        text = (item.preview && item.preview !== "—") ? item.preview : "";
-    }
-    text = text.trim();
-    if (ta) {
-        ta.value = text;
-        ta.placeholder = text ? "" : "Upiši prijevod ovdje (blok je prazan)...";
-    }
-    // FIX 2.4: popuni problem banner sad kad imamo tekst
-    const bannerEl2 = document.getElementById("review-problem-banner");
-    if (bannerEl2) {
-        bannerEl2.innerHTML = _buildProblemBanner(item, text);
-        bannerEl2.style.display = bannerEl2.innerHTML ? "block" : "none";
-    }
-}
-
-function prevReview() {
-    if (_reviewIdx > 0) selectReview(_reviewIdx - 1);
-}
-function nextReview() {
-    if (_reviewIdx < _reviewItems.length - 1) selectReview(_reviewIdx + 1);
-}
-
-async function saveReview() {
-    const item = _reviewItems[_reviewIdx];
-    if (!item) return;
-    const textarea = document.getElementById("review-textarea");
-    const text = textarea ? textarea.value.trim() : "";
-    if (text === "") { showToast("Blok ne može biti prazan.", "warning"); return; }
-    const stem = item.stem || item.file;
-    setOverride(stem, "fixed");
-    _markedForReview.delete(stem);
-    const blockPill = document.querySelector(`.qs-block-pill[data-stem="${stem}"]`);
-    if (blockPill) {
-        blockPill.className = "qs-block-pill excellent";
-        blockPill.style.outline = "2px solid var(--emerald)";
-        const blokNum = stem.split("_blok_")[1] || "?";
-        blockPill.innerHTML = `B${parseInt(blokNum) || blokNum} 10.0`;
-    }
-    _reviewItems.splice(_reviewIdx, 1);
-    if (_reviewIdx >= _reviewItems.length) _reviewIdx = Math.max(0, _reviewItems.length - 1);
-    closeReviewModal();
-    refreshQualityBlock(stem, "fixed");
-    loadQualityScores();
-    _renderReviewListUI();
-    showToast("Sačuvano!", "success");
-    if (_reviewItems.length === 0) showToast("Svi blokovi su riješeni!", "info");
-    // FIX FAZA2: Sačuvaj tekst + ažuriraj quality_scores.json na disku (score → 10.0)
-    try {
-        await Promise.all([
-            fetch(`/api/review/chunk/${encodeURIComponent(stem)}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text })
-            }),
-            fetch(`/api/quality_scores/${encodeURIComponent(stem)}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ score: 10.0 })
-            })
-        ]);
-    } catch (e) {}
-}
-
-async function deleteEmptyBlock() {
-    const item = _reviewItems[_reviewIdx];
-    if (!item) return;
-    if (!confirm("Jeste li sigurni da želite trajno obrisati ovaj blok?")) return;
-    const stem = item.stem || item.file;
-    setOverride(stem, "deleted");
-    _markedForReview.delete(stem);
-    const blockPill = document.querySelector(`.qs-block-pill[data-stem="${stem}"]`);
-    if (blockPill) blockPill.remove();
-    _reviewItems.splice(_reviewIdx, 1);
-    if (_reviewIdx >= _reviewItems.length) _reviewIdx = Math.max(0, _reviewItems.length - 1);
-    closeReviewModal();
-    refreshQualityBlock(stem, "deleted");
-    loadQualityScores();
-    _renderReviewListUI();
-    showToast("Blok uklonjen.", "info");
-    // FIX FAZA2: Obriši i iz quality_scores.json na disku
-    try {
-        await Promise.all([
-            fetch(`/api/review/chunk/${encodeURIComponent(stem)}`, { method: "DELETE" }),
-            fetch(`/api/quality_scores/${encodeURIComponent(stem)}`, { method: "DELETE" })
-        ]);
-    } catch (_) {}
-}
-
-// ═══════════════ DOWNLOAD MODAL ═══════════════════
-function requestLiveDownload() {
-    const pct = STATE.currentPct;
-    if (pct >= 100) {
-        window.location.href = "/api/download";
-        return;
-    }
-    const modal = document.getElementById("download-modal");
-    if (document.getElementById("modal-pct-fill"))
-        document.getElementById("modal-pct-fill").style.width = pct + "%";
-    setVal("modal-pct-label", `${pct}% završeno`);
-    setVal(
-        "modal-body-text",
-        `Prijevod je na ${pct}%. Ono što je prevedeno biće u EPUB-u, a ostatak (${100 - pct}%) ostaje na originalnom jeziku.`
-    );
-    modal?.classList.add("open");
-}
-function confirmDownloadLive() {
-    closeDownloadModal();
-    window.location.href = "/api/download_live";
-}
-function closeDownloadModal() {
-    document.getElementById("download-modal")?.classList.remove("open");
-}
-
 // ═══════════════ EPUB PREGLED ═══════════════════
 // [LIVE EPUB] Učitava djelimični EPUB tokom obrade
 async function loadEpubPreview() {
-    const wrap      = document.getElementById("epub-reader-wrap");
+    const wrap = document.getElementById("epub-reader-wrap");
     const noContent = document.getElementById("epub-no-content");
-    const content   = document.getElementById("epub-content");
+    const content = document.getElementById("epub-content");
 
     if (noContent) {
-        noContent.innerHTML = '<div style="color:var(--tx-3);text-align:center;padding:32px;font-size:0.8rem">⏳ Učitavam pregled...</div>';
+        noContent.innerHTML =
+            '<div style="color:var(--tx-3);text-align:center;padding:32px;font-size:0.8rem">⏳ Učitavam pregled...</div>';
         noContent.classList.remove("hidden");
     }
     if (wrap) wrap.classList.add("hidden");
@@ -2427,8 +1693,8 @@ async function loadEpubPreview() {
         const text = await r.text();
 
         if (!text || text.trim().length === 0) {
-            if (noContent) noContent.innerHTML =
-                `<div style="color:var(--tx-3);text-align:center;padding:32px">
+            if (noContent)
+                noContent.innerHTML = `<div style="color:var(--tx-3);text-align:center;padding:32px">
                     <div style="font-size:1.8rem;margin-bottom:8px">📭</div>
                     <div style="font-size:0.82rem">Nema obrađenog teksta za prikaz.</div>
                     <button onclick="loadEpubPreview()" class="btn btn-sm" style="margin-top:12px">↻ Pokušaj ponovo</button>
@@ -2441,7 +1707,10 @@ async function loadEpubPreview() {
             content.innerHTML = text
                 .split(/\n\n+/)
                 .filter(p => p.trim().length > 0)
-                .map(p => `<p style="margin:0 0 0.9em 0;line-height:1.7">${p.trim().replace(/\n/g, "<br>")}</p>`)
+                .map(
+                    p =>
+                        `<p style="margin:0 0 0.9em 0;line-height:1.7">${p.trim().replace(/\n/g, "<br>")}</p>`
+                )
                 .join("");
         }
 
@@ -2451,10 +1720,9 @@ async function loadEpubPreview() {
         // Ažuriraj label
         const label = document.getElementById("epub-chapter-label");
         if (label) label.textContent = "Pregled obrađenog teksta";
-
     } catch (e) {
-        if (noContent) noContent.innerHTML =
-            `<div style="color:var(--rose);text-align:center;padding:32px">
+        if (noContent)
+            noContent.innerHTML = `<div style="color:var(--rose);text-align:center;padding:32px">
                 <div style="font-size:0.82rem">Greška: ${e.message}</div>
                 <button onclick="loadEpubPreview()" class="btn btn-sm" style="margin-top:12px">↻ Pokušaj ponovo</button>
              </div>`;
@@ -2472,10 +1740,26 @@ function showEpubChapter(idx) {
     let chapterHtml = ch.html || "<p>" + (ch.text || "—") + "</p>";
 
     if (ch.partial) {
-        chapterHtml = "<div class=\"epub-chapter-partial\">" + chapterHtml + "</div>";
-        if (label) label.textContent = "⚡ " + (idx + 1) + "/" + STATE.epubChapters.length + ": " + (ch.title || "") + " (u obradi...)";
+        chapterHtml =
+            '<div class="epub-chapter-partial">' + chapterHtml + "</div>";
+        if (label)
+            label.textContent =
+                "⚡ " +
+                (idx + 1) +
+                "/" +
+                STATE.epubChapters.length +
+                ": " +
+                (ch.title || "") +
+                " (u obradi...)";
     } else {
-        if (label) label.textContent = "Poglavlje " + (idx + 1) + "/" + STATE.epubChapters.length + ": " + (ch.title || "");
+        if (label)
+            label.textContent =
+                "Poglavlje " +
+                (idx + 1) +
+                "/" +
+                STATE.epubChapters.length +
+                ": " +
+                (ch.title || "");
     }
 
     if (content) content.innerHTML = chapterHtml;
@@ -2588,7 +1872,23 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Download dugmad
     document
-        .getElementById("btn-download-live")
+async function requestLiveDownload() {
+    try {
+        const r = await fetch("/api/download_live");
+        if (!r.ok) { showToast("Live download nije dostupan.", "warning"); return; }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "live_preview.epub";
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        showToast("Greška pri downloadu: " + e.message, "error");
+    }
+}
+
+        document.getElementById("btn-download-live")
         ?.addEventListener("click", requestLiveDownload);
     document
         .getElementById("btn-download-final")
@@ -2598,7 +1898,29 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Download modal dugmad
     document
-        .getElementById("btn-close-download-modal")
+function closeDownloadModal() {
+    const m = document.getElementById("download-modal");
+    if (m) m.classList.remove("open");
+}
+
+async function confirmDownloadLive() {
+    closeDownloadModal();
+    try {
+        const r = await fetch("/api/download_live");
+        if (!r.ok) { showToast("Live download nije dostupan.", "warning"); return; }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "live_preview.epub";
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        showToast("Greška: " + e.message, "error");
+    }
+}
+
+        document.getElementById("btn-close-download-modal")
         ?.addEventListener("click", closeDownloadModal);
     document
         .getElementById("btn-confirm-download-live")
@@ -2612,36 +1934,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         .getElementById("btn-send-marked")
         ?.addEventListener("click", sendMarkedForRefix);
 
-    // Review modal dugmad
-    document
-        .getElementById("btn-close-review-modal")
-        ?.addEventListener("click", () => closeReviewModal());
-    document
-        .getElementById("btn-prev-review")
-        ?.addEventListener("click", prevReview); // Modal
-    document
-        .getElementById("btn-next-review")
-        ?.addEventListener("click", nextReview); // Modal
-    document
-        .getElementById("btn-delete-empty-block")
-        ?.addEventListener("click", deleteEmptyBlock);
-    document
-        .getElementById("btn-save-review")
-        ?.addEventListener("click", saveReview); // Modal
-    document
-        .getElementById("btn-save-review-tab")
-        ?.addEventListener("click", saveReview); // Tab
 
-    // Review tab dugmad za navigaciju (ne otvaraju modal, samo menjaju selekciju)
-    // [v2.0.6] će ovo biti prepravljeno, za sada ovako
-    document
-        .getElementById("btn-modal-prev-review")
-        ?.addEventListener("click", prevReview);
-    document
-        .getElementById("btn-modal-next-review")
-        ?.addEventListener("click", nextReview);
-
-    // Napomena: u HTML‑u dugmad za tab navigaciju tek treba dodati (v2.0.6)
 
     // TTS dugmad
     document
@@ -2683,9 +1976,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 });
 
-
-
-
 // ── FIX 2.3: Custom tooltip popover ──────────────────────────────────────────
 (function initTooltip() {
     let tip = null;
@@ -2714,16 +2004,16 @@ document.addEventListener("DOMContentLoaded", async function () {
         const scrollX = window.scrollX || 0;
 
         // Pozicioniraj iznad elementa
-        let top  = rect.top  + scrollY - t.offsetHeight - 8;
+        let top = rect.top + scrollY - t.offsetHeight - 8;
         let left = rect.left + scrollX + rect.width / 2 - t.offsetWidth / 2;
 
         // Korekcija za rub ekrana
         if (left < 8) left = 8;
         if (left + t.offsetWidth > window.innerWidth - 8)
             left = window.innerWidth - t.offsetWidth - 8;
-        if (top < scrollY + 8) top = rect.bottom + scrollY + 8;  // ispod ako nema mjesta
+        if (top < scrollY + 8) top = rect.bottom + scrollY + 8; // ispod ako nema mjesta
 
-        t.style.top  = top  + "px";
+        t.style.top = top + "px";
         t.style.left = left + "px";
         t.style.opacity = "1";
     }
@@ -2732,7 +2022,9 @@ document.addEventListener("DOMContentLoaded", async function () {
         hideTimer = setTimeout(() => {
             if (tip) {
                 tip.style.opacity = "0";
-                setTimeout(() => { if (tip) tip.style.display = "none"; }, 180);
+                setTimeout(() => {
+                    if (tip) tip.style.display = "none";
+                }, 180);
             }
         }, 120);
     }
@@ -2746,14 +2038,18 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (e.target.closest("[data-tip]")) _hideTip();
     });
     // Touch (mobilni)
-    document.addEventListener("touchstart", e => {
-        const el = e.target.closest("[data-tip]");
-        if (el) {
-            e.preventDefault();
-            _showTip(el, el.dataset.tip);
-            setTimeout(_hideTip, 2800);
-        }
-    }, { passive: false });
+    document.addEventListener(
+        "touchstart",
+        e => {
+            const el = e.target.closest("[data-tip]");
+            if (el) {
+                e.preventDefault();
+                _showTip(el, el.dataset.tip);
+                setTimeout(_hideTip, 2800);
+            }
+        },
+        { passive: false }
+    );
 })();
 
 // ═══════════════ Neon naslov animacija ═══════════════
@@ -2782,3 +2078,303 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
     setTimeout(flash, 800);
 })();
+
+// ═══════════════════════════════════════════════════════════════════
+// HIGHLIGHT EDITOR za Review tab — v3.0
+// Backdrop + textarea overlay: textarea ostaje editable,
+// backdrop prikazuje HTML highlight spanove u realnom vremenu.
+// ═══════════════════════════════════════════════════════════════════
+
+(function initHighlightEditor() {
+    // ── Interne reference ──────────────────────────────────────────
+    let _ta = null; // textarea#review-text
+    let _backdrop = null; // div#hl-highlights
+    let _statsBar = null; // div#hl-stats-bar
+    let _rafPending = false;
+
+    // ── Inicijalizacija (poziva se kad se učita tab ili blok) ──────
+    function _init() {
+        _ta = document.getElementById("review-text");
+        _backdrop = document.getElementById("hl-highlights");
+        _statsBar = document.getElementById("hl-stats-bar");
+        if (!_ta || !_backdrop) return false;
+
+        // H1c FIX: Sync scroll — textarea scroll povlači backdrop scroll
+        _ta.addEventListener("scroll", _syncScroll, { passive: true });
+        // Live update na svaki input
+        _ta.addEventListener("input", _scheduleUpdate, { passive: true });
+
+        // Osiguraj identičan font/padding između textarea i highlights diva
+        // (mora biti identično da se span-ovi podudaraju s riječima)
+        _syncFont();
+
+        // Prati promjene dimenzija
+        if (window.ResizeObserver) {
+            new ResizeObserver(_syncFont).observe(_ta);
+        }
+
+        return true;
+    }
+
+    function _syncFont() {
+        if (!_ta || !_backdrop) return;
+        const cs = window.getComputedStyle(_ta);
+        const props = [
+            "fontFamily",
+            "fontSize",
+            "fontWeight",
+            "lineHeight",
+            "letterSpacing",
+            "wordSpacing",
+            "paddingTop",
+            "paddingRight",
+            "paddingBottom",
+            "paddingLeft",
+            "borderTopWidth",
+            "borderRightWidth",
+            "borderBottomWidth",
+            "borderLeftWidth",
+            "boxSizing",
+            "tabSize"
+        ];
+        props.forEach(prop => {
+            _backdrop.style[prop] = cs[prop];
+        });
+        // Visina backdrop = visina textarea sadržaja
+        _backdrop.parentElement.style.height = _ta.offsetHeight + "px";
+    }
+
+    function _syncScroll() {
+        // H1 FIX: pomjeri highlights div s translateY umjesto scroll
+        // Backdrop je position:absolute i ne scrolluje sam — moramo ručno
+        // pomaknuti highlights div za isti iznos kao što textarea scrolluje
+        if (_backdrop) {
+            _backdrop.scrollTop = _ta.scrollTop;
+        }
+    }
+
+    function _scheduleUpdate() {
+        if (_rafPending) return;
+        _rafPending = true;
+        requestAnimationFrame(() => {
+            _rafPending = false;
+            _update();
+        });
+    }
+
+    // ── Ručno pokretanje highlight-a s tekstom ────────────────────
+    function _applyText(text) {
+        if (!_ta) _init();
+        if (!_ta) return;
+        _ta.value = text;
+        _update();
+    }
+
+    // ── Glavni update: scan → render → stats ─────────────────────
+    function _update() {
+        if (!_ta || !_backdrop) return;
+        const rawText = _ta.value;
+        if (!rawText.trim()) {
+            _backdrop.innerHTML = "";
+            if (_statsBar) _statsBar.style.display = "none";
+            return;
+        }
+
+        // Koristi postojeći _heuristicScan iz main.js
+        const highlights =
+            typeof _heuristicScan === "function" ? _heuristicScan(rawText) : [];
+
+        // Render backdrop HTML
+        _backdrop.innerHTML = _buildBackdropHTML(rawText, highlights);
+
+        // Render stats bar
+        _renderStatsBar(highlights, rawText);
+    }
+
+    // ── Gradi backdrop HTML s highlight span-ovima ─────────────────
+    function _buildBackdropHTML(text, highlights) {
+        if (!highlights.length) {
+            // Nema grešaka — samo escapeuj tekst (mora biti isti layout)
+            return _escHl(text);
+        }
+
+        const CLASS_MAP = {
+            en_word: "hl-en",
+            anglicizam: "hl-kalk",
+            gramatika: "hl-gram",
+            word_order: "hl-gram"
+        };
+
+        let html = "",
+            cursor = 0;
+        for (const h of highlights) {
+            if (h.start > cursor) {
+                html += _escHl(text.slice(cursor, h.start));
+            }
+            const cls = CLASS_MAP[h.type] || "hl-en";
+            const tip = _escAttr(h.reason || "");
+            html += `<span class="${cls}" title="${tip}">${_escHl(text.slice(h.start, h.end))}</span>`;
+            cursor = h.end;
+        }
+        if (cursor < text.length) html += _escHl(text.slice(cursor));
+        return html;
+    }
+
+    // ── Stats bar ─────────────────────────────────────────────────
+    function _renderStatsBar(highlights, text) {
+        if (!_statsBar) return;
+        if (!highlights.length) {
+            _statsBar.innerHTML = `<span class="hl-stats-clean">✓ Nema grešaka</span>`;
+            _statsBar.style.display = "flex";
+            return;
+        }
+
+        const enCount = highlights.filter(h => h.type === "en_word").length;
+        const kalkCount = highlights.filter(
+            h => h.type === "anglicizam"
+        ).length;
+        const gramCount = highlights.filter(
+            h => h.type === "gramatika" || h.type === "word_order"
+        ).length;
+        const total = highlights.length;
+
+        let chips = "";
+        if (enCount)
+            chips += `<span class="hl-stat-chip en">🇬🇧 ${enCount} EN</span>`;
+        if (kalkCount)
+            chips += `<span class="hl-stat-chip kalk">⚠ ${kalkCount} kalk</span>`;
+        if (gramCount)
+            chips += `<span class="hl-stat-chip gram">~ ${gramCount} gram.</span>`;
+
+        _statsBar.innerHTML =
+            chips +
+            `<span style="margin-left:auto;color:var(--tx-3)">${total} ukupno · hover za detalj</span>`;
+        _statsBar.style.display = "flex";
+    }
+
+    // ── Escape helpers ────────────────────────────────────────────
+    function _escHl(s) {
+        // Moramo sačuvati razmake i newlineove za identičan layout
+        return s
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\n/g, "<br>")
+            .replace(/ /g, "&nbsp;");
+    }
+    function _escAttr(s) {
+        return s.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    // ── Javno API ─────────────────────────────────────────────────
+    window._hlEditor = {
+        init: _init,
+        applyText: _applyText,
+        update: _update,
+        clear: function () {
+            if (_ta) _ta.value = "";
+            if (_backdrop) _backdrop.innerHTML = "";
+            if (_statsBar) _statsBar.style.display = "none";
+        }
+    };
+
+    // Auto-init kad DOM bude spreman
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", _init);
+    } else {
+        _init();
+    }
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+// REVIEW TAB — inline editor s highlight podrškom + multiselect
+// ═══════════════════════════════════════════════════════════════════
+
+const _reviewMultiSelected = new Set();
+
+function _updateReviewMultiBar() {
+    const n = _reviewMultiSelected.size;
+    const el1 = document.getElementById("review-multi-count");
+    const el2 = document.getElementById("review-multi-count2");
+    if (el1) el1.textContent = n + " označeno";
+    if (el2) el2.textContent = n;
+}
+
+function _clearTabEditor() {
+    if (window._hlEditor) window._hlEditor.clear();
+    const fn = document.getElementById("review-filename");
+    if (fn) fn.textContent = "—";
+    const emptyBanner = document.getElementById("review-empty-banner");
+    if (emptyBanner) emptyBanner.style.display = "none";
+    const legend = document.getElementById("review-legend");
+    if (legend) legend.style.display = "none";
+    const preview = document.getElementById("review-preview-panel");
+    if (preview) preview.style.display = "none";
+    const hint = document.getElementById("review-hint-count");
+    if (hint) hint.textContent = "";
+}
+
+
+function applyHighlights(container, patterns) {
+    // D FIX: inline underline span umjesto backdrop div
+    // container = DOM element s tekstom (contenteditable ili div)
+    if (!container) return;
+
+    // Reset — ukloni stare highlight span-ove
+    container.querySelectorAll(".hl-match").forEach(el => {
+        el.replaceWith(document.createTextNode(el.textContent));
+    });
+    container.normalize();
+
+    if (!patterns || patterns.length === 0) return;
+
+    // Iteriraj text nodove i wrap matches u <span class="hl-match hl-COLOR">
+    function walkAndHighlight(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            let text = node.textContent;
+            let result = null;
+            let matchIdx = -1;
+            let matchLen = 0;
+            let matchClass = "hl-amber";
+
+            for (const pat of patterns) {
+                const rx =
+                    pat.regex instanceof RegExp
+                        ? pat.regex
+                        : new RegExp(pat.pattern || pat, "gi");
+                const m = rx.exec(text);
+                if (m && (matchIdx === -1 || m.index < matchIdx)) {
+                    matchIdx = m.index;
+                    matchLen = m[0].length;
+                    matchClass = pat.color || pat.cls || "hl-amber";
+                    result = m;
+                }
+            }
+
+            if (result === null || matchIdx === -1) return;
+
+            const before = document.createTextNode(text.slice(0, matchIdx));
+            const span = document.createElement("span");
+            span.className = `hl-match ${matchClass}`;
+            span.textContent = text.slice(matchIdx, matchIdx + matchLen);
+            const after = document.createTextNode(
+                text.slice(matchIdx + matchLen)
+            );
+
+            const parent = node.parentNode;
+            parent.replaceChild(after, node);
+            parent.insertBefore(span, after);
+            parent.insertBefore(before, span);
+
+            // Nastavi od "after" node-a
+            walkAndHighlight(after);
+        } else if (
+            node.nodeType === Node.ELEMENT_NODE &&
+            !node.classList.contains("hl-match")
+        ) {
+            Array.from(node.childNodes).forEach(walkAndHighlight);
+        }
+    }
+
+    walkAndHighlight(container);
+}

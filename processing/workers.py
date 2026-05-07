@@ -1,11 +1,9 @@
 # processing/workers.py
 
-import asyncio
 import json
 import re
 import time
 from bs4 import BeautifulSoup
-from core.text_utils import _detektuj_en_ostatke
 from processing.parallel import AdaptiveParallelism
 
 

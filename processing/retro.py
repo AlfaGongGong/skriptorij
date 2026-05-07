@@ -208,6 +208,31 @@ async def retroaktivna_relektura_v10(
             self.shared_stats["quality_scores"] = {}
         self.shared_stats["quality_scores"][chk.stem] = ocjena
 
+        # B2 FIX: per-blok flush — zaštita od pada u sredini retro obrade
+        try:
+            _qs_cache_now = chk_dir / "quality_scores.json"
+            _existing_now = {}
+            if _qs_cache_now.exists():
+                try:
+                    _existing_now = json.loads(_qs_cache_now.read_text("utf-8"))
+                except Exception:
+                    pass
+            # Normalizuj sve na float prije upisa (B1 compat)
+            for _k, _v in list(_existing_now.items()):
+                if isinstance(_v, dict) and "score" in _v:
+                    _existing_now[_k] = float(_v["score"])
+                elif isinstance(_v, (int, float)):
+                    _existing_now[_k] = float(_v)
+            _existing_now.update({k: float(v) for k, v in self._quality_scores.items()})
+            _tmp_qs = _qs_cache_now.with_suffix(".tmp")
+            _tmp_qs.write_text(
+                json.dumps(_existing_now, ensure_ascii=False, indent=2),
+                encoding="utf-8"
+            )
+            _tmp_qs.replace(_qs_cache_now)
+        except Exception as _flush_err:
+            self.log(f"⚠️ Per-blok QS flush greška: {_flush_err}", "warning")
+
         finalno = _post_process_tipografija(finalno)
         self._atomic_write(chk, finalno)
         self.log(
@@ -252,9 +277,28 @@ async def retroaktivna_relektura_v10(
     self.log("🎉 Retro obrada završena!", "system")
 
 
+# R1 FIX: Whitelist fajlova koji legitimno sadrže engleski
+# (naslovnica, bibliografija, sadržaj, copyright, kolofon)
+_WHITELIST_STEMS_PREFIXES = (
+    "01_halftitle", "02_titlepage", "03_otherbyauthor", "04_copyright",
+    "05_dedication", "06_contents", "07_",  # intro/predgovor obično ok
+    "halftitle", "titlepage", "otherbyauthor", "copyright",
+    "dedication", "contents", "toc", "colophon",
+    "abouttheauthor", "otherrecommendations",
+)
+
+
+def _je_whitelisted(stem: str) -> bool:
+    """R1 FIX: Vraća True za fajlove koji legitimno sadrže engleski."""
+    low = stem.lower()
+    return any(low.startswith(pfx) for pfx in _WHITELIST_STEMS_PREFIXES)
+
+
 async def mark_for_review(self, score_threshold: float = _QUALITY_RESCUE_THRESHOLD):
     """
     B14 FIX: Iterira samo finalne .chk fajlove (ne .prevod.chk, .lektura.chk).
+    R1 FIX: Whitelist za naslovnicu/bibliografiju/sadržaj — ne flaguj EN ostatak.
+    R2 FIX: EN threshold 0.05→0.10, severity razlikovanje score vs heuristic.
     """
     chk_dir = _get_checkpoint_dir(self)
     review_list = []
@@ -280,22 +324,27 @@ async def mark_for_review(self, score_threshold: float = _QUALITY_RESCUE_THRESHO
             text = chk_file.read_text("utf-8")
             needs_review = False
             reason = []
+            whitelisted = _je_whitelisted(chk_file.stem)
 
             qs = scores.get(chk_file.stem, None)
+            # Score ispod threshold — uvijek flaguj bez obzira na whitelist
             if qs is not None and qs < score_threshold:
                 needs_review = True
                 reason.append(f"Score: {qs:.1f}/10")
 
-            en_score = _detektuj_en_ostatke(text)
-            if en_score > 0.05:
-                needs_review = True
-                reason.append(f"Engleski ostatak: {en_score:.0%}")
+            # R1+R2 FIX: EN ostatak — preskoci whitelistane, threshold 0.10
+            if not whitelisted:
+                en_score = _detektuj_en_ostatke(text)
+                if en_score > 0.10:  # R2: sniženo s 0.05 na 0.10
+                    needs_review = True
+                    reason.append(f"Engleski ostatak: {en_score:.0%}")
 
             if len(text.strip()) < 50:
                 needs_review = True
                 reason.append("Prekratak tekst")
 
-            if '"' in text and "\u2014" not in text:
+            # Dijalog provjera — samo ako nije whitelisted
+            if not whitelisted and '"' in text and "—" not in text:
                 dijalog_glagoli = any(
                     g in text.lower()
                     for g in ["reče", "rekla", "rekao", "upita", "odgovori", "viknu"]
@@ -306,11 +355,12 @@ async def mark_for_review(self, score_threshold: float = _QUALITY_RESCUE_THRESHO
 
             if needs_review:
                 review_list.append({
-                    "file":    chk_file.name,
-                    "stem":    chk_file.stem,
-                    "score":   qs,
-                    "reason":  ", ".join(reason),
-                    "preview": BeautifulSoup(text, "html.parser").get_text()[:120] + "...",
+                    "file":     chk_file.name,
+                    "stem":     chk_file.stem,
+                    "score":    qs,
+                    "reason":   ", ".join(reason),
+                    "severity": "score" if (qs is not None and qs < score_threshold) else "heuristic",
+                    "preview":  BeautifulSoup(text, "html.parser").get_text()[:120] + "...",
                 })
         except Exception:
             pass

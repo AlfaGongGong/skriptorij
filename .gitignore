@@ -35,9 +35,12 @@ Thumbs.db
 
 # Logovi
 *.log
+*.txt
+
 
 # Jednokratne patch skripte
 fix.sh
+*.sh
 fixpy.py
 
 # Runtime fajlovi

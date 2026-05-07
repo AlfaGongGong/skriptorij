@@ -10,6 +10,13 @@ from flask import (
 )
 from api_fleet import FleetManager
 
+def _rebuild_epub(book_name: str) -> dict:
+    """Stub: rekonstruiše EPUB iz obrađenih fajlova.
+    TODO: implementirati ili importovati iz odgovarajućeg modula.
+    """
+    raise NotImplementedError("_rebuild_epub nije implementiran")
+
+
 # ── Fleet singleton ───────────────────────────────────────────────────────────
 _fleet_fallback = FleetManager(config_path="dev_api.json")
 
@@ -491,6 +498,54 @@ def create_app() -> Flask:
             mode = data.get("tool", data.get("mode", "")).strip().upper()
 
             def run_engine():
+                # ── A FIX: RETRO_ONLY — samo loši blokovi, ne cijela obrada ──
+                if mode == "RETRO_ONLY":
+                    import asyncio as _asyncio
+                    from core.engine import SkriptorijAllInOne
+                    from processing.retro import retroaktivna_relektura_v10
+                    from core.quality import _QUALITY_RESCUE_THRESHOLD
+                    try:
+                        eng = SkriptorijAllInOne(str(book_path), model, SHARED_STATS, SHARED_CONTROLS)
+                        import json as _j
+                        qs_path = eng.checkpoint_dir / "quality_scores.json"
+                        if qs_path.exists():
+                            try:
+                                SHARED_STATS["quality_scores"] = _j.loads(qs_path.read_text("utf-8"))
+                            except Exception:
+                                pass
+                        SHARED_STATS["status"] = "RETRO: samo loši blokovi..."
+                        _asyncio.run(retroaktivna_relektura_v10(
+                            eng, force=False, only_bad=True,
+                            bad_threshold=_QUALITY_RESCUE_THRESHOLD
+                        ))
+                        # Nakon retro — mark_for_review + rebuild
+                        _asyncio.run(eng.mark_for_review())
+                        _rebuild_epub(eng, SHARED_STATS, SHARED_CONTROLS)
+                        SHARED_STATS["status"] = "ZAVRŠENO (RETRO)"
+                        SHARED_STATS["pct"] = 100
+                    except Exception as exc:
+                        import traceback as _tb
+                        SHARED_STATS["status"] = f"RETRO GREŠKA: {exc}"
+                        SHARED_STATS["live_audit"] = (
+                            SHARED_STATS.get("live_audit", "") + _tb.format_exc()
+                        )
+                    return
+
+                # ── B FIX: REBUILD_EPUB — samo rebuild, bez ikakve AI obrade ──
+                if mode == "REBUILD_EPUB":
+                    from core.engine import SkriptorijAllInOne
+                    try:
+                        eng = SkriptorijAllInOne(str(book_path), model, SHARED_STATS, SHARED_CONTROLS)
+                        SHARED_STATS["status"] = "REBUILD EPUB-a..."
+                        _rebuild_epub(eng, SHARED_STATS, SHARED_CONTROLS)
+                        SHARED_STATS["status"] = "ZAVRŠENO (REBUILD)"
+                        SHARED_STATS["pct"] = 100
+                    except Exception as exc:
+                        import traceback as _tb
+                        SHARED_STATS["status"] = f"REBUILD GREŠKA: {exc}"
+                    return
+
+
                 try:
                     if mode == "RETRO":
                         import asyncio
@@ -827,6 +882,12 @@ def create_app() -> Flask:
 
             items = json.loads(review_path.read_text("utf-8"))
 
+            # R3 FIX: primijeni threshold param koji šalje frontend
+            try:
+                threshold = float(request.args.get("threshold", 10.0))
+            except (ValueError, TypeError):
+                threshold = 10.0
+
             # Normalizacija: osiguraj da svaki item ima i "stem" i "file" polje
             for item in items:
                 file_val = item.get("file", "")
@@ -835,6 +896,23 @@ def create_app() -> Flask:
                     item["stem"] = file_val[:-4] if file_val.endswith(".chk") else file_val
                 if not file_val and stem_val:
                     item["file"] = stem_val + ".chk"
+
+            # R3 FIX: filtriraj po threshold-u
+            # - score blokovi: prikaži ako score < threshold
+            # - heuristic blokovi (EN ostatak, dijalog): prikaži uvijek ako threshold >= 10
+            #   ali sakrij ako korisnik traži samo loše score-ove (threshold < 10)
+            if threshold < 10.0:
+                filtered = []
+                for item in items:
+                    score = item.get("score")
+                    severity = item.get("severity", "heuristic")
+                    # Uvijek prikaži score blokove ispod threshold
+                    if score is not None and score < threshold:
+                        filtered.append(item)
+                    # Heuristic blokove prikaži samo ako nemaju dobar score
+                    elif severity == "heuristic" and (score is None or score < threshold):
+                        filtered.append(item)
+                items = filtered
 
             # Dodaj info koji stemovi su već označeni za REFIX
             marked = set(SHARED_CONTROLS.get("refix_stems", []))
@@ -958,6 +1036,18 @@ def create_app() -> Flask:
         except Exception as e:
             return jsonify({"error": str(e), "text": ""}), 500
 
+    @app.route("/api/review/chunk/<path:stem>", methods=["DELETE"])
+    def api_review_chunk_delete(stem):
+        """Briše .chk fajl za dati stem — koristi se za AI re-obradu jednog bloka."""
+        try:
+            chk_path = _find_chk_path(stem)
+            if chk_path is None or not chk_path.exists():
+                return jsonify({"ok": True, "note": "Fajl već ne postoji"}), 200
+            chk_path.unlink()
+            return jsonify({"ok": True, "deleted": str(chk_path)})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     @app.route("/api/review/chunk/<path:stem>", methods=["POST"])
     def api_review_chunk_post(stem):
         """
@@ -1067,6 +1157,213 @@ def create_app() -> Flask:
 
         except Exception as e:
             return Response(f"Greska: {e}", mimetype="text/plain")
+
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # EPUB TEXT / PLAIN — za Revizija tab (B3 FIX)
+    # ═════════════════════════════════════════════════════════════════════════
+
+    @app.route("/api/epub_text/<path:book>")
+    def api_epub_text(book):
+        """
+        Vraća sve finalne .chk blokove za datu knjigu kao JSON.
+        Spaja tekst s quality scores — koristi Revizija tab.
+        Response: {"blocks": [{"stem": "...", "text": "...", "score": 7.2}], "total": N}
+        """
+        try:
+            clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
+            chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
+
+            # Fallback — traži najbliži _skr_ direktorij ako tačan nije pronađen
+            if not chk_dir.exists():
+                candidates = sorted(
+                    CHECKPOINT_BASE_DIR.glob(f"_skr_{clean[:10]}*"),
+                    key=lambda p: p.stat().st_mtime, reverse=True
+                )
+                if candidates:
+                    chk_dir = candidates[0] / "checkpoints"
+
+            if not chk_dir.exists():
+                return jsonify({"error": f"Nema checkpointa za: {book}", "blocks": []}), 404
+
+            # Učitaj quality scores (normalizuj dict→float ako treba)
+            scores = {}
+            qs_path = chk_dir / "quality_scores.json"
+            if qs_path.exists():
+                try:
+                    raw_qs = json.loads(qs_path.read_text("utf-8"))
+                    for k, v in raw_qs.items():
+                        if isinstance(v, dict) and "score" in v:
+                            scores[k] = float(v["score"])
+                        elif isinstance(v, (int, float)):
+                            scores[k] = float(v)
+                except Exception:
+                    pass
+
+            # Ako quality_scores.json prazna/ne postoji, pokušaj iz SHARED_STATS
+            if not scores:
+                raw_qs = SHARED_STATS.get("quality_scores", {})
+                for k, v in raw_qs.items():
+                    if isinstance(v, dict) and "score" in v:
+                        scores[k] = float(v["score"])
+                    elif isinstance(v, (int, float)):
+                        scores[k] = float(v)
+
+            # Finalni .chk fajlovi (ne međukoraci)
+            chk_files = sorted(
+                f for f in chk_dir.glob("*.chk")
+                if not any(f.name.endswith(s) for s in (".prevod.chk", ".lektura.chk"))
+            )
+
+            if not chk_files:
+                return jsonify({"blocks": [], "total": 0, "message": "Nema finalnih blokova."})
+
+            blocks = []
+            for chk in chk_files:
+                try:
+                    raw = chk.read_text("utf-8", errors="ignore")
+                    # Isti JSON unwrap kao review/chunk
+                    text = raw
+                    try:
+                        obj = json.loads(raw)
+                        if isinstance(obj, dict):
+                            text = (
+                                obj.get("translated")
+                                or obj.get("text")
+                                or obj.get("content")
+                                or obj.get("output")
+                                or raw
+                            )
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+                    score = scores.get(chk.stem, None)
+                    blocks.append({
+                        "stem":  chk.stem,
+                        "text":  text.strip(),
+                        "score": round(score, 1) if score is not None else None,
+                    })
+                except Exception:
+                    continue
+
+            return jsonify({"blocks": blocks, "total": len(blocks), "book": book})
+
+        except Exception as e:
+            return jsonify({"error": str(e), "blocks": []}), 500
+
+
+    @app.route("/api/epub_plain/<path:book>")
+    def api_epub_plain(book):
+        """
+        Kao epub_text ali strip HTML → plain text za pretragu i diff.
+        Response: {"blocks": [{"stem": "...", "text": "...", "score": 7.2}], "total": N}
+        """
+        from bs4 import BeautifulSoup as _BS
+
+        try:
+            clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
+            chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
+
+            if not chk_dir.exists():
+                candidates = sorted(
+                    CHECKPOINT_BASE_DIR.glob(f"_skr_{clean[:10]}*"),
+                    key=lambda p: p.stat().st_mtime, reverse=True
+                )
+                if candidates:
+                    chk_dir = candidates[0] / "checkpoints"
+
+            if not chk_dir.exists():
+                return jsonify({"error": f"Nema checkpointa za: {book}", "blocks": []}), 404
+
+            scores = {}
+            qs_path = chk_dir / "quality_scores.json"
+            if qs_path.exists():
+                try:
+                    raw_qs = json.loads(qs_path.read_text("utf-8"))
+                    for k, v in raw_qs.items():
+                        if isinstance(v, dict) and "score" in v:
+                            scores[k] = float(v["score"])
+                        elif isinstance(v, (int, float)):
+                            scores[k] = float(v)
+                except Exception:
+                    pass
+
+            if not scores:
+                raw_qs = SHARED_STATS.get("quality_scores", {})
+                for k, v in raw_qs.items():
+                    if isinstance(v, dict) and "score" in v:
+                        scores[k] = float(v["score"])
+                    elif isinstance(v, (int, float)):
+                        scores[k] = float(v)
+
+            chk_files = sorted(
+                f for f in chk_dir.glob("*.chk")
+                if not any(f.name.endswith(s) for s in (".prevod.chk", ".lektura.chk"))
+            )
+
+            if not chk_files:
+                return jsonify({"blocks": [], "total": 0, "message": "Nema finalnih blokova."})
+
+            blocks = []
+            for chk in chk_files:
+                try:
+                    raw = chk.read_text("utf-8", errors="ignore")
+                    try:
+                        obj = json.loads(raw)
+                        if isinstance(obj, dict):
+                            raw = (
+                                obj.get("translated")
+                                or obj.get("text")
+                                or obj.get("content")
+                                or obj.get("output")
+                                or raw
+                            )
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+                    try:
+                        plain = _BS(raw, "html.parser").get_text(separator=" ", strip=True)
+                    except Exception:
+                        plain = re.sub(r"<[^>]+>", " ", raw).strip()
+                    score = scores.get(chk.stem, None)
+                    blocks.append({
+                        "stem":  chk.stem,
+                        "text":  plain,
+                        "score": round(score, 1) if score is not None else None,
+                    })
+                except Exception:
+                    continue
+
+            return jsonify({"blocks": blocks, "total": len(blocks), "book": book})
+
+        except Exception as e:
+            return jsonify({"error": str(e), "blocks": []}), 500
+
+    @app.route("/api/fix/bad_blocks", methods=["POST"])
+    def api_fix_bad_blocks():
+        import threading, asyncio
+        data = request.get_json(silent=True) or {}
+        book = data.get("book") or SHARED_STATS.get("current_file", "")
+        threshold = float(data.get("threshold", 11.0))
+        model = data.get("model", SHARED_STATS.get("active_engine", "V10_TURBO"))
+        if not book:
+            return jsonify({"error": "Nije odabrana knjiga"}), 400
+        full_path = str(Path(INPUT_DIR) / book)
+        if not Path(full_path).exists():
+            return jsonify({"error": f"Knjiga nije pronađena: {book}"}), 404
+        SHARED_CONTROLS.update({"pause": False, "stop": False, "reset": False})
+        SHARED_STATS.update({"status": "AI RE-LEKTURA BLOKA...", "current_file": book, "pct": 0})
+        def _run():
+            try:
+                from core.engine import SkriptorijAllInOne
+                from processing.retro import retroaktivna_relektura_v10
+                engine = SkriptorijAllInOne(full_path, model, SHARED_STATS, SHARED_CONTROLS)
+                asyncio.run(retroaktivna_relektura_v10(engine, force=False, only_bad=True, bad_threshold=threshold))
+                SHARED_STATS.update({"status": "ZAVRŠENO", "pct": 100})
+            except Exception as exc:
+                import traceback
+                SHARED_STATS["status"] = f"GREŠKA: {exc}"
+                SHARED_STATS["live_audit"] = SHARED_STATS.get("live_audit", "") + f"\n[ERROR] {traceback.format_exc()}"
+        threading.Thread(target=_run, daemon=True).start()
+        return jsonify({"status": "started", "book": book, "threshold": threshold})
 
     return app
 

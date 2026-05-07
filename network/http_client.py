@@ -9,7 +9,6 @@
 import asyncio
 import random
 import requests
-import time
 
 # ── Google model pool — redosljed: gemini-flash prvi (bolji RPD limit) ────────
 GOOGLE_MODEL_POOL = [

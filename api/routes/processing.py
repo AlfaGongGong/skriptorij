@@ -6,6 +6,7 @@ Dio Skriptorij V10 Turbo Omni-Core sistema.
 import json
 import os
 import re
+import pathlib
 import threading
 import time
 import traceback
@@ -15,8 +16,8 @@ from flask import Blueprint, jsonify, request
 
 from config.settings import (
     PROJECTS_ROOT,
-    SHARED_STATS,
     SHARED_CONTROLS,
+    SHARED_STATS,
     CONFIG_PATH,
     INPUT_DIR,
     CHECKPOINT_BASE_DIR,
@@ -416,32 +417,35 @@ def cache_clear_bad():
 
 def _resolve_chunk_path(chk_dir, stem: str):
     """
-    FIX FAZA2 CHUNK: Pronalazi chunk fajl bez obzira na ekstenziju u stem-u.
-    Stem može biti: "King_c43_r1.htm_blok_0" ili "King_c43_r1_blok_0"
+    Pronalazi .chk fajl za dati stem, bez obzira na ekstenziju u imenu.
+    Stem primjeri: "King_c43_r1.htm_blok_0" ili "King_c43_r1_blok_0"
+    Vraća Path objekt (može ne postojati) ili None ako ne može ni pronaći kandidata.
     """
     from pathlib import Path
     chk_dir = Path(chk_dir)
 
-    # 1. Direktno
-    direct = _resolve_chunk_path(chk_dir, stem)
+    # 1. Direktno poklapanje
+    direct = chk_dir / f"{stem}.chk"
     if direct.exists():
         return direct
 
-    # 2. Strip .htm/.html/.xhtml iz stem-a pa pokušaj
-    clean_stem = re.sub(r"\.(x?html?)(_.+)?$", r"\2", stem, flags=re.IGNORECASE).lstrip("_")
-    # Alternativa: ukloni samo file ekstenziju ispred _blok_
+    # 2. Ukloni .htm/.html/.xhtml ispred _blok_ i pokušaj ponovo
     clean_stem2 = re.sub(r"\.(x?html?)(_blok_)", r"\2", stem, flags=re.IGNORECASE)
-    for s in (clean_stem, clean_stem2, stem.replace(".htm_", "_").replace(".html_", "_")):
+    clean_stem3 = stem.replace(".htm_", "_").replace(".html_", "_")
+    clean_stem1 = re.sub(r"\.(x?html?)(_.+)?$", r"\2", stem, flags=re.IGNORECASE).lstrip("_")
+
+    for s in (clean_stem2, clean_stem3, clean_stem1):
+        if s == stem:
+            continue
         p = chk_dir / f"{s}.chk"
         if p.exists():
             return p
 
-    # 3. Glob fallback — traži po blok broju
+    # 3. Glob fallback — traži po broju bloka
     blok_match = re.search(r"_blok_(\d+)$", stem)
     if blok_match:
         blok_num = blok_match.group(1)
         base_part = stem.split("_blok_")[0]
-        # Ukloni .htm iz base_part
         base_clean = re.sub(r"\.(x?html?)$", "", base_part, flags=re.IGNORECASE)
         for pattern in (f"*{base_clean}*_blok_{blok_num}.chk",
                         f"*_blok_{blok_num}.chk"):
@@ -449,7 +453,8 @@ def _resolve_chunk_path(chk_dir, stem: str):
             if matches:
                 return matches[0]
 
-    return None
+    # 4. Vrati nepostojeći path (pozivač provjerava .exists())
+    return chk_dir / f"{stem}.chk"
 
 @bp.route("/api/review/list", methods=["GET"])
 def review_list():
@@ -781,3 +786,110 @@ def epub_preview():
     except Exception as e:
         return Response(f"Greška: {e}", mimetype="text/plain")
 
+
+# ─── B3 FIX: epub_text + epub_plain endpointi za Revizija tab ─────────────────
+
+@bp.route("/api/epub_text/<path:book>")
+def epub_text(book):
+    """
+    Vraća sadržaj .chk fajlova za datu knjigu kao JSON lista blokova.
+    Koristi se u Revizija tabu za prikaz prevedenog teksta.
+    Response: {"blocks": [{"stem": "...", "text": "...", "score": 7.2}, ...]}
+    """
+    import json as _j, re as _re
+    from processing.retro import _je_finalni_chk
+
+    try:
+        clean = _re.sub(r"[^a-zA-Z0-9_\-]", "", pathlib.Path(book).stem)
+        chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
+
+        if not chk_dir.exists():
+            return jsonify({"error": f"Checkpoint dir nije pronađen: {chk_dir}", "blocks": []}), 404
+
+        # Učitaj quality scores
+        qs_path = chk_dir / "quality_scores.json"
+        scores = {}
+        if qs_path.exists():
+            try:
+                raw_scores = _j.loads(qs_path.read_text("utf-8"))
+                for k, v in raw_scores.items():
+                    if isinstance(v, dict) and "score" in v:
+                        scores[k] = float(v["score"])
+                    elif isinstance(v, (int, float)):
+                        scores[k] = float(v)
+            except Exception:
+                pass
+
+        # Učitaj sadržaj finalnih .chk fajlova
+        blocks = []
+        for chk in sorted(chk_dir.glob("*.chk")):
+            if not _je_finalni_chk(chk):
+                continue
+            try:
+                text = chk.read_text("utf-8", errors="ignore")
+                score = scores.get(chk.stem, None)
+                blocks.append({
+                    "stem":  chk.stem,
+                    "text":  text,
+                    "score": round(score, 1) if score is not None else None,
+                })
+            except Exception:
+                pass
+
+        return jsonify({"blocks": blocks, "total": len(blocks), "book": book})
+
+    except Exception as e:
+        return jsonify({"error": str(e), "blocks": []}), 500
+
+
+@bp.route("/api/epub_plain/<path:book>")
+def epub_plain(book):
+    """
+    Kao epub_text ali vraća plain text (bez HTML tagova) — za pretragu i diff.
+    Response: {"blocks": [{"stem": "...", "text": "...", "score": 7.2}, ...]}
+    """
+    import json as _j, re as _re
+    from bs4 import BeautifulSoup
+    from config.settings import CHECKPOINT_BASE_DIR
+    from processing.retro import _je_finalni_chk
+
+    try:
+        clean = _re.sub(r"[^a-zA-Z0-9_\-]", "", pathlib.Path(book).stem)
+        chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
+
+        if not chk_dir.exists():
+            return jsonify({"error": f"Checkpoint dir nije pronađen: {chk_dir}", "blocks": []}), 404
+
+        qs_path = chk_dir / "quality_scores.json"
+        scores = {}
+        if qs_path.exists():
+            try:
+                raw_scores = _j.loads(qs_path.read_text("utf-8"))
+                for k, v in raw_scores.items():
+                    scores[k] = float(v["score"]) if isinstance(v, dict) else float(v)
+            except Exception:
+                pass
+
+        blocks = []
+        for chk in sorted(chk_dir.glob("*.chk")):
+            if not _je_finalni_chk(chk):
+                continue
+            try:
+                raw = chk.read_text("utf-8", errors="ignore")
+                try:
+                    plain = BeautifulSoup(raw, "html.parser").get_text(separator=" ", strip=True)
+                except Exception:
+                    plain = _re.sub(r"<[^>]+>", " ", raw).strip()
+                score = scores.get(chk.stem, None)
+                blocks.append({
+                    "stem":  chk.stem,
+                    "text":  plain,
+                    "score": round(score, 1) if score is not None else None,
+                })
+            except Exception:
+                pass
+
+        return jsonify({"blocks": blocks, "total": len(blocks), "book": book})
+
+    except Exception as e:
+        return jsonify({"error": str(e), "blocks": []}), 500

@@ -7,7 +7,25 @@ from pathlib import Path
 _PLACEHOLDERS = {
     "lektorisani tekst ovdje", "korigirani tekst ovdje",
     "lektorirani tekst ovdje", "prevedeni tekst ovdje",
+    "molim te, pošalji tekst za obradu. čekam ga.",
+    "pošalji tekst za obradu.",
+    "čekam ga.",
+    "[prijevod ovdje]", "[lektura ovdje]", "[tekst ovdje]",
+    "ovdje unesite tekst", "tekst za lekturu", "tekst za prijevod",
 }
+
+_PHANTOM_CONTAINS = [
+    "molim te, pošalji tekst",
+    "pošalji tekst za obradu",
+    "naravno, evo lektoriranog",
+    "naravno, evo prijevoda",
+    "evo lektoriranog teksta:",
+    "evo prijevoda:",
+    "evo korigiranog teksta:",
+    "svakako, evo",
+    "kao što ste tražili",
+    "kao što si tražio",
+]
 
 
 def _ocisti_json_wrapper(sadrzaj: str) -> str:
@@ -27,7 +45,13 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
 
 def _je_placeholder(sadrzaj: str) -> bool:
     cist = re.sub(r"<[^>]+>", "", sadrzaj).strip().lower()
-    return cist in _PLACEHOLDERS or len(cist) < 5
+    if cist in _PLACEHOLDERS or len(cist) < 5:
+        return True
+    if len(cist) < 150:
+        for fraza in _PHANTOM_CONTAINS:
+            if fraza in cist:
+                return True
+    return False
 
 
 def _no_cisti_chk_fajlove(checkpoint_dir: Path, log_fn=None) -> int:

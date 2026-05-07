@@ -12,7 +12,6 @@ VERZIJA 2.0 — Realni sistem ocjenjivanja:
 """
 import re
 import json
-import hashlib
 from bs4 import BeautifulSoup
 
 # ─── Konstante ────────────────────────────────────────────────────────────────
@@ -254,6 +253,78 @@ Vrati ISKLJUČIVO JSON bez objašnjenja:
 """
 
 
+
+# ── NON-PROSE DETEKCIJA (sadržaj, ne ime fajla) ───────────────────────────
+_NONPROSE_KEYWORDS = [
+    "copyright", "isbn", "cip -", "katalogizacija", "cataloguing",
+    "sva prava pridrzana", "sva prava pridržana", "all rights reserved",
+    "stampano u", "štampano u", "printed in", "first published",
+    "prvo izdanje", "o autoru", "about the author", "o autorica",
+    "biljeska o prijevodu", "bilješka o prijevodu", "napomena prevodioca",
+    "zahvalnice", "acknowledgements", "acknowledgments",
+    "posveta", "dedication", "epigraf",
+    "sadrzaj", "sadržaj", "table of contents", "kazalo",
+    "indeks", "index", "glosar pojmova", "glossary",
+    "bibliografija", "bibliography", "literatura",
+    "recenzija", "endorsement", "also by", "by the same author",
+    "o knjizi", "about this book", "about the book",
+]
+
+def _je_nonprose_blok(tekst: str) -> bool:
+    """True ako je blok paratekst koji ne treba AI ocjenu."""
+    import re as _re
+    try:
+        from bs4 import BeautifulSoup as _BS
+        _has_bs4 = True
+    except ImportError:
+        _has_bs4 = False
+
+    t = (tekst or "").strip()
+    if not t:
+        return True
+
+    # 1. Čisto-slikovni blok
+    if _re.search(r'^\s*<(img|figure|svg)', t, _re.IGNORECASE):
+        return True
+    # Blok koji sadrži SAMO sliku (img bez okolnog teksta)
+    if _re.search(r'<img', t, _re.IGNORECASE):
+        stripped = _re.sub(r'<[^>]+>', '', t).strip()
+        if len(stripped) < 10:
+            return True
+
+    # 2. TOC lista — niz linkova bez proze
+    if _re.search(
+        r'(?is)<(ul|ol)[^>]*>(?:\s*<li[^>]*>\s*<a[^>]*>[^<]{1,120}</a>.*?</li>\s*){3,}</(?:ul|ol)>',
+        t
+    ):
+        return True
+
+    # 3. Plain-text analiza
+    if _has_bs4:
+        from bs4 import BeautifulSoup as _BS
+        try:
+            plain = _BS(t, "html.parser").get_text(" ", strip=True)
+        except Exception:
+            plain = _re.sub(r"<[^>]+>", " ", t)
+    else:
+        plain = _re.sub(r"<[^>]+>", " ", t)
+
+    plain_lower = plain.lower()
+
+    # 4. Ključne fraze parateksta
+    for kw in _NONPROSE_KEYWORDS:
+        if kw in plain_lower:
+            return True
+
+    # 5. Kratak blok bez rečenične strukture
+    words = plain.split()
+    if len(words) < 55:
+        has_sentence = bool(_re.search(r'[a-zA-Zšđžčć]{4,}.*[.,!?;]', plain))
+        if not has_sentence:
+            return True
+
+    return False
+
 async def _scoruj_kvalitetu(
     tekst: str,
     engine_fn,
@@ -261,8 +332,13 @@ async def _scoruj_kvalitetu(
     file_name: str,
     self_obj=None,
     stari_tekst: str = None,
-    tip_ocjenjivanja: str = "opci"
+    tip_ocjenjivanja: str = "opci",
+    prevodilac_provider: str = None,
 ) -> float:
+
+    # Auto-10 za non-prose blokove
+    if _je_nonprose_blok(tekst or ''):
+        return 10.0
     """
     Ocjenjuje kvalitetu teksta — kombinacija heuristike i AI ocjene.
     Nikad ne vraća None — uvijek vraća float 1.0–10.0.
@@ -300,9 +376,19 @@ async def _scoruj_kvalitetu(
 
         # uloga="SCORER" → automatski koristi QUALITY_SCORER_SYS,
         # temp=0.05, max_tokens=128, priority=GROQ/CEREBRAS/GEMINI
+        scorer_sys_override = None
         if self_obj is not None:
+            try:
+                from core.quality_scorer_v2 import get_scorer_sys_override
+                scorer_sys_override = get_scorer_sys_override(
+                    self_obj, prevodilac_provider, chunk_idx, file_name
+                )
+            except ImportError:
+                pass
+
             raw, _ = await self_obj._call_ai_engine(
-                prompt, chunk_idx, uloga="SCORER", filename=file_name
+                prompt, chunk_idx, uloga="SCORER", filename=file_name,
+                sys_override=scorer_sys_override,
             )
         elif engine_fn is not None:
             raw, _ = await engine_fn(

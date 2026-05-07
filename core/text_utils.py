@@ -13,6 +13,42 @@
 import re
 import json
 from bs4 import BeautifulSoup
+try:
+    from core.kalkovi.engine import primijeni_html_safe as _kalkovi_primijeni
+except ImportError:
+    _kalkovi_primijeni = lambda t, **kw: t
+
+import re as _re_tu
+
+def _booklyfi_fix_spojnice(tekst: str) -> str:
+    """
+    Ispravlja slijepljene riječi nastale pri chunking/joining operacijama.
+    1. "daBancroftovi" → "da Bancroftovi"  (malo+Veliko bez razmaka)
+    2. "B io je"       → "Bio je"           (slovo+razmak+slova = razlomljena riječ)
+    3. Višestruki razmaci → jedan razmak
+    """
+    if not tekst:
+        return tekst
+    # Fix 1: malo slovo direktno uz veliko (bez razmaka) — ubaci razmak
+    # Izuzetak: HTML tagovi, akronimi, vlastita imena s apostrofom
+    tekst = _re_tu.sub(
+        r'(?<=[a-zčćšžđ])(?=[A-ZČĆŠŽĐ])',
+        ' ',
+        tekst
+    )
+    # Fix 2: Izolirano slovo + razmak + nastavak (razlomljena riječ pri copy/paste)
+    # "B io" → "Bio", "P oglavlje" → "Poglavlje"
+    tekst = _re_tu.sub(
+        r'\b([A-ZČĆŠŽĐ])\s+([a-zčćšžđ]{2,})',
+        lambda m: m.group(1) + m.group(2),
+        tekst
+    )
+    # Fix 3: višestruki razmaci (osim newline)
+    tekst = _re_tu.sub(r'[^\S\n]{2,}', ' ', tekst)
+    return tekst
+
+
+
 
 # FIX: Strane riječi koje EN detektor NE smije brojati kao engleski ostatak
 _STRANI_JEZIK_WHITELIST = frozenset({

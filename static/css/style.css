@@ -1676,15 +1676,10 @@ input:focus {
 #review-modal.open {
     display: flex !important;
 }
-.review-modal-container {
+/* legacy - overridden later */
+.review-modal-container--legacy {
     background: #0d1220;
-    border: 1px solid #1a2236;
-    border-radius: 12px;
-    width: 95vw;
-    max-width: 500px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
 
 .review-modal-header {
     gap: 8px;
@@ -2149,16 +2144,10 @@ input:focus {
     display: none;
 }
 
-/* [v2.0.4] Produkcijski review modal */
-.review-modal-container {
+/* [v2.0.4] Produkcijski review modal - legacy, overridden */
+.review-modal-container--v204 {
     background: #0d1220;
-    border: 1px solid #1a2236;
-    border-radius: 12px;
-    width: 95vw;
-    max-width: 500px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
 
 .review-modal-header {
     gap: 8px;
@@ -2971,3 +2960,566 @@ body.light .bf-tooltip {
 .qs-box-clickable.qs-selected { outline:2px solid var(--amber); outline-offset:2px; }
 .qs-box-hint { font-size:0.58rem; font-family:var(--font-mono); color:var(--tx-3); margin-top:3px; opacity:0; transition:opacity 0.15s; }
 .qs-box-clickable:hover .qs-box-hint { opacity:1; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   REDESIGN PATCH — Review Tab, Pregled tab, Global polish
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Better Google Font imports — keep in sync with <head> ─────── */
+/* Using Syne (display) + JetBrains Mono already loaded */
+
+/* ── Tab nav — more refined, accent underline style ─────────────── */
+.tab-nav {
+    gap: 0;
+    padding: 0;
+    background: transparent;
+    border-bottom: 1px solid var(--bd);
+    border-radius: 0;
+    margin-bottom: 16px;
+}
+.tab-btn {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--tx-3);
+    letter-spacing: 0.04em;
+    transition: color var(--t-fast), border-color var(--t-fast);
+    background: transparent;
+}
+.tab-btn:hover {
+    color: var(--tx-2);
+    background: transparent;
+}
+.tab-btn.active {
+    color: var(--accent-2);
+    border-bottom-color: var(--accent-2);
+    background: transparent;
+    box-shadow: none;
+    font-weight: 700;
+}
+
+/* ── Card: nicer shadow + subtle gradient top border ─────────────── */
+.card {
+    background: var(--bg-1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-xl);
+    padding: 20px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.14);
+    position: relative;
+    overflow: hidden;
+}
+.card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.25), rgba(6,182,212,0.25), transparent);
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+
+/* ── Header — tighter, more polished ────────────────────────────── */
+.app-header {
+    padding: 10px 14px;
+    border-radius: var(--r-lg);
+    border: 1px solid var(--bd);
+    background: var(--bg-glass);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    top: 8px;
+}
+
+/* ── Review Tab — full redesign ──────────────────────────────────── */
+
+/* Grid layout */
+.review-grid {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 14px;
+    min-height: 540px;
+    max-height: 620px;
+}
+
+/* Left column */
+.review-list-col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-right: 1px solid var(--bd);
+    padding-right: 12px;
+}
+.review-list-col #review-list {
+    flex: 1;
+    overflow-y: auto;
+    border: none;
+    padding: 0;
+}
+.review-list-empty {
+    color: var(--tx-3);
+    text-align: center;
+    padding: 32px 12px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    line-height: 1.6;
+}
+
+/* Right column */
+.review-editor-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+}
+
+/* Filename badge */
+.review-filename {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--tx-3);
+    padding: 5px 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+
+/* Empty block warning */
+.review-empty-banner {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: rgba(244, 63, 94, 0.08);
+    border: 1px solid rgba(244, 63, 94, 0.3);
+    border-radius: var(--r-md);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--rose);
+    flex-shrink: 0;
+    border-left: 3px solid var(--rose);
+}
+
+/* Legend */
+.review-legend {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    padding: 6px 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+}
+.review-legend-label {
+    font-size: 0.6rem;
+    color: var(--tx-3);
+    font-family: var(--font-mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+/* Preview panel */
+.review-preview-panel {
+    display: none;
+    flex: 0 0 auto;
+    max-height: 120px;
+    overflow-y: auto;
+    background: var(--bg-0);
+    border: 1px solid var(--bd);
+    border-left: 3px solid var(--sky-dim);
+    border-radius: var(--r-md);
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    line-height: 1.7;
+    color: var(--tx-2);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Textarea */
+.review-textarea {
+    flex: 1;
+    background: var(--bg-0);
+    border: 1.5px solid var(--bd);
+    border-radius: var(--r-md);
+    color: var(--tx-1);
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    resize: none;
+    min-height: 0;
+    line-height: 1.75;
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.review-textarea:focus {
+    outline: none;
+    border-color: var(--accent-2);
+    box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+}
+
+/* Action bar */
+.review-tab-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-top: 4px;
+}
+.review-tab-actions .btn-primary {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+}
+.review-hint-count {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--tx-3);
+}
+
+/* ── Epub toolbar — simplified ───────────────────────────────────── */
+.epub-reader-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--bd);
+}
+.epub-reader-toolbar span {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--tx-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Global micro-polish ─────────────────────────────────────────── */
+
+/* Stat boxes — slightly more prominent */
+.stat-box {
+    padding: 12px 10px;
+    transition: border-color var(--t-fast), transform var(--t-fast);
+}
+.stat-box:hover {
+    border-color: rgba(99,102,241,0.3);
+    transform: translateY(-1px);
+}
+
+/* Better section spacing */
+#app {
+    gap: 16px;
+}
+
+/* Fleet summary boxes — bolder values */
+.fleet-summary-value {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+.fleet-summary-box {
+    border-radius: var(--r-lg);
+    padding: 16px 12px;
+    transition: transform var(--t-fast);
+}
+.fleet-summary-box:hover {
+    transform: translateY(-1px);
+}
+
+/* Progress bar — taller, more visible */
+.progress-track {
+    height: 8px;
+    border-radius: 100px;
+}
+
+/* Body — slightly tighter grid */
+body::before {
+    background-size: 32px 32px;
+    opacity: 0.7;
+}
+
+/* ── Review modal — align to design system ───────────────────────── */
+.review-modal-container {
+    background: var(--bg-1) !important;
+    border: 1px solid var(--bd) !important;
+    border-radius: var(--r-xl) !important;
+    box-shadow: 0 32px 64px -16px rgba(0,0,0,0.55),
+                0 0 0 1px rgba(99,102,241,0.12) !important;
+}
+.review-modal-header {
+    background: var(--bg-2) !important;
+    border-bottom: 1px solid var(--bd) !important;
+    border-radius: var(--r-xl) var(--r-xl) 0 0 !important;
+    padding: 14px 18px !important;
+}
+.review-modal-title {
+    color: var(--tx-1) !important;
+    font-family: var(--font-display) !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+}
+.review-modal-stem {
+    color: var(--accent-2) !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.75rem !important;
+}
+.review-modal-close {
+    background: var(--bg-3) !important;
+    border: 1px solid var(--bd) !important;
+    color: var(--tx-2) !important;
+    border-radius: var(--r-sm) !important;
+}
+.review-modal-close:hover {
+    color: var(--rose) !important;
+    border-color: rgba(244,63,94,0.4) !important;
+}
+.review-modal-textarea {
+    background: var(--bg-0) !important;
+    border: 1.5px solid var(--bd) !important;
+    color: var(--tx-1) !important;
+    border-radius: var(--r-md) !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.82rem !important;
+    line-height: 1.75 !important;
+}
+.review-modal-textarea:focus {
+    border-color: var(--accent-2) !important;
+    box-shadow: 0 0 0 3px rgba(6,182,212,0.12) !important;
+    outline: none !important;
+}
+.review-modal-nav .btn-rev-secondary {
+    background: var(--bg-3) !important;
+    border: 1px solid var(--bd) !important;
+    color: var(--tx-2) !important;
+    border-radius: var(--r-md) !important;
+    font-family: var(--font-display) !important;
+    font-size: 0.78rem !important;
+}
+.review-modal-nav .btn-rev-secondary:hover {
+    background: var(--bg-4) !important;
+    color: var(--tx-1) !important;
+}
+.btn-rev-primary {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #fff !important;
+    border-radius: var(--r-md) !important;
+    font-family: var(--font-display) !important;
+    font-size: 0.82rem !important;
+}
+.btn-rev-primary:hover {
+    filter: brightness(1.12) !important;
+}
+.btn-rev-danger {
+    background: rgba(244,63,94,0.08) !important;
+    border: 1px solid rgba(244,63,94,0.3) !important;
+    color: var(--rose) !important;
+    border-radius: var(--r-md) !important;
+    font-family: var(--font-display) !important;
+    font-size: 0.78rem !important;
+}
+.btn-rev-danger:hover {
+    background: rgba(244,63,94,0.16) !important;
+}
+
+/* ── Responsive — review grid on mobile ──────────────────────────── */
+@media (max-width: 640px) {
+    .review-grid {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+    .review-list-col {
+        border-right: none;
+        border-bottom: 1px solid var(--bd);
+        padding-right: 0;
+        padding-bottom: 12px;
+        max-height: 200px;
+    }
+    .review-editor-col {
+        min-height: 340px;
+    }
+    .tab-btn {
+        padding: 8px 10px;
+        font-size: 0.65rem;
+    }
+}
+
+
+/* ── Review list items — nove klase za _renderReviewListUI ────────── */
+.review-list-item {
+    padding: 8px 10px;
+    border-radius: var(--r-md);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    margin-bottom: 3px;
+    border-left: 3px solid transparent;
+    background: transparent;
+    transition: background var(--t-fast), border-color var(--t-fast);
+    user-select: none;
+}
+.review-list-item:hover {
+    background: var(--bg-2);
+}
+.review-list-item.active {
+    background: var(--bg-3);
+    border-left-color: var(--accent-2);
+}
+.review-list-item.marked {
+    border-left-color: var(--amber);
+}
+.review-list-item.multi-sel {
+    background: rgba(99,102,241,0.1);
+    border-left-color: var(--sky);
+}
+.review-list-name {
+    color: var(--tx-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.review-list-item.active .review-list-name {
+    color: var(--tx-1);
+    font-weight: 700;
+}
+.review-list-reason {
+    color: var(--amber);
+    font-size: 0.6rem;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HIGHLIGHT EDITOR — backdrop + textarea overlay sistem
+   ═══════════════════════════════════════════════════════════════════ */
+
+.hl-editor-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 300px;
+    border-radius: var(--r-md);
+    /* clip overflow da backdrop ne viri van */
+    overflow: hidden;
+}
+
+/* H1 FIX: Backdrop highlight sistem — radi s textarea scroll sync */
+.hl-backdrop {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: var(--r-md);
+    z-index: 1;
+}
+.hl-highlights {
+    /* Isti font, padding, line-height kao textarea — mora biti identično */
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    word-spacing: inherit;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    padding: inherit;
+    margin: 0;
+    border: transparent;
+    color: transparent;         /* Tekst nevidljiv, samo span-ovi se vide */
+    background: transparent;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Textarea — transparentna pozadina, vidljivi tekst */
+.hl-textarea {
+    position: relative;
+    z-index: 2;
+    background: transparent !important;
+    color: var(--tx-1);
+    caret-color: var(--accent-2);
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    resize: none;
+    border-radius: var(--r-md);
+    border: 1.5px solid var(--bd);
+    padding: 12px 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.8rem;
+    line-height: 1.75;
+    outline: none;
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+    /* Textarea treba solidnu pozadinu ISPOD sebe (backdrop je transparentan za hl) */
+}
+
+/* Pozadina dolazi od wrap elementa */
+.hl-editor-wrap {
+    background: var(--bg-0);
+    border: 1.5px solid var(--bd);
+    border-radius: var(--r-md);
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+/* Textarea nema vlastiti border kad je unutar wrap-a */
+.hl-textarea {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+.hl-editor-wrap:focus-within {
+    border-color: var(--accent-2);
+    box-shadow: 0 0 0 3px rgba(6,182,212,0.12);
+}
+
+/* Highlight span stilovi */
+.hl-en    { background: rgba(244,63,94,0.20);  border-bottom: 2px solid rgba(244,63,94,0.65);  border-radius: 2px; color: inherit; cursor: help; }
+.hl-kalk  { background: rgba(245,158,11,0.20); border-bottom: 2px solid rgba(245,158,11,0.65); border-radius: 2px; color: inherit; cursor: help; }
+.hl-gram  { background: rgba(6,182,212,0.16);  border-bottom: 2px solid rgba(6,182,212,0.65);  border-radius: 2px; color: inherit; cursor: help; }
+
+/* Stats bar ispod editora */
+.hl-stats-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 5px 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--tx-3);
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+}
+.hl-stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.62rem;
+}
+.hl-stat-chip.en   { background: rgba(244,63,94,0.15);  color: var(--rose);    border: 1px solid rgba(244,63,94,0.35); }
+.hl-stat-chip.kalk { background: rgba(245,158,11,0.15); color: var(--amber);   border: 1px solid rgba(245,158,11,0.35); }
+.hl-stat-chip.gram { background: rgba(6,182,212,0.13);  color: var(--accent-2);border: 1px solid rgba(6,182,212,0.35); }
+.hl-stat-chip.ok   { background: rgba(16,185,129,0.13); color: var(--emerald); border: 1px solid rgba(16,185,129,0.35); }
+.hl-stats-clean {
+    color: var(--emerald);
+    font-weight: 600;
+}

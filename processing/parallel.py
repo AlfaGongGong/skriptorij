@@ -3,8 +3,6 @@
 # processing/parallel.py
 import asyncio
 import random
-import time
-from collections import defaultdict
 
 # Veličina sliding window-a — maksimalno N aktivnih chunka u isto vrijeme.
 # Za 8 ključeva to znači 4 paralelna poziva (konzervativno, bez DDoS-a)

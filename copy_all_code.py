@@ -6,7 +6,6 @@ Preskaču se direktorijumi poput node_modules, venv, build, itd.
 """
 
 import os
-import sys
 import fnmatch
 from pathlib import Path
 from datetime import datetime
