@@ -224,7 +224,9 @@ def _post_process_tipografija(tekst: str) -> str:
     tekst = re.sub(r"(?<=[^\s\n\u2014])—(?=[^\s\n\u2014])", " — ", tekst)
 
     # Navodnici: ASCII "..." → BS/HR standard „..." u tekstualnom sadržaju
-    # Isključuje HTML atribute (ne smije biti < > unutar navodnika)
+    # Isključuje HTML atribute (ne smije biti < > unutar navodnika).
+    # Limit od 400 znakova: štiti od premoći na HTML atribute s dugačkim vrijednostima;
+    # književni citat gotovo nikad ne prelazi 400 znakova unutar jednog para navodnika.
     tekst = re.sub(r'"([^"<>\n\r]{1,400})"', r'„\1"', tekst)
     # Zamijeni zaostale dvostruke navodnike koji nisu dio HTML-a
     tekst = re.sub(r'\u201c([^"\u201c\u201d<>\n\r]{1,400})\u201d', r'„\1"', tekst)
