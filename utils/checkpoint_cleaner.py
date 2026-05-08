@@ -29,10 +29,11 @@ _PHANTOM_CONTAINS = [
 
 
 def _ocisti_json_wrapper(sadrzaj: str) -> str:
-    if not sadrzaj.strip().startswith("{"):
+    stripped = sadrzaj.strip()
+    if not stripped.startswith("{"):
         return sadrzaj
     try:
-        data = json.loads(sadrzaj)
+        data = json.loads(stripped)
         for k in ("finalno_polirano", "korektura", "tekst", "prijevod"):
             if k in data and isinstance(data[k], str) and data[k].strip():
                 extracted = data[k].strip()
@@ -40,6 +41,17 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
                     return extracted
     except (json.JSONDecodeError, ValueError):
         pass
+    # Regex fallback — handles truncated or malformed JSON wrappers
+    for k in ("finalno_polirano", "korektura", "tekst", "prijevod"):
+        m = re.search(
+            rf'"{k}"\s*:\s*"((?:[^"\\]|\\.)*)',
+            stripped,
+            re.DOTALL,
+        )
+        if m:
+            extracted = m.group(1).replace('\\"', '"').replace('\\n', '\n').strip()
+            if extracted and extracted.lower() not in _PLACEHOLDERS:
+                return extracted
     return sadrzaj
 
 
