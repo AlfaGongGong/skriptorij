@@ -431,6 +431,16 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         else:
             finalno = _post_process_tipografija(cist_priv)
 
+        # ── KOREKTOR pass (temp 0.15) ─────────────────────────────────────────
+        raw_kor_l, prov_kor_l = await self._call_ai_engine(
+            finalno, chunk_idx, uloga="KOREKTOR",
+            filename=file_name, tip_bloka=tip_bloka,
+        )
+        if raw_kor_l:
+            kor_l = _smart_extract(raw_kor_l)
+            if kor_l and not _je_placeholder_lokalni(kor_l) and len(kor_l.strip()) > 20:
+                finalno = kor_l
+
         finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
 
         _chk_write(self, file_name, chunk_idx, finalno, "lektura")
@@ -439,7 +449,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         self.global_done_chunks += 1
         self.stvarno_prevedeno_u_sesiji += 1
         gc.collect()
-        self.log(f"[{file_name}] Blok {chunk_idx}: ✍️ HR lektura ({prov_l})", "tech")
+        self.log(f"[{file_name}] Blok {chunk_idx}: ✍️ HR lektura ({prov_l}→{prov_kor_l})", "tech")
 
         await _quality_scoring(
             self, finalno, None, chunk_idx, file_name,
@@ -477,7 +487,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             self.chunk_skips += 1
             return None, "N/A"
 
-        sirovo = _agresivno_cisti(raw_fusion)
+        sirovo = _agresivno_cisti(_smart_extract(raw_fusion))
         _chk_write(self, file_name, chunk_idx, sirovo, "prevod")
 
     lek_sys = self._get_lektor_prompt(
@@ -508,7 +518,23 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             finalno = spas
 
     if _detektuj_halucinaciju(chunk, finalno):
-        self.log(f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju", "warning")
+        self.log(f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju — pokušavam rescue", "warning")
+        spas_hal, _ = await _spasi_od_sirovog(
+            self, sirovo, chunk, chunk_idx, file_name,
+            prev_ctx, rel_glosar, "halucinacija", tip_bloka,
+        )
+        if spas_hal:
+            finalno = spas_hal
+
+    # ── KOREKTOR pass (temp 0.15) ─────────────────────────────────────────────
+    raw_kor, prov3 = await self._call_ai_engine(
+        finalno, chunk_idx, uloga="KOREKTOR",
+        filename=file_name, tip_bloka=tip_bloka,
+    )
+    if raw_kor:
+        kor = _smart_extract(raw_kor)
+        if kor and not _je_placeholder_lokalni(kor) and len(kor.strip()) > 20:
+            finalno = kor
 
     finalno = _post_process_tipografija(_agresivno_cisti(finalno))
     finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
@@ -522,7 +548,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     self.global_done_chunks += 1
     self.stvarno_prevedeno_u_sesiji += 1
 
-    prov_label = f"{prov1}→{prov2}"
+    prov_label = f"{prov1}→{prov2}→{prov3}"
     await _quality_scoring(
         self, finalno, chunk, chunk_idx, file_name,
         tip_bloka, prov_label, tip_ocjenjivanja="prevod",
