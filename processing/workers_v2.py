@@ -76,6 +76,10 @@ except ImportError:
 
 try:
     from core.qa_benchmark import qa_benchmark as _qa_benchmark
+    _qa_benchmark_ok = True
+except ImportError:
+    logger.warning("workers_v2: core.qa_benchmark nije dostupan")
+    _qa_benchmark_ok = False
 
 # Korak 11 — Dinamicki detektor (pasivni mod)
 try:
@@ -85,11 +89,6 @@ try:
 except Exception as _det_e:
     _DETEKTOR_AKTIVAN = False
     _detektor = None
-
-    _qa_benchmark_ok = True
-except ImportError:
-    logger.warning("workers_v2: core.qa_benchmark nije dostupan")
-    _qa_benchmark_ok = False
 
 
 # ─────────────────────────────────────────────────────────────

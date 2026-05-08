@@ -1914,6 +1914,177 @@
         "Guran",
         "Gurana"
       ]
+    },
+    "Magazine": {
+      "ime": "Magazine",
+      "rod": "auto",
+      "padeži": {
+        "N": "Magazine",
+        "G": "Magazinea",
+        "D": "Magazineu",
+        "A": "Magazinea",
+        "V": "Magazine",
+        "I": "Magazineom",
+        "L": "Magazineu"
+      },
+      "sve_varijante": [
+        "Magazine",
+        "Magazineom",
+        "Magazineu",
+        "Magazinea"
+      ]
+    },
+    "World": {
+      "ime": "World",
+      "rod": "auto",
+      "padeži": {
+        "N": "World",
+        "G": "Worlda",
+        "D": "Worldu",
+        "A": "Worlda",
+        "V": "World",
+        "I": "Worldom",
+        "L": "Worldu"
+      },
+      "sve_varijante": [
+        "Worldom",
+        "Worlda",
+        "World",
+        "Worldu"
+      ]
+    },
+    "Awards": {
+      "ime": "Awards",
+      "rod": "auto",
+      "padeži": {
+        "N": "Awards",
+        "G": "Awardsa",
+        "D": "Awardsu",
+        "A": "Awardsa",
+        "V": "Awards",
+        "I": "Awardsom",
+        "L": "Awardsu"
+      },
+      "sve_varijante": [
+        "Awards",
+        "Awardsom",
+        "Awardsu",
+        "Awardsa"
+      ]
+    },
+    "York": {
+      "ime": "York",
+      "rod": "auto",
+      "padeži": {
+        "N": "York",
+        "G": "Yorka",
+        "D": "Yorku",
+        "A": "Yorka",
+        "V": "York",
+        "I": "Yorkom",
+        "L": "Yorku"
+      },
+      "sve_varijante": [
+        "York",
+        "Yorku",
+        "Yorka",
+        "Yorkom"
+      ]
+    },
+    "Times": {
+      "ime": "Times",
+      "rod": "auto",
+      "padeži": {
+        "N": "Times",
+        "G": "Timesa",
+        "D": "Timesu",
+        "A": "Timesa",
+        "V": "Times",
+        "I": "Timesom",
+        "L": "Timesu"
+      },
+      "sve_varijante": [
+        "Times",
+        "Timesom",
+        "Timesu",
+        "Timesa"
+      ]
+    },
+    "Bag": {
+      "ime": "Bag",
+      "rod": "auto",
+      "padeži": {
+        "N": "Bag",
+        "G": "Baga",
+        "D": "Bagu",
+        "A": "Baga",
+        "V": "Bag",
+        "I": "Bagom",
+        "L": "Bagu"
+      },
+      "sve_varijante": [
+        "Bagu",
+        "Baga",
+        "Bag",
+        "Bagom"
+      ]
+    },
+    "Mom": {
+      "ime": "Mom",
+      "rod": "auto",
+      "padeži": {
+        "N": "Mom",
+        "G": "Moma",
+        "D": "Momu",
+        "A": "Moma",
+        "V": "Mom",
+        "I": "Momom",
+        "L": "Momu"
+      },
+      "sve_varijante": [
+        "Moma",
+        "Momu",
+        "Mom",
+        "Momom"
+      ]
+    },
+    "Corinne": {
+      "ime": "Corinne",
+      "rod": "auto",
+      "padeži": {
+        "N": "Corinne",
+        "G": "Corinnea",
+        "D": "Corinneu",
+        "A": "Corinnea",
+        "V": "Corinne",
+        "I": "Corinneom",
+        "L": "Corinneu"
+      },
+      "sve_varijante": [
+        "Corinneom",
+        "Corinne",
+        "Corinnea",
+        "Corinneu"
+      ]
+    },
+    "Alan": {
+      "ime": "Alan",
+      "rod": "auto",
+      "padeži": {
+        "N": "Alan",
+        "G": "Alana",
+        "D": "Alanu",
+        "A": "Alana",
+        "V": "Alan",
+        "I": "Alanom",
+        "L": "Alanu"
+      },
+      "sve_varijante": [
+        "Alanom",
+        "Alan",
+        "Alanu",
+        "Alana"
+      ]
     }
   },
   "few_shot_primjeri": [],
@@ -2517,6 +2688,106 @@
       "lik_count": {},
       "chunk_ids": [],
       "rijeci_count": 5
+    },
+    "6333": {
+      "broj": 6333,
+      "naslov": "acknowledgements.xhtml",
+      "summary": "",
+      "lik_count": {
+        "The": 12,
+        "Dark": 6,
+        "Magazine": 3,
+        "Fantasy": 3,
+        "Science": 3,
+        "Fiction": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 340
+    },
+    "4342": {
+      "broj": 4342,
+      "naslov": "author.xhtml",
+      "summary": "",
+      "lik_count": {
+        "World": 3,
+        "Fantasy": 6,
+        "Award": 13,
+        "Black": 5,
+        "Shirley": 3,
+        "Jackson": 3,
+        "Awards": 3,
+        "The": 8,
+        "New": 5,
+        "York": 3,
+        "Horror": 4,
+        "Times": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 698
+    },
+    "8644": {
+      "broj": 8644,
+      "naslov": "chapter01.xhtml",
+      "summary": "",
+      "lik_count": {
+        "God": 4,
+        "Bag": 4,
+        "Mom": 8,
+        "Corinne": 4,
+        "Alan": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 854
+    },
+    "7414": {
+      "broj": 7414,
+      "naslov": "acknowledgements.xhtml",
+      "summary": "",
+      "lik_count": {
+        "The": 12,
+        "Dark": 6,
+        "Magazine": 3,
+        "Fantasy": 3,
+        "Science": 3,
+        "Fiction": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 340
+    },
+    "9152": {
+      "broj": 9152,
+      "naslov": "author.xhtml",
+      "summary": "",
+      "lik_count": {
+        "World": 3,
+        "Fantasy": 6,
+        "Award": 13,
+        "Black": 5,
+        "Shirley": 3,
+        "Jackson": 3,
+        "Awards": 3,
+        "The": 8,
+        "New": 5,
+        "York": 3,
+        "Horror": 4,
+        "Times": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 698
+    },
+    "8242": {
+      "broj": 8242,
+      "naslov": "chapter01.xhtml",
+      "summary": "",
+      "lik_count": {
+        "God": 4,
+        "Bag": 4,
+        "Mom": 8,
+        "Corinne": 4,
+        "Alan": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 854
     }
   }
 }
