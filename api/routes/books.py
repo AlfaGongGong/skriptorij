@@ -54,7 +54,7 @@ def api_upload_book():
         # Provjera path traversala — dest mora ostati unutar INPUT_DIR
         input_dir_real = Path(INPUT_DIR).resolve()
         dest = safe_join(str(input_dir_real), safe_name)
-        if not dest:
+        if dest is None:
             return jsonify({"error": "Neispravno ime fajla"}), 400
         input_dir_real.mkdir(parents=True, exist_ok=True)
         f.save(dest)
