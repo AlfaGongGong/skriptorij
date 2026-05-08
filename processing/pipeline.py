@@ -78,7 +78,7 @@ def _strip_ai_json(text: str) -> str:
         return text
     t = text.strip()
     t = re.sub(r"^```(?:json)?\s*?", "", t, flags=re.IGNORECASE)
-    t = re.sub(r"?```\s*$", "", t)
+    t = re.sub(r"```\s*$", "", t)
     return t.strip()
 
 
