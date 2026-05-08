@@ -4,6 +4,14 @@
 import re
 from bs4 import BeautifulSoup, NavigableString
 
+# Regex: JSON wrapper artifacts like {"finalno_polirano": "..." or partial forms
+_JSON_ARTIFACT_PREFIX = re.compile(
+    r'^\s*\{["\s]*(?:finalno_polirano|korektura|tekst|prijevod)["\s]*:\s*["\s]*',
+    re.IGNORECASE,
+)
+_JSON_ARTIFACT_TRAILER = re.compile(r'["\s]*\}\s*$')
+
+
 def _ocisti_epub_html(html: str) -> str:
     try:
         soup = BeautifulSoup(html, "html.parser")
@@ -16,6 +24,43 @@ def _ocisti_epub_html(html: str) -> str:
         return str(soup)
     except Exception:
         return html
+
+
+def _strip_json_artifacts_from_html(html_fajlovi: list, log_fn=None) -> int:
+    """
+    Uklanja JSON omotače poput {"finalno_polirano": "..." koji su procurili
+    u HTML tekst tokom AI obrade. Radi direktno nad tekst-čvorovima BeautifulSoup-a.
+    """
+    fixed = 0
+    for fajl in html_fajlovi:
+        try:
+            original = fajl.read_text("utf-8", errors="replace")
+            # Brza provjera — skipuj fajlove bez artefakta
+            if "finalno_polirano" not in original and "korektura" not in original:
+                continue
+            soup = BeautifulSoup(original, "html.parser")
+            changed = False
+            for node in soup.find_all(string=True):
+                txt = str(node)
+                if "finalno_polirano" not in txt and "korektura" not in txt:
+                    continue
+                if not txt.strip().startswith("{"):
+                    continue
+                # Ukloni prefiks JSON omotača
+                cleaned = _JSON_ARTIFACT_PREFIX.sub("", txt)
+                # Ukloni ostatak JSON zatvarača samo s kraja
+                cleaned = _JSON_ARTIFACT_TRAILER.sub("", cleaned)
+                if cleaned != txt:
+                    node.replace_with(NavigableString(cleaned))
+                    changed = True
+            if changed:
+                fajl.write_text(str(soup), encoding="utf-8")
+                fixed += 1
+        except Exception:
+            pass
+    if fixed and log_fn:
+        log_fn(f"🔧 JSON omotači uklonjeni iz {fixed} HTML fajl(ov)a.", "tech")
+    return fixed
 
 def _ukloni_inline_stilove(html_fajlovi: list, log_fn=None) -> int:
     modificirano = 0
