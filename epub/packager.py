@@ -58,22 +58,44 @@ def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
     if samo_dropcap:
         return
 
-    # Dropcap na prvom paragrafu
-    first_p = soup.find("p")
-    if first_p and first_p.get_text(strip=True):
-        tekst = first_p.get_text(strip=True)
-        if tekst and len(tekst) > 1:
-            first_char = tekst[0]
-            rest = str(first_p)
-            if '<span class="dropcap"' not in rest:
-                original_html = str(first_p)
-                new_html = original_html.replace(
-                    first_char,
-                    f'<span class="dropcap">{first_char}</span>',
-                    1,
-                )
-                from bs4 import BeautifulSoup as _BS
-                first_p.replace_with(_BS(new_html, "html.parser"))
+    # Dropcap na prvom paragrafu koji nije unutar headinga
+    from bs4 import NavigableString as _NS
+    first_p = None
+    for p in soup.find_all("p"):
+        # Preskači <p> koji su ugniježđeni unutar h1/h2/h3
+        if p.find_parent(["h1", "h2", "h3"]):
+            continue
+        if p.get_text(strip=True):
+            first_p = p
+            break
+
+    if first_p and not first_p.find("span", class_="dropcap"):
+        # Pronađi prvi ne-prazni tekst-čvor unutar paragrafa
+        first_text_node = None
+        for node in first_p.descendants:
+            if isinstance(node, _NS) and node.strip():
+                first_text_node = node
+                break
+
+        if first_text_node:
+            node_text = str(first_text_node)
+            stripped = node_text.lstrip()
+            if stripped and len(stripped) > 1:
+                first_char = stripped[0]
+                leading_ws = node_text[: len(node_text) - len(stripped)]
+                rest_of_node = stripped[1:]
+
+                # Kreiraj dropcap span čvor sigurnom manipulacijom stabla
+                dropcap_span = soup.new_tag("span")
+                dropcap_span["class"] = "dropcap"
+                dropcap_span.string = first_char
+
+                parent_tag = first_text_node.parent
+                pos = parent_tag.contents.index(first_text_node)
+                first_text_node.replace_with(_NS(rest_of_node))
+                parent_tag.insert(pos, dropcap_span)
+                if leading_ws:
+                    parent_tag.insert(pos, _NS(leading_ws))
 
     # Puni toc_entries za NCX
     rel_path = html_file.relative_to(self.work_dir)
