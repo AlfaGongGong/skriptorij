@@ -1,4 +1,5 @@
 """Rute za upravljanje knjigama (listanje, pretraga, upload)."""
+import logging
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
@@ -8,6 +9,7 @@ from config.settings import INPUT_DIR
 from utils.file_utils import secure_filename
 
 bp = Blueprint("books", __name__)
+logger = logging.getLogger(__name__)
 
 _SUPPORTED_EXTS = {".epub", ".mobi"}
 
@@ -34,6 +36,7 @@ def api_books():
         books = _list_books()
         return jsonify({"books": books, "files": [b["name"] for b in books]})
     except Exception:
+        logger.exception("Greška pri čitanju knjiga")
         return jsonify({"error": "Greška pri čitanju knjiga", "books": [], "files": []}), 500
 
 
@@ -57,4 +60,5 @@ def api_upload_book():
         f.save(dest)
         return jsonify({"ok": True, "name": safe_name})
     except Exception:
+        logger.exception("Greška pri uploadu fajla")
         return jsonify({"error": "Greška pri uploadu fajla"}), 500
