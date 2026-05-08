@@ -1,13 +1,15 @@
 """Rute za upravljanje knjigama (listanje, pretraga, upload)."""
-import os
+import logging
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
+from werkzeug.utils import safe_join
 
 from config.settings import INPUT_DIR
 from utils.file_utils import secure_filename
 
 bp = Blueprint("books", __name__)
+logger = logging.getLogger(__name__)
 
 _SUPPORTED_EXTS = {".epub", ".mobi"}
 
@@ -34,6 +36,7 @@ def api_books():
         books = _list_books()
         return jsonify({"books": books, "files": [b["name"] for b in books]})
     except Exception:
+        logger.exception("Greška pri čitanju knjiga")
         return jsonify({"error": "Greška pri čitanju knjiga", "books": [], "files": []}), 500
 
 
@@ -49,12 +52,13 @@ def api_upload_book():
             return jsonify({"error": f"Nepodržani format: {ext}"}), 400
         safe_name = secure_filename(f.filename)
         # Provjera path traversala — dest mora ostati unutar INPUT_DIR
-        input_dir_real = os.path.realpath(INPUT_DIR)
-        dest = os.path.realpath(os.path.join(input_dir_real, safe_name))
-        if os.path.commonpath([input_dir_real, dest]) != input_dir_real:
+        input_dir_real = Path(INPUT_DIR).resolve()
+        dest = safe_join(str(input_dir_real), safe_name)
+        if dest is None:
             return jsonify({"error": "Neispravno ime fajla"}), 400
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        input_dir_real.mkdir(parents=True, exist_ok=True)
         f.save(dest)
         return jsonify({"ok": True, "name": safe_name})
     except Exception:
+        logger.exception("Greška pri uploadu fajla")
         return jsonify({"error": "Greška pri uploadu fajla"}), 500

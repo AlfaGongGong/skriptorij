@@ -3,20 +3,23 @@
 # Auto-detekcija moda: PREVOD | LEKTURA | AUTO-RETRO
 # Checkpoint putanja: CHECKPOINT_BASE_DIR/_skr_X (nova centralna lokacija)
 #
-# FIX: mark_for_review se sada automatski poziva nakon završetka main_loop-a
 #      unutar async konteksta — bez nested asyncio.run()
 
-import os, re, sys, shutil, zipfile, asyncio, json
+import json
+import zipfile
+import shutil
+import asyncio
+import sys
 from pathlib import Path
 from bs4 import BeautifulSoup
 
 from core.engine import SkriptorijAllInOne
-from utils.logging import add_audit
 from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
 from epub.parser import _ocisti_epub_html, _ukloni_inline_stilove, _zamijeni_epub_css
 
 try:
     import mobi
+
     HAS_MOBI = True
 except ImportError:
     HAS_MOBI = False
@@ -80,12 +83,15 @@ def _pametni_reset_cachea(engine, scores: dict, sharedstats):
 
     chk_dir = engine.checkpoint_dir
     losi = [
-        chk for chk in chk_dir.glob("*.chk")
+        chk
+        for chk in chk_dir.glob("*.chk")
         if scores.get(chk.stem, 10.0) < _QUALITY_RESCUE_THRESHOLD
     ]
 
     if not losi:
-        engine.log("✅ Svi cache blokovi dobrog kvaliteta — zadržavamo cache.", "system")
+        engine.log(
+            "✅ Svi cache blokovi dobrog kvaliteta — zadržavamo cache.", "system"
+        )
         return 0
 
     for chk in losi:
@@ -96,6 +102,27 @@ def _pametni_reset_cachea(engine, scores: dict, sharedstats):
 
     for chk in losi:
         sharedstats.get("quality_scores", {}).pop(chk.stem, None)
+
+    # FIX: writeback quality_scores na disk odmah nakon brisanja loših blokova.
+    # Bez ovoga: disk JSON i dalje ima stare ocjene → sljedeća sesija ih učita
+    # → _pametni_reset_cachea ih opet pobriše iz memorije → blokovi bez ocjene.
+    try:
+        import json as _json
+        qs_path = engine.checkpoint_dir / "quality_scores.json"
+        trenutni_qs = sharedstats.get("quality_scores", {})
+        if qs_path.exists() and trenutni_qs:
+            tmp = qs_path.with_suffix(".tmp")
+            tmp.write_text(
+                _json.dumps(trenutni_qs, ensure_ascii=False, indent=2),
+                encoding="utf-8"
+            )
+            tmp.replace(qs_path)
+            engine.log(
+                f"💾 Quality scores ažurirani na disku: {len(trenutni_qs)} blokova ostalo",
+                "tech"
+            )
+    except Exception as _e:
+        engine.log(f"⚠️ Quality scores writeback pao: {_e}", "warning")
 
     engine.log(
         f"🧹 Pametni reset: obrisano {len(losi)} loših blokova "
@@ -165,8 +192,11 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
 
     # ── Pronađi HTML fajlove ──────────────────────────────────────────────
     engine.html_files = sorted(
-        [f for f in engine.work_dir.rglob("*")
-         if f.suffix.lower() in [".html", ".htm", ".xhtml", ".xml"]],
+        [
+            f
+            for f in engine.work_dir.rglob("*")
+            if f.suffix.lower() in [".html", ".htm", ".xhtml", ".xml"]
+        ],
         key=lambda x: x.name,
     )
 
@@ -210,21 +240,53 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
     strategija = _odredi_strategiju(engine, engine.html_files, scores)
 
     if strategija == "AUTO-RETRO":
-        _pametni_reset_cachea(engine, scores, sharedstats)
-        # Postavi LEKTURA ili PREVOD ovisno o knjizi
+        # C FIX: Pokreni retro DIREKTNO samo na lošim blokovima
+        # Stara logika: briši loše .chk pa idi u normalni tok → obrađivalo SVE
+        # Nova logika: retroaktivna_relektura_v10(only_bad=True) → samo loši
         engine._detect_knjiga_mode(engine.html_files, n_files=5)
         engine.log(
-            f"🔁 AUTO-RETRO: loši blokovi obrisani, nastavljam "
-            f"normalnim {engine.knjiga_mode} tokom",
+            "🔁 AUTO-RETRO: pokrecemo retroaktivnu re-lekturu samo lošich blokova",
             "system",
         )
+        from processing.retro import retroaktivna_relektura_v10
+        from core.quality import _QUALITY_RESCUE_THRESHOLD
+
+        async def _retro_pa_nastavi():
+            await retroaktivna_relektura_v10(
+                engine,
+                force=False,
+                only_bad=True,
+                bad_threshold=_QUALITY_RESCUE_THRESHOLD,
+            )
+            # Nakon retro — nastavi normalnom obradom za blokove koji još nemaju .chk
+            await engine.main_loop(engine.html_files)
+
+        asyncio.run(_retro_pa_nastavi())
+
+        # Finalizacija (isti blok kao na kraju normalnog toka)
+        if not shared_controls.get("stop") and not shared_controls.get("reset"):
+            sharedstats["status"] = "Završno oblikovanje..."
+            from bs4 import BeautifulSoup as _BS
+
+            for hf in engine.html_files:
+                try:
+                    soup = _BS(hf.read_text("utf-8"), "html.parser")
+                    engine.apply_dropcap_and_toc(soup, hf)
+                    hf.write_text(str(soup), encoding="utf-8")
+                except Exception:
+                    pass
+            engine.generate_ncx()
+            engine.finalize()
+            sharedstats["status"] = "ZAVRŠENO (AUTO-RETRO)"
+            sharedstats["pct"] = 100
+        return  # Izlaz — ne ulazi u main_loop() ispod
+
     else:
         engine.knjiga_mode = strategija
 
     sharedstats["knjiga_mode"] = engine.knjiga_mode
     engine.log(
-        f"📖 Knjiga: <b>{engine.book_path.name}</b> → "
-        f"<b>{engine.knjiga_mode}</b>",
+        f"📖 Knjiga: <b>{engine.book_path.name}</b> → <b>{engine.knjiga_mode}</b>",
         "system",
     )
 
@@ -238,7 +300,8 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 engine.log(f"Analiza pala: {e}. Nastavljam s defaultima.", "warning")
 
         sharedstats["status"] = (
-            "LEKTURA U TOKU..." if engine.knjiga_mode == "LEKTURA"
+            "LEKTURA U TOKU..."
+            if engine.knjiga_mode == "LEKTURA"
             else "PREVOD U TOKU..."
         )
 
@@ -246,7 +309,9 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             if shared_controls.get("stop") or shared_controls.get("reset"):
                 break
 
-            engine.log(f"📄 Poglavlje {i}/{len(engine.html_files)}: {hf.name}", "system")
+            engine.log(
+                f"📄 Poglavlje {i}/{len(engine.html_files)}: {hf.name}", "system"
+            )
             await engine.process_single_file_worker(hf)
             engine.buildlive_epub()
             engine._chapters_processed += 1
@@ -258,17 +323,6 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 except Exception as e:
                     engine.log(f"⚠️ Glosar update pao: {e}", "warning")
 
-        # ── FIX: automatski poziv mark_for_review nakon završetka obrade ──
-        # Prethodno se NIKAD nije pozivao → human_review.json nije postojao
-        # → /api/review/list uvijek vraćao prazan [] → tab za reviziju uvijek prazan.
-        # Pozivamo unutar async konteksta da izbjegnemo nested asyncio.run().
-        if not shared_controls.get("stop") and not shared_controls.get("reset"):
-            try:
-                sharedstats["status"] = "GENERISANJE REVIZIJE..."
-                await engine.mark_for_review()
-                engine.log("📋 Lista za reviziju ažurirana.", "system")
-            except Exception as e:
-                engine.log(f"⚠️ mark_for_review pao: {e}", "warning")
 
     asyncio.run(main_loop())
 
@@ -297,9 +351,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 qs_path.write_text(
                     json.dumps(qs, ensure_ascii=False, indent=2), encoding="utf-8"
                 )
-                engine.log(
-                    f"💾 Quality scores sačuvani: {len(qs)} blokova", "system"
-                )
+                engine.log(f"💾 Quality scores sačuvani: {len(qs)} blokova", "system")
         except Exception as e:
             engine.log(f"⚠️ Quality scores snimanje palo: {e}", "warning")
 
@@ -315,11 +367,13 @@ if __name__ == "__main__":
         print("Usage: python run.py <work_dir>")
         sys.exit(1)
 
-    shared_stats    = {"status": "V10.2 AUTO-MODE"}
+    shared_stats = {"status": "V10.2 AUTO-MODE"}
     shared_controls = {"stop": False, "reset": False, "pause": False}
     engine = SkriptorijAllInOne(
-        Path(WORK_DIR).parent / "dummy.epub", "dummy",
-        shared_stats, shared_controls,
+        Path(WORK_DIR).parent / "dummy.epub",
+        "dummy",
+        shared_stats,
+        shared_controls,
     )
     engine.work_dir = Path(WORK_DIR)
     asyncio.run(engine.retroaktivna_relektura_v10(force=False, only_bad=True))

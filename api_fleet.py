@@ -135,8 +135,6 @@ class KeyState:
             return False
         # BUG#6 FIX: resetuj RPM prije provjere
         self._reset_rpm_if_needed()
-        if not isinstance(self.remaining_minute, int) or self.remaining_minute <= 0:
-            return False
         return True
 
     @property
@@ -647,12 +645,12 @@ class FleetManager:
 
 
 # ── Google model pool ─────────────────────────────────────────────────────────
+# NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
+# Mora biti sinkronizirano s http_client.py::GOOGLE_MODEL_POOL.
 GOOGLE_MODEL_POOL = [
-    {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},
-    {"model": "gemma-3-27b-it",        "rpm": 30, "rpd": 14400},
-    {"model": "gemma-3-12b-it",        "rpm": 30, "rpd": 14400},
-    {"model": "gemma-3-4b-it",         "rpm": 30, "rpd": 14400},
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},
+    {"model": "gemini-2.0-flash",                    "rpm": 15, "rpd": 1500},  # primarni
+    {"model": "gemini-2.5-flash-lite-preview-06-17", "rpm": 10, "rpd": 500},   # fallback 1
+    {"model": "gemini-2.5-flash-preview-05-20",      "rpm": 10, "rpd": 500},   # fallback 2
 ]
 
 

@@ -15,7 +15,6 @@ Tipovi poruka:
 """
 
 from datetime import datetime
-from typing import Optional
 
 audit_logs: list[str] = []
 MAX_AUDIT_LINES = 180

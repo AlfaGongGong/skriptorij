@@ -5,10 +5,7 @@
 #               asyncio.Lock() se kreira isključivo unutar async konteksta
 #   BUG#8 FIX: _get_provider_lock uklonjena (bila mrtva i pogrešna)
 
-import time
 import asyncio
-import threading as _thr_rl
-from api_fleet import FleetManager
 
 # ===== GLOBALNI RATE LIMITER — humanizovano, bez kršenja limita =====
 _PROVIDER_LOCKS: dict = {}
@@ -36,7 +33,6 @@ _RPM_THROTTLE_MULTIPLIER = 1.8
 _JITTER_MIN = 0.3
 _JITTER_MAX = 1.2
 
-
 # BUG#4 FIX: asyncio.Lock() se SMIJE kreirati samo unutar aktivnog event loop-a.
 # Rješenje: ne koristimo threading Lock za dvostruku provjeru —
 # umjesto toga koristimo asyncio-safe lazy init unutar async funkcije.
@@ -53,11 +49,9 @@ async def _ensure_provider_lock(prov: str) -> asyncio.Lock:
         lock = _PROVIDER_LOCKS[prov]
     return lock
 
-
 async def _ensure_global_lock() -> asyncio.Lock:
     """Lazy initialization of global asyncio Lock in the current event loop."""
     return await _ensure_provider_lock("__global__")
-
 
 def _safe_get_model(fleet, prov_upper, default=None):
     """Sigurno dohvati aktivan model — ne crasha ako FleetManager nema tu metodu."""
@@ -69,7 +63,6 @@ def _safe_get_model(fleet, prov_upper, default=None):
             if default is not None
             else ("gemma-3-27b-it" if prov_upper == "GEMINI" else None)
         )
-
 
 def _get_key_state(fleet, prov_upper: str, key: str):
     """Sigurno dohvati KeyState objekt za dati ključ."""
@@ -96,7 +89,6 @@ def _get_key_state(fleet, prov_upper: str, key: str):
         pass
     return None
 
-
 # ============================================================================
 # Per-key rate limiting (semafori)
 # BUG#1 FIX: Ovaj blok je bio dupliran — uklonjen drugi primjerak.
@@ -105,17 +97,14 @@ def _get_key_state(fleet, prov_upper: str, key: str):
 _key_semaphores: dict = {}
 MAX_CONCURRENT_PER_KEY = 1
 
-
 def get_key_semaphore(key: str) -> asyncio.Semaphore:
     if key not in _key_semaphores:
         _key_semaphores[key] = asyncio.Semaphore(MAX_CONCURRENT_PER_KEY)
     return _key_semaphores[key]
 
-
 async def acquire_key(key: str):
     sem = get_key_semaphore(key)
     await sem.acquire()
-
 
 def release_key(key: str):
     sem = _key_semaphores.get(key)
