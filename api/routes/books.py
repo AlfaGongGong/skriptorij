@@ -1,5 +1,4 @@
 """Rute za upravljanje knjigama (listanje, pretraga, upload)."""
-import os
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
@@ -49,12 +48,12 @@ def api_upload_book():
             return jsonify({"error": f"Nepodržani format: {ext}"}), 400
         safe_name = secure_filename(f.filename)
         # Provjera path traversala — dest mora ostati unutar INPUT_DIR
-        input_dir_real = os.path.realpath(INPUT_DIR)
-        dest = os.path.realpath(os.path.join(input_dir_real, safe_name))
-        if os.path.commonpath([input_dir_real, dest]) != input_dir_real:
+        input_dir_real = Path(INPUT_DIR).resolve()
+        dest = (input_dir_real / safe_name).resolve()
+        if dest.parent != input_dir_real:
             return jsonify({"error": "Neispravno ime fajla"}), 400
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        f.save(dest)
+        input_dir_real.mkdir(parents=True, exist_ok=True)
+        f.save(str(dest))
         return jsonify({"ok": True, "name": safe_name})
     except Exception:
         return jsonify({"error": "Greška pri uploadu fajla"}), 500
