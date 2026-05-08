@@ -1,11 +1,23 @@
-flask==3.1.3
-httpx==0.27.0
-beautifulsoup4==4.12.3
-lxml==6.1.0
-requests==2.33.0
-tiktoken==0.6.0
-python-dotenv>=1.0.0
+# BOOKLYFI TURBO V10 — Python ovisnosti
+# Instaliraj s: pip install -r requirements.txt
+
+# ── Web framework ─────────────────────────────────────────────────────────────
+flask>=3.1.0
+
+# ── HTTP klijent (API pozivi prema AI provajderima) ───────────────────────────
+requests>=2.32.0
+
+# ── EPUB parsiranje i obrada ──────────────────────────────────────────────────
+beautifulsoup4>=4.12.0
+lxml>=6.0.0
 ebooklib>=0.18
-mobi>=0.3.0
-classla==2.2.1
-obeliks==1.1.6
+
+# ── Opcionalno: MOBI format podrška ──────────────────────────────────────────
+# mobi>=0.3.0
+
+# ── Opcionalno: morfološki validator (bosnički NLP) ───────────────────────────
+# Potreban samo za Korak 2 morfološku validaciju.
+# Instaliraj zasebno ako je potrebno:
+#   pip install classla==2.2.1 obeliks==1.1.6
+# classla==2.2.1
+# obeliks==1.1.6

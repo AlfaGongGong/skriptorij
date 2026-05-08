@@ -1174,6 +1174,41 @@ input:focus {
     flex-shrink: 0;
 }
 
+/* ── Expert section collapsible ───────────────────────────────────────────── */
+.expert-section-details {
+    border: 1px solid var(--bd);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+}
+.expert-section-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg-2);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--tx-3);
+    list-style: none;
+    user-select: none;
+}
+.expert-section-summary::-webkit-details-marker { display: none; }
+.expert-section-summary:hover { background: var(--bg-3); }
+.expert-section-chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+    opacity: 0.6;
+}
+.expert-section-details[open] .expert-section-chevron {
+    transform: rotate(180deg);
+}
+.expert-section-details > div {
+    padding: 0 12px 12px;
+}
+
 /* ── Terminal / Audit ──────────────────────────────────────────────────────── */
 .audit-log {
     background: var(--bg-0);
@@ -1391,6 +1426,29 @@ input:focus {
 .key-del-btn:hover {
     background: rgba(244, 63, 94, 0.12);
     border-color: var(--rose);
+}
+.key-ping-btn {
+    background: none;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    color: var(--sky);
+    border-radius: var(--r-sm);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: var(--t-fast);
+    flex-shrink: 0;
+}
+.key-ping-btn:hover {
+    background: rgba(14, 165, 233, 0.12);
+    border-color: var(--sky);
+}
+.key-ping-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* ── Toast ─────────────────────────────────────────────────────────────────── */

@@ -1,473 +1,198 @@
 ================================================================================
-BOOKLYFI TURBO CHARGED — OPIS SVIH SKRIPTI
-Generisano: 2026-05-06 (update — post QA analiza + Koraci 2, 3, 4)
+BOOKLYFI TURBO V10 — OPIS PROJEKTA I ARHITEKTURE
+Ažurirano: 2026-05-08
 Projekt: AI-powered sistem za prijevod i lekturu EPUB/MOBI knjiga
 ================================================================================
 
 CILJ KVALITETE: 9.5+ autonomno, bez human-in-the-loop
-Trenutni prosjek (procjena post-Korak 2): ~7.8–8.2
-Realni strop bez fine-tuninga:             9.8–9.9
-
-QA ANALIZA — STVARNA FREKVENCIJA GREŠAKA (empirijska, N≈100 uzoraka)
-──────────────────────────────────────────────────────────────────────
-Knjige: Altered Carbon (R. Morgan), I Am Legend (R. Matheson),
-        Night Shift (S. King)
-        [Year's Best Dark Fantasy 2018 — isključeno, nije prevedeno]
-
-  [ST] Kalkovi/stil            55–60%   Srednja ozbiljnost
-  [SR] Srbizmi/ekavizmi        20–25%   Visoka ozbiljnost
-  [TI] Tipografija             ~15%     Niska–srednja
-  [MH] Morfološke halucinacije 10–15%   Visoka kad se pojavi
-  [KO] Gubitak konteksta       10–15%   Srednja
-  [RO] Greške roda              ~5%     Visoka kad se pojavi
-
-  Posebni bugoviPIPELINE (nisu AI greške):
-  - Duplikacija naslova poglavlja (chunking bug)           ✅ RIJEŠENO
-  - Ćirilični znakovi u latiničnom izlazu (charset bug)   ✅ RIJEŠENO
-  - Slijepljene riječi bez razmaka (daBancroftovi)         ✅ RIJEŠENO
-  - Razmak unutar riječi (B io je)                         ✅ RIJEŠENO
-
-ARHITEKTURA SISTEMA (kratki pregled)
-──────────────────────────────────────────────────────────────────────
-- Backend: Flask (Python) — app.py + api/ + core/ + processing/ + network/
-- Frontend: Vanilla JS + HTML/CSS — static/js/ + templates/
-- AI: Multi-provider fleet (Gemini, Groq, Mistral, Cerebras, SambaNova, Cohere,
-  OpenRouter, GitHub Models, Chutes, HuggingFace, Kluster)
-- Checkpointi: per-blok .chk fajlovi u CHECKPOINT_BASE_DIR/_skr_{stem}/checkpoints/
-- Izlaz: EPUB fajl u OUTPUT_DIR (Moon+ Reader biblioteka na Androidu)
-- Post-processing: core/kalkovi/ engine za deterministčku korekciju PRIJE/POSLIJE
-  AI prolaza — eliminira ekavizme, srbizme i sintaktičke kalkove bez API poziva
-================================================================================
-
-
-────────────────────────────────────────────────────────────────────────────────
-PAKET: core/kalkovi/  [V10.3+ — KOMPLETNO ISPORUČENO]
-────────────────────────────────────────────────────────────────────────────────
-
-SVRHA: Deterministički post-processing sloj koji se izvršava nad svakim blokom
-NAKON AI prijevoda/lekture, ali PRIJE upisa u .chk fajl. Nulti API trošak.
-Kompajlira se jednom pri startu (re.compile sve patterne) — nulti runtime penalty.
-
-FILOZOFIJA: AI modeli (posebno Groq/Cerebras/SambaNova) trenirani su pretežno
-na srpskom korpusu i sistematski uvode određene greške koje su predvidive i
-popravljive regex-om. Kalkovi engine je prva linija odbrane prije AI quality
-scoringa — smanjuje broj rescue/retro prolaza jer eliminiše očigledne greške.
-
-STATUS MODULA:
-  ✅ core/kalkovi/__init__.py       — SVE_LISTE registry, 730+ patterna ukupno
-  ✅ core/kalkovi/engine.py         — KalkoviEngine, HTML-safe, whitelist, fail-safe, audit log
-  ✅ core/kalkovi/kalkovi_da.py     — 280+ zamjena (suvišno "da" + modalni glagoli)
-  ✅ core/kalkovi/ekavizmi.py       — 170+ zamjena (9 kategorija ijekavizama)
-  ✅ core/kalkovi/nominalizacije.py — ~70 zamjena (nominalizacije → direktni glagoli)
-  ✅ core/kalkovi/lazni_prijatelji.py — ~60 zamjena (anglicizmi u prijevodu)
-  ✅ core/kalkovi/prijedlozi.py     — ~50 zamjena (prijedložni kalkovi)
-  ✅ core/kalkovi/pleonazmi.py      — ~40 zamjena (suvišne konstrukcije)
-  ✅ core/kalkovi/dijalog.py        — ~40 zamjena + tipografija navodnika
-  ✅ core/kalkovi/glagoli.py        — ~50 zamjena (glagolski vid, rekcija, povratni oblici)
-
-core/kalkovi/__init__.py
-  Centralni registry svih modula.
-  - Importira sve podliste i spaja u SVE_LISTE
-  - SVE_LISTE = KALKOVI + EKAVIZMI + NOMINALIZACIJE + LAZNI_PRIJATELJI +
-                PRIJEDLOZI + PLEONAZMI + DIJALOG + GLAGOLI (730+ patterna)
-  - Test: python3 -c "from core.kalkovi import SVE_LISTE; print(len(SVE_LISTE))"
-
-core/kalkovi/engine.py
-  Kompajler i executor kalkova.
-  - _kompajliraj(): prolazi kroz SVE_LISTE, re.compile() svaki pattern
-    s re.IGNORECASE | re.UNICODE, čuva compiled objekte
-  - primijeni(tekst, glosar=None): glavna funkcija
-  - HTML-safe mod: štiti sve tagove (<...>) od zamjena lookaheadom
-  - Whitelist: prima glosar iz BookContextManager — vlastita imena likova
-    i termini iz glosara se nikad ne diraju
-  - Fail-safe: try/except oko svake zamjene — greška se loguje ali
-    nikad ne ruši pipeline
-  - Hot-reload: reload() metoda osvježava kompajlirane patterne bez restarta
-  - Statistike: broji koliko zamjena je primijenjeno po bloku (za audit log)
-  - Import: from core.kalkovi.engine import kalkovi_engine
-
-core/kalkovi/kalkovi_da.py  (280+ zamjena, 25 kategorija)
-  Suvišno "da" uz modalne i fazne glagole (srbizam).
-  "morao je da ode" → "morao je otići"
-  Pokriva sve lične oblike (prezent, perfekt, kondicional, negacija) za:
-  moći, morati, smjeti, htjeti, željeti, početi, nastaviti, prestati,
-  trebati, uspjeti, znati, voljeti, pokušati, namjeravati, planirati,
-  odlučiti, zaboraviti, sjetiti se, nastojati, truditi se, odbiti,
-  pristati, obećati, dozvoliti, ostati, završiti, usuditi se,
-  odvažiti se, čekati, naučiti, navikavati, izbjegavati.
-
-core/kalkovi/ekavizmi.py  (170+ zamjena, 9 kategorija)
-  Ekavizmi → ijekavizmi (BS/HR standard).
-  A) Radni glagolski pridjev muški rod: htio, sjedio, vidio, živio...
-  B) Ženski rod i množina: vidjela/vidjeli, sjedila, htjela/htjeli...
-  C) Infinitiv: donijeti, letjeti, sjediti, bježati, pjevati...
-  D) Prezent svih lica: sjedim/sjediš/sjedi/sjedimo/sjedite/sjede...
-  E) Imenice: dijete/djeca/dječak, vreme→vrijeme, mesto→mjesto...
-  F) Pridjevi: cijeli/cijela/cijelo, sljedeći/sljedeća, bijel/bijela...
-  G) Svjetlost i izvedenice: svjetlost, svjetiljka, svjetluca...
-  H) Prilozi: ovdje, ondje, negdje, nigdje, uvijek, poslije, prije
-  I) Složeni prijedložni izrazi: na mjestu, u vrijeme, prije svega...
-  Auto-filter: entryji označeni "je isto" automatski isključuju.
-
-core/kalkovi/nominalizacije.py  (~70 zamjena)
-  Nominalizacije i opisne glagolske fraze → direktni glagoli.
-  "izvršiti prijevod" → "prevesti"
-  "obaviti razgovor" → "razgovarati"
-  "dati doprinos" → "doprinijeti"
-  Kategorije: izvršiti / obaviti / vršiti / dati / imati / biti
-
-core/kalkovi/lazni_prijatelji.py  (~60 zamjena)
-  Lažni prijatelji i direktni anglicizmi u prijevodu.
-  "realizovati" → "ostvariti/shvatiti"
-  "adresirati problem" → "riješiti problem"
-  "implementirati" → "provesti/uvesti/primijeniti"
-  "finalizovati" → "dovršiti/zaključiti"
-  "konfrontirati" → "suočiti se"
-
-core/kalkovi/prijedlozi.py  (~50 zamjena)
-  Prijedložni kalkovi iz engleskog i srpskog.
-  "u vezi sa" → "u vezi s"
-  "po pitanju" → "što se tiče/glede"
-  "od strane" → "od/po" (pasivne konstrukcije)
-  "na bazi" → "na osnovu/temeljem"
-  "u cilju" → "kako bi/radi/s ciljem"
-
-core/kalkovi/pleonazmi.py  (~40 zamjena)  [NOVO — Korak 2]
-  Pleonazmi i suvišne konstrukcije.
-  "sam lično" → "sam/osobno"
-  "spustiti dole" → "spustiti"
-  "nastaviti dalje" → "nastaviti"
-  "u toku dana" → "tokom dana/danju"
-  "na kraju krajeva" → "naposljetku/konačno"
-
-core/kalkovi/dijalog.py  (~40 zamjena + tipografija)  [NOVO — Korak 2]
-  Dijalog-specifični kalkovi i anglicizmi u govoru.
-  Srpske uzrečice, tipografija navodnika u dijalogu.
-  »« umjesto "" u dijaloškim pasažima.
-  Em-crtice ispred replika.
-
-core/kalkovi/glagoli.py  (~50 zamjena)  [NOVO — Korak 2]
-  Glagolski vid, aspekt i rekcija.
-  Pogrešni povratni oblici: "sjetiti" → "sjetiti se"
-  Pogrešna rekcija: "čekati na nekoga" → "čekati nekoga"
-  Aspektni parovi: nedosljedna upotreba svršenog/nesvršenog vida.
-
-INTEGRACIJSKA TAČKA:
-  processing/pipeline.py → obradi_chunk() poziva kalkovi_engine.primijeni()
-  nad finalnim tekstom neposredno prije atomičnog upisa .chk fajla.
-  [Korak 2 — integracija u pipeline.py — ✅ ZAVRŠENO]
-
-
-────────────────────────────────────────────────────────────────────────────────
-PAKET: epub/ — PIPELINE BUGFIXOVI  [Korak 2 — ✅ ZAVRŠENO]
-────────────────────────────────────────────────────────────────────────────────
-
-epub/parser.py  [PATCHIRAN]
-  - Charset filter: uklanja ćirilična Unicode slova iz latiničnog izlaza
-    (bug: AI generira ćirilicu za srbizme, "nepoколебljivo" → "nepokolebljivo")
-  - Heading deduplication: sprečava duplikaciju naslova poglavlja
-    (bug: "POGLAVLJE ČETRDESET I DVOJE P OGLAVLJE ČETRDESET I DVOJE")
-
-core/text_utils.py  [PATCHIRAN]
-  - _booklyfi_fix_spojnice(): popravlja slijepljene riječi bez razmaka
-    (bug: "daBancroftovi", "B io je to")
-
-
-────────────────────────────────────────────────────────────────────────────────
-PAKET: core/validators/  [Korak 3 — ✅ ZAVRŠENO]
-────────────────────────────────────────────────────────────────────────────────
-
-SVRHA: AI-powered morfološki validator koji hvata halucirane glagolske oblike
-koje regex ne može predvidjeti. Izvršava se NAKON kalkovi engine, PRIJE .chk upisa.
-
-  ✅ core/validators/__init__.py
-  ✅ core/validators/morfo_validator.py
-  ✅ core/kalkovi/morfologija_blacklist.py
-
-core/validators/morfo_validator.py
-  Zaseban AI prolaz nad svakim blokom — samo morfologija, ne stil.
-  - Model: Gemini 2.5 Flash (empirijski najjači za BS/HR morfologiju)
-  - Prompt: fokusiran isključivo na morfološke greške, ne prepravlja stil
-  - Lista poznatih anti-patterna u promptu (negative examples):
-    "voljevao, hodavao, gledavao, vidjevao, uzdisnuo, popivajući..."
-  - Fail-safe: ako validator pukne, tekst prolazi nepromijenjen (originalni AI output)
-  - Audit log: loguje sve pronađene i ispravljene oblike s pozicijom u tekstu
-  - Poziva core/kalkovi/morfologija_blacklist.py za listu anti-patterna
-
-core/kalkovi/morfologija_blacklist.py  [NOVO — Korak 3]
-  Eksplicitna lista nepostojećih glagolskih oblika za prompt injection.
-  Kategorije:
-  - Nepostojući iterativi: voljevao, hodavao, gledavao, vidjevao, čujevao...
-  - Nepostojući glagolski pridjevi: uzdisnuo (→ uzdahnuo), popivajući (→ ispijajući)
-  - Slijepljeni oblici: kočilismo (→ kočili smo)
-  Format kompatibilan s core/prompt_injector.py za injection u system prompt.
-  Primjer injection stringa:
-    "Nikad ne pišeš oblike poput: voljevao, hodavao, gledavao,
-     vidjevao, čujevao, uzdisnuo, popivajući i sl."
-
-
-────────────────────────────────────────────────────────────────────────────────
-PAKET: Proširenje konteksta [Korak 4 — ✅ ZAVRŠENO]
-────────────────────────────────────────────────────────────────────────────────
-
-SVRHA: Eliminirati gubitak konteksta između chunkova kao uzrok pada kvalitete.
-Tri mehanizma: few-shot injection, chapter summary, glosar s deklinacijama.
-
-analysis/book_context.py  [PROŠIRENO]
-  - chapter_summary: generira kratak summary tekućeg poglavlja
-    (poziva Gemini 2.5 Flash jednom po poglavlju, čuva u memoriji)
-  - inject u prompt: summary se automatski dodaje u prompt svakog chunka
-    tog poglavlja — model zna koji su ključni likovi i radnja poglavlja
-  - Glosar s deklinacijskim varijantama:
-    Ana → [Ane, Ani, Anu, Anom, Ano]
-    Automatsko generiranje svih 7 padeža za svako vlastito ime u knjizi
-    Whitelist u kalkovi engine koristi prošireni glosar s varijantama
-
-core/prompt_injector.py  [PROŠIRENO]
-  Centralizirana dinamička injekcija konteksta u promptove.
-  - _inject_glosar(prompt, glosar, chunk_text): filtrira glosar na relevantne termine
-  - _inject_prethodni_kontekst(prompt, prev_ctx): zadnji paragraf prethodnog bloka
-  - _inject_chapter_summary(prompt, summary): summary tekućeg poglavlja
-  - _inject_few_shot_primjeri(prompt, primjeri): 3–5 primjera dobrog prijevoda
-    iz iste knjige — de facto soft fine-tuning bez treniranja modela
-  - _inject_anti_model_patterne(prompt, model): model-specifična upozorenja
-    (npr. Gemini: "Ne počinji sa 'Naravno'")
-  - _inject_morfologija_blacklist(prompt): injektira anti-patterne iz
-    core/kalkovi/morfologija_blacklist.py u svaki system prompt
-  - _inject_tip_bloka_instrukcije(prompt, tip_bloka): instrukcije po tipu bloka
-    (dijalog → naglasak na tipografiju, poetski → ritam i rima...)
-  - assemble(uloga, model, tip_bloka, **ctx): sve u jednom pozivu
-
-
-────────────────────────────────────────────────────────────────────────────────
-PLANIRANO: V10.4 Per-model kalibracija [Korak 5 — ⬜ SLJEDEĆE]
-────────────────────────────────────────────────────────────────────────────────
-
-KONTEKST: Svaki AI provider/model ima drugačije karakteristike odgovora —
-Gemini je literaran ali sklon meta-komentarima, Groq/Cerebras su brzi
-ali uvode srbizme, Mistral je precizan ali formalan, Cohere je dosljedan
-ali monoton. Trenutni sistem koristi iste promptove za sve — V10.4 uvodi
-per-model prompt kalibraciju.
-
-PLANIRANI FAJLOVI:
-
-core/model_profiles.py  [PLANIRANO]
-  Profili AI modela s empirijski određenim parametrima.
-  ModelProfile dataclass:
-  - ime, provider, rpm_limit, rpd_limit
-  - optimalna_temperatura: po ulozi (prevodilac/lektor/validator)
-  - max_tokens: po ulozi
-  - snage: lista ("književni stil", "brz", "precizan"...)
-  - slabosti: lista ("meta-komentari", "srbizmi", "formalan"...)
-  - anti_patterne: lista regex patterna karakterističnih za ovaj model
-    koje treba posebno filtrirati (npr. Gemini: "Naravno, evo prijevoda:")
-  - preferred_roles: koje uloge ovaj model obavlja najbolje
-  - blacklisted_roles: uloge za koje se model ne koristi
-  Profili za: gemini-2.0-flash, gemini-2.5-flash, gemma-3-27b,
-  llama-3.3-70b (groq), llama-3.1-70b (cerebras), mistral-large,
-  mistral-nemo, command-r-plus (cohere), llama (sambanova),
-  deepseek (openrouter), qwen (openrouter/chutes)
-
-core/prompts_v2.py  [PLANIRANO]
-  Nasljednik core/prompts.py s per-model varijantama.
-  - BASE_PREVODILAC: zajednička osnova (stilska pravila, HTML preservation)
-  - MODEL_PATCHES: dict po modelu s dodacima/izmjenama
-    {
-      "gemini": {
-        "anti_meta": "Ne komentariši prijevod. Ne dodaji objašnjenja...",
-        "anti_markdown": "Vrati samo HTML. Bez ``` blokova...",
-        "temp_override": 0.72
-      },
-      "groq_llama": {
-        "anti_srbizmi": "Pišeš bosanski/hrvatski. Nikad ekavski...",
-        "temp_override": 0.65
-      },
-      "cerebras": {
-        "anti_srbizmi": "...",
-        "slow_down": "Provjeri svaki glagolski oblik...",
-        "temp_override": 0.65
-      },
-      "mistral": {
-        "loosen_style": "Prijevod treba biti književan, ne doslovan...",
-        "temp_override": 0.80
-      },
-      "sambanova": {
-        "anti_literal": "Izbjegavaj doslovan prijevod idioma...",
-        "temp_override": 0.70
-      },
-      "cohere": {
-        "vary_syntax": "Variiaj strukturu rečenica. Izbjegavaj ponavljanje...",
-        "temp_override": 0.78
-      }
-    }
-  - get_prompt(uloga, model, tip_bloka, **kwargs): sastavlja finalni prompt
-
-network/provider_router_v2.py  [PLANIRANO]
-  Nasljednik provider_router.py s model-aware rutiranjem.
-  - Bira konkretni model na osnovu: tip_bloka, uloga, health score, empirijski score
-  - _score_model(profil, uloga, tip_bloka): suitability score
-  - get_best_model(uloga, tip_bloka, dostupni_ključevi): vraća (provider, model, key)
-
-processing/workers_v2.py  [PLANIRANO]
-  Nasljednik workers.py koji koristi novi prompt sistem.
-  - Svaki worker poziv prolazi kroz PromptInjector
-  - Model se bira iz ProviderRouterV2 umjesto fiksnog prioriteta
-  - Response filtering: per-model anti-pattern čišćenje PRIJE quality scoringa
-  - Metrics: loguje koji model je korišten za koji blok
-
-REDOSLJED IMPLEMENTACIJE:
-  1. core/model_profiles.py — definicija profila (bez izmjene postojećeg koda)
-  2. core/prompts_v2.py — novi prompt sistem (backward compatible)
-  3. network/provider_router_v2.py — model-aware rutiranje
-  4. processing/workers_v2.py — spoji sve zajedno
-  5. A/B test: paralelno puštanje starog i novog sistema na istoj knjizi
-
-OČEKIVANI EFEKTI V10.4:
-  - Smanjenje srbizama iz Groq/Cerebras za ~40–60%
-  - Smanjenje meta-komentara iz Gemini za 80%+
-  - Bolje iskorištavanje jakih strana svakog modela
-  - Manji broj rescue/retro prolaza → brža obrada
-
-
-────────────────────────────────────────────────────────────────────────────────
-KOMPLETNI STATUS ISPORUKE
-────────────────────────────────────────────────────────────────────────────────
-
-  ✅ KORAK 1 — QA benchmark ekstrakcija (booklyfi_qa_extract.sh)
-  ✅ KORAK 2 — kalkovi moduli + pipeline bugfixovi + engine integracija
-               pleonazmi.py / dijalog.py / glagoli.py / __init__.py update
-               epub/parser.py: charset + heading dedup
-               core/text_utils.py: fix slijepljenih riječi
-               processing/pipeline.py: kalkovi_engine integracija
-  ✅ KORAK 3 — Morfološki validator + blacklist
-               core/validators/morfo_validator.py
-               core/validators/__init__.py
-               core/kalkovi/morfologija_blacklist.py
-  ✅ KORAK 4 — Proširenje konteksta
-               analysis/book_context.py: chapter_summary + deklinacije
-               core/prompt_injector.py: few-shot + anti-patterne + morpho blacklist
-
-  ⬜ KORAK 5 — V10.4 per-model kalibracija [SLJEDEĆE]
-               core/model_profiles.py
-               core/prompts_v2.py
-               network/provider_router_v2.py
-               processing/workers_v2.py
-
-PROCIJENJENI DOPRINOS PO KORAKU:
-  Korak 2 (kalkovi komplet):   +0.5–0.8 (stil, srbizmi — najčešći problemi)
-  Pipeline bugfixovi:           +0.1–0.2 (formatting, charset)
-  Korak 3 (morfo validator):   +0.2–0.3 (morfološke halucinacije)
-  Korak 4 (kontekst):          +0.3–0.4 (konzistentnost, rod, kontekst)
-  Korak 5 (per-model):         +0.4–0.6 (drastično smanjenje srbizama iz brzih modela)
-  ─────────────────────────────────────────────────────
-  Ukupno procijenjeno:         +1.5–2.3 bodova → cilj 9.5+ je dostižan
-
-
-────────────────────────────────────────────────────────────────────────────────
-KAKO KORISTITI OVAJ DOKUMENT
-────────────────────────────────────────────────────────────────────────────────
-
-Kada mi šalješ upit, navedi šta radiš i ja ću ti reći tačno koji fajlovi
-trebaju. Primjeri:
-
-- "Quality scoring problem"   → core/quality.py + processing/pipeline.py
-- "Fleet rotacija"            → api_fleet.py + network/provider_router.py
-- "Frontend polling ne radi"  → static/js/services/polling.js + static/js/main.js
-- "Checkpoint resume bug"     → processing/pipeline.py + utils/checkpoint_cleaner.py
-- "Glosar ne čuva likove"     → analysis/book_context.py + core/prompt_injector.py
-- "Nova API ruta"             → app.py + api/routes/
-- "EPUB build problem"        → epub/packager.py + epub/parser.py + run.py
-- "Novi kalkovi modul"        → core/kalkovi/ + core/kalkovi/__init__.py
-- "Per-model prompt"          → core/prompts_v2.py + core/model_profiles.py
-- "Rutiranje modela"          → network/provider_router_v2.py + core/model_profiles.py
-- "Anti-pattern za Gemini"    → core/model_profiles.py + core/prompt_injector.py
-- "Morfološka greška prošla"  → core/validators/morfo_validator.py +
-                                 core/kalkovi/morfologija_blacklist.py
-- "Kontekst između poglavlja" → analysis/book_context.py + core/prompt_injector.py
+Kompozitni score formula: heuristika*0.25 + AI_ocjena*0.75
+Realni strop bez fine-tuninga: 9.8–9.9
+Thresholds: odlično≥8.5 · dobro≥6.5 · slabo≥4.0 · kritično<4.0
 
 ================================================================================
+PIPELINE — 3-PASS AI OBRADA
+================================================================================
 
-Putanja projekta: /storage/emulated/0/termux/Skriptorij
-Putanja checkpoint direktorija root: /storage/emulated/0/booklyfi_checkpoints
-Ispravke piši u vidu izvršnih sh skripti (set -euo pipefail, cd ROOT na vrhu).
+Svaki chunk teksta prolazi kroz 3 nezavisna AI prolaska:
 
-Struktura (uključujući nove fajlove):
-./analysis/__init__.py
-./analysis/book_context.py                  [PROŠIRENO — Korak 4]
-./api/__init__.py
-./api/file_browser.py
-./api/middleware/__init__.py
-./api/routes/__init__.py
-./api/routes/books.py
-./api/routes/control.py
-./api/routes/export.py
-./api/routes/fleet.py
-./api/routes/keys.py
-./api/routes/processing.py
-./api/routes/qualities.py
-./api/routes/quality.py
-./api_fleet.py
-./app.py
-./config/__init__.py
-./config/logging_config.py
-./config/settings.py
-./copy_all_code.py
-./core/__init__.py
-./core/chunking.py
-./core/engine.py
-./core/kalkovi/__init__.py                  [KOMPLETNO — 730+ patterna]
-./core/kalkovi/engine.py                    [KOMPLETNO — HTML-safe, fail-safe]
-./core/kalkovi/kalkovi_da.py                [KOMPLETNO — 280+]
-./core/kalkovi/ekavizmi.py                  [KOMPLETNO — 170+]
-./core/kalkovi/nominalizacije.py            [KOMPLETNO — ~70]
-./core/kalkovi/lazni_prijatelji.py          [KOMPLETNO — ~60]
-./core/kalkovi/prijedlozi.py               [KOMPLETNO — ~50]
-./core/kalkovi/pleonazmi.py                [KOMPLETNO — ~40, Korak 2]
-./core/kalkovi/dijalog.py                  [KOMPLETNO — ~40, Korak 2]
-./core/kalkovi/glagoli.py                  [KOMPLETNO — ~50, Korak 2]
-./core/kalkovi/morfologija_blacklist.py    [NOVO — Korak 3]
-./core/model_profiles.py                   [PLANIRANO — Korak 5]
-./core/prompt_injector.py                  [PROŠIRENO — Korak 4]
-./core/prompts.py
-./core/prompts_v2.py                       [PLANIRANO — Korak 5]
-./core/quality.py
-./core/text_utils.py                       [PATCHIRAN — Korak 2]
-./core/validators/__init__.py              [NOVO — Korak 3]
-./core/validators/morfo_validator.py       [NOVO — Korak 3]
-./epub/__init__.py
-./epub/packager.py
-./epub/parser.py                           [PATCHIRAN — Korak 2]
-./epub/styling.py
-./export_manager.py
-./main.py
-./network/__init__.py
-./network/http_client.py
-./network/provider_router.py
-./network/provider_router_v2.py            [PLANIRANO — Korak 5]
-./network/provider_urls.py
-./network/rate_limiter.py
-./network/urls.py
-./processing/__init__.py
-./processing/parallel.py
-./processing/pipeline.py                   [PATCHIRAN — Korak 2, kalkovi integracija]
-./processing/rescue.py
-./processing/retro.py
-./processing/workers.py
-./processing/workers_v2.py                 [PLANIRANO — Korak 5]
-./run.py
-./static/css/intro.css
-./static/css/style.css
-./static/js/api-client.js
-./static/js/intro/intro-animation.js
-./static/js/intro/particle-system.js
-./static/js/intro/post-processing.js
-./static/js/intro/three.min.js
-./static/js/main.js
-./static/js/services/polling.js
-./static/js/services/storage.js
-./static/js/services/theme.js
-./static/js/ui/fleet.js
-./static/js/ui/notifications.js
-./static/js/utils/constants.js
-./static/js/utils/formatters.js
+  1. PREVODILAC  (temp 0.52)
+     - Primarni prijevod teksta
+     - Provajderi: GROQ, CEREBRAS, SAMBANOVA, GEMINI, MISTRAL
+     - Model selekcija: provider_router.py → MODEL_MAP
+
+  2. LEKTOR  (temp 0.62)
+     - Literarna dorada i stilizacija
+     - Provajderi: GEMINI, MISTRAL, COHERE, SAMBANOVA, TOGETHER, CHUTES
+
+  3. KOREKTOR  (temp 0.15)
+     - Finalna korekcija (samo brzi modeli)
+     - Provajderi: GROQ, CEREBRAS, GEMINI, MISTRAL
+
+  4. _post_process_tipografija  (deterministički)
+     - Ispravke navodnika, crtica, razmaka — bez AI poziva
+
+  5. Quality Scorer  (nezavisni scorer, uloga SCORER)
+     - Heuristička analiza + AI rubrik ocjena
+     - Rezultat se sprema u checkpoint + shared_stats["quality_scores"]
+
+Rescue trigger: EN > 0.10 (više od 10% engleskog teksta u izlazu)
+→ _spasi_od_sirovog() pokušava ekstraktirati BS tekst iz sirovog AI odgovora
+
+RETRO re-lektura:
+→ retroaktivna_relektura_v10() — ponovi samo blokove ispod zadanog praga
+→ Aktivira se putem tool="RETRO" ili iz Quality Review panela
+
+================================================================================
+FLEET MANAGER — API KEY UPRAVLJANJE
+================================================================================
+
+Fajl: api_fleet.py
+Singleton: register_active_fleet() / get_active_fleet()
+
+Podržani provajderi (14):
+  GEMINI      — 15 RPM, 1500 RPD, prim. model: gemini-2.0-flash
+  GROQ        — 20 RPM, 14400 RPD, prim. model: llama-3.1-8b-instant
+  CEREBRAS    — 30 RPM, 14400 RPD, prim. model: gpt-oss-20b (Llama3.1-70B)
+  SAMBANOVA   — 10 RPM, 10000 RPD, prim. model: DeepSeek-V3.1
+  MISTRAL     — 15 RPM, 1000 RPD,  prim. model: mistral-small-latest
+  COHERE      — 15 RPM, 1000 RPD,  prim. model: command-r-plus
+  OPENROUTER  — 20 RPM, 500 RPD,   prim. model: llama-3.3-70b-instruct:free
+  GITHUB      — 10 RPM, 200 RPD,   prim. model: gpt-4o
+  TOGETHER    — 20 RPM, 1000 RPD,  prim. model: Llama-3.2-3B-Instruct-Turbo
+  FIREWORKS   — 20 RPM, 1000 RPD,  prim. model: Llama-3.1-70B-Instruct
+  CHUTES      — 10 RPM, 1000 RPD,  prim. model: deepseek-ai/DeepSeek-V3-0324
+  HUGGINGFACE — 10 RPM, 500 RPD,   prim. model: Qwen/Qwen2.5-72B-Instruct
+  KLUSTER     — 15 RPM, 500 RPD,   prim. model: klusterai/Meta-Llama-3.3-70B
+  GEMMA       — 10 RPM, 500 RPD,   (Google Gemma putem Together)
+
+Fleet logika:
+  - Per-key asyncio Semaphore (MAX_CONCURRENT_PER_KEY=1)
+    → sprečava višestruke paralelne pozive istim ključem
+  - 429 handling: kratka pauza (≤8s) → None → caller bira sljedeći ključ
+    → uklonjen recursive retry koji je multiplicirao grešku 3× po ključu
+  - analyze_response(): automatski cooldown pri 429, error count pri ostalim
+  - reload(): live reload iz dev_api.json bez restarta servera
+
+URL mapa: network/provider_urls.py
+Rate limiter + semaphore: network/rate_limiter.py
+
+================================================================================
+MODULARNI MONOLITH — ARHITEKTURA
+================================================================================
+
+  main.py              — Entry point; Flask server, Termux auto-browser
+  app.py               — Flask factory; blueprint registracija, rute
+  run.py               — Alt. launcher (za specijalne slučajeve)
+  api_fleet.py         — FleetManager singleton; key cooldown, rotate, reload
+
+  config/
+    settings.py        — PORT (8080), CONFIG_PATH, OUTPUT_DIR, SERVER_RUN_ID
+    logging_config.py  — Logging setup
+
+  api/routes/
+    books.py           — /api/files, /api/upload_book, /api/download
+    processing.py      — /api/start, /api/status, /api/dev_models, /control/*
+    fleet.py           — /api/fleet, /api/fleet/toggle
+    keys.py            — /api/keys CRUD + /api/keys/<p>/<i>/ping (health check)
+    qualities.py       — /api/quality_scores CRUD + send_to_fix
+    quality.py         — /api/quality (legacy kompatibilnost)
+    export.py          — /api/export/json|txt
+    control.py         — /control/<action>
+
+  core/
+    engine.py          — SkriptorijAllInOne; orchestracija obrade
+    quality.py         — _scoruj_kvalitetu(); heuristika + AI rubrik
+    text_utils.py      — _smart_extract, _agresivno_cisti, _detektuj_en_ostatke
+    prompt_injector.py — Dinamičko ubacivanje glosara u prompte
+
+  processing/
+    pipeline.py        — Async 3-pass pipeline (workers V2 aktivan)
+    workers.py         — Chunk workeri V1 (legacy)
+    workers_v2.py      — Chunk workeri V2 (aktivan, USE_WORKERS_V2=1)
+    parallel.py        — Paralelna obrada poglavlja
+    retro.py           — retroaktivna_relektura_v10()
+    rescue.py          — _spasi_od_sirovog()
+
+  network/
+    http_client.py     — _async_http_post(); acquire/release_key semaphore
+    rate_limiter.py    — asyncio.Semaphore per-key; acquire_key/release_key
+    provider_urls.py   — get_url(prov) → URL mapa 14 provajdera
+    provider_router.py — MODEL_MAP, routing po ulozi (LEKTOR, PREVODILAC...)
+
+  analysis/
+    book_context.py    — BookContext; glosar, likovi, ton, žanr (analiza pre-run)
+
+  epub/
+    parser.py          — Parsiranje, čišćenje, rekonstrukcija EPUB-a
+
+  utils/
+    file_utils.py      — Sigurni nazivi fajlova, path validacija
+
+  static/
+    css/style.css      — Glassmorphism UI, tamna/svijetla tema, custom properties
+    js/main.js         — App init, fleet polling, quality review, key management
+    js/api-client.js   — Centralizirani HTTP klijent za sve API pozive
+    js/ui/fleet.js     — Fleet pool renderer (<details> collapsible po provajderu)
+    js/intro/          — Three.js 3D intro animacija
+
+  templates/
+    index.html         — Glavni dashboard (tabovi: Flota, Kvalitet, Historija,
+                         Pregled, Stručnjak)
+    intro.html         — Cinematični intro ekran (prikazuje se pri novom server startu)
+
+================================================================================
+TABOVI UI — BOOKLYFI DASHBOARD
+================================================================================
+
+  🛡 Flota
+    - Summary kartice: Aktivnih / Hladi se / Grešaka
+    - Per-provajder expandable kartice s health barom
+    - Toggle ključa kliknut na pill
+
+  🎯 Kvalitet
+    - Prosječna ocjena + ring chart
+    - Distribucija po kategorijama (odlično/dobro/slabo/kritično)
+    - Označi loše blokove, pošalji na RETRO relekturu
+
+  📚 Historija
+    - Log svih prethodno obrađenih knjiga
+
+  👁 Pregled
+    - Live EPUB preview po poglavljima
+
+  🔬 Stručnjak
+    - Fleet detalji po provajderu (collapsible <details>)
+    - Sistemski dnevnik (audit log s autoscroll-om)
+    - API ključevi: CRUD + 🔍 Live ping health check
+
+================================================================================
+SIGURNOSNE NAPOMENE
+================================================================================
+
+  - dev_api.json i proxies.json su u .gitignore
+  - Ključevi maskirani u UI: prikazuju se samo zadnji 6 znakova (...abc123)
+  - Svi file putevi sanitizirani (werkzeug.safe_join, re.sub za provider nazive)
+  - Ping endpoint ne izlaže stack trace u error odgovorima
+  - MAX_CONCURRENT_PER_KEY=1 sprečava parallel key abuse
+
+================================================================================
+TESTOVI
+================================================================================
+
+  python3 -m pytest tests/ -v     (18 testova)
+
+  tests/unit/test_validators.py       — Validatori fajlova (6 testova)
+  tests/integration/test_api_routes.py — Flask rute (12 testova)
+
+================================================================================
+ENV VARIJABLE
+================================================================================
+
+  SKRIPTORIJ_PORT      (default: 8080)     — Port Flask servera
+  SKRIPTORIJ_CONFIG    (default: dev_api.json) — Putanja do ključeva
+  SKRIPTORIJ_INPUT_DIR (default: ~/Skriptorij/data) — Input knjige
+  SKRIPTORIJ_OUTPUT_DIR (default: ~/Skriptorij/output) — Output knjige
+  BOOKLYFI_V2          (default: 1)        — Aktivira workers_v2
+  PYTHONUNBUFFERED     (preporučeno: 1)    — Real-time logovi u Dockeru
+
 ================================================================================
