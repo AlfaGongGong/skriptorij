@@ -83,6 +83,16 @@ async def retroaktivna_relektura_v10(
                 f"⚠️ Neki označeni blokovi nemaju .chk fajl: {sorted(nedostaju)}",
                 "warning",
             )
+        # N-FIX: Ako nijedno od označenih .chk fajlova ne postoji, ne smijemo
+        # pozivati finalize() jer bismo pregazili dobar EPUB s broken NCX-om.
+        if not ciljani:
+            self.log(
+                "⚠️ Selektivna relektura: nema .chk fajlova za označene blokove "
+                "— finalizacija preskočena (dobar EPUB sačuvan).",
+                "warning",
+            )
+            self.log("🎉 Retro obrada završena!", "system")
+            return
     elif force:
         ciljani = svi_chk
     elif only_bad:
@@ -279,6 +289,19 @@ async def retroaktivna_relektura_v10(
     )
 
     # Finalizacija
+    # N-FIX: U RETRO/REFIX modu engine se inicijalizira svježe — html_files = [].
+    # Bez popunjavanja html_files, toc_entries ostaje prazan → NCX dobija 0 poglavlja.
+    # Popuni html_files iz work_dir i resetiraj toc_entries prije dropcap/toc petlje.
+    if not self.html_files and self.work_dir.exists():
+        self.html_files = sorted(
+            [
+                f for f in self.work_dir.rglob("*")
+                if f.suffix.lower() in {".html", ".htm", ".xhtml", ".xml"}
+                and "checkpoints" not in f.parts
+            ],
+            key=lambda x: x.name,
+        )
+    self.toc_entries = []
     html_files = getattr(self, "html_files", [])
     for hf in html_files:
         try:
