@@ -1,12 +1,11 @@
-
-
 # ============================================================================
-# SKRIPTORIJ V8 — export_manager.py
+# SKRIPTORIJ V8 — utils/export.py
 # Export rezultata: EPUB metapodaci, PDF/TXT report, JSON
 # ============================================================================
 
 import json
 import os
+import re
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -32,14 +31,12 @@ def get_epub_metadata(epub_path: str) -> dict:
             opf_name = None
             if "META-INF/container.xml" in z.namelist():
                 container = z.read("META-INF/container.xml").decode("utf-8", errors="ignore")
-                import re
                 m = re.search(r"full-path=['\"]([^'\"]+\.opf)['\"]", container)
                 if m:
                     opf_name = m.group(1)
 
             if opf_name and opf_name in z.namelist():
                 opf = z.read(opf_name).decode("utf-8", errors="ignore")
-                import re
 
                 def _tag(tag, text):
                     m = re.search(rf"<(?:dc:)?{tag}[^>]*>(.*?)</(?:dc:)?{tag}>", text, re.DOTALL)
@@ -97,6 +94,3 @@ def generate_txt_report(epub_path: str, stats: dict) -> bytes:
         "=" * 60,
     ]
     return "\n".join(lines).encode("utf-8")
-
-
-
