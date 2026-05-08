@@ -21,7 +21,7 @@ def export_result(fmt):
     if not os.path.exists(epub_path):
         return jsonify({"error": "EPUB fajl nije pronađen"}), 404
     try:
-        from export_manager import generate_json_report, generate_txt_report
+        from utils.export import generate_json_report, generate_txt_report
 
         if fmt == "json":
             data = generate_json_report(epub_path, SHARED_STATS)
