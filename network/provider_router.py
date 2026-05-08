@@ -27,7 +27,7 @@ MODEL_MAP = {
     "MISTRAL":     "mistral-small-latest",
     "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
     "GROQ":        "llama-3.3-70b-versatile",
-    "GEMINI":      "gemma-3-27b-it",
+    "GEMINI":      "gemini-2.0-flash",
     "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
     "COHERE":      "command-r-plus-08-2024",
     "CHUTES":      "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
