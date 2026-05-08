@@ -9,15 +9,13 @@
 import asyncio
 import random
 import requests
-import time
 
 # ── Google model pool — redosljed: gemini-flash prvi (bolji RPD limit) ────────
+# NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
 GOOGLE_MODEL_POOL = [
-    {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},   # primarni
-    {"model": "gemma-3-27b-it",        "rpm": 30, "rpd": 14400},  # fallback 1
-    {"model": "gemma-3-12b-it",        "rpm": 30, "rpd": 14400},  # fallback 2
-    {"model": "gemma-3-4b-it",         "rpm": 30, "rpd": 14400},  # fallback 3
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},    # zadnji resort
+    {"model": "gemini-2.0-flash",                    "rpm": 15, "rpd": 1500},  # primarni
+    {"model": "gemini-2.5-flash-lite-preview-06-17", "rpm": 10, "rpd": 500},   # fallback 1
+    {"model": "gemini-2.5-flash-preview-05-20",      "rpm": 10, "rpd": 500},   # fallback 2 — zadnji resort
 ]
 
 # BUG#4: Modeli koji NE podržavaju system role — konvertujemo u user poruku
@@ -125,6 +123,10 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             except Exception:
                 err_msg = resp.text[:200]
             self.log(f"[{prov_upper}] HTTP 400 Bad Request: {err_msg}", "warning")
+            return None
+
+        elif resp.status_code == 404:
+            self.log(f"[{prov_upper}] HTTP 404 — model ne postoji, skipujem rotaciju", "warning")
             return None
 
         else:

@@ -2,7 +2,6 @@
 
 # epub/parser.py
 import re
-from pathlib import Path
 from bs4 import BeautifulSoup, NavigableString
 
 def _ocisti_epub_html(html: str) -> str:
@@ -47,7 +46,59 @@ def _zamijeni_epub_css(html_fajlovi: list, work_dir, log_fn=None) -> int:
 # EpubParser — čita EPUB zip i vraća poglavlja za preview
 # ─────────────────────────────────────────────────────────────────────────────
 import zipfile
-import os
+
+import unicodedata as _unicodedata
+
+def _booklyfi_charset_filter(tekst: str) -> str:
+    """
+    Uklanja izolirane ćirilične znakove iz latiničnog teksta.
+    AI modeli (posebno Groq/Cerebras) ponekad vrate jedno ćirilično
+    slovo usred latiničnog teksta (npr. nepokolебljivo).
+    Radi samo kad je ćirilica manjina (<10% znakova).
+    """
+    if not tekst:
+        return tekst
+    cir = sum(1 for c in tekst if '\u0400' <= c <= '\u04FF')
+    ukupno = max(len(tekst), 1)
+    if cir == 0 or cir / ukupno > 0.10:
+        return tekst  # ili čisto latinica ili stvarno ćirilični tekst
+    # Zamijeni svaki ćirilični znak odgovarajućim latiničnim, ako postoji
+    _CIR_LAT = {
+        'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ж':'ž',
+        'з':'z','и':'i','ј':'j','к':'k','л':'l','м':'m','н':'n',
+        'о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f',
+        'х':'h','ц':'c','ч':'č','ш':'š','ђ':'đ','ћ':'ć','њ':'nj',
+        'љ':'lj','џ':'dž','А':'A','Б':'B','В':'V','Г':'G','Д':'D',
+        'Е':'E','Ж':'Ž','З':'Z','И':'I','Ј':'J','К':'K','Л':'L',
+        'М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T',
+        'У':'U','Ф':'F','Х':'H','Ц':'C','Ч':'Č','Ш':'Š','Ђ':'Đ',
+        'Ћ':'Ć','Њ':'Nj','Љ':'Lj','Џ':'Dž',
+    }
+    return ''.join(_CIR_LAT.get(c, c) for c in tekst)
+
+
+def _booklyfi_deduplicate_heading(tekst: str) -> str:
+    """
+    Uklanja duplikate naslova poglavlja.
+    Primjer: "POGLAVLJE 3 POGLAVLJE 3" → "POGLAVLJE 3"
+    Nastaje kad packager/chunker upiše heading i tekst koji počinje
+    headingom zajedno.
+    """
+    if not tekst:
+        return tekst
+    # Pokreni samo ako vidimo potencijalnu duplikaciju (performance)
+    if tekst.count('\n') > 2:
+        return tekst  # preskači duge blokove
+    # Pronađi ponavljanje na početku: "X X" gdje X > 5 znakova
+    import re as _re
+    pattern = _re.compile(
+        r'^((?:[A-ZČĆŠŽĐ][A-ZČĆŠŽĐA-Za-z0-9\s]+){1,8})\s+\1',
+        _re.MULTILINE | _re.UNICODE
+    )
+    return pattern.sub(r'\1', tekst)
+
+
+
 
 class EpubParser:
     """
@@ -71,7 +122,7 @@ class EpubParser:
             return self._chapters
         try:
             self._chapters = self._parse()
-        except Exception as e:
+        except Exception:
             self._chapters = []
         return self._chapters
 

@@ -4,8 +4,6 @@
 import shutil
 import zipfile
 from pathlib import Path
-from bs4 import BeautifulSoup
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Pomoćna: efektivni OUTPUT_DIR (s fallbackom)
@@ -27,7 +25,6 @@ def _get_output_dir() -> Path:
         except Exception:
             return Path("data")
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Live EPUB (u toku obrade)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -48,7 +45,6 @@ def buildlive_epub(self):
                     z.write(f, f.relative_to(self.work_dir))
     except Exception as e:
         self.log(f"⚠️ Live EPUB greška: {e}", "warning")
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Dropcap & TOC
@@ -98,7 +94,6 @@ def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
     if not any(e[1] == href for e in self.toc_entries):
         self.toc_entries.append((title, href))
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # NCX generator
 # ─────────────────────────────────────────────────────────────────────────────
@@ -142,7 +137,6 @@ def generate_ncx(self):
         f"📑 NCX navigacija generirana ({len(self.toc_entries)} poglavlja)",
         "tech",
     )
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FINALIZE — pakuje EPUB i kopira u MoonReader
@@ -211,6 +205,4 @@ def finalize(self):
             self.log("🗑️ Live preview fajl obrisan.", "tech")
     except Exception:
         pass
-
-
 

@@ -1,4 +1,3 @@
-from flask import Flask, jsonify, request
 import os
 import signal
 import sys
@@ -7,13 +6,12 @@ import time
 import logging
 import webbrowser
 import traceback
-import re
 import json
 from pathlib import Path
 
 # Uvoz fabrike aplikacije i dijeljenog stanja
 from app import app
-from config.settings import CHECKPOINT_BASE_DIR, PORT, SHARED_STATS, SHARED_CONTROLS
+from config.settings import PORT, SHARED_STATS, SHARED_CONTROLS
 from config.logging_config import configure_logging
 
 # ── Putanje ──────────────────────────────────────────────────────────────────
@@ -21,7 +19,7 @@ from config.logging_config import configure_logging
 _BASE = Path(__file__).parent
 # Koristi apsolutne putanje iz config/settings.py
 try:
-    from config.settings import INPUT_DIR as _CFG_INPUT_DIR, CHECKPOINT_BASE_DIR as _CFG_CHK
+    from config.settings import INPUT_DIR as _CFG_INPUT_DIR
     PROJECTS_ROOT = str(_CFG_INPUT_DIR)
     INPUT_DIR     = str(_CFG_INPUT_DIR)
 except ImportError:

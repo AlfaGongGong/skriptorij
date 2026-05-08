@@ -510,18 +510,6 @@
                     <button class="tab-btn" data-tab="tab-epub">
                         👁 Pregled
                     </button>
-                    <button class="tab-btn" data-tab="tab-review">
-                        ✏ Revizija <span class="badge" id="review-count">0</span
-                        ><span
-                            class="badge hidden"
-                            id="review-badge"
-                            style="
-                                background: var(--amber);
-                                color: #000;
-                                margin-left: 3px;
-                            "
-                        ></span>
-                    </button>
                     <button class="tab-btn" data-tab="tab-expert">
                         🔬 Stručnjak
                     </button>
@@ -812,228 +800,17 @@
                     <div id="epub-reader-wrap" class="hidden">
                         <div class="epub-reader-toolbar">
                             <span id="epub-chapter-label">—</span>
-                            <button class="btn btn-sm" id="btn-prev-chapter">
-                                ◀
+                            <button class="btn btn-sm" id="btn-reload-epub" title="Osvježi poglavlje">
+                                🔄 Osvježi
                             </button>
-                            <button class="btn btn-sm" id="btn-next-chapter">
-                                ▶
-                            </button>
-                            <button class="btn btn-sm" id="btn-reload-epub">
-                                🔄
-                            </button>
+                            <!-- Skriveni nav buttons za JS kompatibilnost -->
+                            <button class="btn btn-sm hidden" id="btn-prev-chapter">◀</button>
+                            <button class="btn btn-sm hidden" id="btn-next-chapter">▶</button>
                         </div>
                         <div id="epub-content"></div>
                     </div>
                 </div>
 
-                <!-- Review tab (bez modala unutar panela!) -->
-                <div class="tab-panel" id="tab-review">
-                                            <!-- MULTI-SELECT TOOLBAR (Faza 2.4) -->
-                        <div id="review-multiselect-bar" class="review-multiselect-bar">
-                            <span class="review-multiselect-count" id="review-multi-count">0 označeno</span>
-                            <button class="review-select-all-btn" id="btn-review-select-all">☑ Sve</button>
-                            <button class="review-select-all-btn" id="btn-review-deselect-all">☐ Poništi</button>
-                            <button class="btn btn-sm btn-danger" id="btn-delete-selected" style="font-size:0.65rem;padding:3px 9px">
-                                🗑 Obriši označene (<span id="review-multi-count2">0</span>)
-                            </button>
-                        </div>
-<div
-                        style="
-                            display: grid;
-                            grid-template-columns: 200px 1fr;
-                            gap: 12px;
-                            height: 520px;
-                        "
-                    >
-                        <div
-                            id="review-list"
-                            style="
-                                overflow-y: auto;
-                                border-right: 1px solid var(--bd);
-                                padding-right: 8px;
-                            "
-                        >
-                            <div
-                                style="
-                                    color: var(--tx-3);
-                                    text-align: center;
-                                    padding: 20px;
-                                "
-                            >
-                                Kliknite tab za učitavanje...
-                            </div>
-                        </div>
-                        <div
-                            style="
-                                display: flex;
-                                flex-direction: column;
-                                gap: 8px;
-                                min-height: 0;
-                            "
-                        >
-                            <div
-                                id="review-filename"
-                                style="
-                                    font-family: monospace;
-                                    font-size: 0.75rem;
-                                    color: var(--tx-2);
-                                    flex-shrink: 0;
-                                "
-                            >
-                                —
-                            </div>
-                            <div
-                                id="review-empty-banner"
-                                style="
-                                    display: none;
-                                    align-items: center;
-                                    gap: 10px;
-                                    padding: 10px 14px;
-                                    background: rgba(244, 63, 94, 0.12);
-                                    border: 1px solid rgba(244, 63, 94, 0.35);
-                                    border-radius: 8px;
-                                    font-family: monospace;
-                                    font-size: 0.78rem;
-                                    color: var(--rose);
-                                    flex-shrink: 0;
-                                "
-                            >
-                                ⚠ <strong>Blok nije preveden</strong> — upiši
-                                prijevod ručno ili pošalji na reprocessing.
-                            </div>
-                            <div
-                                id="review-legend"
-                                style="
-                                    display: none;
-                                    gap: 10px;
-                                    flex-wrap: wrap;
-                                    flex-shrink: 0;
-                                "
-                            >
-                                <span
-                                    style="
-                                        font-size: 0.62rem;
-                                        color: var(--tx-3);
-                                        font-family: monospace;
-                                        letter-spacing: 0.05em;
-                                        text-transform: uppercase;
-                                        align-self: center;
-                                    "
-                                    >Oznake:</span
-                                >
-                                <span
-                                    style="
-                                        background: rgba(244, 63, 94, 0.18);
-                                        border: 1px solid rgba(244, 63, 94, 0.4);
-                                        color: var(--rose);
-                                        padding: 2px 7px;
-                                        border-radius: 4px;
-                                        font-size: 0.65rem;
-                                        font-family: monospace;
-                                    "
-                                    >EN riječ</span
-                                >
-                                <span
-                                    style="
-                                        background: rgba(245, 158, 11, 0.18);
-                                        border: 1px solid
-                                            rgba(245, 158, 11, 0.4);
-                                        color: var(--amber);
-                                        padding: 2px 7px;
-                                        border-radius: 4px;
-                                        font-size: 0.65rem;
-                                        font-family: monospace;
-                                    "
-                                    >Anglicizam</span
-                                >
-                                <span
-                                    style="
-                                        background: rgba(99, 102, 241, 0.18);
-                                        border: 1px solid
-                                            rgba(99, 102, 241, 0.4);
-                                        color: var(--accent);
-                                        padding: 2px 7px;
-                                        border-radius: 4px;
-                                        font-size: 0.65rem;
-                                        font-family: monospace;
-                                    "
-                                    >Neprirodan red</span
-                                >
-                            </div>
-                            <div
-                                id="review-preview-panel"
-                                style="
-                                    display: none;
-                                    flex: 0 0 auto;
-                                    max-height: 160px;
-                                    overflow-y: auto;
-                                    background: var(--bg-2);
-                                    border: 1px solid var(--bd);
-                                    border-radius: 8px;
-                                    padding: 10px 12px;
-                                    font-family: monospace;
-                                    font-size: 0.78rem;
-                                    line-height: 1.7;
-                                    color: var(--tx-1);
-                                    white-space: pre-wrap;
-                                    word-break: break-word;
-                                "
-                            ></div>
-                            <textarea
-                                id="review-text"
-                                style="
-                                    flex: 1;
-                                    background: var(--bg-2);
-                                    border: 1px solid var(--bd);
-                                    border-radius: 8px;
-                                    color: var(--tx-1);
-                                    padding: 10px;
-                                    font-family: monospace;
-                                    font-size: 0.78rem;
-                                    resize: none;
-                                    min-height: 0;
-                                "
-                            ></textarea>
-                            <div
-                                style="
-                                    display: flex;
-                                    gap: 4px;
-                                    flex-shrink: 0;
-                                    flex-wrap: wrap;
-                                    align-items: center;
-                                "
-                            >
-                                <button
-                                    class="btn btn-sm"
-                                    id="btn-tab-prev-review"
-                                >
-                                    ◀
-                                </button>
-                                <button
-                                    class="btn btn-sm"
-                                    id="btn-tab-next-review"
-                                >
-                                    ▶
-                                </button>
-                                <button
-                                    class="btn btn-sm btn-primary"
-                                    id="btn-save-review-tab"
-                                >
-                                    💾 Sačuvaj
-                                </button>
-                                <span
-                                    id="review-hint-count"
-                                    style="
-                                        font-family: monospace;
-                                        font-size: 0.65rem;
-                                        color: var(--tx-3);
-                                        margin-left: 4px;
-                                    "
-                                ></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Expert tab (Fleet + Audit + Keys) -->
                 <div class="tab-panel" id="tab-expert">
@@ -1179,29 +956,9 @@
         <!-- Ispravljena putanja do main.js -->
         <script src="/static/js/main.js"></script>
 
-        
-        
 
-    <!-- REVIEW MODAL - USKLAĐEN -->
-    <div id="review-modal" class="modal-overlay" style="display:none; z-index:99999;">
-        <div class="review-modal-container" style="padding:14px; gap:10px; max-height:90vh; overflow-y:auto;">
-            <div class="review-modal-header" style="padding:10px 14px; gap:8px;">
-                <h2 class="review-modal-title" style="overflow:hidden; word-break:break-word; white-space:normal; flex:1; min-width:0;">
-                    ✍️ <span id="review-modal-stem" class="review-modal-stem" style="word-break:break-all; overflow-wrap:anywhere;">—</span>
-                </h2>
-                <button id="btn-close-review-modal" class="review-modal-close" style="flex-shrink:0; margin-left:8px;">✕</button>
-            </div>
-            <div class="review-modal-nav">
-                <button id="btn-modal-prev-review" class="btn-rev btn-rev-secondary">◀ Prethodni</button>
-                <button id="btn-modal-next-review" class="btn-rev btn-rev-secondary">Sljedeći ▶</button>
-            </div>
-            <textarea id="review-textarea" class="review-modal-textarea" placeholder="Učitavam prijevod..."></textarea>
-            <div class="review-modal-actions">
-                <button id="btn-save-review" class="btn-rev btn-rev-primary review-modal-save">💾 Sačuvaj</button>
-                <button id="btn-delete-empty-block" class="btn-rev btn-rev-danger review-modal-delete">🗑 Obriši</button>
-            </div>
-        </div>
-    </div>
+
+
 
 </body>
 </html>

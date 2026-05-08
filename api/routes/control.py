@@ -1,10 +1,10 @@
 """Rute za kontrolu obrade (pause, resume, stop, reset)."""
+from flask import Blueprint, jsonify
+from config.settings import SHARED_CONTROLS, SHARED_STATS
 import re
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request
 
-from config.settings import SHARED_STATS, SHARED_CONTROLS, CHECKPOINT_BASE_DIR
 
 bp = Blueprint("control", __name__)
 

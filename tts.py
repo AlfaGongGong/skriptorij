@@ -18,13 +18,12 @@ TTS FILTER FORMAT (Moon+ Reader):
 """
 
 from pathlib import Path
-import asyncio
 import zipfile
 import shutil
 import re
 from bs4 import BeautifulSoup
 from utils.logging import add_audit
-from config.settings import OUTPUT_DIR, CHECKPOINT_BASE_DIR
+from config import OUTPUT_DIR
 
 
 def _html_to_tts_tekst(html: str) -> str:

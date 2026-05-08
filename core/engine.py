@@ -345,11 +345,19 @@ class SkriptorijAllInOne:
 
     async def _inkrementalna_analiza_glosara(self, poglavlje_tekst, poglavlje_ime):
         from analysis.book_context import _inkrementalna_analiza_glosara
-        await _inkrementalna_analiza_glosara(self, poglavlje_tekst, poglavlje_ime)
+        try:
+            await _inkrementalna_analiza_glosara(self, poglavlje_tekst, poglavlje_ime)
+        except Exception as e:
+            import logging
+            logging.warning(f"Glosar analiza preskočena: {e}")
 
     async def _generiraj_chapter_summary(self, file_name, file_content):
         from analysis.book_context import _generiraj_chapter_summary
-        await _generiraj_chapter_summary(self, file_name, file_content)
+        try:
+            await _generiraj_chapter_summary(self, file_name, file_content)
+        except Exception as e:
+            import logging
+            logging.warning(f"Chapter summary preskočen: {e}")
 
     # =========================================================================
     # RETRO RE-LEKTURA
@@ -438,9 +446,6 @@ class SkriptorijAllInOne:
 
     # ── RETRO / REVIZIJA delegacija ───────────────────────────────────────────
 
-    async def mark_for_review(self, score_threshold: float = None):
-        from processing.retro import mark_for_review
-        return await mark_for_review(self, score_threshold or 6.5)
 
     async def send_to_fix(self, score_threshold: float = None):
         from processing.retro import send_to_fix
