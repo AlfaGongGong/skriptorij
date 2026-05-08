@@ -23,7 +23,7 @@ import shutil
 import re
 from bs4 import BeautifulSoup
 from utils.logging import add_audit
-from config import OUTPUT_DIR
+from config.settings import OUTPUT_DIR
 
 
 def _html_to_tts_tekst(html: str) -> str:
@@ -41,8 +41,8 @@ def _html_to_tts_tekst(html: str) -> str:
     tekst = tekst.replace("—", ", ")  # Em-crtica → kratka pauza
     tekst = tekst.replace("–", ", ")  # En-crtica
     tekst = tekst.replace("…", ".")  # Elipsis → tačka (TTS pauza)
-    tekst = tekst.replace("„", "")  # Otvoreni navodnik
-    tekst = tekst.replace("'", "")  #
+    tekst = tekst.replace("„", "")  # Otvoreni navodnik (U+201E)
+    tekst = tekst.replace("\u201d", "")  # Zatvoreni navodnik (U+201D)
 
     # Čisti višestruke prazne redove → jedan
     tekst = re.sub(r"\n{3,}", "\n\n", tekst)
