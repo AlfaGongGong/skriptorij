@@ -1,14 +1,18 @@
 
 
-# network/http_client.py — V10.3 ISPRAVKA
+# network/http_client.py — V10.4 ISPRAVKA
 #
 # BUG#4 FIX: Gemma modeli ne podržavaju system role → merge u user poruku
 # BUG#5 FIX: _call_gemini_with_full_rotation sada prima i koristi početni model
-# OSTALO:    gemini-2.0-flash je na prvom mjestu u GOOGLE_MODEL_POOL (bolji RPD)
+# BUG#9 FIX: 429 recursive retry s istim ključem — uklonjen.
+#            Sada: kratka pauza → None → caller bira drugi ključ/provider.
+# BUG#10 FIX: Per-key semaphore (MAX_CONCURRENT_PER_KEY=1) — uključen.
+#             Sprječava višestruke paralelne pozive istim ključem.
 
 import asyncio
 import random
 import requests
+from network.rate_limiter import acquire_key, release_key
 
 # ── Google model pool — redosljed: gemini-flash prvi (bolji RPD limit) ────────
 # NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
@@ -63,19 +67,33 @@ def _build_messages(sys_content: str | None, user_prompt: str, model: str) -> li
     ]
 
 
-async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key, attempt=1):
+async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key):
     """
-    Generički HTTP POST s ispravnim 429 handlingom i retry logicom.
+    Generički HTTP POST s ispravnim 429 handlingom.
+
+    BUG#9 FIX: Uklonjen recursive retry s istim ključem na 429.
+      Stari kod: čekaj → ponovi isti ključ do 3× → multiplikacija grešaka.
+      Novi kod:  kratka pauza za učtivost → odmah None → caller bira drugi ključ.
+
+    BUG#10 FIX: Per-key semaphore osigurava max 1 paralelni poziv po ključu.
     """
+    await acquire_key(key)
     try:
-        resp = await asyncio.to_thread(
-            requests.post,
-            url,
-            headers=headers,
-            json=json_payload,
-            timeout=(15, 90),
-            verify=True,
-        )
+        try:
+            resp = await asyncio.to_thread(
+                requests.post,
+                url,
+                headers=headers,
+                json=json_payload,
+                timeout=(15, 90),
+                verify=True,
+            )
+        except requests.exceptions.Timeout:
+            self.log(f"[{prov_upper}] Timeout (90s)", "warning")
+            return None
+        except Exception as e:
+            self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
+            return None
 
         try:
             self.fleet.analyze_response(prov, key, resp.status_code, resp.headers)
@@ -98,17 +116,13 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
 
             if retry_after and retry_after > 3600:
                 self.log(f"[{prov_upper}] RPD limit (dnevna kvota) — preskačem", "warning")
-                return None
-
-            wait = retry_after if retry_after else min(2 ** attempt * 2, 60)
-            wait += random.uniform(0.5, 2.0)
-            self.log(f"[{prov_upper}] HTTP 429 — čekam {wait:.1f}s (pokušaj {attempt})", "warning")
-            await asyncio.sleep(wait)
-
-            if attempt < 3:
-                return await _async_http_post(
-                    self, url, headers, json_payload, prov, prov_upper, key, attempt + 1
-                )
+            else:
+                # BUG#9 FIX: Ne ponavljamo isti ključ — kratka pauza za učtivost, zatim None.
+                # analyze_response() je već postavio cooldown na ovaj ključ.
+                # Caller (_call_ai_engine) će pokušati sljedeći provider/ključ.
+                wait = min(retry_after or 3.0, 8.0) + random.uniform(0.3, 1.0)
+                self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s, biram drugi ključ", "warning")
+                await asyncio.sleep(wait)
             return None
 
         elif resp.status_code in (401, 402, 403, 412):
@@ -116,7 +130,6 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             return None
 
         elif resp.status_code == 400:
-            # Bad request — može biti problem s modelom ili payloadom
             try:
                 err_body = resp.json()
                 err_msg  = str(err_body)[:200]
@@ -133,12 +146,8 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             self.log(f"[{prov_upper}] HTTP {resp.status_code}", "warning")
             return None
 
-    except requests.exceptions.Timeout:
-        self.log(f"[{prov_upper}] Timeout (90s)", "warning")
-        return None
-    except Exception as e:
-        self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
-        return None
+    finally:
+        release_key(key)
 
 
 async def _call_single_provider(
