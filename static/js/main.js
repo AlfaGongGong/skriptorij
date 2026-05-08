@@ -1115,7 +1115,7 @@ function renderFleet(data) {
                     else if (cooling) { cls = "warn"; label = `⏳ ${k.masked}`; extra = `<span style="font-size:0.65rem;opacity:0.7">${Math.ceil(k.cooldown_remaining)}s</span>`; }
                     else if (!available) { cls = "err"; label = `✕ ${k.masked}`; }
                     const healthStr = k.health != null ? `<span style="font-size:0.65rem;opacity:0.6">${k.health}%</span>` : "";
-                    return `<span class="key-pill ${cls}" title="${prov}: ${k.masked}" onclick="toggleKey('${prov}','${k.masked}')">${label}${healthStr}${extra}</span>`;
+                    return `<span class="key-pill ${cls}" data-prov="${prov}" data-key="${k.masked}">${label}${healthStr}${extra}</span>`;
                 }).join("");
                 expertHtml += `<div class="fleet-provider" style="margin-bottom:6px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--bd)">
                     <div class="fleet-provider-header">
@@ -1128,6 +1128,11 @@ function renderFleet(data) {
                 </div>`;
             }
             expertC.innerHTML = expertHtml;
+            expertC.querySelectorAll(".key-pill[data-prov]").forEach(pill => {
+                pill.addEventListener("click", () => {
+                    toggleKey(pill.dataset.prov, pill.dataset.key);
+                });
+            });
         }
     }
 }
