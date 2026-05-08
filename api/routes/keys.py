@@ -9,6 +9,11 @@ import requests
 from flask import Blueprint, jsonify, request
 
 from config.settings import CONFIG_PATH
+from network.provider_urls import get_url as _get_provider_url
+
+# Konstante za ping timeout
+_PING_CONNECT_TIMEOUT = 8
+_PING_READ_TIMEOUT    = 20
 
 bp = Blueprint("keys", __name__)
 
@@ -141,12 +146,9 @@ def ping_key(provider, idx):
     if not key:
         return jsonify({"error": "Prazan ključ"}), 400
 
-    from network.provider_urls import get_url
-    url = get_url(prov_upper)
-
-    # Minimalni payload — max_tokens=1 da ne troši kvotu
     from network.http_client import GOOGLE_MODEL_POOL
     from network.provider_router import MODEL_MAP
+    url   = _get_provider_url(prov_upper)
     model = MODEL_MAP.get(prov_upper, "")
     if not model and prov_upper == "GEMINI":
         model = GOOGLE_MODEL_POOL[0]["model"]
@@ -163,7 +165,8 @@ def ping_key(provider, idx):
 
     t0 = time.time()
     try:
-        resp = requests.post(url, headers=headers, json=payload, timeout=(8, 20))
+        resp = requests.post(url, headers=headers, json=payload,
+                             timeout=(_PING_CONNECT_TIMEOUT, _PING_READ_TIMEOUT))
         latency = int((time.time() - t0) * 1000)
         sc = resp.status_code
         if sc == 200:
@@ -189,7 +192,7 @@ def ping_key(provider, idx):
         latency = int((time.time() - t0) * 1000)
         return jsonify({"ok": False, "latency_ms": latency, "status_code": 0,
                         "error": "Timeout (20s)"})
-    except Exception as e:
+    except Exception:
         latency = int((time.time() - t0) * 1000)
         return jsonify({"ok": False, "latency_ms": latency, "status_code": 0,
-                        "error": str(e)[:120]})
+                        "error": "Mrežna greška pri ping testu"})
