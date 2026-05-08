@@ -9,6 +9,11 @@
 #              run.py poziva engine.chunk_html() (→ 800) za prebrojavanje,
 #              ali standalone chunk_html() koristio 1500 — različit broj chunkova.
 
+
+import warnings
+from bs4 import XMLParsedAsHTMLWarning
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+
 from bs4 import BeautifulSoup, NavigableString
 
 
