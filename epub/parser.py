@@ -2,6 +2,11 @@
 
 # epub/parser.py
 import re
+
+import warnings
+from bs4 import XMLParsedAsHTMLWarning
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+
 from bs4 import BeautifulSoup, NavigableString
 
 # Regex: JSON wrapper artifacts like {"finalno_polirano": "..." or partial forms
