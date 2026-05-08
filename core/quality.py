@@ -444,8 +444,8 @@ async def _scoruj_kvalitetu(
     if ai_score is not None:
         kompozitni = round(heur_score * 0.25 + ai_score * 0.75, 1)
     else:
-        # Bez AI potvrde — blago konzervativno (ne kažnjavamo previše)
-        kompozitni = round(heur_score * 0.90, 1)
+        # Bez AI potvrde — koristimo heuristiku direktno (nema razloga za kaznu)
+        kompozitni = round(heur_score * 1.0, 1)
 
     kompozitni -= relektura_kazna
     return round(max(1.0, min(10.0, kompozitni)), 1)

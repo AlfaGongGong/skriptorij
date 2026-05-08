@@ -477,7 +477,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             self.chunk_skips += 1
             return None, "N/A"
 
-        sirovo = _agresivno_cisti(raw_fusion)
+        sirovo = _agresivno_cisti(_smart_extract(raw_fusion))
         _chk_write(self, file_name, chunk_idx, sirovo, "prevod")
 
     lek_sys = self._get_lektor_prompt(
@@ -508,7 +508,13 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             finalno = spas
 
     if _detektuj_halucinaciju(chunk, finalno):
-        self.log(f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju", "warning")
+        self.log(f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju — pokušavam rescue", "warning")
+        spas_hal, _ = await _spasi_od_sirovog(
+            self, sirovo, chunk, chunk_idx, file_name,
+            prev_ctx, rel_glosar, "halucinacija", tip_bloka,
+        )
+        if spas_hal:
+            finalno = spas_hal
 
     finalno = _post_process_tipografija(_agresivno_cisti(finalno))
     finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
