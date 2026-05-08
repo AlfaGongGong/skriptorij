@@ -3,7 +3,9 @@
 """Rute za upravljanje API ključevima (CRUD)."""
 import json
 import re
+import time
 
+import requests
 from flask import Blueprint, jsonify, request
 
 from config.settings import CONFIG_PATH
@@ -112,4 +114,82 @@ def delete_key(provider, idx):
         return jsonify({"error": "Greška pri brisanju ključa"}), 500
 
 
+@bp.route("/api/keys/<provider>/<int:idx>/ping", methods=["POST"])
+def ping_key(provider, idx):
+    """
+    Testira API ključ minimalnim stvarnim pozivom provajderu.
+    Vraća: { ok, latency_ms, status_code, error }
+    """
+    prov_upper = re.sub(r"[^A-Z0-9_]", "", provider.upper())
+    if not prov_upper:
+        return jsonify({"error": "Neispravan naziv provajdera"}), 400
+    try:
+        with open(CONFIG_PATH, encoding="utf-8") as f:
+            cfg = json.load(f)
+    except FileNotFoundError:
+        return jsonify({"error": "Konfiguracija ne postoji"}), 404
+    except Exception:
+        return jsonify({"error": "Greška pri čitanju konfiguracije"}), 500
 
+    raw = cfg.get(prov_upper)
+    if raw is None:
+        return jsonify({"error": "Provajder ne postoji"}), 404
+    keys_list = raw if isinstance(raw, list) else raw.get("keys", [])
+    if idx < 0 or idx >= len(keys_list):
+        return jsonify({"error": "Indeks van opsega"}), 400
+    key = keys_list[idx].strip()
+    if not key:
+        return jsonify({"error": "Prazan ključ"}), 400
+
+    from network.provider_urls import get_url
+    url = get_url(prov_upper)
+
+    # Minimalni payload — max_tokens=1 da ne troši kvotu
+    from network.http_client import GOOGLE_MODEL_POOL
+    from network.provider_router import MODEL_MAP
+    model = MODEL_MAP.get(prov_upper, "")
+    if not model and prov_upper == "GEMINI":
+        model = GOOGLE_MODEL_POOL[0]["model"]
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {key}",
+    }
+    payload = {
+        "model": model,
+        "max_tokens": 1,
+        "messages": [{"role": "user", "content": "ok"}],
+    }
+
+    t0 = time.time()
+    try:
+        resp = requests.post(url, headers=headers, json=payload, timeout=(8, 20))
+        latency = int((time.time() - t0) * 1000)
+        sc = resp.status_code
+        if sc == 200:
+            return jsonify({"ok": True, "latency_ms": latency, "status_code": sc})
+        elif sc == 429:
+            try:
+                body = resp.json()
+                err = body.get("error", {}).get("message", str(body))[:120] if isinstance(body, dict) else str(body)[:120]
+            except Exception:
+                err = "Rate limit"
+            return jsonify({"ok": False, "latency_ms": latency, "status_code": sc,
+                            "error": f"429 Rate limit — {err}"})
+        elif sc in (401, 403):
+            return jsonify({"ok": False, "latency_ms": latency, "status_code": sc,
+                            "error": "Ključ nevažeći (401/403)"})
+        else:
+            try:
+                err = str(resp.json())[:120]
+            except Exception:
+                err = resp.text[:120]
+            return jsonify({"ok": False, "latency_ms": latency, "status_code": sc, "error": err})
+    except requests.exceptions.Timeout:
+        latency = int((time.time() - t0) * 1000)
+        return jsonify({"ok": False, "latency_ms": latency, "status_code": 0,
+                        "error": "Timeout (20s)"})
+    except Exception as e:
+        latency = int((time.time() - t0) * 1000)
+        return jsonify({"ok": False, "latency_ms": latency, "status_code": 0,
+                        "error": str(e)[:120]})

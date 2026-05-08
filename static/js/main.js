@@ -1215,15 +1215,22 @@ async function loadKeys() {
                 html += `<div class="key-row">
                     <span class="key-prov-badge">${PROV_ICONS[prov.toUpperCase()] || "🔑"} ${prov}</span>
                     <span class="key-masked">${masked}</span>
+                    <button class="key-ping-btn" data-provider="${prov}" data-index="${idx}" title="Testiraj ključ">🔍</button>
                     <button class="key-del-btn" data-provider="${prov}" data-index="${idx}" title="Obriši">✕</button>
                 </div>`;
             });
         });
         container.innerHTML = html;
-        // Dodaj event listenere za dugmad za brisanje
+        // Dugme za brisanje
         container.querySelectorAll(".key-del-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 deleteKey(btn.dataset.provider, btn.dataset.index);
+            });
+        });
+        // Dugme za ping/provjeru
+        container.querySelectorAll(".key-ping-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                pingKey(btn.dataset.provider, btn.dataset.index, btn);
             });
         });
     } catch (e) {
@@ -1283,6 +1290,38 @@ async function deleteKey(provider, index) {
         pollFleet();
     } catch (e) {
         showToast("Greška: " + e.message, "error");
+    }
+}
+
+async function pingKey(provider, index, btn) {
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "⏳";
+    try {
+        const r = await fetch(
+            `/api/keys/${encodeURIComponent(provider)}/${index}/ping`,
+            { method: "POST" }
+        );
+        const d = await r.json();
+        if (d.error && !d.ok && d.latency_ms == null) {
+            showToast(`${provider}: ❌ ${d.error}`, "error");
+            btn.textContent = "✕";
+            setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
+            return;
+        }
+        if (d.ok) {
+            showToast(`${provider} ✅ OK — ${d.latency_ms}ms`, "success");
+            btn.textContent = "✅";
+        } else {
+            const msg = d.error || `HTTP ${d.status_code}`;
+            showToast(`${provider} ⚠️ ${msg} (${d.latency_ms}ms)`, "warning");
+            btn.textContent = "⚠️";
+        }
+        setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 4000);
+    } catch (e) {
+        showToast(`Ping greška: ${e.message}`, "error");
+        btn.textContent = origText;
+        btn.disabled = false;
     }
 }
 
