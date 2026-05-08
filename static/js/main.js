@@ -1303,8 +1303,8 @@ async function pingKey(provider, index, btn) {
             { method: "POST" }
         );
         const d = await r.json();
-        // Server-side greška prije nego što je ping počeo (400/404/500)
-        if (!r.ok && d.ok === undefined) {
+        // Server-side greška (400/404/500) — HTTP status nije OK i nema ping rezultata
+        if (!r.ok) {
             showToast(`${provider}: ❌ ${d.error || "Greška servera"}`, "error");
             btn.textContent = "✕";
             setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
