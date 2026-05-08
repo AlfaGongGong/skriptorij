@@ -2,6 +2,7 @@
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
+from werkzeug.utils import safe_join
 
 from config.settings import INPUT_DIR
 from utils.file_utils import secure_filename
@@ -49,11 +50,11 @@ def api_upload_book():
         safe_name = secure_filename(f.filename)
         # Provjera path traversala — dest mora ostati unutar INPUT_DIR
         input_dir_real = Path(INPUT_DIR).resolve()
-        dest = (input_dir_real / safe_name).resolve()
-        if dest.parent != input_dir_real:
+        dest = safe_join(str(input_dir_real), safe_name)
+        if not dest:
             return jsonify({"error": "Neispravno ime fajla"}), 400
         input_dir_real.mkdir(parents=True, exist_ok=True)
-        f.save(str(dest))
+        f.save(dest)
         return jsonify({"ok": True, "name": safe_name})
     except Exception:
         return jsonify({"error": "Greška pri uploadu fajla"}), 500
