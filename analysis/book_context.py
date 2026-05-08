@@ -655,7 +655,7 @@ class BookContextManager:
 
 
 # Standalone funkcije koje engine.py importuje
-def analiziraj_knjigu(engine, book_path):
+async def analiziraj_knjigu(engine, book_path):
     """Analizira knjigu i popunjava glosar."""
     import logging
     logging.info(f"[book_context] Analiza knjige: {book_path}")

@@ -27,14 +27,14 @@ MODEL_MAP = {
     "MISTRAL":     "mistral-small-latest",
     "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
     "GROQ":        "llama-3.3-70b-versatile",
-    "GEMINI":      "gemma-3-27b-it",
+    "GEMINI":      "gemini-2.0-flash",          # FIX: gemma-3-27b-it ugašen (404)
     "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
     "COHERE":      "command-r-plus-08-2024",
     "CHUTES":      "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA":       "google/gemma-3-27b-it",
+    "GEMMA":       "gemma-3-27b-it",            # NAPOMENA: 404 na Gemini API od maja 2026
 }
 
 TEMP_MAP = {

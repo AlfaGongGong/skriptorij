@@ -14,18 +14,34 @@ class ModelProfile:
     ime: str                          # interni identifikator
     provider: str                     # gemini / groq / cerebras / mistral / cohere / sambanova / openrouter / chutes
     api_model_string: str             # stvarni string za API poziv
-    rpm_limit: int                    # requests per minute (free tier)
-    rpd_limit: int                    # requests per day (free tier, 0 = neograničeno)
-    snage: List[str]                  # empirijski utvrđene snage
-    slabosti: List[str]               # empirijski utvrđene slabosti
     anti_patterne: List[str]          # regex patterne karakteristični za ovaj model
-    preferred_roles: List[str]        # uloge za koje je model najprikladniji
-    blacklisted_roles: List[str]      # uloge za koje se model ne koristi
-    temp_prevodilac: float = 0.75     # optimalna temperatura za prijevod
-    temp_lektor: float = 0.65         # optimalna temperatura za lekturu
-    temp_validator: float = 0.30      # optimalna temperatura za morfološku validaciju
-    max_tokens_chunk: int = 2048      # max output tokena za chunk prijevod
-    max_tokens_validator: int = 1024  # max output tokena za validator prolaz
+
+    # Rate limits (opcionalni — novi modeli ih možda ne znaju unaprijed)
+    rpm_limit: int = 0
+    rpd_limit: int = 0
+
+    # Snage/slabosti/uloge (opcionalni za nove profile koji ih ne definiraju)
+    snage: List[str] = field(default_factory=list)
+    slabosti: List[str] = field(default_factory=list)
+    preferred_roles: List[str] = field(default_factory=list)
+    blacklisted_roles: List[str] = field(default_factory=list)
+
+    # STARI sistem temperatura (flat polja) — koriste stariji profili
+    temp_prevodilac: float = 0.75
+    temp_lektor: float = 0.65
+    temp_validator: float = 0.30
+    max_tokens_chunk: int = 2048
+    max_tokens_validator: int = 1024
+
+    # NOVI sistem temperatura (dict po ulozi) — koriste novi Gemini profili
+    # Ako je popunjen, ima prioritet nad flat poljima u get_temp() / get_max_tokens()
+    temperatura_po_ulozi: Dict[str, float] = field(default_factory=dict)
+    max_tokens_po_ulozi: Dict[str, int] = field(default_factory=dict)
+
+    # Dodatna polja novih profila
+    visok_rizik: bool = False         # True = model često halucinira, obavezan validator
+    empirijski_score: float = 0.0    # prosječni quality score iz QA analize (0–10)
+
     notes: str = ""                   # slobodne napomene
 
 
@@ -105,6 +121,83 @@ PROFILI: Dict[str, ModelProfile] = {
         temp_validator=0.35,
         max_tokens_chunk=2048,
         notes="Pouzdana alternativa za gemini_25_flash kada je rpm limit dostignut.",
+    ),
+
+    "gemini_3_flash": ModelProfile(
+        ime="gemini_3_flash",
+        provider="gemini",
+        api_model_string="gemini-3.0-flash",
+        temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
+        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        anti_patterne=[
+            r"(?i)^(evo prijevoda|evo teksta|naravno|svakako|razumijem)",
+            r"(?i)(napomena:|komentar:|translator.*note)",
+        ],
+        visok_rizik=False,
+        empirijski_score=8.4,
+        notes="Gemini 3 Flash — nezavisni RPM/RPD od 2.5 Flash. RPM=5, RPD=20.",
+    ),
+
+    "gemini_31_flash_lite": ModelProfile(
+        ime="gemini_31_flash_lite",
+        provider="gemini",
+        api_model_string="gemini-3.1-flash-lite-preview-06-17",
+        temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
+        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        anti_patterne=[
+            r"(?i)^(evo prijevoda|evo teksta|naravno|svakako)",
+            r"(?i)(napomena:|komentar:)",
+        ],
+        visok_rizik=False,
+        empirijski_score=8.1,
+        notes="Gemini 3.1 Flash Lite — RPM=15, RPD=500. Najveći besplatni RPD od svih Flash modela.",
+    ),
+
+    "gemini_25_flash_lite": ModelProfile(
+        ime="gemini_25_flash_lite",
+        provider="gemini",
+        api_model_string="gemini-2.5-flash-lite-preview-06-17",
+        temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
+        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        anti_patterne=[
+            r"(?i)^(evo prijevoda|evo teksta|naravno|svakako)",
+            r"(?i)(napomena:|komentar:)",
+        ],
+        visok_rizik=False,
+        empirijski_score=8.0,
+        notes="Gemini 2.5 Flash Lite — RPM=10, RPD=20. Nezavisan limit od 2.5 Flash.",
+    ),
+
+    "gemma4_26b": ModelProfile(
+        ime="gemma4_26b",
+        provider="gemini",
+        api_model_string="gemma-4-26b-it",
+        temperatura_po_ulozi={"prevodilac": 0.4, "lektor": 0.3, "validator": 0.15},
+        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        anti_patterne=[
+            r"(?i)^(evo prijevoda|evo teksta|naravno)",
+            r"(?i)(napomena:|komentar:)",
+            r"(?i)(hteo|video|sreo|mogao bih da)",
+        ],
+        visok_rizik=False,
+        empirijski_score=7.8,
+        notes="Gemma 4 26B — RPM=15, RPD=1500. Dobar za lektor prolaz.",
+    ),
+
+    "gemma4_31b": ModelProfile(
+        ime="gemma4_31b",
+        provider="gemini",
+        api_model_string="gemma-4-31b-it",
+        temperatura_po_ulozi={"prevodilac": 0.4, "lektor": 0.3, "validator": 0.15},
+        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        anti_patterne=[
+            r"(?i)^(evo prijevoda|evo teksta|naravno)",
+            r"(?i)(napomena:|komentar:)",
+            r"(?i)(hteo|video|sreo|mogao bih da)",
+        ],
+        visok_rizik=False,
+        empirijski_score=8.0,
+        notes="Gemma 4 31B — RPM=15, RPD=1500. Najjači Gemma model.",
     ),
 
     "gemma3_27b": ModelProfile(
@@ -405,10 +498,17 @@ def get_anti_patterne(ime: str) -> List[str]:
 
 
 def get_temp(ime: str, uloga: str) -> float:
-    """Vraća optimalnu temperaturu za dati model i ulogu."""
+    """Vraća optimalnu temperaturu za dati model i ulogu.
+
+    Prioritet: temperatura_po_ulozi (novi dict sistem) > flat polja (stari sistem).
+    """
     p = PROFILI.get(ime)
     if not p:
         return 0.75
+    # Novi sistem — dict po ulozi ima prioritet
+    if p.temperatura_po_ulozi:
+        return p.temperatura_po_ulozi.get(uloga, p.temperatura_po_ulozi.get("prevodilac", 0.75))
+    # Stari sistem — flat polja
     mapping = {
         "prevodilac": p.temp_prevodilac,
         "lektor": p.temp_lektor,
@@ -418,10 +518,17 @@ def get_temp(ime: str, uloga: str) -> float:
 
 
 def get_max_tokens(ime: str, uloga: str = "prevodilac") -> int:
-    """Vraća max_tokens za dati model i ulogu."""
+    """Vraća max_tokens za dati model i ulogu.
+
+    Prioritet: max_tokens_po_ulozi (novi dict sistem) > flat polja (stari sistem).
+    """
     p = PROFILI.get(ime)
     if not p:
         return 2048
+    # Novi sistem — dict po ulozi ima prioritet
+    if p.max_tokens_po_ulozi:
+        return p.max_tokens_po_ulozi.get(uloga, p.max_tokens_po_ulozi.get("prevodilac", 2048))
+    # Stari sistem — flat polja
     if uloga == "validator":
         return p.max_tokens_validator
     return p.max_tokens_chunk

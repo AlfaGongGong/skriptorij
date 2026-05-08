@@ -841,31 +841,63 @@ function updateStatus(s) {
     }
 }
 
+function _auditClass(text) {
+    // Određuje CSS klasu i badge na osnovu sadržaja log retka
+    const t = text || "";
+    if (/GREŠKA|❌|ERROR|kritično/i.test(t))   return { cls: "log-critical", badge: "ERR" };
+    if (/UPOZ|⚠️|halucinacij|pala|nije obrađen/i.test(t)) return { cls: "log-warning", badge: "UPZ" };
+    if (/✅|uspješno|završen.*GEMINI|završen.*GROQ|završen.*MISTRAL|završen.*CEREBRAS|završen.*SAMBANOVA/i.test(t)) return { cls: "log-success", badge: "OK" };
+    if (/score\s*=\s*([89](\.\d+)?|10)/i.test(t)) return { cls: "log-score-good", badge: "SCR" };
+    if (/score\s*=\s*[67](\.\d+)?/i.test(t))      return { cls: "log-score-mid",  badge: "SCR" };
+    if (/score\s*=\s*[0-5](\.\d+)?/i.test(t))     return { cls: "log-score-bad",  badge: "SCR" };
+    if (/^\s*(SYS|📄|📖|🔍|🚀|📁)/m.test(t))    return { cls: "log-system",  badge: "SYS" };
+    if (/^\s*(NET|📦|🔀|🌐|Parallel|Blok\s\d)/m.test(t)) return { cls: "log-tech", badge: "NET" };
+    return { cls: "log-info", badge: "INF" };
+}
+
+function _parseAuditTime(div) {
+    // Izvlači timestamp ako postoji (format HH:MM:SS)
+    const m = div.match(/^(\d{2}:\d{2}:\d{2})/);
+    return m ? m[1] : "";
+}
+
 function updateAuditLog(html) {
     const log = document.getElementById("audit-log");
     if (!log) return;
-    let patched = html
-        .replace(
-            /<div style='color:#f44[^']*;[^']*background:#300[^']*'>/gi,
-            "<div class='log-entry log-critical'>"
-        )
-        .replace(
-            /<div style='color:#fa0[^']*'>/gi,
-            "<div class='log-entry log-warning'>"
-        )
-        .replace(
-            /<div class='global-only' style='border-left:4px solid #c026d3[^']*'>/gi,
-            "<div class='log-entry log-system'>"
-        )
-        .replace(
-            /<div class='tech-log'[^>]*>/gi,
-            "<div class='log-entry log-tech'>"
-        )
-        .replace(
-            /<div class='global-only' style='color:#94a3b8[^']*'>/gi,
-            "<div class='log-entry log-info'>"
-        );
-    log.innerHTML = patched;
+
+    // Parsiramo svaki <div ...> kao log entry
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const entries = doc.body.querySelectorAll("div");
+
+    if (entries.length === 0) {
+        log.innerHTML = html;
+        if (_auditAutoScroll) log.scrollTop = log.scrollHeight;
+        return;
+    }
+
+    let output = "";
+    entries.forEach(el => {
+        const raw = el.innerHTML || "";
+        const text = el.textContent || "";
+        const { cls, badge } = _auditClass(text);
+        const time = _parseAuditTime(text.trim());
+        // Ukloni timestamp i kategorijski prefiks iz poruke
+        const _prefixes = ["GREŠKA", "UPOZ", "SYS", "NET", "INF", "ERR", "UPZ", "OK", "SCR"];
+        let msgHtml = time ? raw.replace(time, "") : raw;
+        // Ukloni poznate tekstualne prefikse na početku
+        msgHtml = msgHtml.replace(
+            /^\s*(GREŠKA|UPOZ|SYS|NET|GREŠKAGREŠKA|UPOZUPOZ|SYSSYS|NETNET)\s*/,
+            ""
+        ).trim();
+        output += `<div class='log-entry ${cls}'>` +
+            `<span class='log-time'>${time}</span>` +
+            `<span class='log-badge'>${badge}</span>` +
+            `<span class='log-msg'>${msgHtml}</span>` +
+            `</div>`;
+    });
+
+    log.innerHTML = output;
     if (_auditAutoScroll) log.scrollTop = log.scrollHeight;
 }
 

@@ -1202,26 +1202,116 @@ input:focus {
 
 /* [v2.0.2] Audit log entry klase */
 .log-entry {
-    margin-bottom: 2px;
-    padding: 2px 0;
+    margin-bottom: 3px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
 }
-.log-critical {
-    color: var(--rose);
-    background: rgba(244, 63, 94, 0.08);
-}
-.log-warning {
-    color: var(--amber);
-}
-.log-system {
-    border-left: 3px solid var(--violet);
-    padding-left: 8px;
-}
-.log-tech {
+.log-entry .log-time {
     color: var(--tx-3);
-    font-size: 0.68rem;
+    font-size: 0.65rem;
+    min-width: 52px;
+    flex-shrink: 0;
 }
+.log-entry .log-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+}
+.log-entry .log-msg {
+    flex: 1;
+    word-break: break-word;
+}
+
+/* KRITIČNO — crvena */
+.log-critical {
+    color: #fca5a5;
+    background: rgba(244, 63, 94, 0.12);
+    border-left: 3px solid #f43f5e;
+}
+.log-critical .log-badge {
+    background: #f43f5e;
+    color: #fff;
+}
+
+/* UPOZORENJE — amber */
+.log-warning {
+    color: #fcd34d;
+    background: rgba(251, 191, 36, 0.07);
+    border-left: 3px solid #f59e0b;
+}
+.log-warning .log-badge {
+    background: #f59e0b;
+    color: #000;
+}
+
+/* SISTEM — ljubičasta */
+.log-system {
+    color: #d8b4fe;
+    border-left: 3px solid #a855f7;
+    background: rgba(168, 85, 247, 0.07);
+}
+.log-system .log-badge {
+    background: #a855f7;
+    color: #fff;
+}
+
+/* MREŽA / NET — plava */
+.log-tech {
+    color: #93c5fd;
+    border-left: 3px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.06);
+}
+.log-tech .log-badge {
+    background: #3b82f6;
+    color: #fff;
+}
+
+/* INFO — siva */
 .log-info {
     color: var(--tx-2);
+    border-left: 2px solid var(--bd);
+}
+.log-info .log-badge {
+    background: var(--bd);
+    color: var(--tx-2);
+}
+
+/* USPJEŠNO — zelena */
+.log-success {
+    color: #86efac;
+    background: rgba(34, 197, 94, 0.08);
+    border-left: 3px solid #22c55e;
+}
+.log-success .log-badge {
+    background: #22c55e;
+    color: #000;
+}
+
+/* SCORE visok */
+.log-score-good {
+    color: #86efac;
+    background: rgba(34, 197, 94, 0.06);
+    border-left: 3px solid #22c55e;
+}
+/* SCORE srednji */
+.log-score-mid {
+    color: #fcd34d;
+    background: rgba(251, 191, 36, 0.06);
+    border-left: 3px solid #f59e0b;
+}
+/* SCORE loš */
+.log-score-bad {
+    color: #fca5a5;
+    background: rgba(244, 63, 94, 0.09);
+    border-left: 3px solid #f43f5e;
 }
 
 /* ── Keys Tab ──────────────────────────────────────────────────────────────── */

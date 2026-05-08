@@ -73,6 +73,69 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Ne koristiš markdown formatiranje. Ne koristiš ``` blokove. "
             "Vraćaš čisti HTML tekst, ništa drugo."
         ),
+        "literary_dark": (
+            # ── POJAČANI LITERARY PROMPT ZA DARK FANTASY / HORROR ──────────────
+            # Cilj: +0.5–0.8 na quality score za žanrovski tekst.
+            # Fokus: atmosfera, ritam, senzorni jezik, tjeskoba, ne-doslovan prijevod.
+            # ───────────────────────────────────────────────────────────────────
+            "STILSKE INSTRUKCIJE — DARK FANTASY / HORROR ŽANR:\n"
+            "\n"
+            "1. ATMOSFERA IZNAD SVEGA. Svaka rečenica nosi težinu. "
+            "Ako original stvara tjeskobu, neizvjesnost ili jezu — tvoj prijevod mora je pojačati, ne ublažiti. "
+            "Nikad ne 'popravljaj' mračne ili neudobne pasaže prema svom nahođenju — čuvaj ih intaktnim.\n"
+            "\n"
+            "2. SENZORNI JEZIK. Dark fantasy živi od fizičkih detalja: "
+            "miris, tekstura, zvuk, bol, hladnoća. "
+            "Ne prevodi senzorne opise apstraktno. "
+            "\"The iron smell of blood\" → \"metalni miris krvi\" (ne \"krv\"), "
+            "\"the wet rasp of his breathing\" → \"mokro hropanje\" (ne samo \"disanje\").\n"
+            "\n"
+            "3. RITAM KAO INSTRUMENT. Kratke rečenice grade napetost. "
+            "Dugi periodi grade tjeskobno iščekivanje. "
+            "Čuvaj duljinu i strukturu rečenica originala — ne sažimaj, ne spajaj, ne rastavljaj "
+            "bez stilskog razloga. Tempo je dio priče.\n"
+            "\n"
+            "4. GLAGOLI S TJELESNOM TEŽINOM. Birš konkretne, tjelesne glagole. "
+            "\"He moved\" nije isto što i \"He shambled\" / \"He lurched\" / \"He dragged himself\". "
+            "Svaki od tih glagola nosi drugačiju sliku — prevedi tu sliku, ne samo kretanje. "
+            "Primjeri: shamble→vući se / gmizati, lurch→posrnuti / zanijeti se, "
+            "flinch→trznuti se, recoil→sgroziti se / povući se s užasom, "
+            "snarl→režati, hiss→siktati, rasp→šuštati / hropiti.\n"
+            "\n"
+            "5. DIJALOG U HORORU ima pauze i podtekst. "
+            "Likovi ne govore potpunim rečenicama kad su prestravljeni. "
+            "Elipse (...), kratke izjave, nedovršene misli — sve to čuvaj. "
+            "Ne 'popravljaj' fragmentarni govor u gramatički uredan.\n"
+            "\n"
+            "6. DARK FANTASY LEKSIKON — preferirani bosanski/hrvatski ekvivalenti:\n"
+            "   darkness/the dark → tama / mrak (ne 'tamnoća')\n"
+            "   shadow(s) → sjena / sjene (ne 'sjenovitost')\n"
+            "   void → praznina / bezdno\n"
+            "   dread → jeza / strava / tjeskoba (birš prema kontekstu)\n"
+            "   horror → užas / grozota (ne 'horor' u naraciji)\n"
+            "   creature → stvor / biće / nakaza (prema stupnju humanosti)\n"
+            "   corpse/body → leš / lešina / trup (ne 'tijelo' za mrtvo tijelo u sceni grozote)\n"
+            "   blood → krv (nikad 'crvena tekućina' osim u stilski ironičnom kontekstu)\n"
+            "   wound → rana (ne 'ozljeda' — preformalno za žanr)\n"
+            "   whisper → šapat / šapuljanje / šaputanje (prema intenzitetu)\n"
+            "   scream → vrisak / krik / urlik (razlikuj po jačini i vrsti)\n"
+            "   decay → raspadanje / truljenje / propadanje\n"
+            "   rot → trulež / gnjilost\n"
+            "   abyss → ponor / bezdno / ambis\n"
+            "   ancient/old → drevni / pradavni / iskonski (prema vremenskom opsegu)\n"
+            "   ritual → obred / ritual (obred je arhaičniji, ritual moderniji)\n"
+            "   demon → demon / đavo (ne 'zli duh' — previše blijedo)\n"
+            "   monster → nakaza / čudovište / stvor (ne 'monstrum' — srbizam)\n"
+            "\n"
+            "7. NE-DOSLOVNI IDIOMU I METAFORE. Dark fantasy se oslanja na metaforu. "
+            "\"His heart turned to stone\" → \"Srce mu se skamenilo\" (ne 'pretvori u kamen'). "
+            "\"Darkness swallowed him\" → \"Tama ga je progutala\" (ne 'okružila ga tamom'). "
+            "Svaka metafora mora biti živa u bosanskom/hrvatskom, ne kalkirana.\n"
+            "\n"
+            "8. KOHERENTNOST ATMOSFERE. Jedan blok = jedna atmosferska jedinica. "
+            "Ako blok počinje tiho i napeto, ne smije završiti neutralno. "
+            "Provjeri da posljednja rečenica bloka nosi isti emocionalni naboj kao prva."
+        ),
     },
 
     "gemini_20_flash": {
@@ -212,6 +275,24 @@ TIP_BLOKA_PATCHES: Dict[str, str] = {
         "Ovaj blok sadrži TEHNIČKI ili OPISNI tekst. "
         "Preciznost je važnija od književnog stila. "
         "Termini se prevode dosljedno prema glosaru."
+    ),
+    "dark_fantasy": (
+        "Ovaj blok pripada DARK FANTASY / HORROR žanru. "
+        "Primijeni sve stilske instrukcije za ovaj žanr: atmosfera, senzorni jezik, "
+        "tjelesni glagoli, žanrovski leksikon. "
+        "Mračne i neudobne elemente čuvaj intaktnim — ne ublažavaj."
+    ),
+    "horror_akcija": (
+        "Ovaj blok je AKCIJSKA SCENA u horror/dark fantasy kontekstu. "
+        "Kratke rečenice, brzi glagoli, fizička preciznost. "
+        "Napetost se gradi tempom — ne usporavaj tok kratkim blokovima. "
+        "Krv, bol i nasilje prevodi direktno, bez eufemizama."
+    ),
+    "horror_atmosfera": (
+        "Ovaj blok je ATMOSFERSKA SCENA — sporo nakupljanje jeze, nije akcija. "
+        "Duže rečenice s puno senzornih detalja. "
+        "Ne žuri. Svaki detalj prostora, mirisa, zvuka — prenesi ga. "
+        "Čitatelj mora osjetiti tjeskobno iščekivanje."
     ),
 }
 
