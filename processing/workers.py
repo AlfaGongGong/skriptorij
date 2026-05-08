@@ -5,6 +5,7 @@ import re
 import time
 from bs4 import BeautifulSoup
 from processing.parallel import AdaptiveParallelism
+from core.text_utils import _HTML_TAG_RE
 
 
 # ============================================================================
@@ -302,6 +303,11 @@ async def process_single_file_worker(self, file_path):
             self.log(f"⚠️ Blok {i} nije obrađen, koristim original", "warning")
             final_parts.append(chunks[i])
         else:
+            # Ako original ima HTML tagove ali AI vratio plain text,
+            # restauriraj paragrafsku strukturu da se ne izgubi formatiranje.
+            if _HTML_TAG_RE.search(chunks[i]) and not _HTML_TAG_RE.search(res):
+                paras = [p.strip() for p in re.split(r"\n{2,}", res) if p.strip()]
+                res = "\n".join(f"<p>{p}</p>" for p in paras) if paras else f"<p>{res}</p>"
             final_parts.append(res)
 
         # Ažuriraj UI povremeno
@@ -338,7 +344,9 @@ async def process_single_file_worker(self, file_path):
     if body:
         body.clear()
         translated_soup = BeautifulSoup("".join(final_parts), "html.parser")
-        for child in list(translated_soup.children):
+        # BUGFIX: .children vraća <html> wrapper, ne body djecu — koristimo .body
+        source = translated_soup.body or translated_soup
+        for child in list(source.children):
             body.append(child.extract())
         file_path.write_text(str(orig_soup), encoding="utf-8")
     else:

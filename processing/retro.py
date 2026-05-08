@@ -17,6 +17,7 @@ from core.text_utils import (
     _post_process_tipografija,
     _detektuj_halucinaciju,
     _detektuj_en_ostatke,
+    _HTML_TAG_RE,
 )
 from core.quality import _scoruj_kvalitetu, _QUALITY_RESCUE_THRESHOLD
 
@@ -151,6 +152,18 @@ async def retroaktivna_relektura_v10(
         # B-retro FIX: _smart_extract pravilno parsira JSON {"finalno_polirano": "..."}
         # _agresivno_cisti nije parsiralo JSON → pisalo je raw JSON u .chk
         finalno = _smart_extract(raw_l) if raw_l else old_text_raw
+
+        # Struktura FIX: retro šalje plain text AI-u, a HTML struktura se gubi.
+        # Ako originalni .chk je imao HTML tagove (p, em, ...) ali AI vratio
+        # plain text, restauriramo paragrafsku strukturu da EPUB ne izgubi
+        # formatiranje.
+        if _HTML_TAG_RE.search(old_text_raw) and not _HTML_TAG_RE.search(finalno):
+            paras = [p.strip() for p in re.split(r"\n{2,}", finalno) if p.strip()]
+            finalno = (
+                "\n".join(f"<p>{p}</p>" for p in paras)
+                if paras
+                else f"<p>{finalno}</p>"
+            )
 
         # B12 FIX: GUARDIAN i POLISH samo ako lektor zaista nešto promijenio
         # i ako tekst nije haluciniran

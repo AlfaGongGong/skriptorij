@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 
 from core.engine import SkriptorijAllInOne
 from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
-from epub.parser import _ocisti_epub_html, _ukloni_inline_stilove, _zamijeni_epub_css
+from epub.parser import _ocisti_epub_html, _ukloni_inline_stilove, _zamijeni_epub_css, _strip_json_artifacts_from_html
 
 try:
     import mobi
@@ -268,6 +268,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             sharedstats["status"] = "Završno oblikovanje..."
             from bs4 import BeautifulSoup as _BS
 
+            _strip_json_artifacts_from_html(engine.html_files, log_fn=engine.log)
             for hf in engine.html_files:
                 try:
                     soup = _BS(hf.read_text("utf-8"), "html.parser")
@@ -329,6 +330,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
     # ── Finalizacija ──────────────────────────────────────────────────────
     if not shared_controls.get("stop") and not shared_controls.get("reset"):
         sharedstats["status"] = "Završno oblikovanje..."
+        _strip_json_artifacts_from_html(engine.html_files, log_fn=engine.log)
         for hf in engine.html_files:
             try:
                 soup = BeautifulSoup(hf.read_text("utf-8"), "html.parser")
