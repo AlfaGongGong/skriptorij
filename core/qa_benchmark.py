@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # core/qa_benchmark.py
 """
 BooklyFi — Korak 10: QA Benchmark
@@ -57,7 +58,7 @@ _EKAVIZMI = [
     r"\bmoze\b", r"\bmogu[ćc]e\b(?<!\bmoguće\b)",
     r"\bvidi se\b",
     r"\bzapravo\b",                      # nije ekavizam ali provjeravamo
-    r"\bčovek\b", r"\bčoveka\b",
+    r"\b\u010dovek\b", r"\b\u010doveka\b",
     r"\bvolim\b",                        # ok samo kao kontrola da regex radi
     r"\bniko\b",                         # niko = ekavizam; nitko = ijekavski
     r"\bsvako\b(?!m\b)",                 # svako/svakog ok, ali svakome problematično
@@ -82,7 +83,7 @@ _EKAVIZMI_JEKAVSKI = [
 _EKAVIZMI_STROGI = [
     r"\bvreme\b",
     r"\bniko\b",
-    r"\bčovek\b",
+    r"\b\u010dovek\b",
     r"\bdete\b",
     r"\bdecu\b",
     r"\bdevojka\b",
@@ -118,7 +119,7 @@ _KALKOVI_REGEX = [
     (r"\bu cilju\b",                    "kalk: u cilju"),
     (r"\bs ciljem da\b",                "kalk: s ciljem da"),
     (r"\bsa svrhom\b",                  "kalk: sa svrhom"),
-    (r"\bna neki način\b",              "kalk: na neki način"),
+    (r"\bna neki na\u010din\b",              "kalk: na neki način"),
 ]
 
 # Tipografija — regex za greške
@@ -264,8 +265,8 @@ def _ucitaj_chunkove(file_name: str) -> list[dict]:
     # Tražimo u svim standardnim lokacijama
     pretrazne_putanje = [
         _CHK_DIR / stem,
-        _BASE_DIR / "output" / stem,
-        _BASE_DIR / "prijevodi" / stem,
+        INPUT_DIR / "output" / stem,
+        INPUT_DIR / "prijevodi" / stem,
     ]
 
     for dir_path in pretrazne_putanje:
