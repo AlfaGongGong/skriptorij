@@ -114,9 +114,9 @@ td, th {
 
 def _inject_epub_global_css(soup):
     # Remove any previously injected Booklyfi style block to avoid duplicates
-    for existing in soup.find_all("style"):
-        if "booklyfi" in (existing.get("id") or ""):
-            existing.decompose()
+    existing = soup.find("style", id="booklyfi-style")
+    if existing:
+        existing.decompose()
 
     style = soup.new_tag("style", id="booklyfi-style")
     style.string = _EPUB_PAPER_CSS

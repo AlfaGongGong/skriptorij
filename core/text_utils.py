@@ -20,6 +20,10 @@ except ImportError:
 
 import re as _re_tu
 
+# Shared regex za detekciju HTML taga (ne entiteta) u stringu.
+# Koristi se u workers.py i retro.py — definirano ovdje da nema dupliciranja.
+_HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
+
 def _booklyfi_fix_spojnice(tekst: str) -> str:
     """
     Ispravlja slijepljene riječi nastale pri chunking/joining operacijama.
@@ -67,6 +71,26 @@ _STRANI_JEZIK_WHITELIST = frozenset({
 _HR_DIACRITICALS = frozenset("šćčžđŠĆČŽĐ")
 
 
+def _strip_html_wrapper(tekst: str) -> str:
+    """
+    Uklanja <html><body>...</body></html> omotače koje AI modeli ponekad
+    dodaju oko HTML fragmenata koje im je proslijeđen. Vraća samo sadržaj
+    <body> taga. Ako nema <html>/<body> omotača, vraća tekst nepromijenjen.
+    """
+    if not tekst or "<html" not in tekst.lower():
+        return tekst
+    try:
+        s = BeautifulSoup(tekst, "html.parser")
+        if s.body:
+            inner = "".join(str(c) for c in s.body.children)
+            # Samo zamijeni ako smo dobili nešto korisno (ne prazno)
+            if inner.strip():
+                return inner
+    except Exception:
+        pass
+    return tekst
+
+
 def _smart_extract(raw: str) -> str:
     if not raw:
         return ""
@@ -80,7 +104,7 @@ def _smart_extract(raw: str) -> str:
             # B01 FIX: "finalno_polirano" je prvi — to je što LEKTOR_TEMPLATE vraća
             for k in ["finalno_polirano", "korektura", "translated", "tekst", "text"]:
                 if k in data and data[k]:
-                    return str(data[k]).strip()
+                    return _strip_html_wrapper(str(data[k]).strip())
     except Exception:
         pass
     m = re.search(r'"finalno_polirano"\s*:\s*"((?:[^"\\]|\\.)*)"', raw)
@@ -94,6 +118,7 @@ def _agresivno_cisti(tekst: str) -> str:
         return ""
     tekst = re.sub(r"```.*?```", "", tekst, flags=re.DOTALL)
     tekst = re.sub(r"<OVDJE_IDI_[A-Z_]+>", "", tekst)
+    tekst = _strip_html_wrapper(tekst)
     return _ocisti_ai_markere(tekst.strip())
 
 

@@ -34,7 +34,7 @@ def _strip_json_artifacts_from_html(html_fajlovi: list, log_fn=None) -> int:
     fixed = 0
     for fajl in html_fajlovi:
         try:
-            original = fajl.read_text("utf-8", errors="ignore")
+            original = fajl.read_text("utf-8", errors="replace")
             # Brza provjera — skipuj fajlove bez artefakta
             if "finalno_polirano" not in original and "korektura" not in original:
                 continue

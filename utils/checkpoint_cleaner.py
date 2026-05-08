@@ -49,7 +49,13 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
             re.DOTALL,
         )
         if m:
-            extracted = m.group(1).replace('\\"', '"').replace('\\n', '\n').strip()
+            raw_val = m.group(1)
+            try:
+                # json.loads handles all JSON escape sequences (\n, \t, \\, \", …)
+                extracted = json.loads(f'"{raw_val}"')
+            except (json.JSONDecodeError, ValueError):
+                extracted = raw_val
+            extracted = extracted.strip()
             if extracted and extracted.lower() not in _PLACEHOLDERS:
                 return extracted
     return sadrzaj
