@@ -58,7 +58,7 @@ _EKAVIZMI = [
     r"\bmoze\b", r"\bmogu[ćc]e\b(?<!\bmoguće\b)",
     r"\bvidi se\b",
     r"\bzapravo\b",                      # nije ekavizam ali provjeravamo
-    "\\b\u010dovek\\b", "\\b\u010doveka\\b",
+    r"\b\u010dovek\b", r"\b\u010doveka\b",
     r"\bvolim\b",                        # ok samo kao kontrola da regex radi
     r"\bniko\b",                         # niko = ekavizam; nitko = ijekavski
     r"\bsvako\b(?!m\b)",                 # svako/svakog ok, ali svakome problematično
@@ -83,7 +83,7 @@ _EKAVIZMI_JEKAVSKI = [
 _EKAVIZMI_STROGI = [
     r"\bvreme\b",
     r"\bniko\b",
-    "\\b\u010dovek\\b",
+    r"\b\u010dovek\b",
     r"\bdete\b",
     r"\bdecu\b",
     r"\bdevojka\b",
@@ -119,7 +119,7 @@ _KALKOVI_REGEX = [
     (r"\bu cilju\b",                    "kalk: u cilju"),
     (r"\bs ciljem da\b",                "kalk: s ciljem da"),
     (r"\bsa svrhom\b",                  "kalk: sa svrhom"),
-    ("\\bna neki na\u010din\\b",              "kalk: na neki na\u010din"),
+    (r"\bna neki na\u010din\b",              "kalk: na neki način"),
 ]
 
 # Tipografija — regex za greške
