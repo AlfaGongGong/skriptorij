@@ -4,6 +4,11 @@ import re
 import shutil
 from pathlib import Path
 
+try:
+    from core.text_utils import _je_ai_anotacija as _detect_anotacija
+except ImportError:
+    _detect_anotacija = None
+
 _PLACEHOLDERS = {
     "lektorisani tekst ovdje", "korigirani tekst ovdje",
     "lektorirani tekst ovdje", "prevedeni tekst ovdje",
@@ -70,12 +75,8 @@ def _je_placeholder(sadrzaj: str) -> bool:
             if fraza in cist:
                 return True
     # Provjeri je li sadržaj AI anotacija umjesto čistog teksta
-    try:
-        from core.text_utils import _je_ai_anotacija
-        if _je_ai_anotacija(sadrzaj):
-            return True
-    except ImportError:
-        pass
+    if _detect_anotacija is not None and _detect_anotacija(sadrzaj):
+        return True
     return False
 
 
