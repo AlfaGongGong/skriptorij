@@ -36,17 +36,21 @@ _JITTER_MAX = 1.2
 # BUG#4 FIX: asyncio.Lock() se SMIJE kreirati samo unutar aktivnog event loop-a.
 # Rješenje: ne koristimo threading Lock za dvostruku provjeru —
 # umjesto toga koristimo asyncio-safe lazy init unutar async funkcije.
+# BUG#11 FIX: _PROVIDER_LOCKS: prov -> (loop_id, asyncio.Lock) —
+#   isti problem kao kod semafora: Lock vezan za stari event loop je neupotrebljiv.
 async def _ensure_provider_lock(prov: str) -> asyncio.Lock:
     """Vrati per-provider asyncio.Lock — lazy init unutar async konteksta."""
-    # Provjeri bez blokiranja (read je thread-safe za dict u CPythonu)
-    lock = _PROVIDER_LOCKS.get(prov)
-    if lock is None:
-        # Kreiraj novi Lock unutar trenutnog event loop-a
-        lock = asyncio.Lock()
-        # Samo ako još uvijek nije postavljen (race condition između coroutina)
-        _PROVIDER_LOCKS.setdefault(prov, lock)
-        # Vrati ono što je u dictu (može biti drugačiji Lock ako je race)
-        lock = _PROVIDER_LOCKS[prov]
+    current_loop_id = id(asyncio.get_running_loop())
+
+    entry = _PROVIDER_LOCKS.get(prov)
+    if entry is not None:
+        stored_loop_id, lock = entry
+        if current_loop_id == stored_loop_id:
+            return lock
+        # Lock vezan za stari event loop — kreiramo novi
+
+    lock = asyncio.Lock()
+    _PROVIDER_LOCKS[prov] = (current_loop_id, lock)
     return lock
 
 async def _ensure_global_lock() -> asyncio.Lock:
@@ -92,21 +96,44 @@ def _get_key_state(fleet, prov_upper: str, key: str):
 # ============================================================================
 # Per-key rate limiting (semafori)
 # BUG#1 FIX: Ovaj blok je bio dupliran — uklonjen drugi primjerak.
+# BUG#11 FIX: asyncio.Semaphore je vezan za event loop u kom je kreiran.
+#   Svaki asyncio.run() poziv kreira novi event loop — stari semafori postaju
+#   neupotrebljivi i bacaju "is bound to a different event loop".
+#   Rješenje: čuvamo (loop_id, semaphore) par i kreiramo novi semafor ako se
+#   loop_id promijenio (tj. novi asyncio.run() je pokrenut).
 # ============================================================================
 
+# _key_semaphores: key -> (loop_id, asyncio.Semaphore)
 _key_semaphores: dict = {}
 MAX_CONCURRENT_PER_KEY = 1
 
 def get_key_semaphore(key: str) -> asyncio.Semaphore:
-    if key not in _key_semaphores:
-        _key_semaphores[key] = asyncio.Semaphore(MAX_CONCURRENT_PER_KEY)
-    return _key_semaphores[key]
+    try:
+        current_loop_id = id(asyncio.get_running_loop())
+    except RuntimeError:
+        # Nema aktivnog event loop-a — uvijek kreiramo novi semafor jer
+        # ne znamo u kom loop-u će biti prvi put korišten.
+        sem = asyncio.Semaphore(MAX_CONCURRENT_PER_KEY)
+        _key_semaphores[key] = (None, sem)
+        return sem
+
+    entry = _key_semaphores.get(key)
+    if entry is not None:
+        stored_loop_id, sem = entry
+        if stored_loop_id is not None and current_loop_id == stored_loop_id:
+            return sem
+        # Semafor je vezan za stari event loop (ili kreiran bez loop-a) — kreiramo novi
+
+    sem = asyncio.Semaphore(MAX_CONCURRENT_PER_KEY)
+    _key_semaphores[key] = (current_loop_id, sem)
+    return sem
 
 async def acquire_key(key: str):
     sem = get_key_semaphore(key)
     await sem.acquire()
 
 def release_key(key: str):
-    sem = _key_semaphores.get(key)
-    if sem:
+    entry = _key_semaphores.get(key)
+    if entry is not None:
+        _, sem = entry
         sem.release()
