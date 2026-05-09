@@ -156,7 +156,7 @@ _ANOTACIJA_PATERN_RE = re.compile(
         ^\d+\.\s+\*\*[^\n*]{1,60}:?\*\*      # "1. **Tipografija:**" na početku retka
       | →\s+(?:\*\*|„)                         # "→ **novo**" ili "→ „novo""
       | \*\*[A-ZŠĆČŽĐ][a-zšćčžđA-ZŠĆČŽĐ\s]{1,40}:\*\*  # "**Sekcija:**"
-      | ^[-—]\s+(?:Dodan?o|Ispravlj|Zamijen)  # "— Dodano ...", "- Ispravljeno ..."
+      | ^[-—]\s+(?:Dodan|Ispravlj|Zamijen)  # "— Dodano ...", "— Dodan ...", "- Ispravljeno ..."
     )
     """,
     re.MULTILINE | re.VERBOSE,
