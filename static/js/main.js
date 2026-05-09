@@ -753,6 +753,46 @@ function updateStatus(s) {
     }
     updatePipeline(st, pct);
 
+    // ── Relektura banner ───────────────────────────────────────────────────
+    (function () {
+        const banner = document.getElementById("qs-relektura-banner");
+        if (!banner) return;
+        const refixScores = s.refix_scores || {};
+        const refixActive = !!s.refix_active;
+        const vals = Object.values(refixScores).filter(v => typeof v === "number");
+        if (refixActive || vals.length > 0) {
+            const avgEl = document.getElementById("qs-relektura-avg");
+            const countEl = document.getElementById("qs-relektura-count");
+            const labelEl = document.getElementById("qs-relektura-label");
+            const iconEl = document.getElementById("qs-relektura-status-icon");
+            if (vals.length > 0) {
+                const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                if (avgEl) avgEl.textContent = avg.toFixed(1) + "/10";
+                if (countEl) countEl.textContent = vals.length + " blok" + (vals.length === 1 ? "" : "a") + " završeno";
+            }
+            if (refixActive) {
+                if (labelEl) labelEl.textContent = "Relektura u toku…";
+                if (iconEl) iconEl.textContent = "🔄";
+            } else {
+                if (labelEl) labelEl.textContent = "Relektura završena";
+                if (iconEl) iconEl.textContent = "✅";
+            }
+            banner.style.display = "flex";
+            banner.classList.remove("hidden");
+            // Ažuriraj quality-badge da pokazuje relektura progres
+            const qualBadge = document.getElementById("quality-badge");
+            if (qualBadge) {
+                if (refixActive) {
+                    qualBadge.textContent = vals.length;
+                    qualBadge.classList.remove("hidden");
+                }
+            }
+        } else {
+            banner.style.display = "none";
+            banner.classList.add("hidden");
+        }
+    })();
+
     if (s.live_audit) {
         updateAuditLog(s.live_audit);
         extractPreview(s.live_audit);
