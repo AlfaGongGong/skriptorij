@@ -189,6 +189,10 @@ def _detektuj_halucinaciju(original: str, prijevod: str, uloga: str = "LEKTOR") 
         # LEKTOR: stroga provjera (prijevod→HR ne smije puno rasti/padati)
         if uloga == "LEKTOR" and (ratio < 0.92 or ratio > 1.12):
             return True
+        # RETRO: šire granice — blokovi s lošom ocjenom mogu zahtijevati
+        # značajniju preradu (npr. ostatak engleskog koji lektor ispravlja)
+        if uloga == "RETRO" and (ratio < 0.75 or ratio > 1.35):
+            return True
         # PREVODILAC: HR je obično 10-30% duži od EN — šire granice
         if uloga == "PREVODILAC" and (ratio < 0.70 or ratio > 1.50):
             return True
