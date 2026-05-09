@@ -174,7 +174,7 @@ def finalize(self):
     output_dir = _get_output_dir()
 
     # ── 1. Pakuj EPUB ────────────────────────────────────────────────────────
-    # out_path je definiran u engine.__init__ kao INPUT_DIR / PREVEDENO_xxx.epub
+    # out_path je definiran u engine.__init__ kao OUTPUT_DIR / PREVEDENO_xxx.epub
     try:
         with zipfile.ZipFile(self.out_path, "w", zipfile.ZIP_DEFLATED) as z:
             for f in self.work_dir.rglob("*"):
@@ -189,14 +189,22 @@ def finalize(self):
     moon_path = output_dir / self.out_path.name
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(str(self.out_path), str(moon_path))
-        final_path = moon_path
-        self.log(
-            f"📱 EPUB kopiran u MoonReader: {moon_path}",
-            "system",
-        )
+        if self.out_path.resolve() == moon_path.resolve():
+            # out_path je već u OUTPUT_DIR — kopiranje nije potrebno
+            final_path = moon_path
+            self.log(
+                f"📱 EPUB već u MoonReader: {moon_path}",
+                "system",
+            )
+        else:
+            shutil.copy2(str(self.out_path), str(moon_path))
+            final_path = moon_path
+            self.log(
+                f"📱 EPUB kopiran u MoonReader: {moon_path}",
+                "system",
+            )
     except Exception as e:
-        # Fallback: ostaje na INPUT_DIR putanji
+        # Fallback: ostaje na out_path putanji
         self.log(
             f"⚠️ Kopiranje u MoonReader nije uspjelo ({e}). "
             f"EPUB dostupan na: {self.out_path}",
