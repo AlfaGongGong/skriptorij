@@ -768,7 +768,10 @@ function updateStatus(s) {
             if (vals.length > 0) {
                 const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
                 if (avgEl) avgEl.textContent = avg.toFixed(1) + "/10";
-                if (countEl) countEl.textContent = vals.length + " blok" + (vals.length === 1 ? "" : "a") + " završeno";
+                // Pluralizacija za bosanski/hrvatski: 1→blok, 2-4→bloka, 0/5+→blokova
+                const n = vals.length;
+                const suffix = n === 1 ? "blok" : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? "bloka" : "blokova";
+                if (countEl) countEl.textContent = n + " " + suffix + " završeno";
             }
             if (refixActive) {
                 if (labelEl) labelEl.textContent = "Relektura u toku…";
@@ -778,18 +781,14 @@ function updateStatus(s) {
                 if (iconEl) iconEl.textContent = "✅";
             }
             banner.style.display = "flex";
-            banner.classList.remove("hidden");
             // Ažuriraj quality-badge da pokazuje relektura progres
             const qualBadge = document.getElementById("quality-badge");
-            if (qualBadge) {
-                if (refixActive) {
-                    qualBadge.textContent = vals.length;
-                    qualBadge.classList.remove("hidden");
-                }
+            if (qualBadge && refixActive) {
+                qualBadge.textContent = vals.length;
+                qualBadge.classList.remove("hidden");
             }
         } else {
             banner.style.display = "none";
-            banner.classList.add("hidden");
         }
     })();
 
