@@ -147,13 +147,16 @@ def _je_placeholder(tekst: str) -> bool:
 # markdown formatu (npr. "1. **Interpunkcija:** → **novo**"), taj odgovor
 # NIKAD ne smije ući u .chk fajlove niti u EPUB izlaz.
 
+# Minimalan broj pronađenih anotacijskih obrazaca da bi tekst bio odbačen
+_MIN_ANOTACIJA_PATTERNS: int = 2
+
 _ANOTACIJA_PATERN_RE = re.compile(
     r"""
     (?:
-        ^\d+\.\s+\*\*[^\n*]{1,60}:?\*\*   # "1. **Tipografija:**" na početku retka
-      | →\s+(?:\*\*|„)                      # "→ **novo**" ili "→ „novo""
-      | \*\*[A-ZŠĆČŽĐ][a-zšćčžđA-ZŠĆČŽĐ\s]{1,40}:\*\* # "**Sekcija:**"
-      | ^[-—]\s+(?:Doda[no]{1,2}|Ispravlj|Zamijen)  # "— Dodano ...", "- Ispravljeno ..."
+        ^\d+\.\s+\*\*[^\n*]{1,60}:?\*\*      # "1. **Tipografija:**" na početku retka
+      | →\s+(?:\*\*|„)                         # "→ **novo**" ili "→ „novo""
+      | \*\*[A-ZŠĆČŽĐ][a-zšćčžđA-ZŠĆČŽĐ\s]{1,40}:\*\*  # "**Sekcija:**"
+      | ^[-—]\s+(?:Dodan?o|Ispravlj|Zamijen)  # "— Dodano ...", "- Ispravljeno ..."
     )
     """,
     re.MULTILINE | re.VERBOSE,
@@ -169,12 +172,12 @@ def _je_ai_anotacija(tekst: str) -> bool:
         2. **Interpunkcija:** — Dodana em-crtica ...
         - *„staro"* → **„novo"** (objašnjenje)
 
-    Ako se nađe ≥2 takva obrasca tekst se tretira kao nevaljana anotacija.
-    Vraća True → pozivalac mora pasti na fallback tekst.
+    Ako se nađe ≥_MIN_ANOTACIJA_PATTERNS takva obrasca tekst se tretira
+    kao nevaljana anotacija.  Vraća True → pozivalac pada na fallback tekst.
     """
     if not tekst or len(tekst) < 20:
         return False
-    return len(_ANOTACIJA_PATERN_RE.findall(tekst)) >= 2
+    return len(_ANOTACIJA_PATERN_RE.findall(tekst)) >= _MIN_ANOTACIJA_PATTERNS
 
 
 _EN_STOPWORDS = frozenset({

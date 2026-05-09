@@ -797,7 +797,12 @@ def clean_annotations():
     Vraća: {"obrisano": N, "status": "ok"}
     """
     data = request.get_json(silent=True) or {}
-    book = data.get("book") or SHARED_STATS.get("current_file", "") or SHARED_STATS.get("output_file", "")
+
+    book = (
+        data.get("book")
+        or SHARED_STATS.get("current_file", "")
+        or SHARED_STATS.get("output_file", "")
+    )
 
     if not book:
         lbp = Path(PROJECTS_ROOT) / "last_book.json"
@@ -812,6 +817,7 @@ def clean_annotations():
 
     try:
         from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
+        # Sanitizacija: dozvoli samo alfanumeričke znakove i _- za stem
         clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
         chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
 
@@ -822,9 +828,9 @@ def clean_annotations():
             SHARED_STATS["live_audit"] = SHARED_STATS.get("live_audit", "") + f"\n{msg}"
 
         n = _no_cisti_chk_fajlove(chk_dir, log_fn=_log)
-        return jsonify({"obrisano": n, "status": "ok", "book": book})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"obrisano": n, "status": "ok", "book": Path(book).name})
+    except Exception:
+        return jsonify({"error": "Greška pri čišćenju anotacija"}), 500
 
 
 # ─── B3 FIX: epub_text + epub_plain endpointi za Revizija tab ─────────────────
