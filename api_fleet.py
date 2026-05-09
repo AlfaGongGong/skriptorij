@@ -84,7 +84,10 @@ _DEFAULT_RPM = {
 }
 
 _DEFAULT_DAILY_QUOTA = {
-    # GROQ: llama-3.3-70b-versatile ima 1K RPD (ne 14.4K — to je za 8b-instant)
+    # GROQ: llama-3.3-70b-versatile (primarni model) = 1K RPD;
+    #        llama-3.1-8b-instant = 14.4K RPD — ali 8b je sekundarni model.
+    #        Konzervativna vrijednost od 1K štiti od prekoračenja na primarnom modelu.
+    #        Stvarna vrijednost se ažurira iz x-ratelimit-remaining-requests headera.
     "GEMINI": 1500, "GROQ": 1000, "CEREBRAS": 14400, "SAMBANOVA": 10000,
     "MISTRAL": 1000, "GITHUB": 200, "COHERE": 1000, "OPENROUTER": 500,
     "TOGETHER": 1000, "FIREWORKS": 1000, "CHUTES": 1000,
