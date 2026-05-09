@@ -69,6 +69,13 @@ def _je_placeholder(sadrzaj: str) -> bool:
         for fraza in _PHANTOM_CONTAINS:
             if fraza in cist:
                 return True
+    # Provjeri je li sadržaj AI anotacija umjesto čistog teksta
+    try:
+        from core.text_utils import _je_ai_anotacija
+        if _je_ai_anotacija(sadrzaj):
+            return True
+    except ImportError:
+        pass
     return False
 
 
@@ -95,7 +102,7 @@ def _no_cisti_chk_fajlove(checkpoint_dir: Path, log_fn=None) -> int:
     if log_fn and (popravljeno or obrisano):
         log_fn(
             f"🧹 Checkpoint čišćenje: {popravljeno} JSON omotača uklonjeno, "
-            f"{obrisano} placeholder fajlova obrisano.",
+            f"{obrisano} placeholder/anotacija fajlova obrisano.",
             "tech",
         )
     return popravljeno + obrisano
