@@ -122,7 +122,7 @@ async def _call_ai_engine(
             if not key:
                 continue
 
-            model = MODEL_MAP.get(prov_upper) or self.fleet.get_active_model(prov_upper)
+            model = self.fleet.get_active_model(prov_upper) or MODEL_MAP.get(prov_upper)
             if not model:
                 continue
 

@@ -16,11 +16,39 @@ from network.rate_limiter import acquire_key, release_key
 
 # ── Google model pool — redosljed: gemini-flash prvi (bolji RPD limit) ────────
 # NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
-GOOGLE_MODEL_POOL = [
+# Ovo je statički fallback pool. Dinamički pool se gradi iz model_discovery-a
+# kada su dostupni API ključevi (vidi _get_google_model_pool()).
+_GOOGLE_MODEL_POOL_FALLBACK = [
     {"model": "gemini-2.0-flash",                    "rpm": 15, "rpd": 1500},  # primarni
     {"model": "gemini-2.5-flash-lite-preview-06-17", "rpm": 10, "rpd": 500},   # fallback 1
     {"model": "gemini-2.5-flash-preview-05-20",      "rpm": 10, "rpd": 500},   # fallback 2 — zadnji resort
 ]
+# Backward-compatible alias (koristi se direktno u nekim mjestima)
+GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
+
+
+def _get_google_model_pool() -> list[dict]:
+    """
+    Vraća pool Gemini modela za rotaciju.
+    Ako model_discovery ima svježu listu modela za GEMINI, koristi je.
+    Inače vraća statički fallback pool.
+    Otkriveni modeli idu prvi; statički fallback popunjava ostatak.
+    """
+    try:
+        from network.model_discovery import get_cached_model_list
+        discovered = get_cached_model_list("GEMINI")
+        if discovered:
+            # Svaki ID → dict format koji rotacija očekuje
+            pool = [{"model": mid, "rpm": 10, "rpd": 500} for mid in discovered]
+            # Dodaj statičke fallback modele kojih nema u discovery listi
+            existing_ids = {m["model"] for m in pool}
+            for fb in _GOOGLE_MODEL_POOL_FALLBACK:
+                if fb["model"] not in existing_ids:
+                    pool.append(fb)
+            return pool
+    except Exception:
+        pass
+    return _GOOGLE_MODEL_POOL_FALLBACK
 
 # BUG#4: Modeli koji NE podržavaju system role — konvertujemo u user poruku
 _NO_SYSTEM_ROLE = {"gemma-3-27b-it", "gemma-3-12b-it", "gemma-3-4b-it", "gemma-3-1b-it"}
@@ -30,22 +58,28 @@ _key_model_cache: dict[str, int] = {}
 
 
 def _get_model_for_key(key: str) -> str:
-    """Inicijalni model za ključ (gemini-2.0-flash za sve — jednako raspoređeno)."""
+    """Inicijalni model za ključ — uvijek počni s prvim modelom u pool-u."""
+    pool = _get_google_model_pool()
     if key not in _key_model_cache:
-        # Uvijek počni s gemini-2.0-flash (index 0) — ne raspoređuj nasumično
         _key_model_cache[key] = 0
-    return GOOGLE_MODEL_POOL[_key_model_cache[key]]["model"]
+    idx = _key_model_cache[key]
+    # Provjeri da index nije van opsega (pool se može promijeniti između poziva)
+    if idx >= len(pool):
+        _key_model_cache[key] = 0
+        idx = 0
+    return pool[idx]["model"]
 
 
 def _rotate_model_for_key(key: str) -> str | None:
-    """Rotira na sljedeći model. Vraća None ako su svi modeli iscrpljeni."""
+    """Rotira na sljedeći model u pool-u. Vraća None ako su svi modeli iscrpljeni."""
+    pool = _get_google_model_pool()
     start_idx = _key_model_cache.get(key, 0)
-    next_idx  = (start_idx + 1) % len(GOOGLE_MODEL_POOL)
+    next_idx  = (start_idx + 1) % len(pool)
     if next_idx == 0:
         # Prošli smo krug
         return None
     _key_model_cache[key] = next_idx
-    return GOOGLE_MODEL_POOL[next_idx]["model"]
+    return pool[next_idx]["model"]
 
 
 def _build_messages(sys_content: str | None, user_prompt: str, model: str) -> list:
@@ -232,19 +266,24 @@ async def _call_gemini_with_full_rotation(
         key = ks.key
 
         # BUG#5 FIX: Ako je preferred_model naveden, počni s njim
-        if preferred_model and preferred_model in [m["model"] for m in GOOGLE_MODEL_POOL]:
-            # Postavi cache na preferred model
-            for i, m in enumerate(GOOGLE_MODEL_POOL):
+        # Dinamički pool — ne zahtijeva da preferred_model bude u pool-u
+        pool = _get_google_model_pool()
+        if preferred_model:
+            current_model = preferred_model
+            # Postavi cache index na preferred model ako je u pool-u
+            for i, m in enumerate(pool):
                 if m["model"] == preferred_model:
                     _key_model_cache[key] = i
                     break
-            current_model = preferred_model
+            else:
+                # Nije u pool-u (novi model iz discovery) — počni od indexa 0
+                _key_model_cache[key] = 0
         else:
             current_model = _get_model_for_key(key)
 
         tried_models = set()
 
-        for _ in range(len(GOOGLE_MODEL_POOL)):
+        for _ in range(len(pool) + 1):
             if current_model in tried_models:
                 break
             tried_models.add(current_model)
