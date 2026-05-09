@@ -178,7 +178,7 @@ async def retroaktivna_relektura_v10(
         # B12 FIX: GUARDIAN i POLISH samo ako lektor zaista nešto promijenio
         # i ako tekst nije haluciniran
         lektor_promjenio = raw_l and (finalno.strip() != old_text_cist.strip())
-        lektor_halucinacija = _detektuj_halucinaciju(old_text_cist, finalno, "LEKTOR")
+        lektor_halucinacija = _detektuj_halucinaciju(old_text_cist, finalno, "RETRO")
 
         if lektor_promjenio and not lektor_halucinacija:
             guard_raw, _ = await self._call_ai_engine(
@@ -187,7 +187,7 @@ async def retroaktivna_relektura_v10(
             if guard_raw:
                 g_cist = _agresivno_cisti(guard_raw)
                 # Prihvati guardian samo ako nije halucinacija
-                if not _detektuj_halucinaciju(finalno, g_cist, "LEKTOR"):
+                if not _detektuj_halucinaciju(finalno, g_cist, "RETRO"):
                     finalno = g_cist
 
             # POLISH samo ako je lektor + guardian prošao validaciju
@@ -196,7 +196,7 @@ async def retroaktivna_relektura_v10(
             )
             if polish_raw:
                 p_cist = _agresivno_cisti(polish_raw)
-                if not _detektuj_halucinaciju(finalno, p_cist, "LEKTOR"):
+                if not _detektuj_halucinaciju(finalno, p_cist, "RETRO"):
                     finalno = p_cist
         elif not lektor_promjenio:
             self.log(
