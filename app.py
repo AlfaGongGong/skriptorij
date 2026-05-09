@@ -593,19 +593,23 @@ def create_app() -> Flask:
                         if qs_path.exists():
                             try:
                                 raw_all = _json.loads(qs_path.read_text("utf-8"))
-                                SHARED_STATS["quality_scores"] = {
-                                    k: float(v) if isinstance(v, (int, float))
-                                    else float(v["score"]) if isinstance(v, dict) and "score" in v
-                                    else None
-                                    for k, v in raw_all.items()
-                                }
-                                # Ukloni None vrijednosti
-                                SHARED_STATS["quality_scores"] = {
-                                    k: v for k, v in SHARED_STATS["quality_scores"].items()
-                                    if v is not None
-                                }
-                            except Exception:
-                                pass
+                                loaded: dict[str, float] = {}
+                                for k, v in raw_all.items():
+                                    try:
+                                        if isinstance(v, (int, float)):
+                                            loaded[k] = float(v)
+                                        elif isinstance(v, dict) and "score" in v:
+                                            loaded[k] = float(v["score"])
+                                        else:
+                                            SHARED_STATS.setdefault("live_audit", "")
+                                            SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: neočekivani tip ocjene za {k}: {type(v).__name__}"
+                                    except (TypeError, ValueError) as _e:
+                                        SHARED_STATS.setdefault("live_audit", "")
+                                        SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: ne mogu pretvoriti ocjenu za {k}: {_e}"
+                                SHARED_STATS["quality_scores"] = loaded
+                            except Exception as _load_err:
+                                SHARED_STATS.setdefault("live_audit", "")
+                                SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: greška pri učitavanju quality_scores.json: {_load_err}"
 
                         # Inicijaliziraj praćenje relekture
                         SHARED_STATS["refix_active"] = True
