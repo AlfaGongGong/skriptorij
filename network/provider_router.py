@@ -9,16 +9,16 @@ from core.text_utils import _adaptive_temp
 from network.http_client import _call_single_provider
 
 PROVIDER_PRIORITY = {
-    "PREVODILAC":      ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMINI", "MISTRAL", "OPENROUTER"],
-    "LEKTOR":          ["GEMINI", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA"],
-    "KOREKTOR":        ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "SAMBANOVA"],
-    "VALIDATOR":       ["CEREBRAS", "GROQ", "MISTRAL"],
-    "GUARDIAN":        ["GEMINI", "MISTRAL", "CEREBRAS", "COHERE"],
-    "POLISH":          ["GEMINI", "MISTRAL", "COHERE", "TOGETHER", "SAMBANOVA"],
-    "ANALIZA":         ["CEREBRAS", "GROQ", "MISTRAL", "SAMBANOVA", "GEMINI"],
-    "CHAPTER_SUMMARY": ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL"],
-    "GLOSAR_UPDATE":   ["GEMINI", "CEREBRAS", "GROQ", "MISTRAL"],
-    "SCORER":          ["GEMINI", "MISTRAL", "OPENROUTER"],
+    "PREVODILAC":      ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
+    "LEKTOR":          ["GEMINI", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
+    "KOREKTOR":        ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "SAMBANOVA", "GITHUB"],
+    "VALIDATOR":       ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
+    "GUARDIAN":        ["GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
+    "POLISH":          ["GEMINI", "MISTRAL", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
+    "ANALIZA":         ["CEREBRAS", "GROQ", "MISTRAL", "SAMBANOVA", "GEMINI", "GITHUB"],
+    "CHAPTER_SUMMARY": ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "GITHUB"],
+    "GLOSAR_UPDATE":   ["GEMINI", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
+    "SCORER":          ["GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
 }
 
 MODEL_MAP = {
@@ -35,6 +35,7 @@ MODEL_MAP = {
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
     "GEMMA":       "gemma-3-27b-it",            # NAPOMENA: 404 na Gemini API od maja 2026
+    "GITHUB":      "gpt-4o",                    # GitHub Models: jak backup kad Gemini presuši
 }
 
 TEMP_MAP = {

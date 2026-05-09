@@ -24,6 +24,7 @@ _CACHE_TTL = 3600.0  # 1 sat
 # ── Endpoints za listanje modela ─────────────────────────────────────────────
 # Svi OpenAI-kompatibilni provideri imaju GET /v1/models.
 # Gemini koristi isti bearer format ali drugačiji base URL.
+# GitHub Models: https://models.inference.ai.azure.com/models (vraća array)
 _MODELS_ENDPOINTS: dict[str, str] = {
     "GROQ":        "https://api.groq.com/openai/v1/models",
     "CEREBRAS":    "https://api.cerebras.ai/v1/models",
@@ -37,6 +38,7 @@ _MODELS_ENDPOINTS: dict[str, str] = {
     "HUGGINGFACE": "https://router.huggingface.co/v1/models",
     "COHERE":      "https://api.cohere.com/v1/models",
     "GEMINI":      "https://generativelanguage.googleapis.com/v1beta/openai/models",
+    "GITHUB":      "https://models.inference.ai.azure.com/models",
 }
 
 # ── Fallback modeli (vrijede dok discovery ne uspije) ────────────────────────
@@ -54,7 +56,8 @@ FALLBACK_MODELS: dict[str, str] = {
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
     "GEMMA":       "gemma-3-27b-it",
-    "GITHUB":      "gpt-4o-mini",
+    # GitHub Models: gpt-4o je jači od gpt-4o-mini i dostupan je na free tier
+    "GITHUB":      "gpt-4o",
 }
 
 # ── Ključne riječi koje isključuju model iz odabira ──────────────────────────
@@ -93,6 +96,12 @@ _PROVIDER_FILTERS: dict[str, list] = {
         lambda m: "whisper" not in m,
         lambda m: "guard" not in m,
         lambda m: "tts" not in m,
+    ],
+    # GitHub Models: isključi embeddings i evaluation modele koji nisu chat
+    "GITHUB":     [
+        lambda m: "embed" not in m,
+        lambda m: "text-embedding" not in m,
+        lambda m: "evaluation" not in m,
     ],
 }
 
@@ -184,6 +193,35 @@ def _score_model_strength(provider: str, model_id: str) -> float:
         score += 2.5
     elif "command" in m:
         score += 1.0
+
+    # ── OpenAI GPT modeli (GitHub Models, OpenRouter) ─────────────────────────
+    # Redosljed je bitan: od specifičnijeg prema opštijem da se izbjegne preklapanje.
+    if "gpt-4o" in m and "mini" not in m:
+        score += 6.5
+    elif "gpt-4o-mini" in m:
+        score += 3.5
+    elif "gpt-4" in m and "gpt-4o" not in m:
+        score += 5.0
+    elif "o3-mini" in m:
+        score += 3.5
+    elif re.search(r'\bo3\b', m):
+        score += 6.0
+    elif "o1-mini" in m:
+        score += 3.0
+    elif re.search(r'\bo1\b', m):
+        score += 4.5
+    elif "gpt-3.5" in m:
+        score += 2.0
+
+    # ── Microsoft Phi modeli (GitHub Models) ──────────────────────────────────
+    if "phi-4" in m and "mini" not in m:
+        score += 4.0
+    elif "phi-4-mini" in m:
+        score += 2.5
+    elif "phi-3.5" in m:
+        score += 2.0
+    elif "phi-3" in m and "phi-3.5" not in m:
+        score += 1.5
 
     # ── Variante (instruct > turbo > base) ───────────────────────────────────
     if "instruct" in m:
