@@ -24,6 +24,7 @@ from core.text_utils import (
     _post_process_tipografija,
     _automatska_korekcija,
     detektuj_tip_bloka,
+    _je_ai_anotacija,
 )
 from processing.rescue import _spasi_od_sirovog
 
@@ -147,6 +148,9 @@ def _je_placeholder_lokalni(tekst: str) -> bool:
         for fraza in _contains:
             if fraza in cist:
                 return True
+    # Odbaci anotacijski format (AI vratio listu izmjena umjesto teksta)
+    if _je_ai_anotacija(tekst):
+        return True
     return False
 
 

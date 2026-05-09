@@ -4,6 +4,7 @@ Dio Skriptorij V10 Turbo Omni-Core sistema.
 """
 
 import json
+import logging
 import os
 import re
 import pathlib
@@ -785,6 +786,59 @@ def epub_preview():
 
     except Exception as e:
         return Response(f"Greška: {e}", mimetype="text/plain")
+
+
+@bp.route("/api/clean_annotations", methods=["POST"])
+def clean_annotations():
+    """
+    Retroaktivno čišćenje .chk fajlova koji sadrže AI anotacije umjesto teksta.
+    Briše takve fajlove da se blokovi ponovo obrade pri sljedećem pokretanju.
+
+    Body (opcionalno): {"book": "ime.epub"}
+    Vraća: {"obrisano": N, "status": "ok"}
+    """
+    data = request.get_json(silent=True) or {}
+
+    book = (
+        data.get("book")
+        or SHARED_STATS.get("current_file", "")
+        or SHARED_STATS.get("output_file", "")
+    )
+
+    if not book:
+        lbp = Path(PROJECTS_ROOT) / "last_book.json"
+        if lbp.exists():
+            try:
+                book = json.loads(lbp.read_text("utf-8")).get("last_book", "")
+            except Exception:
+                pass
+
+    if not book:
+        return jsonify({"error": "Nema aktivne knjige"}), 400
+
+    try:
+        from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
+        # Sanitizacija: dozvoli samo alfanumeričke znakove i _- za stem
+        clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
+        chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
+
+        # Provjeri da putanja ostaje unutar CHECKPOINT_BASE_DIR
+        try:
+            chk_dir.resolve().relative_to(CHECKPOINT_BASE_DIR.resolve())
+        except ValueError:
+            return jsonify({"error": "Nevažeća putanja knjige"}), 400
+
+        if not chk_dir.exists():
+            return jsonify({"obrisano": 0, "status": "ok", "info": "Nema checkpointa za ovu knjigu"})
+
+        def _log(msg, tip="info"):
+            SHARED_STATS["live_audit"] = SHARED_STATS.get("live_audit", "") + f"\n{msg}"
+
+        n = _no_cisti_chk_fajlove(chk_dir, log_fn=_log)
+        return jsonify({"obrisano": n, "status": "ok", "book": Path(book).name})
+    except Exception:
+        logging.exception("clean_annotations: greška pri čišćenju")
+        return jsonify({"error": "Greška pri čišćenju anotacija"}), 500
 
 
 # ─── B3 FIX: epub_text + epub_plain endpointi za Revizija tab ─────────────────
