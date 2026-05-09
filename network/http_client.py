@@ -283,6 +283,8 @@ async def _call_gemini_with_full_rotation(
 
         tried_models = set()
 
+        # +1 u opsegu: preferred_model može biti izvan pool-a (dinamički otkriveni model),
+        # pa treba jedan dodatni slot — tried_models skup garantuje bez duplikata.
         for _ in range(len(pool) + 1):
             if current_model in tried_models:
                 break
