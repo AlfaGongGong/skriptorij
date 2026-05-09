@@ -4,6 +4,7 @@ Dio Skriptorij V10 Turbo Omni-Core sistema.
 """
 
 import json
+import logging
 import os
 import re
 import pathlib
@@ -821,6 +822,12 @@ def clean_annotations():
         clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
         chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
 
+        # Provjeri da putanja ostaje unutar CHECKPOINT_BASE_DIR
+        try:
+            chk_dir.resolve().relative_to(CHECKPOINT_BASE_DIR.resolve())
+        except ValueError:
+            return jsonify({"error": "Nevažeća putanja knjige"}), 400
+
         if not chk_dir.exists():
             return jsonify({"obrisano": 0, "status": "ok", "info": "Nema checkpointa za ovu knjigu"})
 
@@ -830,6 +837,7 @@ def clean_annotations():
         n = _no_cisti_chk_fajlove(chk_dir, log_fn=_log)
         return jsonify({"obrisano": n, "status": "ok", "book": Path(book).name})
     except Exception:
+        logging.exception("clean_annotations: greška pri čišćenju")
         return jsonify({"error": "Greška pri čišćenju anotacija"}), 500
 
 
