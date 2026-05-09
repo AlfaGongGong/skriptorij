@@ -233,6 +233,9 @@ async def retroaktivna_relektura_v10(
         if "quality_scores" not in self.shared_stats:
             self.shared_stats["quality_scores"] = {}
         self.shared_stats["quality_scores"][chk.stem] = ocjena
+        # Ako smo u selektivnom modu (stems_whitelist), pratimo ocjene relekture zasebno
+        if stems_whitelist is not None and "refix_scores" in self.shared_stats:
+            self.shared_stats["refix_scores"][chk.stem] = ocjena
 
         # B2 FIX: per-blok flush — zaštita od pada u sredini retro obrade
         try:

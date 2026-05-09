@@ -572,6 +572,7 @@ def create_app() -> Flask:
                     elif mode == "REFIX":
                         # ── Selektivna relektura označenih blokova ────────────
                         import asyncio
+                        import json as _json
                         from core.engine import SkriptorijAllInOne
                         from processing.retro import retroaktivna_relektura_v10
 
@@ -585,6 +586,34 @@ def create_app() -> Flask:
                         )
                         engine.work_dir.mkdir(parents=True, exist_ok=True)
                         engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+                        # Učitaj SVE quality scores s diska prije REFIX-a da
+                        # prosječna ocjena cijelog epuba ostane stabilna tokom relekture.
+                        qs_path = engine.checkpoint_dir / "quality_scores.json"
+                        if qs_path.exists():
+                            try:
+                                raw_all = _json.loads(qs_path.read_text("utf-8"))
+                                loaded: dict[str, float] = {}
+                                for k, v in raw_all.items():
+                                    try:
+                                        if isinstance(v, (int, float)):
+                                            loaded[k] = float(v)
+                                        elif isinstance(v, dict) and "score" in v:
+                                            loaded[k] = float(v["score"])
+                                        else:
+                                            SHARED_STATS.setdefault("live_audit", "")
+                                            SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: neočekivani tip ocjene za {k}: {type(v).__name__}"
+                                    except (TypeError, ValueError) as _e:
+                                        SHARED_STATS.setdefault("live_audit", "")
+                                        SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: ne mogu pretvoriti ocjenu za {k}: {_e}"
+                                SHARED_STATS["quality_scores"] = loaded
+                            except Exception as _load_err:
+                                SHARED_STATS.setdefault("live_audit", "")
+                                SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: greška pri učitavanju quality_scores.json: {_load_err}"
+
+                        # Inicijaliziraj praćenje relekture
+                        SHARED_STATS["refix_active"] = True
+                        SHARED_STATS["refix_scores"] = {}
 
                         n = len(stems)
                         engine.log(
@@ -600,6 +629,7 @@ def create_app() -> Flask:
 
                         SHARED_CONTROLS.pop("refix_stems", None)
                         SHARED_CONTROLS.pop("refix_book",  None)
+                        SHARED_STATS["refix_active"] = False
                         SHARED_STATS["status"] = f"ZAVRŠENO (REFIX {n} blokova)"
                         SHARED_STATS["pct"] = 100
 
