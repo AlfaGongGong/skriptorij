@@ -572,6 +572,7 @@ def create_app() -> Flask:
                     elif mode == "REFIX":
                         # ── Selektivna relektura označenih blokova ────────────
                         import asyncio
+                        import json as _json
                         from core.engine import SkriptorijAllInOne
                         from processing.retro import retroaktivna_relektura_v10
 
@@ -585,6 +586,30 @@ def create_app() -> Flask:
                         )
                         engine.work_dir.mkdir(parents=True, exist_ok=True)
                         engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+                        # Učitaj SVE quality scores s diska prije REFIX-a da
+                        # prosječna ocjena cijelog epuba ostane stabilna tokom relekture.
+                        qs_path = engine.checkpoint_dir / "quality_scores.json"
+                        if qs_path.exists():
+                            try:
+                                raw_all = _json.loads(qs_path.read_text("utf-8"))
+                                SHARED_STATS["quality_scores"] = {
+                                    k: float(v) if isinstance(v, (int, float))
+                                    else float(v["score"]) if isinstance(v, dict) and "score" in v
+                                    else None
+                                    for k, v in raw_all.items()
+                                }
+                                # Ukloni None vrijednosti
+                                SHARED_STATS["quality_scores"] = {
+                                    k: v for k, v in SHARED_STATS["quality_scores"].items()
+                                    if v is not None
+                                }
+                            except Exception:
+                                pass
+
+                        # Inicijaliziraj praćenje relekture
+                        SHARED_STATS["refix_active"] = True
+                        SHARED_STATS["refix_scores"] = {}
 
                         n = len(stems)
                         engine.log(
@@ -600,6 +625,7 @@ def create_app() -> Flask:
 
                         SHARED_CONTROLS.pop("refix_stems", None)
                         SHARED_CONTROLS.pop("refix_book",  None)
+                        SHARED_STATS["refix_active"] = False
                         SHARED_STATS["status"] = f"ZAVRŠENO (REFIX {n} blokova)"
                         SHARED_STATS["pct"] = 100
 
