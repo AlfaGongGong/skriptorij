@@ -35,6 +35,16 @@ class SkriptorijAllInOne:
         except Exception:
             pass
 
+        # ── Auto-discovery najjačih modela ───────────────────────────────────
+        # prime_cache_sync popunjava cache sinhrono (paralelni threadovi, max 12s)
+        # start_background_refresh osvježava cache svakih sat vremena
+        try:
+            from network.model_discovery import prime_cache_sync, start_background_refresh
+            prime_cache_sync(self.fleet)
+            start_background_refresh(self.fleet)
+        except Exception:
+            pass
+
         self.clean_book_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.book_path.stem)
 
         # ── IZMJENA: work_dir i checkpoint_dir u CHECKPOINT_BASE_DIR ────────
