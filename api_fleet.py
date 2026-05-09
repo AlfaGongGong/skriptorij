@@ -266,20 +266,14 @@ class FleetManager:
                 )
 
     def _resolve_models(self):
-        """Modeli prema zvaničnoj dokumentaciji — Maj 2026."""
-        self.resolved_models = {
-            "CEREBRAS":    "gpt-oss-20b",
-            "SAMBANOVA":   "DeepSeek-V3.1",
-            "GROQ":        "llama-3.1-8b-instant",
-            "GEMINI":      "gemini-2.0-flash",       # Primarni model za Gemini
-            "MISTRAL":     "mistral-small-latest",
-            "TOGETHER":    "meta-llama/Llama-3.2-3B-Instruct-Turbo",
-            "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
-            "COHERE":      "command-r-08-2024",
-            "CHUTES":      "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
-            "HUGGINGFACE": "meta-llama/Meta-Llama-3-8B-Instruct",
-            "KLUSTER":     "klusterai/Meta-Llama-3.1-8B-Instruct-Turbo",
-        }
+        """
+        Inicijalizira resolved_models iz FALLBACK_MODELS.
+        Stvarni auto-discovery se pokreće pozadinski putem
+        network.model_discovery.prime_cache_sync() i start_background_refresh().
+        get_active_model() uvijek vraća najsvježiji auto-otkriveni model.
+        """
+        from network.model_discovery import FALLBACK_MODELS
+        self.resolved_models = dict(FALLBACK_MODELS)
 
     def _save_state(self):
         with self._save_lock:
@@ -328,7 +322,16 @@ class FleetManager:
             self._resolve_models()
 
     def get_active_model(self, provider_upper: str) -> str:
-        return self.resolved_models.get(provider_upper.upper(), "")
+        """
+        Vraća trenutno aktivan model za provajdera.
+        Prioritet: auto-otkriveni model (discovery cache) > fallback iz resolved_models.
+        """
+        from network.model_discovery import get_cached_model
+        prov = provider_upper.upper()
+        discovered = get_cached_model(prov)
+        if discovered:
+            return discovered
+        return self.resolved_models.get(prov, "")
 
     # ── Key selection ────────────────────────────────────────────────────────
 
