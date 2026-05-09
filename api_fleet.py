@@ -9,6 +9,7 @@
 # ============================================================================
 
 import json
+import re
 import time
 import math
 import threading
@@ -16,6 +17,29 @@ from pathlib import Path
 
 # ── Dnevna kvota threshold (82800s = 23h)
 _DAILY_QUOTA_RETRY_AFTER = 82800
+
+
+def _parse_groq_duration(value: str) -> float:
+    """
+    Parsira Groq-style duration stringove u sekunde.
+    Groq šalje headere poput x-ratelimit-reset-tokens u ovim formatima:
+      "2m59.56s"  →  179.56
+      "7.66s"     →    7.66
+      "30"        →   30.0    (plain broj, bez sufiksa)
+    Vraća 0.0 ako format nije prepoznatljiv.
+    """
+    if not value:
+        return 0.0
+    s = value.strip()
+    m = re.match(r'^(?:(\d+)m\s*)?(\d+(?:\.\d+)?)s?$', s)
+    if m:
+        minutes = float(m.group(1) or 0)
+        seconds = float(m.group(2) or 0)
+        return minutes * 60.0 + seconds
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
 
 _STATE_DEBOUNCE_INTERVAL = 30.0
 
@@ -53,14 +77,15 @@ PROVIDER_ORDER = [
 ]
 
 _DEFAULT_RPM = {
-    "GEMINI": 15, "GROQ": 20, "CEREBRAS": 30, "SAMBANOVA": 10,
+    "GEMINI": 15, "GROQ": 30, "CEREBRAS": 30, "SAMBANOVA": 10,
     "MISTRAL": 15, "COHERE": 15, "OPENROUTER": 20, "GITHUB": 10,
     "TOGETHER": 20, "FIREWORKS": 20, "CHUTES": 10,
     "HUGGINGFACE": 10, "KLUSTER": 15, "GEMMA": 10,
 }
 
 _DEFAULT_DAILY_QUOTA = {
-    "GEMINI": 1500, "GROQ": 14400, "CEREBRAS": 14400, "SAMBANOVA": 10000,
+    # GROQ: llama-3.3-70b-versatile ima 1K RPD (ne 14.4K — to je za 8b-instant)
+    "GEMINI": 1500, "GROQ": 1000, "CEREBRAS": 14400, "SAMBANOVA": 10000,
     "MISTRAL": 1000, "GITHUB": 200, "COHERE": 1000, "OPENROUTER": 500,
     "TOGETHER": 1000, "FIREWORKS": 1000, "CHUTES": 1000,
     "HUGGINGFACE": 500, "KLUSTER": 500, "GEMMA": 500,
@@ -435,58 +460,93 @@ class FleetManager:
             def hget(name):
                 return h.get(name) or h.get(name.lower()) or h.get(name.upper())
 
-            # RPM remaining
-            for n in ["x-ratelimit-remaining-requests", "ratelimit-remaining", "x-remaining-requests"]:
-                v = hget(n)
-                if v is not None:
-                    try:
-                        ks.remaining_minute = int(v)
-                    except ValueError:
-                        pass
-                    break
-
-            # RPM limit
-            for n in ["x-ratelimit-limit-requests", "ratelimit-limit", "x-limit-requests"]:
-                v = hget(n)
-                if v is not None:
-                    try:
-                        ks.rate_limit_minute = int(v)
-                    except ValueError:
-                        pass
-                    break
-
-            # RPD remaining
-            for n in ["x-ratelimit-remaining-tokens-day", "x-ratelimit-remaining-day"]:
-                v = hget(n)
+            # ── GROQ: headeri imaju specifičnu semantiku per dokumentaciji ───────
+            # x-ratelimit-limit-requests     → uvijek RPD (dnevna kvota), NE RPM
+            # x-ratelimit-remaining-requests → uvijek RPD, NE RPM
+            # x-ratelimit-reset-requests     → RPD reset u "Xm Ys" formatu
+            # x-ratelimit-limit-tokens       → uvijek TPM (tokens/min), NE TPD
+            # x-ratelimit-remaining-tokens   → TPM remaining
+            # x-ratelimit-reset-tokens       → TPM reset u "Xs" formatu (≈ RPM window)
+            if prov_u == "GROQ":
+                v = hget("x-ratelimit-remaining-requests")
                 if v is not None:
                     try:
                         ks.remaining_day = int(v)
                         ks.req_rem       = ks.remaining_day
                     except ValueError:
                         pass
-                    break
 
-            # BUG#6 FIX: reset_time_minute iz headera
-            for n in ["x-ratelimit-reset-requests", "ratelimit-reset", "retry-after"]:
-                v = hget(n)
+                v = hget("x-ratelimit-limit-requests")
                 if v is not None:
                     try:
-                        reset_secs = float(v)
-                        # Ako je to relativan offset (< 3600), dodaj na now
-                        if reset_secs < 3600:
-                            ks.reset_time_minute = now + reset_secs
-                        # Ako je apsolutni timestamp, koristi direktno
-                        elif reset_secs > now:
-                            ks.reset_time_minute = reset_secs
-                        else:
-                            ks.reset_time_minute = now + _RPM_WINDOW
+                        ks.rate_limit_day = int(v)
                     except ValueError:
-                        ks.reset_time_minute = now + _RPM_WINDOW
-                    break
-            else:
-                # Nema headera — postavi konzervativno
-                if ks.reset_time_minute < now:
+                        pass
+
+                # TPM reset ≈ per-minute window reset — koristimo za reset_time_minute
+                v = hget("x-ratelimit-reset-tokens")
+                if v is not None:
+                    secs = _parse_groq_duration(v)
+                    if secs > 0:
+                        ks.reset_time_minute = now + secs
+                elif ks.reset_time_minute < now:
                     ks.reset_time_minute = now + _RPM_WINDOW
+
+            else:
+                # ── Generic header parsing za ostale provajdere ──────────────────
+                # RPM remaining
+                for n in ["x-ratelimit-remaining-requests", "ratelimit-remaining", "x-remaining-requests"]:
+                    v = hget(n)
+                    if v is not None:
+                        try:
+                            ks.remaining_minute = int(v)
+                        except ValueError:
+                            pass
+                        break
+
+                # RPM limit
+                for n in ["x-ratelimit-limit-requests", "ratelimit-limit", "x-limit-requests"]:
+                    v = hget(n)
+                    if v is not None:
+                        try:
+                            ks.rate_limit_minute = int(v)
+                        except ValueError:
+                            pass
+                        break
+
+                # BUG#6 FIX: reset_time_minute iz headera
+                for n in ["x-ratelimit-reset-requests", "ratelimit-reset", "retry-after"]:
+                    v = hget(n)
+                    if v is not None:
+                        try:
+                            reset_secs = float(v)
+                            # Ako je to relativan offset (< 3600), dodaj na now
+                            if reset_secs < 3600:
+                                ks.reset_time_minute = now + reset_secs
+                            # Ako je apsolutni timestamp, koristi direktno
+                            elif reset_secs > now:
+                                ks.reset_time_minute = reset_secs
+                            else:
+                                ks.reset_time_minute = now + _RPM_WINDOW
+                        except ValueError:
+                            ks.reset_time_minute = now + _RPM_WINDOW
+                        break
+                else:
+                    # Nema headera — postavi konzervativno
+                    if ks.reset_time_minute < now:
+                        ks.reset_time_minute = now + _RPM_WINDOW
+
+            # ── RPD remaining — zajednički za sve provajdere osim GROQ ──────────
+            if prov_u != "GROQ":
+                for n in ["x-ratelimit-remaining-tokens-day", "x-ratelimit-remaining-day"]:
+                    v = hget(n)
+                    if v is not None:
+                        try:
+                            ks.remaining_day = int(v)
+                            ks.req_rem       = ks.remaining_day
+                        except ValueError:
+                            pass
+                        break
 
             # Status code handling
             if status_code == 200:
