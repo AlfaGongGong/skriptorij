@@ -110,7 +110,11 @@ def _smart_extract(raw: str) -> str:
     m = re.search(r'"finalno_polirano"\s*:\s*"((?:[^"\\]|\\.)*)"', raw)
     if m:
         return m.group(1)
-    return _agresivno_cisti(raw)
+    cist = _agresivno_cisti(raw)
+    # Odbaci ako je AI vratio anotacijski odgovor umjesto čistog teksta
+    if _je_ai_anotacija(cist):
+        return ""
+    return cist
 
 
 def _agresivno_cisti(tekst: str) -> str:
@@ -136,6 +140,44 @@ def _ocisti_ai_markere(tekst: str) -> str:
 def _je_placeholder(tekst: str) -> bool:
     cist = re.sub(r"<[^>]+>", "", tekst).strip().lower()
     return cist in {"lektorisani tekst ovdje", "korigirani tekst ovdje"}
+
+
+# ── Detekcija AI anotacija (annotation-style odgovora) ───────────────────────
+# Kada AI (Lektor/Korektor) umjesto čistog teksta vrati listu izmjena u
+# markdown formatu (npr. "1. **Interpunkcija:** → **novo**"), taj odgovor
+# NIKAD ne smije ući u .chk fajlove niti u EPUB izlaz.
+
+# Minimalan broj pronađenih anotacijskih obrazaca da bi tekst bio odbačen
+_MIN_ANOTACIJA_PATTERNS: int = 2
+
+_ANOTACIJA_PATERN_RE = re.compile(
+    r"""
+    (?:
+        ^\d+\.\s+\*\*[^\n*]{1,60}:?\*\*      # "1. **Tipografija:**" na početku retka
+      | →\s+(?:\*\*|„)                         # "→ **novo**" ili "→ „novo""
+      | \*\*[A-ZŠĆČŽĐ][a-zšćčžđA-ZŠĆČŽĐ\s]{1,40}:\*\*  # "**Sekcija:**"
+      | ^[-—]\s+(?:Dodan|Ispravlj|Zamijen)  # "— Dodano ...", "— Dodan ...", "- Ispravljeno ..."
+    )
+    """,
+    re.MULTILINE | re.VERBOSE,
+)
+
+
+def _je_ai_anotacija(tekst: str) -> bool:
+    """
+    Detektuje da li je AI vratio format anotacija/bilješki o izmjenama
+    umjesto čistog teksta.  Primjeri:
+
+        1. **Tipografija:** „staro" → **„novo"**
+        2. **Interpunkcija:** — Dodana em-crtica ...
+        - *„staro"* → **„novo"** (objašnjenje)
+
+    Ako se nađe ≥_MIN_ANOTACIJA_PATTERNS takva obrasca tekst se tretira
+    kao nevaljana anotacija.  Vraća True → pozivalac pada na fallback tekst.
+    """
+    if not tekst or len(tekst) < 20:
+        return False
+    return len(_ANOTACIJA_PATERN_RE.findall(tekst)) >= _MIN_ANOTACIJA_PATTERNS
 
 
 _EN_STOPWORDS = frozenset({

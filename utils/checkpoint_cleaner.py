@@ -1,8 +1,15 @@
 """Čišćenje checkpoint fajlova od JSON omotača i placeholder teksta."""
 import json
+import logging
 import re
 import shutil
 from pathlib import Path
+
+try:
+    from core.text_utils import _je_ai_anotacija as _detect_anotacija
+except ImportError:
+    logging.warning("checkpoint_cleaner: core.text_utils nedostupan — detekcija anotacija isključena")
+    _detect_anotacija = None
 
 _PLACEHOLDERS = {
     "lektorisani tekst ovdje", "korigirani tekst ovdje",
@@ -69,6 +76,9 @@ def _je_placeholder(sadrzaj: str) -> bool:
         for fraza in _PHANTOM_CONTAINS:
             if fraza in cist:
                 return True
+    # Provjeri je li sadržaj AI anotacija umjesto čistog teksta
+    if _detect_anotacija is not None and _detect_anotacija(sadrzaj):
+        return True
     return False
 
 
@@ -95,7 +105,7 @@ def _no_cisti_chk_fajlove(checkpoint_dir: Path, log_fn=None) -> int:
     if log_fn and (popravljeno or obrisano):
         log_fn(
             f"🧹 Checkpoint čišćenje: {popravljeno} JSON omotača uklonjeno, "
-            f"{obrisano} placeholder fajlova obrisano.",
+            f"{obrisano} placeholder/anotacija fajlova obrisano.",
             "tech",
         )
     return popravljeno + obrisano
