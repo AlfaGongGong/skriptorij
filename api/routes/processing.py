@@ -154,7 +154,10 @@ def start_processing():
                 {"error": f"Fajl '{book}' ne postoji na lokaciji: {INPUT_DIR}"}
             ), 404
 
-        SHARED_CONTROLS.update({"pause": False, "stop": False, "reset": False})
+        # Signaliziraj zaustavljanje eventualnog tekućeg threada
+        SHARED_CONTROLS["stop"] = True
+        SHARED_CONTROLS["pause"] = False
+        SHARED_CONTROLS["reset"] = False
 
         # Provjeri da li postoje checkpointi (nova putanja)
         chk_count, _ = _get_checkpoint_count_base(Path(full_path))
@@ -247,6 +250,10 @@ def start_processing():
             )
 
         thread.start()
+        # Za RETRO i standardni pipeline: resetuj stop=False da nova obrada može teći.
+        # Za TTS: stop ostaje True — TTS ne koristi stop flag, a stari thread se zaustavlja.
+        if tool != "TTS":
+            SHARED_CONTROLS["stop"] = False
         return jsonify({
             "status": "Started",
             "file":   book,

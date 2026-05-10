@@ -76,6 +76,20 @@ except ImportError:
     _zabilježi_prev = None
     _SCORER_V2_OK = False
 
+# ── Karantena detektor (singleton, lazy init) ────────────────────────────────
+_karantena_detektor = None
+
+def _get_karantena_detektor():
+    """Vraća singleton DinamickiDetektor, inicijaliziran pri prvom pozivu."""
+    global _karantena_detektor
+    if _karantena_detektor is None:
+        try:
+            from core.kalkovi.dinamicki_detektor import DinamickiDetektor
+            _karantena_detektor = DinamickiDetektor()
+        except Exception:
+            _karantena_detektor = False  # sentinel: ne pokušavaj ponovo
+    return _karantena_detektor if _karantena_detektor is not False else None
+
 
 # ── Privatni checkpoint helperi ───────────────────────────────────────────────
 
@@ -178,7 +192,8 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
             glosar = {}
             if hasattr(self, "book_context") and self.book_context:
                 glosar = getattr(self.book_context, "glosar", {})
-            finalno_k = kalkovi_engine.primijeni(finalno, glosar=glosar)
+            blok_id = f"{file_name}_blok_{chunk_idx}"
+            finalno_k, n_zamjena = kalkovi_engine.primijeni(finalno, glosar=glosar, blok_id=blok_id)
             if finalno_k and len(finalno_k.strip()) > 10:
                 finalno = finalno_k
         except Exception as e:
@@ -191,6 +206,33 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
             finalno = validator.validiraj(finalno, knjiga_id=file_name, chunk_id=chunk_idx)
         except Exception as e:
             logging.warning(f"[pipeline] Morfo validator greška (blok {chunk_idx}): {e}")
+
+    # Korak 11a: Karantena detektor — pasivno bilježenje kandidiata
+    detektor = _get_karantena_detektor()
+    if detektor is not None and finalno:
+        try:
+            knjiga_str = ""
+            bp = getattr(self, "book_path", None)
+            if bp:
+                from pathlib import Path as _Path
+                knjiga_str = _Path(bp).stem
+            quality_score = 0.0
+            qs = getattr(self, "shared_stats", {})
+            if qs and isinstance(qs, dict):
+                scores = qs.get("quality_scores", {})
+                if isinstance(scores, dict) and scores:
+                    vals = [v for v in scores.values() if isinstance(v, (int, float))]
+                    if vals:
+                        quality_score = sum(vals) / len(vals)
+            detektor.analiziraj(
+                original="",
+                prijevod=finalno,
+                knjiga=knjiga_str,
+                chunk_idx=chunk_idx,
+                quality_score=quality_score,
+            )
+        except Exception as e:
+            logging.debug(f"[pipeline] Karantena detektor greška (blok {chunk_idx}): {e}")
 
     return finalno
 
