@@ -224,11 +224,17 @@ class _RodRegistar:
     """
 
     def __init__(self, knjiga_id: str):
-        self.knjiga_id = knjiga_id
+        # Sanitizuj knjiga_id: samo alfanumerički, crtice i donje crte, max 80 znakova
+        safe_id = re.sub(r"[^\w\-]", "_", knjiga_id or "default")[:80] or "default"
+        self.knjiga_id = safe_id
         self._lock = threading.Lock()
         # {ime: {"rod": "M"|"Ž"|None, "clue_m": int, "clue_z": int}}
         self._data: dict[str, dict] = {}
-        self._path = REGISTRI_DIR / f"{knjiga_id}.json"
+        # Osiguraj da putanja ostaje unutar REGISTRI_DIR (path traversal zaštita)
+        candidate = (REGISTRI_DIR / f"{safe_id}.json").resolve()
+        if not str(candidate).startswith(str(REGISTRI_DIR.resolve())):
+            candidate = (REGISTRI_DIR / "default.json").resolve()
+        self._path = candidate
         self._ucitaj()
 
     def _ucitaj(self) -> None:
@@ -352,20 +358,13 @@ def _koriguj_chunk(
                 re.UNICODE | re.IGNORECASE,
             )
             if pat_fwd.search(tekst):
-                novi_tekst = pat_fwd.sub(
-                    lambda m, pf=pogresna_forma, iz=ispravna_forma: (
-                        m.group(0).replace(
-                            # pronađi originalnu formu (različita velika/mala slova)
-                            re.search(re.escape(pf), m.group(0), re.IGNORECASE).group(0),
-                            _sacuvaj_velicinu(
-                                re.search(re.escape(pf), m.group(0), re.IGNORECASE).group(0),
-                                iz
-                            ),
-                            1
-                        )
-                    ),
-                    tekst,
-                )
+                def _zamijeni_fwd(m, pf=pogresna_forma, iz=ispravna_forma):
+                    match_pf = re.search(re.escape(pf), m.group(0), re.IGNORECASE)
+                    if not match_pf:
+                        return m.group(0)
+                    return m.group(0).replace(match_pf.group(0), _sacuvaj_velicinu(match_pf.group(0), iz), 1)
+
+                novi_tekst = pat_fwd.sub(_zamijeni_fwd, tekst)
                 if novi_tekst != tekst:
                     n_ukupno += 1
                     _zapisi_rod_gresku(
@@ -381,19 +380,13 @@ def _koriguj_chunk(
                 re.UNICODE | re.IGNORECASE,
             )
             if pat_bwd.search(tekst):
-                novi_tekst = pat_bwd.sub(
-                    lambda m, pf=pogresna_forma, iz=ispravna_forma: (
-                        m.group(0).replace(
-                            re.search(re.escape(pf), m.group(0), re.IGNORECASE).group(0),
-                            _sacuvaj_velicinu(
-                                re.search(re.escape(pf), m.group(0), re.IGNORECASE).group(0),
-                                iz
-                            ),
-                            1
-                        )
-                    ),
-                    tekst,
-                )
+                def _zamijeni_bwd(m, pf=pogresna_forma, iz=ispravna_forma):
+                    match_pf = re.search(re.escape(pf), m.group(0), re.IGNORECASE)
+                    if not match_pf:
+                        return m.group(0)
+                    return m.group(0).replace(match_pf.group(0), _sacuvaj_velicinu(match_pf.group(0), iz), 1)
+
+                novi_tekst = pat_bwd.sub(_zamijeni_bwd, tekst)
                 if novi_tekst != tekst:
                     n_ukupno += 1
                     _zapisi_rod_gresku(
