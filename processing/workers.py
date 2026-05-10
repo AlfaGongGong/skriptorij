@@ -274,7 +274,7 @@ async def process_single_file_worker(self, file_path):
     except Exception:
         return
 
-    chunks = self.chunk_html(raw_html, max_words=1500)
+    chunks = self.chunk_html(raw_html, max_words=800)
     if not chunks:
         return
 

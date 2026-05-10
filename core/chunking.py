@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 from bs4 import BeautifulSoup, NavigableString
 
 
-def chunk_html(html_content: str, max_words=500) -> list:
+def chunk_html(html_content: str, max_words=800) -> list:
     """
     Dijeli HTML sadržaj na blokove od max_words riječi.
     Default: 800 (konzistentno s SkriptorijAllInOne.chunk_html).
