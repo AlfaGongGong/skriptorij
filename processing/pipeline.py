@@ -358,7 +358,17 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             cached_score = _norm_score(raw_val) if raw_val is not None else None
 
             if cached_score is None or cached_score >= _QUALITY_RESCUE_THRESHOLD:
-                score_info = f"score={cached_score:.1f}" if cached_score else "score=?"
+                if cached_score is None:
+                    # Blok nema pohranjenu ocjenu — scoruj keširani sadržaj
+                    tip_bloka_c = detektuj_tip_bloka(chunk)
+                    await _quality_scoring(
+                        self, cached_final, chunk, chunk_idx, file_name,
+                        tip_bloka_c, "DATABASE",
+                        tip_ocjenjivanja="opci",
+                    )
+                    new_qs_val = self.shared_stats.get("quality_scores", {}).get(stem_key)
+                    cached_score = _norm_score(new_qs_val) if new_qs_val is not None else None
+                score_info = f"score={cached_score:.1f}" if cached_score is not None else "score=?"
                 self.log(
                     f"[{file_name}] Blok {chunk_idx}: 💾 Učitan iz cache-a ({score_info}).",
                     "tech",
@@ -390,11 +400,27 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         if not force_reprocess:
             cached_lek = _chk_read(self, file_name, chunk_idx, "lektura")
             if cached_lek:
-                self.log(
-                    f"[{file_name}] Blok {chunk_idx}: 💾 Lektura učitana iz cache-a.", "tech"
-                )
                 if not _chk_path(self, file_name, chunk_idx).exists():
                     _chk_write(self, file_name, chunk_idx, cached_lek)
+                qs_l = self.shared_stats.get("quality_scores", {})
+                stem_key_l = f"{file_name}_blok_{chunk_idx}"
+                raw_val_l = qs_l.get(stem_key_l, None)
+                cached_score_l = _norm_score(raw_val_l) if raw_val_l is not None else None
+                if cached_score_l is None:
+                    # Blok nema pohranjenu ocjenu — scoruj keširani sadržaj
+                    tip_bloka_l = detektuj_tip_bloka(chunk)
+                    await _quality_scoring(
+                        self, cached_lek, chunk, chunk_idx, file_name,
+                        tip_bloka_l, "DATABASE/LEKTURA", tip_ocjenjivanja="lektura",
+                        prevodilac_provider="DATABASE/LEKTURA",
+                    )
+                    new_qs_val_l = self.shared_stats.get("quality_scores", {}).get(stem_key_l)
+                    cached_score_l = _norm_score(new_qs_val_l) if new_qs_val_l is not None else None
+                score_info_l = f"score={cached_score_l:.1f}" if cached_score_l is not None else "score=?"
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: 💾 Lektura učitana iz cache-a ({score_info_l}).",
+                    "tech",
+                )
                 self.spaseno_iz_checkpointa += 1
                 self.global_done_chunks += 1
                 return cached_lek, "DATABASE/LEKTURA"
