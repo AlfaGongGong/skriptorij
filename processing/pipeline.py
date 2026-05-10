@@ -364,6 +364,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     await _quality_scoring(
                         self, cached_final, chunk, chunk_idx, file_name,
                         tip_bloka_c, "DATABASE",
+                        tip_ocjenjivanja="opci",
                     )
                     new_qs_val = self.shared_stats.get("quality_scores", {}).get(stem_key)
                     cached_score = _norm_score(new_qs_val) if new_qs_val is not None else None
