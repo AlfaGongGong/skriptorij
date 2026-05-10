@@ -192,6 +192,15 @@ def _norm_score(v) -> float:
         return 0.0
 
 
+_MIN_ORIG_LEN_FOR_LOSS_CHECK = 120
+_MIN_CAND_LEN_FOR_LOSS_CHECK = 20
+# PREVODILAC može biti kraći od EN (kompresija), ali sve ispod 62% je često
+# signal da su ispali odlomci.
+_MIN_TRANSLATION_RATIO = 0.62
+# LEKTOR/KOREKTOR ne bi smjeli značajno skraćivati sadržaj.
+_MIN_LEKTOR_RATIO = 0.80
+
+
 def _plain_len(tekst: str) -> int:
     try:
         return len(BeautifulSoup(tekst or "", "html.parser").get_text(" ", strip=True))
@@ -204,12 +213,12 @@ def _je_sumnjiv_gubitak_teksta(original: str, kandidat: str, uloga: str = "LEKTO
         return False
     orig_len = _plain_len(original)
     cand_len = _plain_len(kandidat)
-    if orig_len < 120 or cand_len < 20:
+    if orig_len < _MIN_ORIG_LEN_FOR_LOSS_CHECK or cand_len < _MIN_CAND_LEN_FOR_LOSS_CHECK:
         return False
     ratio = cand_len / max(1, orig_len)
     if uloga == "PREVODILAC":
-        return ratio < 0.62
-    return ratio < 0.80
+        return ratio < _MIN_TRANSLATION_RATIO
+    return ratio < _MIN_LEKTOR_RATIO
 
 
 # ── Korak 5: Helper za kalkove + validator ──────────────────────────────────
@@ -400,9 +409,14 @@ async def _quality_scoring(
         if original_chunk:
             orig_len = _plain_len(original_chunk)
             out_len = _plain_len(finalno)
-            if orig_len >= 120 and out_len >= 20:
+            if (
+                orig_len >= _MIN_ORIG_LEN_FOR_LOSS_CHECK
+                and out_len >= _MIN_CAND_LEN_FOR_LOSS_CHECK
+            ):
                 ratio = out_len / max(1, orig_len)
                 old_score = score_float
+                # Cap-ovi su namjerno stepenasti: što je veći pad dužine, niži
+                # maksimalni score, da nepotpuni blok ne može završiti s 9+.
                 if ratio < 0.60:
                     score_float = min(score_float, 4.8)
                 elif ratio < 0.72:
