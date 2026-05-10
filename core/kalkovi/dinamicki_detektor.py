@@ -46,14 +46,13 @@ EKAVIZMI_REGEX = re.compile(
 
 # --- Poznati kalkovi iz engine-a (za deduplikaciju) ---
 def _ucitaj_poznate_kalkove() -> set:
+    # SVE_LISTE je lista tuplova (pattern, zamjena[, kategorija])
     poznati = set()
-    for lista in SVE_LISTE.values():
-        for unos in lista:
-            if isinstance(unos, (list, tuple)) and len(unos) >= 2:
-                # format: (pattern, zamjena) ili [pattern, zamjena]
-                poznati.add(str(unos[0]).lower())
-            elif isinstance(unos, str):
-                poznati.add(unos.lower())
+    for unos in SVE_LISTE:
+        if isinstance(unos, (list, tuple)) and len(unos) >= 2:
+            poznati.add(str(unos[0]).lower())
+        elif isinstance(unos, str):
+            poznati.add(unos.lower())
     return poznati
 
 POZNATI_KALKOVI: set = set()  # lazy init
@@ -149,7 +148,7 @@ class DinamickiDetektor:
         self._init_db()
 
     def _init_db(self):
-        """Inicijalizira SQLite bazu ako ne postoji."""
+        """Inicijalizira SQLite bazu ako ne postoji (sve potrebne kolone u jednom koraku)."""
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS kandidati (
@@ -163,13 +162,29 @@ class DinamickiDetektor:
                     ukupan_score REAL DEFAULT 0.0,
                     status TEXT DEFAULT 'kandidat',
                     datum_prvog TEXT DEFAULT (datetime('now')),
-                    datum_zadnjeg TEXT DEFAULT (datetime('now'))
+                    datum_zadnjeg TEXT DEFAULT (datetime('now')),
+                    knjige_set TEXT DEFAULT '[]',
+                    rollback_count INTEGER DEFAULT 0,
+                    validator_napomena TEXT DEFAULT ''
                 )
             """)
             conn.execute("""
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_pattern_tip
                 ON kandidati(pattern, tip)
             """)
+            # Migracija: dodaj kolone ako nedostaju (za postojeće baze)
+            postojece = {r[1] for r in conn.execute("PRAGMA table_info(kandidati)").fetchall()}
+            _migracije = {
+                "knjige_set": "TEXT DEFAULT '[]'",
+                "rollback_count": "INTEGER DEFAULT 0",
+                "validator_napomena": "TEXT DEFAULT ''",
+            }
+            for kolona, tip_sql in _migracije.items():
+                if kolona not in postojece and kolona in _migracije:
+                    # Sigurno: kolona i tip su iz hardkodiranog rječnika
+                    conn.execute(
+                        f"ALTER TABLE kandidati ADD COLUMN {kolona} {tip_sql}"  # noqa: S608
+                    )
             conn.commit()
 
     def _zapisi_kandidata(
