@@ -4,195 +4,1887 @@ Ažurirano: 2026-05-10
 Projekt: AI-powered sistem za prijevod i lekturu EPUB/MOBI knjiga
 ================================================================================
 
-CILJ KVALITETE: 9.5+ autonomno, bez human-in-the-loop
-Kompozitni score formula: heuristika*0.25 + AI_ocjena*0.75
-Realni strop bez fine-tuninga: 9.8–9.9
-Thresholds: odlično≥8.5 · dobro≥6.5 · slabo≥4.0 · kritično<4.0
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                            FILE TREE PROJEKTA                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+skriptorij/
+├── main.py                          # Entry point; pokreće Flask, Termux browser
+├── app.py                           # Flask factory; sve rute i blueprinti
+├── run.py                           # Alternativni launcher; orkestrira run loop
+├── api_fleet.py                     # FleetManager singleton; API key upravljanje
+├── tts.py                           # Text-to-Speech pipeline (Kokoro TTS)
+├── opis_projekta.txt                # Ovaj fajl
+├── requirements.txt                 # Python zavisnosti
+├── restart.sh                       # Shell skripta za restart servera
+├── package.json / package-lock.json # JS zavisnosti (Three.js i sl.)
+│
+├── config/
+│   ├── __init__.py
+│   ├── settings.py                  # PORT, putanje, SERVER_RUN_ID
+│   └── logging_config.py            # Konfiguracija Python loggera
+│
+├── api/
+│   ├── __init__.py                  # register_blueprints()
+│   ├── file_browser.py              # /api/browse, /api/upload_from_path
+│   ├── middleware/
+│   │   └── __init__.py
+│   └── routes/
+│       ├── __init__.py
+│       ├── books.py                 # /api/books, /api/upload_book
+│       ├── control.py               # /control/<action> (pause, resume, reset)
+│       ├── export.py                # /api/export/json|txt
+│       ├── fleet.py                 # /api/fleet, /api/fleet/toggle
+│       ├── keys.py                  # /api/keys CRUD + /ping health check
+│       ├── processing.py            # /api/start, /api/status, review, preview
+│       ├── qualities.py             # /api/quality_scores CRUD + send_to_fix
+│       └── quality.py               # /api/quality (legacy)
+│
+├── core/
+│   ├── __init__.py
+│   ├── engine.py                    # SkriptorijAllInOne orchestrator
+│   ├── chunking.py                  # chunk_html(), get_context_window()
+│   ├── dynamic_few_shot.py          # Dinamički few-shot primjeri
+│   ├── model_profiles.py            # ModelProfile dataclass; scorovi modela
+│   ├── prompt_injector.py           # PromptInjector; dinamički system prompt
+│   ├── prompts.py                   # Statički prompti (PREVODILAC, LEKTOR...)
+│   ├── prompts_v2.py                # Prošireni prompti V2
+│   ├── qa_benchmark.py              # QABenchmark; offline analiza kvaliteta
+│   ├── quality.py                   # _scoruj_kvalitetu(); heuristika + AI rubrik
+│   ├── quality_scorer_v2.py         # TranslatorTracker; scorer provider odabir
+│   ├── retry_engine.py              # RetryEngine; ponovi loše chunke
+│   ├── text_utils.py                # Ekstrakcija, čišćenje, detekcija engleskog
+│   ├── validators/
+│   │   ├── __init__.py
+│   │   └── morfo_validator.py       # MorfoValidator; AI + regex morfološka val.
+│   └── kalkovi/
+│       ├── __init__.py
+│       ├── engine.py                # KalkoviEngine; regex zamjena kalkova
+│       ├── dinamicki_detektor.py    # DinamickiDetektor; otkriva nove kalkove
+│       ├── dinamicki_lista.py       # Lista dinamički otkrivenih kalkova
+│       ├── dinamicki_promoter.py    # DinamickiPromoter; promovira u aktivnu listu
+│       ├── dinamicki_validator.py   # DinamickiValidator; potvrđuje kandidate
+│       ├── dijalog.py               # Lista kalkova specifičnih za dijalog
+│       ├── ekavizmi.py              # Lista ekavizama → ijekavski oblici
+│       ├── glagoli.py               # Lista glagolskih kalkova
+│       ├── kalkovi_da.py            # Lista DA-konstrukcija i modalnih kalkova
+│       ├── morfologija_blacklist.py # Blacklist halucinacija i lažnih oblika
+│       └── pleonazmi.py             # Lista pleonazama za uklanjanje
+│
+├── processing/
+│   ├── __init__.py
+│   ├── pipeline.py                  # Async 3-pass AI pipeline po chunku
+│   ├── parallel.py                  # AdaptiveParallelism; paralelni chunkovi
+│   ├── rescue.py                    # _spasi_od_sirovog(); fallback ekstrakcija
+│   ├── retro.py                     # retroaktivna_relektura_v10()
+│   ├── workers.py                   # Workeri V1 (legacy per-file loop)
+│   └── workers_v2.py                # WorkerV2 (aktivan); sinhroni worker objekat
+│
+├── network/
+│   ├── __init__.py
+│   ├── http_client.py               # _async_http_post(); Gemini full rotation
+│   ├── model_discovery.py           # Auto-discovery modela; /v1/models polling
+│   ├── provider_router.py           # _call_ai_engine(); LEKTOR/PREVODILAC routing
+│   ├── provider_router_v2.py        # ProviderRouterV2; health score routing
+│   ├── provider_urls.py             # get_url(prov); URL mapa 14 provajdera
+│   ├── rate_limiter.py              # asyncio.Semaphore per-key; acquire/release
+│   └── urls.py                      # _url_*() helper funkcije po provajderu
+│
+├── analysis/
+│   ├── __init__.py
+│   ├── book_context.py              # BookContext; glosar, likovi, summaryji
+│   └── cache/
+│       └── *.json                   # Cached BookContext objekti
+│
+├── epub/
+│   ├── __init__.py
+│   ├── parser.py                    # EpubParser; raspakivanje i čišćenje EPUB-a
+│   ├── packager.py                  # buildlive_epub(), finalize(); pakovanje EPUB
+│   └── styling.py                   # _inject_epub_global_css(); CSS injekcija
+│
+├── utils/
+│   ├── __init__.py
+│   ├── checkpoint_cleaner.py        # Čišćenje loših/starih checkpoint JSON-ova
+│   ├── export.py                    # JSON/TXT export izveštaja o prijevodu
+│   ├── file_utils.py                # secure_filename(), safe_path()
+│   ├── logging.py                   # add_audit(); centralni audit log
+│   └── model_updater.py             # update_model_cache(); osvježi model cache
+│
+├── tests/
+│   ├── __init__.py
+│   ├── unit/
+│   │   ├── __init__.py
+│   │   └── test_validators.py       # 6 unit testova za file_utils
+│   └── integration/
+│       ├── __init__.py
+│       └── test_api_routes.py       # 12 integracijskih testova Flask ruta
+│
+├── static/
+│   ├── css/
+│   │   ├── style.css                # Glassmorphism UI; tamna/svijetla tema
+│   │   └── intro.css                # Stilovi za intro animaciju
+│   ├── img/                         # Ikone i SVG logo
+│   ├── js/
+│   │   ├── main.js                  # Glavni app JS; fleet polling, key mgmt
+│   │   ├── api-client.js            # Centralizovani HTTP klijent za API pozive
+│   │   ├── intro/
+│   │   │   ├── intro-animation.js   # Three.js orchestrator 3D intro animacije
+│   │   │   ├── particle-system.js   # Particle efekti (Three.js)
+│   │   │   ├── post-processing.js   # Post-processing efekti (bloom, glow)
+│   │   │   └── three.min.js         # Three.js biblioteka (bundled)
+│   │   ├── services/
+│   │   │   ├── polling.js           # Status polling servis
+│   │   │   ├── storage.js           # LocalStorage wrapper
+│   │   │   └── theme.js             # Tamna/svijetla tema toggle
+│   │   ├── ui/
+│   │   │   ├── fleet.js             # Fleet pool renderer (collapsible kartice)
+│   │   │   └── notifications.js     # Toast notifikacije
+│   │   └── utils/
+│   │       ├── constants.js         # Globalne konstante (polling interval i sl.)
+│   │       ├── formatters.js        # Formatiranje vremena, broja, ocjena
+│   │       └── validators.js        # Validacija korisničkog unosa
+│   ├── manifest.json                # PWA manifest
+│   └── sw.js                        # Service Worker za PWA
+│
+├── templates/
+│   ├── index.html                   # Glavni dashboard (5 tabova)
+│   └── intro.html                   # Cinematični intro ekran
+│
+├── data/
+│   └── kalkovi_karantena.db         # SQLite DB za dinamički detektor kalkova
+│
+└── logs/
+    └── morfo_audit.jsonl            # JSONL audit log morfološkog validatora
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         OPIS SVIH SKRIPTI                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ROOT FAJLOVI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ main.py
+════════════════════════════════════════════════════════
+SVRHA: Entry point aplikacije. Pokreće Flask server, otvara browser na Termuxu,
+       rukuje signal handlerom za graceful shutdown.
+
+IMPORTI: os, sys, signal, threading, webbrowser, time, logging, pathlib.Path,
+         app.create_app, api_fleet.FleetManager, network.model_discovery,
+         config.settings, config.logging_config, utils.logging
+
+FUNKCIJE:
+  _flask_audit_loop(port)
+    → Pozadinska nit koja šalje heartbeat audit log poruke svakih 60 sekundi.
+      Prati health stanje aplikacije dok server radi.
+
+  _graceful_shutdown(signum, frame)
+    → SIGINT/SIGTERM handler. Zatvara Flask server čisto, bez bacanja traceback-a.
+
+  _resolve_book()
+    → Pronalazi putanju do prve EPUB knjige u INPUT_DIR direktoriju.
+      Vraća apsolutnu putanju ili None ako nema knjiga.
+
+  _open_browser()
+    → Otvara browser na http://localhost:<port>/ uz 1.5s delay.
+      Na Termuxu koristi termux-open-url, inače webbrowser.open().
+
+  if __name__ == "__main__" blok
+    → Učitava konfiguraciju, inicijalizuje FleetManager, pokreće model discovery,
+      startuje Flask server (threaded=True), poziva _open_browser().
+
+════════════════════════════════════════════════════════
+ app.py
+════════════════════════════════════════════════════════
+SVRHA: Flask application factory. Definiše sve HTTP rute, registruje blueprinte,
+       obrađuje upload/download knjiga, status, pregled, EPUB preview, review.
+       NAPOMENA: Stari monolitni app.py koji postoji uz novi modularni sistem.
+       Oba su aktivna (create_app() je zajednički ulaz).
+
+IMPORTI: os, re, json, time, threading, asyncio, pathlib, flask (Flask, Blueprint,
+         jsonify, request, send_file, redirect, url_for, render_template, session),
+         werkzeug.utils, api_fleet, config.settings, run.start_skriptorij_from_master,
+         epub.packager, utils.file_utils, utils.export, api.__init__.register_blueprints
+
+FUNKCIJE:
+  _rebuild_epub(book_name)
+    → Ponovo pakuje EPUB iz checkpoint fajlova bez ponovnog AI prolaska.
+
+  _get_fleet()
+    → Vraća aktivnu instancu FleetManager-a (singleton).
+
+  _list_books()
+    → Skenira INPUT_DIR i vraća listu dict-ova s metapodacima knjiga (ime, veličina).
+
+  _find_epub(name)
+    → Pronalazi EPUB fajl po imenu u INPUT_DIR; vraća Path ili None.
+
+  _latest_prevedeno()
+    → Vraća putanju do najnovijeg prevedenog EPUB-a u OUTPUT_DIR.
+
+  _latest_live()
+    → Vraća putanju do najnovijeg "live" (u toku obrade) EPUB-a.
+
+  _get_checkpoint_count(book_path)
+    → Broji koliko je chunkova već obrađeno (broj checkpoint JSON fajlova).
+
+  _obrisi_checkpoint_i_kes(book)
+    → Briše sve checkpoint i cache fajlove za zadanu knjigu.
+
+  create_app()
+    → Flask factory funkcija. Kreira Flask app, registruje blueprinte iz api/,
+      definiše rute: /, /intro, /api/books, /api/start, /api/status, /api/quality,
+      /api/quality_scores, /api/keys, /api/fleet, /api/download, /epub/preview,
+      /api/review/*, /control/*, /api/export/*, i dr.
+    → Unutar create_app() definisane inline funkcije (Flask view functions):
+      intro() — servira templates/intro.html
+      index() — redirect na /intro ili servis index.html
+      api_books() — GET /api/books; lista knjiga
+      api_upload_book() — POST /api/upload_book; prima EPUB fajl
+      api_dev_models() — GET /api/dev_models; lista dostupnih modela
+      api_status() — GET /api/status; status trenutne obrade
+      api_checkpoints() — GET /api/checkpoints; broj obrađenih chunkova
+      api_quality() — GET/POST /api/quality; ocjena kvaliteta (legacy)
+      api_quality_scores() — GET /api/quality_scores; sve ocjene
+      api_save_scores() — POST /api/quality_scores/save; spasi ocjene
+      api_start() — POST /api/start; pokretanje AI obrade knjige
+      control(action) — POST /control/<action>; pause/resume/reset
+      api_reset_full() — POST /api/reset_full; brisanje svih checkpointa
+      api_keys_get() — GET /api/keys; lista API ključeva
+      api_keys_add(provider) — POST /api/keys/<provider>; dodaj ključ
+      api_keys_delete(provider, index) — DELETE /api/keys/<p>/<i>; obriši
+      api_fleet() — GET /api/fleet; stanje svih provajdera
+      api_fleet_toggle() — POST /api/fleet/toggle; uključi/isključi ključ
+      api_download() — GET /api/download; preuzmi preveden EPUB
+      api_download_live() — GET /api/download_live; preuzmi live EPUB
+      api_review_list() — GET /api/review; lista chunkova za pregled
+      api_review_mark() — POST /api/review/mark; označi chunk za review
+      api_review_clear() — POST /api/review/clear; poništi oznaku
+      api_review_chunk_get(stem) — GET /api/review/<stem>; dohvati chunk
+      api_review_chunk_delete(stem) — DELETE /api/review/<stem>; obriši
+      api_review_chunk_post(stem) — POST /api/review/<stem>; spasi izmjenu
+      epub_preview() — GET /epub/preview; HTML preview knjige
+      api_epub_text(book) — GET /api/epub/<book>/text; tekst po poglavljima
+      api_epub_plain(book) — GET /api/epub/<book>/plain; čisti tekst
+      api_fix_bad_blocks() — POST /api/fix_bad_blocks; RETRO za loše blokove
+
+════════════════════════════════════════════════════════
+ run.py
+════════════════════════════════════════════════════════
+SVRHA: Alternativni launcher koji implementira inteligentni run loop.
+       Određuje strategiju (PREVOD, LEKTURA, RETRO), pametan reset cache-a,
+       i koordinira ponovne pokušaje za neuspjele chunkove.
+
+IMPORTI: os, asyncio, json, pathlib, logging, time, shutil,
+         core.engine.SkriptorijAllInOne, api_fleet, config.settings,
+         processing.retro, processing.pipeline
+
+FUNKCIJE:
+  _ucitaj_quality_scores(engine, sharedstats)
+    → Učitava quality_scores.json iz checkpoint direktorija i puni shared_stats.
+
+  _odredi_strategiju(engine, html_files, scores)
+    → Analizira postojeće checkpointe i ocjene, vraća string strategije:
+      "PREVOD" ako nema prijevoda, "LEKTURA" ako treba dorada,
+      "RETRO" ako ima loših blokova, "GOTOVO" ako je sve OK.
+
+  _pametni_reset_cachea(engine, scores, sharedstats)
+    → Briše samo checkpoint fajlove koji imaju ocjenu ispod praga.
+      Čuva dobre checkpointe kako bi se izbjeglo nepotrebno ponavljanje.
+
+  start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_controls)
+    → Glavna entry funkcija. Inicijalizira engine, odredi strategiju, pokreće
+      asyncio event loop s main_loop() korutinom.
+    → _retro_pa_nastavi() — inline async; radi RETRO a zatim nastavlja PREVOD.
+    → main_loop() — inline async; ponavlja obradu dok nema nedovršenih poglavlja.
+
+════════════════════════════════════════════════════════
+ api_fleet.py
+════════════════════════════════════════════════════════
+SVRHA: Centralni modul za upravljanje API ključevima svih provajdera.
+       Implementira FleetManager singleton s per-key rate limitingom,
+       cooldown logikom, 429 detekcijom, i live reload bez restarta.
+
+IMPORTI: os, json, time, threading, re, math, asyncio, dataclasses, pathlib,
+         logging, typing, network.model_discovery
+
+FUNKCIJE / KLASE:
+  _parse_groq_duration(value)
+    → Parsira Groq-specifičan "Retry-After" string (npr. "1m30s") u sekunde.
+
+  register_active_fleet(fleet)
+    → Registruje FleetManager instancu kao globalni singleton.
+
+  get_active_fleet()
+    → Vraća aktivni FleetManager singleton.
+
+  class KeyState:
+    → Dataclass koji prati stanje jednog API ključa.
+    __init__(key, provider, saved) — inicijalizira iz saved stanja ili default
+    _reset_rpm_if_needed() — resetira RPM brojač ako je prošla minuta
+    available() — property; True ako ključ nije u cooldownu i nema prekoračenja
+    cooldown_remaining() — preostalo vrijeme cooldowna u sekundama
+    health_score() — float 0.0-1.0; omjer uspješnih poziva
+    masked() — vraća maskirani ključ (zadnjih 6 znakova)
+    record_error() — bilježi grešku; stavlja u cooldown ako je previše grešaka
+    to_dict() — serijalizacija u dict za state persistence
+    to_ui_dict() — dict za prikaz u UI (bez punog ključa)
+
+  _is_quota_exhausted_body(body)
+    → Provjerava da li je 429 odgovor zbog kvote (a ne rate-limita).
+      Traži ključne riječi iz _QUOTA_KEYWORDS frozenset-a u body tekstu.
+
+  class FleetManager:
+    → Singleton klasa koja upravlja svim API ključevima za sve provajdere.
+    __init__(config_path, state_path) — učitava ključeve i state
+    _load_config() — čita dev_api.json; kreira KeyState za svaki ključ
+    _resolve_models() — za svaki prov. bira aktivni model iz discovery cache-a
+    _save_state() — serijalizuje stanje u api_state.json
+    _flush_state() — atomarni write state fajla (temp file + rename)
+    _flush_state_safe() — _flush_state() s exception handlerom
+    flush_now() — javni poziv za trenutni flush stanja
+    reload() — live reload iz dev_api.json bez restarta servera
+    get_active_model(provider_upper) — vraća model koji se koristi za provajdera
+    get_best_key(provider) — iterator; vraća sljedeći dostupni ključ za provajdera
+    get_best_key_for_role(role) — iterator; bira provajdera prema ulozi (LEKTOR...)
+    record_request(provider, key) — bilježi RPM i RPD za ključ
+    record_usage(provider, key, req_count, success) — bilježi uspjeh/neuspjeh
+    analyze_response(provider, key, status_code, headers, body) — obrađuje HTTP
+      odgovor; postavlja cooldown pri 429, bilježi grešku pri ostalim kodovima
+    get_rpm_used(provider, key) — vraća broj zahtjeva u tekućoj minuti
+    get_effective_rpm_limit(provider, key) — vraća RPM limit za ključ
+    get_backoff_for_provider(provider) — vraća backoff vrijeme za provajdera
+    get_global_cooldown(provider) — vraća globalnu pauzu za provajdera
+    toggle_key(provider, key_val) — uključuje ili isključuje API ključ
+    revive_all(provider) — resetira cooldown za sve ključeve (ili po provajderu)
+    get_fleet_summary() — vraća sažetak stanja flote (aktivni/cooldown/greška)
+    get_fleet_ui() — vraća kompletne UI podatke za sve provajdere
+    get_total_active_keys() — ukupan broj aktivnih ključeva
+    _find_key(prov_u, key_str) — interni helper; pronalazi KeyState po stringu
+
+  get_google_model_for_key(key_index)
+    → Vraća Gemini model za zadani indeks ključa (rotacija modela).
+
+  get_next_google_model(current_model)
+    → Vraća sljedeći Gemini model u cikličnoj rotaciji.
+
+════════════════════════════════════════════════════════
+ tts.py
+════════════════════════════════════════════════════════
+SVRHA: Text-to-Speech modul za generisanje audio fajlova iz prevedenih EPUB knjiga.
+       Koristi Kokoro TTS. Procesira checkpointove i generiše MP3/WAV fajlove.
+
+IMPORTI: os, re, pathlib, json, time, logging, html (unescape), bs4 (BeautifulSoup),
+         config.settings
+
+FUNKCIJE:
+  _html_to_tts_tekst(html)
+    → Konvertuje HTML chunk u čisti tekst pogodan za TTS.
+      Uklanja tagove, dekodira HTML entitete, normalizuje razmake.
+
+  _generiraj_ttsfilter(html_files, output_path, log_fn)
+    → Generiše filtrirani tekst iz svih HTML poglavlja za TTS ulaz.
+      Preskače kratka i neprozna poglavlja. Vraća True ako uspije.
+
+  start_from_master(bookpathstr, modelname, sharedstats, shared_controls)
+    → Glavna entry funkcija za TTS obradu. Inicijalizira Kokoro model,
+      procesira sve chunkove i generiše audio fajlove.
+    → log(msg, tip) — inline helper za logging
+
+  _primijeni_checkpointe_na_html(checkpoint_dir, html_files, log_fn)
+    → Čita checkpoint JSON-ove i primjenjuje prevedeni tekst na HTML fajlove.
+      Koristi se za TTS da bi radio s prevedenim tekstom, ne originalnim.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CONFIG/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ config/settings.py
+════════════════════════════════════════════════════════
+SVRHA: Centralizovane konfigurativne konstantne vrijednosti i putanje.
+       Čita env varijable i definiše globalene konstante koje koriste svi moduli.
+
+IMPORTI: os, pathlib, uuid
+
+KONSTANTE:
+  PORT — port Flask servera (env SKRIPTORIJ_PORT, default 8080)
+  CONFIG_PATH — putanja do dev_api.json (env SKRIPTORIJ_CONFIG)
+  INPUT_DIR — direktorij s ulaznim knjigama
+  OUTPUT_DIR — direktorij za izlazne knjige
+  CHECKPOINT_BASE — bazni direktorij za checkpoint fajlove
+  SERVER_RUN_ID — UUID generisan pri importu; koristi se za intro cookie
+
+FUNKCIJE:
+  _resolve_checkpoint_base()
+    → Odredi bazni direktorij za checkpointe (unutar OUTPUT_DIR/checkpoints/).
+
+════════════════════════════════════════════════════════
+ config/logging_config.py
+════════════════════════════════════════════════════════
+SVRHA: Konfiguracija Python logging sistema za cijelu aplikaciju.
+
+IMPORTI: logging, sys
+
+FUNKCIJE:
+  configure_logging(level)
+    → Postavlja format i level za root logger. Dodaje StreamHandler za stdout.
+      Kreira _CriticalTerminalHandler koji ispisuje CRITICAL poruke crvenom bojom.
+    → _CriticalTerminalHandler — inline klasa; override emit() za ANSI boju
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ API/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ api/__init__.py
+════════════════════════════════════════════════════════
+SVRHA: Registracija Flask blueprinta iz api/routes/ u app factory.
+
+IMPORTI: flask.Flask, svi blueprinti iz api/routes/
+
+FUNKCIJE:
+  register_blueprints(app)
+    → Registruje sve blueprinte (books_bp, processing_bp, fleet_bp, keys_bp,
+      qualities_bp, quality_bp, export_bp, control_bp) u Flask app.
+
+════════════════════════════════════════════════════════
+ api/file_browser.py
+════════════════════════════════════════════════════════
+SVRHA: API rute za pretraživanje fajl sistema i upload EPUB-a po putanji.
+
+IMPORTI: flask, os, pathlib, utils.file_utils, config.settings
+
+FUNKCIJE:
+  api_upload_from_path()
+    → POST /api/upload_from_path — prima JSON s putanjom do EPUB-a,
+      kopira fajl u INPUT_DIR bez HTTP uploada.
+
+  api_browse_files()
+    → GET /api/browse — vraća listing direktorija u JSON formatu za
+      file picker u UI-u.
+
+════════════════════════════════════════════════════════
+ api/routes/books.py
+════════════════════════════════════════════════════════
+SVRHA: API rute za listanje i upload knjiga.
+
+IMPORTI: flask, pathlib, werkzeug.utils, config.settings, utils.file_utils
+
+FUNKCIJE:
+  _list_books()
+    → Interni helper; skenira INPUT_DIR, vraća listu dict-ova s imenima i veličinama.
+
+  api_books()
+    → GET /api/books — vraća JSON listu dostupnih knjiga.
+
+  api_upload_book()
+    → POST /api/upload_book — prima multipart EPUB upload, sanitizuje ime,
+      sprema u INPUT_DIR. Vraća JSON s potvrdom ili greškom.
+
+════════════════════════════════════════════════════════
+ api/routes/control.py
+════════════════════════════════════════════════════════
+SVRHA: API rute za kontrolu toka obrade (pause, resume, reset).
+
+IMPORTI: flask, pathlib, config.settings, api_fleet.get_active_fleet
+
+FUNKCIJE:
+  _obrisi_checkpoint_i_kes(book, log)
+    → Briše sve checkpoint i cache fajlove za zadanu knjigu (interni helper).
+
+  control_process(action)
+    → POST /control/<action> — obrađuje akcije:
+      "pause" → postavlja shared_controls["pauzirano"] = True
+      "resume" → uklanja pauzu
+      "reset" → briše checkpointe tekuće knjige
+      "reset_all" → briše sve checkpointe
+      Vraća JSON s potvrdom ili greškom 400.
+
+════════════════════════════════════════════════════════
+ api/routes/export.py
+════════════════════════════════════════════════════════
+SVRHA: API rute za export izvještaja o prijevodu.
+
+IMPORTI: flask, pathlib, config.settings, utils.export
+
+FUNKCIJE:
+  export_result(fmt)
+    → GET /api/export/<fmt> gdje fmt je "json" ili "txt".
+      Pronalazi zadnji prevedeni EPUB, generira izvještaj pozivom
+      utils.export.generate_json_report() ili generate_txt_report().
+      Vraća fajl za preuzimanje ili grešku 404.
+
+════════════════════════════════════════════════════════
+ api/routes/fleet.py
+════════════════════════════════════════════════════════
+SVRHA: API rute za dohvat stanja fleet-a i toggle ključeva.
+
+IMPORTI: flask, api_fleet.get_active_fleet
+
+FUNKCIJE:
+  _normalize_fleet_summary(raw)
+    → Normalizuje raw dict iz FleetManager u standardizirani UI format.
+      Dodaje nedostajuće provajdere s default vrijednostima.
+
+  get_fleet()
+    → GET /api/fleet — vraća JSON s kompletnim stanjem flote svih provajdera.
+
+  toggle_fleet_key()
+    → POST /api/fleet/toggle — prima {provider, key} JSON, poziva
+      FleetManager.toggle_key(), vraća novo stanje ključa.
+
+════════════════════════════════════════════════════════
+ api/routes/keys.py
+════════════════════════════════════════════════════════
+SVRHA: CRUD operacije nad API ključevima s live reload fleet managera.
+
+IMPORTI: flask, json, pathlib, config.settings, api_fleet.get_active_fleet,
+         network.model_discovery
+
+FUNKCIJE:
+  _reload_active_fleet()
+    → Interno poziva fleet.reload() nakon svake izmjene dev_api.json.
+
+  list_keys()
+    → GET /api/keys — vraća JSON s listom svih ključeva po provajderu (maskirani).
+
+  add_key(provider)
+    → POST /api/keys/<provider> — dodaje novi ključ u dev_api.json, poziva reload.
+
+  delete_key(provider, idx)
+    → DELETE /api/keys/<provider>/<idx> — uklanja ključ po indeksu, poziva reload.
+
+  ping_key(provider, idx)
+    → GET /api/keys/<provider>/<idx>/ping — šalje test zahtjev na /v1/models
+      endpoint i vraća {ok, latency_ms, model_count} ili grešku.
+
+════════════════════════════════════════════════════════
+ api/routes/qualities.py
+════════════════════════════════════════════════════════
+SVRHA: API rute za pregled, uređivanje i RETRO popravak quality scoreova.
+
+IMPORTI: flask, json, pathlib, asyncio, threading, config.settings,
+         api_fleet.get_active_fleet, processing.retro, core.engine
+
+FUNKCIJE:
+  _get_quality_cache_path()
+    → Pronalazi putanju do quality_scores.json za aktivnu knjigu.
+
+  get_quality_scores()
+    → GET /api/quality_scores — vraća JSON s ocjenama za sve chunkove.
+
+  get_quality_for_file(file_name)
+    → GET /api/quality_scores/<file_name> — ocjene za jedno poglavlje.
+
+  send_to_fix_route()
+    → POST /api/quality_scores/fix — pokretanje RETRO relekture za
+      blokove ispod zadanog praga ocjene.
+
+  fix_marked_blocks()
+    → POST /api/fix_marked — RETRO za ručno označene blokove.
+      Pokreće relekturu u background threadu.
+    → _run() — inline async funkcija koja poziva retroaktivna_relektura_v10()
+
+  human_review()
+    → GET /api/quality_scores/review — vraća blokove označene za human review.
+
+  _write_quality_scores(cache_path, scores)
+    → Atomarni write quality_scores.json (temp file + rename).
+
+  delete_quality_score(stem)
+    → DELETE /api/quality_scores/<stem> — briše ocjenu za chunk.
+
+  patch_quality_score(stem)
+    → PATCH /api/quality_scores/<stem> — ažurira ocjenu (ručna korekcija).
+
+════════════════════════════════════════════════════════
+ api/routes/quality.py
+════════════════════════════════════════════════════════
+SVRHA: Legacy /api/quality endpoint za kompatibilnost sa starijim klijentima.
+       Preusmjerava na qualities.py logiku.
+
+IMPORTI: flask, api/routes/qualities
+
+NAPOMENA: Svi pozivi se prosljeđuju na get_quality_scores() iz qualities.py.
+
+════════════════════════════════════════════════════════
+ api/routes/processing.py
+════════════════════════════════════════════════════════
+SVRHA: Centralni blueprint za upravljanje obradom knjiga. Pokretanje, status,
+       RETRO relektura, pregled chunkova, EPUB preview, quality review.
+
+IMPORTI: flask, os, json, pathlib, threading, asyncio, time, logging,
+         config.settings, api_fleet, run.start_skriptorij_from_master,
+         epub.packager, core.engine, processing.retro, utils.checkpoint_cleaner
+
+FUNKCIJE:
+  _racunaj_eta()
+    → Izračunava preostalo vrijeme (ETA) na osnovu shared_stats prosječnog
+      trajanja po chunku i broja preostalih chunkova.
+
+  _get_checkpoint_count_base(book_path)
+    → Broji checkpoint fajlove za zadanu knjigu (tuple: count, chk_dir).
+
+  _obrisi_checkpoint_i_kes(book)
+    → Briše sve checkpoint i cache fajlove za knjigu.
+
+  get_files() → GET /api/files; lista knjiga
+  dev_models() → GET /api/dev_models; dostupni modeli iz fleet-a
+  get_status() → GET /api/status; JSON sa shared_stats (napredak, ETA, log)
+  start_processing() → POST /api/start; pokretanje AI obrade u background threadu
+    → _run_retro(fp, mdl) — inline; pokreće RETRO u zasebnom threadu
+    → start_skriptorij_from_master(*a) — inline; wrapper za run thread
+  reset_route() → POST /api/reset; soft reset (briše checkpointe)
+  reset_full_route() → POST /api/reset_full; hard reset (sve + cache)
+  debug_retro_check() → GET /api/debug/retro; debug lista lošh chunkova
+  cache_clear() → POST /api/cache_clear; briše sve checkpointe
+  cache_clear_bad() → POST /api/cache_clear_bad; briše samo loše checkpointe
+  _resolve_chunk_path(chk_dir, stem) → interni; pronalazi chunk fajl po stem-u
+  review_list() → GET /api/review; lista chunkova za human review
+  _build_reason(score) → interni; vraća tekstualni opis razloga review-a
+  review_chunk(chunk_stem) → GET /api/review/<stem>; dohvati/uredi chunk
+  fix_bad_blocks() → POST /api/fix_bad; RETRO za loše blokove ispod praga
+    → _run_fix() — inline; pokreće fix u background threadu
+  rebuild_review() → POST /api/rebuild_review; obnovi review listu
+  _init_review_state() → interni; inicijalizuje review cache u shared_stats
+  epub_preview() → GET /epub/preview; HTML preview živog EPUB-a
+  clean_annotations() → POST /api/clean_annotations; briše AI anotacije iz EPUB-a
+  epub_text(book) → GET /api/epub/<book>/text; tekst po poglavljima iz EPUB-a
+  epub_plain(book) → GET /api/epub/<book>/plain; čisti tekst (bez HTML tagova)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CORE/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ core/engine.py
+════════════════════════════════════════════════════════
+SVRHA: Centralni orchestrator "SkriptorijAllInOne" koji omotava sve funkcionalnosti
+       u jedan objekat. Kreira ga run.py i app.py za svaku obradu knjige.
+
+IMPORTI: os, json, asyncio, pathlib, logging, time, threading, re, typing,
+         bs4, api_fleet, config.settings, processing.pipeline, processing.retro,
+         epub.parser, epub.packager, epub.styling, core.chunking, core.text_utils,
+         core.prompts, core.quality, core.prompt_injector, analysis.book_context,
+         network.http_client, network.provider_router, utils.checkpoint_cleaner,
+         utils.logging
+
+KLASA SkriptorijAllInOne:
+  __init__(book_path, model_name, shared_stats, shared_controls)
+    → Inicijalizira engine: putanje, checkpoint dir, glosar, fleet manager,
+      BookContextManager, inicijalizira statistike u shared_stats.
+
+  log(msg, ltype, en_text)
+    → Centralni logger; šalje poruku u shared_stats["audit_log"] i Python logger.
+
+  _atomic_write(path, content)
+    → Thread-safe atomarni write (piše u temp fajl pa renameuje).
+
+  _detect_language(text)
+    → Detektuje jezik teksta (BS/HR vs EN) na osnovu distribucije znakova.
+
+  _detect_knjiga_mode(html_files, n_files)
+    → Analizira uzorak poglavlja da odredi mod obrade: "PREVOD" ili "LEKTURA".
+
+  _build_glosar_tekst()
+    → Gradi tekst glosara iz BookContextManager-a za ubacivanje u promptove.
+
+  _extract_relevant_glossary(chunk_text)
+    → Izvlači relevantne unose glosara za zadani chunk tekst.
+
+  _get_chapter_summary_for_lektor(current_file_name)
+    → Vraća summary prethodnog poglavlja za LEKTOR prompt kontekst.
+
+  _save_chapter_summaries() / _load_chapter_summaries()
+    → Perzistencija summaryja poglavlja između sesija.
+
+  _get_prevodilac_prompt(glosar_chunk, prev_kraj, tip_bloka)
+    → Gradi system prompt za PREVODILAC ulogu s glosarnom injekcijom.
+
+  _get_lektor_prompt(prev_kraj, glosar_injekcija, chapter_summary, tip_bloka)
+    → Gradi system prompt za LEKTOR ulogu.
+
+  _get_korektor_prompt() / _get_guardian_prompt() / _get_polish_prompt(tip_bloka)
+    → Gradi promptove za KOREKTOR, GUARDIAN i POLISH uloge.
+
+  chunk_html(html_content, max_words) → delegira na core.chunking.chunk_html()
+  get_context_window(chunks, idx, file_name) → delegira na core.chunking
+  buildlive_epub() → delegira na epub.packager.buildlive_epub()
+  apply_dropcap_and_toc(soup, html_file, samo_dropcap) → delegira na packager
+  generate_ncx() → delegira na epub.packager.generate_ncx()
+  finalize() → delegira na epub.packager.finalize()
+
+  _async_http_post(*args) → delegira na network.http_client
+  _call_single_provider(*args) → delegira na network.http_client
+  _call_ai_engine(*args) → delegira na network.provider_router
+
+  process_chunk_with_ai(*args) → delegira na processing.pipeline
+  process_single_file_worker(*args) → delegira na processing.workers/workers_v2
+
+  analiziraj_knjigu(intro_text) → delegira na analysis.book_context.analiziraj_knjigu()
+  _inkrementalna_analiza_glosara(poglavlje_tekst, poglavlje_ime) → delegira
+  _generiraj_chapter_summary(file_name, file_content) → delegira
+
+  obrisi_cache(samo_losi, threshold)
+    → Briše checkpoint fajlove; samo_losi=True briše samo ispod praga ocjene.
+
+  obrisi_cache_fajla(file_name)
+    → Briše sve checkpointe za jedno poglavlje.
+
+  postavi_force_reprocess(aktivan)
+    → Postavlja flag koji forsira ponovnu obradu čak i cached chunkova.
+
+  send_to_fix(score_threshold) → delegira na processing.retro
+  retroaktivna_relektura_v10(*args) → delegira na processing.retro
+
+════════════════════════════════════════════════════════
+ core/quality.py
+════════════════════════════════════════════════════════
+SVRHA: Ocjenjivanje kvaliteta prevedenih chunkova. Kombinuje heurističku
+       analizu i AI rubrik procjenu u kompozitni score.
+
+IMPORTI: re, json, asyncio, time, logging, network.provider_router,
+         api_fleet.get_active_fleet, core.text_utils
+
+FORMULA: composite = heuristika * 0.25 + ai_ocjena * 0.75
+         fallback (bez AI) = heuristika * 0.90
+         Thresholds: odlično≥8.5, dobro≥6.5, slabo≥4.0, kritično<4.0
+
+FUNKCIJE:
+  _strip_ai_json(text)
+    → Uklanja JSON markup iz AI odgovora i vraća čisti tekst ocjene.
+
+  _ekstrahuj_cist_tekst(tekst)
+    → Uklanja HTML tagove i normalizuje whitespace za heurističku analizu.
+
+  _izracunaj_heuristicki_score(tekst)
+    → Heuristička analiza: provjerava dužinu, udio engleskog, ponavljanja,
+      pravilnost rečenica. Vraća (score: float, problemi: list[str]).
+      Base score = 9.8, oduzima bodove po nalazima.
+
+  _provjeri_nepromjenjenost(stari_tekst, novi_tekst)
+    → Mjeri sličnost starog i novog teksta bigramskom presjekom (0.0-1.0).
+      Koristi se da otkrije je li chunk promjenjen u LEKTURA fazi.
+    → bigrami(s) — inline helper za generisanje bigramskog skupa.
+
+  _je_nonprose_blok(tekst)
+    → Detektuje je li chunk nonprose (zaglavlja, stihovi, tablice, kratki tekst).
+      Nonprose blokovi dobivaju lakše kriterije ocjene.
+
+  _scoruj_kvalitetu(engine, chunk_tekst, chunk_idx, file_name, uloga, tip_bloka)
+    → Async. Glavna funkcija ocjenjivanja: poziva heuristic score, a zatim
+      šalje chunk AI scorer-u (uloga="SCORER") i parsira rubrik ocjenu.
+      Sprema rezultat u quality_scores.json i checkpoint.
+
+  _scoruj_batch(engine, chunks)
+    → Async. Sekvencijalni batch scorer; poziva _scoruj_kvalitetu() za svaki chunk.
+
+  quality_summary(scores)
+    → Statistički sažetak dict-a scoreova: prosjek, min, max, distribucija.
+
+════════════════════════════════════════════════════════
+ core/text_utils.py
+════════════════════════════════════════════════════════
+SVRHA: Utiliti funkcije za čišćenje, ekstrakciju i analizu teksta koji dolazi
+       od AI modela. Centralne utility za cijeli pipeline.
+
+IMPORTI: re, html, bs4 (BeautifulSoup), logging
+
+FUNKCIJE:
+  _booklyfi_fix_spojnice(tekst)
+    → Ispravlja spojnice i crte: em-dash, en-dash, binarna crtica u dijalogu.
+      Standardizira tipografsku upotrebu crtica prema BS pravopisu.
+
+  _strip_html_wrapper(tekst)
+    → Uklanja HTML wrapper tagove (html, body, head) ako ih AI vrati neočekivano.
+
+  _smart_extract(raw)
+    → Pametna ekstrakcija: iz AI odgovora izvlači čisti prijevodni tekst.
+      Detektuje JSON, markdown code block, čisti tekst. Redoslijed:
+      1. JSON parse → "translation"/"tekst" polje
+      2. ```html block
+      3. Direktni HTML
+      4. Sirovi tekst
+
+  _agresivno_cisti(tekst)
+    → Agresivno čišćenje AI artifakata: uklanja sve što nije BS tekst
+      (JSON wrapper, markdown, engleske rečenice-komentare, AI metakomentare).
+
+  _ocisti_ai_markere(tekst)
+    → Uklanja specifične AI markere koje modeli dodaju uz prijevod
+      (npr. "Prijevod:", "Translation:", JSON polja i sl.).
+
+  _je_placeholder(tekst)
+    → Detektuje je li chunk placeholder (prazan, samo HTML tagovi, kratki tekst).
+      Vraća True ako chunk ne sadrži stvarni sadržaj za obradu.
+
+  _je_ai_anotacija(tekst)
+    → Detektuje je li cijeli chunk AI anotacija (komentar, napomena prevodioca).
+      Vraća True za tekst koji počinje s "[", "Note:", "Napomena:" i sl.
+
+  _detektuj_en_ostatke(tekst)
+    → Detektuje postotak engleskog teksta u prijevodu.
+      Broji engleske stop-wordsove i dijeli s ukupnim brojem riječi.
+      Vraća float 0.0-1.0. Rescue trigger: EN > 0.10.
+
+  _detektuj_halucinaciju(original, prijevod, uloga)
+    → Detektuje je li AI halucinirao (vratio potpuno drugačiji tekst).
+      Mjeri Jaccard sličnost skupova n-grama original vs prijevod.
+      Vraća True ako je sličnost ispod praga za zadanu ulogu.
+
+  detektuj_tip_bloka(html_chunk)
+    → Analizira HTML chunk i vraća tip: "naracija", "dijalog", "nonprose",
+      "mijesano". Koristi se za adaptivnu temperaturu i prompt selekciju.
+
+  _adaptive_temp(uloga, tip_bloka, bazna_temp)
+    → Vraća adaptiranu temperaturu na osnovu uloge i tipa bloka.
+      Dijalog → niža temp za konzistentnost; naracija → bazna temp.
+
+  _post_process_tipografija(tekst)
+    → Deterministička tipografska korekcija bez AI poziva:
+      bosanski navodnici „", crte u dijalogu, dvostruki razmaci,
+      interpunkcija, spojnice, nbsp entiteti.
+
+  _automatska_korekcija(tekst)
+    → Kombinirani wrapper: poziva kalkovi engine + tipografske korekcije.
+    → _korigiraj_cist(cist) — inline; korekcija čistog teksta bez HTML-a
+
+════════════════════════════════════════════════════════
+ core/chunking.py
+════════════════════════════════════════════════════════
+SVRHA: Dijeljenje HTML poglavlja na manje obradive chunkovekoje pipeline procesira.
+
+IMPORTI: re, bs4 (BeautifulSoup)
+
+FUNKCIJE:
+  chunk_html(html_content, max_words)
+    → Dijeli HTML string na listu chunkova maksimalne veličine max_words.
+      Čuva HTML strukturu; ne reže usred paragrafa. Vraća list[str].
+
+  get_context_window(checkpoint_dir, chunks, idx, file_name)
+    → Vraća (prev_ctx, next_ctx) tuple za chunk na poziciji idx.
+      Čita prethodni/sljedeći chunk iz checkpointa ako postoji,
+      ili iz in-memory liste. Koristi se za kontekstualni prijevod.
+
+════════════════════════════════════════════════════════
+ core/model_profiles.py
+════════════════════════════════════════════════════════
+SVRHA: Katastar svih poznatih AI modela s njihovim profilima, snagama,
+       ograničenjima i preporučenim temperaturama po ulozi.
+
+IMPORTI: dataclasses, typing
+
+KLASA ModelProfile (dataclass):
+  Polja: ime, provajder, max_tokens, uloge (lista), temp_po_ulozi (dict),
+         anti_patterne (lista), score (0-10), kontekst_prozor, je_free
+
+KONSTANTA: MODELI — dict svih poznatih modela (60+ profila)
+
+FUNKCIJE:
+  get_profil(ime) → Vraća ModelProfile za model po imenu, ili None.
+  get_profili_za_ulogu(uloga) → Lista profila koji podržavaju zadanu ulogu.
+  get_anti_patterne(ime) → Lista anti-patterna za model (tekstovi za uklanjanje).
+  get_temp(ime, uloga) → Preporučena temperatura za model i ulogu.
+  get_max_tokens(ime, uloga) → Max broj tokena za model i ulogu.
+
+════════════════════════════════════════════════════════
+ core/prompt_injector.py
+════════════════════════════════════════════════════════
+SVRHA: Dinamičko ubacivanje kontekstualnih blokova u AI promptove.
+       Kombinuje glosar, blacklist, few-shot primjere i chapter summary
+       u jedan koherentan system prompt blok.
+
+IMPORTI: typing, logging, analysis.book_context
+
+KLASA PromptInjector:
+  __init__(knjiga_id, book_context, uloga, max_glosar, max_few_shot, ...)
+    → Inicijalizira sa referencom na BookContext i konfiguracijom.
+  _inject_blacklist() → Vraća formatiran blacklist blok za prompt.
+  _inject_jezicna_pravila() → Vraća blok jezičnih pravila (BS specifičnosti).
+  _inject_glosar() → Vraća formatirani glosar s imenima likova i varijantama.
+  _inject_chapter_summary(broj_poglavlja) → Vraća summary prethodnog poglavlja.
+  _inject_few_shot_primjeri() → Vraća few-shot primjere (original→prijevod parovi).
+  build_context_blok(broj_poglavlja) → Gradi kompletan kontekstualni blok
+    spajanjem svih injekcija.
+  build_system_prompt(bazni_prompt, broj_poglavlja) → Dodaje kontekst na kraj
+    baznog system prompta.
+  statistika() → Dict s brojevima ubačenih elemenata (glosar, few-shot, itd.).
+  __repr__() → String reprezentacija s osnovnim stats.
+
+FUNKCIJE:
+  get_injector(knjiga_id, **kwargs) → Factory funkcija; kreira PromptInjector za
+    zadanu knjigu, dohvatajući BookContext iz caching sloja.
+
+════════════════════════════════════════════════════════
+ core/prompts.py
+════════════════════════════════════════════════════════
+SVRHA: Statički system prompti za sve AI uloge u pipelinu.
+       Definira detaljne upute za PREVODILAC, LEKTOR i POLISH.
+
+IMPORTI: nema vanjskih (pure Python)
+
+KONSTANTE: PREVODILAC_SYS, LEKTOR_SYS, KOREKTOR_SYS, SCORER_SYS — dugački
+           multi-line stringovi koji opisuju zadatak za svaku AI ulogu.
+
+FUNKCIJE:
+  get_prevodilac_prompt(book_context, glosar_injekcija, prev_kraj, tip_bloka)
+    → Gradi dinamički PREVODILAC prompt spajanjem statičkog baze + konteksta.
+  get_lektor_prompt(book_context, prev_kraj, glosar_injekcija, chapter_summary, tip_bloka)
+    → Gradi dinamički LEKTOR prompt.
+  get_polish_prompt(book_context, tip_bloka)
+    → Gradi kraći POLISH prompt (završno glačanje bez glosara).
+
+════════════════════════════════════════════════════════
+ core/quality.py (quality_scorer_v2.py)
+════════════════════════════════════════════════════════
+SVRHA: V2 scorer — TranslatorTracker pamti koji je provajder preveo koji chunk,
+       a _odaberi_scorer_provider() bira drugačijeg provajdera za ocjenu
+       (da izbjegne self-scoring).
+
+IMPORTI: threading, typing, api_fleet.get_active_fleet
+
+KLASA TranslatorTracker:
+  __init__() → Thread-safe dict za praćenje (file, chunk_idx) → provider.
+  zabilježi(file_name, chunk_idx, provider) → Bilježi prevodioca za chunk.
+  dohvati(file_name, chunk_idx) → Vraća ime provajdera koji je preveo chunk.
+  statistike() → Dict s brojevima prevoda po provajderu.
+
+FUNKCIJE:
+  get_tracker() → Globalni singleton TranslatorTracker.
+  zabilježi_prevoditelja(file_name, chunk_idx, engine_label) → Wrapper za get_tracker().zabilježi()
+  _normaliziraj_provider(provider) → Normalizuje naziv provajdera u uppercase.
+  _odaberi_scorer_provider(prevodilac_provider) → Vraća drugog provajdera za
+    scoring (rotacija: GROQ→MISTRAL→GEMINI...).
+  get_scorer_sys_override(prevodilac_provider, ...) → Vraća (provider, key) par
+    za scorer koji nije isti kao prevodilac.
+
+════════════════════════════════════════════════════════
+ core/qa_benchmark.py
+════════════════════════════════════════════════════════
+SVRHA: Offline QA analiza prijevoda. Analizira chunkovena nivou regexova,
+       spelling checkera i trenda ocjena između sesija.
+
+IMPORTI: re, json, pathlib, subprocess, typing, time
+
+FUNKCIJE:
+  _provjeri_hunspell(tekst) → Pokreće hunspell spell checker; vraća listu grešaka.
+  _hunspell_dostupan() → Vraća True ako je hunspell instaliran.
+  analiziraj_blok(tekst, koristiti_hunspell) → Analizira jedan tekst blok:
+    broji engleske riječi, regex greške, opcijski spelling. Vraća dict.
+  _ucitaj_chunkove(file_name) → Čita checkpoint fajlove za poglavlje.
+  _ucitaj_quality_scores(quality_scores_path) → Čita quality_scores.json.
+  _ucitaj_trend(trend_path) → Čita prethodne trend podatke.
+  _generiši_trend_report(tekuci, prethodni) → Poredi tekuće i prethodne
+    statistike, vraća dict s delta vrijednostima.
+
+KLASA QABenchmark:
+  __init__() → Inicijalizira akumulatore statistika.
+  analiziraj_fajl(file_name, checkpoint_dir, quality_scores_path, ...) →
+    Analizira sve chunkove jednog poglavlja, akumulira statistike, generiše
+    trend report, ispisuje summary.
+
+FUNKCIJE:
+  _ispisi_summary(file_name, summary, trend) → Formatira i ispisuje izvještaj.
+
+════════════════════════════════════════════════════════
+ core/retry_engine.py
+════════════════════════════════════════════════════════
+SVRHA: RetryEngine za sinhrono ponavljanje obrade loših chunkova.
+       Koristi se iz workers_v2.py za offline retry bez AI poziva.
+
+IMPORTI: json, pathlib, time, logging, dataclasses, typing
+
+KLASA RetryResult (dataclass):
+  Polja: chunk_stem, uspjeh, pokusaji, razlog, trajanje_ms
+
+KLASA RetryEngine:
+  __init__(checkpoint_dir, max_pokusaja, min_score, log_fn)
+    → Inicijalizira s direktorijima i pragovima.
+  process_chapter(file_name, chunk_list) → Procesira sve loše chunkove u
+    poglavlju; za svaki poziva _retry_chunk(), vraća listu RetryResult.
+  _retry_chunk(chunk) → Ponovo obrađuje jedan chunk koristeći WorkerV2;
+    provjerava ocjenu i odlučuje o uspjehu.
+  _log_retry_session(file_name, rezultati, trajanje) → Zapisuje session log.
+
+════════════════════════════════════════════════════════
+ core/dynamic_few_shot.py
+════════════════════════════════════════════════════════
+SVRHA: Dinamičko biranjefew-shot primjera za promptove na osnovu
+       sličnosti sadržaja chunkova koji se obrađuju.
+
+IMPORTI: json, pathlib, re, logging, typing
+
+NAPOMENA: Funkcionalnost integrirana u BookContext.dodaj_few_shot() i
+          BookContext.few_shot_prompt_blok(). Ovaj modul pruža helper funkcije
+          za odabir najrelevantnijih primjera iz baze.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CORE/KALKOVI/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ core/kalkovi/engine.py
+════════════════════════════════════════════════════════
+SVRHA: Regex engine za primjenu liste kalkova na tekst. Kompajlira pattern liste,
+       primjenjuje zamjene uz whitelist zaštitu glosarnih imena.
+
+IMPORTI: re, logging, typing
+
+KLASA _KompajliraniPattern (dataclass):
+  Polja: pattern (re.Pattern), zamjena (str), original_str
+
+FUNKCIJE:
+  _izgradi_whitelist_re(glosar) → Gradi regex koji zaštićuje glosarna imena
+    od nenamjerne zamjene kalkovim patternom.
+  _zamijeni_s_whitelistom(tekst, pattern, zamjena, whitelist_re) →
+    Primjenjuje zamjenu uz privremeno čuvanje whitelisted stringova.
+    → _sacuvaj(m) — inline; placeholder zamjena za čuvanje
+
+KLASA KalkoviEngine:
+  __init__(liste, html_safe) → Kompajlira listu (kalk, zamjena) tutplova.
+  _kompajliraj(liste) → Kreira _KompajliraniPattern za svaki unos.
+  primijeni(tekst, glosar) → Primjenjuje sve patterned zamjene na tekst;
+    čuva HTML tagove ako html_safe=True; vraća (novi_tekst, izmjene_count).
+  reload(liste) → Live reload liste bez kreiranja novog objekta.
+  broj_patterna() → Vraća broj aktivnih regex patterna.
+  statistike() → Dict sa stats (ukupno, html_safe, itd.).
+
+FUNKCIJE:
+  _inicijaliziraj_engine() → Kreira globalnu KalkoviEngine instancu
+    sa svim listama (kalkovi_da, ekavizmi, glagoli, dijalog, pleonazmi).
+  primijeni_html_safe(tekst, glosar) → Javni wrapper; poziva engine.primijeni().
+
+════════════════════════════════════════════════════════
+ core/kalkovi/dinamicki_detektor.py
+════════════════════════════════════════════════════════
+SVRHA: Automatska detekcija novih potencijalnih kalkova u prevedenom tekstu.
+       Koristi NLP (spaCy/stanza), hunspell i statističku analizu n-grama.
+
+IMPORTI: re, json, pathlib, sqlite3, logging, collections, typing,
+         bs4 (BeautifulSoup)
+
+FUNKCIJE:
+  _ucitaj_poznate_kalkove() → Čita existing kalkove i vraća set za de-duplication.
+  _init_poznati() → Thread-safe inicijalizacija known kalkova pri importu.
+  _get_nlp() → Lazy inicijalizacija spaCy modela (bs_core ili sl.).
+  _hunspell_neispravna(rijec) → True ako hunspell prijavi da je riječ netočna.
+  _ekstraktuj_ngrame(tekst, n) → Generira n-grame iz teksta za statističku analizu.
+
+KLASA DinamickiDetektor:
+  __init__(db_path) → Otvara SQLite konnkciju za kalkovi_karantena.db.
+  _init_db() → Kreira shemu (tablice: kandidati, knjige) ako ne postoji.
+  _zapisi_kandidata(pattern, zamjena, kontekst, knjiga, tip, izvor) →
+    INSERT OR UPDATE kandidata u DB; akumulira pojavljivanja.
+  analiziraj(tekst, knjiga, min_pojavljivanja) → Analizira tekst, detektuje
+    sumnjive fraze, zapisuje u karantensku DB. Vraća listu kandidata.
+  dohvati_top_kandidate(limit, min_pojavljivanja) → Vraća top N kandidata
+    sortirane po broju pojavljivanja.
+  statistika() → Dict sa stats DB-a.
+
+════════════════════════════════════════════════════════
+ core/kalkovi/dinamicki_validator.py
+════════════════════════════════════════════════════════
+SVRHA: Validacija kandidata iz karantenske DB: odobrava ili odbija nove kalkove.
+
+IMPORTI: sqlite3, pathlib, re, time, logging, typing
+
+KLASA DinamickiValidator:
+  __init__(db_path) → Otvara SQLite konnkciju.
+  _init_schema() → Dodaje kolone za validacijski status u shemu.
+  azuriraj_knjige(pattern, tip, knjiga) → Bilježi u kojim knjigama se kalkulacija viđena.
+  _ocijeni_kandidata(row) → Automatska ocjena: (prihvati: bool, razlog: str).
+    Kriteriji: min pojavljivanja, poznata greška, morfološka konzistentnost.
+  provjeri_sve_kandidate(dry_run) → Prolazi sve "pending" kandidate i ocjenjuje.
+    Vraća dict sa stats (prihvaćeni, odbijeni, na čekanju).
+  dohvati_na_cekanju() → Lista kandidata koji čekaju validaciju.
+  rucna_potvrda(pattern, tip, potvrdi, napomena) → Manual override validacije.
+  izvjestaj() → String izvještaj o stanju validacije.
+
+════════════════════════════════════════════════════════
+ core/kalkovi/dinamicki_promoter.py
+════════════════════════════════════════════════════════
+SVRHA: Promovira validirane kalkove iz karantene u aktivnu listu (dinamicki_lista.py).
+
+IMPORTI: sqlite3, pathlib, re, logging, typing
+
+KLASA DinamickiPromoter:
+  __init__(db_path) → SQLite konnkcija.
+  _dohvati_potvrdjene() → Čita potvrđene kandidate iz DB.
+  _provjeri_korelaciju(pattern) → Provjerava korelira li pattern s postojećim listama
+    da izbjegne duplikate.
+  _generisi_python_unos(pattern, tip) → Generira Python tuple string za umetanje u listu.
+  _ucitaj_dinamicki_listu() / _spasi_dinamicki_listu(unosi) → Čitanje/pisanje
+    dinamicki_lista.py fajla.
+  promoviraj(dry_run) → Promovira sve potvrđene, ne-duplikovane kalkove u aktivnu listu.
+    Vraća dict s brojevima promovitanih/preskočenih.
+  rollback_pattern(pattern, razlog) → Vraća prethodno promoviran pattern u karantenu.
+  provjeri_score_pad(knjiga, score_prije, score_poslije) → Detektuje je li
+    uvođenje novog kalka pogoršalo ocjenu (sigurnosna provjera).
+
+════════════════════════════════════════════════════════
+ core/kalkovi/dijalog.py, ekavizmi.py, glagoli.py, kalkovi_da.py, pleonazmi.py
+════════════════════════════════════════════════════════
+SVRHA: Statičke liste kalkova u obliku Python lista tutplova (kalk, zamjena).
+
+  dijalog.py — kalkovi specifični za dijalogške sekvence
+  ekavizmi.py — ekavizmi koje treba zamijeniti ijekavskim oblicima
+  glagoli.py — glagolski kalkovi (npr. anglicizmi u glagolima)
+  kalkovi_da.py — DA-konstrukcije i modalni glagolski kalkovi
+  pleonazmi.py — pleonazmi koji se uklanjaju (redundantne fraze)
+  dinamicki_lista.py — dinamički generisane zamjene (auto-update)
+  morfologija_blacklist.py — blacklist haluciniranih oblika + funkcija:
+    skeniraj_halucinacije(tekst) → Regex skeniranje za poznate halucinacije.
+
+════════════════════════════════════════════════════════
+ core/validators/morfo_validator.py
+════════════════════════════════════════════════════════
+SVRHA: Morfološka validacija prevedenog teksta kombinacijom AI (Gemini) i regexova.
+       Popravlja deklinacione greške, slaganje, padežne konstrukcije.
+
+IMPORTI: re, json, time, logging, pathlib, typing, httpx,
+         api_fleet.get_active_fleet, core.kalkovi.morfologija_blacklist
+
+KLASE:
+  ValidacijaRezultat (dataclass)
+    → Rezultat validacije: original_tekst, korigirani_tekst, izmjene (lista)
+    promijenjen() — property; True ako postoje izmjene
+    broj_izmjena() — property; ukupan broj izmjena
+
+  MorfoValidator
+    __init__(knjiga_id, checkpoint_dir, log_fn, ...) → Inicijalizira validator.
+    validiraj(tekst, tip_bloka, chunk_idx) → Kombinovana validacija:
+      1. regex zamjene (_regex_zamjene)
+      2. Gemini AI poziv (_pozovi_gemini)
+      Vraća ValidacijaRezultat.
+    statistika() → Dict s brojevima validiranih/izmijenjenih chunkova.
+
+FUNKCIJE:
+  _system_prompt() → Gradi system prompt za Gemini morfološki validator.
+  _korisnik_prompt(tekst) → Gradi user prompt s tekstom za validaciju.
+  _pozovi_gemini(tekst, key, model) → HTTP poziv Gemini API-ju; vraća korigirani tekst.
+  _regex_zamjene(tekst) → Primjenjuje regex korekcije iz morfologija_blacklist.
+    Vraća (korigirani_tekst, lista_izmjena).
+  _audit_log(chunk_idx, original, korigirani, izmjene, tip, trajanje_ms) →
+    Upisuje izmjene u morfo_audit.jsonl za kasniji pregled.
+  validiraj_tekst(tekst, knjiga_id, ...) → Javni wrapper za MorfoValidator.validiraj().
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PROCESSING/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ processing/pipeline.py
+════════════════════════════════════════════════════════
+SVRHA: Centralni async pipeline koji obrađuje jedan chunk kroz 3 AI prolaska:
+       PREVODILAC → LEKTOR → KOREKTOR, s checkpointingom i quality scoringom.
+
+IMPORTI: asyncio, json, re, pathlib, time, logging, bs4, typing,
+         core.text_utils, core.quality, core.kalkovi.engine,
+         network.http_client, network.provider_router, api_fleet,
+         analysis.book_context, processing.rescue
+
+FUNKCIJE:
+  _chk_path(self, file_name, chunk_idx, suffix) → Path do checkpoint JSON fajla.
+  _chk_read(self, file_name, chunk_idx, suffix) → Čita checkpoint; None ako ne postoji.
+  _chk_write(self, file_name, chunk_idx, sadrzaj, suffix) → Atomarni write checkpointa.
+  _strip_ai_json(text) → Uklanja JSON wrapper iz AI odgovora.
+  _je_placeholder_lokalni(tekst) → Lokalna provjera je li chunk placeholder.
+  _norm_score(v) → Normalizuje score vrijednost u float.
+  _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx) →
+    Primjenjuje kalkove engine i morfološki validator na finalni tekst.
+  _init_book_context(self, knjiga_id) → Inicijalizira BookContext za novu knjigu.
+
+  _quality_scoring(self, engine, chunk_tekst, chunk_idx, file_name, uloga, tip_bloka)
+    → Async. Poziva core.quality._scoruj_kvalitetu() i sprema score u shared_stats.
+
+  process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file_name)
+    → Async. GLAVNA FUNKCIJA pipelina. Za jedan HTML chunk:
+      1. Provjeri checkpoint (preskači ako već obrađen)
+      2. Detektuje tip bloka (naracija/dijalog/nonprose)
+      3. Poziva PREVODILAC pass (http_client._call_single_provider)
+      4. Primjenjuje _smart_extract, _detektuj_en_ostatke
+      5. Rescue ako EN > 0.10 (_spasi_od_sirovog)
+      6. Poziva LEKTOR pass
+      7. Poziva KOREKTOR pass
+      8. Primjenjuje kalkove + morfološki validator
+      9. Tipografska korekcija (_post_process_tipografija)
+      10. Sprema finalni checkpoint
+      11. Quality scoring (_quality_scoring)
+      12. Vraća finalni tekst
+
+  process_chunk_with_retry(self, chunk, prev_ctx, next_ctx, chunk_idx, file_name)
+    → Async wrapper s retry logikom za process_chunk_with_ai().
+      Retry pri network greškama, ne pri AI greškama.
+
+════════════════════════════════════════════════════════
+ processing/parallel.py
+════════════════════════════════════════════════════════
+SVRHA: Adaptivni paralelizam za simultanu obradu više chunkova u poglavlju.
+
+IMPORTI: asyncio, logging, typing
+
+KLASA AdaptiveParallelism:
+  __init__(engine) → Inicijalizira s referencom na engine; čita aktivne ključeve.
+  _get_window_size() → Izračunava veličinu prozora (koliko paralelnih chunkova)
+    na osnovu broja aktivnih API ključeva i current error rate.
+  process_chunks_parallel(chunks, file_name, p_ctx_func, n_ctx_func) → Async.
+    Procesira sve chunkove poglavlja u sliding window paralelizmu.
+    Čuva redoslijed chunkova u izlazu. Vraća listu obrađenih chunkova.
+    → process_one(idx, chunk) — inline async; obradi jedan chunk u pool-u.
+
+════════════════════════════════════════════════════════
+ processing/rescue.py
+════════════════════════════════════════════════════════
+SVRHA: Fallback mehanizam kad AI vrati tekst s previše engleskog (>10%).
+
+IMPORTI: asyncio, logging, core.text_utils
+
+FUNKCIJE:
+  _spasi_od_sirovog(self, sirovo, chunk, chunk_idx, file_name, prev_ctx,
+                    rel_glosar, razlog, tip_bloka)
+    → Async. "Rescue" procedura: kada prijevod sadrži previše engleskog,
+      pokušava re-ekstrakciju iz sirovog AI odgovora ili novi AI poziv
+      s eksplicitnijim uputama za BS prijevod. Vraća spašeni tekst ili None.
+
+════════════════════════════════════════════════════════
+ processing/retro.py
+════════════════════════════════════════════════════════
+SVRHA: Retroaktivna relektura — ponovo obrađuje blokove ispod zadanog praga
+       kvalitete bez ponovnog prijevoda (samo LEKTOR + KOREKTOR pass).
+
+IMPORTI: asyncio, json, pathlib, logging, time, re,
+         core.quality, core.text_utils, network.http_client, api_fleet,
+         utils.checkpoint_cleaner
+
+FUNKCIJE:
+  _je_finalni_chk(chk_path) → True ako je checkpoint fajl finalni (ne intermediate).
+  _get_checkpoint_dir(self) → Putanja do checkpoint direktorija za aktivnu knjigu.
+
+  retroaktivna_relektura_v10(self, score_threshold, tool, max_blokova) → Async.
+    Glavna RETRO funkcija:
+    1. Učitava sve checkpoint fajlove i quality scoreove
+    2. Bira blokove ispod score_threshold
+    3. Za svaki blok: LEKTOR pass → KOREKTOR pass → kalkovi → tipografija
+    4. Sprema poboljšani checkpoint
+    5. Ažurira quality score
+    6. Vraća statistiku (poboljšani/pogoršani/neizmijenjeni)
+
+  _je_whitelisted(stem) → True ako je chunk stem na whitelist-u (preskočiti).
+
+  mark_for_review(self, score_threshold) → Async.
+    Prolazi sve chunkove, označava one ispod praga u shared_stats["review_list"].
+
+  send_to_fix(self, score_threshold) → Async.
+    Kombinuje mark_for_review + retroaktivna_relektura_v10() za označene blokove.
+
+════════════════════════════════════════════════════════
+ processing/workers.py
+════════════════════════════════════════════════════════
+SVRHA: Workeri V1 (legacy). Per-file async petlja za obradu poglavlja.
+       Zamijenjen workers_v2.py (USE_WORKERS_V2=1).
+
+IMPORTI: asyncio, json, pathlib, logging, re, bs4, api_fleet,
+         core.text_utils, core.chunking, core.quality, processing.parallel,
+         processing.pipeline
+
+FUNKCIJE:
+  _robust_json_parse(raw) → Pokušava parsirati JSON iz AI odgovora;
+    fallback na regex ekstrakciju ako direktni parse ne uspije.
+
+  _validiraj_glosar_poglavlja(engine, poglavlje_tekst, file_name) → Async.
+    Poziva AI da provjeri konzistentnost glosara u poglavlju.
+
+  process_single_file_worker(self, file_path) → Async.
+    Legacy V1 worker: čita HTML, dijeli na chunkove, obrađuje paralelno,
+    sprema rezultat u EPUB. Koristi AdaptiveParallelism.
+    → get_p_ctx(chunks_list, idx) — inline; prethodni kontekst
+    → get_n_ctx(chunks_list, idx) — inline; sljedeći kontekst
+
+════════════════════════════════════════════════════════
+ processing/workers_v2.py
+════════════════════════════════════════════════════════
+SVRHA: Workeri V2 (aktivan). Sinhroni WorkerV2 objekat koji obrađuje jedan
+       chunk s punom kontrolom prompta, anti-patternima i postprocessingom.
+
+IMPORTI: os, json, re, time, logging, pathlib, typing, requests,
+         core.model_profiles, core.text_utils, core.prompts,
+         core.kalkovi.engine, api_fleet, processing.rescue
+
+KONSTANTE: USE_WORKERS_V2 (env flag, default 1)
+
+FUNKCIJE:
+  _ocisti_anti_patterne(tekst, model_ime) → Uklanja model-specifične
+    anti-patterne iz teksta (definisani u ModelProfile.anti_patterne).
+
+KLASA WorkerV2:
+  __init__(uloga, engine, knjiga_id, chunk_idx, file_name, ...) → Inicijalizira
+    worker za specifičnu ulogu i chunk.
+  _sklopi_prompt(model_ime, chunk_tekst) → Gradi kompletni prompt za model:
+    system_prompt + kontekst blok (glosar, few-shot, summary) + user tekst.
+  _api_poziv(provider, key, model, messages, temp) → Sinhroni HTTP POST;
+    koristi requests library. Obrađuje response, rate limit i error kodove.
+  _postprocessing(tekst, model_ime) → Primjenjuje čišćenje, anti-patterne,
+    tipografiju na AI odgovor.
+  obradi_chunk(chunk_tekst, provider, key, model) → Kompletna obrada chunka:
+    _sklopi_prompt → _api_poziv → _postprocessing. Vraća obrađeni tekst.
+  pokreni_qa_benchmark(chunk_tekst, obrađeni_tekst) → Pokreće QA analizu
+    i vraća dict s metrikama.
+
+FUNKCIJE:
+  obradi_chunk_v2(uloga, engine, chunk, ...) → Factory wrapper koji kreira
+    WorkerV2 instancu i poziva obradi_chunk().
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ NETWORK/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ network/http_client.py
+════════════════════════════════════════════════════════
+SVRHA: Async HTTP klijent za AI API pozive. Upravlja Gemini ključ rotacijom,
+       rate limit semaphore acquire/release, i retry logikom za mreže greške.
+
+IMPORTI: asyncio, aiohttp, json, time, logging, typing, api_fleet,
+         network.rate_limiter, network.provider_urls
+
+FUNKCIJE:
+  _get_google_model_pool() → Lista Gemini modela dostupnih za rotaciju.
+  _get_model_for_key(key) → Vraća trenutno aktivni Gemini model za API ključ.
+  _rotate_model_for_key(key) → Rotira na sljedeći Gemini model za ključ.
+  _build_messages(sys_content, user_prompt, model) → Gradi messages listu za
+    chat completion API formatu. Za Gemini kreira special format.
+
+  _async_http_post(self, url, headers, json_payload, prov, prov_upper, key)
+    → Async. Šalje HTTP POST zahtjev, obrađuje response, poziva
+      FleetManager.analyze_response() za 429/error handling.
+      Acquire/release key semaphore. Vraća (status_code, response_text) ili None.
+
+  _call_single_provider(self, uloga, tip_bloka, messages, prov, prov_upper, key,
+                         model, temperature)
+    → Async. Poziva _async_http_post() za jednog provajdera. Obrađuje Gemini
+      posebno (_call_gemini_with_full_rotation). Vraća tekst ili None.
+
+  _call_gemini_with_full_rotation(self, messages, key, temperature)
+    → Async. Specijalna logika za Gemini: rotira kroz sve modele u pool-u
+      dok ne nađe radni ili iscrpi sve opcije.
+
+════════════════════════════════════════════════════════
+ network/model_discovery.py
+════════════════════════════════════════════════════════
+SVRHA: Automatsko otkrivanje najboljeg dostupnog modela za svakog provajdera.
+       Pita /v1/models endpoint, scoruje modele, kešira rezultat 3600s.
+
+IMPORTI: asyncio, aiohttp, json, time, logging, threading, pathlib, typing,
+         api_fleet, network.provider_urls
+
+FALLBACK_MODELS — dict zadanih modela po provajderu ako discovery ne uspije.
+
+FUNKCIJE:
+  _is_valid_chat_model(provider, model_id) → True ako model_id izgleda kao
+    chat completion model (filtrira embedding, whisper i sl. modele).
+  _score_model_strength(provider, model_id) → Float score (0-100) na osnovu
+    imena modela: parametri (70B > 8B), generacija (4 > 3), posebni bonusi.
+  fetch_models(provider, api_key, timeout) → Async poziv /v1/models; vraća
+    listu validnih chat modela.
+  get_cached_model(provider) → Vraća keširani model za provajdera ili None.
+  get_cached_model_list(provider) → Keširana lista modela.
+  _set_cached_model(provider, model_id) → Postavi model u in-memory cache.
+  _set_cached_model_list(provider, model_list) → Postavi listu u cache.
+  select_best_model(provider, api_key) → Async. Fetcha modele i bira
+    onaj s najvišim _score_model_strength() scorom. Kešira rezultat.
+  invalidate_cached_model(provider, model_id) → Ukloni model iz cachea
+    i odaberi sljedeći; korisno kad model vrati 404.
+  _refresh_worker(provider_keys) → Async. Background worker koji periodicno
+    osvježava cache za sve provajdere (TTL=3600s).
+  start_background_refresh(fleet_manager) → Pokretanje background refresh threada.
+  prime_cache_sync(fleet_manager) → Sinhrono punjenje cachea pri startu za
+    sve dostupne provajdere (poziva se iz core/engine.py).
+  startup_key_check(fleet_manager) → Async. Proba sve ključeve pri startu:
+    429→quota exhausted, 200→OK, ostalo→greška.
+    → _check_one(prov, ks) — inline async; provjera jednog ključa.
+
+════════════════════════════════════════════════════════
+ network/provider_router.py
+════════════════════════════════════════════════════════
+SVRHA: Routing AI poziva na odgovarajući provajder prema ulozi (PREVODILAC,
+       LEKTOR, KOREKTOR, SCORER) s fallback logikom i key rotacijom.
+
+IMPORTI: asyncio, logging, typing, api_fleet, network.http_client,
+         network.provider_urls, network.model_discovery
+
+KONSTANTE: MODEL_MAP — dict {uloga: [lista_provajdera]} koji definira prioritet
+           provajdera za svaku ulogu u pipelinu.
+
+FUNKCIJE:
+  _call_ai_engine(self, uloga, tip_bloka, messages, temperature, knjiga_id)
+    → Async. Iterira kroz provajdere iz MODEL_MAP[uloga] i ključeve.
+      Za svaki par (provider, key): poziva _call_single_provider().
+      Vraća prvi uspješni odgovor ili None ako svi ne uspiju.
+
+════════════════════════════════════════════════════════
+ network/provider_router_v2.py
+════════════════════════════════════════════════════════
+SVRHA: V2 router s health score praćenjem i pametnim sortiranjem provajdera.
+
+IMPORTI: logging, threading, typing, api_fleet, core.model_profiles
+
+FUNKCIJE:
+  _score_model(profil, uloga, tip_bloka, health_score) → Float kombinirani score:
+    model_score * uloga_bonus * health_score.
+
+KLASA ProviderRouterV2:
+  __init__(dostupni_kljucevi) → Inicijalizira health score dict.
+  set_health_score(provider, score) / get_health_score(provider) → R/W health.
+  _provider_dostupan(profil) → True ako provajder ima aktivne ključeve.
+  _get_kljuc(provider) → Vraća dostupan ključ za provajdera ili None.
+  get_best_model(uloga, tip_bloka, exclude) → Vraća (ModelProfile, key) par
+    za najpogodniji dostupan model za zadanu ulogu.
+  get_ranked_models(uloga, tip_bloka, n) → Vraća top N modela sortirane po
+    kombiniranom scoru.
+  log_ranking(uloga, tip_bloka) → Ispisuje ranking u log za debug.
+
+FUNKCIJE:
+  init_router_v2(dostupni_kljucevi) → Kreira i registruje globalnu V2 instancu.
+
+════════════════════════════════════════════════════════
+ network/provider_urls.py
+════════════════════════════════════════════════════════
+SVRHA: Centralizirana URL mapa za sve podržane AI provajdere.
+
+IMPORTI: nema vanjskih
+
+FUNKCIJE:
+  get_url(prov) → Vraća chat completions URL za zadani provajder (uppercase string).
+    Mapira: GEMINI, GROQ, CEREBRAS, SAMBANOVA, MISTRAL, COHERE, OPENROUTER,
+    GITHUB, TOGETHER, FIREWORKS, CHUTES, HUGGINGFACE, KLUSTER, GEMMA.
+
+════════════════════════════════════════════════════════
+ network/rate_limiter.py
+════════════════════════════════════════════════════════
+SVRHA: Per-key asyncio.Semaphore za sprečavanje paralelnih poziva istim ključem.
+       Plus provider-level lock i global lock za koordinaciju.
+
+IMPORTI: asyncio, logging, typing, api_fleet
+
+FUNKCIJE:
+  _ensure_provider_lock(prov) → Async. Lazy kreiranje asyncio.Lock po provajderu.
+  _ensure_global_lock() → Async. Lazy kreiranje globalnog asyncio.Lock-a.
+  _safe_get_model(fleet, prov_upper, default) → Thread-safe dohvat modela iz fleet-a.
+  _get_key_state(fleet, prov_upper, key) → Dohvati KeyState objekt za ključ.
+    → _FakeKS — inline klasa; placeholder ako ključ nije u fleet-u.
+  get_key_semaphore(key) → Vraća (ili kreira) asyncio.Semaphore za ključ.
+    MAX_CONCURRENT_PER_KEY=1 znači samo jedan simultani poziv po ključu.
+  acquire_key(key) → Async. Čeka na semaphore za ključ.
+  release_key(key) → Oslobađa semaphore za ključ.
+
+════════════════════════════════════════════════════════
+ network/urls.py
+════════════════════════════════════════════════════════
+SVRHA: Helper funkcije koje vraćaju URL za svaki provajder. Alternativa provider_urls.py.
+
+IMPORTI: nema vanjskih
+
+FUNKCIJE (po jedna po provajderu, sve vraćaju string URL):
+  _url_gemini_compat(), _url_groq(), _url_samba(), _url_cerebras(),
+  _url_mistral(), _url_cohere(), _url_openrouter(), _url_github(),
+  _url_together(), _url_fireworks(), _url_chutes(), _url_huggingface(),
+  _url_kluster(), _url_gemma(), _url_daisy()
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ANALYSIS/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ analysis/book_context.py
+════════════════════════════════════════════════════════
+SVRHA: Analiza knjige i izgradnja konteksta (glosar likova, summaryji poglavlja,
+       few-shot primjeri) koji se ubacuju u AI promptove za koherentniji prijevod.
+
+IMPORTI: json, re, pathlib, time, logging, dataclasses, typing,
+         collections.Counter, unicodedata
+
+FUNKCIJE:
+  _dekliniraj_ime(ime, rod) → Generira deklinacijske varijante imena lika
+    (nominativ, genitiv, dativ, akuzativ...) za BS/HR. Vraća dict.
+  _normaliziraj_glosar_entry(ime, rod) → Normalizuje glosarni unos s varijantama.
+
+KLASE:
+  PoglavljeKontekst (dataclass)
+    → Summary jednog poglavlja: naziv, broj, kratki summary tekst.
+
+  BookContext (dataclass)
+    → Kompletni kontekst knjige:
+    __post_init__() — inicijalizira unutarnje strukture i učitava cache.
+    _ucitaj_cache() / _spremi_cache() — JSON persistencija BookContext-a.
+    dodaj_lik(ime, rod) — dodaje lik s dekliniranim varijantama u glosar.
+    dodaj_likove_bulk(imena) — batch dodavanje likova.
+    autodetektiraj_likove(tekst, min_pojavljivanja) — Async; poziva AI za
+      ekstrakciju likova iz teksta. Dodaje detektirane u glosar.
+    glosar_prompt_blok(max_likova) — Formatiran blok glosara za ubacivanje u prompt.
+    dodaj_poglavlje(tekst, broj, naslov) — Kreira i sprema summary poglavlja.
+    _generiraj_summary(tekst, broj, naslov) — Async; AI generacija summaryja.
+    _fallback_summary(tekst, lik_count) — Deterministički summary bez AI.
+    summary_poglavlja(broj) — Vraća summary za poglavlje po broju.
+    summary_prompt_blok(broj_poglavlja) — Formatiran blok summaryja za prompt.
+    dodaj_few_shot(original, prijevod, score, tip_bloka) — Dodaje (original,prijevod)
+      par u few-shot bazu uz score za kvalitet-based selekciju.
+    dodaj_few_shot_iz_quality_scores(scores_dict, checkpoint_dir) — Bulk dodavanje
+      iz quality_scores.json za inicijalizaciju few-shot baze.
+    dodaj_few_shot_par(original, prijevod) — Jednostavno dodavanje para bez scorea.
+    few_shot_prompt_blok(max_primjera) — Bira max_primjera najkvalitetnijih
+      few-shot parova i formatira ih za ubacivanje u prompt.
+    kontekst_prompt_blok(broj_poglavlja) — Kombinirani blok: glosar + summary.
+    get(key, default) / __getitem__(key) / __contains__(key) — dict-like pristup.
+    __repr__() — String reprezentacija s brojem likova i few-shot primjera.
+
+  BookContextManager
+    → Lightweight verzija BookContext-a za korištenje u engine.py.
+    __init__(checkpoint_dir, log_func) — inicijalizira i učitava cache.
+    _ucitaj_cache() / _spremi_cache() — JSON persistencija.
+    build_glosar_tekst() — Gradi formatirani tekst glosara.
+    extract_relevant_glossary(chunk_text, glosar_tekst) — Filtrira glosar na
+      samo unose relevantne za tekst chunka.
+    dodaj_u_glosar(ime, varijante) — Dodaje lik u glosar.
+    glosar_za_prompt(max_likova) — Vraća glosar formatiran za prompt.
+    dodaj_kontekst(poglavlje, summary) — Dodaje summary poglavlja.
+    kontekst_za_poglavlje(poglavlje) — Vraća summary za poglavlje.
+
+FUNKCIJE:
+  analiziraj_knjigu(engine, book_path) — Async. Analizira cijelu knjigu:
+    ekstrakcija intro teksta, autodetektovanje likova, inicijalizacija glosara.
+  _inkrementalna_analiza_glosara(engine, poglavlje_tekst, poglavlje_ime) — Async.
+    Inkremantalno ažurira glosar novim likovima nađenim u poglavlju.
+  _generiraj_chapter_summary(engine, file_name, file_content) — Async.
+    Generira kratak summary poglavlja pozivom AI-ja.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ EPUB/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ epub/parser.py
+════════════════════════════════════════════════════════
+SVRHA: Raspakivanje, čišćenje i parsiranje EPUB fajlova u listu HTML sadržaja
+       po poglavljima, sprema u privremeni radni direktorij.
+
+IMPORTI: zipfile, pathlib, re, json, bs4 (BeautifulSoup), lxml, logging
+
+FUNKCIJE:
+  _ocisti_epub_html(html) → Čisti HTML: uklanja scripte, stilove koji nisu epub,
+    normalizuje encoding.
+  _strip_json_artifacts_from_html(html_fajlovi, log_fn) → Čisti JSON artefakte
+    (zaostale od prethodnih AI obrada) iz HTML fajlova. Vraća broj izmjena.
+  _ukloni_inline_stilove(html_fajlovi, log_fn) → Uklanja inline style atribute
+    iz HTML elemenata da standardizuje izgled. Vraća broj izmjena.
+  _zamijeni_epub_css(html_fajlovi, work_dir, log_fn) → Zamjenjuje linkove ka
+    CSS fajlovima s booklyfi standardnim CSS-om.
+  _booklyfi_charset_filter(tekst) → Filtrira nestandardne Unicode znakove;
+    zadržava BS/latinica, uobičajena interpunkcija i emotikoni.
+  _booklyfi_deduplicate_heading(tekst) → Uklanja duplirana zaglavlja poglavlja
+    koja neki EPUB generatori dodaju.
+
+KLASA EpubParser:
+  __init__(epub_path) → Otvara ZIP, kreira radni direktorij.
+  get_chapters() → Vraća listu dict-ova s HTML sadržajem po poglavljima.
+  _parse() → Interni parser: čita OPF manifest i spine redoslijed.
+  _find_opf(zf, names) → Pronalazi .opf fajl unutar ZIP arhive.
+  _parse_opf_spine(zf, opf_path) → Parsira <spine> element iz OPF-a;
+    vraća uređenu listu HTML fajlova po spine redoslijedu.
+  _extract_content(raw_html, idx) → Čisti i parsira HTML jedno poglavlja;
+    primjenjuje sve _ocisti_* i _strip_* funkcije.
+
+════════════════════════════════════════════════════════
+ epub/packager.py
+════════════════════════════════════════════════════════
+SVRHA: Pakovanje prevedenih HTML fajlova nazad u EPUB arhivu.
+       Generira NCX/TOC, ubacuje dropcap, dodaje CSS, kreira finalni ZIP.
+
+IMPORTI: zipfile, pathlib, re, bs4 (BeautifulSoup), logging, epub.styling
+
+FUNKCIJE:
+  _get_output_dir() → Vraća putanju do OUTPUT_DIR iz config.settings.
+
+  buildlive_epub(self) → Kreira "live" EPUB iz trenutno obrađenih poglavlja.
+    Koristi se za preview za vrijeme obrade. Pakuje samo obrađene chunkove.
+
+  apply_dropcap_and_toc(self, soup, html_file, samo_dropcap) → Dodaje dropcap
+    na prvi paragraf poglavlja, generira u-poglavlje TOC linkove.
+
+  generate_ncx(self) → Generira NCX (Navigation Control for XML) fajl s
+    listom poglavlja i naslovima za e-reader navigaciju.
+
+  finalize(self) → Kreira finalni EPUB ZIP: kopira sve fajlove iz work_dir,
+    dodaje mimetype (uncompressed), META-INF/container.xml, generisani CSS,
+    NCX fajl. Sprema u OUTPUT_DIR.
+
+════════════════════════════════════════════════════════
+ epub/styling.py
+════════════════════════════════════════════════════════
+SVRHA: CSS injekcija u EPUB HTML fajlove. Definira Booklyfi globalni CSS stil.
+
+IMPORTI: bs4 (BeautifulSoup)
+
+KONSTANTE: BOOKLYFI_EPUB_CSS — multiline CSS string s tipografijom, fontovima,
+           dropcap stilom, responsivnim layoutom za e-readere.
+
+FUNKCIJE:
+  _inject_epub_global_css(soup) → Injektuje <link> tag ka booklyfi.css u
+    <head> svakog HTML fajla koji se pakuje u EPUB.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ UTILS/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ utils/file_utils.py
+════════════════════════════════════════════════════════
+SVRHA: Sigurna manipulacija fajl imenima i putanjama. Zaštita od path traversal.
+
+IMPORTI: re, unicodedata, os, pathlib, typing
+
+FUNKCIJE:
+  secure_filename(filename) → Sanitizuje naziv fajla: uklanja specijalne znakove,
+    normalizuje unicode, sprečava path traversal (../). Vraća sigurno ime.
+    Fallback: "nepoznato.epub" za prazne/nevalidne unose.
+
+  safe_path(filename, root) → Kombinuje root dir + filename uz werkzeug.safe_join()
+    validaciju da putanja ne izlazi iz root direktorija. Baca ValueError ako nije safe.
+
+════════════════════════════════════════════════════════
+ utils/export.py
+════════════════════════════════════════════════════════
+SVRHA: Generisanje izvještaja o prijevodu u JSON i TXT formatima za download.
+
+IMPORTI: json, pathlib, zipfile, time, re, bs4
+
+FUNKCIJE:
+  get_epub_metadata(epub_path) → Čita OPF metadata iz EPUB-a: naslov, autor,
+    jezik, datum. Vraća dict.
+    → _tag(tag, text) — inline; safe XML tag ekstrakcija.
+
+  generate_json_report(epub_path, stats) → Gradi JSON izvještaj: metadata + stats
+    (broj poglavlja, chunkova, ocjena, trajanje, provajderi). Vraća bytes.
+
+  generate_txt_report(epub_path, stats) → Gradi čitljivi TXT izvještaj
+    s istim podacima. Vraća bytes.
+
+════════════════════════════════════════════════════════
+ utils/checkpoint_cleaner.py
+════════════════════════════════════════════════════════
+SVRHA: Čišćenje oštećenih, nepotpunih ili loše ocijenjenih checkpoint fajlova.
+
+IMPORTI: json, pathlib, re, logging, time
+
+FUNKCIJE:
+  _ocisti_json_wrapper(sadrzaj) → Pokušava popraviti malformirani JSON u
+    checkpoint fajlu (strip markdown wrapper, fix truncated JSON).
+  _je_placeholder(sadrzaj) → True ako checkpoint sadrži samo placeholder tekst,
+    a ne stvarni prijevod.
+  _no_cisti_chk_fajlove(checkpoint_dir, log_fn) → Čisti sve malformirane
+    checkpoint fajlove u direktoriju. Vraća broj obrisanih.
+  full_reset(book_stem, log_fn) → Kompletni reset: briše checkpoint dir,
+    cache fajlove, quality scores za zadanu knjigu. Vraća dict sa stats.
+
+════════════════════════════════════════════════════════
+ utils/logging.py
+════════════════════════════════════════════════════════
+SVRHA: Centralni audit log koji prati sve bitne operacije u aplikaciji.
+       Piše u shared_stats["audit_log"] i u Python logger.
+
+IMPORTI: logging, time, typing
+
+FUNKCIJE:
+  add_audit(msg, atype, en_text, shared_stats) → Dodaje poruku u audit log.
+    atype može biti: "info", "warn", "error", "success".
+    Ograničava listu na zadnjih 500 unosa (FIFO).
+    Uključuje timestamp i en_text (engleski original ako postoji).
+
+════════════════════════════════════════════════════════
+ utils/model_updater.py
+════════════════════════════════════════════════════════
+SVRHA: Utility za ručno osvježavanje model cache-a izvan normalnog ciklusa.
+
+IMPORTI: network.model_discovery, api_fleet
+
+FUNKCIJE:
+  update_model_cache() → Dohvata FleetManager singleton, poziva prime_cache_sync()
+    za ažuriranje keširanih modela za sve provajdere.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TESTS/
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ tests/unit/test_validators.py
+════════════════════════════════════════════════════════
+SVRHA: Unit testovi za utils.file_utils.secure_filename() funkciju.
+       Pokreće se s: python3 -m pytest tests/ -v
+
+FUNKCIJE (svaka je pytest test):
+  test_secure_filename_basic() → "knjiga.epub" → "knjiga.epub"
+  test_secure_filename_balkan() → "Čudna Knjiga.epub" → "Cudna_Knjiga.epub"
+  test_secure_filename_empty() → "" → "nepoznato.epub"
+  test_secure_filename_path_traversal() → "../../etc/passwd" → nema ".." ni "/"
+  test_secure_filename_only_dots() → "..." → "knjiga.epub"
+  test_secure_filename_special_chars() → "my book (2024).epub" → nema "(" ni ")"
+
+════════════════════════════════════════════════════════
+ tests/integration/test_api_routes.py
+════════════════════════════════════════════════════════
+SVRHA: Integracijski testovi Flask ruta koristeći test klijent.
+       Testira HTTP status kodove i strukturu JSON odgovora.
+
+SETUP:
+  client() → pytest fixture; kreira Flask test app s create_app() i vraća test client.
+
+FUNKCIJE (svaka je pytest test):
+  test_index_loads(client) → GET / vraća 200 ili 302
+  test_intro_loads(client) → GET /intro vraća 200
+  test_status_endpoint(client) → GET /api/status vraća JSON s "status" ključem
+  test_books_endpoint(client) → GET /api/books vraća JSON listu
+  test_models_endpoint(client) → GET /api/dev_models vraća JSON
+  test_fleet_endpoint(client) → GET /api/fleet vraća JSON
+  test_keys_endpoint(client) → GET /api/keys vraća JSON
+  test_control_pause(client) → POST /control/pause vraća 200
+  test_control_resume(client) → POST /control/resume vraća 200
+  test_control_unknown_action(client) → POST /control/nepostojece vraća 400
+  test_export_without_output(client) → GET /api/export/json vraća 404 (nema knjige)
+  test_start_missing_book(client) → POST /api/start bez knjige vraća 4xx
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STATIC JS SKRIPTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════════════════════
+ static/js/main.js
+════════════════════════════════════════════════════════
+SVRHA: Glavni frontend JavaScript. Inicijalizira aplikaciju, upravlja tabovima,
+       fleet pollingom, quality review, upload, i prikazom statusa.
+
+KLJUČNE FUNKCIJE:
+  initApp() → Bootstrap svih servisa; poziva polling, inicijalizira UI komponente.
+  switchTab(tabId) → Mijenja aktivni tab na dashboardu.
+  updateStatusUI(data) → Prima status JSON i ažurira progress bar, ETA, log.
+  renderQualityChart(scores) → Crta ring chart distribucije ocjena.
+  handleUpload(file) → Upload EPUB fajla putem FormData, prikaz napretka.
+  startProcessing(bookName, model) → POST /api/start; pokretanje obrade.
+  renderAuditLog(entries) → Prikazuje audit log poruke u Stručnjak tabu.
+  openKeyModal(provider) → Otvara modal za dodavanje/brisanje API ključeva.
+  pingKey(provider, idx) → AJAX poziv /api/keys/<p>/<i>/ping; prikazuje latenciju.
+
+════════════════════════════════════════════════════════
+ static/js/api-client.js
+════════════════════════════════════════════════════════
+SVRHA: Centralizovani HTTP klijent koji omotava fetch() pozive s error handlingom.
+
+KLJUČNE FUNKCIJE:
+  ApiClient.get(url, options) → GET zahtjev; vraća parsed JSON ili baca grešku.
+  ApiClient.post(url, body, options) → POST zahtjev s JSON tijelom.
+  ApiClient.delete(url) → DELETE zahtjev.
+  ApiClient.upload(url, formData) → Multipart POST za fajl upload.
+
+════════════════════════════════════════════════════════
+ static/js/ui/fleet.js
+════════════════════════════════════════════════════════
+SVRHA: Renderer za Fleet tab. Kreira collapsible kartice po provajderu.
+
+KLJUČNE FUNKCIJE:
+  renderFleetPool(fleetData) → Generira HTML za sve provajdere s:
+    health barom, statusom ključeva (aktivni/cooldown/greška), toggle dugmadi.
+  renderKeyPill(keyData, provider) → Jedna pill komponenta za API ključ.
+  toggleKey(provider, key) → AJAX /api/fleet/toggle; ažurira UI bez reload-a.
+
+════════════════════════════════════════════════════════
+ static/js/intro/intro-animation.js
+════════════════════════════════════════════════════════
+SVRHA: Orchestrator 3D intro animacije u Three.js. Upravlja scenom, kamerom,
+       animacijskim fazama i navigacijom na glavni dashboard nakon završetka.
+
+KLJUČNE FUNKCIJE:
+  initScene() → Kreira Three.js scenu, renderer, kameru, osvjetljenje.
+  runAnimation() → Pokreće animacijski loop: 12 sekundi intro, zatim redirect na /.
+  Phase1/2/3/4() → Sekvencijalne faze animacije (book morph, particle burst, itd.).
+  onWindowResize() → Handler za promjenu veličine prozora.
+
+════════════════════════════════════════════════════════
+ static/js/services/polling.js
+════════════════════════════════════════════════════════
+SVRHA: Polling servis za periodično dohvatanje statusa obrade.
+
+KLJUČNE FUNKCIJE:
+  startPolling(interval) → Pokreće setInterval loop koji poziva GET /api/status.
+  stopPolling() → Zaustavlja polling.
+  onUpdate(callback) → Registrira callback koji se poziva s novim podacima.
+
+════════════════════════════════════════════════════════
+ static/js/services/storage.js
+════════════════════════════════════════════════════════
+SVRHA: Wrapper za localStorage s JSON serijalizacijom i namespace-om.
+
+KLJUČNE FUNKCIJE:
+  Storage.get(key) → Čita i parsira vrijednost iz localStorage.
+  Storage.set(key, value) → Serijalizuje i sprema vrijednost.
+  Storage.remove(key) → Briše ključ.
+
+════════════════════════════════════════════════════════
+ static/js/utils/formatters.js
+════════════════════════════════════════════════════════
+SVRHA: Formatiranje podataka za prikaz u UI-u.
+
+KLJUČNE FUNKCIJE:
+  formatDuration(ms) → Pretvara milisekunde u "2h 15m 30s" format.
+  formatScore(score) → Float ocjenu formatira u "9.2 / 10.0" s CSS klasom.
+  formatProvider(name) → Normalizuje ime provajdera za prikaz.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ŠEMA PODATAKA — CHECKPOINT JSON
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Svaki chunk sprema se u: checkpoints/<book_stem>/<file_stem>_chunk_<idx>.json
+
+  {
+    "sadrzaj": "<html>Prevedeni tekst</html>",
+    "score": 8.7,
+    "prov_label": "GROQ→GEMINI→CEREBRAS",
+    "tip_bloka": "naracija",
+    "timestamp": 1715000000,
+    "en_ratio": 0.02,
+    "verzija": "v10"
+  }
+
+quality_scores.json — dict {file_stem + "_" + chunk_idx: {score, timestamp, prov_label}}
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ POKRETANJE I ENV VARIJABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  python3 main.py                      # Standardni start
+  python3 -m pytest tests/ -v          # Pokretanje testova (18 testova)
+
+  SKRIPTORIJ_PORT=8080                 # Port Flask servera
+  SKRIPTORIJ_CONFIG=dev_api.json       # Putanja do API ključeva
+  SKRIPTORIJ_INPUT_DIR=~/data          # Ulazne knjige
+  SKRIPTORIJ_OUTPUT_DIR=~/output       # Izlazne knjige
+  BOOKLYFI_V2=1                        # Aktivira WorkerV2 (preporučeno)
+  PYTHONUNBUFFERED=1                   # Real-time logovi
 
 ================================================================================
-PIPELINE — 3-PASS AI OBRADA
-================================================================================
-
-Svaki chunk teksta prolazi kroz 3 nezavisna AI prolaska:
-
-  1. PREVODILAC  (temp 0.52)
-     - Primarni prijevod teksta
-     - Provajderi: GROQ, CEREBRAS, SAMBANOVA, GEMINI, MISTRAL
-     - Model selekcija: provider_router.py → MODEL_MAP
-
-  2. LEKTOR  (temp 0.62)
-     - Literarna dorada i stilizacija
-     - Provajderi: GEMINI, MISTRAL, COHERE, SAMBANOVA, TOGETHER, CHUTES
-
-  3. KOREKTOR  (temp 0.15)
-     - Finalna korekcija (samo brzi modeli)
-     - Provajderi: GROQ, CEREBRAS, GEMINI, MISTRAL
-
-  4. _post_process_tipografija  (deterministički)
-     - Ispravke navodnika, crtica, razmaka — bez AI poziva
-
-  5. Quality Scorer  (nezavisni scorer, uloga SCORER)
-     - Heuristička analiza + AI rubrik ocjena
-     - Rezultat se sprema u checkpoint + shared_stats["quality_scores"]
-
-Rescue trigger: EN > 0.10 (više od 10% engleskog teksta u izlazu)
-→ _spasi_od_sirovog() pokušava ekstraktirati BS tekst iz sirovog AI odgovora
-
-RETRO re-lektura:
-→ retroaktivna_relektura_v10() — ponovi samo blokove ispod zadanog praga
-→ Aktivira se putem tool="RETRO" ili iz Quality Review panela
-
-================================================================================
-FLEET MANAGER — API KEY UPRAVLJANJE
-================================================================================
-
-Fajl: api_fleet.py
-Singleton: register_active_fleet() / get_active_fleet()
-
-Podržani provajderi (14):
-  GEMINI      — 15 RPM, 1500 RPD, prim. model: gemini-2.0-flash
-  GROQ        — 20 RPM, 14400 RPD, prim. model: llama-3.1-8b-instant
-  CEREBRAS    — 30 RPM, 14400 RPD, prim. model: gpt-oss-20b (Llama3.1-70B)
-  SAMBANOVA   — 10 RPM, 10000 RPD, prim. model: DeepSeek-V3.1
-  MISTRAL     — 15 RPM, 1000 RPD,  prim. model: mistral-small-latest
-  COHERE      — 15 RPM, 1000 RPD,  prim. model: command-r-plus
-  OPENROUTER  — 20 RPM, 500 RPD,   prim. model: llama-3.3-70b-instruct:free
-  GITHUB      — 10 RPM, 200 RPD,   prim. model: gpt-4o
-  TOGETHER    — 20 RPM, 1000 RPD,  prim. model: Llama-3.2-3B-Instruct-Turbo
-  FIREWORKS   — 20 RPM, 1000 RPD,  prim. model: Llama-3.1-70B-Instruct
-  CHUTES      — 10 RPM, 1000 RPD,  prim. model: deepseek-ai/DeepSeek-V3-0324
-  HUGGINGFACE — 10 RPM, 500 RPD,   prim. model: Qwen/Qwen2.5-72B-Instruct
-  KLUSTER     — 15 RPM, 500 RPD,   prim. model: klusterai/Meta-Llama-3.3-70B
-  GEMMA       — 10 RPM, 500 RPD,   (Google Gemma putem Together)
-
-Fleet logika:
-  - Per-key asyncio Semaphore (MAX_CONCURRENT_PER_KEY=1)
-    → sprečava višestruke paralelne pozive istim ključem
-  - 429 handling: kratka pauza (≤8s) → None → caller bira sljedeći ključ
-    → uklonjen recursive retry koji je multiplicirao grešku 3× po ključu
-  - analyze_response(): automatski cooldown pri 429, error count pri ostalim
-  - reload(): live reload iz dev_api.json bez restarta servera
-
-URL mapa: network/provider_urls.py
-Rate limiter + semaphore: network/rate_limiter.py
-
-================================================================================
-MODULARNI MONOLITH — ARHITEKTURA
-================================================================================
-
-  main.py              — Entry point; Flask server, Termux auto-browser
-  app.py               — Flask factory; blueprint registracija, rute
-  run.py               — Alt. launcher (za specijalne slučajeve)
-  api_fleet.py         — FleetManager singleton; key cooldown, rotate, reload
-
-  config/
-    settings.py        — PORT (8080), CONFIG_PATH, OUTPUT_DIR, SERVER_RUN_ID
-    logging_config.py  — Logging setup
-
-  api/routes/
-    books.py           — /api/files, /api/upload_book, /api/download
-    processing.py      — /api/start, /api/status, /api/dev_models, /control/*
-    fleet.py           — /api/fleet, /api/fleet/toggle
-    keys.py            — /api/keys CRUD + /api/keys/<p>/<i>/ping (health check)
-    qualities.py       — /api/quality_scores CRUD + send_to_fix
-    quality.py         — /api/quality (legacy kompatibilnost)
-    export.py          — /api/export/json|txt
-    control.py         — /control/<action>
-
-  core/
-    engine.py          — SkriptorijAllInOne; orchestracija obrade
-    quality.py         — _scoruj_kvalitetu(); heuristika + AI rubrik
-    text_utils.py      — _smart_extract, _agresivno_cisti, _detektuj_en_ostatke
-    prompt_injector.py — Dinamičko ubacivanje glosara u prompte
-
-  processing/
-    pipeline.py        — Async 3-pass pipeline (workers V2 aktivan)
-    workers.py         — Chunk workeri V1 (legacy)
-    workers_v2.py      — Chunk workeri V2 (aktivan, USE_WORKERS_V2=1)
-    parallel.py        — Paralelna obrada poglavlja
-    retro.py           — retroaktivna_relektura_v10()
-    rescue.py          — _spasi_od_sirovog()
-
-  network/
-    http_client.py     — _async_http_post(); acquire/release_key semaphore
-    rate_limiter.py    — asyncio.Semaphore per-key; acquire_key/release_key
-    provider_urls.py   — get_url(prov) → URL mapa 14 provajdera
-    provider_router.py — MODEL_MAP, routing po ulozi (LEKTOR, PREVODILAC...)
-
-  analysis/
-    book_context.py    — BookContext; glosar, likovi, ton, žanr (analiza pre-run)
-
-  epub/
-    parser.py          — Parsiranje, čišćenje, rekonstrukcija EPUB-a
-
-  utils/
-    file_utils.py      — Sigurni nazivi fajlova, path validacija
-
-  static/
-    css/style.css      — Glassmorphism UI, tamna/svijetla tema, custom properties
-    js/main.js         — App init, fleet polling, quality review, key management
-    js/api-client.js   — Centralizirani HTTP klijent za sve API pozive
-    js/ui/fleet.js     — Fleet pool renderer (<details> collapsible po provajderu)
-    js/intro/          — Three.js 3D intro animacija
-
-  templates/
-    index.html         — Glavni dashboard (tabovi: Flota, Kvalitet, Historija,
-                         Pregled, Stručnjak)
-    intro.html         — Cinematični intro ekran (prikazuje se pri novom server startu)
-
-================================================================================
-TABOVI UI — BOOKLYFI DASHBOARD
-================================================================================
-
-  🛡 Flota
-    - Summary kartice: Aktivnih / Hladi se / Grešaka
-    - Per-provajder expandable kartice s health barom
-    - Toggle ključa kliknut na pill
-
-  🎯 Kvalitet
-    - Prosječna ocjena + ring chart
-    - Distribucija po kategorijama (odlično/dobro/slabo/kritično)
-    - Označi loše blokove, pošalji na RETRO relekturu
-
-  📚 Historija
-    - Log svih prethodno obrađenih knjiga
-
-  👁 Pregled
-    - Live EPUB preview po poglavljima
-
-  🔬 Stručnjak
-    - Fleet detalji po provajderu (collapsible <details>)
-    - Sistemski dnevnik (audit log s autoscroll-om)
-    - API ključevi: CRUD + 🔍 Live ping health check
-
-================================================================================
-SIGURNOSNE NAPOMENE
-================================================================================
-
-  - dev_api.json i proxies.json su u .gitignore
-  - Ključevi maskirani u UI: prikazuju se samo zadnji 6 znakova (...abc123)
-  - Svi file putevi sanitizirani (werkzeug.safe_join, re.sub za provider nazive)
-  - Ping endpoint ne izlaže stack trace u error odgovorima
-  - MAX_CONCURRENT_PER_KEY=1 sprečava parallel key abuse
-
-================================================================================
-TESTOVI
-================================================================================
-
-  python3 -m pytest tests/ -v     (18 testova)
-
-  tests/unit/test_validators.py       — Validatori fajlova (6 testova)
-  tests/integration/test_api_routes.py — Flask rute (12 testova)
-
-================================================================================
-ENV VARIJABLE
-================================================================================
-
-  SKRIPTORIJ_PORT      (default: 8080)     — Port Flask servera
-  SKRIPTORIJ_CONFIG    (default: dev_api.json) — Putanja do ključeva
-  SKRIPTORIJ_INPUT_DIR (default: ~/Skriptorij/data) — Input knjige
-  SKRIPTORIJ_OUTPUT_DIR (default: ~/Skriptorij/output) — Output knjige
-  BOOKLYFI_V2          (default: 1)        — Aktivira workers_v2
-  PYTHONUNBUFFERED     (preporučeno: 1)    — Real-time logovi u Dockeru
-
+KRAJ DOKUMENTA
 ================================================================================
