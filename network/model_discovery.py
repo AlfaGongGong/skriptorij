@@ -495,19 +495,6 @@ def prime_cache_sync(fleet_manager) -> None:
 
 # ── Startup provjera ključeva ─────────────────────────────────────────────────
 
-# Ključne riječi u 429 body-u koje signaliziraju iscrpljenu kvotu
-_QUOTA_KEYWORDS = frozenset([
-    "quota",               # Google RESOURCE_EXHAUSTED, general
-    "insufficient_quota",  # OpenAI specifični kod greške
-    "billing",             # Billing/account greška
-    "daily limit",         # Dnevna kvota
-    "monthly limit",       # Mjesečna kvota
-    "out of credits",      # Sistemi na kredit
-    "account balance",     # Stanje računa
-    "prepaid",             # Prepaid kredit
-    "resource exhausted",  # Google: RESOURCE_EXHAUSTED
-])
-
 _DAILY_QUOTA_COOLDOWN = 82800  # 23h — isti kao api_fleet._DAILY_QUOTA_RETRY_AFTER
 
 
@@ -600,8 +587,12 @@ def startup_key_check(fleet_manager) -> None:
                 ra = float(retry_after_raw) if retry_after_raw else 0.0
             except ValueError:
                 ra = 0.0
-            body_lower = str(body).lower() if body else ""
-            is_quota = ra > 3600 or any(kw in body_lower for kw in _QUOTA_KEYWORDS)
+            # Lazy import — api_fleet je već učitan u procesu, nema cirkularnog importa
+            try:
+                from api_fleet import _is_quota_exhausted_body
+                is_quota = ra > 3600 or _is_quota_exhausted_body(body)
+            except Exception:
+                is_quota = ra > 3600
             tip = "KVOTA ISCRPLJENA" if is_quota else "RATE LIMIT"
             logger.warning("[KeyCheck] %s ...%s → %s (HTTP 429)", prov, ks.key[-4:], tip)
         else:

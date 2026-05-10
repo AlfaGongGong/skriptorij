@@ -238,6 +238,22 @@ class KeyState:
         }
 
 
+# Ključne riječi u tijelu odgovora koje ukazuju na iscrpljenost kvote.
+# Definisano jednom na nivou modula — koristi se i u _is_quota_exhausted_body()
+# i može se importovati u network.model_discovery radi konzistentnosti.
+_QUOTA_KEYWORDS = frozenset([
+    "quota",               # Google RESOURCE_EXHAUSTED, general
+    "insufficient_quota",  # OpenAI specifični kod greške
+    "billing",             # Billing/account greška
+    "daily limit",         # Dnevna kvota
+    "monthly limit",       # Mjesečna kvota
+    "out of credits",      # Sistemi na kredit
+    "account balance",     # Stanje računa
+    "prepaid",             # Prepaid kredit
+    "resource exhausted",  # Google: RESOURCE_EXHAUSTED
+])
+
+
 def _is_quota_exhausted_body(body) -> bool:
     """
     Provjerava body odgovora na prisutnost ključnih riječi koje ukazuju
@@ -247,18 +263,7 @@ def _is_quota_exhausted_body(body) -> bool:
     if not body:
         return False
     body_lower = str(body).lower()
-    quota_keywords = [
-        "quota",               # Google RESOURCE_EXHAUSTED, general
-        "insufficient_quota",  # OpenAI specifični kod greške
-        "billing",             # Billing/account greška
-        "daily limit",         # Dnevna kvota
-        "monthly limit",       # Mjesečna kvota
-        "out of credits",      # Sistemi na kredit
-        "account balance",     # Stanje računa
-        "prepaid",             # Prepaid kredit
-        "resource exhausted",  # Google: RESOURCE_EXHAUSTED
-    ]
-    return any(kw in body_lower for kw in quota_keywords)
+    return any(kw in body_lower for kw in _QUOTA_KEYWORDS)
 
 
 class FleetManager:
