@@ -9,12 +9,33 @@ warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 from bs4 import BeautifulSoup, NavigableString
 
-# Regex: JSON wrapper artifacts like {"finalno_polirano": "..." or partial forms
+# Regex: JSON wrapper artifacts like {"finalno_polirano": "..." or partial forms.
+# Tipografski navodnici „"'' (koje AI modeli ponekad koriste umjesto ASCII ") su
+# uključeni u klasu znakova kako bi čišćenje radilo i na tim varijantama.
+#
+# _Q = klasa znakova koja obuhvata i ASCII " i sve tipografske navodnike i whitespace
+_Q = r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b"\s]'
+# _Q1 = samo navodnici (bez whitespace) za graničnike vrijednosti
+_Q1 = r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b"]'
+# Ključevi JSON omotača koje prepoznajemo
+_JSON_KEYS = r'(?:finalno_polirano|korektura|tekst|prijevod)'
+
 _JSON_ARTIFACT_PREFIX = re.compile(
-    r'^\s*\{["\s]*(?:finalno_polirano|korektura|tekst|prijevod)["\s]*:\s*["\s]*',
+    rf'^\s*\{{{_Q}*{_JSON_KEYS}{_Q}*:\s*{_Q}*',
     re.IGNORECASE,
 )
-_JSON_ARTIFACT_TRAILER = re.compile(r'["\s]*\}\s*$')
+_JSON_ARTIFACT_TRAILER = re.compile(
+    r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b"\s]*\}\s*$'
+)
+
+# Regex za ugniježđeni JSON u sredini tekst-čvora:
+# hvata slučajeve gdje AI upiše dio teksta pa doda JSON wrapper na kraju, npr.:
+#   "Uputi dramatične{ „korektura": „...cijeli tekst..."}"
+# Pohlepni (.+?) je namjerno kratak (non-greedy) jer tražimo do prve zatvorene tipografske/ASCII ".
+_EMBEDDED_JSON_RE = re.compile(
+    rf'\{{{_Q}*(?:finalno_polirano|korektura){_Q}*:\s*{_Q1}(.*?){_Q1}\s*\}}\s*$',
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def _ocisti_epub_html(html: str) -> str:
@@ -35,6 +56,8 @@ def _strip_json_artifacts_from_html(html_fajlovi: list, log_fn=None) -> int:
     """
     Uklanja JSON omotače poput {"finalno_polirano": "..." koji su procurili
     u HTML tekst tokom AI obrade. Radi direktno nad tekst-čvorovima BeautifulSoup-a.
+    Podržava i tipografske navodnike „"'' koje AI modeli ponekad koriste umjesto ASCII ".
+    Podržava i ugniježđeni JSON — gdje JSON nije na početku tekst-čvora nego u sredini/kraju.
     """
     fixed = 0
     for fajl in html_fajlovi:
@@ -49,15 +72,24 @@ def _strip_json_artifacts_from_html(html_fajlovi: list, log_fn=None) -> int:
                 txt = str(node)
                 if "finalno_polirano" not in txt and "korektura" not in txt:
                     continue
-                if not txt.strip().startswith("{"):
-                    continue
-                # Ukloni prefiks JSON omotača
-                cleaned = _JSON_ARTIFACT_PREFIX.sub("", txt)
-                # Ukloni ostatak JSON zatvarača samo s kraja
-                cleaned = _JSON_ARTIFACT_TRAILER.sub("", cleaned)
-                if cleaned != txt:
-                    node.replace_with(NavigableString(cleaned))
-                    changed = True
+                if txt.strip().startswith("{"):
+                    # Slučaj 1: JSON wrapper je na početku čvora (normalni artefakt)
+                    cleaned = _JSON_ARTIFACT_PREFIX.sub("", txt)
+                    # Ukloni ostatak JSON zatvarača samo s kraja
+                    cleaned = _JSON_ARTIFACT_TRAILER.sub("", cleaned)
+                    if cleaned != txt:
+                        node.replace_with(NavigableString(cleaned))
+                        changed = True
+                else:
+                    # Slučaj 2: JSON wrapper je ugniježđen u sredini/kraju teksta.
+                    # Primjer: "Uputi dramatične{ „korektura": „...cijeli tekst..."}"
+                    # Izvuci vrijednost iz JSON-a i zamijeni cijeli čvor s njom.
+                    m = _EMBEDDED_JSON_RE.search(txt)
+                    if m:
+                        extracted = m.group(1).strip()
+                        if extracted and extracted != txt:
+                            node.replace_with(NavigableString(extracted))
+                            changed = True
             if changed:
                 fajl.write_text(str(soup), encoding="utf-8")
                 fixed += 1

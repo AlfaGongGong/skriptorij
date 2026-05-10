@@ -98,18 +98,37 @@ def _smart_extract(raw: str) -> str:
     if raw.startswith("```"):
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
         raw = re.sub(r"\s*```\s*$", "", raw)  # B19 FIX: bio r"?```\s*$"
-    try:
-        data = json.loads(raw)
-        if isinstance(data, dict):
-            # B01 FIX: "finalno_polirano" je prvi — to je što LEKTOR_TEMPLATE vraća
-            for k in ["finalno_polirano", "korektura", "translated", "tekst", "text"]:
-                if k in data and data[k]:
-                    return _strip_html_wrapper(str(data[k]).strip())
-    except Exception:
-        pass
-    m = re.search(r'"finalno_polirano"\s*:\s*"((?:[^"\\]|\\.)*)"', raw)
+
+    # Normalizacija tipografskih navodnika → ASCII prije JSON parsiranja.
+    # Neki AI modeli (posebno manji) prate "NAVODNICI" pravilo premijerno i
+    # koriste „..." i u JSON omotaču (ključevi, graničnici stringa), što
+    # proizvodi nevaljani JSON. Normalizacijom omogućavamo uspješan json.loads.
+    _TYPO_Q = re.compile(r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b]')
+
+    for candidate in (raw, _TYPO_Q.sub('"', raw)):
+        try:
+            data = json.loads(candidate)
+            if isinstance(data, dict):
+                # B01 FIX: "finalno_polirano" je prvi — to je što LEKTOR_TEMPLATE vraća
+                for k in ["finalno_polirano", "korektura", "translated", "tekst", "text"]:
+                    if k in data and data[k]:
+                        return _strip_html_wrapper(str(data[k]).strip())
+        except Exception:
+            pass
+
+    # Regex fallback za finalno_polirano: pohlepni (.+) namjerno hvata vrijednosti
+    # s neescape-danim ASCII navodnicima unutar HTML-a (npr. dijalog sekcije).
+    # Ispravno-escapirani JSON je već uhvaćen json.loads iznad.
+    # Pohlepni backtracking je O(n) — nema eksponencijalnog rizika za ovaj obrazac.
+    m = re.search(r'"finalno_polirano"\s*:\s*"(.+)"\s*\}?\s*$', raw, re.DOTALL)
     if m:
         return m.group(1)
+
+    # Regex fallback za korektura (KOREKTOR prolaz) — pohlepni, isti princip.
+    m = re.search(r'"korektura"\s*:\s*"(.+)"\s*\}?\s*$', raw, re.DOTALL)
+    if m:
+        return m.group(1)
+
     cist = _agresivno_cisti(raw)
     # Odbaci ako je AI vratio anotacijski odgovor umjesto čistog teksta
     if _je_ai_anotacija(cist):
