@@ -343,6 +343,13 @@ class MorfoValidator:
         )
 
 
+# ---------------------------------------------------------------------------
+# Gotova instanca — importira se u workers_v2.py / pipeline.py
+# ---------------------------------------------------------------------------
+
+morfo_validator: MorfoValidator = MorfoValidator()
+
+
 if __name__ == "__main__":
     import sys
 

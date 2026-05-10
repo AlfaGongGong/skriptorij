@@ -21,6 +21,21 @@ from core.text_utils import (
 )
 from core.quality import _scoruj_kvalitetu, _QUALITY_RESCUE_THRESHOLD
 
+# Lazy import — rod_detektor i kalkovi_engine (fail-safe)
+try:
+    from core.kalkovi.rod_detektor import rod_detektor as _rod_detektor_singleton
+    _ROD_DETEKTOR_OK = True
+except Exception:
+    _rod_detektor_singleton = None
+    _ROD_DETEKTOR_OK = False
+
+try:
+    from core.kalkovi.engine import kalkovi_engine as _kalkovi_engine_retro
+    _KALKOVI_RETRO_OK = True
+except Exception:
+    _kalkovi_engine_retro = None
+    _KALKOVI_RETRO_OK = False
+
 
 def _je_finalni_chk(chk_path: Path) -> bool:
     """
@@ -263,6 +278,40 @@ async def retroaktivna_relektura_v10(
             self.log(f"⚠️ Per-blok QS flush greška: {_flush_err}", "warning")
 
         finalno = _post_process_tipografija(finalno)
+
+        # Primijeni kalkovi + rod korekcije i na retro rezultatu
+        if _KALKOVI_RETRO_OK and _kalkovi_engine_retro is not None:
+            try:
+                glosar_r = {}
+                if hasattr(self, "book_context") and self.book_context:
+                    glosar_r = getattr(self.book_context, "glosar", {})
+                finalno_k, _ = _kalkovi_engine_retro.primijeni(
+                    finalno, glosar=glosar_r, blok_id=chk.stem
+                )
+                if finalno_k and len(finalno_k.strip()) > 10:
+                    finalno = finalno_k
+            except Exception:
+                pass
+
+        if _ROD_DETEKTOR_OK and _rod_detektor_singleton is not None:
+            try:
+                knjiga_id_r = getattr(self, "clean_book_name", "") or chk.stem.split("_blok_")[0]
+                glosar_rod_r = {}
+                if hasattr(self, "book_context") and self.book_context:
+                    raw_g = getattr(self.book_context, "_glosar", {})
+                    glosar_rod_r = {
+                        ime: entry.get("rod", "auto")
+                        for ime, entry in raw_g.items()
+                        if isinstance(entry, dict) and entry.get("rod") in ("M", "Ž")
+                    }
+                finalno_r, n_rod = _rod_detektor_singleton.primijeni(
+                    finalno, knjiga_id=knjiga_id_r, glosar_rod=glosar_rod_r
+                )
+                if n_rod and finalno_r and len(finalno_r.strip()) > 10:
+                    finalno = finalno_r
+            except Exception:
+                pass
+
         self._atomic_write(chk, finalno)
         self.log(
             f"[{file_name}] Blok {chunk_idx}: ✅ Retro | score: {ocjena:.1f}/10",
@@ -418,6 +467,114 @@ async def mark_for_review(self, score_threshold: float = _QUALITY_RESCUE_THRESHO
         "system",
     )
     return review_list
+
+
+def retroaktivna_rod_korekcija(
+    self,
+    samo_loše: bool = False,
+    bad_threshold: float = _QUALITY_RESCUE_THRESHOLD,
+) -> dict:
+    """
+    Deterministička retroaktivna korekcija miješanja roda nad svim .chk fajlovima.
+    Ne koristi AI — samo rod_detektor + kalkovi engine.
+    Brza alternativa punom retro pipelinu za rod probleme.
+
+    Args:
+        samo_loše:     Ako True, obrađuje samo blokove s lošim quality scoreom.
+        bad_threshold: Threshold ispod kojeg je blok 'loš' (default: 6.5).
+
+    Returns:
+        {
+            "obradjeno": int,
+            "korigovano": int,
+            "korekcija_ukupno": int,
+            "po_fajlu": {stem: int}
+        }
+    """
+    if not _ROD_DETEKTOR_OK or _rod_detektor_singleton is None:
+        self.log("⚠️ [retro_rod] RodDetektor nije dostupan — preskačem", "warning")
+        return {"obradjeno": 0, "korigovano": 0, "korekcija_ukupno": 0, "po_fajlu": {}}
+
+    chk_dir = _get_checkpoint_dir(self)
+    svi_chk = sorted(f for f in chk_dir.glob("*.chk") if _je_finalni_chk(f))
+
+    if not svi_chk:
+        self.log("❌ [retro_rod] Nema finalnih .chk fajlova", "error")
+        return {"obradjeno": 0, "korigovano": 0, "korekcija_ukupno": 0, "po_fajlu": {}}
+
+    # Filtriranje po quality scoreu (opcionalno)
+    if samo_loše:
+        qs_cache = chk_dir / "quality_scores.json"
+        scores = {}
+        if qs_cache.exists():
+            try:
+                raw = json.loads(qs_cache.read_text("utf-8"))
+                for k, v in raw.items():
+                    scores[k] = float(v["score"]) if isinstance(v, dict) else float(v)
+            except Exception:
+                pass
+        ciljani = [c for c in svi_chk if scores.get(c.stem, 10.0) < bad_threshold]
+        self.log(
+            f"[retro_rod] Selektivni mod: {len(ciljani)}/{len(svi_chk)} blokova "
+            f"(score < {bad_threshold})",
+            "system",
+        )
+    else:
+        ciljani = svi_chk
+
+    if not ciljani:
+        self.log("✅ [retro_rod] Nema blokova za rod korekciju", "system")
+        return {"obradjeno": 0, "korigovano": 0, "korekcija_ukupno": 0, "po_fajlu": {}}
+
+    # Izvuci glosar rod info iz book_context (ako postoji)
+    glosar_rod: dict[str, str] = {}
+    bc = getattr(self, "book_context", None)
+    if bc:
+        raw_g = getattr(bc, "_glosar", {})
+        glosar_rod = {
+            ime: entry.get("rod", "auto")
+            for ime, entry in raw_g.items()
+            if isinstance(entry, dict) and entry.get("rod") in ("M", "Ž")
+        }
+
+    knjiga_id = getattr(self, "clean_book_name", "") or "knjiga"
+
+    # Delegiraj batch_primijeni rod_detektoru
+    self.log(
+        f"🔄 [retro_rod] Pokretanje deterministike rod korekcije: "
+        f"{len(ciljani)} blokova, knjiga='{knjiga_id}'",
+        "system",
+    )
+    statistika = _rod_detektor_singleton.batch_primijeni(
+        chk_fajlovi=ciljani,
+        knjiga_id=knjiga_id,
+        glosar_rod=glosar_rod,
+        log_fn=self.log,
+    )
+
+    # Primijeni i kalkovi engine retroaktivno (uz rod korekciju)
+    if _KALKOVI_RETRO_OK and _kalkovi_engine_retro is not None:
+        glosar_k = getattr(bc, "glosar", {}) if bc else {}
+        n_kalkovi = 0
+        for chk in ciljani:
+            try:
+                tekst_orig = chk.read_text("utf-8", errors="ignore")
+                tekst_kor, n = _kalkovi_engine_retro.primijeni(
+                    tekst_orig, glosar=glosar_k, blok_id=chk.stem
+                )
+                if n and tekst_kor and len(tekst_kor.strip()) > 10:
+                    tmp = chk.with_suffix(".kal_tmp")
+                    tmp.write_text(tekst_kor, encoding="utf-8")
+                    tmp.replace(chk)
+                    n_kalkovi += n
+            except Exception:
+                pass
+        if n_kalkovi:
+            self.log(
+                f"[retro_rod] Kalkovi engine: {n_kalkovi} dodatnih zamjena", "tech"
+            )
+
+    return statistika
 
 
 async def send_to_fix(self, score_threshold: float = _QUALITY_RESCUE_THRESHOLD):
