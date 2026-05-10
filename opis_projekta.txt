@@ -1,6 +1,6 @@
 ================================================================================
-BOOKLYFI TURBO V10 — OPIS PROJEKTA I ARHITEKTURE
-Ažurirano: 2026-05-08
+BOOKLYFI TURBO V10 — KOMPLETNI OPIS PROJEKTA
+Ažurirano: 2026-05-10
 Projekt: AI-powered sistem za prijevod i lekturu EPUB/MOBI knjiga
 ================================================================================
 
