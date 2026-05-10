@@ -90,6 +90,15 @@ except Exception as _det_e:
     _DETEKTOR_AKTIVAN = False
     _detektor = None
 
+# Korak 11b — Rod detektor (aktivni mod: korigira miješanje roda)
+try:
+    from core.kalkovi.rod_detektor import RodDetektor as _RodDetektor
+    _rod_detektor = _RodDetektor()
+    _ROD_DETEKTOR_AKTIVAN = True
+except Exception as _rod_e:
+    _ROD_DETEKTOR_AKTIVAN = False
+    _rod_detektor = None
+
 
 # ─────────────────────────────────────────────────────────────
 # MODELI S VISOKIM RIZIKOM — morfo_validator se uvijek pokreće
@@ -246,11 +255,11 @@ class WorkerV2:
         # 1. Anti-pattern čišćenje
         tekst = _ocisti_anti_patterne(tekst, model_ime)
 
-        # 2. KalkoviEngine
+        # 2. KalkoviEngine — primijeni() vraća (tekst, n_zamjena) tuple
         if _kalkovi_ok:
             glosar = getattr(self.book_context, "glosar", {}) if self.book_context else {}
             try:
-                tekst = kalkovi_engine.primijeni(tekst, glosar=glosar)
+                tekst, _ = kalkovi_engine.primijeni(tekst, glosar=glosar)
             except Exception as e:
                 logger.warning(f"KalkoviEngine greška: {e} — originalni tekst prolazi")
 
@@ -264,6 +273,30 @@ class WorkerV2:
                 tekst = morfo_validator.validiraj(tekst)
             except Exception as e:
                 logger.warning(f"MorfoValidator greška: {e} — tekst prolazi bez validacije")
+
+        # 4. Rod detektor — aktivna korekcija miješanja roda
+        if _ROD_DETEKTOR_AKTIVAN and _rod_detektor is not None:
+            try:
+                knjiga_id = (
+                    getattr(self.book_context, "knjiga_id", "")
+                    or getattr(self.book_context, "naziv", "")
+                    if self.book_context else ""
+                )
+                glosar_rod = {}
+                if self.book_context:
+                    raw_glosar = getattr(self.book_context, "_glosar", {})
+                    glosar_rod = {
+                        ime: entry.get("rod", "auto")
+                        for ime, entry in raw_glosar.items()
+                        if isinstance(entry, dict)
+                    }
+                tekst, n_rod = _rod_detektor.primijeni(
+                    tekst, knjiga_id=knjiga_id, glosar_rod=glosar_rod
+                )
+                if n_rod:
+                    logger.info(f"[rod_detektor] {n_rod} rod korekcija primijenjena")
+            except Exception as e:
+                logger.warning(f"RodDetektor greška: {e} — tekst prolazi nepromijenjen")
 
         return tekst
 
