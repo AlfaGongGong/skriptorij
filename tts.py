@@ -208,17 +208,16 @@ async def _ai_fonetizacija(
         "thriller#->#triler\n"
         "coffee#->#kofi\n"
     )
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {
-            "role": "user",
-            "content": f"Fonetizuj sljedeće riječi:\n{lista_rijeci}",
-        },
-    ]
+    prompt = f"Fonetizuj sljedeće riječi:\n{lista_rijeci}"
 
     try:
-        odgovor = await engine._call_ai_engine(
-            "LEKTOR", "naracija", messages, 0.1, "tts_fonetizacija"
+        odgovor, _ = await engine._call_ai_engine(
+            prompt,
+            chunk_idx=0,
+            uloga="LEKTOR",
+            filename="tts_fonetizacija",
+            sys_override=system_prompt,
+            tip_bloka="naracija",
         )
     except Exception as e:
         log_fn(f"⚠️ TTS AI fonetizacija greška: {e}", "warning")
