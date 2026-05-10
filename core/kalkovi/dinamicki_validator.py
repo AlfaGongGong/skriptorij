@@ -29,6 +29,12 @@ MAX_AVG_SCORE = 8.2         # Prosječni quality score mora biti ispod ovoga
 MIN_KNJIGA_RAZNOLIKOST = 2  # Mora se pojaviti u bar 2 različite knjige
 
 
+# Tipovi koji se NIKAD ne promoviraju globalno (book-specifični)
+# rod_mijesanje: ovisi o imenima likova koji su per-knjiga
+# info: pasivna statistika, ne kalkovi pattern
+NIKAD_PROMOVISATI_TIPOVI: frozenset = frozenset({"rod_mijesanje", "info"})
+
+
 class DinamickiValidator:
     """
     Validira kandidate iz karantene i odlučuje o promociji.
@@ -134,6 +140,12 @@ class DinamickiValidator:
 
             for row in rows:
                 rdict = dict(row)
+
+                # Nikad ne promoviraj book-specifične tipove globalno
+                if rdict.get("tip") in NIKAD_PROMOVISATI_TIPOVI:
+                    rezultat['cekati'].append(rdict['pattern'])
+                    continue
+
                 treba, razlog = self._ocijeni_kandidata(rdict)
 
                 if treba:

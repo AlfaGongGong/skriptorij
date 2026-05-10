@@ -1,0 +1,32 @@
+{
+  "Marija": {
+    "rod": "Ž",
+    "clue_m": 3,
+    "clue_z": 3
+  },
+  "Ivan": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 3
+  },
+  "Aida": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "John": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Marko": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 3
+  },
+  "Sara": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 6
+  }
+}

@@ -91,6 +91,21 @@ def _get_karantena_detektor():
     return _karantena_detektor if _karantena_detektor is not False else None
 
 
+# ── Rod detektor (singleton, lazy init) ──────────────────────────────────────
+_rod_detektor_pipeline = None
+
+def _get_rod_detektor():
+    """Vraća singleton RodDetektor, inicijaliziran pri prvom pozivu."""
+    global _rod_detektor_pipeline
+    if _rod_detektor_pipeline is None:
+        try:
+            from core.kalkovi.rod_detektor import RodDetektor
+            _rod_detektor_pipeline = RodDetektor()
+        except Exception:
+            _rod_detektor_pipeline = False
+    return _rod_detektor_pipeline if _rod_detektor_pipeline is not False else None
+
+
 # ── Privatni checkpoint helperi ───────────────────────────────────────────────
 
 def _chk_path(self, file_name: str, chunk_idx: int, suffix: str = "") -> object:
@@ -233,6 +248,39 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
             )
         except Exception as e:
             logging.debug(f"[pipeline] Karantena detektor greška (blok {chunk_idx}): {e}")
+
+    # Korak 11b: Rod detektor — aktivna korekcija miješanja roda
+    rod_det = _get_rod_detektor()
+    if rod_det is not None and finalno:
+        try:
+            knjiga_id_rod = ""
+            bp = getattr(self, "book_path", None)
+            if bp:
+                from pathlib import Path as _PathR
+                knjiga_id_rod = _PathR(bp).stem
+            elif hasattr(self, "clean_book_name"):
+                knjiga_id_rod = self.clean_book_name
+
+            glosar_rod = {}
+            bc = getattr(self, "book_context", None)
+            if bc:
+                raw_g = getattr(bc, "_glosar", {})
+                glosar_rod = {
+                    ime: entry.get("rod", "auto")
+                    for ime, entry in raw_g.items()
+                    if isinstance(entry, dict) and entry.get("rod") in ("M", "Ž")
+                }
+
+            finalno_r, n_rod = rod_det.primijeni(
+                finalno, knjiga_id=knjiga_id_rod, glosar_rod=glosar_rod
+            )
+            if n_rod and finalno_r and len(finalno_r.strip()) > 10:
+                finalno = finalno_r
+                logging.info(
+                    f"[pipeline] Rod korekcija: blok {chunk_idx} → {n_rod} zamjena"
+                )
+        except Exception as e:
+            logging.debug(f"[pipeline] Rod detektor greška (blok {chunk_idx}): {e}")
 
     return finalno
 
