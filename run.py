@@ -132,7 +132,48 @@ def _pametni_reset_cachea(engine, scores: dict, sharedstats):
     return len(losi)
 
 
-def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_controls):
+def _obrada_karantene_kraj_knjige(engine) -> None:
+    """
+    Poziva se na kraju obrade svake knjige.
+    1. DinamickiValidator: provjerava sve kandidate i promovira/odbija
+    2. DinamickiPromoter: upisuje potvrđene u dinamicki_lista.py
+    3. Ako su novi kalkovi promovirani, hot-reload kalkovi_engine
+    """
+    try:
+        from core.kalkovi.dinamicki_validator import DinamickiValidator
+        from core.kalkovi.dinamicki_promoter import DinamickiPromoter
+
+        validator = DinamickiValidator()
+        rez_val = validator.provjeri_sve_kandidate(dry_run=False)
+
+        promoter = DinamickiPromoter()
+        rez_prom = promoter.promoviraj(dry_run=False)
+
+        n_prom = len(rez_prom.get("promoviran", []))
+        n_val_cekanje = len(rez_val.get("promovirati", []))
+        n_val_odbiti = len(rez_val.get("odbiti", []))
+
+        if n_prom:
+            # Hot-reload kalkovi_engine s novim patternima
+            try:
+                from core.kalkovi import reload_dinamicki_kalkove
+                n_ukupno = reload_dinamicki_kalkove()
+                engine.log(
+                    f"🔄 Kalkovi karantena: {n_prom} novih patterna promovirano — "
+                    f"engine reloadovan ({n_ukupno} aktivnih patterna)",
+                    "system",
+                )
+            except Exception as e_rel:
+                engine.log(f"⚠️ Kalkovi reload pao: {e_rel}", "warning")
+        else:
+            engine.log(
+                f"📊 Kalkovi karantena: {n_val_cekanje} na čekanju, "
+                f"{n_val_odbiti} odbijeno — nema novih promocija",
+                "tech",
+            )
+
+    except Exception as e:
+        engine.log(f"⚠️ Karantena obrada pala: {e}", "warning")
     """
     Glavna entry točka. Poziva je app.py u zasebnom threadu.
     Mode se NE prima kao parametar — engine ga sam detektuje UVIJEK na početku:
@@ -278,6 +319,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                     pass
             engine.generate_ncx()
             engine.finalize()
+            _obrada_karantene_kraj_knjige(engine)
             sharedstats["status"] = "ZAVRŠENO (AUTO-RETRO)"
             sharedstats["pct"] = 100
         return  # Izlaz — ne ulazi u main_loop() ispod
@@ -358,6 +400,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.log(f"⚠️ Quality scores snimanje palo: {e}", "warning")
 
         engine.finalize()
+        _obrada_karantene_kraj_knjige(engine)
 
 
 if __name__ == "__main__":
