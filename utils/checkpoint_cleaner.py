@@ -39,16 +39,24 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
     stripped = sadrzaj.strip()
     if not stripped.startswith("{"):
         return sadrzaj
-    try:
-        data = json.loads(stripped)
-        for k in ("finalno_polirano", "korektura", "tekst", "prijevod"):
-            if k in data and isinstance(data[k], str) and data[k].strip():
-                extracted = data[k].strip()
-                if extracted.lower() not in _PLACEHOLDERS:
-                    return extracted
-    except (json.JSONDecodeError, ValueError):
-        pass
-    # Regex fallback — handles truncated or malformed JSON wrappers
+
+    # Normalizuj tipografske navodnike → ASCII za potrebe json.loads.
+    # AI modeli ponekad koriste „..." umjesto ASCII "" čak i u JSON omotaču.
+    _TYPO_Q = re.compile(r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b]')
+
+    for candidate in (stripped, _TYPO_Q.sub('"', stripped)):
+        try:
+            data = json.loads(candidate)
+            for k in ("finalno_polirano", "korektura", "tekst", "prijevod"):
+                if k in data and isinstance(data[k], str) and data[k].strip():
+                    extracted = data[k].strip()
+                    if extracted.lower() not in _PLACEHOLDERS:
+                        return extracted
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # Regex fallback — handles truncated or malformed JSON wrappers.
+    # Strogi (ispravni JSON escape), pa pohlepni (neescape-dani navodnici unutar vrijednosti).
     for k in ("finalno_polirano", "korektura", "tekst", "prijevod"):
         m = re.search(
             rf'"{k}"\s*:\s*"((?:[^"\\]|\\.)*)',
@@ -63,6 +71,17 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
             except (json.JSONDecodeError, ValueError):
                 extracted = raw_val
             extracted = extracted.strip()
+            if extracted and extracted.lower() not in _PLACEHOLDERS:
+                return extracted
+        # Pohlepni fallback (.+) — namjerno hvata vrijednosti s neescape-danim
+        # ASCII navodnicima unutar HTML sadržaja. Backtracking je O(n), nije eksponencijalan.
+        m2 = re.search(
+            rf'"{k}"\s*:\s*"(.+)"\s*\}}?\s*$',
+            stripped,
+            re.DOTALL,
+        )
+        if m2:
+            extracted = m2.group(1).strip()
             if extracted and extracted.lower() not in _PLACEHOLDERS:
                 return extracted
     return sadrzaj

@@ -791,11 +791,15 @@ def epub_preview():
 @bp.route("/api/clean_annotations", methods=["POST"])
 def clean_annotations():
     """
-    Retroaktivno čišćenje .chk fajlova koji sadrže AI anotacije umjesto teksta.
-    Briše takve fajlove da se blokovi ponovo obrade pri sljedećem pokretanju.
+    Retroaktivno čišćenje za aktivnu knjiga:
+      1. .chk fajlovi — uklanja AI anotacije, JSON omotače (uključujući
+         tipografske navodnike „"'') i placeholder tekstove.
+      2. HTML fajlovi u work_dir — uklanja { „korektura" i slične JSON omotače
+         koji su procurili u EPUB HTML tokom AI obrade (tipografski i ASCII navodnici,
+         ugniježđeni JSON u sredini tekst-čvora).
 
     Body (opcionalno): {"book": "ime.epub"}
-    Vraća: {"obrisano": N, "status": "ok"}
+    Vraća: {"chk_popravljeno": N, "html_popravljeno": M, "status": "ok"}
     """
     data = request.get_json(silent=True) or {}
 
@@ -818,24 +822,48 @@ def clean_annotations():
 
     try:
         from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
+        from epub.parser import _strip_json_artifacts_from_html
+
         # Sanitizacija: dozvoli samo alfanumeričke znakove i _- za stem
         clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
-        chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
+        work_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}"
+        chk_dir  = work_dir / "checkpoints"
 
         # Provjeri da putanja ostaje unutar CHECKPOINT_BASE_DIR
         try:
-            chk_dir.resolve().relative_to(CHECKPOINT_BASE_DIR.resolve())
+            work_dir.resolve().relative_to(CHECKPOINT_BASE_DIR.resolve())
         except ValueError:
             return jsonify({"error": "Nevažeća putanja knjige"}), 400
-
-        if not chk_dir.exists():
-            return jsonify({"obrisano": 0, "status": "ok", "info": "Nema checkpointa za ovu knjigu"})
 
         def _log(msg, tip="info"):
             SHARED_STATS["live_audit"] = SHARED_STATS.get("live_audit", "") + f"\n{msg}"
 
-        n = _no_cisti_chk_fajlove(chk_dir, log_fn=_log)
-        return jsonify({"obrisano": n, "status": "ok", "book": Path(book).name})
+        # 1. Čišćenje .chk fajlova (JSON omotači + anotacije + placeholder)
+        chk_popravljeno = 0
+        if chk_dir.exists():
+            chk_popravljeno = _no_cisti_chk_fajlove(chk_dir, log_fn=_log)
+        else:
+            _log("ℹ️ Nema checkpointa za ovu knjigu.")
+
+        # 2. Čišćenje HTML fajlova u work_dir (procurili JSON omotači u EPUB HTML)
+        html_popravljeno = 0
+        if work_dir.exists():
+            html_files = sorted(
+                f for f in work_dir.rglob("*")
+                if f.suffix.lower() in {".html", ".htm", ".xhtml"}
+                and not f.name.startswith(".")
+            )
+            if html_files:
+                html_popravljeno = _strip_json_artifacts_from_html(html_files, log_fn=_log)
+            else:
+                _log("ℹ️ Nema HTML fajlova za čišćenje u work_dir.")
+
+        return jsonify({
+            "chk_popravljeno":  chk_popravljeno,
+            "html_popravljeno": html_popravljeno,
+            "status": "ok",
+            "book":   Path(book).name,
+        })
     except Exception:
         logging.exception("clean_annotations: greška pri čišćenju")
         return jsonify({"error": "Greška pri čišćenju anotacija"}), 500

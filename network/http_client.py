@@ -110,6 +110,10 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
       Novi kod:  kratka pauza za učtivost → odmah None → caller bira drugi ključ.
 
     BUG#10 FIX: Per-key semaphore osigurava max 1 paralelni poziv po ključu.
+
+    NOVO: body se parsira i prosljeđuje analyze_response() za bolje
+      razlikovanje kvote i rate limita kod 429 grešaka.
+    NOVO: Na 404, model se invalidira iz discovery cachea.
     """
     await acquire_key(key)
     try:
@@ -129,8 +133,16 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
             return None
 
+        # Parsiramo body za greške (200 ne trebamo parsirati ovdje)
+        resp_body = None
+        if resp.status_code != 200:
+            try:
+                resp_body = resp.json()
+            except Exception:
+                resp_body = {"text": resp.text[:300]}
+
         try:
-            self.fleet.analyze_response(prov, key, resp.status_code, resp.headers)
+            self.fleet.analyze_response(prov, key, resp.status_code, resp.headers, resp_body)
         except Exception:
             pass
 
@@ -148,12 +160,11 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             except ValueError:
                 retry_after = None
 
+            # analyze_response() je već odredio tip (kvota ili rate limit) i postavio cooldown.
+            # Ovdje samo logovati i eventualno čekati kratko za učtivost.
             if retry_after and retry_after > 3600:
-                self.log(f"[{prov_upper}] RPD limit (dnevna kvota) — preskačem", "warning")
+                self.log(f"[{prov_upper}] Kvota iscrpljena (dnevni limit) — biram drugi ključ", "warning")
             else:
-                # BUG#9 FIX: Ne ponavljamo isti ključ — kratka pauza za učtivost, zatim None.
-                # analyze_response() je već postavio cooldown na ovaj ključ.
-                # Caller (_call_ai_engine) će pokušati sljedeći provider/ključ.
                 wait = min(retry_after or 3.0, 8.0) + random.uniform(0.3, 1.0)
                 self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s, biram drugi ključ", "warning")
                 await asyncio.sleep(wait)
@@ -164,16 +175,33 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             return None
 
         elif resp.status_code == 400:
-            try:
-                err_body = resp.json()
-                err_msg  = str(err_body)[:200]
-            except Exception:
-                err_msg = resp.text[:200]
+            err_msg = str(resp_body)[:200] if resp_body else resp.text[:200]
             self.log(f"[{prov_upper}] HTTP 400 Bad Request: {err_msg}", "warning")
             return None
 
         elif resp.status_code == 404:
-            self.log(f"[{prov_upper}] HTTP 404 — model ne postoji, skipujem rotaciju", "warning")
+            # Model ne postoji — ukloni iz discovery cachea i pokušaj sljedeći
+            model_used = (json_payload or {}).get("model", "") if isinstance(json_payload, dict) else ""
+            if model_used:
+                try:
+                    from network.model_discovery import invalidate_cached_model
+                    next_model = invalidate_cached_model(prov_upper, model_used)
+                    if next_model:
+                        self.log(
+                            f"[{prov_upper}] Model {model_used!r} ne postoji (404) → "
+                            f"invalidiran, sljedeći: {next_model!r}",
+                            "warning",
+                        )
+                    else:
+                        self.log(
+                            f"[{prov_upper}] Model {model_used!r} ne postoji (404) — "
+                            "nema više modela u cacheu",
+                            "warning",
+                        )
+                except Exception:
+                    self.log(f"[{prov_upper}] HTTP 404 — model ne postoji", "warning")
+            else:
+                self.log(f"[{prov_upper}] HTTP 404 — resurs nije pronađen", "warning")
             return None
 
         else:
@@ -182,6 +210,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
 
     finally:
         release_key(key)
+
 
 
 async def _call_single_provider(

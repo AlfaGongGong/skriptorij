@@ -373,6 +373,36 @@ def select_best_model(provider: str, api_key: str) -> str:
     return fallback
 
 
+def invalidate_cached_model(provider: str, model_id: str) -> Optional[str]:
+    """
+    Uklanja specifičan model iz cachea (npr. kad vrati HTTP 404).
+    Promoviše sljedeći model iz liste kao novi best.
+    Vraća ID sljedećeg modela, ili None ako nema više dostupnih.
+
+    Koristi se kad HTTP klijent dobije 404 na poziv — model je
+    obrisan/ugašen i treba probati sljedeći iz discovery liste.
+    """
+    prov = provider.upper()
+    with _cache_lock:
+        entry = _model_list_cache.get(prov)
+        if entry is None:
+            return None
+        model_list, ts = entry
+        if model_id not in model_list:
+            return None
+        # Ukloni loš model
+        model_list = [m for m in model_list if m != model_id]
+        _model_list_cache[prov] = (model_list, ts)
+        if model_list:
+            _model_cache[prov] = (model_list[0], ts)
+            logger.info("[ModelDiscovery] %s: model %s invalidiran → %s", prov, model_id, model_list[0])
+            return model_list[0]
+        else:
+            _model_cache.pop(prov, None)
+            logger.warning("[ModelDiscovery] %s: model %s invalidiran — nema više modela u cacheu", prov, model_id)
+            return None
+
+
 # ── Pozadinski refresh ────────────────────────────────────────────────────────
 
 def _refresh_worker(provider_keys: dict[str, str]) -> None:
@@ -461,3 +491,129 @@ def prime_cache_sync(fleet_manager) -> None:
     # Čekamo max 12 sekundi da svi završe
     for t in threads:
         t.join(timeout=12.0)
+
+
+# ── Startup provjera ključeva ─────────────────────────────────────────────────
+
+_DAILY_QUOTA_COOLDOWN = 82800  # 23h — isti kao api_fleet._DAILY_QUOTA_RETRY_AFTER
+
+
+def startup_key_check(fleet_manager) -> None:
+    """
+    Provjera validnosti SVIH ključeva pri startu servera.
+    Za svaki ključ šalje GET /v1/models i ažurira stanje u fleetu:
+
+      HTTP 200      → ključ validan; modeli se cachiraju
+      HTTP 401/402/403/412 → ključ nevažeći; označen kao disabled (24h cooldown)
+      HTTP 429      → kvota iscrpljena ili rate limit:
+                       - body/Retry-After signaliziraju kvotu → dugi cooldown
+                       - inače → kratki cooldown (rate limit)
+      Greška veze   → stanje se ne mijenja (privremena mrežna greška)
+
+    Pokreće se paralelno (jedan thread po ključu), max 20s ukupno.
+    Model discovery je ugrađen: 200 odgovor cachira modele u isti mah.
+    """
+    # Prikupi sve ključeve koji nisu već disabled
+    all_ks: list[tuple[str, object]] = []
+    for prov, keys in fleet_manager.fleet.items():
+        for ks in keys:
+            if ks.key and not ks.disabled:
+                all_ks.append((prov.upper(), ks))
+
+    if not all_ks:
+        logger.warning("[KeyCheck] Nema ključeva za provjeru")
+        return
+
+    logger.info("[KeyCheck] Provjera %d ključeva...", len(all_ks))
+
+    def _check_one(prov: str, ks) -> None:
+        endpoint = _MODELS_ENDPOINTS.get(prov)
+        if not endpoint:
+            return
+
+        headers = {
+            "Authorization": f"Bearer {ks.key}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            resp = requests.get(endpoint, headers=headers, timeout=10.0)
+        except requests.exceptions.RequestException as exc:
+            logger.warning("[KeyCheck] %s ...%s — mrežna greška: %s", prov, ks.key[-4:], exc)
+            return
+
+        status = resp.status_code
+
+        # Parsiramo body samo kad nije 200 (jeftino, kratko)
+        body = None
+        if status != 200:
+            try:
+                body = resp.json()
+            except Exception:
+                body = {"text": resp.text[:300]}
+
+        # Delegiramo state update fleetmanageru (koristi interni lock)
+        fleet_manager.analyze_response(prov, ks.key, status, resp.headers, body)
+
+        if status == 200:
+            logger.info("[KeyCheck] %s ...%s → OK", prov, ks.key[-4:])
+            # Bonus: cachiraj modele odmah (ne čekaj prime_cache_sync)
+            if not get_cached_model(prov):
+                try:
+                    data = resp.json()
+                    raw_list = data.get("data", data) if isinstance(data, dict) else data
+                    model_ids: list[str] = []
+                    for item in (raw_list if isinstance(raw_list, list) else []):
+                        if isinstance(item, dict):
+                            mid = item.get("id") or item.get("name") or ""
+                        elif isinstance(item, str):
+                            mid = item
+                        else:
+                            continue
+                        if mid and _is_valid_chat_model(prov, mid):
+                            model_ids.append(mid)
+                    if model_ids:
+                        model_ids.sort(key=lambda m: _score_model_strength(prov, m), reverse=True)
+                        _set_cached_model_list(prov, model_ids)
+                        logger.info("[KeyCheck] %s: %d modela cachiran (best: %s)", prov, len(model_ids), model_ids[0])
+                except Exception:
+                    pass
+        elif status in (401, 402, 403, 412):
+            logger.warning("[KeyCheck] %s ...%s → NEVAŽEĆI KLJUČ (HTTP %d)", prov, ks.key[-4:], status)
+        elif status in (429, 425):
+            # analyze_response je već postavio cooldown; samo logujemo tip
+            retry_after_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after") or ""
+            try:
+                ra = float(retry_after_raw) if retry_after_raw else 0.0
+            except ValueError:
+                ra = 0.0
+            # Lazy import — api_fleet je već učitan u procesu, nema cirkularnog importa
+            try:
+                from api_fleet import _is_quota_exhausted_body
+                is_quota = ra > 3600 or _is_quota_exhausted_body(body)
+            except Exception:
+                is_quota = ra > 3600
+            tip = "KVOTA ISCRPLJENA" if is_quota else "RATE LIMIT"
+            logger.warning("[KeyCheck] %s ...%s → %s (HTTP 429)", prov, ks.key[-4:], tip)
+        else:
+            logger.warning("[KeyCheck] %s ...%s → HTTP %d (ignorišem)", prov, ks.key[-4:], status)
+
+    threads = [
+        threading.Thread(
+            target=_check_one,
+            args=(prov, ks),
+            name=f"KeyCheck-{prov}-{ks.key[-4:]}",
+            daemon=True,
+        )
+        for prov, ks in all_ks
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=20.0)
+
+    fleet_manager.flush_now()
+
+    valid = sum(1 for prov, ks in all_ks if ks.available)
+    total = len(all_ks)
+    logger.info("[KeyCheck] Gotovo: %d/%d ključeva aktivno", valid, total)

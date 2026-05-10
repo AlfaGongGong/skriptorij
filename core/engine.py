@@ -35,11 +35,15 @@ class SkriptorijAllInOne:
         except Exception:
             pass
 
-        # ── Auto-discovery najjačih modela ───────────────────────────────────
-        # prime_cache_sync popunjava cache sinhrono (paralelni threadovi, max 12s)
-        # start_background_refresh osvježava cache svakih sat vremena
+        # ── Provjera i auto-discovery modela pri startu ──────────────────────
+        # startup_key_check: validira sve ključeve (401/429 → disable/cooldown)
+        #   i cachira modele kao sporedni efekat (GET /v1/models za svaki ključ).
+        # prime_cache_sync: popunjava model cache za provajdere koji ga nemaju
+        #   (nakon key_check-a većina će već biti cachirana, ovo popunjava ostatak).
+        # start_background_refresh: osvježava cache svakih sat vremena.
         try:
-            from network.model_discovery import prime_cache_sync, start_background_refresh
+            from network.model_discovery import startup_key_check, prime_cache_sync, start_background_refresh
+            startup_key_check(self.fleet)
             prime_cache_sync(self.fleet)
             start_background_refresh(self.fleet)
         except Exception:
