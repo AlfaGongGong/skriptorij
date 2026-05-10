@@ -1,104 +1,278 @@
 """
-tts.py — TTS filter mod za Moon+ Reader
+tts.py — TTS filter generator za Moon+ Reader
 
-BUGFIX:
-  B15: engine.run() ne postoji — TTS sad prolazi kroz workers direktno.
-  B16: tts_mode flag postavljen ali nikad čitan — sada pipeline prima info
-       kroz shared_stats["tts_mode"] i workers generišu čisti tekst.
-  B17: Nije generisan .ttsfilter fajl — sada se eksplicitno generira.
-  B18: shared_stats["live_audit"] se postavljao kao string direktno,
-       zaobilazeći add_audit HTML sistem — sada koristi add_audit.
+FORMAT .ttsfilter fajla:
+  Svaki red je zamjena u obliku: original#->#fonetizovano
+  Primjeri:
+    A#->#a
+    George#->#Džordž
+    me #-># meh
 
-TTS FILTER FORMAT (Moon+ Reader):
-  Fajl s ekstenzijom .ttsfilter sadrži čisti tekst knjige bez HTML-a,
-  jedan paragraf po retku, bez tipografskih znakova koji zbunjuju TTS:
-    - Em-crtice (—) → zarez i razmak
-    - Elipsis (…)   → tačka
-    - Navodnici („") → ništa (TTS ih ne izgovara dobro)
+LOGIKA:
+  1. Učitava tekst iz checkpointa (ako postoje) ili iz originalnog EPUB-a
+  2. Upisuje hardkodirane zamjene (velika slova BS abecede)
+  3. Skenira tekst za strane riječi (q/w/x/y, vlastita imena, strani idiomi)
+  4. Šalje skenirane strane riječi AI-u za fonetizaciju na BS izgovor
+  5. Snima .ttsfilter fajl pored izlazne knjige (OUTPUT_DIR)
 """
 
-from pathlib import Path
+import re
+import asyncio
 import zipfile
 import shutil
-import re
+from pathlib import Path
 from bs4 import BeautifulSoup
 from utils.logging import add_audit
 from config.settings import OUTPUT_DIR
 
 
-def _html_to_tts_tekst(html: str) -> str:
-    """
-    Konvertuje HTML u TTS-friendly plain text.
-    Primjenjuje TTS-specifična čišćenja koja su drugačija od standardnog čišćenja.
-    """
+# ── Hardkodirane zamjene: velika slova BS abecede → mala (za TTS) ─────────────
+_HARDKODIRANI = """A#->#a
+B#->#b
+C#->#c
+Č#->#č
+Ć#->#ć
+D#->#d
+Dž#->#dž
+Đ#->#đ
+E#->#e
+F#->#f
+G#->#g
+H#->#h
+I#->#i
+J#->#j
+K#->#k
+L#->#l
+Lj#->#lj
+M#->#m
+N#->#n
+Nj#->#nj
+O#->#o
+P#->#p
+Q#->#q
+R#->#r
+S#->#s
+Š#->#š
+T#->#t
+U#->#u
+V#->#v
+W#->#w
+X#->#x
+Y#->#y
+Z#->#z
+Ž#->#ž
+me #-># meh"""
+
+# BS/HR znakovi koji su normalni (ne tretiramo kao strani)
+_BS_ZNAKOVI = set("aAbBcCčČćĆdDđĐeEfFgGhHiIjJkKlLmMnNoOpPrRsStTuUvVzZšŠžŽ")
+
+# Regex za strane/nepoznate znakove (q, w, x, y — ne postoje u BS abecedi)
+_STRANI_ZNAKOVI_RE = re.compile(r"[qwxyQWXY]")
+
+# Regex za izvlačenje čistih riječi iz teksta
+_RIJEC_RE = re.compile(r"\b[A-ZČĆŽŠĐa-zčćžšđ][a-zA-ZčćžšđČĆŽŠĐ\-']{2,}\b")
+
+# Engleski prijedlozi/veznici koji zbune TTS (kratke engl. riječi)
+_ENGLESKI_KRATKI = {
+    "the", "a", "an", "in", "on", "at", "to", "of", "for", "with",
+    "from", "by", "or", "and", "but", "not", "is", "are", "was",
+    "were", "be", "been", "has", "have", "had", "do", "does", "did",
+    "will", "would", "can", "could", "should", "may", "might", "shall",
+    "no", "yes", "it", "he", "she", "we", "they", "you", "me", "my",
+    "his", "her", "its", "our", "their", "this", "that", "these",
+    "those", "what", "which", "who", "how", "when", "where", "why",
+}
+
+# Fonetizacija engleskih kratkih riječi → BS izgovor
+_ENGLESKI_KRATKI_FONETIKA = {
+    "the": "de",
+    "a": "ej",
+    "an": "en",
+    "in": "in",
+    "on": "on",
+    "at": "et",
+    "to": "tu",
+    "of": "ov",
+    "for": "for",
+    "with": "vid",
+    "from": "from",
+    "by": "baj",
+    "or": "or",
+    "and": "end",
+    "but": "bat",
+    "not": "not",
+    "is": "iz",
+    "are": "ar",
+    "was": "woz",
+    "it": "it",
+    "he": "hi",
+    "she": "ši",
+    "we": "wi",
+    "they": "dej",
+    "you": "ju",
+    "me": "mi",
+    "my": "maj",
+    "his": "hiz",
+    "her": "her",
+    "no": "nou",
+    "yes": "jes",
+}
+
+
+def _html_u_tekst(html: str) -> str:
+    """Konvertuje HTML u čisti tekst za analizu."""
     try:
         soup = BeautifulSoup(html, "html.parser")
-        tekst = soup.get_text(separator="\n")
+        return soup.get_text(separator=" ")
     except Exception:
-        tekst = re.sub(r"<[^>]+>", " ", html)
-
-    # TTS zamjene
-    tekst = tekst.replace("—", ", ")  # Em-crtica → kratka pauza
-    tekst = tekst.replace("–", ", ")  # En-crtica
-    tekst = tekst.replace("…", ".")  # Elipsis → tačka (TTS pauza)
-    tekst = tekst.replace("„", "")  # Otvoreni navodnik (U+201E)
-    tekst = tekst.replace("\u201d", "")  # Zatvoreni navodnik (U+201D)
-
-    # Čisti višestruke prazne redove → jedan
-    tekst = re.sub(r"\n{3,}", "\n\n", tekst)
-    # Čisti višestruke razmake
-    tekst = re.sub(r" {2,}", " ", tekst)
-
-    return tekst.strip()
+        return re.sub(r"<[^>]+>", " ", html)
 
 
-def _generiraj_ttsfilter(html_files: list, output_path: Path, log_fn) -> bool:
+def _je_strana_rijec(rijec: str) -> bool:
     """
-    B17 FIX: Generira .ttsfilter fajl iz liste HTML fajlova.
-    Vraća True ako uspješno, False ako greška.
+    Vraća True ako je rijec vjerovatno strana (ne-BS).
+    Kriteriji:
+      - Sadrži q, w, x, y
+      - Sve je caps i duža od 1 slova (kratica/akronim)
+      - Sadrži nestandardnu kombinaciju suglasnika za BS
     """
-    dijelovi = []
-    for hf in html_files:
-        try:
-            html = Path(hf).read_text("utf-8", errors="ignore")
-            tts_tekst = _html_to_tts_tekst(html)
-            if tts_tekst:
-                dijelovi.append(tts_tekst)
-        except Exception as e:
-            log_fn(f"⚠️ TTS: Greška pri čitanju {hf}: {e}", "warning")
-
-    if not dijelovi:
-        log_fn("❌ TTS: Nema teksta za generisanje.", "error")
+    if not rijec or len(rijec) < 2:
         return False
+    r_lower = rijec.lower()
+    if _STRANI_ZNAKOVI_RE.search(rijec):
+        return True
+    if r_lower in _ENGLESKI_KRATKI:
+        return True
+    # Dvostruki suglasnici nekarakteristični za BS
+    if re.search(r"(ll|rr|tt|pp|bb|dd|gg|ss|ff|cc|zz)", r_lower):
+        return True
+    return False
 
-    kompletan_tekst = "\n\n".join(dijelovi)
+
+def _ekstraktuj_strane_rijeci(tekst: str) -> list[str]:
+    """
+    Izvlači listu jedinstvenih stranih riječi iz teksta.
+    Vraća sortiranu listu bez duplikata.
+    """
+    kandidati = set()
+    rijeci = _RIJEC_RE.findall(tekst)
+    for r in rijeci:
+        if _je_strana_rijec(r):
+            kandidati.add(r)
+    # Kratke engl. riječi (lowercase)
+    sve_lowercase = re.findall(r"\b[a-z]{2,5}\b", tekst)
+    for r in sve_lowercase:
+        if r in _ENGLESKI_KRATKI:
+            kandidati.add(r)
+    return sorted(kandidati)
+
+
+def _regex_fonetizacija(rijeci: list[str]) -> dict[str, str]:
+    """
+    Regex-based fonetizacija poznatih slučajeva bez AI poziva.
+    Vraća dict {original: fonetizovano}.
+    """
+    rezultat = {}
+    for r in rijeci:
+        r_lower = r.lower()
+        if r_lower in _ENGLESKI_KRATKI_FONETIKA:
+            rezultat[r] = _ENGLESKI_KRATKI_FONETIKA[r_lower]
+    return rezultat
+
+
+async def _ai_fonetizacija(
+    strane_rijeci: list[str], engine, log_fn
+) -> dict[str, str]:
+    """
+    Šalje strane/nefonetizovane riječi AI modelu za fonetizaciju.
+    AI vraća linije u formatu: original#->#fonetizovano
+    """
+    if not strane_rijeci:
+        return {}
+
+    lista_rijeci = "\n".join(strane_rijeci)
+    system_prompt = (
+        "Ti si fonetski ekspert za bosanski jezik. "
+        "Za svaku stranu riječ ili vlastito ime koje dobiješ, napiši kako se izgovara na bosanskom. "
+        "Format odgovora — svaka zamjena u zasebnom retku:\n"
+        "original#->#fonetizovano\n\n"
+        "Pravila:\n"
+        "- Samo fonetski zapis, bez objašnjenja\n"
+        "- Koristi bosanska slova (š, č, ž, đ, ć)\n"
+        "- Svaka linija: tocno jedna zamjena\n"
+        "- Ako rijec vec zvuci bosanski, ipak je napiši (original#->#original)\n"
+        "Primjeri:\n"
+        "George#->#Džordž\n"
+        "Harry#->#Hari\n"
+        "London#->#London\n"
+        "thriller#->#triler\n"
+        "coffee#->#kofi\n"
+    )
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {
+            "role": "user",
+            "content": f"Fonetizuj sljedeće riječi:\n{lista_rijeci}",
+        },
+    ]
 
     try:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(kompletan_tekst, encoding="utf-8")
-        log_fn(f"✅ TTS fajl generisan: {output_path}", "success")
-        return True
+        odgovor = await engine._call_ai_engine(
+            "LEKTOR", "naracija", messages, 0.1, "tts_fonetizacija"
+        )
     except Exception as e:
-        log_fn(f"❌ TTS: Greška pri pisanju fajla: {e}", "error")
-        return False
+        log_fn(f"⚠️ TTS AI fonetizacija greška: {e}", "warning")
+        return {}
+
+    if not odgovor:
+        return {}
+
+    # Parsiraj odgovor: original#->#fonetizovano
+    rezultat = {}
+    for linija in odgovor.splitlines():
+        linija = linija.strip()
+        if "#->#" in linija:
+            dijelovi = linija.split("#->#", 1)
+            if len(dijelovi) == 2:
+                orig = dijelovi[0].strip()
+                fonet = dijelovi[1].strip()
+                if orig and fonet and orig != fonet:
+                    rezultat[orig] = fonet
+
+    log_fn(f"✅ TTS: AI fonetizirao {len(rezultat)} od {len(strane_rijeci)} stranih riječi.", "tech")
+    return rezultat
+
+
+def _generiraj_ttsfilter_sadrzaj(ai_fonetika: dict[str, str]) -> str:
+    """
+    Gradi kompletan .ttsfilter sadržaj:
+    1. Hardkodirane zamjene
+    2. AI-fonetizovane strane riječi
+    """
+    linije = [_HARDKODIRANI]
+
+    if ai_fonetika:
+        linije.append("")  # prazan red kao separator
+        linije.append("# Strane rijeci i vlastita imena")
+        for original, fonetizovano in sorted(ai_fonetika.items()):
+            linije.append(f"{original}#->#{fonetizovano}")
+
+    return "\n".join(linije) + "\n"
 
 
 def start_from_master(
     book_path: str, model: str, shared_stats: dict, shared_controls: dict
 ):
     """
-    B15 FIX: Ne poziva engine.run() — TTS ima vlastiti tok.
-    B16 FIX: TTS mod se komunicira kroz shared_stats["tts_mode"].
-    B18 FIX: Koristi add_audit umjesto direktnog string postavljanja.
+    TTS filter generator. NE pokreće AI prijevod/lekturu.
+    Generira .ttsfilter fajl za Moon+ Reader u OUTPUT_DIR.
     """
 
-    # B18 FIX: koristi add_audit, ne direktno postavljanje stringa
     def log(msg: str, tip: str = "info"):
         add_audit(msg, tip, shared_stats=shared_stats)
 
     shared_stats["status"] = "TTS OBRADA..."
-    shared_stats["tts_mode"] = True  # B16 FIX: flag za pipeline
-    log("🔊 TTS filter mod pokrenut...", "system")
+    log("🔊 TTS filter generator pokrenut...", "system")
 
     try:
         from core.engine import SkriptorijAllInOne
@@ -106,14 +280,14 @@ def start_from_master(
         engine = SkriptorijAllInOne(book_path, model, shared_stats, shared_controls)
         book_path_obj = Path(book_path)
 
-        # Raspakuj epub u work_dir (isto kao run.py)
-        engine.work_dir.mkdir(parents=True, exist_ok=True)
-        engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-
         if not book_path_obj.exists():
             log(f"❌ Knjiga nije pronađena: {book_path}", "error")
             shared_stats["status"] = "GREŠKA (TTS)"
             return
+
+        # ── Raspakivanje EPUB-a ──────────────────────────────────────────────
+        engine.work_dir.mkdir(parents=True, exist_ok=True)
+        engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         log(f"📖 Raspakovavam: {book_path_obj.name}", "tech")
         try:
@@ -124,12 +298,12 @@ def start_from_master(
             shared_stats["status"] = "GREŠKA (TTS)"
             return
 
-        # Pronađi HTML fajlove
+        # ── Pronađi HTML fajlove ─────────────────────────────────────────────
         html_files = sorted(
             [
                 f
                 for f in engine.work_dir.rglob("*")
-                if f.suffix.lower() in [".html", ".htm", ".xhtml"]
+                if f.suffix.lower() in (".html", ".htm", ".xhtml")
             ],
             key=lambda x: x.name,
         )
@@ -139,85 +313,130 @@ def start_from_master(
             shared_stats["status"] = "GREŠKA (TTS)"
             return
 
-        log(f"📄 Pronađeno {len(html_files)} poglavlja za TTS obradu.", "system")
+        log(f"📄 Pronađeno {len(html_files)} poglavlja.", "system")
 
-        # Provjeri postoje li već prevedeni/lektorirani checkpointi
+        # ── Primijeni checkpointe ako postoje ────────────────────────────────
         chk_files = list(engine.checkpoint_dir.glob("*.chk"))
-        log(f"💾 Pronađeno {len(chk_files)} checkpoint blokova.", "tech")
-
-        # Ako postoje checkpointi, zamijeni HTML sadržaj s lektoriranim verzijama
         if chk_files:
-            log("♻️ Učitavam lektorirani sadržaj iz checkpointa...", "system")
+            log(f"♻️ Učitavam {len(chk_files)} lektoriranih blokova...", "system")
             _primijeni_checkpointe_na_html(html_files, engine.checkpoint_dir, log)
+        else:
+            log("ℹ️ Nema checkpointa — koristim originalni tekst iz EPUB-a.", "info")
 
-        # B17 FIX: Generiraj .ttsfilter fajl
+        # ── Izvuci sav tekst za analizu ──────────────────────────────────────
+        shared_stats["status"] = "TTS: Skeniranje teksta..."
+        shared_stats["pct"] = 20
+
+        sav_tekst = []
+        for hf in html_files:
+            try:
+                html = hf.read_text("utf-8", errors="ignore")
+                sav_tekst.append(_html_u_tekst(html))
+            except Exception as e:
+                log(f"⚠️ TTS: Greška pri čitanju {hf.name}: {e}", "warning")
+
+        kompletan_tekst = " ".join(sav_tekst)
+
+        # ── Pronađi strane riječi ────────────────────────────────────────────
+        strane_rijeci = _ekstraktuj_strane_rijeci(kompletan_tekst)
+        log(f"🔍 TTS: Pronađeno {len(strane_rijeci)} stranih/nepoznatih izraza.", "tech")
+
+        # Regex fonetizacija za poznate slučajeve
+        fonetika = _regex_fonetizacija(strane_rijeci)
+        preostale = [r for r in strane_rijeci if r not in fonetika]
+
+        # ── AI fonetizacija za preostale ─────────────────────────────────────
+        shared_stats["status"] = "TTS: AI fonetizacija..."
+        shared_stats["pct"] = 50
+
+        ai_fonetika = {}
+        if preostale:
+            # Ograniči na max 200 riječi da izbjegnemo predugačak prompt
+            batch = preostale[:200]
+            log(f"🤖 TTS: Šaljem {len(batch)} riječi na AI fonetizaciju...", "tech")
+            try:
+                ai_fonetika = asyncio.run(
+                    _ai_fonetizacija(batch, engine, log)
+                )
+            except Exception as e:
+                log(f"⚠️ TTS AI fonetizacija nije uspjela: {e} — nastavljam bez AI.", "warning")
+
+        # Spoji regex + AI fonetiku
+        fonetika.update(ai_fonetika)
+
+        # ── Generiraj i snimi .ttsfilter ─────────────────────────────────────
+        shared_stats["status"] = "TTS: Generisanje fajla..."
+        shared_stats["pct"] = 85
+
         clean_name = engine.clean_book_name or "knjiga"
         output_path = OUTPUT_DIR / f"{clean_name}.ttsfilter"
 
-        shared_stats["status"] = "GENERISANJE TTS FAJLA..."
-        shared_stats["pct"] = 50
+        sadrzaj = _generiraj_ttsfilter_sadrzaj(fonetika)
 
-        uspjeh = _generiraj_ttsfilter(html_files, output_path, log)
-
-        if uspjeh:
-            shared_stats["status"] = "ZAVRŠENO (TTS)"
-            shared_stats["pct"] = 100
-            shared_stats["output_file"] = str(output_path)
-            log(f"✅ TTS filter generisan: {output_path.name}", "success")
-        else:
-            shared_stats["status"] = "GREŠKA (TTS)"
-
-        # Čišćenje work_dir
         try:
-            shutil.rmtree(engine.work_dir, ignore_errors=True)
-        except Exception:
-            pass
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(sadrzaj, encoding="utf-8")
+            log(f"✅ TTS filter sačuvan: {output_path}", "success")
+        except Exception as e:
+            log(f"❌ TTS: Greška pri pisanju fajla: {e}", "error")
+            shared_stats["status"] = "GREŠKA (TTS)"
+            return
+
+        shared_stats["status"] = "ZAVRŠENO (TTS)"
+        shared_stats["pct"] = 100
+        shared_stats["output_file"] = str(output_path)
+        log(f"🔊 .ttsfilter generisan: {output_path.name} ({len(fonetika)} zamjena)", "success")
 
     except Exception as exc:
         import traceback
-
         shared_stats["status"] = f"GREŠKA (TTS): {type(exc).__name__}"
         add_audit(f"❌ TTS Greška: {exc}", "error", shared_stats=shared_stats)
-        add_audit(traceback.format_exc()[-500:], "tech", shared_stats=shared_stats)
+        add_audit(traceback.format_exc()[-800:], "tech", shared_stats=shared_stats)
+
+    finally:
+        # Čišćenje privremenih fajlova
+        try:
+            if "engine" in dir():
+                shutil.rmtree(engine.work_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 def _primijeni_checkpointe_na_html(
     html_files: list, checkpoint_dir: Path, log_fn
 ) -> None:
     """
-    Zamjenjuje sadržaj HTML fajlova s lektoriranim blokovima iz checkpointa.
-    Koristi se u TTS modu da se generira TTS od finalnog lektoriranog teksta.
+    Zamjenjuje sadržaj HTML fajlova s finalnim lektoriranim blokovima iz checkpointa.
+    Koristi .chk fajlove koji su finalni (bez .prevod/.lektura sufiksa u imenu).
     """
-    from utils.checkpoint_cleaner import _ocisti_json_wrapper
-
     for hf in html_files:
         file_name = hf.name
-        # Pronađi sve blokove koji pripadaju ovom fajlu
+        # Pronađi sve finalne blokove za ovaj fajl (ne intermediate .prevod/.lektura)
         blok_fajlovi = sorted(
             [
                 f
                 for f in checkpoint_dir.glob(f"{file_name}_blok_*.chk")
                 if not (f.stem.endswith(".prevod") or f.stem.endswith(".lektura"))
             ],
-            key=lambda f: int(re.search(r"_blok_(\d+)", f.stem).group(1))
-            if re.search(r"_blok_(\d+)", f.stem)
+            key=lambda f: int(m.group(1))
+            if (m := re.search(r"_blok_(\d+)", f.stem))
             else 0,
         )
 
         if not blok_fajlovi:
-            continue  # Ovaj fajl nije obrađen — koristi original
+            continue  # Poglavlje nije obrađeno — koristi original
 
         try:
             dijelovi = []
             for blok in blok_fajlovi:
-                sadrzaj = blok.read_text("utf-8", errors="ignore")
-                sadrzaj = _ocisti_json_wrapper(sadrzaj)
-                if sadrzaj and len(sadrzaj.strip()) > 5:
+                sadrzaj = blok.read_text("utf-8", errors="ignore").strip()
+                if sadrzaj and len(sadrzaj) > 5:
                     dijelovi.append(sadrzaj)
 
             if dijelovi:
                 hf.write_text("\n".join(dijelovi), encoding="utf-8")
         except Exception as e:
             log_fn(
-                f"⚠️ TTS: Greška pri primjeni checkpointa za {file_name}: {e}", "warning"
+                f"⚠️ TTS: Greška pri primjeni checkpointa za {file_name}: {e}",
+                "warning",
             )
