@@ -238,8 +238,31 @@ class KeyState:
         }
 
 
+def _is_quota_exhausted_body(body) -> bool:
+    """
+    Provjerava body odgovora na prisutnost ključnih riječi koje ukazuju
+    na iscrpljenost kvote (za razliku od rate limita koji se obnovi za minutu).
+    Koristi se u analyze_response() za bolju klasifikaciju 429 grešaka.
+    """
+    if not body:
+        return False
+    body_lower = str(body).lower()
+    quota_keywords = [
+        "quota",               # Google RESOURCE_EXHAUSTED, general
+        "insufficient_quota",  # OpenAI specifični kod greške
+        "billing",             # Billing/account greška
+        "daily limit",         # Dnevna kvota
+        "monthly limit",       # Mjesečna kvota
+        "out of credits",      # Sistemi na kredit
+        "account balance",     # Stanje računa
+        "prepaid",             # Prepaid kredit
+        "resource exhausted",  # Google: RESOURCE_EXHAUSTED
+    ]
+    return any(kw in body_lower for kw in quota_keywords)
+
+
 class FleetManager:
-    """V10.3 Fleet Manager."""
+    """V10.4 Fleet Manager."""
 
     def __init__(self, config_path="dev_api.json", state_path="api_state.json"):
         self.config_path = Path(config_path)
@@ -445,12 +468,16 @@ class FleetManager:
                 ks.record_error()
         self._save_state()
 
-    def analyze_response(self, provider: str, key: str, status_code: int, headers):
+    def analyze_response(self, provider: str, key: str, status_code: int, headers, body=None):
         """
-        Parsira HTTP headere i ažurira KeyState.
+        Parsira HTTP headere i response body te ažurira KeyState.
 
         BUG#6 FIX: reset_time_minute se sada pravilno postavlja iz
         x-ratelimit-reset-requests headera ili kao now + 60s.
+
+        NOVO: prima opcionalni `body` (dict ili str) za bolju klasifikaciju 429:
+          - Ako body sadrži ključne riječi kvote (quota, exceeded, billing...)
+            tretira 429 kao dnevnu kvotu (dugi cooldown), čak i bez Retry-After.
         """
         prov_u = provider.upper()
         with self.lock:
@@ -564,13 +591,20 @@ class FleetManager:
                     except ValueError:
                         pass
 
-                if ra > 3600:
+                # Provjeri i body — neki provideri ne šalju Retry-After
+                # ali body sadrži ključne riječi koje signaliziraju kvotu
+                quota_body = _is_quota_exhausted_body(body)
+
+                if ra > 3600 or quota_body:
                     # Dnevna kvota — dugi cooldown
-                    ks.cooldown_until = now + min(ra, _DAILY_QUOTA_RETRY_AFTER)
-                    ks.is_active      = False
-                    ks.reset_time_minute = now + ra
+                    cooldown = min(ra, _DAILY_QUOTA_RETRY_AFTER) if ra > 3600 else _DAILY_QUOTA_RETRY_AFTER
+                    ks.cooldown_until    = now + cooldown
+                    ks.is_active         = False
+                    ks.reset_time_minute = now + cooldown
+                    ks.req_rem           = 0
+                    ks.remaining_day     = 0
                 else:
-                    # RPM limit — kratki cooldown
+                    # RPM limit — kratki cooldown (obnovi se za minutu)
                     ks.cooldown_until    = now + max(ra, 5.0)
                     ks.reset_time_minute = now + max(ra, _RPM_WINDOW)
 
