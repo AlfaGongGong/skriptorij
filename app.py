@@ -549,7 +549,13 @@ def create_app() -> Flask:
 
 
                 try:
-                    if mode == "RETRO":
+                    if mode == "TTS":
+                        from tts import start_from_master as start_tts_from_master
+                        start_tts_from_master(
+                            str(book_path), model, SHARED_STATS, SHARED_CONTROLS
+                        )
+
+                    elif mode == "RETRO":
                         import asyncio
                         from core.engine import SkriptorijAllInOne
                         from processing.retro import retroaktivna_relektura_v10

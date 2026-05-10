@@ -174,6 +174,9 @@ def _obrada_karantene_kraj_knjige(engine) -> None:
 
     except Exception as e:
         engine.log(f"⚠️ Karantena obrada pala: {e}", "warning")
+
+
+def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_controls):
     """
     Glavna entry točka. Poziva je app.py u zasebnom threadu.
     Mode se NE prima kao parametar — engine ga sam detektuje UVIJEK na početku:
