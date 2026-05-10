@@ -213,7 +213,7 @@ async def _ai_fonetizacija(
     try:
         odgovor, _ = await engine._call_ai_engine(
             prompt,
-            0,
+            chunk_idx=0,
             uloga="LEKTOR",
             filename="tts_fonetizacija",
             sys_override=system_prompt,
