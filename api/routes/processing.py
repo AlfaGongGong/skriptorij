@@ -250,7 +250,7 @@ def start_processing():
             )
 
         thread.start()
-        # Za RETRO i standardni pipeline: resetuj stop=False da nova obrada može teći.
+        # Za RETRO i standardni pipeline: resetuj stop=False da nova obrada može početi.
         # Za TTS: stop ostaje True — TTS ne koristi stop flag, a stari thread se zaustavlja.
         if tool != "TTS":
             SHARED_CONTROLS["stop"] = False

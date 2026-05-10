@@ -193,7 +193,7 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
             if hasattr(self, "book_context") and self.book_context:
                 glosar = getattr(self.book_context, "glosar", {})
             blok_id = f"{file_name}_blok_{chunk_idx}"
-            finalno_k, n_zamjena = kalkovi_engine.primijeni(finalno, glosar=glosar, blok_id=blok_id)
+            finalno_k, _ = kalkovi_engine.primijeni(finalno, glosar=glosar, blok_id=blok_id)
             if finalno_k and len(finalno_k.strip()) > 10:
                 finalno = finalno_k
         except Exception as e:
@@ -225,7 +225,7 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
                     if vals:
                         quality_score = sum(vals) / len(vals)
             detektor.analiziraj(
-                original="",
+                original="",  # originalni EN tekst nije dostupan na ovoj tački pipeline-a
                 prijevod=finalno,
                 knjiga=knjiga_str,
                 chunk_idx=chunk_idx,

@@ -174,13 +174,17 @@ class DinamickiDetektor:
             """)
             # Migracija: dodaj kolone ako nedostaju (za postojeće baze)
             postojece = {r[1] for r in conn.execute("PRAGMA table_info(kandidati)").fetchall()}
-            for kolona, tip_sql in [
-                ("knjige_set", "TEXT DEFAULT '[]'"),
-                ("rollback_count", "INTEGER DEFAULT 0"),
-                ("validator_napomena", "TEXT DEFAULT ''"),
-            ]:
-                if kolona not in postojece:
-                    conn.execute(f"ALTER TABLE kandidati ADD COLUMN {kolona} {tip_sql}")
+            _migracije = {
+                "knjige_set": "TEXT DEFAULT '[]'",
+                "rollback_count": "INTEGER DEFAULT 0",
+                "validator_napomena": "TEXT DEFAULT ''",
+            }
+            for kolona, tip_sql in _migracije.items():
+                if kolona not in postojece and kolona in _migracije:
+                    # Sigurno: kolona i tip su iz hardkodiranog rječnika
+                    conn.execute(
+                        f"ALTER TABLE kandidati ADD COLUMN {kolona} {tip_sql}"  # noqa: S608
+                    )
             conn.commit()
 
     def _zapisi_kandidata(
