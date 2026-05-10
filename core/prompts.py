@@ -113,6 +113,7 @@ PRAVILA (sva obavezna):
 7. HTML — zadrzi SVE tagove tacno (<p>, <em>, <i>, <b>, <br>). Ne mijenjaj strukturu.
 
 Vrati ISKLJUCIVO JSON: {{"finalno_polirano": "LEKTORIRANI_TEKST_OVDJE"}}
+KRITIČNO: JSON omotač (vitičaste zagrade i ključ) UVIJEK s ASCII navodnicima (""). Tipografski navodnici („") vrijede SAMO unutar vrijednosti teksta.
 """
 
 _LEKTOR_TIP_INSTRUKCIJE = {
@@ -209,6 +210,7 @@ PROVJERI I ISPRAVI SVAKU KATEGORIJU:
    - Titule i forme obraćanja: dosljedne
 
 Vrati ISKLJUČIVO JSON: {{"korektura": "KORIGIRANI_TEKST_OVDJE"}}
+KRITIČNO: JSON omotač (vitičaste zagrade i ključ) UVIJEK s ASCII navodnicima (""). Tipografski navodnici („") vrijede SAMO unutar vrijednosti teksta.
 """
 
 VALIDATOR_SYS = """\
