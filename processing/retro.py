@@ -37,6 +37,22 @@ except Exception:
     _KALKOVI_RETRO_OK = False
 
 
+def _izvuci_glosar_rod(engine_self) -> dict[str, str]:
+    """
+    Helper: izvlači {ime: rod} iz engine.book_context._glosar.
+    Vraća samo likove s eksplicitnim rodom 'M' ili 'Ž'.
+    """
+    bc = getattr(engine_self, "book_context", None)
+    if not bc:
+        return {}
+    raw_g = getattr(bc, "_glosar", {})
+    return {
+        ime: entry.get("rod")
+        for ime, entry in raw_g.items()
+        if isinstance(entry, dict) and entry.get("rod") in ("M", "Ž")
+    }
+
+
 def _je_finalni_chk(chk_path: Path) -> bool:
     """
     B10 FIX: Razlikuje finalne .chk od međukorak fajlova.
@@ -296,14 +312,7 @@ async def retroaktivna_relektura_v10(
         if _ROD_DETEKTOR_OK and _rod_detektor_singleton is not None:
             try:
                 knjiga_id_r = getattr(self, "clean_book_name", "") or chk.stem.split("_blok_")[0]
-                glosar_rod_r = {}
-                if hasattr(self, "book_context") and self.book_context:
-                    raw_g = getattr(self.book_context, "_glosar", {})
-                    glosar_rod_r = {
-                        ime: entry.get("rod", "auto")
-                        for ime, entry in raw_g.items()
-                        if isinstance(entry, dict) and entry.get("rod") in ("M", "Ž")
-                    }
+                glosar_rod_r = _izvuci_glosar_rod(self)
                 finalno_r, n_rod = _rod_detektor_singleton.primijeni(
                     finalno, knjiga_id=knjiga_id_r, glosar_rod=glosar_rod_r
                 )
@@ -527,15 +536,7 @@ def retroaktivna_rod_korekcija(
         return {"obradjeno": 0, "korigovano": 0, "korekcija_ukupno": 0, "po_fajlu": {}}
 
     # Izvuci glosar rod info iz book_context (ako postoji)
-    glosar_rod: dict[str, str] = {}
-    bc = getattr(self, "book_context", None)
-    if bc:
-        raw_g = getattr(bc, "_glosar", {})
-        glosar_rod = {
-            ime: entry.get("rod", "auto")
-            for ime, entry in raw_g.items()
-            if isinstance(entry, dict) and entry.get("rod") in ("M", "Ž")
-        }
+    glosar_rod: dict[str, str] = _izvuci_glosar_rod(self)
 
     knjiga_id = getattr(self, "clean_book_name", "") or "knjiga"
 

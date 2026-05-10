@@ -1,13 +1,13 @@
 {
   "Marija": {
     "rod": "Ž",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 3
   },
   "Ivan": {
     "rod": "M",
     "clue_m": 3,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Aida": {
     "rod": "Ž",
@@ -22,11 +22,11 @@
   "Marko": {
     "rod": "M",
     "clue_m": 3,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Sara": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 5
+    "clue_z": 6
   }
 }
