@@ -460,7 +460,6 @@ class SkriptorijAllInOne:
 
     # ── RETRO / REVIZIJA delegacija ───────────────────────────────────────────
 
-
     async def send_to_fix(self, score_threshold: float = None):
         from processing.retro import send_to_fix
         return await send_to_fix(self, score_threshold or 6.5)
@@ -468,3 +467,22 @@ class SkriptorijAllInOne:
     async def retroaktivna_relektura_v10(self, *args, **kwargs):
         from processing.retro import retroaktivna_relektura_v10
         await retroaktivna_relektura_v10(self, *args, **kwargs)
+
+    def retroaktivna_rod_korekcija(
+        self, samo_loše: bool = False, bad_threshold: float = 6.5
+    ) -> dict:
+        """
+        Deterministička retroaktivna korekcija miješanja roda nad .chk fajlovima.
+        Ne troši AI — brza, pokretljiva u bilo kom trenutku.
+
+        Args:
+            samo_loše:     Obradi samo blokove s quality scoreom < bad_threshold.
+            bad_threshold: Threshold za 'loš' blok (default: 6.5).
+
+        Returns:
+            dict s statistikom: obradjeno, korigovano, korekcija_ukupno, po_fajlu
+        """
+        from processing.retro import retroaktivna_rod_korekcija
+        return retroaktivna_rod_korekcija(
+            self, samo_loše=samo_loše, bad_threshold=bad_threshold
+        )

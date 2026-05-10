@@ -482,6 +482,18 @@ async def _scoruj_batch(
     return results
 
 
+# ─── Javna sinhorna ocjena (za workers_v2 i ostale sinhroni korisnici) ────────
+
+def ocijeni_kvalitet(prijevod: str, original: str = "", tip_ocjenjivanja: str = "opci") -> float:
+    """
+    Brza heuristička ocjena kvaliteta — sinhorna, bez AI poziva.
+    Koristi se u workers_v2.py i svuda gdje nije dostupan async kontekst.
+    Vraća float 1.0–10.0. Nikad ne vraća None.
+    """
+    score, _ = _izracunaj_heuristicki_score(prijevod)
+    return score
+
+
 # ─── Summary statistika ───────────────────────────────────────────────────────
 
 def quality_summary(scores: dict) -> dict:
