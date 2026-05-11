@@ -596,8 +596,11 @@ def startup_key_check(fleet_manager) -> None:
                 ra = 0.0
             # Lazy import — api_fleet je već učitan u procesu, nema cirkularnog importa
             try:
-                from api_fleet import _is_quota_exhausted_body
-                is_quota = ra > 3600 or _is_quota_exhausted_body(body)
+                from api_fleet import _is_quota_exhausted_body, _is_billing_exhausted_body
+                if prov in {"GEMINI", "GEMMA"}:
+                    is_quota = ra > 3600 or _is_billing_exhausted_body(body)
+                else:
+                    is_quota = ra > 3600 or _is_quota_exhausted_body(body)
             except Exception:
                 is_quota = ra > 3600
             tip = "KVOTA ISCRPLJENA" if is_quota else "RATE LIMIT"
