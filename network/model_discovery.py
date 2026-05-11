@@ -318,8 +318,9 @@ _dead_lock = threading.Lock()
 
 def mark_model_dead(provider: str, model_id: str) -> None:
     """
-    Trajno označava model kao nedostupan (HTTP 404).
-    Model se neće koristiti sve dok ga API ponovo ne vrati u listu modela.
+    Označava model kao nedostupan (HTTP 404).
+    Model ostaje dead sve dok ga API ponovo ne vrati u listi modela
+    (tj. dok `_set_cached_model_list` ne registruje oživljavanje).
     """
     prov = provider.upper()
     with _dead_lock:
@@ -334,6 +335,18 @@ def get_dead_models(provider: str) -> frozenset:
     prov = provider.upper()
     with _dead_lock:
         return frozenset(_dead_models.get(prov, set()))
+
+
+def clear_dead_models(provider: str = None) -> None:
+    """
+    Briše skup dead modela za dati provajder (ili sve provajdere ako provider=None).
+    Namijenjena testovima i situacijama kad se želi puna ponovna provjera svih modela.
+    """
+    with _dead_lock:
+        if provider is None:
+            _dead_models.clear()
+        else:
+            _dead_models.pop(provider.upper(), None)
 
 
 def get_cached_model(provider: str) -> Optional[str]:

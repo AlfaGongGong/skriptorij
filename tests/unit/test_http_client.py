@@ -3,15 +3,13 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-import importlib
 from network import http_client
 import network.model_discovery as _md
 
 
 def _reset_dead_models():
     """Pomoćnik: čisti dead_models state između testova."""
-    with _md._dead_lock:
-        _md._dead_models.clear()
+    _md.clear_dead_models()
 
 
 def test_google_pool_uses_only_whitelisted_models(monkeypatch):
