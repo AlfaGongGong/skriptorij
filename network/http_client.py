@@ -176,6 +176,31 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
 
         elif resp.status_code == 400:
             err_msg = str(resp_body)[:200] if resp_body else resp.text[:200]
+            body_l = str(resp_body).lower() if resp_body is not None else resp.text.lower()
+            if (
+                "unknown_model" in body_l
+                or "unknown model" in body_l
+                or "nepoznati model" in body_l
+            ):
+                model_used = (json_payload or {}).get("model", "") if isinstance(json_payload, dict) else ""
+                if model_used:
+                    try:
+                        from network.model_discovery import invalidate_cached_model
+                        next_model = invalidate_cached_model(prov_upper, model_used)
+                        if next_model:
+                            self.log(
+                                f"[{prov_upper}] Model {model_used!r} nepoznat (400) → "
+                                f"invalidiran, sljedeći: {next_model!r}",
+                                "warning",
+                            )
+                        else:
+                            self.log(
+                                f"[{prov_upper}] Model {model_used!r} nepoznat (400) — "
+                                "nema više modela u cacheu",
+                                "warning",
+                            )
+                    except Exception:
+                        pass
             self.log(f"[{prov_upper}] HTTP 400 Bad Request: {err_msg}", "warning")
             return None
 
@@ -353,6 +378,5 @@ async def _call_gemini_with_full_rotation(
 
     self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
-
 
 
