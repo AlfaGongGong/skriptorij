@@ -59,7 +59,9 @@ def test_available_auto_revives_after_cooldown_expiry(tmp_path):
     assert ks.cooldown_until == 0.0
 
 
-def test_rate_limit_errors_do_not_force_inactive_state(tmp_path):
+def test_rate_limit_errors_do_not_force_permanent_disable(tmp_path):
+    """After 3 quick RPM 429s, the key gets a short auto-cooldown (≤300s),
+    NOT a 23-hour daily-quota cooldown, and NOT a manual disable."""
     fm = _make_fleet(tmp_path)
     ks = fm.fleet["GROQ"][0]
 
@@ -73,8 +75,13 @@ def test_rate_limit_errors_do_not_force_inactive_state(tmp_path):
         )
 
     assert ks.disabled is False
-    assert ks.is_active is True
-    assert ks.cooldown_remaining > 0
+    # Cooldown must be short (≤300s auto-disable window), never 23+ hours
+    assert ks.cooldown_remaining <= 400, f"Cooldown too long: {ks.cooldown_remaining:.0f}s"
+
+    # Key must auto-revive once cooldown expires
+    ks.cooldown_until = 0.0
+    ks.is_active = False
+    assert ks.available is True  # auto-revive kicks in
 
 
 # ── GEMINI-specific billing body check ──────────────────────────────────────

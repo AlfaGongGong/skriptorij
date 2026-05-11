@@ -161,15 +161,7 @@ class KeyState:
         # Auto-revive kada istekne cooldown (štiti od "zaglavljivanja" u inactive).
         if not self.is_active:
             if now >= self.cooldown_until:
-                self.is_active = True
-                self.cooldown_until = 0.0
-                self.health = max(self.health, 30.0)
-                self.remaining_minute = self.rate_limit_minute
-                self.reset_time_minute = max(self.reset_time_minute, now + _RPM_WINDOW)
-                # req_rem se mogao postaviti na 0 od dnevne kvote 429 — resetuj ga
-                if self.req_rem <= 0:
-                    self.req_rem = _DEFAULT_DAILY_QUOTA.get(self.provider, 1000)
-                    self.remaining_day = self.rate_limit_day
+                self._reset_for_reactivation()
             else:
                 return False
         if now < self.cooldown_until:
@@ -216,6 +208,22 @@ class KeyState:
             self._error_timestamps.clear()
             return True
         return False
+
+    def _reset_for_reactivation(self) -> None:
+        """
+        Resetuje stanje ključa za reaktivaciju (auto-revive ili manuelno uključivanje).
+        Poziva se iz toggle_key, get_best_key, revive_all i available property-a.
+        """
+        now = time.time()
+        self.is_active = True
+        self.cooldown_until = 0.0
+        self.health = max(self.health, 30.0)
+        self.remaining_minute = self.rate_limit_minute
+        self.reset_time_minute = max(self.reset_time_minute, now + _RPM_WINDOW)
+        # req_rem se mogao postaviti na 0 od dnevne kvote 429 — resetuj ga
+        if self.req_rem <= 0:
+            self.req_rem = _DEFAULT_DAILY_QUOTA.get(self.provider, 1000)
+            self.remaining_day = self.rate_limit_day
 
     # ── Serialization ────────────────────────────────────────────────────────
 
@@ -459,16 +467,7 @@ class FleetManager:
             for ks in keys:
                 if not ks.is_active and not ks.disabled:
                     if now > ks.cooldown_until:
-                        ks.is_active       = True
-                        ks.health          = max(ks.health, 30.0)
-                        ks.cooldown_until  = 0.0
-                        # Resetuj RPM kvotu
-                        ks.remaining_minute  = ks.rate_limit_minute
-                        ks.reset_time_minute = now + _RPM_WINDOW
-                        # req_rem se mogao postaviti na 0 od dnevne kvote 429 — resetuj ga
-                        if ks.req_rem <= 0:
-                            ks.req_rem = _DEFAULT_DAILY_QUOTA.get(ks.provider, 1000)
-                            ks.remaining_day = ks.rate_limit_day
+                        ks._reset_for_reactivation()
 
             avail = [ks for ks in keys if ks.available]
             if not avail:
@@ -669,7 +668,8 @@ class FleetManager:
                     ks.reset_time_minute = now + max(ra, _RPM_WINDOW)
 
                 ks.health = max(0.0, ks.health - 10)
-                ks.record_error()
+                if ks.record_error():
+                    ks.is_active = False
 
             elif status_code in (401, 403, 402, 412):
                 # Nevažeći ključ — dugi cooldown (ali ne 30 dana — to je previše)
@@ -719,28 +719,17 @@ class FleetManager:
                 return {"error": "Ključ nije pronađen"}
             now = time.time()
 
-            def _reactivate() -> None:
-                ks.is_active = True
-                ks.cooldown_until = 0.0
-                ks.health = max(ks.health, 30.0)
-                ks.remaining_minute = ks.rate_limit_minute
-                ks.reset_time_minute = now + _RPM_WINDOW
-                # req_rem se mogao postaviti na 0 od dnevne kvote 429 — resetuj ga
-                if ks.req_rem <= 0:
-                    ks.req_rem = _DEFAULT_DAILY_QUOTA.get(ks.provider, 1000)
-                    ks.remaining_day = ks.rate_limit_day
-
             # Ako je ključ auto-isključen (inactive, ali nije manualno disabled),
             # prvi klik ga treba vratiti online umjesto dodatnog "gašenja".
             if not ks.disabled and not ks.is_active:
-                _reactivate()
+                ks._reset_for_reactivation()
             else:
                 ks.disabled = not ks.disabled
                 if ks.disabled:
                     ks.is_active = False
                     ks.cooldown_until = 0.0
                 else:
-                    _reactivate()
+                    ks._reset_for_reactivation()
         self.flush_now()
         return {"ok": True, "disabled": ks.disabled, "provider": prov_u, "masked": ks.masked}
 
@@ -757,15 +746,7 @@ class FleetManager:
             for prov_u in provs:
                 for ks in self.fleet.get(prov_u, []):
                     if not ks.is_active and not ks.disabled and now > ks.cooldown_until:
-                        ks.is_active         = True
-                        ks.health            = max(ks.health, 30.0)
-                        ks.cooldown_until    = 0.0
-                        ks.remaining_minute  = ks.rate_limit_minute
-                        ks.reset_time_minute = now + _RPM_WINDOW
-                        # req_rem se mogao postaviti na 0 od dnevne kvote 429 — resetuj ga
-                        if ks.req_rem <= 0:
-                            ks.req_rem = _DEFAULT_DAILY_QUOTA.get(ks.provider, 1000)
-                            ks.remaining_day = ks.rate_limit_day
+                        ks._reset_for_reactivation()
                         count += 1
         if count:
             self.flush_now()
