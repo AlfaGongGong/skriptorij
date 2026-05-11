@@ -27,6 +27,7 @@ from core.text_utils import (
     _je_ai_anotacija,
 )
 from processing.rescue import _spasi_od_sirovog
+from core.quality import _QUALITY_RESCUE_THRESHOLD
 
 # ── Korak 2, 3, 4 integracije ──────────────────────────────────────────────
 try:
@@ -493,7 +494,6 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     if not force_reprocess:
         cached_final = _chk_read(self, file_name, chunk_idx)
         if cached_final and _detektuj_en_ostatke(cached_final) < 0.08:
-            from core.quality import _QUALITY_RESCUE_THRESHOLD
             qs = self.shared_stats.get("quality_scores", {})
             stem_key = f"{file_name}_blok_{chunk_idx}"
             raw_val = qs.get(stem_key, None)
@@ -544,7 +544,6 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             if cached_lek:
                 if not _chk_path(self, file_name, chunk_idx).exists():
                     _chk_write(self, file_name, chunk_idx, cached_lek)
-                from core.quality import _QUALITY_RESCUE_THRESHOLD
                 qs_l = self.shared_stats.get("quality_scores", {})
                 stem_key_l = f"{file_name}_blok_{chunk_idx}"
                 raw_val_l = qs_l.get(stem_key_l, None)
