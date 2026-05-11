@@ -141,6 +141,30 @@ def test_gemini_billing_429_gets_long_cooldown(tmp_path):
     assert ks.is_active is False
 
 
+# ── GEMMA-specific 429 classification (Google-like body semantics) ────────────
+
+def test_gemma_rpm_429_gets_short_cooldown(tmp_path):
+    fm = _make_fleet(tmp_path, provider="GEMMA", key="gemma_test_1234567890")
+    ks = fm.fleet["GEMMA"][0]
+
+    body = {"error": {"code": 429, "message": "Resource has been exhausted (e.g. check quota).", "status": "RESOURCE_EXHAUSTED"}}
+    fm.analyze_response("GEMMA", ks.key, 429, {"retry-after": "60"}, body)
+
+    assert ks.cooldown_remaining < 7200, f"Expected short cooldown, got {ks.cooldown_remaining:.0f}s"
+    assert ks.is_active is True
+
+
+def test_gemma_billing_429_gets_long_cooldown(tmp_path):
+    fm = _make_fleet(tmp_path, provider="GEMMA", key="gemma_test_1234567890")
+    ks = fm.fleet["GEMMA"][0]
+
+    body = {"error": {"message": "You exceeded your current quota, please check your plan and billing details."}}
+    fm.analyze_response("GEMMA", ks.key, 429, {}, body)
+
+    assert ks.cooldown_remaining >= 3600, f"Expected long cooldown, got {ks.cooldown_remaining:.0f}s"
+    assert ks.is_active is False
+
+
 # ── req_rem = 0 auto-revive fix ──────────────────────────────────────────────
 
 def test_auto_revive_resets_req_rem_zero(tmp_path):
