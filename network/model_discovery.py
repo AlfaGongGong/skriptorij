@@ -102,6 +102,11 @@ _PROVIDER_FILTERS: dict[str, list] = {
         lambda m: "embed" not in m,
         lambda m: "text-embedding" not in m,
         lambda m: "evaluation" not in m,
+        # GitHub models endpoint ponekad vraća registry URI-je koji nisu
+        # direktno pozivi preko /chat/completions i često završavaju s unknown_model.
+        lambda m: "azureml://" not in m,
+        lambda m: "/registries/" not in m,
+        lambda m: "/versions/" not in m,
     ],
 }
 
@@ -288,6 +293,7 @@ def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str
             mid = item
         else:
             continue
+        mid = str(mid).strip()
         if mid and _is_valid_chat_model(provider, mid):
             model_ids.append(mid)
 
@@ -570,6 +576,7 @@ def startup_key_check(fleet_manager) -> None:
                             mid = item
                         else:
                             continue
+                        mid = str(mid).strip()
                         if mid and _is_valid_chat_model(prov, mid):
                             model_ids.append(mid)
                     if model_ids:
