@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/License-MIT-8b5cf6?style=for-the-badge)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-0ea5e9?style=for-the-badge)](Dockerfile)
 
-**BOOKLYFI TURBO V10** is a full-featured, multi-model AI engine that automatically translates, proofreads, and formats entire books in EPUB/MOBI format. Rather than relying on a single API that can fail or hit rate limits, BOOKLYFI runs a **Fleet Manager** — a pool of API keys spread across **14 AI providers**, with per-key semaphore locking, automatic cooldown rotation, and millisecond-level failover.
+**BOOKLYFI TURBO V10** is a full-featured, multi-model AI engine that automatically translates, proofreads, and formats entire books in EPUB/MOBI format. Rather than relying on a single API that can fail or hit rate limits, BOOKLYFI runs a **Fleet Manager** — a pool of API keys spread across **14 AI providers**, with per-key semaphore locking, automatic cooldown rotation, provider-level Retry-After backoff, and adaptive pacing derived from observed RPM/TPM limits.
 
 ---
 
@@ -17,6 +17,8 @@
 | Feature | Description |
 |---------|-------------|
 | 🧠 **Fleet Manager V10** | 14 AI providers in a single fleet — automatic key rotation, per-key semaphore, smart cooldown |
+| ⏱️ **Adaptive provider pacing** | Runtime throttling for all providers from observed rate-limit headers + token usage (RPM/TPM aware) |
+| 🧩 **Model-aware tuning** | Per-model/per-family generation tuning by role (translator/proofreader/validator/editor) with safe fallback |
 | 🔍 **Live key ping** | Click the 🔍 button next to any key to instantly check its actual health status |
 | 🔄 **3-pass AI pipeline** | TRANSLATOR → PROOFREADER → EDITOR — three independent AI passes per text block |
 | 🎯 **Composite quality scorer** | Heuristic + AI scoring (25/75 weights), thresholds: 🌟 ≥8.5 · ✅ ≥6.5 · ⚠ ≥4.0 · 🔴 <4.0 |
@@ -150,7 +152,7 @@
     │
     ├── network/                     # 🌍 Network layer
     │   ├── http_client.py           # HTTP POST with per-key semaphore and 429 handling
-    │   ├── rate_limiter.py          # Per-key asyncio semaphore (MAX_CONCURRENT=1)
+    │   ├── rate_limiter.py          # Per-key semaphore + provider backoff + adaptive runtime pacing
     │   ├── provider_urls.py         # URL map for all 14 providers
     │   ├── provider_router.py       # Routing by role (TRANSLATOR, PROOFREADER, etc.)
     │   └── urls.py                  # Legacy URL helpers
@@ -209,7 +211,7 @@
     ├─► config/settings   (Shared state and paths)
     ├─► core/             (Business logic)
     ├─► processing/       (Pipeline and workers)
-    └─► network/          (HTTP client, rate limiter)
+    └─► network/          (HTTP client, adaptive rate limiter)
     │
     api_fleet.py ◄─── FleetManager singleton
     (Key rotation,         (register_active_fleet /
@@ -406,7 +408,7 @@
     ### Running Tests
 
     ```bash
-    # Full test suite (18 tests)
+    # Full test suite (39 tests)
     python3 -m pytest tests/ -v
 
     # Unit tests only
@@ -537,6 +539,8 @@
 
     - **This is expected** — Fleet Manager automatically switches to the next key
     - V10 no longer retries the same exhausted key (recursive retry eliminated)
+    - `Retry-After` is used as provider-level backoff to prevent synchronized key bursts
+    - Runtime pacing is updated from observed provider limits (RPM/TPM headers + usage tokens)
     - Add more keys per provider to increase throughput
     - Monitor cooldown timers in the **Fleet** panel
 
@@ -595,9 +599,12 @@
     ## 📋 Roadmap
 
     - [x] 3-pass AI pipeline (TRANSLATOR → PROOFREADER → EDITOR)
-    - [x] Fleet Manager with 14 providers and automatic key rotation
-    - [x] Per-key asyncio semaphore (MAX_CONCURRENT=1 per key)
-    - [x] Live ping/health check for each API key
+- [x] Fleet Manager with 14 providers and automatic key rotation
+- [x] Per-key asyncio semaphore (MAX_CONCURRENT=1 per key)
+- [x] Provider-level Retry-After backoff (anti-burst protection across keys)
+- [x] Adaptive provider pacing from observed runtime limits (RPM/TPM aware)
+- [x] Model-aware generation tuning by role with fallback heuristics
+- [x] Live ping/health check for each API key
     - [x] Composite quality scorer (heuristic + AI, 25/75 weights)
     - [x] RETRO re-proofreading for blocks below the quality threshold
     - [x] Real-time web dashboard (dark/light theme)
