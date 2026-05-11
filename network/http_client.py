@@ -35,24 +35,35 @@ GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
 def _get_google_model_pool() -> list[dict]:
     """
     Vraća pool Gemini modela za rotaciju.
-    Ako model_discovery ima svježu listu modela za GEMINI, koristi je.
-    Inače vraća statički fallback pool.
-    Otkriveni modeli idu prvi; statički fallback popunjava ostatak.
+    Ako model_discovery ima svježu listu modela za GEMINI, koristi je
+    za određivanje redosljeda unutar statičkog fallback skupa.
+    Modeli koji su označeni kao dead (HTTP 404) se filtriraju iz poola.
+    Inače vraća statički fallback pool (bez dead modela).
     """
     fallback_by_id = {m["model"]: m for m in _GOOGLE_MODEL_POOL_FALLBACK}
 
     try:
-        from network.model_discovery import get_cached_model_list
+        from network.model_discovery import get_cached_model_list, get_dead_models
+        dead = get_dead_models("GEMINI")
         discovered = get_cached_model_list("GEMINI")
         if discovered:
-            # Runtime whitelist: koristimo samo fallback modele sa provjerenim limitima.
-            # Discovery smije odlučiti samo REDOSLJED unutar ovog skupa.
-            pool = [fallback_by_id[mid] for mid in discovered if mid in fallback_by_id]
+            # Discovery određuje redosljed unutar whitelistiranog skupa (poznati rpm/rpd).
+            # Dead modeli su isključeni.
+            pool = [fallback_by_id[mid] for mid in discovered if mid in fallback_by_id and mid not in dead]
             existing_ids = {m["model"] for m in pool}
             for fb in _GOOGLE_MODEL_POOL_FALLBACK:
-                if fb["model"] not in existing_ids:
+                if fb["model"] not in existing_ids and fb["model"] not in dead:
                     pool.append(fb)
-            return pool
+            if pool:
+                return pool
+            # Ako su i discovery i fallback prazni (sve dead) — vrati puni fallback
+            # kao zadnji resort (bolji od praznog poola koji bi izazvao ZeroDivisionError)
+            return _GOOGLE_MODEL_POOL_FALLBACK
+
+        # Nema discovery cache-a — filtriraj dead iz statičkog fallbacka
+        if dead:
+            filtered = [m for m in _GOOGLE_MODEL_POOL_FALLBACK if m["model"] not in dead]
+            return filtered if filtered else _GOOGLE_MODEL_POOL_FALLBACK
     except Exception:
         pass
     return _GOOGLE_MODEL_POOL_FALLBACK
@@ -392,6 +403,13 @@ async def _call_gemini_with_full_rotation(
             next_model = _rotate_model_for_key(key)
             if next_model is None:
                 self.log(f"[GEMINI] Svi modeli iscrpljeni za ključ ...{key[-4:]}", "warning")
+                # Pokušaj hitni re-discovery — možda postoji noviji model koji nije u
+                # statičkom fallback poolu, a API ga nudi kao zamjenu za ugašene modele.
+                try:
+                    from network.model_discovery import trigger_rediscover_background
+                    trigger_rediscover_background("GEMINI", key)
+                except Exception:
+                    pass
                 break
             self.log(f"[GEMINI] {current_model} → {next_model}", "warning")
             current_model = next_model

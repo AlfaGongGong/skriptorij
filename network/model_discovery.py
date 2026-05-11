@@ -306,9 +306,47 @@ def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str
 # ── Thread-safe cache ─────────────────────────────────────────────────────────
 # _model_cache:      provider_upper → (best_model_id, unix_timestamp)
 # _model_list_cache: provider_upper → (sorted_model_ids, unix_timestamp)
+# _dead_models:      provider_upper → set of model IDs koji su vratili HTTP 404
+#                    Modeli se uklanjaju iz dead seta tek kad ih API ponovo
+#                    vrati u listi (tj. provajder ih je vratio u produkciju).
 _model_cache: dict[str, tuple[str, float]] = {}
 _model_list_cache: dict[str, tuple[list, float]] = {}
+_dead_models: dict[str, set] = {}
 _cache_lock = threading.Lock()
+_dead_lock = threading.Lock()
+
+
+def mark_model_dead(provider: str, model_id: str) -> None:
+    """
+    Označava model kao nedostupan (HTTP 404).
+    Model ostaje dead sve dok ga API ponovo ne vrati u listi modela
+    (tj. dok `_set_cached_model_list` ne registruje oživljavanje).
+    """
+    prov = provider.upper()
+    with _dead_lock:
+        if prov not in _dead_models:
+            _dead_models[prov] = set()
+        _dead_models[prov].add(model_id)
+    logger.debug("[ModelDiscovery] %s: model %s označen kao dead (404)", prov, model_id)
+
+
+def get_dead_models(provider: str) -> frozenset:
+    """Vraća skup modela koji su proglašeni nedostupnim (404) za provajdera."""
+    prov = provider.upper()
+    with _dead_lock:
+        return frozenset(_dead_models.get(prov, set()))
+
+
+def clear_dead_models(provider: str = None) -> None:
+    """
+    Briše skup dead modela za dati provajder (ili sve provajdere ako provider=None).
+    Namijenjena testovima i situacijama kad se želi puna ponovna provjera svih modela.
+    """
+    with _dead_lock:
+        if provider is None:
+            _dead_models.clear()
+        else:
+            _dead_models.pop(provider.upper(), None)
 
 
 def get_cached_model(provider: str) -> Optional[str]:
@@ -346,6 +384,16 @@ def _set_cached_model(provider: str, model_id: str) -> None:
 def _set_cached_model_list(provider: str, model_list: list[str]) -> None:
     prov = provider.upper()
     now = time.time()
+    # Ako API ponovo vrati model koji smo smatrali dead-om, oživimo ga —
+    # provajder ga je vratio u produkciju pa je opet validan.
+    if model_list:
+        with _dead_lock:
+            dead = _dead_models.get(prov)
+            if dead:
+                revived = dead & set(model_list)
+                if revived:
+                    dead -= revived
+                    logger.info("[ModelDiscovery] %s: modeli oživljeni: %s", prov, revived)
     with _cache_lock:
         _model_list_cache[prov] = (model_list, now)
         if model_list:
@@ -382,13 +430,15 @@ def select_best_model(provider: str, api_key: str) -> str:
 def invalidate_cached_model(provider: str, model_id: str) -> Optional[str]:
     """
     Uklanja specifičan model iz cachea (npr. kad vrati HTTP 404).
+    Model se ujedno označava kao dead — neće se koristiti iz statičkog
+    fallbacka sve dok ga API ponovo ne vrati u listi.
     Promoviše sljedeći model iz liste kao novi best.
     Vraća ID sljedećeg modela, ili None ako nema više dostupnih.
-
-    Koristi se kad HTTP klijent dobije 404 na poziv — model je
-    obrisan/ugašen i treba probati sljedeći iz discovery liste.
     """
     prov = provider.upper()
+    # Označiti kao dead PRIJE nego što dođemo do cachea (bez locka — mark ima vlastiti)
+    mark_model_dead(prov, model_id)
+
     with _cache_lock:
         entry = _model_list_cache.get(prov)
         if entry is None:
@@ -432,6 +482,45 @@ def _refresh_worker(provider_keys: dict[str, str]) -> None:
 
 _refresh_thread: Optional[threading.Thread] = None
 
+# Per-provajder lock koji sprječava duplicirane re-discovery threadove.
+_rediscover_active: dict[str, bool] = {}
+_rediscover_lock = threading.Lock()
+
+
+def trigger_rediscover_background(provider: str, api_key: str) -> None:
+    """
+    Pokreće hitan pozadinski re-discovery za dati provajder.
+    Koristi se kad su svi modeli iscrpljeni (svi 404'd ili cache prazan)
+    da se što prije dobije svježa lista validnih modela.
+
+    Sigurno za višestruko pozivanje — ne pokreće duplikat threadova.
+    """
+    prov = provider.upper()
+    if not api_key:
+        return
+
+    with _rediscover_lock:
+        if _rediscover_active.get(prov):
+            return  # thread već aktivan
+        _rediscover_active[prov] = True
+
+    def _worker():
+        try:
+            logger.info("[ModelDiscovery] Re-discovery %s — tražim svježe modele...", prov)
+            models = fetch_models(prov, api_key, timeout=12.0)
+            if models:
+                _set_cached_model_list(prov, models)
+                logger.info("[ModelDiscovery] Re-discovery %s → %s (%d modela)", prov, models[0], len(models))
+            else:
+                logger.warning("[ModelDiscovery] Re-discovery %s — endpoint nije vratio modele", prov)
+        except Exception as exc:
+            logger.warning("[ModelDiscovery] Re-discovery %s greška: %s", prov, exc)
+        finally:
+            with _rediscover_lock:
+                _rediscover_active[prov] = False
+
+    t = threading.Thread(target=_worker, name=f"ModelRediscover-{prov}", daemon=True)
+    t.start()
 
 def start_background_refresh(fleet_manager) -> None:
     """
