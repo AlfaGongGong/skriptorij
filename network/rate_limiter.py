@@ -12,6 +12,7 @@ import time
 # ===== GLOBALNI RATE LIMITER — humanizovano, bez kršenja limita =====
 _PROVIDER_LOCKS: dict = {}
 _LAST_CALLS = {}
+_PROVIDER_COOLDOWN_UNTIL: dict = {}
 
 _PROVIDER_MIN_GAP = {
     "GEMINI": 4.0,
@@ -95,6 +96,27 @@ def _get_key_state(fleet, prov_upper: str, key: str):
         pass
     return None
 
+
+def register_provider_backoff(provider: str | None, retry_after: float | None) -> None:
+    """
+    Registruje provider-level backoff (sekunde) nakon 429.
+    Sljedeći zahtjevi prema tom provideru čekaju bar do ovog roka.
+    """
+    if not provider:
+        return
+    try:
+        ra = float(retry_after) if retry_after is not None else 0.0
+    except (TypeError, ValueError):
+        return
+    if ra <= 0:
+        return
+
+    prov = provider.upper()
+    until = time.time() + ra
+    prev = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
+    if until > prev:
+        _PROVIDER_COOLDOWN_UNTIL[prov] = until
+
 # ============================================================================
 # Per-key rate limiting (semafori)
 # BUG#1 FIX: Ovaj blok je bio dupliran — uklonjen drugi primjerak.
@@ -143,6 +165,11 @@ async def _throttle_provider(provider: str | None) -> None:
 
     async with lock:
         now = time.time()
+        provider_cooldown_until = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
+        if provider_cooldown_until > now:
+            await asyncio.sleep(provider_cooldown_until - now)
+            now = time.time()
+
         base_gap = _PROVIDER_MIN_GAP.get(prov, MIN_GAP)
 
         # Gemini/Gemma free-tier je osjetljiv na TPM burstove.

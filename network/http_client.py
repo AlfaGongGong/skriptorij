@@ -12,7 +12,7 @@
 import asyncio
 import random
 import requests
-from network.rate_limiter import acquire_key, release_key
+from network.rate_limiter import acquire_key, release_key, register_provider_backoff
 
 # ── Google model pool — redosljed: gemini-flash prvi (bolji RPD limit) ────────
 # NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
@@ -162,12 +162,19 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             except ValueError:
                 retry_after = None
 
+            # Provider-level backoff da se izbjegne "stampedo" svih ključeva odjednom.
+            if retry_after and retry_after > 0:
+                register_provider_backoff(prov_upper, retry_after)
+            elif prov_upper in {"GEMINI", "GEMMA"}:
+                # Google često vrati 429 bez korisnog Retry-After — koristi konzervativan fallback.
+                register_provider_backoff(prov_upper, 60.0)
+
             # analyze_response() je već odredio tip (kvota ili rate limit) i postavio cooldown.
             # Ovdje samo logovati i eventualno čekati kratko za učtivost.
             if retry_after and retry_after > 3600:
                 self.log(f"[{prov_upper}] Kvota iscrpljena (dnevni limit) — biram drugi ključ", "warning")
             else:
-                wait = min(retry_after or 3.0, 8.0) + random.uniform(0.3, 1.0)
+                wait = (retry_after or 3.0) + random.uniform(0.3, 1.0)
                 self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s, biram drugi ključ", "warning")
                 await asyncio.sleep(wait)
             return None
@@ -378,4 +385,3 @@ async def _call_gemini_with_full_rotation(
 
     self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
-
