@@ -760,6 +760,21 @@
 
                 <!-- History tab -->
                 <div class="tab-panel" id="tab-history">
+                    <div id="history-controls" class="history-controls hidden">
+                        <label class="history-select-all-wrap">
+                            <input type="checkbox" id="history-select-all" />
+                            <span>Označi sve</span>
+                        </label>
+                        <span id="history-selected-count" class="history-selected-count">0 zapisa</span>
+                        <button
+                            class="btn btn-sm"
+                            id="btn-history-delete-selected"
+                            type="button"
+                            disabled
+                        >
+                            🗑 Obriši označeno
+                        </button>
+                    </div>
                     <div
                         id="history-empty"
                         style="
@@ -826,7 +841,26 @@
                     >
                         <details class="expert-section-details">
                             <summary class="expert-section-summary">
-                                🛡 Fleet — detalji po provajderu
+                                <span class="expert-summary-main">
+                                    <span>🛡 Fleet — detalji po provajderu</span>
+                                    <span
+                                        id="expert-fleet-health-badge"
+                                        class="ql-badge expert-fleet-health-badge"
+                                        title="Ukupno zdravlje kompletne flote"
+                                    >
+                                        <div
+                                            class="ql-ring"
+                                            data-val="—"
+                                            style="--ql-pct: 0%"
+                                        ></div>
+                                        <div class="ql-text">
+                                            <span class="ql-score-main">—</span>
+                                            <span class="ql-score-sub"
+                                                >zdravlje flote</span
+                                            >
+                                        </div>
+                                    </span>
+                                </span>
                                 <span class="expert-section-chevron">▾</span>
                             </summary>
                             <div id="expert-fleet-container" style="margin-top:8px">

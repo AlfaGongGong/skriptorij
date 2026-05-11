@@ -155,9 +155,16 @@ class KeyState:
 
     @property
     def available(self) -> bool:
-        if self.disabled or not self.is_active:
+        now = time.time()
+        if self.disabled:
             return False
-        if time.time() < self.cooldown_until:
+        # Auto-revive kada istekne cooldown (štiti od "zaglavljivanja" u inactive).
+        if not self.is_active:
+            if now >= self.cooldown_until:
+                self._reset_for_reactivation()
+            else:
+                return False
+        if now < self.cooldown_until:
             return False
         if self.req_rem <= 0:
             return False
@@ -201,6 +208,22 @@ class KeyState:
             self._error_timestamps.clear()
             return True
         return False
+
+    def _reset_for_reactivation(self) -> None:
+        """
+        Resetuje stanje ključa za reaktivaciju (auto-revive ili manuelno uključivanje).
+        Poziva se iz toggle_key, get_best_key, revive_all i available property-a.
+        """
+        now = time.time()
+        self.is_active = True
+        self.cooldown_until = 0.0
+        self.health = max(self.health, 30.0)
+        self.remaining_minute = self.rate_limit_minute
+        self.reset_time_minute = max(self.reset_time_minute, now + _RPM_WINDOW)
+        # req_rem se mogao postaviti na 0 od dnevne kvote 429 — resetuj ga
+        if self.req_rem <= 0:
+            self.req_rem = _DEFAULT_DAILY_QUOTA.get(self.provider, 1000)
+            self.remaining_day = self.rate_limit_day
 
     # ── Serialization ────────────────────────────────────────────────────────
 
@@ -253,6 +276,23 @@ _QUOTA_KEYWORDS = frozenset([
     "resource exhausted",  # Google: RESOURCE_EXHAUSTED
 ])
 
+# GEMINI specifična provjera: "quota" i "resource exhausted" se pojavljuju u SVIM
+# Google 429 odgovorima — i RPM limitima i dnevnim kvotama. Za Gemini koristimo
+# strožije ključne riječi koje jednoznačno ukazuju na BILLING/dnevnu kvotu,
+# a ne na kratkoročni RPM limit koji se obnovi za 60 sekundi.
+_GEMINI_BILLING_KEYWORDS = frozenset([
+    "insufficient_quota",        # OpenAI/Google billing greška
+    "billing",                   # Billing/account greška
+    "daily limit",               # Dnevna kvota
+    "monthly limit",             # Mjesečna kvota
+    "out of credits",            # Kredit iscrpljen
+    "account balance",           # Stanje računa
+    "prepaid",                   # Prepaid kredit
+    "your current quota",        # Google: "exceeded your current quota"
+    "plan and billing",          # Google: "check your plan and billing"
+    "check your plan",           # Google: billing/subscription link
+])
+
 
 def _is_quota_exhausted_body(body) -> bool:
     """
@@ -264,6 +304,19 @@ def _is_quota_exhausted_body(body) -> bool:
         return False
     body_lower = str(body).lower()
     return any(kw in body_lower for kw in _QUOTA_KEYWORDS)
+
+
+def _is_billing_exhausted_body(body) -> bool:
+    """
+    Strožija provjera za iscrpljenu DNEVNU/BILLING kvotu — namijenjena
+    Google/Gemini provajderu koji šalje "quota" i "resource exhausted" u svim
+    429 odgovorima, uključujući kratkoročne RPM limite.
+    Vraća True samo ako body sadrži jasne pokazatelje billing/account problema.
+    """
+    if not body:
+        return False
+    body_lower = str(body).lower()
+    return any(kw in body_lower for kw in _GEMINI_BILLING_KEYWORDS)
 
 
 class FleetManager:
@@ -414,12 +467,7 @@ class FleetManager:
             for ks in keys:
                 if not ks.is_active and not ks.disabled:
                     if now > ks.cooldown_until:
-                        ks.is_active       = True
-                        ks.health          = max(ks.health, 30.0)
-                        ks.cooldown_until  = 0.0
-                        # Resetuj RPM kvotu
-                        ks.remaining_minute  = ks.rate_limit_minute
-                        ks.reset_time_minute = now + _RPM_WINDOW
+                        ks._reset_for_reactivation()
 
             avail = [ks for ks in keys if ks.available]
             if not avail:
@@ -597,8 +645,14 @@ class FleetManager:
                         pass
 
                 # Provjeri i body — neki provideri ne šalju Retry-After
-                # ali body sadrži ključne riječi koje signaliziraju kvotu
-                quota_body = _is_quota_exhausted_body(body)
+                # ali body sadrži ključne riječi koje signaliziraju kvotu.
+                # GEMINI poseban slučaj: Google šalje "quota" i "resource exhausted"
+                # i za RPM limite i za dnevnu kvotu — koristimo strožu provjeru
+                # koja traži eksplicitne billing/account pokazatelje.
+                if prov_u == "GEMINI":
+                    quota_body = _is_billing_exhausted_body(body)
+                else:
+                    quota_body = _is_quota_exhausted_body(body)
 
                 if ra > 3600 or quota_body:
                     # Dnevna kvota — dugi cooldown
@@ -663,13 +717,19 @@ class FleetManager:
                         break
             if not ks:
                 return {"error": "Ključ nije pronađen"}
-            ks.disabled = not ks.disabled
-            if not ks.disabled:
-                ks.is_active         = True
-                ks.cooldown_until    = 0.0
-                ks.health            = max(ks.health, 30.0)
-                ks.remaining_minute  = ks.rate_limit_minute
-                ks.reset_time_minute = time.time() + _RPM_WINDOW
+            now = time.time()
+
+            # Ako je ključ auto-isključen (inactive, ali nije manualno disabled),
+            # prvi klik ga treba vratiti online umjesto dodatnog "gašenja".
+            if not ks.disabled and not ks.is_active:
+                ks._reset_for_reactivation()
+            else:
+                ks.disabled = not ks.disabled
+                if ks.disabled:
+                    ks.is_active = False
+                    ks.cooldown_until = 0.0
+                else:
+                    ks._reset_for_reactivation()
         self.flush_now()
         return {"ok": True, "disabled": ks.disabled, "provider": prov_u, "masked": ks.masked}
 
@@ -686,11 +746,7 @@ class FleetManager:
             for prov_u in provs:
                 for ks in self.fleet.get(prov_u, []):
                     if not ks.is_active and not ks.disabled and now > ks.cooldown_until:
-                        ks.is_active         = True
-                        ks.health            = max(ks.health, 30.0)
-                        ks.cooldown_until    = 0.0
-                        ks.remaining_minute  = ks.rate_limit_minute
-                        ks.reset_time_minute = now + _RPM_WINDOW
+                        ks._reset_for_reactivation()
                         count += 1
         if count:
             self.flush_now()
