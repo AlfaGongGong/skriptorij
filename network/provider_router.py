@@ -64,6 +64,77 @@ MAX_TOKENS_MAP = {
     "SCORER":          256,
 }
 
+_MODEL_TUNING_BY_ID = {
+    "gemini-2.0-flash": {
+        "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
+        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
+        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
+    },
+    "gemma-3-27b-it": {
+        "PREVODILAC": {"temp_mul": 0.82, "max_tokens": 1800},
+        "LEKTOR": {"temp_mul": 0.85, "max_tokens": 1800},
+        "VALIDATOR": {"temp_mul": 0.70, "max_tokens": 600},
+        "KOREKTOR": {"temp_mul": 0.95, "max_tokens": 1400},
+    },
+    "mistral-small-latest": {
+        "PREVODILAC": {"temp_mul": 0.92, "max_tokens": 2400},
+        "LEKTOR": {"temp_mul": 0.95, "max_tokens": 2400},
+        "VALIDATOR": {"temp_mul": 0.85, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 2000},
+    },
+    "command-r-plus-08-2024": {
+        "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2200},
+        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2200},
+        "VALIDATOR": {"temp_mul": 0.80, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
+    },
+    "gpt-4o": {
+        "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2400},
+        "LEKTOR": {"temp_mul": 0.93, "max_tokens": 2400},
+        "VALIDATOR": {"temp_mul": 0.80, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
+    },
+}
+
+_MODEL_FAMILY_TUNING = {
+    "gemini-": {"temp_mul": 0.90, "max_tokens": 2200},
+    "gemma-": {"temp_mul": 0.84, "max_tokens": 1800},
+    "mistral": {"temp_mul": 0.95, "max_tokens": 2400},
+    "command-r": {"temp_mul": 0.92, "max_tokens": 2200},
+    "gpt-4": {"temp_mul": 0.93, "max_tokens": 2400},
+    "llama": {"temp_mul": 0.98, "max_tokens": 2600},
+    "deepseek": {"temp_mul": 0.95, "max_tokens": 2300},
+}
+
+
+def _resolve_model_generation_params(uloga: str, model: str, base_temp: float, base_max_tokens: int) -> tuple[float, int]:
+    """
+    Model-specifični tuning preko:
+      1) tačnog model ID override-a
+      2) fallback family heuristike
+    """
+    role = (uloga or "").upper()
+    model_l = (model or "").lower()
+
+    temp = float(base_temp)
+    max_tokens = int(base_max_tokens)
+
+    exact = _MODEL_TUNING_BY_ID.get(model_l, {}).get(role)
+    if exact:
+        temp *= float(exact.get("temp_mul", 1.0))
+        max_tokens = min(max_tokens, int(exact.get("max_tokens", max_tokens)))
+    else:
+        for family, cfg in _MODEL_FAMILY_TUNING.items():
+            if family in model_l:
+                temp *= float(cfg.get("temp_mul", 1.0))
+                max_tokens = min(max_tokens, int(cfg.get("max_tokens", max_tokens)))
+                break
+
+    temp = max(0.0, min(temp, 1.0))
+    max_tokens = max(128, max_tokens)
+    return temp, max_tokens
+
 
 async def _call_ai_engine(
     self, prompt, chunk_idx,
@@ -74,8 +145,8 @@ async def _call_ai_engine(
     B21 FIX: Uklonjen debug log koji se ispisivao za svaki AI poziv.
     """
     svi_upper = {p.upper() for p in self.fleet.fleet.keys()}
-    opt_temp = _adaptive_temp(uloga, tip_bloka, TEMP_MAP.get(uloga, 0.35))
-    opt_max_tokens = MAX_TOKENS_MAP.get(uloga, 2400)
+    base_temp = _adaptive_temp(uloga, tip_bloka, TEMP_MAP.get(uloga, 0.35))
+    base_max_tokens = MAX_TOKENS_MAP.get(uloga, 2400)
 
     sys_c = sys_override
     if not sys_c:
@@ -126,6 +197,10 @@ async def _call_ai_engine(
             model = self.fleet.get_active_model(prov_upper) or MODEL_MAP.get(prov_upper)
             if not model:
                 continue
+
+            opt_temp, opt_max_tokens = _resolve_model_generation_params(
+                uloga, model, base_temp, base_max_tokens
+            )
 
             await asyncio.sleep(random.uniform(0.2, 0.8))
 

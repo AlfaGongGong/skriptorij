@@ -6,10 +6,14 @@
 #   BUG#8 FIX: _get_provider_lock uklonjena (bila mrtva i pogrešna)
 
 import asyncio
+import random
+import time
 
 # ===== GLOBALNI RATE LIMITER — humanizovano, bez kršenja limita =====
 _PROVIDER_LOCKS: dict = {}
 _LAST_CALLS = {}
+_PROVIDER_COOLDOWN_UNTIL: dict = {}
+_PROVIDER_DYNAMIC_GAP: dict = {}
 
 _PROVIDER_MIN_GAP = {
     "GEMINI": 4.0,
@@ -93,6 +97,98 @@ def _get_key_state(fleet, prov_upper: str, key: str):
         pass
     return None
 
+
+def register_provider_backoff(provider: str | None, retry_after: float | None) -> None:
+    """
+    Registruje provider-level backoff (sekunde) nakon 429.
+    Sljedeći zahtjevi prema tom provideru čekaju bar do ovog roka.
+    """
+    if not provider:
+        return
+    try:
+        ra = float(retry_after) if retry_after is not None else 0.0
+    except (TypeError, ValueError):
+        return
+    if ra <= 0:
+        return
+
+    prov = provider.upper()
+    until = time.time() + ra
+    prev = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
+    if until > prev:
+        _PROVIDER_COOLDOWN_UNTIL[prov] = until
+
+
+def _to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _header_float(headers, names):
+    if not headers:
+        return None
+    for name in names:
+        v = headers.get(name) or headers.get(name.lower()) or headers.get(name.upper())
+        fv = _to_float(v)
+        if fv is not None:
+            return fv
+    return None
+
+
+def _extract_total_tokens(body) -> float | None:
+    if not isinstance(body, dict):
+        return None
+    usage = body.get("usage")
+    if not isinstance(usage, dict):
+        return None
+    total = usage.get("total_tokens")
+    if total is None:
+        prompt = _to_float(usage.get("prompt_tokens")) or 0.0
+        completion = _to_float(usage.get("completion_tokens")) or 0.0
+        total = prompt + completion
+    return _to_float(total)
+
+
+def register_provider_runtime_limits(provider: str | None, headers=None, body=None) -> None:
+    """
+    Ažurira dinamički provider gap iz stvarno opaženih limita/usage-a.
+    Koristi RPM/TPM limite iz headera + usage.total_tokens iz body-a (ako postoji).
+    """
+    if not provider:
+        return
+    prov = provider.upper()
+
+    rpm_limit = _header_float(headers, [
+        "x-ratelimit-limit-requests",
+        "ratelimit-limit",
+        "x-limit-requests",
+    ])
+    tpm_limit = _header_float(headers, [
+        "x-ratelimit-limit-tokens",
+        "ratelimit-limit-tokens",
+        "x-limit-tokens",
+    ])
+    token_cost = _extract_total_tokens(body)
+
+    rpm_gap = (60.0 / rpm_limit) if (rpm_limit and rpm_limit > 0) else 0.0
+    tpm_gap = (60.0 * token_cost / tpm_limit) if (tpm_limit and tpm_limit > 0 and token_cost and token_cost > 0) else 0.0
+
+    observed_gap = max(rpm_gap, tpm_gap, 0.0)
+    if observed_gap <= 0:
+        return
+
+    # Blagi safety faktor; ograniči da ne ode u ekstrem zbog outliera.
+    observed_gap = min(observed_gap * 1.15, 20.0)
+
+    prev = _PROVIDER_DYNAMIC_GAP.get(prov, 0.0)
+    if prev <= 0:
+        _PROVIDER_DYNAMIC_GAP[prov] = observed_gap
+    else:
+        # EWMA: reaguje i na rast i na pad, bez naglih skokova.
+        _PROVIDER_DYNAMIC_GAP[prov] = (0.70 * prev) + (0.30 * observed_gap)
+
 # ============================================================================
 # Per-key rate limiting (semafori)
 # BUG#1 FIX: Ovaj blok je bio dupliran — uklonjen drugi primjerak.
@@ -128,9 +224,46 @@ def get_key_semaphore(key: str) -> asyncio.Semaphore:
     _key_semaphores[key] = (current_loop_id, sem)
     return sem
 
-async def acquire_key(key: str):
+async def _throttle_provider(provider: str | None) -> None:
+    """
+    Globalni throttle po provideru (nezavisno od broja ključeva).
+    Smanjuje burst-ove koji probijaju RPM/TPM, posebno kod Gemini.
+    """
+    if not provider:
+        return
+
+    prov = provider.upper()
+    lock = await _ensure_provider_lock(prov)
+
+    async with lock:
+        now = time.time()
+        provider_cooldown_until = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
+        if provider_cooldown_until > now:
+            await asyncio.sleep(provider_cooldown_until - now)
+            now = time.time()
+
+        base_gap = _PROVIDER_MIN_GAP.get(prov, MIN_GAP)
+        dynamic_gap = _PROVIDER_DYNAMIC_GAP.get(prov, 0.0)
+        if dynamic_gap > 0:
+            base_gap = max(base_gap, dynamic_gap)
+
+        # Gemini/Gemma free-tier je osjetljiv na TPM burstove.
+        if prov in {"GEMINI", "GEMMA"}:
+            base_gap *= _RPM_THROTTLE_MULTIPLIER
+
+        gap = base_gap + random.uniform(_JITTER_MIN, _JITTER_MAX)
+        last = _LAST_CALLS.get(prov, 0.0)
+        wait = (last + gap) - now
+        if wait > 0:
+            await asyncio.sleep(wait)
+
+        _LAST_CALLS[prov] = time.time()
+
+
+async def acquire_key(key: str, provider: str | None = None):
     sem = get_key_semaphore(key)
     await sem.acquire()
+    await _throttle_provider(provider)
 
 def release_key(key: str):
     entry = _key_semaphores.get(key)

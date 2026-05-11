@@ -649,7 +649,7 @@ class FleetManager:
                 # GEMINI poseban slučaj: Google šalje "quota" i "resource exhausted"
                 # i za RPM limite i za dnevnu kvotu — koristimo strožu provjeru
                 # koja traži eksplicitne billing/account pokazatelje.
-                if prov_u == "GEMINI":
+                if prov_u in {"GEMINI", "GEMMA"}:
                     quota_body = _is_billing_exhausted_body(body)
                 else:
                     quota_body = _is_quota_exhausted_body(body)
