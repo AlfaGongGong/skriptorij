@@ -192,6 +192,35 @@ def _norm_score(v) -> float:
         return 0.0
 
 
+_MIN_ORIG_LEN_FOR_LOSS_CHECK = 120
+_MIN_CAND_LEN_FOR_LOSS_CHECK = 20
+# PREVODILAC može biti kraći od EN (kompresija), ali sve ispod 62% je često
+# signal da su ispali odlomci.
+_MIN_TRANSLATION_RATIO = 0.62
+# LEKTOR/KOREKTOR ne bi smjeli značajno skraćivati sadržaj.
+_MIN_LEKTOR_RATIO = 0.80
+
+
+def _plain_len(tekst: str) -> int:
+    try:
+        return len(BeautifulSoup(tekst or "", "html.parser").get_text(" ", strip=True))
+    except Exception:
+        return len((tekst or "").strip())
+
+
+def _je_sumnjiv_gubitak_teksta(original: str, kandidat: str, uloga: str = "LEKTOR") -> bool:
+    if not original or not kandidat:
+        return False
+    orig_len = _plain_len(original)
+    cand_len = _plain_len(kandidat)
+    if orig_len < _MIN_ORIG_LEN_FOR_LOSS_CHECK or cand_len < _MIN_CAND_LEN_FOR_LOSS_CHECK:
+        return False
+    ratio = cand_len / max(1, orig_len)
+    if uloga == "PREVODILAC":
+        return ratio < _MIN_TRANSLATION_RATIO
+    return ratio < _MIN_LEKTOR_RATIO
+
+
 # ── Korak 5: Helper za kalkove + validator ──────────────────────────────────
 
 def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx: int) -> str:
@@ -377,6 +406,29 @@ async def _quality_scoring(
             prevodilac_provider=prevodilac_provider,
         )
         score_float = float(max(1.0, min(10.0, score)))
+        if original_chunk:
+            orig_len = _plain_len(original_chunk)
+            out_len = _plain_len(finalno)
+            if (
+                orig_len >= _MIN_ORIG_LEN_FOR_LOSS_CHECK
+                and out_len >= _MIN_CAND_LEN_FOR_LOSS_CHECK
+            ):
+                ratio = out_len / max(1, orig_len)
+                old_score = score_float
+                # Cap-ovi su namjerno stepenasti: što je veći pad dužine, niži
+                # maksimalni score, da nepotpuni blok ne može završiti s 9+.
+                if ratio < 0.60:
+                    score_float = min(score_float, 4.8)
+                elif ratio < 0.72:
+                    score_float = min(score_float, 6.0)
+                elif ratio < 0.82:
+                    score_float = min(score_float, 7.0)
+                if score_float < old_score:
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: score cap zbog mogućeg gubitka teksta "
+                        f"(ratio={ratio:.2f}, {old_score:.1f}→{score_float:.1f})",
+                        "warning",
+                    )
 
         preview = BeautifulSoup(finalno, "html.parser").get_text()[:80]
         self._quality_scores[stem_key] = score_float
@@ -540,6 +592,12 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         else:
             finalno = sirovo
             prov_l = "AUTO-HR"
+        if _je_sumnjiv_gubitak_teksta(chunk, finalno, uloga="LEKTOR"):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ Lektor vratio prekratak tekst — vraćam sigurni ulaz.",
+                "warning",
+            )
+            finalno = sirovo
 
         cist_priv = _agresivno_cisti(finalno)
         if not cist_priv or len(cist_priv.strip()) < 30:
@@ -552,6 +610,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             finalno = _post_process_tipografija(cist_priv)
 
         # ── KOREKTOR pass (temp 0.15) ─────────────────────────────────────────
+        pre_korektor_l = finalno
         raw_kor_l, prov_kor_l = await self._call_ai_engine(
             finalno, chunk_idx, uloga="KOREKTOR",
             filename=file_name, tip_bloka=tip_bloka,
@@ -559,7 +618,13 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         if raw_kor_l:
             kor_l = _smart_extract(raw_kor_l)
             if kor_l and not _je_placeholder_lokalni(kor_l) and len(kor_l.strip()) > 20:
-                finalno = kor_l
+                if _je_sumnjiv_gubitak_teksta(pre_korektor_l, kor_l, uloga="LEKTOR"):
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ⚠️ Korektor skratio blok — zadržavam lektor verziju.",
+                        "warning",
+                    )
+                else:
+                    finalno = kor_l
 
         finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
 
@@ -572,7 +637,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         self.log(f"[{file_name}] Blok {chunk_idx}: ✍️ HR lektura ({prov_l}→{prov_kor_l})", "tech")
 
         await _quality_scoring(
-            self, finalno, None, chunk_idx, file_name,
+            self, finalno, chunk, chunk_idx, file_name,
             tip_bloka, f"LEKTURA/{prov_l}", tip_ocjenjivanja="lektura",
             prevodilac_provider=prov_l,
         )
@@ -645,8 +710,22 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         )
         if spas_hal:
             finalno = spas_hal
+    if _je_sumnjiv_gubitak_teksta(chunk, finalno, uloga="PREVODILAC"):
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: ⚠️ Moguć gubitak teksta nakon lekture — pokušavam rescue.",
+            "warning",
+        )
+        spas_gubitak, _ = await _spasi_od_sirovog(
+            self, sirovo, chunk, chunk_idx, file_name,
+            prev_ctx, rel_glosar, "gubitak teksta", tip_bloka,
+        )
+        if spas_gubitak and not _je_sumnjiv_gubitak_teksta(chunk, spas_gubitak, uloga="PREVODILAC"):
+            finalno = spas_gubitak
+        else:
+            finalno = sirovo
 
     # ── KOREKTOR pass (temp 0.15) ─────────────────────────────────────────────
+    pre_korektor = finalno
     raw_kor, prov3 = await self._call_ai_engine(
         finalno, chunk_idx, uloga="KOREKTOR",
         filename=file_name, tip_bloka=tip_bloka,
@@ -654,7 +733,13 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     if raw_kor:
         kor = _smart_extract(raw_kor)
         if kor and not _je_placeholder_lokalni(kor) and len(kor.strip()) > 20:
-            finalno = kor
+            if _je_sumnjiv_gubitak_teksta(pre_korektor, kor, uloga="LEKTOR"):
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ⚠️ Korektor skratio sadržaj — zadržavam prethodnu verziju.",
+                    "warning",
+                )
+            else:
+                finalno = kor
 
     finalno = _post_process_tipografija(_agresivno_cisti(finalno))
     finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
