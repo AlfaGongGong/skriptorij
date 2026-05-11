@@ -223,9 +223,9 @@ function renderHistory() {
                     minute: "2-digit"
                 });
             const checked = HISTORY_SELECTED.has(entry._id) ? "checked" : "";
-            return `<div class="history-item ${checked ? "selected" : ""}" data-id="${entry._id}">
+            return `<div class="history-item ${checked ? "selected" : ""}" data-id="${escapeHtml(entry._id)}">
                 <label class="history-select" title="Označi zapis">
-                    <input type="checkbox" class="history-checkbox" data-id="${entry._id}" ${checked} />
+                    <input type="checkbox" class="history-checkbox" data-id="${escapeHtml(entry._id)}" ${checked} />
                 </label>
                 <div class="history-icon">📘</div>
                 <div class="history-info">
