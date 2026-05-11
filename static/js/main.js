@@ -109,33 +109,66 @@ function historyEntryId(entry, idx) {
     return String(entry.id ?? `${entry.date || "history"}-${idx}`);
 }
 
-function renderHistory() {
-    const listEl = document.getElementById("history-list");
-    const emptyEl = document.getElementById("history-empty");
+function getHistoryWithIds() {
+    return getHistory().map((entry, idx) => ({
+        ...entry,
+        _id: historyEntryId(entry, idx)
+    }));
+}
+
+function syncHistoryControls(entries = getHistoryWithIds()) {
     const controlsEl = document.getElementById("history-controls");
     const selectAllEl = document.getElementById("history-select-all");
     const selectedCountEl = document.getElementById("history-selected-count");
     const deleteBtn = document.getElementById("btn-history-delete-selected");
-    const h = getHistory().map((entry, idx) => ({
-        ...entry,
-        _id: historyEntryId(entry, idx)
-    }));
+    const total = entries.length;
+    const selected = entries.filter(entry => HISTORY_SELECTED.has(entry._id)).length;
+    if (controlsEl) controlsEl.classList.toggle("hidden", total === 0);
+    if (selectAllEl) {
+        selectAllEl.disabled = total === 0;
+        selectAllEl.checked = total > 0 && selected === total;
+        selectAllEl.indeterminate = selected > 0 && selected < total;
+    }
+    if (deleteBtn) deleteBtn.disabled = selected === 0;
+    if (selectedCountEl) {
+        selectedCountEl.textContent =
+            selected > 0 ? `${selected}/${total} označeno` : `${total} zapisa`;
+    }
+}
 
-    const syncControls = () => {
-        const total = h.length;
-        const selected = h.filter(entry => HISTORY_SELECTED.has(entry._id)).length;
-        if (controlsEl) controlsEl.classList.toggle("hidden", total === 0);
-        if (selectAllEl) {
-            selectAllEl.disabled = total === 0;
-            selectAllEl.checked = total > 0 && selected === total;
-            selectAllEl.indeterminate = selected > 0 && selected < total;
-        }
-        if (deleteBtn) deleteBtn.disabled = selected === 0;
-        if (selectedCountEl) {
-            selectedCountEl.textContent =
-                selected > 0 ? `${selected}/${total} označeno` : `${total} zapisa`;
-        }
-    };
+function handleHistorySelectAllChange(e) {
+    const checked = Boolean(e?.target?.checked);
+    const entries = getHistoryWithIds();
+    if (checked) {
+        entries.forEach(entry => HISTORY_SELECTED.add(entry._id));
+    } else {
+        HISTORY_SELECTED.clear();
+    }
+    document.querySelectorAll("#history-list .history-checkbox").forEach(chk => {
+        chk.checked = checked;
+        chk.closest(".history-item")?.classList.toggle("selected", checked);
+    });
+    syncHistoryControls(entries);
+}
+
+function handleHistoryDeleteSelectedClick() {
+    if (HISTORY_SELECTED.size === 0) return;
+    const filtered = getHistory().filter((entry, idx) => {
+        const id = historyEntryId(entry, idx);
+        return !HISTORY_SELECTED.has(id);
+    });
+    saveHistory(filtered);
+    HISTORY_SELECTED.clear();
+    renderHistory();
+    showToast("Obrisani označeni zapisi iz historije.", "success");
+}
+
+function renderHistory() {
+    const listEl = document.getElementById("history-list");
+    const emptyEl = document.getElementById("history-empty");
+    const selectAllEl = document.getElementById("history-select-all");
+    const deleteBtn = document.getElementById("btn-history-delete-selected");
+    const h = getHistoryWithIds();
 
     const validIds = new Set(h.map(entry => entry._id));
     for (const id of Array.from(HISTORY_SELECTED)) {
@@ -147,7 +180,7 @@ function renderHistory() {
         HISTORY_SELECTED.clear();
         emptyEl?.classList.remove("hidden");
         listEl.innerHTML = "";
-        syncControls();
+        syncHistoryControls(h);
         return;
     }
     emptyEl?.classList.add("hidden");
@@ -211,7 +244,7 @@ function renderHistory() {
             if (chk.checked) HISTORY_SELECTED.add(chk.dataset.id);
             else HISTORY_SELECTED.delete(chk.dataset.id);
             chk.closest(".history-item")?.classList.toggle("selected", chk.checked);
-            syncControls();
+            syncHistoryControls(h);
         });
     });
 
@@ -224,29 +257,18 @@ function renderHistory() {
     });
 
     if (selectAllEl) {
-        selectAllEl.onchange = () => {
-            if (selectAllEl.checked) {
-                h.forEach(entry => HISTORY_SELECTED.add(entry._id));
-            } else {
-                HISTORY_SELECTED.clear();
-            }
-            renderHistory();
-        };
+        if (!selectAllEl.dataset.listenerBound) {
+            selectAllEl.addEventListener("change", handleHistorySelectAllChange);
+            selectAllEl.dataset.listenerBound = "1";
+        }
     }
     if (deleteBtn) {
-        deleteBtn.onclick = () => {
-            if (HISTORY_SELECTED.size === 0) return;
-            const filtered = getHistory().filter((entry, idx) => {
-                const id = historyEntryId(entry, idx);
-                return !HISTORY_SELECTED.has(id);
-            });
-            saveHistory(filtered);
-            HISTORY_SELECTED.clear();
-            renderHistory();
-            showToast("Obrisani označeni zapisi iz historije.", "success");
-        };
+        if (!deleteBtn.dataset.listenerBound) {
+            deleteBtn.addEventListener("click", handleHistoryDeleteSelectedClick);
+            deleteBtn.dataset.listenerBound = "1";
+        }
     }
-    syncControls();
+    syncHistoryControls(h);
 }
 
 function loadFromHistory(book, model) {
