@@ -96,7 +96,7 @@ function addHistoryEntry(book, model, avg) {
     renderHistory();
 }
 
-function escapeHistoryText(value) {
+function escapeHtml(value) {
     return String(value == null ? "" : value)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -228,10 +228,10 @@ function renderHistory() {
                 </label>
                 <div class="history-icon">📘</div>
                 <div class="history-info">
-                    <div class="history-title">${escapeHistoryText(entry.book)}</div>
-                    <div class="history-meta">${escapeHistoryText(entry.model)} · ${escapeHistoryText(dateStr)}</div>
+                    <div class="history-title">${escapeHtml(entry.book)}</div>
+                    <div class="history-meta">${escapeHtml(entry.model)} · ${dateStr}</div>
                 </div>
-                <div class="history-grade ${gi.cls}" title="${escapeHistoryText(`${gi.emoji} ${gi.text}`)}">${gi.emoji} ${gi.text}</div>
+                <div class="history-grade ${gi.cls}" title="${escapeHtml(`${gi.emoji} ${gi.text}`)}">${gi.emoji} ${gi.text}</div>
             </div>`;
         })
         .join("");
