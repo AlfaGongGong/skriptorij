@@ -760,6 +760,21 @@
 
                 <!-- History tab -->
                 <div class="tab-panel" id="tab-history">
+                    <div id="history-controls" class="history-controls hidden">
+                        <label class="history-select-all-wrap">
+                            <input type="checkbox" id="history-select-all" />
+                            <span>Označi sve</span>
+                        </label>
+                        <span id="history-selected-count" class="history-selected-count">0 zapisa</span>
+                        <button
+                            class="btn btn-sm"
+                            id="btn-history-delete-selected"
+                            type="button"
+                            disabled
+                        >
+                            🗑 Obriši označeno
+                        </button>
+                    </div>
                     <div
                         id="history-empty"
                         style="

@@ -69,6 +69,7 @@ function clearOverrides() {
 
 // ═══════════════ HISTORIJA ═══════════════════════════════
 const HISTORY_KEY = "bf_history";
+const HISTORY_SELECTED = new Set();
 function getHistory() {
     try {
         return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
@@ -95,14 +96,54 @@ function addHistoryEntry(book, model, avg) {
     renderHistory();
 }
 
+function escapeHistoryText(value) {
+    return String(value == null ? "" : value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
 function renderHistory() {
     const listEl = document.getElementById("history-list");
     const emptyEl = document.getElementById("history-empty");
-    const h = getHistory();
+    const controlsEl = document.getElementById("history-controls");
+    const selectAllEl = document.getElementById("history-select-all");
+    const selectedCountEl = document.getElementById("history-selected-count");
+    const deleteBtn = document.getElementById("btn-history-delete-selected");
+    const h = getHistory().map((entry, idx) => ({
+        ...entry,
+        _id: String(entry.id ?? `${entry.date || "history"}-${idx}`)
+    }));
+
+    const syncControls = () => {
+        const total = h.length;
+        const selected = h.filter(entry => HISTORY_SELECTED.has(entry._id)).length;
+        if (controlsEl) controlsEl.classList.toggle("hidden", total === 0);
+        if (selectAllEl) {
+            selectAllEl.disabled = total === 0;
+            selectAllEl.checked = total > 0 && selected === total;
+            selectAllEl.indeterminate = selected > 0 && selected < total;
+        }
+        if (deleteBtn) deleteBtn.disabled = selected === 0;
+        if (selectedCountEl) {
+            selectedCountEl.textContent =
+                selected > 0 ? `${selected}/${total} označeno` : `${total} zapisa`;
+        }
+    };
+
+    const validIds = new Set(h.map(entry => entry._id));
+    for (const id of Array.from(HISTORY_SELECTED)) {
+        if (!validIds.has(id)) HISTORY_SELECTED.delete(id);
+    }
+
     if (!listEl) return;
     if (h.length === 0) {
+        HISTORY_SELECTED.clear();
         emptyEl?.classList.remove("hidden");
         listEl.innerHTML = "";
+        syncControls();
         return;
     }
     emptyEl?.classList.add("hidden");
@@ -143,24 +184,65 @@ function renderHistory() {
                     hour: "2-digit",
                     minute: "2-digit"
                 });
-            return `<div class="history-item" data-book="${entry.book}" data-model="${entry.model}">
+            const checked = HISTORY_SELECTED.has(entry._id) ? "checked" : "";
+            return `<div class="history-item ${checked ? "selected" : ""}" data-id="${entry._id}">
+                <label class="history-select" title="Označi zapis">
+                    <input type="checkbox" class="history-checkbox" data-id="${entry._id}" ${checked} />
+                </label>
                 <div class="history-icon">📘</div>
                 <div class="history-info">
-                    <div class="history-title">${entry.book}</div>
-                    <div class="history-meta">${entry.model} · ${dateStr}</div>
+                    <div class="history-title">${escapeHistoryText(entry.book)}</div>
+                    <div class="history-meta">${escapeHistoryText(entry.model)} · ${escapeHistoryText(dateStr)}</div>
                 </div>
                 <div class="history-grade ${gi.cls}">${gi.emoji} ${gi.text}</div>
             </div>`;
         })
         .join("");
-    // Dodaj event listener-e naknadno
-    listEl.querySelectorAll(".history-item").forEach(item => {
-        item.addEventListener("click", () => {
-            const book = item.dataset.book;
-            const model = item.dataset.model;
-            loadFromHistory(book, model);
+
+    const entriesById = new Map(h.map(entry => [entry._id, entry]));
+
+    listEl.querySelectorAll(".history-checkbox").forEach(chk => {
+        chk.addEventListener("click", e => e.stopPropagation());
+        chk.addEventListener("change", () => {
+            if (chk.checked) HISTORY_SELECTED.add(chk.dataset.id);
+            else HISTORY_SELECTED.delete(chk.dataset.id);
+            chk.closest(".history-item")?.classList.toggle("selected", chk.checked);
+            syncControls();
         });
     });
+
+    listEl.querySelectorAll(".history-item").forEach(item => {
+        item.addEventListener("click", e => {
+            if (e.target.closest(".history-select")) return;
+            const entry = entriesById.get(item.dataset.id);
+            if (entry) loadFromHistory(entry.book, entry.model);
+        });
+    });
+
+    if (selectAllEl) {
+        selectAllEl.onchange = () => {
+            if (selectAllEl.checked) {
+                h.forEach(entry => HISTORY_SELECTED.add(entry._id));
+            } else {
+                HISTORY_SELECTED.clear();
+            }
+            renderHistory();
+        };
+    }
+    if (deleteBtn) {
+        deleteBtn.onclick = () => {
+            if (HISTORY_SELECTED.size === 0) return;
+            const filtered = getHistory().filter((entry, idx) => {
+                const id = String(entry.id ?? `${entry.date || "history"}-${idx}`);
+                return !HISTORY_SELECTED.has(id);
+            });
+            saveHistory(filtered);
+            HISTORY_SELECTED.clear();
+            renderHistory();
+            showToast("Obrisani označeni zapisi iz historije.", "success");
+        };
+    }
+    syncControls();
 }
 
 function loadFromHistory(book, model) {
