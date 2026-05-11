@@ -69,6 +69,8 @@ function clearOverrides() {
 
 // ═══════════════ HISTORIJA ═══════════════════════════════
 const HISTORY_KEY = "bf_history";
+// Global selection state for history bulk actions.
+const HISTORY_SELECTED = new Set();
 function getHistory() {
     try {
         return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
@@ -95,14 +97,91 @@ function addHistoryEntry(book, model, avg) {
     renderHistory();
 }
 
+function escapeHtml(value) {
+    return String(value == null ? "" : value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function historyEntryId(entry, idx) {
+    return String(entry.id ?? `${entry.date || "history"}-${idx}`);
+}
+
+function getHistoryWithIds() {
+    return getHistory().map((entry, idx) => ({
+        ...entry,
+        _id: historyEntryId(entry, idx)
+    }));
+}
+
+function syncHistoryControls(entries = getHistoryWithIds()) {
+    const controlsEl = document.getElementById("history-controls");
+    const selectAllEl = document.getElementById("history-select-all");
+    const selectedCountEl = document.getElementById("history-selected-count");
+    const deleteBtn = document.getElementById("btn-history-delete-selected");
+    const total = entries.length;
+    const selected = entries.filter(entry => HISTORY_SELECTED.has(entry._id)).length;
+    if (controlsEl) controlsEl.classList.toggle("hidden", total === 0);
+    if (selectAllEl) {
+        selectAllEl.disabled = total === 0;
+        selectAllEl.checked = total > 0 && selected === total;
+        selectAllEl.indeterminate = selected > 0 && selected < total;
+    }
+    if (deleteBtn) deleteBtn.disabled = selected === 0;
+    if (selectedCountEl) {
+        selectedCountEl.textContent =
+            selected > 0 ? `${selected}/${total} označeno` : `${total} zapisa`;
+    }
+}
+
+function handleHistorySelectAllChange(e) {
+    const checked = Boolean(e?.target?.checked);
+    const entries = getHistoryWithIds();
+    if (checked) {
+        entries.forEach(entry => HISTORY_SELECTED.add(entry._id));
+    } else {
+        HISTORY_SELECTED.clear();
+    }
+    document.querySelectorAll("#history-list .history-checkbox").forEach(chk => {
+        chk.checked = checked;
+        chk.closest(".history-item")?.classList.toggle("selected", checked);
+    });
+    syncHistoryControls(entries);
+}
+
+function handleHistoryDeleteSelectedClick() {
+    if (HISTORY_SELECTED.size === 0) return;
+    const filtered = getHistory().filter((entry, idx) => {
+        const id = historyEntryId(entry, idx);
+        return !HISTORY_SELECTED.has(id);
+    });
+    saveHistory(filtered);
+    HISTORY_SELECTED.clear();
+    renderHistory();
+    showToast("Obrisani označeni zapisi iz historije.", "success");
+}
+
 function renderHistory() {
     const listEl = document.getElementById("history-list");
     const emptyEl = document.getElementById("history-empty");
-    const h = getHistory();
+    const selectAllEl = document.getElementById("history-select-all");
+    const deleteBtn = document.getElementById("btn-history-delete-selected");
+    const h = getHistoryWithIds();
+
+    const validIds = new Set(h.map(entry => entry._id));
+    for (const id of Array.from(HISTORY_SELECTED)) {
+        if (!validIds.has(id)) HISTORY_SELECTED.delete(id);
+    }
+
     if (!listEl) return;
     if (h.length === 0) {
+        HISTORY_SELECTED.clear();
         emptyEl?.classList.remove("hidden");
         listEl.innerHTML = "";
+        syncHistoryControls(h);
         return;
     }
     emptyEl?.classList.add("hidden");
@@ -143,24 +222,54 @@ function renderHistory() {
                     hour: "2-digit",
                     minute: "2-digit"
                 });
-            return `<div class="history-item" data-book="${entry.book}" data-model="${entry.model}">
+            const checked = HISTORY_SELECTED.has(entry._id) ? "checked" : "";
+            return `<div class="history-item ${checked ? "selected" : ""}" data-id="${escapeHtml(entry._id)}">
+                <label class="history-select" title="Označi zapis">
+                    <input type="checkbox" class="history-checkbox" data-id="${escapeHtml(entry._id)}" ${checked} />
+                </label>
                 <div class="history-icon">📘</div>
                 <div class="history-info">
-                    <div class="history-title">${entry.book}</div>
-                    <div class="history-meta">${entry.model} · ${dateStr}</div>
+                    <div class="history-title">${escapeHtml(entry.book)}</div>
+                    <div class="history-meta">${escapeHtml(entry.model)} · ${dateStr}</div>
                 </div>
-                <div class="history-grade ${gi.cls}">${gi.emoji} ${gi.text}</div>
+                <div class="history-grade ${gi.cls}" title="${escapeHtml(`${gi.emoji} ${gi.text}`)}">${gi.emoji} ${gi.text}</div>
             </div>`;
         })
         .join("");
-    // Dodaj event listener-e naknadno
-    listEl.querySelectorAll(".history-item").forEach(item => {
-        item.addEventListener("click", () => {
-            const book = item.dataset.book;
-            const model = item.dataset.model;
-            loadFromHistory(book, model);
+
+    const entriesById = new Map(h.map(entry => [entry._id, entry]));
+
+    listEl.querySelectorAll(".history-checkbox").forEach(chk => {
+        chk.addEventListener("click", e => e.stopPropagation());
+        chk.addEventListener("change", () => {
+            if (chk.checked) HISTORY_SELECTED.add(chk.dataset.id);
+            else HISTORY_SELECTED.delete(chk.dataset.id);
+            chk.closest(".history-item")?.classList.toggle("selected", chk.checked);
+            syncHistoryControls(h);
         });
     });
+
+    listEl.querySelectorAll(".history-item").forEach(item => {
+        item.addEventListener("click", e => {
+            if (e.target.closest(".history-select")) return;
+            const entry = entriesById.get(item.dataset.id);
+            if (entry) loadFromHistory(entry.book, entry.model);
+        });
+    });
+
+    if (selectAllEl) {
+        if (!selectAllEl.dataset.listenerBound) {
+            selectAllEl.addEventListener("change", handleHistorySelectAllChange);
+            selectAllEl.dataset.listenerBound = "1";
+        }
+    }
+    if (deleteBtn) {
+        if (!deleteBtn.dataset.listenerBound) {
+            deleteBtn.addEventListener("click", handleHistoryDeleteSelectedClick);
+            deleteBtn.dataset.listenerBound = "1";
+        }
+    }
+    syncHistoryControls(h);
 }
 
 function loadFromHistory(book, model) {
@@ -1126,6 +1235,48 @@ const PROV_ICONS = {
     GEMMA: "🔷"
 };
 
+function updateExpertFleetHealthBadge(totalActive, totalKeys) {
+    const badge = document.getElementById("expert-fleet-health-badge");
+    if (!badge) return;
+
+    if (totalKeys <= 0) {
+        badge.classList.remove("has-data");
+        const ring = badge.querySelector(".ql-ring");
+        const mainEl = badge.querySelector(".ql-score-main");
+        const subEl = badge.querySelector(".ql-score-sub");
+        if (ring) {
+            ring.style.setProperty("--ql-pct", "0%");
+            ring.style.background =
+                "conic-gradient(var(--accent-2) 0% 0%, var(--bg-3) 0%)";
+            ring.setAttribute("data-val", "—");
+        }
+        if (mainEl) mainEl.textContent = "—";
+        if (subEl) subEl.textContent = "zdravlje flote";
+        return;
+    }
+
+    const pct = Math.round((totalActive / totalKeys) * 100);
+    const color =
+        pct >= 80
+            ? "var(--emerald)"
+            : pct >= 60
+              ? "var(--accent-2)"
+              : pct >= 35
+                ? "var(--amber)"
+                : "var(--rose)";
+    const ring = badge.querySelector(".ql-ring");
+    const mainEl = badge.querySelector(".ql-score-main");
+    const subEl = badge.querySelector(".ql-score-sub");
+    if (ring) {
+        ring.style.setProperty("--ql-pct", `${pct}%`);
+        ring.style.background = `conic-gradient(${color} 0% ${pct}%, var(--bg-3) 0%)`;
+        ring.setAttribute("data-val", String(pct));
+    }
+    if (mainEl) mainEl.textContent = `${pct}%`;
+    if (subEl) subEl.textContent = `${totalActive}/${totalKeys} aktivno`;
+    badge.classList.add("has-data");
+}
+
 function renderFleet(data) {
     const c = document.getElementById("fleet-cards-container");
     const simpleOk = document.getElementById("fleet-ok-count");
@@ -1134,11 +1285,13 @@ function renderFleet(data) {
     if (!c) return;
     const entries = Object.entries(data || {});
     if (entries.length === 0) {
+        updateExpertFleetHealthBadge(0, 0);
         c.innerHTML =
             '<div style="text-align:center;padding:24px;color:var(--tx-3);font-size:0.75rem">Nema provajdera u floti.</div>';
         return;
     }
     let totalActive = 0,
+        totalKeys = 0,
         totalCooling = 0,
         totalErr = 0;
     let html = "";
@@ -1147,6 +1300,7 @@ function renderFleet(data) {
             total = info.total || 0,
             keys = info.keys || [];
         totalActive += active;
+        totalKeys += total;
         keys.forEach(k => {
             if (!k.available && !k.disabled && k.cooldown_remaining > 0)
                 totalCooling++;
@@ -1171,6 +1325,7 @@ function renderFleet(data) {
     if (simpleCol) simpleCol.textContent = totalCooling;
     if (simpleErr) simpleErr.textContent = totalErr;
     document.getElementById("fleet-total-count").textContent = totalActive;
+    updateExpertFleetHealthBadge(totalActive, totalKeys);
 
     // Render detailed fleet view in expert tab
     const expertC = document.getElementById("expert-fleet-container");
