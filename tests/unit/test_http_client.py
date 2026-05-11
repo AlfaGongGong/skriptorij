@@ -31,3 +31,16 @@ def test_google_pool_falls_back_when_discovery_empty(monkeypatch):
     pool = http_client._get_google_model_pool()
 
     assert pool == http_client._GOOGLE_MODEL_POOL_FALLBACK
+
+
+def test_build_messages_uses_user_only_for_models_without_system_role():
+    msgs = http_client._build_messages("sys", "usr", "gemma-3-27b-it")
+    assert len(msgs) == 1
+    assert msgs[0]["role"] == "user"
+    assert "[INSTRUKCIJE]" in msgs[0]["content"]
+
+
+def test_build_messages_uses_system_for_supported_models():
+    msgs = http_client._build_messages("sys", "usr", "gpt-4o")
+    assert msgs[0]["role"] == "system"
+    assert msgs[1]["role"] == "user"

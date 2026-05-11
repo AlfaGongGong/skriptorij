@@ -12,7 +12,12 @@
 import asyncio
 import random
 import requests
-from network.rate_limiter import acquire_key, release_key, register_provider_backoff
+from network.rate_limiter import (
+    acquire_key,
+    release_key,
+    register_provider_backoff,
+    register_provider_runtime_limits,
+)
 
 # ── Google model pool — redosljed: gemini-flash prvi (bolji RPD limit) ────────
 # NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
@@ -52,11 +57,21 @@ def _get_google_model_pool() -> list[dict]:
         pass
     return _GOOGLE_MODEL_POOL_FALLBACK
 
-# BUG#4: Modeli koji NE podržavaju system role — konvertujemo u user poruku
+# Modeli koji NE podržavaju system role — konvertujemo u user poruku.
 _NO_SYSTEM_ROLE = {"gemma-3-27b-it", "gemma-3-12b-it", "gemma-3-4b-it", "gemma-3-1b-it"}
+_NO_SYSTEM_ROLE_PATTERNS = ("gemma-",)
 
 # Per-ključ cache: koji model je trenutno aktivan (index u GOOGLE_MODEL_POOL)
 _key_model_cache: dict[str, int] = {}
+
+
+def _supports_system_role(model: str | None) -> bool:
+    if not model:
+        return True
+    m = model.lower().strip()
+    if m in _NO_SYSTEM_ROLE:
+        return False
+    return not any(pat in m for pat in _NO_SYSTEM_ROLE_PATTERNS)
 
 
 def _get_model_for_key(key: str) -> str:
@@ -92,7 +107,7 @@ def _build_messages(sys_content: str | None, user_prompt: str, model: str) -> li
     if not sys_content:
         return [{"role": "user", "content": user_prompt}]
 
-    if model in _NO_SYSTEM_ROLE:
+    if not _supports_system_role(model):
         # Merge system + user u jednu user poruku
         combined = f"[INSTRUKCIJE]\n{sys_content}\n\n[TEKST ZA OBRADU]\n{user_prompt}"
         return [{"role": "user", "content": combined}]
@@ -150,12 +165,15 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
 
         if resp.status_code == 200:
             try:
-                return resp.json()
+                data = resp.json()
+                register_provider_runtime_limits(prov_upper, resp.headers, data)
+                return data
             except Exception:
                 self.log(f"[{prov_upper}] Neispravan JSON u odgovoru", "error")
                 return None
 
         elif resp.status_code in (429, 425):
+            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             retry_after_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
             try:
                 retry_after = float(retry_after_raw) if retry_after_raw else None
@@ -180,10 +198,12 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             return None
 
         elif resp.status_code in (401, 402, 403, 412):
+            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             self.log(f"[{prov_upper}] HTTP {resp.status_code} — ključ nevažeći", "error")
             return None
 
         elif resp.status_code == 400:
+            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             err_msg = str(resp_body)[:200] if resp_body else resp.text[:200]
             body_l = str(resp_body).lower() if resp_body is not None else resp.text.lower()
             if (
@@ -214,6 +234,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             return None
 
         elif resp.status_code == 404:
+            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             # Model ne postoji — ukloni iz discovery cachea i pokušaj sljedeći
             model_used = (json_payload or {}).get("model", "") if isinstance(json_payload, dict) else ""
             if model_used:
@@ -239,6 +260,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             return None
 
         else:
+            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             self.log(f"[{prov_upper}] HTTP {resp.status_code}", "warning")
             return None
 
@@ -274,15 +296,7 @@ async def _call_single_provider(
     from network.provider_urls import get_url
     url = get_url(prov_upper)
 
-    # Provajderi bez system prompt podrške
-    if prov_upper in ("GEMMA",) or sys_content is None:
-        combined = f"[INSTRUKCIJE]\n{sys_content}\n\n[TEKST]\n{user_prompt}" if sys_content else user_prompt
-        messages = [{"role": "user", "content": combined}]
-    else:
-        messages = [
-            {"role": "system", "content": sys_content},
-            {"role": "user",   "content": user_prompt},
-        ]
+    messages = _build_messages(sys_content, user_prompt, model)
 
     payload = {
         "model":       model,
