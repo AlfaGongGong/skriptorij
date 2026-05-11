@@ -105,6 +105,10 @@ function escapeHistoryText(value) {
         .replaceAll("'", "&#39;");
 }
 
+function historyEntryId(entry, idx) {
+    return String(entry.id ?? `${entry.date || "history"}-${idx}`);
+}
+
 function renderHistory() {
     const listEl = document.getElementById("history-list");
     const emptyEl = document.getElementById("history-empty");
@@ -114,7 +118,7 @@ function renderHistory() {
     const deleteBtn = document.getElementById("btn-history-delete-selected");
     const h = getHistory().map((entry, idx) => ({
         ...entry,
-        _id: String(entry.id ?? `${entry.date || "history"}-${idx}`)
+        _id: historyEntryId(entry, idx)
     }));
 
     const syncControls = () => {
@@ -194,7 +198,7 @@ function renderHistory() {
                     <div class="history-title">${escapeHistoryText(entry.book)}</div>
                     <div class="history-meta">${escapeHistoryText(entry.model)} · ${escapeHistoryText(dateStr)}</div>
                 </div>
-                <div class="history-grade ${gi.cls}">${gi.emoji} ${gi.text}</div>
+                <div class="history-grade ${gi.cls}" title="${escapeHistoryText(`${gi.emoji} ${gi.text}`)}">${gi.emoji} ${gi.text}</div>
             </div>`;
         })
         .join("");
@@ -233,7 +237,7 @@ function renderHistory() {
         deleteBtn.onclick = () => {
             if (HISTORY_SELECTED.size === 0) return;
             const filtered = getHistory().filter((entry, idx) => {
-                const id = String(entry.id ?? `${entry.date || "history"}-${idx}`);
+                const id = historyEntryId(entry, idx);
                 return !HISTORY_SELECTED.has(id);
             });
             saveHistory(filtered);
