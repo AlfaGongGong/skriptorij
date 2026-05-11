@@ -1811,8 +1811,9 @@ input:focus {
     font-weight: 700;
     padding: 3px 8px;
     border-radius: 100px;
-    white-space: normal;
-    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     text-align: right;
     flex-shrink: 0;
 }
