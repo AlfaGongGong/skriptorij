@@ -1799,7 +1799,6 @@ input:focus {
     overflow-wrap: anywhere;
     text-align: right;
     flex-shrink: 0;
-    max-width: min(45%, 240px);
 }
 .history-grade.excellent {
     background: rgba(16, 185, 129, 0.15);
