@@ -1730,7 +1730,7 @@ input:focus {
 /* ── Historija ───────────────────────────────────────────────────────────── */
 .history-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
     padding: 12px 14px;
     background: var(--bg-2);
@@ -1812,7 +1812,6 @@ input:focus {
     padding: 3px 8px;
     border-radius: 100px;
     white-space: normal;
-    word-break: normal;
     overflow-wrap: break-word;
     text-align: right;
     flex-shrink: 0;

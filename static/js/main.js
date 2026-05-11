@@ -69,6 +69,7 @@ function clearOverrides() {
 
 // ═══════════════ HISTORIJA ═══════════════════════════════
 const HISTORY_KEY = "bf_history";
+// Global selection state for history bulk actions.
 const HISTORY_SELECTED = new Set();
 function getHistory() {
     try {
@@ -1238,7 +1239,7 @@ function updateExpertFleetHealthBadge(totalActive, totalKeys) {
     const badge = document.getElementById("expert-fleet-health-badge");
     if (!badge) return;
 
-    if (!totalKeys) {
+    if (totalKeys <= 0) {
         badge.classList.remove("has-data");
         const ring = badge.querySelector(".ql-ring");
         const mainEl = badge.querySelector(".ql-score-main");
