@@ -1,5 +1,3 @@
-
-
 # 📚 BOOKLYFI ⚡ TURBO V10
 
 **AI-Powered Book Translation & Refinement Engine**
@@ -14,630 +12,629 @@
 
 ---
 
-## ✨ Ključne funkcionalnosti
+## ✨ Key Features
 
-| Funkcionalnost | Opis |
-|----------------|------|
-| 🧠 **Fleet Manager V10** | 14 AI provajdera u jednoj floti — automatska rotacija ključeva, per-key semaphore, pametni cooldown |
-| 🔍 **Live ping ključeva** | Klikni dugme 🔍 pored bilo kojeg ključa da odmah provjeriš njegovo stvarno zdravlje |
-| 🔄 **3-pass AI pipeline** | PREVODILAC → LEKTOR → KOREKTOR — tri nezavisna AI prolaska za svaki blok teksta |
-| 🎯 **Kompozitni quality scorer** | Heuristička + AI ocjena (25/75 ponderi), thresholds: 🌟 ≥8.5 · ✅ ≥6.5 · ⚠ ≥4.0 · 🔴 <4.0 |
-| 🛡️ **Auto-Heal Firewall** | Otkriva i uništava AI halucinacije i prompt injection pokušaje u realnom vremenu |
-| 📖 **Dinamički glosar** | Analizira likove, ton i žanr knjige prije nego što prijevod počne |
-| 🔄 **RETRO re-lektura** | Ponovo obradi samo blokove ispod zadanog quality praga — bez restarta od nule |
-| 📊 **Quality Review panel** | Označi loše blokove, pošalji ih na popravku jednim klikom, prati napredak uživo |
-| ⚡ **Smart checkpointi** | Granularno snimanje po bloku — nastavi točno gdje si stao/la |
-| 🔊 **TTS Filter mode** | Generiše `.ttsfilter` output za Moon+ Reader i ostale TTS aplikacije |
-| 🌗 **Tamna / svijetla tema** | Glassmorphism dizajn, live switching bez reload-a |
-| 📱 **PWA podrška** | Dodaj na početni ekran mobitela, radi i offline (service worker) |
+| Feature | Description |
+|---------|-------------|
+| 🧠 **Fleet Manager V10** | 14 AI providers in a single fleet — automatic key rotation, per-key semaphore, smart cooldown |
+| 🔍 **Live key ping** | Click the 🔍 button next to any key to instantly check its actual health status |
+| 🔄 **3-pass AI pipeline** | TRANSLATOR → PROOFREADER → EDITOR — three independent AI passes per text block |
+| 🎯 **Composite quality scorer** | Heuristic + AI scoring (25/75 weights), thresholds: 🌟 ≥8.5 · ✅ ≥6.5 · ⚠ ≥4.0 · 🔴 <4.0 |
+    | 🛡️ **Auto-Heal Firewall** | Detects and eliminates AI hallucinations and prompt injection attempts in real time |
+    | 📖 **Dynamic glossary** | Analyzes characters, tone, and genre before translation begins |
+    | 🔄 **RETRO re-proofreading** | Reprocesses only blocks below a specified quality threshold — no full restart required |
+    | 📊 **Quality Review panel** | Flags low-quality blocks, submits them for repair in one click, tracks progress live |
+    | ⚡ **Smart checkpoints** | Granular per-block state persistence — resume exactly where processing stopped |
+    | 🔊 **TTS Filter mode** | Generates `.ttsfilter` output for Moon+ Reader and other TTS applications |
+    | 🌗 **Dark / Light theme** | Glassmorphism design, live switching without page reload |
+    | 📱 **PWA support** | Add to mobile home screen, works offline via service worker |
 
----
+    ---
 
-## 🚀 Brzi start
+    ## 🚀 Quick Start
 
-### Preduvjeti
+    ### Prerequisites
 
-- **Python 3.10+**
-- **pip** package manager
-- Barem jedan API ključ od jednog od podržanih provajdera:
+    - **Python 3.10+**
+    - **pip** package manager
+    - At least one API key from one of the supported providers:
 
-| Provajder | Link | Napomena |
-|-----------|------|----------|
-| 🔷 Google Gemini | [ai.google.dev](https://ai.google.dev) | Preporučen — visok kvalitet, 1500 RPD besplatno |
-| ⚡ Groq | [console.groq.com](https://console.groq.com) | Ultra-brz, 14 400 RPD besplatno |
-| 🔬 Cerebras | [cloud.cerebras.ai](https://cloud.cerebras.ai) | Najbrži inference, 14 400 RPD |
-| 🧠 SambaNova | [cloud.sambanova.ai](https://cloud.sambanova.ai) | Visok throughput, DeepSeek modeli |
-| 💫 Mistral | [console.mistral.ai](https://console.mistral.ai) | Višejezični specijalist |
-| 🌐 Cohere | [dashboard.cohere.com](https://dashboard.cohere.com) | Jak za lekturu |
-| 🔀 OpenRouter | [openrouter.ai](https://openrouter.ai) | Pristup stotinama modela |
-| 🐙 GitHub Models | [github.com/marketplace/models](https://github.com/marketplace/models) | Besplatno s GitHub računom |
-| 🤝 Together AI | [api.together.xyz](https://api.together.xyz) | Llama i ostali open-source modeli |
-| 🎆 Fireworks AI | [fireworks.ai](https://fireworks.ai) | Brz inference za open-source modele |
-| 🪣 Chutes AI | [chutes.ai](https://chutes.ai) | Besplatni LLM endpoint |
-| 🤗 HuggingFace | [huggingface.co](https://huggingface.co) | Inference API / serverless |
-| 🔗 Kluster AI | [kluster.ai](https://kluster.ai) | OpenAI-kompatibilni endpoint |
-| 🔷 Gemma (Together) | — | Google Gemma modeli putem Together |
+    | Provider | Link | Notes |
+    |----------|------|-------|
+    | 🔷 Google Gemini | [ai.google.dev](https://ai.google.dev) | Recommended — high quality, 1500 RPD free |
+    | ⚡ Groq | [console.groq.com](https://console.groq.com) | Ultra-fast, 14,400 RPD free |
+    | 🔬 Cerebras | [cloud.cerebras.ai](https://cloud.cerebras.ai) | Fastest inference, 14,400 RPD |
+    | 🧠 SambaNova | [cloud.sambanova.ai](https://cloud.sambanova.ai) | High throughput, DeepSeek models |
+    | 💫 Mistral | [console.mistral.ai](https://console.mistral.ai) | Multilingual specialist |
+    | 🌐 Cohere | [dashboard.cohere.com](https://dashboard.cohere.com) | Strong for proofreading |
+    | 🔀 OpenRouter | [openrouter.ai](https://openrouter.ai) | Access to hundreds of models |
+    | 🐙 GitHub Models | [github.com/marketplace/models](https://github.com/marketplace/models) | Free with a GitHub account |
+    | 🤝 Together AI | [api.together.xyz](https://api.together.xyz) | Llama and other open-source models |
+    | 🎆 Fireworks AI | [fireworks.ai](https://fireworks.ai) | Fast inference for open-source models |
+    | 🪣 Chutes AI | [chutes.ai](https://chutes.ai) | Free LLM endpoint |
+    | 🤗 HuggingFace | [huggingface.co](https://huggingface.co) | Inference API / serverless |
+    | 🔗 Kluster AI | [kluster.ai](https://kluster.ai) | OpenAI-compatible endpoint |
+    | 🔷 Gemma (Together) | — | Google Gemma models via Together |
 
-### Instalacija
+    ### Installation
 
-```bash
-# 1. Kloniraj repozitorij
-git clone https://github.com/AlfaGongGong/skriptorij.git
-cd skriptorij
+    ```bash
+    # 1. Clone the repository
+    git clone https://github.com/AlfaGongGong/skriptorij.git
+    cd skriptorij
 
-# 2. (Preporučeno) Kreiraj virtualno okruženje
-python3 -m venv venv
-source venv/bin/activate        # Linux / macOS / Termux
-# venv\Scripts\activate         # Windows
+    # 2. (Recommended) Create a virtual environment
+    python3 -m venv venv
+    source venv/bin/activate        # Linux / macOS / Termux
+    # venv\Scripts\activate         # Windows
 
-# 3. Instaliraj ovisnosti
-pip install -r requirements.txt
-```
+    # 3. Install dependencies
+    pip install -r requirements.txt
+    ```
 
-### Konfiguracija
+    ### Configuration
 
-Kreiraj `dev_api.json` u root direktoriju projekta sa svojim API ključevima:
+    Create `dev_api.json` in the project root directory with your API keys:
 
-```json
-{
-    "GEMINI":      ["TVOJ_GEMINI_KLJUC_1", "TVOJ_GEMINI_KLJUC_2"],
-    "GROQ":        ["TVOJ_GROQ_KLJUC"],
-    "CEREBRAS":    ["TVOJ_CEREBRAS_KLJUC"],
-    "SAMBANOVA":   ["TVOJ_SAMBANOVA_KLJUC"],
-    "MISTRAL":     ["TVOJ_MISTRAL_KLJUC"],
-    "COHERE":      ["TVOJ_COHERE_KLJUC"],
-    "OPENROUTER":  ["TVOJ_OPENROUTER_KLJUC"],
-    "GITHUB":      ["TVOJ_GITHUB_TOKEN"],
-    "TOGETHER":    ["TVOJ_TOGETHER_KLJUC"],
-    "FIREWORKS":   ["TVOJ_FIREWORKS_KLJUC"],
-    "CHUTES":      ["TVOJ_CHUTES_KLJUC"],
-    "HUGGINGFACE": ["TVOJ_HF_TOKEN"],
-    "KLUSTER":     ["TVOJ_KLUSTER_KLJUC"]
-}
-```
+    ```json
+    {
+    "GEMINI":      ["YOUR_GEMINI_KEY_1", "YOUR_GEMINI_KEY_2"],
+    "GROQ":        ["YOUR_GROQ_KEY"],
+    "CEREBRAS":    ["YOUR_CEREBRAS_KEY"],
+    "SAMBANOVA":   ["YOUR_SAMBANOVA_KEY"],
+    "MISTRAL":     ["YOUR_MISTRAL_KEY"],
+    "COHERE":      ["YOUR_COHERE_KEY"],
+    "OPENROUTER":  ["YOUR_OPENROUTER_KEY"],
+    "GITHUB":      ["YOUR_GITHUB_TOKEN"],
+    "TOGETHER":    ["YOUR_TOGETHER_KEY"],
+    "FIREWORKS":   ["YOUR_FIREWORKS_KEY"],
+    "CHUTES":      ["YOUR_CHUTES_KEY"],
+    "HUGGINGFACE": ["YOUR_HF_TOKEN"],
+    "KLUSTER":     ["YOUR_KLUSTER_KEY"]
+    }
+    ```
 
-> ⚠️ **Sigurnost:** `dev_api.json` je u `.gitignore` — **nikad ne commituj stvarne ključeve!**  
-> Potreban ti je samo jedan ključ od jednog provajdera da aplikacija radi.
+    > ⚠️ **Security:** `dev_api.json` is listed in `.gitignore` — **never commit real keys!**
+    > Only one key from one provider is required for the application to run.
 
-### Pokretanje
+    ### Running
 
-```bash
-python main.py
-```
+    ```bash
+    python main.py
+    ```
 
-Otvori browser na **`http://localhost:8080`**. Na Termux-u (Android), browser se otvori automatski.
+    Open your browser at **`http://localhost:8080`**. On Termux (Android), the browser opens automatically.
 
----
+    ---
 
-## 📂 Struktura projekta
+    ## 📂 Project Structure
 
-```
-skriptorij/
-├── main.py                      # Entry point — pokreće Flask server
-├── app.py                       # Flask application factory
-├── run.py                       # Alternativni launcher (za Termux i desktop)
-├── api_fleet.py                 # Fleet Manager — praćenje ključeva, cooldown, RPM/RPD limiti
-├── tts.py                       # TTS filter mode za Moon+ Reader
-│
-├── config/                      # 🔧 Konfiguracija aplikacije
-│   ├── settings.py              # Zajednički state, env varijable, putanje
-│   └── logging_config.py        # Logging konfiguracija
-│
-├── api/                         # 🌐 Flask Blueprint rute
-│   ├── __init__.py              # Blueprint registracija
-│   ├── middleware/              # Error handleri, CORS
-│   └── routes/
-│       ├── books.py             # Upload, listanje, preuzimanje knjiga
-│       ├── processing.py        # Pokretanje, status, odabir modela
-│       ├── control.py           # Pauza, nastavak, stop, reset
-│       ├── fleet.py             # Fleet status & toggle ključeva
-│       ├── keys.py              # CRUD ključeva + ping (health check)
-│       ├── qualities.py         # Quality score pregled i ažuriranje
-│       ├── quality.py           # Scoring API rute
-│       └── export.py            # JSON/TXT export izvještaja
-│
-├── core/                        # ⚙️ Jezgro engine-a
-│   ├── engine.py                # SkriptorijAllInOne — orchestracija obrade
-│   ├── quality.py               # Kompozitni quality scorer (heuristika + AI)
-│   ├── text_utils.py            # Čišćenje teksta, detekcija engleskog, tipografija
-│   └── prompt_injector.py       # Dinamičko ubacivanje glosara u prompte
-│
-├── processing/                  # 🔄 Pipeline moduli
-│   ├── pipeline.py              # 3-pass pipeline: PREVODILAC → LEKTOR → KOREKTOR
-│   ├── workers.py               # Async chunk workeri (V1)
-│   ├── workers_v2.py            # Async chunk workeri (V2, aktivan)
-│   ├── parallel.py              # Paralelna obrada poglavlja
-│   ├── retro.py                 # RETRO re-lektura loših blokova
-│   └── rescue.py                # Spašavanje iz sirovog AI odgovora
-│
-├── network/                     # 🌍 Mrežni sloj
-│   ├── http_client.py           # HTTP POST s per-key semaphore i 429 handlingom
-│   ├── rate_limiter.py          # Per-key asyncio semaphore (MAX_CONCURRENT=1)
-│   ├── provider_urls.py         # URL mapa svih 14 provajdera
-│   ├── provider_router.py       # Routing po ulozi (PREVODILAC, LEKTOR, itd.)
-│   └── urls.py                  # Legacy URL helperi
-│
-├── analysis/                    # 📊 Analiza knjige
-│   └── book_context.py          # Dinamički glosar — analiza likova, tona, žanra
-│
-├── epub/                        # 📚 EPUB obrada
-│   └── parser.py                # Parsiranje, čišćenje i rekonstrukcija EPUB-a
-│
-├── utils/                       # 🛠️ Pomoćne funkcije
-│   └── file_utils.py            # Sigurni nazivi fajlova, path validacija
-│
-├── static/                      # 🎨 Frontend resursi
-│   ├── css/
-│   │   └── style.css            # Glavni stylesheet (tamna/svijetla tema)
-│   ├── js/
-│   │   ├── main.js              # Inicijalizacija aplikacije
-│   │   ├── api-client.js        # HTTP klijent za sve API pozive
-│   │   ├── ui/
-│   │   │   ├── fleet.js         # Prikaz Fleet poola
-│   │   │   └── notifications.js # Toast notifikacije
-│   │   ├── services/
-│   │   │   ├── polling.js       # Real-time polling statusa
-│   │   │   ├── storage.js       # localStorage perzistencija
-│   │   │   └── theme.js         # Tamna/svijetla tema
-│   │   └── intro/               # 3D intro animacija (Three.js)
-│   ├── manifest.json            # PWA manifest
-│   └── sw.js                    # Service worker (offline podrška)
-│
-├── templates/
-│   ├── index.html               # Glavni UI (dashboard)
-│   └── intro.html               # Cinematični intro ekran
-│
-├── tests/                       # 🧪 Test suite
-│   ├── unit/
-│   │   └── test_validators.py   # Unit testovi za validatore
-│   └── integration/
-│       └── test_api_routes.py   # Integracijski testovi API ruta
-│
-├── Dockerfile                   # Docker image definicija
-├── docker-compose.yml           # Docker Compose konfiguracija
-├── requirements.txt             # Python ovisnosti
-├── dev_api.json                 # ⚠️ Tvoji API ključevi (u .gitignore — nikad ne commituj!)
-└── .gitignore                   # Git ignore pravila
-```
+    ```
+    skriptorij/
+    ├── main.py                      # Entry point — starts the Flask server
+    ├── app.py                       # Flask application factory
+    ├── run.py                       # Alternative launcher (for Termux and desktop)
+    ├── api_fleet.py                 # Fleet Manager — key tracking, cooldown, RPM/RPD limits
+    ├── tts.py                       # TTS filter mode for Moon+ Reader
+    │
+    ├── config/                      # 🔧 Application configuration
+    │   ├── settings.py              # Shared state, env variables, paths
+    │   └── logging_config.py        # Logging configuration
+    │
+    ├── api/                         # 🌐 Flask Blueprint routes
+    │   ├── __init__.py              # Blueprint registration
+    │   ├── middleware/              # Error handlers, CORS
+    │   └── routes/
+    │       ├── books.py             # Upload, listing, downloading books
+    │       ├── processing.py        # Start, status, model selection
+    │       ├── control.py           # Pause, resume, stop, reset
+    │       ├── fleet.py             # Fleet status & key toggle
+    │       ├── keys.py              # Key CRUD + ping (health check)
+    │       ├── qualities.py         # Quality score review and update
+    │       ├── quality.py           # Scoring API routes
+    │       └── export.py            # JSON/TXT report export
+    │
+    ├── core/                        # ⚙️ Engine core
+    │   ├── engine.py                # SkriptorijAllInOne — processing orchestration
+    │   ├── quality.py               # Composite quality scorer (heuristic + AI)
+    │   ├── text_utils.py            # Text cleanup, English detection, typography
+    │   └── prompt_injector.py       # Dynamic glossary injection into prompts
+    │
+    ├── processing/                  # 🔄 Pipeline modules
+    │   ├── pipeline.py              # 3-pass pipeline: TRANSLATOR → PROOFREADER → EDITOR
+    │   ├── workers.py               # Async chunk workers (V1)
+    │   ├── workers_v2.py            # Async chunk workers (V2, active)
+    │   ├── parallel.py              # Parallel chapter processing
+    │   ├── retro.py                 # RETRO re-proofreading of low-quality blocks
+    │   └── rescue.py                # Recovery from raw AI responses
+    │
+    ├── network/                     # 🌍 Network layer
+    │   ├── http_client.py           # HTTP POST with per-key semaphore and 429 handling
+    │   ├── rate_limiter.py          # Per-key asyncio semaphore (MAX_CONCURRENT=1)
+    │   ├── provider_urls.py         # URL map for all 14 providers
+    │   ├── provider_router.py       # Routing by role (TRANSLATOR, PROOFREADER, etc.)
+    │   └── urls.py                  # Legacy URL helpers
+    │
+    ├── analysis/                    # 📊 Book analysis
+    │   └── book_context.py          # Dynamic glossary — character, tone, and genre analysis
+    │
+    ├── epub/                        # 📚 EPUB processing
+    │   └── parser.py                # EPUB parsing, cleanup, and reconstruction
+    │
+    ├── utils/                       # 🛠️ Utility functions
+    │   └── file_utils.py            # Safe filenames, path validation
+    │
+    ├── static/                      # 🎨 Frontend assets
+    │   ├── css/
+    │   │   └── style.css            # Main stylesheet (dark/light theme)
+    │   ├── js/
+    │   │   ├── main.js              # Application initialization
+    │   │   ├── api-client.js        # HTTP client for all API calls
+    │   │   ├── ui/
+    │   │   │   ├── fleet.js         # Fleet pool display
+    │   │   │   └── notifications.js # Toast notifications
+    │   │   ├── services/
+    │   │   │   ├── polling.js       # Real-time status polling
+    │   │   │   ├── storage.js       # localStorage persistence
+    │   │   │   └── theme.js         # Dark/light theme
+    │   │   └── intro/               # 3D intro animation (Three.js)
+    │   ├── manifest.json            # PWA manifest
+    │   └── sw.js                    # Service worker (offline support)
+    │
+    ├── templates/
+    │   ├── index.html               # Main UI (dashboard)
+    │   └── intro.html               # Cinematic intro screen
+    │
+    ├── tests/                       # 🧪 Test suite
+    │   ├── unit/
+    │   │   └── test_validators.py   # Unit tests for validators
+    │   └── integration/
+    │       └── test_api_routes.py   # Integration tests for API routes
+    │
+    ├── Dockerfile                   # Docker image definition
+    ├── docker-compose.yml           # Docker Compose configuration
+    ├── requirements.txt             # Python dependencies
+    ├── dev_api.json                 # ⚠️ Your API keys (in .gitignore — never commit!)
+    └── .gitignore                   # Git ignore rules
+    ```
 
-### Arhitektura
+    ### Architecture
 
-BOOKLYFI koristi **modularni monolit** — jedna deployable jedinica podijeljena u jasne, nezavisne module:
+    BOOKLYFI uses a **modular monolith** — a single deployable unit divided into clear, independent modules:
 
-```
-Browser ──► Flask (app.py)
-              │
-              ├─► api/routes/       (HTTP sloj — Flask Blueprinti)
-              ├─► config/settings   (Zajednički state i putanje)
-              ├─► core/             (Business logika)
-              ├─► processing/       (Pipeline i workeri)
-              └─► network/          (HTTP klijent, rate limiter)
-                        │
-              api_fleet.py ◄─── FleetManager singleton
-              (Rotacija ključeva,       (register_active_fleet /
-               cooldown, semaphore)      get_active_fleet)
-```
+    ```
+    Browser ──► Flask (app.py)
+    │
+    ├─► api/routes/       (HTTP layer — Flask Blueprints)
+    ├─► config/settings   (Shared state and paths)
+    ├─► core/             (Business logic)
+    ├─► processing/       (Pipeline and workers)
+    └─► network/          (HTTP client, rate limiter)
+    │
+    api_fleet.py ◄─── FleetManager singleton
+    (Key rotation,         (register_active_fleet /
+    cooldown, semaphore)   get_active_fleet)
+    ```
 
----
+    ---
 
-## ⚙️ Konfiguracija
+    ## ⚙️ Configuration
 
-### API ključevi (`dev_api.json`)
+    ### API Keys (`dev_api.json`)
 
-> ⚠️ **NIKAD ne commituj ovaj fajl!** Već je u `.gitignore`.
+    > ⚠️ **NEVER commit this file!** It is already listed in `.gitignore`.
 
-```json
-{
-    "GEMINI":      ["kljuc1", "kljuc2"],
-    "GROQ":        ["kljuc1", "kljuc2", "kljuc3"],
-    "CEREBRAS":    ["kljuc1"],
-    "SAMBANOVA":   ["kljuc1", "kljuc2"],
-    "MISTRAL":     ["kljuc1"],
-    "COHERE":      ["kljuc1"],
-    "OPENROUTER":  ["kljuc1"],
+    ```json
+    {
+    "GEMINI":      ["key1", "key2"],
+    "GROQ":        ["key1", "key2", "key3"],
+    "CEREBRAS":    ["key1"],
+    "SAMBANOVA":   ["key1", "key2"],
+    "MISTRAL":     ["key1"],
+    "COHERE":      ["key1"],
+    "OPENROUTER":  ["key1"],
     "GITHUB":      ["token1"],
-    "TOGETHER":    ["kljuc1"],
-    "FIREWORKS":   ["kljuc1"],
-    "CHUTES":      ["kljuc1"],
+    "TOGETHER":    ["key1"],
+    "FIREWORKS":   ["key1"],
+    "CHUTES":      ["key1"],
     "HUGGINGFACE": ["token1"],
-    "KLUSTER":     ["kljuc1"]
-}
-```
+    "KLUSTER":     ["key1"]
+    }
+    ```
 
-- **Više ključeva po provajderu** — Fleet Manager ih rotira automatski
-- Ključevi se mogu dodavati/brisati **bez restarta** iz panela API ključevi u UI-u
-- Klikni **🔍** pored ključa da odmah provjeriš je li ključ validan (live ping)
+    - **Multiple keys per provider** — Fleet Manager rotates them automatically
+    - Keys can be added or removed **without a restart** via the API Keys panel in the UI
+    - Click **🔍** next to a key to immediately verify whether it is valid (live ping)
 
-### Env varijable
+    ### Environment Variables
 
-| Varijabla | Default | Opis |
-|-----------|---------|------|
-| `SKRIPTORIJ_PORT` | `8080` | Port Flask servera |
-| `SKRIPTORIJ_CONFIG` | `dev_api.json` | Putanja do konfiguracije ključeva |
-| `PYTHONUNBUFFERED` | `1` | Real-time output logova u Dockeru |
-| `BOOKLYFI_V2` | `1` | Aktivira workers_v2 (preporučeno) |
+    | Variable | Default | Description |
+    |----------|---------|-------------|
+    | `SKRIPTORIJ_PORT` | `8080` | Flask server port |
+    | `SKRIPTORIJ_CONFIG` | `dev_api.json` | Path to the key configuration file |
+    | `PYTHONUNBUFFERED` | `1` | Real-time log output in Docker |
+    | `BOOKLYFI_V2` | `1` | Enables workers_v2 (recommended) |
 
-### Proxy konfiguracija (`proxies.json`)
+    ### Proxy Configuration (`proxies.json`)
 
-Ako moraš rutirati zahtjeve kroz proxy:
+    To route requests through a proxy:
 
-```bash
-cp proxies.json.example proxies.json
-# Uredi proxies.json s tvojim proxy podešavanjima
-```
+    ```bash
+    cp proxies.json.example proxies.json
+    # Edit proxies.json with your proxy settings
+    ```
 
-> `proxies.json` je u `.gitignore` radi zaštite kredencijala.
+    > `proxies.json` is listed in `.gitignore` to protect credentials.
 
----
+    ---
 
-## 📖 Vodič za korištenje
+    ## 📖 Usage Guide
 
-### Korak 1 — Upload knjige
+    ### Step 1 — Upload a Book
 
-1. Na **Setup** ekranu, klikni **📁 Upload EPUB/MOBI** ili prevuci i spusti fajl
-2. Knjiga se pojavljuje u dropdown za odabir
-3. Prethodno korištene knjige se automatski pamte
+    1. On the **Setup** screen, click **📁 Upload EPUB/MOBI** or drag and drop a file
+    2. The book appears in the selection dropdown
+    3. Previously used books are remembered automatically
 
-### Korak 2 — Odaberi model
+    ### Step 2 — Select a Model
 
-- **AUTO** (preporučeno) — engine sam detektuje PREVOD ili LEKTURA mod
-- **GROQ / CEREBRAS / GEMINI** itd. — prisili na specifičan provajder
-- **RETRO** — ponovi lekturu samo za blokove ispod zadanog quality praga
-- **TTS** — filter mode za Moon+ Reader
+    - **AUTO** (recommended) — the engine auto-detects TRANSLATION or PROOFREADING mode
+    - **GROQ / CEREBRAS / GEMINI** etc. — force a specific provider
+    - **RETRO** — re-proofread only blocks below the specified quality threshold
+    - **TTS** — filter mode for Moon+ Reader
 
-### Korak 3 — Pokretanje
+    ### Step 3 — Start Processing
 
-1. Klikni **🚀 Pokreni Sistem**
-2. Prati **Dashboard** za real-time napredak:
-   - Traka napretka s postotkom
-   - ETA (preostalo vrijeme)
-   - Indikator aktivnog engine-a
-   - Brojač obrađenih blokova
+    1. Click **🚀 Start System**
+    2. Monitor the **Dashboard** for real-time progress:
+    - Progress bar with percentage
+    - ETA (estimated time remaining)
+    - Active engine indicator
+    - Processed block counter
 
-### Korak 4 — Praćenje zdravlja flote
+    ### Step 4 — Monitor Fleet Health
 
-Panel **🛡️ Flota** prikazuje live status svakog API ključa:
+    The **🛡️ Fleet** panel shows the live status of each API key:
 
-| Indikator | Značenje |
-|-----------|---------|
-| 🟢 AKTIVAN | Ključ dostupan i obrađuje zahtjeve |
-| 🟡 HLADI SE | Ključ pogodio rate limit — automatski cooldown |
-| 🔴 GREŠKA | Ključ vratio grešku — provjeri validnost |
-| ⚫ ISKLJUČEN | Ključ ručno isključen toggle-om |
+    | Indicator | Meaning |
+    |-----------|---------|
+    | 🟢 ACTIVE | Key is available and processing requests |
+    | 🟡 COOLING DOWN | Key hit a rate limit — automatic cooldown in progress |
+    | 🔴 ERROR | Key returned an error — verify its validity |
+    | ⚫ DISABLED | Key manually disabled via toggle |
 
-> **Novi:** Klikni **🔍** dugme pored ključa u tabu **Stručnjak** da odmah provjeriš stvarno stanje ključa direktnim API pozivom.
+    > **New:** Click the **🔍** button next to a key in the **Expert** tab to immediately check the key's actual status via a direct API call.
 
-### Korak 5 — Quality Review
+    ### Step 5 — Quality Review
 
-Panel **🎯 Kvalitet** prikazuje ocjenu svakog prevedenog bloka:
+    The **🎯 Quality** panel displays the score for each translated block:
 
-| Oznaka | Ocjena | Akcija |
-|--------|--------|--------|
-| 🌟 Odlično | ≥ 8.5 | Nema potrebe |
-| ✅ Dobro | 6.5 – 8.5 | Opciona provjera |
-| ⚠ Treba retro | 4.0 – 6.5 | Klikni za označavanje |
-| 🔴 Kritično | < 4.0 | Hitna re-lektura |
+    | Label | Score | Action |
+    |-------|-------|--------|
+    | 🌟 Excellent | ≥ 8.5 | No action needed |
+    | ✅ Good | 6.5 – 8.5 | Optional review |
+    | ⚠ Needs retro | 4.0 – 6.5 | Click to flag |
+    | 🔴 Critical | < 4.0 | Immediate re-proofreading |
 
-Klikni **🔧 Relektura označenih** da pošalješ loše blokove na RETRO prolaz.
+    Click **🔧 Re-proofread flagged** to submit low-quality blocks to the RETRO pass.
 
-### Korak 6 — Export
+    ### Step 6 — Export
 
-Kad obrada završi:
-- **Download EPUB/MOBI** — prevedena knjiga
-- **Export JSON izvještaj** — detaljne statistike (blokovi, timing, greške)
-- **Export TXT izvještaj** — čitljivi log prijevoda
+    When processing completes:
+    - **Download EPUB/MOBI** — the translated book
+    - **Export JSON report** — detailed statistics (blocks, timing, errors)
+    - **Export TXT report** — human-readable translation log
 
-### Kontrola obrade
+    ### Processing Controls
 
-| Dugme | Akcija |
-|-------|--------|
-| ⏸️ Pauza | Suspendira obradu nakon trenutnog bloka |
-| ▶️ Nastavi | Nastavlja od pauze |
-| ⏹️ Stop | Graceful zaustavljanje obrade |
-| 🔄 Reset | Povratak na Setup ekran (zadržava checkpointe) |
+    | Button | Action |
+    |--------|--------|
+    | ⏸️ Pause | Suspends processing after the current block |
+    | ▶️ Resume | Continues from the paused state |
+    | ⏹️ Stop | Gracefully halts processing |
+    | 🔄 Reset | Returns to the Setup screen (checkpoints are retained) |
 
----
+    ---
 
-## 🌐 API Endpoints
+    ## 🌐 API Endpoints
 
-### Knjige
+    ### Books
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| `GET` | `/api/files` | Lista svih dostupnih EPUB/MOBI knjiga |
-| `POST` | `/api/upload_book` | Upload nove knjige |
-| `GET` | `/api/download` | Preuzimanje rezultantnog fajla |
-| `GET` | `/api/epub_preview` | Live EPUB preview (poglavlje po poglavlje) |
-| `GET` | `/api/epub_text/<book>` | Sirovi tekst EPUB-a (za pregled) |
+    | Method | Endpoint | Description |
+    |--------|----------|-------------|
+    | `GET` | `/api/files` | List all available EPUB/MOBI books |
+    | `POST` | `/api/upload_book` | Upload a new book |
+    | `GET` | `/api/download` | Download the output file |
+    | `GET` | `/api/epub_preview` | Live EPUB preview (chapter by chapter) |
+    | `GET` | `/api/epub_text/<book>` | Raw EPUB text (for inspection) |
 
-### Obrada
+    ### Processing
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| `GET` | `/api/status` | Puni status obrade + ETA |
-| `GET` | `/api/dev_models` | Lista dostupnih AI modela/provajdera |
-| `POST` | `/api/start` | Pokretanje (`{"book": "...", "model": "GROQ", "tool": "AUTO"}`) |
+    | Method | Endpoint | Description |
+    |--------|----------|-------------|
+    | `GET` | `/api/status` | Full processing status + ETA |
+    | `GET` | `/api/dev_models` | List of available AI models/providers |
+    | `POST` | `/api/start` | Start processing (`{"book": "...", "model": "GROQ", "tool": "AUTO"}`) |
 
-### Kontrola obrade
+    ### Processing Control
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| `POST` | `/control/pause` | Pauziraj obradu |
-| `POST` | `/control/resume` | Nastavi pauzu |
-| `POST` | `/control/stop` | Zaustavi obradu |
-| `POST` | `/control/reset` | Reset na početno stanje |
+    | Method | Endpoint | Description |
+    |--------|----------|-------------|
+    | `POST` | `/control/pause` | Pause processing |
+    | `POST` | `/control/resume` | Resume from pause |
+    | `POST` | `/control/stop` | Stop processing |
+    | `POST` | `/control/reset` | Reset to initial state |
 
-### Fleet upravljanje
+    ### Fleet Management
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| `GET` | `/api/fleet` | Svi provajderi i status ključeva |
-| `POST` | `/api/fleet/toggle` | Toggle ključ on/off (`{"provider": "GROQ", "key": "...abc"}`) |
-
-### API ključevi
+    | Method | Endpoint | Description |
+    |--------|----------|-------------|
+    | `GET` | `/api/fleet` | All providers and key statuses |
+    | `POST` | `/api/fleet/toggle` | Toggle a key on/off (`{"provider": "GROQ", "key": "...abc"}`) |
+
+    ### API Keys
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| `GET` | `/api/keys` | Lista svih provajdera i maskiranih ključeva |
-| `POST` | `/api/keys/<provider>` | Dodaj ključ (`{"key": "tvoj-api-kljuc"}`) |
-| `DELETE` | `/api/keys/<provider>/<idx>` | Obriši ključ po indeksu |
-| `POST` | `/api/keys/<provider>/<idx>/ping` | **Live health check** ključa — vraća `{ok, latency_ms, status_code}` |
+    | Method | Endpoint | Description |
+    |--------|----------|-------------|
+    | `GET` | `/api/keys` | List all providers and masked keys |
+    | `POST` | `/api/keys/<provider>` | Add a key (`{"key": "your-api-key"}`) |
+    | `DELETE` | `/api/keys/<provider>/<idx>` | Delete a key by index |
+    | `POST` | `/api/keys/<provider>/<idx>/ping` | **Live health check** for a key — returns `{ok, latency_ms, status_code}` |
 
-### Quality Scores
+    ### Quality Scores
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| `GET` | `/api/quality_scores` | Sve ocjene kvalitete za trenutnu knjigu |
-| `PATCH` | `/api/quality_scores/<stem>` | Ažuriraj ocjenu bloka |
-| `DELETE` | `/api/quality_scores/<stem>` | Obriši ocjenu bloka |
-| `POST` | `/api/quality_scores/send_to_fix` | Pošalji blok na RETRO popravku |
-| `POST` | `/api/fix/bad_blocks` | Re-obrada loših blokova ispod praga |
-| `POST` | `/api/fix/marked_blocks` | Re-obrada ručno označenih blokova |
+    | Method | Endpoint | Description |
+    |--------|----------|-------------|
+    | `GET` | `/api/quality_scores` | All quality scores for the current book |
+    | `PATCH` | `/api/quality_scores/<stem>` | Update a block's score |
+    | `DELETE` | `/api/quality_scores/<stem>` | Delete a block's score |
+    | `POST` | `/api/quality_scores/send_to_fix` | Submit a block for RETRO repair |
+    | `POST` | `/api/fix/bad_blocks` | Reprocess blocks below the quality threshold |
+    | `POST` | `/api/fix/marked_blocks` | Reprocess manually flagged blocks |
 
-### Export
+    ### Export
 
-| Metoda | Endpoint | Opis |
-|--------|----------|------|
-| `GET` | `/api/export/json` | Preuzmi JSON izvještaj prijevoda |
-| `GET` | `/api/export/txt` | Preuzmi TXT izvještaj prijevoda |
-
----
-
-## 🧪 Razvoj
-
-### Pokretanje testova
-
-```bash
-# Puni test suite (18 testova)
-python3 -m pytest tests/ -v
-
-# Samo unit testovi
-python3 -m pytest tests/unit/ -v
-
-# Samo integracijski testovi
-python3 -m pytest tests/integration/ -v
-
-# Kratki output (samo greške)
-python3 -m pytest tests/ -v --tb=short
-```
-
-### Provjera sintakse
-
-```bash
-python3 -m py_compile main.py app.py api_fleet.py
-python3 -m py_compile api/routes/keys.py network/http_client.py
-```
+    | Method | Endpoint | Description |
+    |--------|----------|-------------|
+    | `GET` | `/api/export/json` | Download the JSON translation report |
+    | `GET` | `/api/export/txt` | Download the TXT translation report |
+
+    ---
+
+    ## 🧪 Development
+
+    ### Running Tests
+
+    ```bash
+    # Full test suite (18 tests)
+    python3 -m pytest tests/ -v
+
+    # Unit tests only
+    python3 -m pytest tests/unit/ -v
+
+    # Integration tests only
+    python3 -m pytest tests/integration/ -v
+
+    # Short output (errors only)
+    python3 -m pytest tests/ -v --tb = short
+    ```
+
+    ### Syntax Check
+
+    ```bash
+    python3 -m py_compile main.py app.py api_fleet.py
+    python3 -m py_compile api/routes/keys.py network/http_client.py
+    ```
 
-### Lokalni dev server
-
-```bash
-# Eksplicitni port
-SKRIPTORIJ_PORT=9000 python main.py
-
-# Isključi workers_v2 (legacy mod)
-BOOKLYFI_V2=0 python main.py
-```
+    ### Local Dev Server
+
+    ```bash
+    # Explicit port
+    SKRIPTORIJ_PORT = 9000 python main.py
+
+    # Disable workers_v2 (legacy mode)
+    BOOKLYFI_V2 = 0 python main.py
+    ```
 
----
+    ---
 
-## 🚢 Deployment
-
-### Linux — systemd servis
+    ## 🚢 Deployment
+
+    ### Linux — systemd Service
 
-Kreiraj `/etc/systemd/system/booklyfi.service`:
+    Create `/etc/systemd/system/booklyfi.service`:
 
-```ini
-[Unit]
-Description=BOOKLYFI TURBO V10 — AI Book Translation Engine
-After=network.target
+    ```ini
+    [Unit]
+    Description=BOOKLYFI TURBO V10 — AI Book Translation Engine
+    After=network.target
 
-[Service]
-Type=simple
-User=booklyfi
-WorkingDirectory=/opt/booklyfi
-Environment=SKRIPTORIJ_PORT=8080
-Environment=PYTHONUNBUFFERED=1
-ExecStart=/opt/booklyfi/venv/bin/python main.py
-Restart=always
-RestartSec=5
+    [Service]
+    Type=simple
+    User=booklyfi
+    WorkingDirectory=/opt/booklyfi
+    Environment=SKRIPTORIJ_PORT=8080
+    Environment=PYTHONUNBUFFERED=1
+    ExecStart=/opt/booklyfi/venv/bin/python main.py
+    Restart=always
+    RestartSec=5
 
-[Install]
-WantedBy=multi-user.target
-```
+    [Install]
+    WantedBy=multi-user.target
+    ```
 
-```bash
-sudo useradd -r -s /bin/false booklyfi
-sudo cp -r . /opt/booklyfi
-sudo chown -R booklyfi:booklyfi /opt/booklyfi
-sudo systemctl daemon-reload
-sudo systemctl enable --now booklyfi
-sudo journalctl -u booklyfi -f
-```
+    ```bash
+    sudo useradd -r -s /bin/false booklyfi
+    sudo cp -r . /opt/booklyfi
+    sudo chown -R booklyfi:booklyfi /opt/booklyfi
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now booklyfi
+    sudo journalctl -u booklyfi -f
+    ```
 
-### Docker (Preporučeno)
+    ### Docker (Recommended)
 
-```bash
-# Build i start
-docker compose up -d
+    ```bash
+    # Build and start
+    docker compose up -d
 
-# Logovi
-docker compose logs -f
+    # View logs
+    docker compose logs -f
 
-# Stop
-docker compose down
-```
+    # Stop
+    docker compose down
+    ```
 
-`docker-compose.yml` mountuje:
-- `./data/` — perzistentni checkpointi i knjige
-- `./dev_api.json` — API ključevi (read-only)
-- `./proxies.json` — proxy konfiguracija (read-only)
+    `docker-compose.yml` mounts:
+    - `./data/` — persistent checkpoints and books
+    - `./dev_api.json` — API keys (read-only)
+    - `./proxies.json` — proxy configuration (read-only)
 
-```bash
-# Manuelni build
-docker build -t booklyfi .
-docker run -d \
-  -p 8080:8080 \
-  -v $(pwd)/data:/app/data \
-  -v $(pwd)/dev_api.json:/app/dev_api.json:ro \
-  --name booklyfi \
-  booklyfi
-```
+    ```bash
+    # Manual build
+    docker build -t booklyfi .
+    docker run -d \
+    -p 8080:8080 \
+    -v $(pwd)/data:/app/data \
+    -v $(pwd)/dev_api.json:/app/dev_api.json:ro \
+    --name booklyfi \
+    booklyfi
+    ```
 
-### Android (Termux)
+    ### Android (Termux)
 
-```bash
-# Instaliraj Termux s F-Droid (ne Play Store!)
-pkg update && pkg install python git
-git clone https://github.com/AlfaGongGong/skriptorij.git
-cd skriptorij
-pip install -r requirements.txt
-python main.py
-# Browser se otvori automatski na http://localhost:8080
-```
-
-> Ili dodaj na početni ekran kao **PWA** — webapp radi kao nativna aplikacija.
+    ```bash
+    # Install Termux from F-Droid (not the Play Store!)
+    pkg update && pkg install python git
+    git clone https://github.com/AlfaGongGong/skriptorij.git
+    cd skriptorij
+    pip install -r requirements.txt
+    python main.py
+    # Browser opens automatically at http://localhost:8080
+    ```
+
+    > Or add to the home screen as a **PWA** — the web app runs like a native application.
 
----
+    ---
 
-## 🔧 Rješavanje problema
+    ## 🔧 Troubleshooting
 
-### "Nema API ključeva" / Svi provajderi nedostupni
+    ### "No API keys" / All providers unavailable
 
-```bash
-# Provjeri validan JSON
-python3 -m json.tool dev_api.json
+    ```bash
+    # Verify valid JSON
+    python3 -m json.tool dev_api.json
 
-# Provjeri lokaciju
-ls -la dev_api.json   # mora biti u root direktoriju projekta
-```
+    # Check the location
+    ls -la dev_api.json  # must be in the project root directory
+    ```
 
-- Barem jedan ključ od jednog provajdera je dovoljan
-- Ključeve dodaj direktno iz UI-a u panelu **API ključevi** → odmah aktivno
-- Klikni **🔍** pored ključa da provjeriš je li validan
+    - A single key from one provider is sufficient for the application to run
+    - Keys can be added directly from the UI via the **API Keys** panel — active immediately
+    - Click **🔍** next to a key to verify it is valid
 
-### Rate limit (429 Too Many Requests)
+    ### Rate Limit (429 Too Many Requests)
 
-- **Normalno je** — Fleet Manager automatski prebacuje na sljedeći ključ
-- V10 više ne ponavlja isti iscrpljeni ključ (eliminiran recursive retry)
-- Dodaj više ključeva po provajderu za veći throughput
-- Prati cooldown tajmere u panelu **Flota**
+    - **This is expected** — Fleet Manager automatically switches to the next key
+    - V10 no longer retries the same exhausted key (recursive retry eliminated)
+    - Add more keys per provider to increase throughput
+    - Monitor cooldown timers in the **Fleet** panel
 
-### Problemi s kvalitetom prijevoda
+    ### Translation Quality Issues
 
-- Koristi AUTO mod — engine sam odlučuje PREVOD ili LEKTURA
-- Dinamički glosar analizira prvih ~2000 tokena knjige
-- Nakon prijevoda, iskoristi **RETRO** za re-lekturu loših blokova
-- Gemini i Mistral daju generalno best literary quality
+    - Use AUTO mode — the engine decides between TRANSLATION and PROOFREADING automatically
+    - The dynamic glossary analyzes the first ~2,000 tokens of the book
+    - After translation, use **RETRO** to re-proofread low-quality blocks
+    - Gemini and Mistral generally deliver the best literary quality
 
-### UI ne reagira
+    ### UI Not Responding
 
-```
-Ctrl + Shift + R   # Hard-refresh (Chrome/Firefox)
-Cmd + Shift + R    # macOS
-```
+    ```
+    Ctrl + Shift + R   # Hard refresh (Chrome/Firefox)
+    Cmd + Shift + R    # macOS
+    ```
 
-- F12 → Console tab za JavaScript greške
-- Chrome/Brave preporučeni browseri
+    - F12 → Console tab for JavaScript errors
+    - Chrome/Brave are the recommended browsers
 
-### Checkpoint problemi
+    ### Checkpoint Issues
 
-```bash
-# Checkpointi su u data/_skr_<NazivKnjige>/
-ls data/
+    ```bash
+    # Checkpoints are stored in data/_skr_<BookTitle>/
+    ls data/
 
-# Restart od nule (brisanje checkpointa)
-rm -rf data/_skr_NazivKnjige/
-```
+    # Restart from scratch (delete checkpoints)
+    rm -rf data/_skr_BookTitle/
+    ```
 
----
+    ---
 
-## 🤝 Doprinos projektu
+    ## 🤝 Contributing
 
-Doprinosi su dobrodošli!
+    Contributions are welcome!
 
-1. **Fork** repozitorij
-2. **Kreiraj** granu: `git checkout -b feature/nova-funkcija`
-3. **Commit** promjene: `git commit -m 'feat: dodaj novu funkciju'`
-4. **Push**: `git push origin feature/nova-funkcija`
-5. **Otvori** Pull Request
+    1. **Fork** the repository
+    2. **Create** a branch: `git checkout -b feature/new-feature`
+    3. **Commit** your changes: `git commit -m 'feat: add new feature'`
+    4. **Push**: `git push origin feature/new-feature`
+    5. **Open** a Pull Request
 
-### Konvencija commit poruka
+    ### Commit Message Convention
 
-```
-feat:     Nova funkcionalnost
-fix:      Ispravka buga
-docs:     Promjene dokumentacije
-refactor: Refaktorisanje koda (bez promjene funkcionalnosti)
-test:     Dodavanje ili ažuriranje testova
-chore:    Održavanje (ovisnosti, CI, itd.)
-```
+    ```
+    feat:     New feature
+    fix:      Bug fix
+    docs:     Documentation changes
+    refactor: Code refactoring (no functional changes)
+    test:     Adding or updating tests
+    chore:    Maintenance (dependencies, CI, etc.)
+    ```
 
----
+    ---
 
-## 📋 Roadmap
+    ## 📋 Roadmap
 
-- [x] 3-pass AI pipeline (PREVODILAC → LEKTOR → KOREKTOR)
-- [x] Fleet Manager s 14 provajdera i automatskom rotacijom ključeva
-- [x] Per-key asyncio semaphore (MAX_CONCURRENT=1 po ključu)
-- [x] Live ping/health check za svaki API ključ
-- [x] Kompozitni quality scorer (heuristika + AI, 25/75 ponder)
-- [x] RETRO re-lektura za blokove ispod quality praga
-- [x] Real-time web dashboard (tamna/svijetla tema)
-- [x] Modularni monolith (api/, core/, processing/, network/, config/)
-- [x] Docker + systemd deployment
-- [x] Smart checkpointi (granularno snimanje po bloku)
-- [x] PWA podrška (manifest + service worker)
-- [x] Collapsible Fleet panel u Stručnjak tabu
-- [ ] Nativna Android aplikacija (`.apk`)
-- [ ] Debian paket (`.deb`) za Linux desktop
-- [ ] Cloud sinhronizacija knjiga i checkpointa
-- [ ] Web-based EPUB editor za post-translation review
+    - [x] 3-pass AI pipeline (TRANSLATOR → PROOFREADER → EDITOR)
+    - [x] Fleet Manager with 14 providers and automatic key rotation
+    - [x] Per-key asyncio semaphore (MAX_CONCURRENT=1 per key)
+    - [x] Live ping/health check for each API key
+    - [x] Composite quality scorer (heuristic + AI, 25/75 weights)
+    - [x] RETRO re-proofreading for blocks below the quality threshold
+    - [x] Real-time web dashboard (dark/light theme)
+    - [x] Modular monolith (api/, core/, processing/, network/, config/)
+    - [x] Docker + systemd deployment
+    - [x] Smart checkpoints (granular per-block persistence)
+    - [x] PWA support (manifest + service worker)
+    - [x] Collapsible Fleet panel in the Expert tab
+    - [ ] Native Android application (`.apk`)
+    - [ ] Debian package (`.deb`) for Linux desktop
+    - [ ] Cloud synchronization of books and checkpoints
+    - [ ] Web-based EPUB editor for post-translation review
 
----
+    ---
 
-## 🔐 Sigurnosne napomene
+    ## 🔐 Security Notes
 
-- `dev_api.json` i `proxies.json` su u `.gitignore` — **nikad ne commituj ove fajlove**
-- API ključevi su maskirani u UI-u (prikazuje se samo zadnjih 6 znakova: `...abc123`)
-- Svi putevi fajlova su sanitizirani protiv directory traversal napada
-- Aplikacija radi lokalno — podaci idu samo na AI provajdere koje koristiš
+    - `dev_api.json` and `proxies.json` are in `.gitignore` — **never commit these files**
+    - API keys are masked in the UI (only the last 6 characters are shown: `...abc123`)
+    - All file paths are sanitized against directory traversal attacks
+    - The application runs locally — data is sent only to the AI providers you use
 
----
+    ---
 
-## 📄 Licenca
+    ## 📄 License
 
-MIT License — vidi [LICENSE](LICENSE) fajl za detalje.
+    MIT License — see the [LICENSE](LICENSE) file for details.
 
----
+    ---
 
-## 💬 Kontakt i podrška
+    ## 💬 Contact & Support
 
-- 🐛 **Bugovi:** [GitHub Issues](https://github.com/AlfaGongGong/skriptorij/issues)
-- 💡 **Prijedlozi:** [GitHub Issues](https://github.com/AlfaGongGong/skriptorij/issues)
-- 👤 **Autor:** [AlfaGongGong](https://github.com/AlfaGongGong)
+    - 🐛 **Bug reports:** [GitHub Issues](https://github.com/AlfaGongGong/skriptorij/issues)
+    - 💡 **Feature requests:** [GitHub Issues](https://github.com/AlfaGongGong/skriptorij/issues)
+    - 👤 **Author:** [AlfaGongGong](https://github.com/AlfaGongGong)
 
----
+    ---
 
-*Napravljeno s ❤️ za čitaoce koji ne čekaju zvanične prijevode.*  
-*BOOKLYFI TURBO V10 — jer dobre knjige ne smiju imati jezičke prepreke.*
-
+    *Built with ❤️ for readers who don't wait for official translations.*
+    *BOOKLYFI TURBO V10 — because great books shouldn't have language barriers.*
