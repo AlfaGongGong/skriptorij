@@ -1195,6 +1195,23 @@ input:focus {
     list-style: none;
     user-select: none;
 }
+.expert-summary-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+.expert-fleet-health-badge {
+    opacity: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 600;
+    pointer-events: none;
+}
+.expert-fleet-health-badge .ql-score-sub {
+    text-transform: none;
+    letter-spacing: normal;
+}
 .expert-section-summary::-webkit-details-marker { display: none; }
 .expert-section-summary:hover { background: var(--bg-3); }
 .expert-section-chevron {
@@ -2297,6 +2314,12 @@ input:focus {
     .history-controls {
         flex-wrap: wrap;
         gap: 8px;
+    }
+    .expert-section-summary {
+        align-items: flex-start;
+    }
+    .expert-section-chevron {
+        margin-top: 4px;
     }
     .history-selected-count {
         order: 3;
