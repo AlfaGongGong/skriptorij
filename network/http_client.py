@@ -34,13 +34,15 @@ def _get_google_model_pool() -> list[dict]:
     Inače vraća statički fallback pool.
     Otkriveni modeli idu prvi; statički fallback popunjava ostatak.
     """
+    fallback_by_id = {m["model"]: m for m in _GOOGLE_MODEL_POOL_FALLBACK}
+
     try:
         from network.model_discovery import get_cached_model_list
         discovered = get_cached_model_list("GEMINI")
         if discovered:
-            # Svaki ID → dict format koji rotacija očekuje
-            pool = [{"model": mid, "rpm": 10, "rpd": 500} for mid in discovered]
-            # Dodaj statičke fallback modele kojih nema u discovery listi
+            # Runtime whitelist: koristimo samo fallback modele sa provjerenim limitima.
+            # Discovery smije odlučiti samo REDOSLJED unutar ovog skupa.
+            pool = [fallback_by_id[mid] for mid in discovered if mid in fallback_by_id]
             existing_ids = {m["model"] for m in pool}
             for fb in _GOOGLE_MODEL_POOL_FALLBACK:
                 if fb["model"] not in existing_ids:
@@ -115,7 +117,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
       razlikovanje kvote i rate limita kod 429 grešaka.
     NOVO: Na 404, model se invalidira iz discovery cachea.
     """
-    await acquire_key(key)
+    await acquire_key(key, prov_upper)
     try:
         try:
             resp = await asyncio.to_thread(
@@ -322,16 +324,14 @@ async def _call_gemini_with_full_rotation(
         # BUG#5 FIX: Ako je preferred_model naveden, počni s njim
         # Dinamički pool — ne zahtijeva da preferred_model bude u pool-u
         pool = _get_google_model_pool()
-        if preferred_model:
+        allowed_model_ids = {m["model"] for m in pool}
+        if preferred_model and preferred_model in allowed_model_ids:
             current_model = preferred_model
             # Postavi cache index na preferred model ako je u pool-u
             for i, m in enumerate(pool):
                 if m["model"] == preferred_model:
                     _key_model_cache[key] = i
                     break
-            else:
-                # Nije u pool-u (novi model iz discovery) — počni od indexa 0
-                _key_model_cache[key] = 0
         else:
             current_model = _get_model_for_key(key)
 
@@ -378,5 +378,4 @@ async def _call_gemini_with_full_rotation(
 
     self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
-
 
