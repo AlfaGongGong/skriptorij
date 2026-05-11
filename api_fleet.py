@@ -155,9 +155,20 @@ class KeyState:
 
     @property
     def available(self) -> bool:
-        if self.disabled or not self.is_active:
+        now = time.time()
+        if self.disabled:
             return False
-        if time.time() < self.cooldown_until:
+        # Auto-revive kada istekne cooldown (štiti od "zaglavljivanja" u inactive).
+        if not self.is_active:
+            if now >= self.cooldown_until:
+                self.is_active = True
+                self.cooldown_until = 0.0
+                self.health = max(self.health, 30.0)
+                self.remaining_minute = self.rate_limit_minute
+                self.reset_time_minute = max(self.reset_time_minute, now + _RPM_WINDOW)
+            else:
+                return False
+        if now < self.cooldown_until:
             return False
         if self.req_rem <= 0:
             return False
@@ -614,8 +625,7 @@ class FleetManager:
                     ks.reset_time_minute = now + max(ra, _RPM_WINDOW)
 
                 ks.health = max(0.0, ks.health - 10)
-                if ks.record_error():
-                    ks.is_active = False
+                ks.record_error()
 
             elif status_code in (401, 403, 402, 412):
                 # Nevažeći ključ — dugi cooldown (ali ne 30 dana — to je previše)
@@ -663,13 +673,26 @@ class FleetManager:
                         break
             if not ks:
                 return {"error": "Ključ nije pronađen"}
-            ks.disabled = not ks.disabled
-            if not ks.disabled:
-                ks.is_active         = True
-                ks.cooldown_until    = 0.0
-                ks.health            = max(ks.health, 30.0)
-                ks.remaining_minute  = ks.rate_limit_minute
-                ks.reset_time_minute = time.time() + _RPM_WINDOW
+            now = time.time()
+
+            def _reactivate() -> None:
+                ks.is_active = True
+                ks.cooldown_until = 0.0
+                ks.health = max(ks.health, 30.0)
+                ks.remaining_minute = ks.rate_limit_minute
+                ks.reset_time_minute = now + _RPM_WINDOW
+
+            # Ako je ključ auto-isključen (inactive, ali nije manualno disabled),
+            # prvi klik ga treba vratiti online umjesto dodatnog "gašenja".
+            if not ks.disabled and not ks.is_active:
+                _reactivate()
+            else:
+                ks.disabled = not ks.disabled
+                if ks.disabled:
+                    ks.is_active = False
+                    ks.cooldown_until = 0.0
+                else:
+                    _reactivate()
         self.flush_now()
         return {"ok": True, "disabled": ks.disabled, "provider": prov_u, "masked": ks.masked}
 
