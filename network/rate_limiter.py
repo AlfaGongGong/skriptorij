@@ -6,6 +6,8 @@
 #   BUG#8 FIX: _get_provider_lock uklonjena (bila mrtva i pogrešna)
 
 import asyncio
+import random
+import time
 
 # ===== GLOBALNI RATE LIMITER — humanizovano, bez kršenja limita =====
 _PROVIDER_LOCKS: dict = {}
@@ -128,9 +130,38 @@ def get_key_semaphore(key: str) -> asyncio.Semaphore:
     _key_semaphores[key] = (current_loop_id, sem)
     return sem
 
-async def acquire_key(key: str):
+async def _throttle_provider(provider: str | None) -> None:
+    """
+    Globalni throttle po provideru (nezavisno od broja ključeva).
+    Smanjuje burst-ove koji probijaju RPM/TPM, posebno kod Gemini.
+    """
+    if not provider:
+        return
+
+    prov = provider.upper()
+    lock = await _ensure_provider_lock(prov)
+
+    async with lock:
+        now = time.time()
+        base_gap = _PROVIDER_MIN_GAP.get(prov, MIN_GAP)
+
+        # Gemini/Gemma free-tier je osjetljiv na TPM burstove.
+        if prov in {"GEMINI", "GEMMA"}:
+            base_gap *= _RPM_THROTTLE_MULTIPLIER
+
+        gap = base_gap + random.uniform(_JITTER_MIN, _JITTER_MAX)
+        last = _LAST_CALLS.get(prov, 0.0)
+        wait = (last + gap) - now
+        if wait > 0:
+            await asyncio.sleep(wait)
+
+        _LAST_CALLS[prov] = time.time()
+
+
+async def acquire_key(key: str, provider: str | None = None):
     sem = get_key_semaphore(key)
     await sem.acquire()
+    await _throttle_provider(provider)
 
 def release_key(key: str):
     entry = _key_semaphores.get(key)
