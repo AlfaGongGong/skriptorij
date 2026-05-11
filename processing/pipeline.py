@@ -27,6 +27,7 @@ from core.text_utils import (
     _je_ai_anotacija,
 )
 from processing.rescue import _spasi_od_sirovog
+from core.quality import _QUALITY_RESCUE_THRESHOLD
 
 # ── Korak 2, 3, 4 integracije ──────────────────────────────────────────────
 try:
@@ -493,7 +494,6 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     if not force_reprocess:
         cached_final = _chk_read(self, file_name, chunk_idx)
         if cached_final and _detektuj_en_ostatke(cached_final) < 0.08:
-            from core.quality import _QUALITY_RESCUE_THRESHOLD
             qs = self.shared_stats.get("quality_scores", {})
             stem_key = f"{file_name}_blok_{chunk_idx}"
             raw_val = qs.get(stem_key, None)
@@ -558,14 +558,21 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     )
                     new_qs_val_l = self.shared_stats.get("quality_scores", {}).get(stem_key_l)
                     cached_score_l = _norm_score(new_qs_val_l) if new_qs_val_l is not None else None
-                score_info_l = f"score={cached_score_l:.1f}" if cached_score_l is not None else "score=?"
-                self.log(
-                    f"[{file_name}] Blok {chunk_idx}: 💾 Lektura učitana iz cache-a ({score_info_l}).",
-                    "tech",
-                )
-                self.spaseno_iz_checkpointa += 1
-                self.global_done_chunks += 1
-                return cached_lek, "DATABASE/LEKTURA"
+                if cached_score_l is not None and cached_score_l < _QUALITY_RESCUE_THRESHOLD:
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ♻️ Lektura cache ignorisan "
+                        f"(score={cached_score_l:.1f} < {_QUALITY_RESCUE_THRESHOLD}) — ponovo lektoriram.",
+                        "warning",
+                    )
+                else:
+                    score_info_l = f"score={cached_score_l:.1f}" if cached_score_l is not None else "score=?"
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: 💾 Lektura učitana iz cache-a ({score_info_l}).",
+                        "tech",
+                    )
+                    self.spaseno_iz_checkpointa += 1
+                    self.global_done_chunks += 1
+                    return cached_lek, "DATABASE/LEKTURA"
 
         sirovo = _automatska_korekcija(chunk)
         lek_sys = self._get_lektor_prompt(
