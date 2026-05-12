@@ -119,3 +119,73 @@ def test_build_messages_uses_system_for_supported_models():
     msgs = http_client._build_messages("sys", "usr", "gpt-4o")
     assert msgs[0]["role"] == "system"
     assert msgs[1]["role"] == "user"
+
+
+def test_gemini_rotates_model_on_429(monkeypatch):
+    """
+    BUG FIX: Kad ključ dobije 429 na gemini-2.0-flash, mora probati sljedeći
+    model (gemini-2.5-flash, gemini-2.0-flash-lite) — ne smije odmah skočiti
+    na sljedeći ključ bez pokušaja s drugim modelima.
+
+    Svaki Gemini model ima vlastite RPM/RPD kvote, pa 429 na jednom modelu
+    ne znači nužno da su i drugi modeli iscrpljeni.
+    """
+    import asyncio
+
+    _reset_dead_models()
+
+    pool = http_client._GOOGLE_MODEL_POOL_FALLBACK
+    assert len(pool) >= 2, "Test zahtijeva barem 2 modela u pool-u"
+
+    tried_models: list[str] = []
+
+    async def fake_async_http_post(self_obj, url, headers, payload,
+                                    prov, prov_upper, key, _proxy=None):
+        model = payload.get("model", "")
+        tried_models.append(model)
+        # Simuliraj 429 cooldown na ključu (kao što to radi analyze_response)
+        # Tek drugi model "uspijeva"
+        if model == pool[0]["model"]:
+            # Postavi key u cooldown (simulacija 429)
+            import time
+            for ks in self_obj.fleet.fleet.get("GEMINI", []):
+                if ks.key == key:
+                    ks.cooldown_until = time.time() + 65.0
+                    ks.is_active = False
+                    break
+            return None
+        # Drugi model uspijeva
+        return {"choices": [{"message": {"content": "ODGOVOR"}}]}
+
+    monkeypatch.setattr("network.http_client._async_http_post", fake_async_http_post)
+    monkeypatch.setattr("network.http_client._get_next_proxy", lambda: None)
+
+    async def _noop_sleep(_s):
+        pass
+
+    monkeypatch.setattr("asyncio.sleep", _noop_sleep)
+
+    from api_fleet import FleetManager, KeyState
+    _fleet = FleetManager.__new__(FleetManager)
+    import threading
+    _fleet.lock = threading.Lock()
+    _fleet.fleet = {"GEMINI": [KeyState("TEST_KEY_1234", "GEMINI")]}
+    _fleet.resolved_models = {"GEMINI": pool[0]["model"]}
+    _fleet._rr_index = {}
+
+    class FakeEngine:
+        fleet = _fleet
+
+        def log(self, msg, level="info"):
+            pass
+
+    engine = FakeEngine()
+
+    result = asyncio.run(
+        http_client._call_gemini_with_full_rotation(engine, None, "test", 0.5, 100)
+    )
+    content, label = result
+    assert content == "ODGOVOR", "Trebalo je uspjeti s drugim modelom nakon 429 na prvom"
+    assert len(tried_models) >= 2, "Morala su biti isprobana barem 2 modela"
+    assert tried_models[0] == pool[0]["model"], "Prvi pokušaj mora biti s primarnim modelom"
+    assert tried_models[1] != pool[0]["model"], "Drugi pokušaj mora biti s drugim modelom"
