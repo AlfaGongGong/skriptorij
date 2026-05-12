@@ -81,14 +81,16 @@ bp = Blueprint("fleet", __name__)
 
 @bp.route("/api/fleet")
 def get_fleet():
-    """Vraća detalje flote za Fleet Pool prikaz."""
+    """Vraća detalje flote za Fleet Pool prikaz (s per-key detaljima)."""
     try:
         from api_fleet import FleetManager, get_active_fleet
 
         fm = get_active_fleet()
         if fm is None:
             fm = FleetManager(config_path=CONFIG_PATH)
-        return jsonify(_normalize_fleet_summary(fm.get_fleet_summary()))
+        # get_fleet_ui() vraća per-key podatke (health, cooldown, available...)
+        # get_fleet_summary() vraća samo agregatne podatke bez ključeva
+        return jsonify(_normalize_fleet_summary(fm.get_fleet_ui()))
     except Exception:
         return jsonify({"error": "Greška pri dohvaćanju flote"}), 500
 
@@ -111,6 +113,30 @@ def toggle_fleet_key():
         return jsonify(result)
     except Exception:
         return jsonify({"error": "Interna greška pri toggleu ključa"}), 500
+
+
+@bp.route("/api/fleet/revive", methods=["POST"])
+def revive_fleet_keys():
+    """
+    Prisilno resetuje cooldown stanje ključeva.
+    Body (opcionalno): { "provider": "GEMINI" }  — bez provider-a resetuje sve.
+    Koristi se kad korisnik zna da su ključevi zdravi a sistem ih drži na hlađenju.
+    """
+    try:
+        from api_fleet import FleetManager, get_active_fleet
+
+        fm = get_active_fleet()
+        if fm is None:
+            fm = FleetManager(config_path=CONFIG_PATH)
+
+        data = request.get_json(silent=True) or {}
+        provider = data.get("provider")  # None = svi provajderi
+
+        count = fm.force_reset_all(provider=provider)
+        label = provider.upper() if provider else "sve provajdere"
+        return jsonify({"ok": True, "revived": count, "provider": label})
+    except Exception as e:
+        return jsonify({"error": f"Greška pri resetovanju: {e}"}), 500
 
 
 

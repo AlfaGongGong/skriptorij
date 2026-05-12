@@ -850,6 +850,27 @@ class FleetManager:
                     }
         return result
 
+    def force_reset_all(self, provider: str = None) -> int:
+        """
+        Prisilno resetuje SVE ključeve (bez obzira na cooldown ili is_active stanje).
+        Korisno kad korisnik zna da su ključevi zdravi ali su pogrešno stavljeni
+        na hlađenje (npr. zbog 429 koji je bio lažno klasificiran kao dnevna kvota).
+        Vraća broj resetovanih ključeva.
+        """
+        count = 0
+        provs = [provider.upper()] if provider else list(self.fleet.keys())
+        with self.lock:
+            for prov_u in provs:
+                for ks in self.fleet.get(prov_u, []):
+                    if ks.disabled:
+                        continue
+                    ks._reset_for_reactivation()
+                    ks.health = min(100.0, max(ks.health, 50.0))
+                    count += 1
+        if count:
+            self.flush_now()
+        return count
+
     def get_total_active_keys(self) -> int:
         # BUG-D FIX: isti race condition — zaštiti s lockom.
         with self.lock:

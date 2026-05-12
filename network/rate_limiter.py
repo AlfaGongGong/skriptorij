@@ -201,34 +201,31 @@ def register_provider_runtime_limits(provider: str | None, headers=None, body=No
 # BUG#11 FIX: asyncio.Semaphore je vezan za event loop u kom je kreiran.
 #   Svaki asyncio.run() poziv kreira novi event loop — stari semafori postaju
 #   neupotrebljivi i bacaju "is bound to a different event loop".
-#   Rješenje: čuvamo (loop_id, semaphore) par i kreiramo novi semafor ako se
-#   loop_id promijenio (tj. novi asyncio.run() je pokrenut).
+# BUG#12 FIX (KRITIČNO): asyncio.Semaphore ne pruža zaštitu između THREADOVA.
+#   App pokreće više pozadinskih threadova koji svaki pozivaju asyncio.run(),
+#   što znači N paralelnih event loop-ova. Svaki thread kreirao je VLASTITI
+#   asyncio.Semaphore za isti ključ → zaštita "max 1 paralelni poziv po ključu"
+#   bila je POTPUNO NEFUNKCIONALNA između threadova.
+#   Posljedica: više threadova moglo je istovremeno poslati zahtjev s istim
+#   ključem, što uzrokuje 429 čak i na svježim (nekorišćenim) ključevima.
+#   Ispravak: threading.Semaphore koji je process-wide (ne vezan za event loop).
+#   Akvizicija u async kontekstu ide kroz asyncio.to_thread da ne blokira loop.
 # ============================================================================
 
-# _key_semaphores: key -> (loop_id, asyncio.Semaphore)
-_key_semaphores: dict = {}
+import threading as _threading
+
+# _key_semaphores: key -> threading.Semaphore  (process-wide, cross-thread)
+_key_semaphores: dict[str, _threading.Semaphore] = {}
+_key_semaphores_lock = _threading.Lock()
 MAX_CONCURRENT_PER_KEY = 1
 
-def get_key_semaphore(key: str) -> asyncio.Semaphore:
-    try:
-        current_loop_id = id(asyncio.get_running_loop())
-    except RuntimeError:
-        # Nema aktivnog event loop-a — uvijek kreiramo novi semafor jer
-        # ne znamo u kom loop-u će biti prvi put korišten.
-        sem = asyncio.Semaphore(MAX_CONCURRENT_PER_KEY)
-        _key_semaphores[key] = (None, sem)
-        return sem
 
-    entry = _key_semaphores.get(key)
-    if entry is not None:
-        stored_loop_id, sem = entry
-        if stored_loop_id is not None and current_loop_id == stored_loop_id:
-            return sem
-        # Semafor je vezan za stari event loop (ili kreiran bez loop-a) — kreiramo novi
-
-    sem = asyncio.Semaphore(MAX_CONCURRENT_PER_KEY)
-    _key_semaphores[key] = (current_loop_id, sem)
-    return sem
+def get_key_semaphore(key: str) -> _threading.Semaphore:
+    """Vraća process-wide threading.Semaphore za dati ključ (lazy init)."""
+    with _key_semaphores_lock:
+        if key not in _key_semaphores:
+            _key_semaphores[key] = _threading.Semaphore(MAX_CONCURRENT_PER_KEY)
+        return _key_semaphores[key]
 
 async def _throttle_provider(provider: str | None, key: str | None = None) -> None:
     """
@@ -291,12 +288,14 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
 
 async def acquire_key(key: str, provider: str | None = None):
     sem = get_key_semaphore(key)
-    await sem.acquire()
+    # BUG#12 FIX: koristimo threading.Semaphore (process-wide) umjesto asyncio.Semaphore.
+    # asyncio.to_thread akvizira semafor u thread pool-u bez blokiranja event loop-a.
+    # Ovo garantuje da samo jedan thread istovremeno koristi isti ključ.
+    await asyncio.to_thread(sem.acquire)
     # BUG#THROTTLE FIX: prosljeđujemo key da _throttle_provider koristi per-key timing
     await _throttle_provider(provider, key=key)
 
 def release_key(key: str):
-    entry = _key_semaphores.get(key)
-    if entry is not None:
-        _, sem = entry
+    sem = _key_semaphores.get(key)
+    if sem is not None:
         sem.release()
