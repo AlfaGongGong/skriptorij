@@ -483,20 +483,20 @@ async def _call_gemini_with_full_rotation(
                 if content:
                     return content, f"GEMINI-{current_model}"
 
-            # ── BUG#MODEL FIX: razlikuj uzrok None-a ─────────────────────────
-            # Ako je ključ SADA u cooldownu (429/quota), _async_http_post ga je
-            # postavio u cooldown PRIJE vraćanja None.  U tom slučaju ne smijemo
-            # rotirati model — samo prelazimo na sljedeći ključ.
-            # Ako ključ NIJE u cooldownu (404, 400, timeout...) → rotiramo model.
+            # ── Rotacija modela nakon neuspješnog zahtjeva ────────────────────
+            # Svaki Gemini model ima VLASTITE RPM/RPD kvote (gemini-2.0-flash-lite
+            # ima 30 RPM, gemini-2.0-flash ima 15 RPM, gemini-2.5-flash ima 10 RPM).
+            # Stoga: 429 na jednom modelu NE znači da su i ostali modeli iscrpljeni.
+            # Uvijek rotiramo model (bez obzira na razlog) — tried_models skup
+            # osigurava da se ne vrtimo u krug.
             if not ks.available:
                 self.log(
-                    f"[GEMINI] Ključ ...{key[-4:]} u cooldownu (429/quota) "
-                    f"— preskačem na sljedeći ključ (model: {current_model})",
+                    f"[GEMINI] Ključ ...{key[-4:]} u cooldownu za {current_model} "
+                    f"— probam sljedeći model",
                     "warning",
                 )
-                break  # ← izlazi iz model loop-a, ne rotira model
 
-            # 404 / nepoznat model / timeout → rotiraj model za ovaj ključ
+            # 404 / nepoznat model / timeout / 429 → rotiraj model za ovaj ključ
             next_model = _rotate_model_for_key(key)
             if next_model is None:
                 self.log(f"[GEMINI] Svi modeli iscrpljeni za ključ ...{key[-4:]}", "warning")
