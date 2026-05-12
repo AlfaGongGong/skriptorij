@@ -197,7 +197,7 @@ def test_gemini_rotates_model_on_429(monkeypatch):
 
 def test_gemini_skips_inactive_key_on_billing(monkeypatch):
     """
-    Ako je ključ DEFINITVNO iscrpljen (is_active=False — billing kvota ili
+    Ako je ključ DEFINITIVNO iscrpljen (is_active=False — billing kvota ili
     3+ grešaka u 30s), ne smije probati ostale modele s tim ključem.
     Treba odmah preći na sljedeći ključ (ili dati 'Svi ključevi iscrpljeni').
     """

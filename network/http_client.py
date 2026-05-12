@@ -491,7 +491,7 @@ async def _call_gemini_with_full_rotation(
             # Svaki Gemini model ima VLASTITE RPM/RPD kvote (gemini-2.0-flash-lite
             # ima 30 RPM, gemini-2.0-flash ima 15 RPM, gemini-2.5-flash ima 10 RPM).
             # Stoga: 429 na jednom modelu NE znači da su i ostali modeli iscrpljeni.
-            # ISPRAVKA BUG#COOLDOWN: Ako je ključ DEFINITVNO iscrpljen (is_active=False —
+            # ISPRAVKA BUG#COOLDOWN: Ako je ključ DEFINITIVNO iscrpljen (is_active=False —
             # billing kvota ili 3+ grešaka u 30s), nema smisla probati ostale modele
             # ISTIM ključem — svaki sljedeći zahtjev bi dobio novu 429 i produžio cooldown.
             # Kratki RPM cooldown (is_active=True, cooldown_until>now) je drugačiji slučaj:
@@ -567,13 +567,19 @@ async def _call_gemini_with_full_rotation(
                     content = data["choices"][0].get("message", {}).get("content", "").strip()
                     if content:
                         return content, f"GEMINI-{current_model}"
-                if not ks.available:
+                if not ks.is_active:
                     self.log(
-                        f"[GEMINI] Ključ ...{key[-4:]} (novi) u cooldownu za {current_model} "
+                        f"[GEMINI] Ključ ...{key[-4:]} (novi) iscrpljen (inactive) za {current_model} "
                         f"— prelazim na sljedeći ključ",
                         "warning",
                     )
                     break
+                if not ks.available:
+                    self.log(
+                        f"[GEMINI] Ključ ...{key[-4:]} (novi) u kratkom cooldownu za {current_model} "
+                        f"— probam sljedeći model",
+                        "warning",
+                    )
                 next_model = _rotate_model_for_key(key)
                 if next_model is None:
                     break
