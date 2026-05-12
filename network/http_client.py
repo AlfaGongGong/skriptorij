@@ -192,18 +192,21 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
                 retry_after = None
 
             # Provider-level backoff da se izbjegne "stampedo" svih ključeva odjednom.
-            if retry_after and retry_after > 0:
-                register_provider_backoff(prov_upper, retry_after)
-            elif prov_upper in {"GEMINI", "GEMMA"}:
-                # Google često vrati 429 bez korisnog Retry-After — koristi konzervativan fallback.
-                register_provider_backoff(prov_upper, 60.0)
+            # BUG_B FIX: provider-level backoff od 60s je previše agresivan — blokira SVE
+            # Gemini ključeve odjednom jer _throttle_provider() koristi globalni provider lock.
+            # Umjesto toga: koristimo kratki polite-wait samo ako Retry-After nije prisutan.
+            # Per-key cooldown (u KeyState) je dovoljan za dulje blokiranje.
+            if retry_after and retry_after > 0 and retry_after <= 3600:
+                register_provider_backoff(prov_upper, min(retry_after, 15.0))
+            elif prov_upper in {"GEMINI", "GEMMA"} and not retry_after:
+                # Google često vrati 429 bez Retry-After — kratki backoff da se izbjegne
+                # stampedo, ali NE 60s koji bi blokirao sve ključeve istovremeno.
+                register_provider_backoff(prov_upper, 5.0)
 
-            # analyze_response() je već odredio tip (kvota ili rate limit) i postavio cooldown.
-            # Ovdje samo logovati i eventualno čekati kratko za učtivost.
             if retry_after and retry_after > 3600:
                 self.log(f"[{prov_upper}] Kvota iscrpljena (dnevni limit) — biram drugi ključ", "warning")
             else:
-                wait = (retry_after or 3.0) + random.uniform(0.3, 1.0)
+                wait = min(retry_after or 3.0, 15.0) + random.uniform(0.3, 1.0)
                 self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s, biram drugi ključ", "warning")
                 await asyncio.sleep(wait)
             return None

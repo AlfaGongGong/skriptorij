@@ -647,8 +647,14 @@ def startup_key_check(fleet_manager) -> None:
             except Exception:
                 body = {"text": resp.text[:300]}
 
-        # Delegiramo state update fleetmanageru (koristi interni lock)
-        fleet_manager.analyze_response(prov, ks.key, status, resp.headers, body)
+        # BUG_A FIX: analyze_response se POZIVA SAMO za 401/402/403/412 (nevažeći ključ)
+        # i NE za 429 s /models endpointa.
+        # Razlog: /v1/models ima odvojene (niže) limite od /v1/chat/completions —
+        # 429 na /models ne znači da je completions kvota iscrpljena.
+        # Stari kod je pozivao analyze_response za sve statuse, što je uzrokovalo
+        # stavljanje ključeva u cooldown čak i kad su completions bili sasvim zdravi.
+        if status in (401, 402, 403, 412):
+            fleet_manager.analyze_response(prov, ks.key, status, resp.headers, body)
 
         if status == 200:
             logger.info("[KeyCheck] %s ...%s → OK", prov, ks.key[-4:])
