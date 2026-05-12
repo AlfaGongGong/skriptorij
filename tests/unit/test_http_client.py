@@ -197,9 +197,10 @@ def test_gemini_rotates_model_on_429(monkeypatch):
 
 def test_gemini_skips_inactive_key_on_billing(monkeypatch):
     """
-    Ako je ključ DEFINITIVNO iscrpljen (is_active=False — billing kvota ili
-    3+ grešaka u 30s), ne smije probati ostale modele s tim ključem.
-    Treba odmah preći na sljedeći ključ (ili dati 'Svi ključevi iscrpljeni').
+    BUG FIX: Kad je_active=False zbog billing/dnevne kvote JEDNOG modela,
+    rotacija mora nastaviti probati OSTALE modele s istim ključem jer svaki
+    Gemini model ima NEZAVISNE RPD kvote.
+    Svi modeli u pool-u trebaju biti isprobani (tried_models == len(pool)).
     """
     import asyncio
 
@@ -213,7 +214,7 @@ def test_gemini_skips_inactive_key_on_billing(monkeypatch):
                                     prov, prov_upper, key, _proxy=None):
         model = payload.get("model", "")
         tried_models.append(model)
-        # Simuliraj billing exhaustion — is_active=False (dnevna kvota)
+        # Simuliraj billing exhaustion — is_active=False (dnevna kvota jednog modela)
         import time
         for ks in self_obj.fleet.fleet.get("GEMINI", []):
             if ks.key == key:
@@ -251,9 +252,11 @@ def test_gemini_skips_inactive_key_on_billing(monkeypatch):
     )
     content, label = result
     assert content is None, "Billing-iscrpljeni ključ ne smije uspjeti"
-    # Nakon billing 429, smije biti pokušan samo JEDAN model — odmah prelazimo na sljedeći ključ
-    assert len(tried_models) == 1, (
-        f"Billing-iscrpljeni ključ smije koristiti samo 1 model, pokušano: {tried_models}"
+    # BUG FIX: moraju biti isprobani SVI modeli — svaki ima nezavisnu kvotu.
+    # Staro ponašanje (samo 1 model) je bilo pogrešno jer je spriječavalo rotaciju
+    # na gemini-2.5-flash, gemini-2.0-flash-lite i gemma-4 kad je 2.0-flash iscrpljen.
+    assert len(tried_models) == len(pool), (
+        f"Rotacija mora isprobati sve {len(pool)} modela, pokušano: {tried_models}"
     )
 
 
