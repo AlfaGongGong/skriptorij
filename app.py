@@ -834,6 +834,17 @@ def create_app() -> Flask:
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    @app.route("/api/fleet/revive", methods=["POST"])
+    def api_fleet_revive():
+        try:
+            data     = request.get_json(silent=True) or {}
+            provider = data.get("provider")
+            count    = _get_fleet().force_reset_all(provider=provider)
+            label    = provider.upper() if provider else "sve provajdere"
+            return jsonify({"ok": True, "revived": count, "provider": label})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     # ═════════════════════════════════════════════════════════════════════════
     # DOWNLOAD
     # ═════════════════════════════════════════════════════════════════════════
