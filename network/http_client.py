@@ -490,21 +490,18 @@ async def _call_gemini_with_full_rotation(
             # ── Rotacija modela nakon neuspješnog zahtjeva ────────────────────
             # Svaki Gemini model ima VLASTITE RPM/RPD kvote (gemini-2.0-flash-lite
             # ima 30 RPM, gemini-2.0-flash ima 15 RPM, gemini-2.5-flash ima 10 RPM).
-            # Stoga: 429 na jednom modelu NE znači da su i ostali modeli iscrpljeni.
-            # ISPRAVKA BUG#COOLDOWN: Ako je ključ DEFINITIVNO iscrpljen (is_active=False —
-            # billing kvota ili 3+ grešaka u 30s), nema smisla probati ostale modele
-            # ISTIM ključem — svaki sljedeći zahtjev bi dobio novu 429 i produžio cooldown.
-            # Kratki RPM cooldown (is_active=True, cooldown_until>now) je drugačiji slučaj:
-            # drugi model ima vlastitu kvotu i može uspjeti, pa nastavimo rotaciju.
+            # BUG FIX: Prethodna verzija je breakala petlju kad is_active=False
+            # (billing/dnevna kvota jednog modela). To je POGREŠNO — dnevna kvota
+            # gemini-2.0-flash ne znači da su gemini-2.5-flash ili gemma-4 iscrpljeni.
+            # Ispravno: nastavi rotaciju kroz sve modele bez break-a.
+            # tried_models skup garantuje terminaciju petlje bez duplikata.
             if not ks.is_active:
                 self.log(
-                    f"[GEMINI] Ključ ...{key[-4:]} iscrpljen (inactive) za {current_model} "
-                    f"— prelazim na sljedeći ključ",
+                    f"[GEMINI] Ključ ...{key[-4:]} — kvota iscrpljena za {current_model} "
+                    f"— rotiram na sljedeći model",
                     "warning",
                 )
-                break
-
-            if not ks.available:
+            elif not ks.available:
                 self.log(
                     f"[GEMINI] Ključ ...{key[-4:]} u kratkom cooldownu za {current_model} "
                     f"— probam sljedeći model",
@@ -569,12 +566,11 @@ async def _call_gemini_with_full_rotation(
                         return content, f"GEMINI-{current_model}"
                 if not ks.is_active:
                     self.log(
-                        f"[GEMINI] Ključ ...{key[-4:]} (novi) iscrpljen (inactive) za {current_model} "
-                        f"— prelazim na sljedeći ključ",
+                        f"[GEMINI] Ključ ...{key[-4:]} (novi) — kvota iscrpljena za {current_model} "
+                        f"— rotiram na sljedeći model",
                         "warning",
                     )
-                    break
-                if not ks.available:
+                elif not ks.available:
                     self.log(
                         f"[GEMINI] Ključ ...{key[-4:]} (novi) u kratkom cooldownu za {current_model} "
                         f"— probam sljedeći model",
