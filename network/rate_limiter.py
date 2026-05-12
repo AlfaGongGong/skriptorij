@@ -4,6 +4,12 @@
 #   BUG#4 FIX: _ensure_provider_lock ne kreira Lock unutar threading lock-a —
 #               asyncio.Lock() se kreira isključivo unutar async konteksta
 #   BUG#8 FIX: _get_provider_lock uklonjena (bila mrtva i pogrešna)
+#   BUG#THROTTLE FIX (v10.5): _LAST_CALLS je bio per-provider globalna varijabla —
+#     serijalizirala je SVE ključeve istog provajdera. Svaki ključ je čekao puni
+#     min_gap (5s za Gemini) od zadnjeg poziva BILO KOJEG ključa istog provajdera.
+#     S 6 Gemini ključeva: throughput = 1 req/5s umjesto 6 req/5s.
+#     Ispravljeno: _LAST_CALLS_KEY per-key dict (key_string → timestamp).
+#     _LAST_CALLS (per-provider) ostaje samo za startup anti-burst jitter.
 
 import asyncio
 import random
@@ -11,7 +17,8 @@ import time
 
 # ===== GLOBALNI RATE LIMITER — humanizovano, bez kršenja limita =====
 _PROVIDER_LOCKS: dict = {}
-_LAST_CALLS = {}
+_LAST_CALLS = {}          # per-provider: koristi se samo za startup anti-burst jitter
+_LAST_CALLS_KEY: dict = {}  # BUG#THROTTLE FIX: per-key timestamp (key_string → float)
 _PROVIDER_COOLDOWN_UNTIL: dict = {}
 _PROVIDER_DYNAMIC_GAP: dict = {}
 
@@ -223,25 +230,26 @@ def get_key_semaphore(key: str) -> asyncio.Semaphore:
     _key_semaphores[key] = (current_loop_id, sem)
     return sem
 
-async def _throttle_provider(provider: str | None) -> None:
+async def _throttle_provider(provider: str | None, key: str | None = None) -> None:
     """
-    Globalni throttle po provideru (nezavisno od broja ključeva).
+    Throttle po ključu + provider-level cooldown provjera.
 
     BUG_C FIX: Prethodna verzija je koristila provider-level asyncio.Lock koji je
     serijalizirao SVE pozive prema provideru. S više ključeva to znači da ključevi
     čekaju jedan na drugog umjesto da rade paralelno — direktno suprotno svrsi flota.
 
-    Nova verzija: provider lock se koristi samo za provjeru cooldown-a (kratko).
-    Sam throttle (sleep) se izvodi VAN lock-a da se ne blokiraju drugi ključevi.
-    Gemini multiplikator je uklonjen — per-key semaphore (MAX_CONCURRENT_PER_KEY=1)
-    već osigurava da isti ključ nema paralelnih poziva.
+    BUG#THROTTLE FIX: _LAST_CALLS je bio per-provider — serijalizirao je sve ključeve
+    istog provajdera. Svaki ključ čekao puni min_gap od zadnjeg poziva BILO KOJEG
+    ključa. S 6 Gemini ključeva to znači 1 req/5s umjesto 6 req/5s (throughput
+    faktorno manji od kapaciteta). Ispravljeno: throttle je sada per-key putem
+    _LAST_CALLS_KEY. Provider-level _LAST_CALLS ostaje samo za startup anti-burst.
     """
     if not provider:
         return
 
     prov = provider.upper()
 
-    # Provjeri provider cooldown (kratko, uz lock)
+    # Provjeri provider cooldown (kratko, bez locka — samo čitanje)
     provider_cooldown_until = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
     now = time.time()
     if provider_cooldown_until > now:
@@ -259,23 +267,33 @@ async def _throttle_provider(provider: str | None) -> None:
     if dynamic_gap > 0:
         base_gap = max(base_gap, dynamic_gap)
 
-    # BUG_C FIX: Uklonjeno Gemini/Gemma množenje s _RPM_THROTTLE_MULTIPLIER (1.8).
-    # Per-key semaphore (MAX_CONCURRENT_PER_KEY=1) osigurava serializaciju po ključu.
-    # Provider-level množenje je blokiralo paralelne pozive s RAZLIČITIM ključevima.
-
+    # BUG#THROTTLE FIX: koristi per-key timestamp, ne per-provider.
+    # Svaki ključ ima vlastitu liniju vremena — ključevi rade paralelno,
+    # svaki poštuje vlastiti min_gap od svog zadnjeg poziva.
     gap = base_gap + random.uniform(_JITTER_MIN, _JITTER_MAX)
-    last = _LAST_CALLS.get(prov, 0.0)
+    if key:
+        last = _LAST_CALLS_KEY.get(key, 0.0)
+    else:
+        # Fallback za pozive bez ključa — per-provider (staro ponašanje)
+        last = _LAST_CALLS.get(prov, 0.0)
+
     wait = (last + gap) - now
     if wait > 0:
         await asyncio.sleep(wait)
 
-    _LAST_CALLS[prov] = time.time()
+    # Ažuriraj per-key timestamp
+    now2 = time.time()
+    if key:
+        _LAST_CALLS_KEY[key] = now2
+    else:
+        _LAST_CALLS[prov] = now2
 
 
 async def acquire_key(key: str, provider: str | None = None):
     sem = get_key_semaphore(key)
     await sem.acquire()
-    await _throttle_provider(provider)
+    # BUG#THROTTLE FIX: prosljeđujemo key da _throttle_provider koristi per-key timing
+    await _throttle_provider(provider, key=key)
 
 def release_key(key: str):
     entry = _key_semaphores.get(key)

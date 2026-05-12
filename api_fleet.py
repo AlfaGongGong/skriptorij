@@ -1,11 +1,18 @@
 # ============================================================================
-# API FLEET MANAGER V10.3 — api_fleet.py
+# API FLEET MANAGER V10.4 — api_fleet.py
 #
 # ISPRAVKE v10.3:
 #   BUG#1 FIX: auto-revive: now > cooldown_until (uklonjen pogrešan + 86400)
 #   BUG#6 FIX: remaining_minute se resetuje kad prođe 60s od reset_time_minute
 #   NOVO:       reset_time_minute se pravilno popunjava iz Retry-After headera
 #   NOVO:       _reset_rpm_if_needed() poziva se u get_best_key() i available
+#
+# ISPRAVKE v10.4:
+#   BUG#MODEL FIX: GOOGLE_MODEL_POOL ažuriran — uklonjeni dead preview modeli
+#                  (gemini-2.5-flash-lite-preview-06-17, gemini-2.5-flash-preview-05-20
+#                   vraćaju HTTP 404 od maja 2026).
+#                  Novi pool: gemini-2.0-flash (primarni) → gemini-2.5-flash →
+#                             gemini-2.0-flash-lite (živi modeli, provjereni).
 # ============================================================================
 
 import json
@@ -862,11 +869,13 @@ class FleetManager:
 
 # ── Google model pool ─────────────────────────────────────────────────────────
 # NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
-# Mora biti sinkronizirano s http_client.py::GOOGLE_MODEL_POOL.
+# BUG#MODEL FIX: gemini-2.5-flash-lite-preview-06-17 i gemini-2.5-flash-preview-05-20
+#   vraćaju HTTP 404 od maja 2026 — uklonjeni. Zamijenjeni živim modelima.
+# Mora biti sinkronizirano s http_client.py::_GOOGLE_MODEL_POOL_FALLBACK.
 GOOGLE_MODEL_POOL = [
-    {"model": "gemini-2.0-flash",                    "rpm": 15, "rpd": 1500},  # primarni
-    {"model": "gemini-2.5-flash-lite-preview-06-17", "rpm": 10, "rpd": 500},   # fallback 1
-    {"model": "gemini-2.5-flash-preview-05-20",      "rpm": 10, "rpd": 500},   # fallback 2
+    {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},  # primarni — stabilan, visoki RPD
+    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},   # fallback 1 — noviji, stabilna GA verzija
+    {"model": "gemini-2.0-flash-lite", "rpm": 30, "rpd": 1500},  # fallback 2 — visoki RPM, dobar za RPM hitove
 ]
 
 
