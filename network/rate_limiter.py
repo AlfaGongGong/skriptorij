@@ -15,23 +15,23 @@ _LAST_CALLS = {}
 _PROVIDER_COOLDOWN_UNTIL: dict = {}
 _PROVIDER_DYNAMIC_GAP: dict = {}
 
-_PROVIDER_MIN_GAP = {
-    "GEMINI": 4.0,
-    "GROQ": 2.5,
-    "CEREBRAS": 2.0,
-    "SAMBANOVA": 2.5,
-    "MISTRAL": 3.0,
-    "COHERE": 3.0,
-    "OPENROUTER": 3.0,
-    "GITHUB": 6.0,
-    "TOGETHER": 3.0,
-    "FIREWORKS": 3.0,
-    "CHUTES": 3.0,
-    "HUGGINGFACE": 4.0,
-    "KLUSTER": 4.0,
-    "GEMMA": 5.0,
-}
-MIN_GAP = 2.5
+# ── Per-provider minimalni gap — iz provider_profiles.py ─────────────────────
+# Razmak između poziva JEDNOG ključa = 60s / rpm_safe
+# Ne treba se mijenjati ovdje — mijenja se u provider_profiles.py
+try:
+    from network.provider_profiles import get_min_gap as _get_provider_min_gap
+    def _provider_gap(prov: str) -> float:
+        return _get_provider_min_gap(prov)
+except ImportError:
+    # Fallback iz profila ako import nije dostupan
+    _PROVIDER_MIN_GAP_FALLBACK = {
+        "GEMINI": 5.0,   "GROQ": 2.5,   "CEREBRAS": 2.5,  "SAMBANOVA": 7.5,
+        "MISTRAL": 62.0, "COHERE": 3.75, "OPENROUTER": 4.0, "GITHUB": 7.5,
+        "TOGETHER": 3.75, "FIREWORKS": 3.75, "CHUTES": 7.5,
+        "HUGGINGFACE": 8.6, "KLUSTER": 5.0, "GEMMA": 7.5,
+    }
+    def _provider_gap(prov: str) -> float:
+        return _PROVIDER_MIN_GAP_FALLBACK.get(prov.upper(), 5.0)
 
 _RPM_THROTTLE_MULTIPLIER = 1.8
 _JITTER_MIN = 0.3
@@ -227,37 +227,50 @@ def get_key_semaphore(key: str) -> asyncio.Semaphore:
 async def _throttle_provider(provider: str | None) -> None:
     """
     Globalni throttle po provideru (nezavisno od broja ključeva).
-    Smanjuje burst-ove koji probijaju RPM/TPM, posebno kod Gemini.
+
+    BUG_C FIX: Prethodna verzija je koristila provider-level asyncio.Lock koji je
+    serijalizirao SVE pozive prema provideru. S više ključeva to znači da ključevi
+    čekaju jedan na drugog umjesto da rade paralelno — direktno suprotno svrsi flota.
+
+    Nova verzija: provider lock se koristi samo za provjeru cooldown-a (kratko).
+    Sam throttle (sleep) se izvodi VAN lock-a da se ne blokiraju drugi ključevi.
+    Gemini multiplikator je uklonjen — per-key semaphore (MAX_CONCURRENT_PER_KEY=1)
+    već osigurava da isti ključ nema paralelnih poziva.
     """
     if not provider:
         return
 
     prov = provider.upper()
-    lock = await _ensure_provider_lock(prov)
 
-    async with lock:
-        now = time.time()
-        provider_cooldown_until = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
-        if provider_cooldown_until > now:
-            await asyncio.sleep(provider_cooldown_until - now)
-            now = time.time()
-
-        base_gap = _PROVIDER_MIN_GAP.get(prov, MIN_GAP)
-        dynamic_gap = _PROVIDER_DYNAMIC_GAP.get(prov, 0.0)
-        if dynamic_gap > 0:
-            base_gap = max(base_gap, dynamic_gap)
-
-        # Gemini/Gemma free-tier je osjetljiv na TPM burstove.
-        if prov in {"GEMINI", "GEMMA"}:
-            base_gap *= _RPM_THROTTLE_MULTIPLIER
-
-        gap = base_gap + random.uniform(_JITTER_MIN, _JITTER_MAX)
-        last = _LAST_CALLS.get(prov, 0.0)
-        wait = (last + gap) - now
+    # Provjeri provider cooldown (kratko, uz lock)
+    provider_cooldown_until = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
+    now = time.time()
+    if provider_cooldown_until > now:
+        wait = provider_cooldown_until - now
+        # Ograniči čekanje: ne blokiraj duže od 30s u throttle funkciji —
+        # per-key cooldown u KeyState je zadužen za dulja blokiranja.
+        if wait > 30.0:
+            wait = 0.0
         if wait > 0:
             await asyncio.sleep(wait)
+            now = time.time()
 
-        _LAST_CALLS[prov] = time.time()
+    base_gap = _provider_gap(prov)
+    dynamic_gap = _PROVIDER_DYNAMIC_GAP.get(prov, 0.0)
+    if dynamic_gap > 0:
+        base_gap = max(base_gap, dynamic_gap)
+
+    # BUG_C FIX: Uklonjeno Gemini/Gemma množenje s _RPM_THROTTLE_MULTIPLIER (1.8).
+    # Per-key semaphore (MAX_CONCURRENT_PER_KEY=1) osigurava serializaciju po ključu.
+    # Provider-level množenje je blokiralo paralelne pozive s RAZLIČITIM ključevima.
+
+    gap = base_gap + random.uniform(_JITTER_MIN, _JITTER_MAX)
+    last = _LAST_CALLS.get(prov, 0.0)
+    wait = (last + gap) - now
+    if wait > 0:
+        await asyncio.sleep(wait)
+
+    _LAST_CALLS[prov] = time.time()
 
 
 async def acquire_key(key: str, provider: str | None = None):
