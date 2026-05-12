@@ -802,46 +802,54 @@ class FleetManager:
     # ── Fleet summary & UI ───────────────────────────────────────────────────
 
     def get_fleet_summary(self) -> dict:
-        summary = {}
-        for prov, keys in self.fleet.items():
-            active  = sum(1 for k in keys if k.available)
-            cooling = sum(
-                1 for k in keys
-                if not k.available and not k.disabled and k.cooldown_remaining > 0
-            )
-            summary[prov] = {
-                "active":  active,
-                "cooling": cooling,
-                "total":   len(keys),
-                "req_rem": sum(k.req_rem for k in keys),
-            }
+        # BUG-D FIX: self.fleet se čita bez locka — race condition s analyze_response()
+        # Dodatno: ks.available MUTIRA stanje (poziva _reset_for_reactivation) — mora biti
+        # pod lockom da ne vidi half-updated KeyState iz drugog threada.
+        with self.lock:
+            summary = {}
+            for prov, keys in self.fleet.items():
+                active  = sum(1 for k in keys if k.available)
+                cooling = sum(
+                    1 for k in keys
+                    if not k.available and not k.disabled and k.cooldown_remaining > 0
+                )
+                summary[prov] = {
+                    "active":  active,
+                    "cooling": cooling,
+                    "total":   len(keys),
+                    "req_rem": sum(k.req_rem for k in keys),
+                }
         return summary
 
     def get_fleet_ui(self) -> dict:
-        result = {}
-        for prov in PROVIDER_ORDER:  # BUG#5 FIX: bilo PROVIDER_PRIORITY
-            keys = self.fleet.get(prov, [])
-            if not keys:
-                continue
-            result[prov] = {
-                "active": sum(1 for k in keys if k.available),
-                "total":  len(keys),
-                "keys":   [ks.to_ui_dict() for ks in keys],
-            }
-        for prov, keys in self.fleet.items():
-            if prov not in result and keys:
+        # BUG-D FIX: isti race condition kao get_fleet_summary — zaštiti s lockom.
+        with self.lock:
+            result = {}
+            for prov in PROVIDER_ORDER:  # BUG#5 FIX: bilo PROVIDER_PRIORITY
+                keys = self.fleet.get(prov, [])
+                if not keys:
+                    continue
                 result[prov] = {
                     "active": sum(1 for k in keys if k.available),
                     "total":  len(keys),
                     "keys":   [ks.to_ui_dict() for ks in keys],
                 }
+            for prov, keys in self.fleet.items():
+                if prov not in result and keys:
+                    result[prov] = {
+                        "active": sum(1 for k in keys if k.available),
+                        "total":  len(keys),
+                        "keys":   [ks.to_ui_dict() for ks in keys],
+                    }
         return result
 
     def get_total_active_keys(self) -> int:
-        return sum(
-            sum(1 for ks in keys if ks.available)
-            for keys in self.fleet.values()
-        )
+        # BUG-D FIX: isti race condition — zaštiti s lockom.
+        with self.lock:
+            return sum(
+                sum(1 for ks in keys if ks.available)
+                for keys in self.fleet.values()
+            )
 
     # ── Internal ─────────────────────────────────────────────────────────────
 
