@@ -104,10 +104,14 @@ def _get_next_proxy() -> dict | None:
 #   vraćaju HTTP 404 od maja 2026 — uklonjeni. Zamijenjeni živim modelima.
 # Ovo je statički fallback pool. Dinamički pool se gradi iz model_discovery-a
 # kada su dostupni API ključevi (vidi _get_google_model_pool()).
+# GEMMA FIX: gemma-4-31b-it dodan u pool — najjači Gemma model (RPM=15, RPD=1500).
+#   Koristi iste Gemini API ključeve. _build_messages automatski spaja system+user
+#   poruku jer Gemma ne podržava system role (vidi _NO_SYSTEM_ROLE_PATTERNS).
 _GOOGLE_MODEL_POOL_FALLBACK = [
     {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},  # primarni — stabilan, visoki RPD
     {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},   # fallback 1 — noviji, stabilna GA verzija
     {"model": "gemini-2.0-flash-lite", "rpm": 30, "rpd": 1500},  # fallback 2 — visoki RPM, dobar za RPM hitove
+    {"model": "gemma-4-31b-it",        "rpm": 15, "rpd": 1500},  # fallback 3 — najjači Gemma, nezavisna kvota
 ]
 # Backward-compatible alias (koristi se direktno u nekim mjestima)
 GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
