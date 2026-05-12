@@ -55,7 +55,8 @@ FALLBACK_MODELS: dict[str, str] = {
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA":       "gemma-3-27b-it",
+    # BUG-A FIX: GEMMA (gemma-3-27b-it) uklonjen — HTTP 404 od maja 2026.
+    # Ako se GEMMA provider ponovo aktivira, ovdje treba staviti validan model.
     # GitHub Models: gpt-4o je jači od gpt-4o-mini i dostupan je na free tier
     "GITHUB":      "gpt-4o",
 }

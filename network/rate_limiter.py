@@ -73,11 +73,10 @@ def _safe_get_model(fleet, prov_upper, default=None):
     try:
         return fleet.get_active_model(prov_upper)
     except (AttributeError, KeyError):
-        return (
-            default
-            if default is not None
-            else ("gemma-3-27b-it" if prov_upper == "GEMINI" else None)
-        )
+        if default is not None:
+            return default
+        # BUG-C FIX: gemma-3-27b-it je 404 od maja 2026 — koristimo gemini-2.0-flash
+        return "gemini-2.0-flash" if prov_upper == "GEMINI" else None
 
 def _get_key_state(fleet, prov_upper: str, key: str):
     """Sigurno dohvati KeyState objekt za dati ključ."""
