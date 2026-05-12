@@ -1,6 +1,6 @@
 """
 BooklyFi — network/provider_router_v2.py
-V10.4: Model-aware rutiranje na osnovu ModelProfile scoring-a.
+V10.5: Model-aware rutiranje s per-provider profilima (avoid_roles, quality_tier).
 Nasljednik provider_router.py — backward compatible.
 """
 
@@ -8,6 +8,20 @@ import logging
 from typing import Optional, Tuple, List, Dict, Any
 
 from core.model_profiles import PROFILI, ModelProfile, get_profili_za_ulogu
+
+# Per-provider profili — limiti, uloge, kvalitet
+try:
+    from network.provider_profiles import (
+        should_avoid_for_role as _pp_avoid,
+        get_quality_tier as _pp_tier,
+    )
+    _PROFILES_OK = True
+except ImportError:
+    _PROFILES_OK = False
+    def _pp_avoid(provider: str, role: str) -> bool:
+        return False
+    def _pp_tier(provider: str) -> int:
+        return 3
 
 logger = logging.getLogger(__name__)
 
@@ -77,10 +91,17 @@ def _score_model(
 ) -> float:
     """
     Izračunava suitability score za model na osnovu uloge i tipa bloka.
-    Vraća float 0.0–1.0+. Blacklisted modeli vraćaju -1.0.
+    Vraća float 0.0–1.0+. Blacklisted ili avoid modeli vraćaju -1.0.
+
+    V10.5: Integrira per-provider avoid_roles i quality_tier iz provider_profiles.
     """
-    # Diskvalifikacija
+    # Diskvalifikacija iz ModelProfile blackliste
     if uloga in profil.blacklisted_roles:
+        return -1.0
+
+    # Diskvalifikacija iz ProviderProfile avoid_roles
+    # (npr. GROQ ne za SCORER, GITHUB ne za PREVODILAC, MISTRAL ne za bulk)
+    if _PROFILES_OK and _pp_avoid(profil.provider, uloga):
         return -1.0
 
     score = 0.0
@@ -96,6 +117,13 @@ def _score_model(
     # RPM availability (normalizirano)
     rpm_score = min(profil.rpm_limit / _MAX_RPM, 1.0) if profil.rpm_limit > 0 else 0.0
     score += rpm_score * _SCORE_TEZINE["rpm_availability"]
+
+    # Quality tier bonus iz provider_profiles (tier 1 = +0.10, tier 4 = 0)
+    # Osigurava da tier-1 provajderi (Gemini, GitHub) dobiju prednost
+    if _PROFILES_OK:
+        tier = _pp_tier(profil.provider)
+        tier_bonus = max(0.0, (4 - tier) * 0.04)  # tier1=+0.12, tier2=+0.08, tier3=+0.04, tier4=0
+        score += tier_bonus
 
     return score
 
