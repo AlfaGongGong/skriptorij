@@ -16,7 +16,7 @@
   },
   "tav": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 10,
     "clue_z": 0
   },
   "ačnijim": {
@@ -46,7 +46,7 @@
   },
   "tvi": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Sojka": {
@@ -95,9 +95,9 @@
     "clue_z": 0
   },
   "Majka": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 4
   },
   "Sarai": {
     "rod": "Ž",
@@ -212,7 +212,7 @@
   "Ako": {
     "rod": null,
     "clue_m": 1,
-    "clue_z": 0
+    "clue_z": 1
   },
   "Luca": {
     "rod": null,
@@ -271,7 +271,7 @@
   },
   "Tata": {
     "rod": null,
-    "clue_m": 1,
+    "clue_m": 2,
     "clue_z": 0
   },
   "Vrućina": {
@@ -516,7 +516,7 @@
   },
   "tve": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Dječak": {
@@ -855,8 +855,8 @@
     "clue_z": 3
   },
   "Dino": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Otac": {
@@ -883,5 +883,20 @@
     "rod": null,
     "clue_m": 0,
     "clue_z": 1
+  },
+  "ežom": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Cesta": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "ave": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
   }
 }
