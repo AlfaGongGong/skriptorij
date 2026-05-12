@@ -491,11 +491,22 @@ async def _call_gemini_with_full_rotation(
             # Svaki Gemini model ima VLASTITE RPM/RPD kvote (gemini-2.0-flash-lite
             # ima 30 RPM, gemini-2.0-flash ima 15 RPM, gemini-2.5-flash ima 10 RPM).
             # Stoga: 429 na jednom modelu NE znači da su i ostali modeli iscrpljeni.
-            # Uvijek rotiramo model (bez obzira na razlog) — tried_models skup
-            # osigurava da se ne vrtimo u krug.
+            # ISPRAVKA BUG#COOLDOWN: Ako je ključ DEFINITVNO iscrpljen (is_active=False —
+            # billing kvota ili 3+ grešaka u 30s), nema smisla probati ostale modele
+            # ISTIM ključem — svaki sljedeći zahtjev bi dobio novu 429 i produžio cooldown.
+            # Kratki RPM cooldown (is_active=True, cooldown_until>now) je drugačiji slučaj:
+            # drugi model ima vlastitu kvotu i može uspjeti, pa nastavimo rotaciju.
+            if not ks.is_active:
+                self.log(
+                    f"[GEMINI] Ključ ...{key[-4:]} iscrpljen (inactive) za {current_model} "
+                    f"— prelazim na sljedeći ključ",
+                    "warning",
+                )
+                break
+
             if not ks.available:
                 self.log(
-                    f"[GEMINI] Ključ ...{key[-4:]} u cooldownu za {current_model} "
+                    f"[GEMINI] Ključ ...{key[-4:]} u kratkom cooldownu za {current_model} "
                     f"— probam sljedeći model",
                     "warning",
                 )
@@ -515,6 +526,60 @@ async def _call_gemini_with_full_rotation(
             self.log(f"[GEMINI] {current_model} → {next_model}", "warning")
             current_model = next_model
             await asyncio.sleep(0.5)
+
+    # ── Pokušaj s novim ključevima koji su dodani dok je rotacija bila u toku ──
+    # keys_list snapshot je uzet na početku poziva. Ako je korisnik dodao novi ključ
+    # (ili se neki ključ probudio iz cooldowna) za to vrijeme, nećemo ga vidjeti u
+    # starom snapshotu. Jedno svježe čitanje flote ovdje daje im šansu.
+    keys_tried = {ks.key for ks in keys_list}
+    with self.fleet.lock:
+        fresh_keys = [
+            ks for ks in self.fleet.fleet.get("GEMINI", [])
+            if ks.available and ks.key not in keys_tried
+        ]
+    if fresh_keys:
+        fresh_keys.sort(key=lambda ks: ks.health_score, reverse=True)
+        for ks in fresh_keys:
+            key = ks.key
+            pool = _get_google_model_pool()
+            current_model = _get_model_for_key(key)
+            tried_models: set = set()
+            for _ in range(len(pool) + 1):
+                if current_model in tried_models:
+                    break
+                tried_models.add(current_model)
+                messages = _build_messages(sys_content, user_prompt, current_model)
+                payload = {
+                    "model":       current_model,
+                    "temperature": opt_temp,
+                    "max_tokens":  max_tokens,
+                    "messages":    messages,
+                }
+                headers = {
+                    "Content-Type":  "application/json",
+                    "Authorization": f"Bearer {key}",
+                }
+                data = await _async_http_post(
+                    self, url, headers, payload, "GEMINI", "GEMINI", key,
+                    _proxy=_get_next_proxy(),
+                )
+                if data and "choices" in data and data["choices"]:
+                    content = data["choices"][0].get("message", {}).get("content", "").strip()
+                    if content:
+                        return content, f"GEMINI-{current_model}"
+                if not ks.available:
+                    self.log(
+                        f"[GEMINI] Ključ ...{key[-4:]} (novi) u cooldownu za {current_model} "
+                        f"— prelazim na sljedeći ključ",
+                        "warning",
+                    )
+                    break
+                next_model = _rotate_model_for_key(key)
+                if next_model is None:
+                    break
+                self.log(f"[GEMINI] {current_model} → {next_model}", "warning")
+                current_model = next_model
+                await asyncio.sleep(0.5)
 
     self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
