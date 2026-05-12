@@ -76,34 +76,49 @@ PROVIDER_ORDER = [
     "HUGGINGFACE", "KLUSTER", "OPENROUTER", "GITHUB", "GEMMA",
 ]
 
-_DEFAULT_RPM = {
-    "GEMINI": 15, "GROQ": 30, "CEREBRAS": 30, "SAMBANOVA": 10,
-    "MISTRAL": 15, "COHERE": 15, "OPENROUTER": 20, "GITHUB": 10,
-    "TOGETHER": 20, "FIREWORKS": 20, "CHUTES": 10,
-    "HUGGINGFACE": 10, "KLUSTER": 15, "GEMMA": 10,
-}
-
-_DEFAULT_DAILY_QUOTA = {
-    # GROQ: llama-3.3-70b-versatile (primarni model) = 1K RPD;
-    #        llama-3.1-8b-instant = 14.4K RPD — ali 8b je sekundarni model.
-    #        Konzervativna vrijednost od 1K štiti od prekoračenja na primarnom modelu.
-    #        Stvarna vrijednost se ažurira iz x-ratelimit-remaining-requests headera.
-    "GEMINI": 1500, "GROQ": 1000, "CEREBRAS": 14400, "SAMBANOVA": 10000,
-    "MISTRAL": 1000, "GITHUB": 200, "COHERE": 1000, "OPENROUTER": 500,
-    "TOGETHER": 1000, "FIREWORKS": 1000, "CHUTES": 1000,
-    "HUGGINGFACE": 500, "KLUSTER": 500, "GEMMA": 500,
-}
+# ── Per-provider limiti i karakteristike ─────────────────────────────────────
+# Svi limiti su centralizirani u network/provider_profiles.py.
+# Ovdje importujemo samo ono što KeyState treba — ne dupliciramo podatke.
+try:
+    from network.provider_profiles import get_rpm_safe, get_rpd_safe, get_cooldown_429
+    def _DEFAULT_RPM_GET(prov: str) -> int:
+        return get_rpm_safe(prov)
+    def _DEFAULT_QUOTA_GET(prov: str) -> int:
+        return get_rpd_safe(prov) or 1000
+    def _COOLDOWN_429_GET(prov: str) -> float:
+        return get_cooldown_429(prov)
+except ImportError:
+    # Fallback ako provider_profiles.py nije još dostupan
+    _RPM_FALLBACK = {
+        "GEMINI": 12, "GROQ": 24, "CEREBRAS": 24, "SAMBANOVA": 8,
+        "MISTRAL": 1,  "COHERE": 16, "OPENROUTER": 15, "GITHUB": 8,
+        "TOGETHER": 16, "FIREWORKS": 16, "CHUTES": 8,
+        "HUGGINGFACE": 7, "KLUSTER": 12, "GEMMA": 8,
+    }
+    _QUOTA_FALLBACK = {
+        "GEMINI": 1275, "GROQ": 850, "CEREBRAS": 12000, "SAMBANOVA": 8500,
+        "MISTRAL": 200,  "GITHUB": 42,  "COHERE": 850,  "OPENROUTER": 170,
+        "TOGETHER": 850, "FIREWORKS": 850, "CHUTES": 3000,
+        "HUGGINGFACE": 2000, "KLUSTER": 5000, "GEMMA": 500,
+    }
+    _COOLDOWN_FALLBACK = {
+        "GEMINI": 65.0, "GROQ": 65.0, "SAMBANOVA": 70.0, "MISTRAL": 120.0,
+        "COHERE": 65.0, "OPENROUTER": 70.0, "GITHUB": 70.0, "CHUTES": 70.0,
+        "HUGGINGFACE": 90.0, "KLUSTER": 65.0, "GEMMA": 70.0,
+    }
+    def _DEFAULT_RPM_GET(prov: str) -> int:
+        return _RPM_FALLBACK.get(prov.upper(), 10)
+    def _DEFAULT_QUOTA_GET(prov: str) -> int:
+        return _QUOTA_FALLBACK.get(prov.upper(), 1000)
+    def _COOLDOWN_429_GET(prov: str) -> float:
+        return _COOLDOWN_FALLBACK.get(prov.upper(), 65.0)
 
 _AUTO_DISABLE_ERRORS   = 3
 _AUTO_DISABLE_WINDOW   = 30
 _AUTO_DISABLE_COOLDOWN = 300
 
-_PROVIDER_GLOBAL_COOLDOWN = {
-    "GEMINI": 8.0, "GROQ": 6.0, "CEREBRAS": 3.0, "SAMBANOVA": 10.0,
-    "MISTRAL": 4.0, "COHERE": 4.0, "OPENROUTER": 4.0, "GITHUB": 8.0,
-    "TOGETHER": 4.0, "FIREWORKS": 4.0, "CHUTES": 4.0,
-    "HUGGINGFACE": 5.0, "KLUSTER": 5.0, "GEMMA": 6.0,
-}
+# _PROVIDER_GLOBAL_COOLDOWN je premješten u network/provider_profiles.py
+# Koristimo get_cooldown_429() za per-provider kratki cooldown na 429.
 
 # RPM window u sekundama (Google resetuje svakih 60s)
 _RPM_WINDOW = 60.0
@@ -120,17 +135,27 @@ class KeyState:
         self.is_active:  bool  = s.get("is_active", True)
         self.health:     float = s.get("health", 100.0)
         self.cooldown_until: float = s.get("cooldown_until", 0.0)
-        self.req_rem:    int   = s.get("req_rem", _DEFAULT_DAILY_QUOTA.get(self.provider, 1000))
+        self.req_rem:    int   = s.get("req_rem", _DEFAULT_QUOTA_GET(self.provider))
         self.disabled:   bool  = s.get("disabled", False)
 
-        self.rate_limit_minute: int   = s.get("rate_limit_minute", _DEFAULT_RPM.get(self.provider, 20))
+        self.rate_limit_minute: int   = s.get("rate_limit_minute", _DEFAULT_RPM_GET(self.provider))
         self.remaining_minute:  int   = s.get("remaining_minute", self.rate_limit_minute)
-        self.rate_limit_day:    int   = s.get("rate_limit_day", _DEFAULT_DAILY_QUOTA.get(self.provider, 1000))
+        self.rate_limit_day:    int   = s.get("rate_limit_day", _DEFAULT_QUOTA_GET(self.provider))
         self.remaining_day:     int   = s.get("remaining_day", self.req_rem)
 
         # BUG#6 FIX: reset_time_minute = unix timestamp kad se RPM kvota resetuje
         # Inicijalno: sad + 60s (konzervativno)
         self.reset_time_minute: float = s.get("reset_time_minute", 0.0)
+
+        # BUG_D FIX: reset_time_minute učitan iz state fajla može biti u budućnosti
+        # ako je server restartovan unutar RPM window-a (60s) od prethodne 429 greške.
+        # U tom slučaju ključ bi ostao "unavailable" dok god taj timestamp nije dostignut.
+        # Rješenje: pri učitavanju, ako je reset_time_minute > now + 120s, vjerovatno je
+        # to ostatak starog cooldowna koji više nije relevantan za RPM — resetujemo ga.
+        # Napomena: cooldown_until (dnevna kvota) se NE dira ovdje — to je ispravno.
+        now_init = time.time()
+        if self.reset_time_minute > now_init + 120.0:
+            self.reset_time_minute = 0.0  # _reset_rpm_if_needed() će ga odmah obnoviti
 
         self.total_requests: int   = s.get("total_requests", 0)
         self.errors:         int   = s.get("errors", 0)
@@ -222,7 +247,7 @@ class KeyState:
         self.reset_time_minute = max(self.reset_time_minute, now + _RPM_WINDOW)
         # req_rem se mogao postaviti na 0 od dnevne kvote 429 — resetuj ga
         if self.req_rem <= 0:
-            self.req_rem = _DEFAULT_DAILY_QUOTA.get(self.provider, 1000)
+            self.req_rem = _DEFAULT_QUOTA_GET(self.provider)
             self.remaining_day = self.rate_limit_day
 
     # ── Serialization ────────────────────────────────────────────────────────
@@ -663,9 +688,12 @@ class FleetManager:
                     ks.req_rem           = 0
                     ks.remaining_day     = 0
                 else:
-                    # RPM limit — kratki cooldown (obnovi se za minutu)
-                    ks.cooldown_until    = now + max(ra, 5.0)
-                    ks.reset_time_minute = now + max(ra, _RPM_WINDOW)
+                    # RPM limit — kratki per-provider cooldown iz profila
+                    # (npr. Gemini=65s, Groq=65s, Mistral=120s, HuggingFace=90s ...)
+                    provider_429_cd = _COOLDOWN_429_GET(prov_u)
+                    effective_cd = max(ra, provider_429_cd) if ra > 0 else provider_429_cd
+                    ks.cooldown_until    = now + effective_cd
+                    ks.reset_time_minute = now + effective_cd
 
                 ks.health = max(0.0, ks.health - 10)
                 if ks.record_error():
@@ -704,7 +732,7 @@ class FleetManager:
         return min(cooldowns) if cooldowns else 0.0
 
     def get_global_cooldown(self, provider: str) -> float:
-        return _PROVIDER_GLOBAL_COOLDOWN.get(provider.upper(), 4.0)
+        return _COOLDOWN_429_GET(provider.upper())
 
     def toggle_key(self, provider: str, key_val: str) -> dict:
         prov_u = provider.upper()
