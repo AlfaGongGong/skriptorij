@@ -221,13 +221,19 @@ PROFILI: Dict[str, ModelProfile] = {
             r"```[\w]*\n",
             r"\n```",
         ],
-        preferred_roles=["lektor", "prevodilac"],
-        blacklisted_roles=["validator", "chapter_summary"],
+        # BUG-B FIX: gemma-3-27b-it je HTTP 404 od maja 2026 — isključen iz svih rola.
+        # Profil ostaje kao historijski zapis, ali se model nikad ne smije odabrati.
+        preferred_roles=[],
+        blacklisted_roles=[
+            "lektor", "prevodilac", "validator", "korektor",
+            "guardian", "polish", "analiza", "chapter_summary",
+            "glosar_update", "scorer",
+        ],
         temp_prevodilac=0.78,
         temp_lektor=0.70,
         temp_validator=0.40,
         max_tokens_chunk=1800,
-        notes="Koristiti kada su Gemini flash modeli na limitu. Nije za validator — slabija morfološka preciznost.",
+        notes="DEAD MODEL: gemma-3-27b-it vratio HTTP 404 od maja 2026. Ne koristiti.",
     ),
 
     "llama33_70b_groq": ModelProfile(

@@ -423,7 +423,10 @@ async def _call_gemini_with_full_rotation(
     from network.provider_urls import get_url
     url = get_url("GEMINI")
 
-    keys_list = [ks for ks in self.fleet.fleet.get("GEMINI", []) if ks.available]
+    # BUG #4 FIX: Snapshot keys under lock — sprječava race condition s analyze_response()
+    # koji može mijenjati ks.is_active u drugom asyncio tasku u isto vrijeme.
+    with self.fleet.lock:
+        keys_list = [ks for ks in self.fleet.fleet.get("GEMINI", []) if ks.available]
     if not keys_list:
         self.log("[GEMINI] Nema dostupnih ključeva", "warning")
         return None, None
