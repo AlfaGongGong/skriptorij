@@ -135,8 +135,8 @@ def revive_fleet_keys():
         count = fm.force_reset_all(provider=provider)
         label = provider.upper() if provider else "sve provajdere"
         return jsonify({"ok": True, "revived": count, "provider": label})
-    except Exception as e:
-        return jsonify({"error": f"Greška pri resetovanju: {e}"}), 500
+    except Exception:
+        return jsonify({"error": "Greška pri resetovanju stanja ključeva"}), 500
 
 
 
