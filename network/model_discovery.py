@@ -76,7 +76,7 @@ _GLOBAL_EXCLUDE = frozenset([
 _PROVIDER_FILTERS: dict[str, list] = {
     "OPENROUTER": [lambda m: m.endswith(":free")],
     "GEMINI":     [
-        lambda m: "flash" in m,
+        lambda m: "flash" in m or "gemma-4" in m,
         lambda m: "pro" not in m,
         lambda m: "ultra" not in m,
         lambda m: "embed" not in m,
