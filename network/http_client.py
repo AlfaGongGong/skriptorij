@@ -1,6 +1,6 @@
 
 
-# network/http_client.py — V10.4 ISPRAVKA
+# network/http_client.py — V10.6 ISPRAVKA
 #
 # BUG#4 FIX: Gemma modeli ne podržavaju system role → merge u user poruku
 # BUG#5 FIX: _call_gemini_with_full_rotation sada prima i koristi početni model
@@ -8,6 +8,14 @@
 #            Sada: kratka pauza → None → caller bira drugi ključ/provider.
 # BUG#10 FIX: Per-key semaphore (MAX_CONCURRENT_PER_KEY=1) — uključen.
 #             Sprječava višestruke paralelne pozive istim ključem.
+# BUG#MODEL FIX (v10.5): _GOOGLE_MODEL_POOL_FALLBACK ažuriran — uklonjeni dead preview modeli.
+#             KRITIČNO: 429 na gemini-2.0-flash više ne rotira model — prelazi na
+#             sljedeći ključ (isti model). Model rotacija samo za 404/nepoznat model.
+# PROXY FIX (v10.6): Gemini requestovi rotiraju kroz external proxy pool da se
+#             izbjegne IP-level throttling. Proxy lista se učitava iz dev_api.json
+#             ("PROXIES" sekcija) ili iz PROXIES_FILE env varijable.
+#             Format: "ip:port:user:pass" po redu. Samo GEMINI koristi proksije —
+#             ostali provideri ne throttluju po IP-u.
 
 import asyncio
 import random
@@ -19,14 +27,87 @@ from network.rate_limiter import (
     register_provider_runtime_limits,
 )
 
+# ── Proxy pool za Gemini IP rotaciju ─────────────────────────────────────────
+# Učitava se lazy pri prvom pozivu. Thread-safe jer je samo čitanje nakon init.
+_proxy_pool: list[dict] = []
+_proxy_index: int = 0
+_proxy_lock = asyncio.Lock() if False else None  # inicijalizira se u _get_next_proxy
+
+
+def _load_proxy_pool() -> list[dict]:
+    """
+    Učitava proxy listu iz dev_api.json ("PROXIES": ["ip:port:user:pass", ...])
+    ili iz tekstualnog fajla navedenog u PROXIES_FILE env varijabli.
+    Format svake stavke: "ip:port:user:pass"
+    Vraća listu requests-kompatibilnih proxy dictova.
+    """
+    import os, json
+    from pathlib import Path
+
+    raw_lines: list[str] = []
+
+    # 1. Pokušaj iz dev_api.json
+    try:
+        cfg_path = Path("dev_api.json")
+        if cfg_path.exists():
+            data = json.loads(cfg_path.read_text("utf-8"))
+            entries = data.get("PROXIES") or data.get("proxies") or []
+            if isinstance(entries, list):
+                raw_lines = [str(e).strip() for e in entries if e]
+    except Exception:
+        pass
+
+    # 2. Fallback: tekstualni fajl (PROXIES_FILE env ili Webshare_10_proxies.txt)
+    if not raw_lines:
+        proxy_file = os.environ.get("PROXIES_FILE", "Webshare_10_proxies.txt")
+        try:
+            p = Path(proxy_file)
+            if p.exists():
+                raw_lines = [ln.strip() for ln in p.read_text("utf-8").splitlines() if ln.strip()]
+        except Exception:
+            pass
+
+    pool = []
+    for line in raw_lines:
+        parts = line.split(":")
+        if len(parts) == 4:
+            ip, port, user, pw = parts
+            proxy_url = f"http://{user}:{pw}@{ip}:{port}"
+            pool.append({"http": proxy_url, "https": proxy_url})
+        elif len(parts) == 2:
+            # ip:port bez autentifikacije
+            ip, port = parts
+            proxy_url = f"http://{ip}:{port}"
+            pool.append({"http": proxy_url, "https": proxy_url})
+    return pool
+
+
+def _get_next_proxy() -> dict | None:
+    """
+    Round-robin rotacija kroz proxy pool.
+    Thread-safe bez asyncio.Lock (GIL štiti int inkrementaciju u CPython-u).
+    Vraća None ako proxy pool nije konfiguriran — request ide direktno.
+    """
+    global _proxy_pool, _proxy_index
+    if not _proxy_pool:
+        # Lazy init — učitaj samo jednom
+        _proxy_pool = _load_proxy_pool()
+    if not _proxy_pool:
+        return None
+    proxy = _proxy_pool[_proxy_index % len(_proxy_pool)]
+    _proxy_index += 1
+    return proxy
+
 # ── Google model pool — redosljed: gemini-flash prvi (bolji RPD limit) ────────
 # NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
+# BUG#MODEL FIX: gemini-2.5-flash-lite-preview-06-17 i gemini-2.5-flash-preview-05-20
+#   vraćaju HTTP 404 od maja 2026 — uklonjeni. Zamijenjeni živim modelima.
 # Ovo je statički fallback pool. Dinamički pool se gradi iz model_discovery-a
 # kada su dostupni API ključevi (vidi _get_google_model_pool()).
 _GOOGLE_MODEL_POOL_FALLBACK = [
-    {"model": "gemini-2.0-flash",                    "rpm": 15, "rpd": 1500},  # primarni
-    {"model": "gemini-2.5-flash-lite-preview-06-17", "rpm": 10, "rpd": 500},   # fallback 1
-    {"model": "gemini-2.5-flash-preview-05-20",      "rpm": 10, "rpd": 500},   # fallback 2 — zadnji resort
+    {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},  # primarni — stabilan, visoki RPD
+    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},   # fallback 1 — noviji, stabilna GA verzija
+    {"model": "gemini-2.0-flash-lite", "rpm": 30, "rpd": 1500},  # fallback 2 — visoki RPM, dobar za RPM hitove
 ]
 # Backward-compatible alias (koristi se direktno u nekim mjestima)
 GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
@@ -129,19 +210,14 @@ def _build_messages(sys_content: str | None, user_prompt: str, model: str) -> li
     ]
 
 
-async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key):
+async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key,
+                           _proxy: dict | None = None):
     """
     Generički HTTP POST s ispravnim 429 handlingom.
 
     BUG#9 FIX: Uklonjen recursive retry s istim ključem na 429.
-      Stari kod: čekaj → ponovi isti ključ do 3× → multiplikacija grešaka.
-      Novi kod:  kratka pauza za učtivost → odmah None → caller bira drugi ključ.
-
     BUG#10 FIX: Per-key semaphore osigurava max 1 paralelni poziv po ključu.
-
-    NOVO: body se parsira i prosljeđuje analyze_response() za bolje
-      razlikovanje kvote i rate limita kod 429 grešaka.
-    NOVO: Na 404, model se invalidira iz discovery cachea.
+    PROXY FIX (v10.6): _proxy parametar omogućava per-request proxy (Gemini).
     """
     await acquire_key(key, prov_upper)
     try:
@@ -153,6 +229,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
                 json=json_payload,
                 timeout=(15, 90),
                 verify=True,
+                proxies=_proxy,  # None = direktna veza (svi osim Gemini)
             )
         except requests.exceptions.Timeout:
             self.log(f"[{prov_upper}] Timeout (90s)", "warning")
@@ -394,7 +471,8 @@ async def _call_gemini_with_full_rotation(
             }
 
             data = await _async_http_post(
-                self, url, headers, payload, "GEMINI", "GEMINI", key
+                self, url, headers, payload, "GEMINI", "GEMINI", key,
+                _proxy=_get_next_proxy(),  # PROXY FIX: svaki poziv dobiva drugi proxy
             )
 
             if data and "choices" in data and data["choices"]:
@@ -402,7 +480,20 @@ async def _call_gemini_with_full_rotation(
                 if content:
                     return content, f"GEMINI-{current_model}"
 
-            # Rotacija na sljedeći model
+            # ── BUG#MODEL FIX: razlikuj uzrok None-a ─────────────────────────
+            # Ako je ključ SADA u cooldownu (429/quota), _async_http_post ga je
+            # postavio u cooldown PRIJE vraćanja None.  U tom slučaju ne smijemo
+            # rotirati model — samo prelazimo na sljedeći ključ.
+            # Ako ključ NIJE u cooldownu (404, 400, timeout...) → rotiramo model.
+            if not ks.available:
+                self.log(
+                    f"[GEMINI] Ključ ...{key[-4:]} u cooldownu (429/quota) "
+                    f"— preskačem na sljedeći ključ (model: {current_model})",
+                    "warning",
+                )
+                break  # ← izlazi iz model loop-a, ne rotira model
+
+            # 404 / nepoznat model / timeout → rotiraj model za ovaj ključ
             next_model = _rotate_model_for_key(key)
             if next_model is None:
                 self.log(f"[GEMINI] Svi modeli iscrpljeni za ključ ...{key[-4:]}", "warning")

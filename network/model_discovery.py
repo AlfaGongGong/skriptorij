@@ -605,21 +605,24 @@ def startup_key_check(fleet_manager) -> None:
                        - inače → kratki cooldown (rate limit)
       Greška veze   → stanje se ne mijenja (privremena mrežna greška)
 
-    Pokreće se paralelno (jedan thread po ključu), max 20s ukupno.
-    Model discovery je ugrađen: 200 odgovor cachira modele u isti mah.
+    ANTI-BURST: Ključevi istog provajdera se provjeravaju s razmakom od 1s
+    da se izbjegne burst koji uzrokuje 429 pri startu (Google throttluje IP).
+    Različiti provajderi rade paralelno (jedan thread po provajderu, ne po ključu).
     """
-    # Prikupi sve ključeve koji nisu već disabled
-    all_ks: list[tuple[str, object]] = []
+    # Grupiraj ključeve po provajderu
+    by_prov: dict[str, list] = {}
     for prov, keys in fleet_manager.fleet.items():
+        prov_u = prov.upper()
         for ks in keys:
             if ks.key and not ks.disabled:
-                all_ks.append((prov.upper(), ks))
+                by_prov.setdefault(prov_u, []).append(ks)
 
-    if not all_ks:
+    if not by_prov:
         logger.warning("[KeyCheck] Nema ključeva za provjeru")
         return
 
-    logger.info("[KeyCheck] Provjera %d ključeva...", len(all_ks))
+    total = sum(len(v) for v in by_prov.values())
+    logger.info("[KeyCheck] Provjera %d ključeva (%d provajdera)...", total, len(by_prov))
 
     def _check_one(prov: str, ks) -> None:
         endpoint = _MODELS_ENDPOINTS.get(prov)
@@ -651,8 +654,6 @@ def startup_key_check(fleet_manager) -> None:
         # i NE za 429 s /models endpointa.
         # Razlog: /v1/models ima odvojene (niže) limite od /v1/chat/completions —
         # 429 na /models ne znači da je completions kvota iscrpljena.
-        # Stari kod je pozivao analyze_response za sve statuse, što je uzrokovalo
-        # stavljanje ključeva u cooldown čak i kad su completions bili sasvim zdravi.
         if status in (401, 402, 403, 412):
             fleet_manager.analyze_response(prov, ks.key, status, resp.headers, body)
 
@@ -683,13 +684,11 @@ def startup_key_check(fleet_manager) -> None:
         elif status in (401, 402, 403, 412):
             logger.warning("[KeyCheck] %s ...%s → NEVAŽEĆI KLJUČ (HTTP %d)", prov, ks.key[-4:], status)
         elif status in (429, 425):
-            # analyze_response je već postavio cooldown; samo logujemo tip
             retry_after_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after") or ""
             try:
                 ra = float(retry_after_raw) if retry_after_raw else 0.0
             except ValueError:
                 ra = 0.0
-            # Lazy import — api_fleet je već učitan u procesu, nema cirkularnog importa
             try:
                 from api_fleet import _is_quota_exhausted_body, _is_billing_exhausted_body
                 if prov in {"GEMINI", "GEMMA"}:
@@ -703,22 +702,38 @@ def startup_key_check(fleet_manager) -> None:
         else:
             logger.warning("[KeyCheck] %s ...%s → HTTP %d (ignorišem)", prov, ks.key[-4:], status)
 
+    def _check_provider_keys(prov: str, key_list: list) -> None:
+        """
+        ANTI-BURST FIX: Provjeri ključeve jednog provajdera sekvencijalno
+        s razmakom od 1.2s između ključeva.
+        Različiti provajderi rade paralelno (poziva se iz zasebnih threadova).
+        """
+        for i, ks in enumerate(key_list):
+            if i > 0:
+                time.sleep(1.2)  # anti-burst: 1.2s između ključeva istog provajdera
+            _check_one(prov, ks)
+
+    # Jedan thread po provajderu — unutar svakog threada ključevi su sekvencijalni
     threads = [
         threading.Thread(
-            target=_check_one,
-            args=(prov, ks),
-            name=f"KeyCheck-{prov}-{ks.key[-4:]}",
+            target=_check_provider_keys,
+            args=(prov, key_list),
+            name=f"KeyCheck-{prov}",
             daemon=True,
         )
-        for prov, ks in all_ks
+        for prov, key_list in by_prov.items()
     ]
     for t in threads:
         t.start()
+    # Timeout: max_keys_per_prov * 1.2s * threadova + 10s buffer
+    max_keys = max(len(v) for v in by_prov.values())
+    timeout = max_keys * 1.5 + 15.0
     for t in threads:
-        t.join(timeout=20.0)
+        t.join(timeout=timeout)
 
     fleet_manager.flush_now()
 
-    valid = sum(1 for prov, ks in all_ks if ks.available)
-    total = len(all_ks)
-    logger.info("[KeyCheck] Gotovo: %d/%d ključeva aktivno", valid, total)
+    all_ks_flat = [(prov, ks) for prov, kl in by_prov.items() for ks in kl]
+    valid = sum(1 for _, ks in all_ks_flat if ks.available)
+    total_checked = len(all_ks_flat)
+    logger.info("[KeyCheck] Gotovo: %d/%d ključeva aktivno", valid, total_checked)
