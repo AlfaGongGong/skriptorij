@@ -5641,6 +5641,86 @@
         "Chrissiea",
         "Chrissieu"
       ]
+    },
+    "Pipa": {
+      "ime": "Pipa",
+      "rod": "auto",
+      "padeži": {
+        "N": "Pipa",
+        "G": "Pipe",
+        "D": "Pipi",
+        "A": "Pipu",
+        "V": "Pipa",
+        "I": "Pipom",
+        "L": "Pipi"
+      },
+      "sve_varijante": [
+        "Pipom",
+        "Pipe",
+        "Pipi",
+        "Pipu",
+        "Pipa"
+      ]
+    },
+    "Elsa": {
+      "ime": "Elsa",
+      "rod": "auto",
+      "padeži": {
+        "N": "Elsa",
+        "G": "Else",
+        "D": "Elsi",
+        "A": "Elsu",
+        "V": "Elsa",
+        "I": "Elsom",
+        "L": "Elsi"
+      },
+      "sve_varijante": [
+        "Elsu",
+        "Elsa",
+        "Elsi",
+        "Else",
+        "Elsom"
+      ]
+    },
+    "Vila": {
+      "ime": "Vila",
+      "rod": "auto",
+      "padeži": {
+        "N": "Vila",
+        "G": "Vile",
+        "D": "Vili",
+        "A": "Vilu",
+        "V": "Vila",
+        "I": "Vilom",
+        "L": "Vili"
+      },
+      "sve_varijante": [
+        "Vila",
+        "Vilu",
+        "Vili",
+        "Vilom",
+        "Vile"
+      ]
+    },
+    "Vilinska": {
+      "ime": "Vilinska",
+      "rod": "auto",
+      "padeži": {
+        "N": "Vilinska",
+        "G": "Vilinske",
+        "D": "Vilinski",
+        "A": "Vilinsku",
+        "V": "Vilinska",
+        "I": "Vilinskom",
+        "L": "Vilinski"
+      },
+      "sve_varijante": [
+        "Vilinskom",
+        "Vilinska",
+        "Vilinski",
+        "Vilinsku",
+        "Vilinske"
+      ]
     }
   },
   "few_shot_primjeri": [
@@ -8091,11 +8171,11 @@
     },
     "8649": {
       "broj": 8649,
-      "naslov": "chapter0011.html",
+      "naslov": "chapter0000_split_002.html",
       "summary": "",
       "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 895
+      "rijeci_count": 270
     },
     "4101": {
       "broj": 4101,
@@ -10865,14 +10945,11 @@
     },
     "7924": {
       "broj": 7924,
-      "naslov": "chapter02.xhtml",
+      "naslov": "chapter0001.html",
       "summary": "",
-      "lik_count": {
-        "Sophie": 11,
-        "Andrew": 12
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 774
+      "rijeci_count": 412
     },
     "4841": {
       "broj": 4841,
@@ -11385,6 +11462,287 @@
       },
       "chunk_ids": [],
       "rijeci_count": 765
+    },
+    "312": {
+      "broj": 312,
+      "naslov": "acknowledgements.xhtml",
+      "summary": "",
+      "lik_count": {
+        "The": 7,
+        "Dark": 5,
+        "Magazine": 3,
+        "Fantasy": 3,
+        "Science": 3,
+        "Fiction": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 352
+    },
+    "5884": {
+      "broj": 5884,
+      "naslov": "author.xhtml",
+      "summary": "",
+      "lik_count": {
+        "Black": 3,
+        "Shirley": 3,
+        "Jackson": 3,
+        "The": 9,
+        "New": 4,
+        "Fantasy": 3,
+        "Horror": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 648
+    },
+    "1945": {
+      "broj": 1945,
+      "naslov": "chapter01.xhtml",
+      "summary": "",
+      "lik_count": {
+        "Božiju": 4,
+        "Corinne": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 803
+    },
+    "5602": {
+      "broj": 5602,
+      "naslov": "chapter02.xhtml",
+      "summary": "",
+      "lik_count": {
+        "Sophie": 11,
+        "Andrew": 12
+      },
+      "chunk_ids": [],
+      "rijeci_count": 774
+    },
+    "2956": {
+      "broj": 2956,
+      "naslov": "chapter03.xhtml",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 744
+    },
+    "151": {
+      "broj": 151,
+      "naslov": "chapter04.xhtml",
+      "summary": "",
+      "lik_count": {
+        "Negdje": 4,
+        "Majka": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 780
+    },
+    "7963": {
+      "broj": 7963,
+      "naslov": "chapter05.xhtml",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 786
+    },
+    "5362": {
+      "broj": 5362,
+      "naslov": "chapter06.xhtml",
+      "summary": "",
+      "lik_count": {
+        "Dusa": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "7280": {
+      "broj": 7280,
+      "naslov": "chapter07.xhtml",
+      "summary": "",
+      "lik_count": {
+        "Bridget": 12,
+        "Fridge": 3,
+        "Mardy": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 811
+    },
+    "6062": {
+      "broj": 6062,
+      "naslov": "chapter08.xhtml",
+      "summary": "",
+      "lik_count": {
+        "Joy": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 802
+    },
+    "8602": {
+      "broj": 8602,
+      "naslov": "chapter09.xhtml",
+      "summary": "",
+      "lik_count": {
+        "Slušajte": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 623
+    },
+    "9628": {
+      "broj": 9628,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 6
+    },
+    "4754": {
+      "broj": 4754,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 100
+    },
+    "1215": {
+      "broj": 1215,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 270
+    },
+    "7913": {
+      "broj": 7913,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 412
+    },
+    "4659": {
+      "broj": 4659,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {
+        "Tata": 7,
+        "Pipa": 4,
+        "Elsa": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "570": {
+      "broj": 570,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 6
+    },
+    "1233": {
+      "broj": 1233,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 100
+    },
+    "1062": {
+      "broj": 1062,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 270
+    },
+    "6911": {
+      "broj": 6911,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 412
+    },
+    "9429": {
+      "broj": 9429,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {
+        "Vila": 3,
+        "Tata": 8,
+        "Pipa": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 762
+    },
+    "2818": {
+      "broj": 2818,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 6
+    },
+    "1868": {
+      "broj": 1868,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 100
+    },
+    "9422": {
+      "broj": 9422,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 270
+    },
+    "4151": {
+      "broj": 4151,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {
+        "Vilinska": 3,
+        "Tata": 8,
+        "Pipa": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 761
+    },
+    "1516": {
+      "broj": 1516,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 6
+    },
+    "6325": {
+      "broj": 6325,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 100
+    },
+    "3622": {
+      "broj": 3622,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 412
+    },
+    "2372": {
+      "broj": 2372,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {
+        "Tata": 9,
+        "Pippa": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 741
     }
   }
 }
