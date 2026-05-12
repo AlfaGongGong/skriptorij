@@ -141,6 +141,8 @@ class ProviderRouterV2:
     def __init__(self, dostupni_kljucevi: Optional[Dict[str, List[str]]] = None):
         self.dostupni_kljucevi = dostupni_kljucevi or {}
         self._health_scores: Dict[str, float] = {}
+        # BUG #6 FIX: round-robin index po provideru da se ne koristi uvijek isti ključ
+        self._kljuc_index: Dict[str, int] = {}
 
     def set_health_score(self, provider: str, score: float) -> None:
         self._health_scores[provider] = max(0.0, min(1.0, score))
@@ -156,7 +158,12 @@ class ProviderRouterV2:
 
     def _get_kljuc(self, provider: str) -> Optional[str]:
         kljucevi = self.dostupni_kljucevi.get(provider, [])
-        return kljucevi[0] if kljucevi else None
+        if not kljucevi:
+            return None
+        # BUG #6 FIX: round-robin umjesto uvijek prvog ključa
+        idx = self._kljuc_index.get(provider, 0) % len(kljucevi)
+        self._kljuc_index[provider] = (idx + 1) % len(kljucevi)
+        return kljucevi[idx]
 
     def get_best_model(
         self,
