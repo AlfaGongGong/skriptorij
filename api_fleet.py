@@ -123,6 +123,9 @@ _AUTO_DISABLE_COOLDOWN = 300
 # RPM window u sekundama (Google resetuje svakih 60s)
 _RPM_WINDOW = 60.0
 
+# Backward-compatible alias — vraća default dnevnu kvotu za provider
+_DEFAULT_DAILY_QUOTA = _DEFAULT_QUOTA_GET
+
 
 class KeyState:
     """Stanje jednog API ključa."""
@@ -191,8 +194,12 @@ class KeyState:
                 return False
         if now < self.cooldown_until:
             return False
+        # BUG #2 FIX: req_rem == 0 (dnevna kvota) — auto-revive kad cooldown istekne
         if self.req_rem <= 0:
-            return False
+            if now >= self.cooldown_until:
+                self._reset_for_reactivation()
+            else:
+                return False
         # BUG#6 FIX: resetuj RPM prije provjere
         self._reset_rpm_if_needed()
         return True
@@ -244,7 +251,9 @@ class KeyState:
         self.cooldown_until = 0.0
         self.health = max(self.health, 30.0)
         self.remaining_minute = self.rate_limit_minute
-        self.reset_time_minute = max(self.reset_time_minute, now + _RPM_WINDOW)
+        # BUG #5 FIX: uvijek postavi svježi timestamp — ne max() koji može zadržati
+        # stari timestamp 23h u budućnosti (nastao od BUG #3) i blokirati RPM 23h.
+        self.reset_time_minute = now + _RPM_WINDOW
         # req_rem se mogao postaviti na 0 od dnevne kvote 429 — resetuj ga
         if self.req_rem <= 0:
             self.req_rem = _DEFAULT_QUOTA_GET(self.provider)
@@ -684,9 +693,16 @@ class FleetManager:
                     cooldown = min(ra, _DAILY_QUOTA_RETRY_AFTER) if ra > 3600 else _DAILY_QUOTA_RETRY_AFTER
                     ks.cooldown_until    = now + cooldown
                     ks.is_active         = False
-                    ks.reset_time_minute = now + cooldown
+                    # BUG #3 FIX: reset_time_minute je za RPM window (60s), ne dnevni cooldown.
+                    # Postavljanje na 0.0 znači da će _reset_rpm_if_needed() odmah obnoviti
+                    # RPM counter kad ključ dođe na auto-revive, umjesto da blokira 23h.
+                    ks.reset_time_minute = 0.0
                     ks.req_rem           = 0
                     ks.remaining_day     = 0
+                    # BUG #1 FIX: Ne pozivati record_error() za dnevnu kvotu.
+                    # record_error() može skratiti cooldown_until na 300s (AUTO_DISABLE),
+                    # čime bi ključ bio prijevremeno oživen dok je dnevna kvota još aktivna.
+                    ks.health = max(0.0, ks.health - 10)
                 else:
                     # RPM limit — kratki per-provider cooldown iz profila
                     # (npr. Gemini=65s, Groq=65s, Mistral=120s, HuggingFace=90s ...)
@@ -694,10 +710,9 @@ class FleetManager:
                     effective_cd = max(ra, provider_429_cd) if ra > 0 else provider_429_cd
                     ks.cooldown_until    = now + effective_cd
                     ks.reset_time_minute = now + effective_cd
-
-                ks.health = max(0.0, ks.health - 10)
-                if ks.record_error():
-                    ks.is_active = False
+                    ks.health = max(0.0, ks.health - 10)
+                    if ks.record_error():
+                        ks.is_active = False
 
             elif status_code in (401, 403, 402, 412):
                 # Nevažeći ključ — dugi cooldown (ali ne 30 dana — to je previše)
@@ -773,7 +788,11 @@ class FleetManager:
         with self.lock:
             for prov_u in provs:
                 for ks in self.fleet.get(prov_u, []):
-                    if not ks.is_active and not ks.disabled and now > ks.cooldown_until:
+                    if ks.disabled:
+                        continue
+                    # BUG #8 FIX: Revivuj i ključeve gdje je req_rem=0 (dnevna kvota)
+                    # ali je_active=True (nije prošao kroz is_active path)
+                    if now > ks.cooldown_until and (not ks.is_active or ks.req_rem <= 0):
                         ks._reset_for_reactivation()
                         count += 1
         if count:

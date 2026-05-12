@@ -34,7 +34,7 @@ MODEL_MAP = {
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA":       "gemma-3-27b-it",            # NAPOMENA: 404 na Gemini API od maja 2026
+    "GEMMA":       None,                 # DEAD: 404 na Gemini API od maja 2026 — preskači
     "GITHUB":      "gpt-4o",                    # GitHub Models: jak backup kad Gemini presuši
 }
 
