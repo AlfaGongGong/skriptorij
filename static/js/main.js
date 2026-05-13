@@ -1360,46 +1360,6 @@ function renderFleet(data) {
     }
 }
 
-async function toggleKey(provider, key) {
-    try {
-        const r = await fetch("/api/fleet/toggle", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ provider, key })
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-        showToast(
-            `${provider}: ${d.disabled ? "🔴 onemogućen" : "🟢 aktiviran"}`,
-            d.disabled ? "warning" : "success"
-        );
-        pollFleet();
-    } catch (e) {
-        showToast("Toggle greška: " + e.message, "error");
-    }
-}
-
-async function reviveAllKeys(provider) {
-    try {
-        const body = provider ? { provider } : {};
-        const r = await fetch("/api/fleet/revive", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-        const label = provider || "sve provajdere";
-        showToast(
-            `⚡ Resetovano ${d.revived} ključeva (${label})`,
-            "success"
-        );
-        pollFleet();
-    } catch (e) {
-        showToast("Greška pri resetovanju: " + e.message, "error");
-    }
-}
-
 async function loadKeys() {
     const container = document.getElementById("keys-list-container");
     if (!container) return;
@@ -2188,14 +2148,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     document
         .getElementById("btn-stop")
         ?.addEventListener("click", () => sendControl("stop"));
-
-    // Revive (reset hlađenja) dugmad — fleet tab i expert tab
-    document
-        .getElementById("btn-revive-keys")
-        ?.addEventListener("click", () => reviveAllKeys());
-    document
-        .getElementById("btn-revive-keys-expert")
-        ?.addEventListener("click", () => reviveAllKeys());
 
     // Download dugmad
     document

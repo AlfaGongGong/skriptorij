@@ -266,7 +266,18 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
     BUG#9 FIX: Uklonjen recursive retry s istim ključem na 429.
     BUG#10 FIX: Per-key semaphore osigurava max 1 paralelni poziv po ključu.
     PROXY FIX (v10.6): _proxy parametar omogućava per-request proxy (Gemini).
+    ANTI-BAN: Browser-like User-Agent + Accept headers na svakom zahtjevu.
     """
+    # ANTI-BAN: dodaj browser-like headers da se izbjegne trivijalna bot-detekcija
+    headers.setdefault("User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36")
+    headers.setdefault("Accept", "application/json, text/plain, */*")
+    headers.setdefault("Accept-Language", "en-US,en;q=0.9")
+    headers.setdefault("Accept-Encoding", "gzip, deflate, br")
+    headers.setdefault("Connection", "keep-alive")
+
     await acquire_key(key, prov_upper)
     try:
         # Bilježi zahtjev PRIJE slanja
@@ -276,6 +287,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
         except Exception as _rr_err:
             logger.debug("[%s] record_request greška (fleet tracking onesposobljen): %s",
                          prov_upper, _rr_err)
+        logger.debug("[%s] POST %s (key=...%s)", prov_upper, url.split("//")[-1][:60], key[-4:])
         try:
             resp = await asyncio.to_thread(
                 requests.post,
@@ -288,6 +300,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             )
         except requests.exceptions.Timeout:
             self.log(f"[{prov_upper}] Timeout (90s)", "warning")
+            logger.warning("[%s] Timeout pri slanju zahtjeva (key=...%s)", prov_upper, key[-4:])
             try:
                 self.fleet.record_network_failure(prov, key)
             except Exception:
@@ -295,6 +308,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             return None
         except Exception as e:
             self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
+            logger.error("[%s] Mrežna greška (key=...%s): %s", prov_upper, key[-4:], str(e)[:200])
             try:
                 self.fleet.record_network_failure(prov, key)
             except Exception:
@@ -318,9 +332,11 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             try:
                 data = resp.json()
                 register_provider_runtime_limits(prov_upper, resp.headers, data)
+                logger.debug("[%s] HTTP 200 OK (key=...%s)", prov_upper, key[-4:])
                 return data
             except Exception:
                 self.log(f"[{prov_upper}] Neispravan JSON u odgovoru", "error")
+                logger.error("[%s] Neispravan JSON u 200 odgovoru (key=...%s)", prov_upper, key[-4:])
                 return None
 
         elif resp.status_code in (429, 425):
@@ -331,29 +347,34 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             except ValueError:
                 retry_after = None
 
-            # Provider-level backoff da se izbjegne "stampedo" svih ključeva odjednom.
-            # BUG_B FIX: provider-level backoff od 60s je previše agresivan — blokira SVE
-            # Gemini ključeve odjednom jer _throttle_provider() koristi globalni provider lock.
-            # Umjesto toga: koristimo kratki polite-wait samo ako Retry-After nije prisutan.
-            # Per-key cooldown (u KeyState) je dovoljan za dulje blokiranje.
+            # Exponential backoff: poštujemo Retry-After do 120s;
+            # bez Retry-After koristimo eksponencijalni rast po broju uzastopnih 429.
             if retry_after and retry_after > 0 and retry_after <= 3600:
-                register_provider_backoff(prov_upper, min(retry_after, 15.0))
+                # Poštuj Retry-After header točno (max 120s) — audit: prethodni cap bio 15s
+                backoff = min(retry_after, 120.0)
+                register_provider_backoff(prov_upper, backoff)
             elif prov_upper in {"GEMINI", "GEMMA"} and not retry_after:
-                # Google često vrati 429 bez Retry-After — kratki backoff da se izbjegne
-                # stampedo, ali NE 60s koji bi blokirao sve ključeve istovremeno.
+                # Google često ne šalje Retry-After — kratki backoff da se izbjegne stampedo
                 register_provider_backoff(prov_upper, 5.0)
+            elif not retry_after:
+                register_provider_backoff(prov_upper, 10.0)
 
             if retry_after and retry_after > 3600:
                 self.log(f"[{prov_upper}] Kvota iscrpljena (dnevni limit) — biram drugi ključ", "warning")
+                logger.warning("[%s] HTTP 429 dnevna kvota iscrpljena (key=...%s, retry_after=%.0fs)",
+                               prov_upper, key[-4:], retry_after)
             else:
-                wait = min(retry_after or 3.0, 15.0) + random.uniform(0.3, 1.0)
+                wait = min(retry_after or 3.0, 120.0) + random.uniform(0.5, 2.0)
                 self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s, biram drugi ključ", "warning")
+                logger.warning("[%s] HTTP 429 rate-limit (key=...%s) — čekam %.1fs",
+                               prov_upper, key[-4:], wait)
                 await asyncio.sleep(wait)
             return None
 
         elif resp.status_code in (401, 402, 403, 412):
             register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             self.log(f"[{prov_upper}] HTTP {resp.status_code} — ključ nevažeći", "error")
+            logger.error("[%s] HTTP %d nevažeći ključ (key=...%s)", prov_upper, resp.status_code, key[-4:])
             return None
 
         elif resp.status_code == 400:
@@ -419,7 +440,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             return None
 
     finally:
-        release_key(key)
+        release_key(key, prov_upper)
 
 
 
@@ -620,9 +641,14 @@ def api_call(
     """
     Sinhronizovani (blocking) API poziv — namijenjen za WorkerV2 i druge ne-async kontekste.
     Vraća content string pri uspjehu, None pri grešci.
+    ANTI-BAN: Browser-like headers + rate limiting preko acquire_key/release_key.
     """
     from network.provider_urls import get_url
-    url = get_url(provider.upper())
+    from network.rate_limiter import get_key_semaphore, get_provider_semaphore, _throttle_provider
+    import asyncio
+
+    prov_upper = provider.upper()
+    url = get_url(prov_upper)
 
     messages = _build_messages(system, user, model)
     payload = {
@@ -632,24 +658,62 @@ def api_call(
         "messages": messages,
     }
     headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
+        "Content-Type":   "application/json",
+        "Authorization":  f"Bearer {api_key}",
+        "User-Agent":     (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "Accept":          "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection":      "keep-alive",
     }
 
+    # Rate limiting: acquiriraj per-provider i per-key semaphore
+    prov_sem = get_provider_semaphore(prov_upper)
+    key_sem  = get_key_semaphore(api_key)
+    prov_sem.acquire()
+    key_sem.acquire()
+    logger.debug("[api_call] %s ...%s semaphori zauzeti", prov_upper, api_key[-4:])
     try:
-        resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
-    except requests.exceptions.RequestException:
-        logger.warning("[api_call] Mrežna greška tokom API poziva")
-        return None
+        # Jitter da se izbjegne burst (blocking verzija throttlea)
+        import time as _time
+        import random as _random
+        _time.sleep(_random.uniform(0.3, 1.5))
 
-    if resp.status_code != 200:
-        logger.debug("[api_call] HTTP neuspjeh tokom API poziva (%s)", resp.status_code)
-        return None
+        try:
+            resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
+        except requests.exceptions.RequestException as e:
+            logger.warning("[api_call] %s mrežna greška (key=...%s): %s", prov_upper, api_key[-4:], e)
+            return None
 
-    try:
-        data = resp.json()
-    except Exception:
-        logger.warning("[api_call] Neispravan JSON u API odgovoru")
-        return None
+        logger.debug("[api_call] %s HTTP %d (key=...%s)", prov_upper, resp.status_code, api_key[-4:])
 
-    return _extract_content(provider.upper(), data)
+        if resp.status_code == 429:
+            retry_after_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
+            try:
+                ra = float(retry_after_raw) if retry_after_raw else 10.0
+            except ValueError:
+                ra = 10.0
+            wait = min(ra, 120.0) + _random.uniform(0.5, 2.0)
+            logger.warning("[api_call] %s HTTP 429 (key=...%s) — čekam %.1fs", prov_upper, api_key[-4:], wait)
+            _time.sleep(wait)
+            return None
+
+        if resp.status_code != 200:
+            logger.debug("[api_call] %s HTTP neuspjeh %d (key=...%s)", prov_upper, resp.status_code, api_key[-4:])
+            return None
+
+        try:
+            data = resp.json()
+        except Exception:
+            logger.warning("[api_call] %s neispravan JSON (key=...%s)", prov_upper, api_key[-4:])
+            return None
+
+        return _extract_content(prov_upper, data)
+    finally:
+        key_sem.release()
+        prov_sem.release()
+        logger.debug("[api_call] %s ...%s semaphori oslobođeni", prov_upper, api_key[-4:])

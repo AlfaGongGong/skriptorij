@@ -12,9 +12,12 @@
 #     _LAST_CALLS (per-provider) ostaje samo za startup anti-burst jitter.
 
 import asyncio
+import logging
 import random
 import threading
 import time
+
+logger = logging.getLogger(__name__)
 
 # ===== GLOBALNI RATE LIMITER — humanizovano, bez kršenja limita =====
 _PROVIDER_LOCKS: dict = {}
@@ -66,45 +69,6 @@ async def _ensure_provider_lock(prov: str) -> asyncio.Lock:
     _PROVIDER_LOCKS[prov] = (current_loop_id, lock)
     return lock
 
-async def _ensure_global_lock() -> asyncio.Lock:
-    """Lazy initialization of global asyncio Lock in the current event loop."""
-    return await _ensure_provider_lock("__global__")
-
-def _safe_get_model(fleet, prov_upper, default=None):
-    """Sigurno dohvati aktivan model — ne crasha ako FleetManager nema tu metodu."""
-    try:
-        return fleet.get_active_model(prov_upper)
-    except (AttributeError, KeyError):
-        if default is not None:
-            return default
-        # BUG-C FIX: gemma-3-27b-it je 404 od maja 2026 — koristimo gemini-2.0-flash
-        return "gemini-2.0-flash" if prov_upper == "GEMINI" else None
-
-def _get_key_state(fleet, prov_upper: str, key: str):
-    """Sigurno dohvati KeyState objekt za dati ključ."""
-    try:
-        keys_list = fleet.fleet.get(prov_upper, [])
-        if isinstance(keys_list, list):
-            for ks in keys_list:
-                if getattr(ks, "key", None) == key:
-                    return ks
-            return None
-        if isinstance(keys_list, dict):
-            raw = keys_list.get(key)
-            if raw is None:
-                return None
-
-            class _FakeKS:
-                pass
-
-            fks = _FakeKS()
-            for k, v in (raw.items() if isinstance(raw, dict) else {}):
-                setattr(fks, k, v)
-            return fks
-    except Exception:
-        pass
-    return None
-
 
 def register_provider_backoff(provider: str | None, retry_after: float | None) -> None:
     """
@@ -125,6 +89,8 @@ def register_provider_backoff(provider: str | None, retry_after: float | None) -
     prev = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
     if until > prev:
         _PROVIDER_COOLDOWN_UNTIL[prov] = until
+        logger.warning("[rate_limiter] %s backoff registrovan: %.1fs (do %s)",
+                       prov, ra, time.strftime("%H:%M:%S", time.localtime(until)))
 
 
 def _to_float(value):
@@ -193,9 +159,13 @@ def register_provider_runtime_limits(provider: str | None, headers=None, body=No
     prev = _PROVIDER_DYNAMIC_GAP.get(prov, 0.0)
     if prev <= 0:
         _PROVIDER_DYNAMIC_GAP[prov] = observed_gap
+        logger.info("[rate_limiter] %s: dinamički gap inicijaliziran na %.2fs", prov, observed_gap)
     else:
         # EWMA: reaguje i na rast i na pad, bez naglih skokova.
-        _PROVIDER_DYNAMIC_GAP[prov] = (0.70 * prev) + (0.30 * observed_gap)
+        new_gap = (0.70 * prev) + (0.30 * observed_gap)
+        _PROVIDER_DYNAMIC_GAP[prov] = new_gap
+        if abs(new_gap - prev) > 0.5:
+            logger.debug("[rate_limiter] %s: dinamički gap ažuriran %.2fs→%.2fs (EWMA)", prov, prev, new_gap)
 
 # ============================================================================
 # Per-key rate limiting (semafori)
@@ -221,6 +191,12 @@ _key_semaphores: dict[str, _threading.Semaphore] = {}
 _key_semaphores_lock = _threading.Lock()
 MAX_CONCURRENT_PER_KEY = 1
 
+# Per-provider IP-level semaphore — ograničava ukupan broj paralelnih zahtjeva
+# prema istom provideru (neovisno o broju ključeva) da se izbjegne IP ban.
+_PROVIDER_SEMAPHORES: dict[str, _threading.Semaphore] = {}
+_PROVIDER_SEMAPHORES_LOCK = _threading.Lock()
+MAX_CONCURRENT_PER_PROVIDER = 4  # max paralelnih zahtjeva prema istom provideru
+
 
 def get_key_semaphore(key: str) -> _threading.Semaphore:
     """Vraća process-wide threading.Semaphore za dati ključ (lazy init)."""
@@ -228,6 +204,16 @@ def get_key_semaphore(key: str) -> _threading.Semaphore:
         if key not in _key_semaphores:
             _key_semaphores[key] = _threading.Semaphore(MAX_CONCURRENT_PER_KEY)
         return _key_semaphores[key]
+
+
+def get_provider_semaphore(provider: str) -> _threading.Semaphore:
+    """Vraća process-wide threading.Semaphore za dati provajder (IP-level zaštita)."""
+    prov = provider.upper()
+    with _PROVIDER_SEMAPHORES_LOCK:
+        if prov not in _PROVIDER_SEMAPHORES:
+            _PROVIDER_SEMAPHORES[prov] = _threading.Semaphore(MAX_CONCURRENT_PER_PROVIDER)
+        return _PROVIDER_SEMAPHORES[prov]
+
 
 async def _throttle_provider(provider: str | None, key: str | None = None) -> None:
     """
@@ -253,17 +239,18 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
     now = time.time()
     if provider_cooldown_until > now:
         wait = provider_cooldown_until - now
-        # Ograniči čekanje: ne blokiraj duže od 30s u throttle funkciji —
-        # per-key cooldown u KeyState je zadužen za dulja blokiranja.
-        if wait > 30.0:
-            wait = 0.0
+        # Ograniči čekanje na max 120s da ne blokiramo beskonačno
+        wait = min(wait, 120.0)
         if wait > 0:
+            logger.info("[rate_limiter] %s cooldown aktivan — čekam %.1fs", prov, wait)
             await asyncio.sleep(wait)
             now = time.time()
 
     base_gap = _provider_gap(prov)
     dynamic_gap = _PROVIDER_DYNAMIC_GAP.get(prov, 0.0)
     if dynamic_gap > 0:
+        if dynamic_gap > base_gap:
+            logger.debug("[rate_limiter] %s: dinamički gap %.2fs > baza %.2fs", prov, dynamic_gap, base_gap)
         base_gap = max(base_gap, dynamic_gap)
 
     # BUG#THROTTLE FIX: koristi per-key timestamp, ne per-provider.
@@ -279,6 +266,8 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
 
     wait = (last + gap) - now
     if wait > 0:
+        logger.debug("[rate_limiter] %s ...%s throttle %.2fs (gap=%.2f+jitter)",
+                     prov, (key or "")[-4:], wait, base_gap)
         await asyncio.sleep(wait)
 
     # Ažuriraj per-key timestamp
@@ -291,15 +280,29 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
 
 
 async def acquire_key(key: str, provider: str | None = None):
+    # IP-level per-provider semaphore — zaštita od burst-a prema istom provideru
+    if provider:
+        prov_sem = get_provider_semaphore(provider)
+        await asyncio.to_thread(prov_sem.acquire)
+        logger.debug("[rate_limiter] %s IP-semaphore zauzet (key=...%s)", provider.upper(), key[-4:])
+
     sem = get_key_semaphore(key)
     # BUG#12 FIX: koristimo threading.Semaphore (process-wide) umjesto asyncio.Semaphore.
     # asyncio.to_thread akvizira semafor u thread pool-u bez blokiranja event loop-a.
     # Ovo garantuje da samo jedan thread istovremeno koristi isti ključ.
     await asyncio.to_thread(sem.acquire)
+    logger.debug("[rate_limiter] key-semaphore zauzet: ...%s (%s)", key[-4:], (provider or "").upper())
     # BUG#THROTTLE FIX: prosljeđujemo key da _throttle_provider koristi per-key timing
     await _throttle_provider(provider, key=key)
 
-def release_key(key: str):
+
+def release_key(key: str, provider: str | None = None):
     sem = _key_semaphores.get(key)
     if sem is not None:
         sem.release()
+        logger.debug("[rate_limiter] key-semaphore oslobođen: ...%s", key[-4:])
+    if provider:
+        prov_sem = _PROVIDER_SEMAPHORES.get(provider.upper())
+        if prov_sem is not None:
+            prov_sem.release()
+            logger.debug("[rate_limiter] %s IP-semaphore oslobođen", provider.upper())
