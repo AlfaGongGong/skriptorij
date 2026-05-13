@@ -269,7 +269,7 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
     """
     await acquire_key(key, prov_upper)
     try:
-        # Bilježi zahtjev PRIJE slanja — dekrementira remaining_minute/req_rem
+        # Bilježi zahtjev PRIJE slanja
         # čime se sprječava da flota šalje burst zahtjeve na isti ključ (BUG 1 FIX).
         try:
             self.fleet.record_request(prov_upper, key)
@@ -485,10 +485,8 @@ async def _call_gemini_with_full_rotation(
     from network.provider_urls import get_url
     url = get_url("GEMINI")
 
-    # BUG #4 FIX: Snapshot keys under lock — sprječava race condition s analyze_response()
-    # koji može mijenjati ks.is_active u drugom asyncio tasku u isto vrijeme.
     with self.fleet.lock:
-        keys_list = [ks for ks in self.fleet.fleet.get("GEMINI", []) if ks.available]
+        keys_list = list(self.fleet.fleet.get("GEMINI", []))
     if not keys_list:
         self.log("[GEMINI] Nema dostupnih ključeva", "warning")
         return None, None
@@ -544,25 +542,6 @@ async def _call_gemini_with_full_rotation(
                 content = data["choices"][0].get("message", {}).get("content", "").strip()
                 if content:
                     return content, f"GEMINI-{current_model}"
-            # Svaki Gemini model ima VLASTITE RPM/RPD kvote (gemini-2.0-flash-lite
-            # ima 30 RPM, gemini-2.0-flash ima 15 RPM, gemini-2.5-flash ima 10 RPM).
-            # BUG FIX: Prethodna verzija je breakala petlju kad is_active=False
-            # (billing/dnevna kvota jednog modela). To je POGREŠNO — dnevna kvota
-            # gemini-2.0-flash ne znači da su gemini-2.5-flash ili gemma-4 iscrpljeni.
-            # Ispravno: nastavi rotaciju kroz sve modele bez break-a.
-            # tried_models skup garantuje terminaciju petlje bez duplikata.
-            if not ks.is_active:
-                self.log(
-                    f"[GEMINI] Ključ ...{key[-4:]} — kvota iscrpljena za {current_model} "
-                    f"— rotiram na sljedeći model",
-                    "warning",
-                )
-            elif not ks.available:
-                self.log(
-                    f"[GEMINI] Ključ ...{key[-4:]} u kratkom cooldownu za {current_model} "
-                    f"— probam sljedeći model",
-                    "warning",
-                )
 
             # 404 / nepoznat model / timeout / 429 → rotiraj model za ovaj ključ
             next_model = _rotate_model_for_key(key)
@@ -581,14 +560,11 @@ async def _call_gemini_with_full_rotation(
             await asyncio.sleep(0.5)
 
     # ── Pokušaj s novim ključevima koji su dodani dok je rotacija bila u toku ──
-    # keys_list snapshot je uzet na početku poziva. Ako je korisnik dodao novi ključ
-    # (ili se neki ključ probudio iz cooldowna) za to vrijeme, nećemo ga vidjeti u
-    # starom snapshotu. Jedno svježe čitanje flote ovdje daje im šansu.
     keys_tried = {ks.key for ks in keys_list}
     with self.fleet.lock:
         fresh_keys = [
             ks for ks in self.fleet.fleet.get("GEMINI", [])
-            if ks.available and ks.key not in keys_tried
+            if ks.key not in keys_tried
         ]
     if fresh_keys:
         fresh_keys.sort(key=lambda ks: ks.success_rate, reverse=True)
@@ -620,17 +596,6 @@ async def _call_gemini_with_full_rotation(
                     content = data["choices"][0].get("message", {}).get("content", "").strip()
                     if content:
                         return content, f"GEMINI-{current_model}"
-                    self.log(
-                        f"[GEMINI] Ključ ...{key[-4:]} (novi) — kvota iscrpljena za {current_model} "
-                        f"— rotiram na sljedeći model",
-                        "warning",
-                    )
-                elif not ks.available:
-                    self.log(
-                        f"[GEMINI] Ključ ...{key[-4:]} (novi) u kratkom cooldownu za {current_model} "
-                        f"— probam sljedeći model",
-                        "warning",
-                    )
                 next_model = _rotate_model_for_key(key)
                 if next_model is None:
                     break

@@ -170,7 +170,7 @@ class ProviderRouterV2:
             try:
                 with fleet.lock:
                     keys = fleet.fleet.get(prov_u, [])
-                    rates = [ks.success_rate for ks in keys if not ks.disabled]
+                    rates = [ks.success_rate for ks in keys]
                 if rates:
                     return sum(rates) / len(rates)
             except Exception:

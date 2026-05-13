@@ -615,7 +615,7 @@ def startup_key_check(fleet_manager) -> None:
     for prov, keys in fleet_manager.fleet.items():
         prov_u = prov.upper()
         for ks in keys:
-            if ks.key and not ks.disabled:
+            if ks.key:
                 by_prov.setdefault(prov_u, []).append(ks)
 
     if not by_prov:

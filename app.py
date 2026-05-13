@@ -48,7 +48,7 @@ except ImportError:
     SHARED_STATS: dict = {
         "status": "IDLE", "pct": 0, "ok": "0 / 0", "skipped": 0,
         "current_file": "", "active_engine": "---",
-        "fleet_active": 0, "fleet_cooling": 0,
+        "fleet_active": 0,
         "live_audit": "", "output_file": "", "output_dir": "data",
         "est": "--:--:--", "quality_scores": {}, "glosar_problemi": {},
         "knjiga_mode": None, "knjiga_mode_info": "",
@@ -237,8 +237,7 @@ def create_app() -> Flask:
         try:
             fleet = _get_fleet()
             summary = fleet.get_fleet_summary()
-            active_keys  = sum(v["active"]  for v in summary.values())
-            cooling_keys = sum(v["cooling"] for v in summary.values())
+            total_keys = sum(v["total"] for v in summary.values())
 
             raw_qs = SHARED_STATS.get("quality_scores", {})
             normalized_qs: dict[str, float] = {}
@@ -251,8 +250,7 @@ def create_app() -> Flask:
             return jsonify({
                 **SHARED_STATS,
                 "quality_scores": normalized_qs,
-                "fleet_active":   active_keys,
-                "fleet_cooling":  cooling_keys,
+                "fleet_active":   total_keys,
                 "output_dir":     str(OUTPUT_DIR),
             })
         except Exception as e:
@@ -825,29 +823,6 @@ def create_app() -> Flask:
     def api_fleet():
         try:
             return jsonify(_get_fleet().get_fleet_ui())
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    @app.route("/api/fleet/toggle", methods=["POST"])
-    def api_fleet_toggle():
-        try:
-            data     = request.get_json(force=True) or {}
-            provider = data.get("provider", "").upper()
-            key      = data.get("key", "")
-            if not provider or not key:
-                return jsonify({"error": "Nedostaje provider ili key"}), 400
-            return jsonify(_get_fleet().toggle_key(provider, key))
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    @app.route("/api/fleet/revive", methods=["POST"])
-    def api_fleet_revive():
-        try:
-            data     = request.get_json(silent=True) or {}
-            provider = data.get("provider")
-            count    = _get_fleet().force_reset_all(provider=provider)
-            label    = provider.upper() if provider else "sve provajdere"
-            return jsonify({"ok": True, "revived": count, "provider": label})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
