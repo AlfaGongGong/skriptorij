@@ -150,21 +150,22 @@ def _regex_zamjene(tekst: str) -> tuple[str, list[dict]]:
 
     for pogresno, ispravno in HALUCIRANI_OBLICI.items():
         pattern = re.compile(r'\b' + re.escape(pogresno) + r'\b', re.IGNORECASE)
-        if pattern.search(rezultat):
-            novi = rezultat
-            for m in pattern.finditer(rezultat):
-                original_case = m.group(0)
-                if original_case[0].isupper():
-                    zamjena = ispravno[0].upper() + ispravno[1:]
-                else:
-                    zamjena = ispravno
-                novi = novi[:m.start()] + zamjena + novi[m.end():]
-                izmjene.append({
-                    "original": original_case,
-                    "ispravak": zamjena,
-                    "objasnjenje": "regex_blacklist",
-                })
-            rezultat = novi
+        if not pattern.search(rezultat):
+            continue
+
+        # re.sub s callableom — ispravno, bez index-shift buga koji nastaje
+        # ako se koristio finditer + ručna zamjena po pozicijama u originalnom stringu
+        def _zamijeni(m, _isp=ispravno):
+            orig = m.group(0)
+            zamjena = (_isp[0].upper() + _isp[1:]) if orig[0].isupper() else _isp
+            izmjene.append({
+                "original": orig,
+                "ispravak": zamjena,
+                "objasnjenje": "regex_blacklist",
+            })
+            return zamjena
+
+        rezultat = pattern.sub(_zamijeni, rezultat)
 
     return rezultat, izmjene
 
@@ -370,7 +371,7 @@ if __name__ == "__main__":
         if rezultat != tekst:
             print(f"    ISPRAVLJENO: {rezultat}")
         else:
-            print(f"    OK — nema promjena")
+            print("    OK — nema promjena")
         print()
 
     print(f"\nAudit log: {AUDIT_LOG_PATH}")

@@ -120,10 +120,6 @@ except ImportError:
     def _COOLDOWN_429_GET(prov: str) -> float:
         return _COOLDOWN_FALLBACK.get(prov.upper(), 65.0)
 
-_AUTO_DISABLE_ERRORS   = 3
-_AUTO_DISABLE_WINDOW   = 30
-_AUTO_DISABLE_COOLDOWN = 300
-
 # _PROVIDER_GLOBAL_COOLDOWN je premješten u network/provider_profiles.py
 # Koristimo get_cooldown_429() za per-provider kratki cooldown na 429.
 
@@ -143,7 +139,6 @@ class KeyState:
         s = saved or {}
 
         self.is_active:  bool  = s.get("is_active", True)
-        self.health:     float = s.get("health", 100.0)
         self.cooldown_until: float = s.get("cooldown_until", 0.0)
         self.req_rem:    int   = s.get("req_rem", _DEFAULT_QUOTA_GET(self.provider))
         self.disabled:   bool  = s.get("disabled", False)
@@ -168,17 +163,27 @@ class KeyState:
             self.reset_time_minute = 0.0  # _reset_rpm_if_needed() će ga odmah obnoviti
 
         self.total_requests: int   = s.get("total_requests", 0)
-        self.errors:         int   = s.get("errors", 0)
         self.last_used:      float = s.get("last_used", 0.0)
 
-        self._error_timestamps: list = []
+        # ── Brojevni brojači poziva (zamjena za health float) ────────────────
+        # calls_ok       : ukupno uspješnih HTTP 200 odgovora
+        # calls_failed   : mrežne greške i timeoutovi (bez HTTP koda)
+        # calls_rejected : HTTP greške po kodu — {429: 5, 401: 1, 500: 2, ...}
+        #                  int ključevi u memoriji, string ključevi u JSON (auto-konverzija)
+        self.calls_ok:       int       = s.get("calls_ok", 0)
+        self.calls_failed:   int       = s.get("calls_failed", 0)
+        self.calls_rejected: dict      = {
+            int(k): int(v)
+            for k, v in s.get("calls_rejected", {}).items()
+            if str(k).lstrip("-").isdigit()  # preskoči nevalidne ključeve
+        }
 
     # ── BUG#6 FIX: RPM reset ────────────────────────────────────────────────
 
     def _reset_rpm_if_needed(self) -> None:
         """
         Resetuje remaining_minute ako je prošao RPM window (60s).
-        Poziva se na svakom čitanju available i health_score.
+        Poziva se na svakom čitanju available i success_rate.
         """
         now = time.time()
         # Ako je reset_time_minute 0 ili u prošlosti → obnovi RPM
@@ -209,6 +214,11 @@ class KeyState:
                 return False
         # BUG#6 FIX: resetuj RPM prije provjere
         self._reset_rpm_if_needed()
+        # BUG RPM FIX: blokira ključ dok je minutna kvota iscrpljena.
+        # _reset_rpm_if_needed() garantuje da je remaining_minute svježe —
+        # ako je 0 ovdje, znači da su pozivi u ovom 60s prozoru iscrpljeni.
+        if self.remaining_minute <= 0:
+            return False
         return True
 
     @property
@@ -216,37 +226,23 @@ class KeyState:
         return max(0.0, self.cooldown_until - time.time())
 
     @property
-    def health_score(self) -> float:
-        # BUG#6 FIX: resetuj RPM prije računanja health_score
+    def success_rate(self) -> float:
+        """
+        Stopa uspješnosti: calls_ok / ukupno poziva.
+        Novi ključ (svi brojači == 0) → 1.0 (tretira se kao best-case da se odmah koristi).
+        Koristi se za rangiranje ključeva u get_best_key i _call_gemini_with_full_rotation.
+        """
         self._reset_rpm_if_needed()
-        rpm_pct = (self.remaining_minute / max(1, self.rate_limit_minute)) * 100
-        rpd_pct = (self.remaining_day    / max(1, self.rate_limit_day))    * 100
-        return round(
-            0.5 * min(rpm_pct, 100) + 0.3 * min(rpd_pct, 100) + 0.2 * self.health, 1
-        )
+        total = self.calls_ok + self.calls_failed + sum(self.calls_rejected.values())
+        if total == 0:
+            return 1.0
+        return round(self.calls_ok / total, 4)
 
     @property
     def masked(self) -> str:
         if len(self.key) <= 8:
             return "***"
         return self.key[:4] + "…" + self.key[-4:]
-
-    # ── Error tracking ───────────────────────────────────────────────────────
-
-    def record_error(self) -> bool:
-        """Vrati True ako je auto-disabled."""
-        now = time.time()
-        self._error_timestamps.append(now)
-        self._error_timestamps = [
-            t for t in self._error_timestamps if now - t <= _AUTO_DISABLE_WINDOW
-        ]
-        self.errors += 1
-        self.health  = max(0.0, self.health - 20)
-        if len(self._error_timestamps) >= _AUTO_DISABLE_ERRORS:
-            self.cooldown_until = now + _AUTO_DISABLE_COOLDOWN
-            self._error_timestamps.clear()
-            return True
-        return False
 
     def _reset_for_reactivation(self) -> None:
         """
@@ -256,7 +252,6 @@ class KeyState:
         now = time.time()
         self.is_active = True
         self.cooldown_until = 0.0
-        self.health = max(self.health, 30.0)
         self.remaining_minute = self.rate_limit_minute
         # BUG #5 FIX: uvijek postavi svježi timestamp — ne max() koji može zadržati
         # stari timestamp 23h u budućnosti (nastao od BUG #3) i blokirati RPM 23h.
@@ -271,7 +266,6 @@ class KeyState:
     def to_dict(self) -> dict:
         return {
             "is_active":         self.is_active,
-            "health":            self.health,
             "cooldown_until":    self.cooldown_until,
             "req_rem":           self.req_rem,
             "disabled":          self.disabled,
@@ -280,9 +274,11 @@ class KeyState:
             "rate_limit_day":    self.rate_limit_day,
             "remaining_day":     self.remaining_day,
             "total_requests":    self.total_requests,
-            "errors":            self.errors,
             "last_used":         self.last_used,
             "reset_time_minute": self.reset_time_minute,
+            "calls_ok":          self.calls_ok,
+            "calls_failed":      self.calls_failed,
+            "calls_rejected":    {str(k): v for k, v in self.calls_rejected.items()},
         }
 
     def to_ui_dict(self) -> dict:
@@ -291,14 +287,16 @@ class KeyState:
             "masked":            self.masked,
             "available":         self.available,
             "disabled":          self.disabled,
-            "health":            round(self.health_score, 1),
+            "success_rate":      self.success_rate,
+            "calls_ok":          self.calls_ok,
+            "calls_failed":      self.calls_failed,
+            "calls_rejected":    {str(k): v for k, v in self.calls_rejected.items()},
             "cooldown_remaining": round(self.cooldown_remaining, 1),
             "rate_limit_minute": self.rate_limit_minute,
             "remaining_minute":  self.remaining_minute,
             "rate_limit_day":    self.rate_limit_day,
             "remaining_day":     self.remaining_day,
             "total_requests":    self.total_requests,
-            "errors":            self.errors,
         }
 
 
@@ -514,7 +512,7 @@ class FleetManager:
             if not avail:
                 return None
 
-            avail.sort(key=lambda x: x.health_score, reverse=True)
+            avail.sort(key=lambda x: x.success_rate, reverse=True)
             top_n  = max(1, math.ceil(len(avail) * 0.7))
             top    = avail[:top_n]
             idx    = self._rr_index.get(prov_u, 0) % len(top)
@@ -557,9 +555,22 @@ class FleetManager:
                 return
             if success:
                 ks.req_rem = max(0, ks.req_rem - req_count)
-                ks.health  = min(100.0, ks.health + 2)
+                ks.calls_ok += req_count
             else:
-                ks.record_error()
+                ks.calls_failed += 1
+        self._save_state()
+
+    def record_network_failure(self, provider: str, key: str):
+        """
+        Bilježi mrežnu grešku ili timeout — bez HTTP koda.
+        Povećava calls_failed brojač.
+        Poziva se iz _async_http_post kad request ne stigne do servera.
+        """
+        prov_u = provider.upper()
+        with self.lock:
+            ks = self._find_key(prov_u, key)
+            if ks:
+                ks.calls_failed += 1
         self._save_state()
 
     def analyze_response(self, provider: str, key: str, status_code: int, headers, body=None):
@@ -674,9 +685,14 @@ class FleetManager:
 
             # Status code handling
             if status_code == 200:
-                ks.health = min(100.0, ks.health + 1)
+                ks.calls_ok += 1
 
             elif status_code in (429, 425):
+                ks.calls_rejected[status_code] = ks.calls_rejected.get(status_code, 0) + 1
+                # BUG 5 FIX: zahtjev je stigao do servera — potrošio je RPM slot.
+                # record_request() to dekrementira optimistično, ali kao sigurnosna
+                # mreža postavljamo remaining_minute na 0 da spriječimo daljnje slanje.
+                ks.remaining_minute = 0
                 v  = hget("retry-after")
                 ra = 60.0
                 if v:
@@ -706,10 +722,6 @@ class FleetManager:
                     ks.reset_time_minute = 0.0
                     ks.req_rem           = 0
                     ks.remaining_day     = 0
-                    # BUG #1 FIX: Ne pozivati record_error() za dnevnu kvotu.
-                    # record_error() može skratiti cooldown_until na 300s (AUTO_DISABLE),
-                    # čime bi ključ bio prijevremeno oživen dok je dnevna kvota još aktivna.
-                    ks.health = max(0.0, ks.health - 10)
                 else:
                     # RPM limit — kratki per-provider cooldown iz profila
                     # (npr. Gemini=65s, Groq=65s, Mistral=120s, HuggingFace=90s ...)
@@ -717,18 +729,15 @@ class FleetManager:
                     effective_cd = max(ra, provider_429_cd) if ra > 0 else provider_429_cd
                     ks.cooldown_until    = now + effective_cd
                     ks.reset_time_minute = now + effective_cd
-                    ks.health = max(0.0, ks.health - 10)
-                    if ks.record_error():
-                        ks.is_active = False
 
             elif status_code in (401, 403, 402, 412):
-                # Nevažeći ključ — dugi cooldown (ali ne 30 dana — to je previše)
+                # Nevažeći ključ — dugi cooldown
                 ks.is_active      = False
-                ks.health         = 0.0
-                ks.cooldown_until = now + 86400  # 24h, ne 30 dana
+                ks.cooldown_until = now + 86400  # 24h
+                ks.calls_rejected[status_code] = ks.calls_rejected.get(status_code, 0) + 1
 
             elif status_code >= 500:
-                ks.record_error()
+                ks.calls_failed += 1
 
         self._save_state()
 
@@ -865,7 +874,6 @@ class FleetManager:
                     if ks.disabled:
                         continue
                     ks._reset_for_reactivation()
-                    ks.health = min(100.0, max(ks.health, 50.0))
                     count += 1
         if count:
             self.flush_now()

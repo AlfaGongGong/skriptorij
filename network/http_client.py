@@ -9,8 +9,9 @@
 # BUG#10 FIX: Per-key semaphore (MAX_CONCURRENT_PER_KEY=1) — uključen.
 #             Sprječava višestruke paralelne pozive istim ključem.
 # BUG#MODEL FIX (v10.5): _GOOGLE_MODEL_POOL_FALLBACK ažuriran — uklonjeni dead preview modeli.
-#             KRITIČNO: 429 na gemini-2.0-flash više ne rotira model — prelazi na
-#             sljedeći ključ (isti model). Model rotacija samo za 404/nepoznat model.
+#             Gemini 429 (RPM) rotira model za isti ključ — svaki model ima nezavisnu
+#             RPM/RPD kvotu. Tek kad su svi modeli jednog ključa iscrpljeni → sljedeći ključ.
+#             Model rotacija za: 429 (RPM), 404 (mrtav model), timeout, nepoznat model.
 # PROXY FIX (v10.6): Gemini requestovi rotiraju kroz external proxy pool da se
 #             izbjegne IP-level throttling. Proxy lista se učitava iz dev_api.json
 #             ("PROXIES" sekcija) ili iz PROXIES_FILE env varijable.
@@ -18,14 +19,18 @@
 #             ostali provideri ne throttluju po IP-u.
 
 import asyncio
+import logging
 import random
 import requests
+import threading
 from network.rate_limiter import (
     acquire_key,
     release_key,
     register_provider_backoff,
     register_provider_runtime_limits,
 )
+
+logger = logging.getLogger(__name__)
 
 # ── Proxy pool za Gemini IP rotaciju ─────────────────────────────────────────
 # Učitava se lazy pri prvom pozivu. Thread-safe jer je samo čitanje nakon init.
@@ -159,6 +164,8 @@ _NO_SYSTEM_ROLE_PATTERNS = ("gemma-",)
 
 # Per-ključ cache: koji model je trenutno aktivan (index u GOOGLE_MODEL_POOL)
 _key_model_cache: dict[str, int] = {}
+# Lock štiti _key_model_cache od race condition-a između paralelnih threadova
+_key_model_cache_lock = threading.Lock()
 
 
 def _supports_system_role(model: str | None) -> bool:
@@ -173,25 +180,27 @@ def _supports_system_role(model: str | None) -> bool:
 def _get_model_for_key(key: str) -> str:
     """Inicijalni model za ključ — uvijek počni s prvim modelom u pool-u."""
     pool = _get_google_model_pool()
-    if key not in _key_model_cache:
-        _key_model_cache[key] = 0
-    idx = _key_model_cache[key]
-    # Provjeri da index nije van opsega (pool se može promijeniti između poziva)
-    if idx >= len(pool):
-        _key_model_cache[key] = 0
-        idx = 0
+    with _key_model_cache_lock:
+        if key not in _key_model_cache:
+            _key_model_cache[key] = 0
+        idx = _key_model_cache[key]
+        # Provjeri da index nije van opsega (pool se može promijeniti između poziva)
+        if idx >= len(pool):
+            _key_model_cache[key] = 0
+            idx = 0
     return pool[idx]["model"]
 
 
 def _rotate_model_for_key(key: str) -> str | None:
     """Rotira na sljedeći model u pool-u. Vraća None ako su svi modeli iscrpljeni."""
     pool = _get_google_model_pool()
-    start_idx = _key_model_cache.get(key, 0)
-    next_idx  = (start_idx + 1) % len(pool)
-    if next_idx == 0:
-        # Prošli smo krug
-        return None
-    _key_model_cache[key] = next_idx
+    with _key_model_cache_lock:
+        start_idx = _key_model_cache.get(key, 0)
+        next_idx  = (start_idx + 1) % len(pool)
+        if next_idx == 0:
+            # Prošli smo krug
+            return None
+        _key_model_cache[key] = next_idx
     return pool[next_idx]["model"]
 
 
@@ -214,6 +223,41 @@ def _build_messages(sys_content: str | None, user_prompt: str, model: str) -> li
     ]
 
 
+def _extract_content(provider: str, data: dict) -> str | None:
+    """
+    Parsira content string iz API response dict-a.
+
+    OpenAI-kompatibilni format (svi osim Cohere v2):
+        {"choices": [{"message": {"content": "..."}}]}
+
+    Cohere v2 format (/v2/chat endpoint):
+        {"message": {"content": [{"type": "text", "text": "..."}]}}
+    """
+    if not data:
+        return None
+
+    if provider == "COHERE":
+        # Cohere /v2/chat vraća drugačiji format od OpenAI
+        try:
+            parts = data["message"]["content"]
+            if isinstance(parts, list):
+                text = " ".join(
+                    p.get("text", "") for p in parts
+                    if isinstance(p, dict) and p.get("type") == "text"
+                ).strip()
+                return text or None
+        except (KeyError, TypeError):
+            pass
+        return None
+
+    # OpenAI-kompatibilni format
+    if "choices" in data and data["choices"]:
+        content = data["choices"][0].get("message", {}).get("content", "")
+        if isinstance(content, str):
+            return content.strip() or None
+    return None
+
+
 async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key,
                            _proxy: dict | None = None):
     """
@@ -225,6 +269,13 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
     """
     await acquire_key(key, prov_upper)
     try:
+        # Bilježi zahtjev PRIJE slanja — dekrementira remaining_minute/req_rem
+        # čime se sprječava da flota šalje burst zahtjeve na isti ključ (BUG 1 FIX).
+        try:
+            self.fleet.record_request(prov_upper, key)
+        except Exception as _rr_err:
+            logger.debug("[%s] record_request greška (fleet tracking onesposobljen): %s",
+                         prov_upper, _rr_err)
         try:
             resp = await asyncio.to_thread(
                 requests.post,
@@ -237,9 +288,17 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             )
         except requests.exceptions.Timeout:
             self.log(f"[{prov_upper}] Timeout (90s)", "warning")
+            try:
+                self.fleet.record_network_failure(prov, key)
+            except Exception:
+                pass
             return None
         except Exception as e:
             self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
+            try:
+                self.fleet.record_network_failure(prov, key)
+            except Exception:
+                pass
             return None
 
         # Parsiramo body za greške (200 ne trebamo parsirati ovdje)
@@ -404,10 +463,9 @@ async def _call_single_provider(
     if not data:
         return None, None
 
-    if "choices" in data and data["choices"]:
-        content = data["choices"][0].get("message", {}).get("content", "").strip()
-        if content:
-            return content, f"{prov_upper}-{model}"
+    content = _extract_content(prov_upper, data)
+    if content:
+        return content, f"{prov_upper}-{model}"
     return None, None
 
 
@@ -435,7 +493,7 @@ async def _call_gemini_with_full_rotation(
         self.log("[GEMINI] Nema dostupnih ključeva", "warning")
         return None, None
 
-    keys_list.sort(key=lambda ks: ks.health_score, reverse=True)
+    keys_list.sort(key=lambda ks: ks.success_rate, reverse=True)
 
     for ks in keys_list:
         key = ks.key
@@ -486,8 +544,6 @@ async def _call_gemini_with_full_rotation(
                 content = data["choices"][0].get("message", {}).get("content", "").strip()
                 if content:
                     return content, f"GEMINI-{current_model}"
-
-            # ── Rotacija modela nakon neuspješnog zahtjeva ────────────────────
             # Svaki Gemini model ima VLASTITE RPM/RPD kvote (gemini-2.0-flash-lite
             # ima 30 RPM, gemini-2.0-flash ima 15 RPM, gemini-2.5-flash ima 10 RPM).
             # BUG FIX: Prethodna verzija je breakala petlju kad is_active=False
@@ -535,7 +591,7 @@ async def _call_gemini_with_full_rotation(
             if ks.available and ks.key not in keys_tried
         ]
     if fresh_keys:
-        fresh_keys.sort(key=lambda ks: ks.health_score, reverse=True)
+        fresh_keys.sort(key=lambda ks: ks.success_rate, reverse=True)
         for ks in fresh_keys:
             key = ks.key
             pool = _get_google_model_pool()
@@ -564,7 +620,6 @@ async def _call_gemini_with_full_rotation(
                     content = data["choices"][0].get("message", {}).get("content", "").strip()
                     if content:
                         return content, f"GEMINI-{current_model}"
-                if not ks.is_active:
                     self.log(
                         f"[GEMINI] Ključ ...{key[-4:]} (novi) — kvota iscrpljena za {current_model} "
                         f"— rotiram na sljedeći model",
@@ -585,3 +640,51 @@ async def _call_gemini_with_full_rotation(
 
     self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
+
+
+def api_call(
+    provider: str,
+    model: str,
+    api_key: str,
+    system: str,
+    user: str,
+    temperature: float = 0.5,
+    max_tokens: int = 2400,
+    timeout: int = 90,
+) -> str | None:
+    """
+    Sinhronizovani (blocking) API poziv — namijenjen za WorkerV2 i druge ne-async kontekste.
+    Vraća content string pri uspjehu, None pri grešci.
+    """
+    from network.provider_urls import get_url
+    url = get_url(provider.upper())
+
+    messages = _build_messages(system, user, model)
+    payload = {
+        "model": model,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "messages": messages,
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+
+    try:
+        resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
+    except requests.exceptions.RequestException:
+        logger.warning("[api_call] Mrežna greška tokom API poziva")
+        return None
+
+    if resp.status_code != 200:
+        logger.debug("[api_call] HTTP neuspjeh tokom API poziva (%s)", resp.status_code)
+        return None
+
+    try:
+        data = resp.json()
+    except Exception:
+        logger.warning("[api_call] Neispravan JSON u API odgovoru")
+        return None
+
+    return _extract_content(provider.upper(), data)

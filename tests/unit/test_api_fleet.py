@@ -214,3 +214,94 @@ def test_toggle_reactivate_resets_req_rem(tmp_path):
     result = fm.toggle_key("GEMINI", ks.masked)
     assert result["disabled"] is False
     assert ks.req_rem > 0
+
+
+# ── BUG 1/2 FIX: record_request + remaining_minute blokada ───────────────────
+
+def test_available_blocks_when_remaining_minute_zero(tmp_path):
+    """BUG 2 FIX: available mora blokati ključ kad je remaining_minute == 0."""
+    fm = _make_fleet(tmp_path, provider="GEMINI", key="AIzatest1234567890")
+    ks = fm.fleet["GEMINI"][0]
+
+    # Simuliraj iscrpljenu minutnu kvotu — RPM window još nije istekao
+    ks.remaining_minute = 0
+    ks.reset_time_minute = time.time() + 55  # window još 55s
+
+    assert ks.available is False, "Key with remaining_minute=0 must not be available"
+
+
+def test_available_unblocks_after_rpm_window(tmp_path):
+    """available mora biti True nakon što RPM window istekne i remaining_minute bude obnovljen."""
+    fm = _make_fleet(tmp_path, provider="GEMINI", key="AIzatest1234567890")
+    ks = fm.fleet["GEMINI"][0]
+
+    ks.remaining_minute = 0
+    ks.reset_time_minute = time.time() - 1  # window je istekao
+
+    # available treba pozvati _reset_rpm_if_needed() i postaviti remaining_minute > 0
+    assert ks.available is True
+    assert ks.remaining_minute > 0
+
+
+def test_429_rpm_sets_remaining_minute_to_zero(tmp_path):
+    """BUG 5 FIX: analyze_response za 429 (RPM) mora postaviti remaining_minute=0."""
+    fm = _make_fleet(tmp_path, provider="GEMINI", key="AIzatest1234567890")
+    ks = fm.fleet["GEMINI"][0]
+    ks.remaining_minute = 15  # puno dostupnih
+
+    body = {"error": {"code": 429, "message": "Resource has been exhausted.", "status": "RESOURCE_EXHAUSTED"}}
+    fm.analyze_response("GEMINI", ks.key, 429, {"retry-after": "60"}, body)
+
+    assert ks.remaining_minute == 0, "429 mora postaviti remaining_minute=0"
+    assert ks.calls_rejected.get(429, 0) == 1, "429 mora biti izbrojano u calls_rejected"
+
+
+def test_calls_ok_increments_on_200(tmp_path):
+    """BUG 1 FIX: analyze_response za 200 mora inkrementovati calls_ok."""
+    fm = _make_fleet(tmp_path)
+    ks = fm.fleet["GROQ"][0]
+    before = ks.calls_ok
+
+    fm.analyze_response("GROQ", ks.key, 200, {}, None)
+
+    assert ks.calls_ok == before + 1
+
+
+def test_calls_rejected_increments_on_401(tmp_path):
+    """analyze_response za 401 mora biti u calls_rejected[401]."""
+    fm = _make_fleet(tmp_path)
+    ks = fm.fleet["GROQ"][0]
+
+    fm.analyze_response("GROQ", ks.key, 401, {}, None)
+
+    assert ks.calls_rejected.get(401, 0) == 1
+    assert ks.is_active is False
+
+
+def test_calls_failed_increments_on_500(tmp_path):
+    """analyze_response za 500 mora inkrementovati calls_failed."""
+    fm = _make_fleet(tmp_path)
+    ks = fm.fleet["GROQ"][0]
+
+    fm.analyze_response("GROQ", ks.key, 500, {}, None)
+
+    assert ks.calls_failed == 1
+
+
+def test_success_rate_new_key_is_one(tmp_path):
+    """Novi ključ (sve 0) mora imati success_rate == 1.0."""
+    fm = _make_fleet(tmp_path)
+    ks = fm.fleet["GROQ"][0]
+
+    assert ks.success_rate == 1.0
+
+
+def test_success_rate_after_calls(tmp_path):
+    """success_rate = calls_ok / ukupno."""
+    fm = _make_fleet(tmp_path)
+    ks = fm.fleet["GROQ"][0]
+    ks.calls_ok = 8
+    ks.calls_failed = 1
+    ks.calls_rejected = {429: 1}
+
+    assert abs(ks.success_rate - 0.8) < 0.001

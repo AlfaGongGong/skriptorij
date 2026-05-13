@@ -149,9 +149,9 @@ class RetryEngine:
             try:
                 retry_trans = self.translate(original_text, retry_model)
                 retry_score = self.score(
-                    original=original_text,
-                    translation=retry_trans,
-                    exclude_model=retry_model,   # scorer bira treći model
+                    original_text,
+                    retry_trans,
+                    retry_model,   # scorer bira treći model
                 )
 
                 logger.debug(
