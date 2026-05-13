@@ -53,9 +53,15 @@ def _normalize_fleet_summary(raw: dict) -> dict:
 
         total = info.get("total", len(norm_keys))
 
+        avg_sr = (
+            round(sum(k.get("success_rate", 1.0) for k in norm_keys) / len(norm_keys), 4)
+            if norm_keys else 1.0
+        )
         result[prov.upper()] = {
-            "total": int(total),
-            "keys":  norm_keys,
+            "total":        int(total),
+            "active":       int(total),
+            "success_rate": avg_sr,
+            "keys":         norm_keys,
         }
 
     return result
