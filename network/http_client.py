@@ -238,9 +238,17 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
             )
         except requests.exceptions.Timeout:
             self.log(f"[{prov_upper}] Timeout (90s)", "warning")
+            try:
+                self.fleet.record_network_failure(prov, key)
+            except Exception:
+                pass
             return None
         except Exception as e:
             self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
+            try:
+                self.fleet.record_network_failure(prov, key)
+            except Exception:
+                pass
             return None
 
         # Parsiramo body za greške (200 ne trebamo parsirati ovdje)
@@ -536,7 +544,7 @@ async def _call_gemini_with_full_rotation(
             if ks.available and ks.key not in keys_tried
         ]
     if fresh_keys:
-        fresh_keys.sort(key=lambda ks: ks.health_score, reverse=True)
+        fresh_keys.sort(key=lambda ks: ks.success_rate, reverse=True)
         for ks in fresh_keys:
             key = ks.key
             pool = _get_google_model_pool()
