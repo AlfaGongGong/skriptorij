@@ -21,6 +21,7 @@
 import asyncio
 import random
 import requests
+import threading
 from network.rate_limiter import (
     acquire_key,
     release_key,
@@ -160,6 +161,7 @@ _NO_SYSTEM_ROLE_PATTERNS = ("gemma-",)
 
 # Per-ključ cache: koji model je trenutno aktivan (index u GOOGLE_MODEL_POOL)
 _key_model_cache: dict[str, int] = {}
+_key_model_cache_lock = threading.Lock()
 
 
 def _supports_system_role(model: str | None) -> bool:
@@ -174,25 +176,27 @@ def _supports_system_role(model: str | None) -> bool:
 def _get_model_for_key(key: str) -> str:
     """Inicijalni model za ključ — uvijek počni s prvim modelom u pool-u."""
     pool = _get_google_model_pool()
-    if key not in _key_model_cache:
-        _key_model_cache[key] = 0
-    idx = _key_model_cache[key]
-    # Provjeri da index nije van opsega (pool se može promijeniti između poziva)
-    if idx >= len(pool):
-        _key_model_cache[key] = 0
-        idx = 0
+    with _key_model_cache_lock:
+        if key not in _key_model_cache:
+            _key_model_cache[key] = 0
+        idx = _key_model_cache[key]
+        # Provjeri da index nije van opsega (pool se može promijeniti između poziva)
+        if idx >= len(pool):
+            _key_model_cache[key] = 0
+            idx = 0
     return pool[idx]["model"]
 
 
 def _rotate_model_for_key(key: str) -> str | None:
     """Rotira na sljedeći model u pool-u. Vraća None ako su svi modeli iscrpljeni."""
     pool = _get_google_model_pool()
-    start_idx = _key_model_cache.get(key, 0)
-    next_idx  = (start_idx + 1) % len(pool)
-    if next_idx == 0:
-        # Prošli smo krug
-        return None
-    _key_model_cache[key] = next_idx
+    with _key_model_cache_lock:
+        start_idx = _key_model_cache.get(key, 0)
+        next_idx  = (start_idx + 1) % len(pool)
+        if next_idx == 0:
+            # Prošli smo krug
+            return None
+        _key_model_cache[key] = next_idx
     return pool[next_idx]["model"]
 
 
@@ -261,6 +265,12 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
     """
     await acquire_key(key, prov_upper)
     try:
+        # Bilježi zahtjev PRIJE slanja — dekrementira remaining_minute/req_rem
+        # čime se sprječava da flota šalje burst zahtjeve na isti ključ (BUG 1 FIX).
+        try:
+            self.fleet.record_request(prov_upper, key)
+        except Exception:
+            pass
         try:
             resp = await asyncio.to_thread(
                 requests.post,
