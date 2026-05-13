@@ -555,6 +555,7 @@ def retroaktivna_rod_korekcija(
 
     # Primijeni i kalkovi engine retroaktivno (uz rod korekciju)
     if _KALKOVI_RETRO_OK and _kalkovi_engine_retro is not None:
+        bc = getattr(self, "book_context", None)
         glosar_k = getattr(bc, "glosar", {}) if bc else {}
         n_kalkovi = 0
         for chk in ciljani:

@@ -11,11 +11,21 @@ from flask import (
 from api_fleet import FleetManager
 from utils.file_utils import secure_filename as _secure_filename
 
-def _rebuild_epub(book_name: str) -> dict:
-    """Stub: rekonstruiše EPUB iz obrađenih fajlova.
-    TODO: implementirati ili importovati iz odgovarajućeg modula.
+def _rebuild_epub(eng, shared_stats: dict, shared_controls: dict) -> None:
     """
-    raise NotImplementedError("_rebuild_epub nije implementiran")
+    Pokretanje EPUB rebuild-a: HTML post-processing → finalize (pakovanje + kopiranje).
+    Poziva se iz RETRO i REBUILD_EPUB modova.
+    """
+    from epub.packager import finalize
+    try:
+        eng.apply_dropcap_and_toc_all()
+    except AttributeError:
+        pass
+    try:
+        eng.buildlive_epub()
+    except Exception:
+        pass
+    finalize(eng)
 
 
 # ── Fleet singleton ───────────────────────────────────────────────────────────
