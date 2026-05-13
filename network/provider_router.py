@@ -185,41 +185,32 @@ async def _call_ai_engine(
         if p not in ordered:
             ordered.append(p)
 
-    for attempt in range(3):
-        for prov_upper in ordered:
-            if self.shared_controls.get("stop"):
-                return None, "N/A"
+    for prov_upper in ordered:
+        if self.shared_controls.get("stop"):
+            return None, "N/A"
 
-            key = self.fleet.get_best_key(prov_upper)
-            if not key:
-                continue
+        key = self.fleet.get_best_key(prov_upper)
+        if not key:
+            continue
 
-            model = self.fleet.get_active_model(prov_upper) or MODEL_MAP.get(prov_upper)
-            if not model:
-                continue
+        model = self.fleet.get_active_model(prov_upper) or MODEL_MAP.get(prov_upper)
+        if not model:
+            continue
 
-            opt_temp, opt_max_tokens = _resolve_model_generation_params(
-                uloga, model, base_temp, base_max_tokens
-            )
-
-            await asyncio.sleep(random.uniform(0.2, 0.8))
-
-            raw, label = await _call_single_provider(
-                self, prov_upper, model,
-                sys_c, prompt,
-                opt_temp, max_tokens=opt_max_tokens
-            )
-
-            if raw:
-                # B21 FIX: uklonjen debug log koji je bio ovdje
-                return raw, label
-
-        wait = min(2 ** (attempt + 1), 30) + random.uniform(1, 3)
-        self.log(
-            f"⚠️ [{uloga}] Pokušaj {attempt+1}/3 neuspješan — čekam {wait:.0f}s...",
-            "warning",
+        opt_temp, opt_max_tokens = _resolve_model_generation_params(
+            uloga, model, base_temp, base_max_tokens
         )
-        await asyncio.sleep(wait)
+
+        await asyncio.sleep(random.uniform(0.2, 0.8))
+
+        raw, label = await _call_single_provider(
+            self, prov_upper, model,
+            sys_c, prompt,
+            opt_temp, max_tokens=opt_max_tokens
+        )
+
+        if raw:
+            return raw, label
 
     self.log(f"❌ [{uloga}] Svi provideri iscrpljeni za blok {chunk_idx}", "error")
     return None, "N/A"

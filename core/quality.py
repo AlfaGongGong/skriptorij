@@ -303,7 +303,6 @@ def _je_nonprose_blok(tekst: str) -> bool:
 
     # 3. Plain-text analiza
     if _has_bs4:
-        from bs4 import BeautifulSoup as _BS
         try:
             plain = _BS(t, "html.parser").get_text(" ", strip=True)
         except Exception:

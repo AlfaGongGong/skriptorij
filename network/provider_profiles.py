@@ -270,6 +270,61 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=2,
         notes="SAMO 1 KLJUČ i 1 RPM na free tier! Koristiti samo za scorer/posebne slučajeve.",
     ),
+
+    # ── CEREBRAS ────────────────────────────────────────────────────────────
+    # Free tier: llama-3.3-70b = 30 RPM / 10000 RPD / 131K TPM (procjena)
+    # Izuzetno brzak (kompajlovani silikon). Preferiran za PREVODILAC/KOREKTOR.
+    "CEREBRAS": ProviderProfile(
+        name="CEREBRAS",
+        rpm_hard=30,
+        rpm_safe=24,           # 80% od 30
+        rpd_hard=10_000,
+        rpd_safe=8_500,
+        tpm_hard=131_072,
+        min_gap_s=2.5,         # 60/24
+        cooldown_429_s=65.0,
+        supports_system_role=True,
+        preferred_roles=["PREVODILAC", "KOREKTOR"],
+        avoid_roles=["SCORER"],
+        quality_tier=2,
+        notes="Kompajlovani silikon — najbrži inferens. Dobar za PREVODILAC/KOREKTOR.",
+    ),
+
+    # ── TOGETHER ────────────────────────────────────────────────────────────
+    # Free tier: 60 RPM / 60 RPD (konzervativno) — rate limiti variraju po modelu
+    "TOGETHER": ProviderProfile(
+        name="TOGETHER",
+        rpm_hard=60,
+        rpm_safe=16,           # konzervativno — modeli imaju različite limite
+        rpd_hard=0,
+        rpd_safe=2_000,
+        tpm_hard=0,
+        min_gap_s=3.75,        # 60/16
+        cooldown_429_s=65.0,
+        supports_system_role=True,
+        preferred_roles=["PREVODILAC"],
+        avoid_roles=["SCORER"],
+        quality_tier=3,
+        notes="Različiti modeli s različitim limitima. Konzervativni RPM.",
+    ),
+
+    # ── FIREWORKS ───────────────────────────────────────────────────────────
+    # Free tier: 60 RPM / varijabilno RPD
+    "FIREWORKS": ProviderProfile(
+        name="FIREWORKS",
+        rpm_hard=60,
+        rpm_safe=16,
+        rpd_hard=0,
+        rpd_safe=2_000,
+        tpm_hard=0,
+        min_gap_s=3.75,
+        cooldown_429_s=65.0,
+        supports_system_role=True,
+        preferred_roles=["PREVODILAC"],
+        avoid_roles=["SCORER"],
+        quality_tier=3,
+        notes="Slično Together.ai — varijabilni rate limiti po modelu.",
+    ),
 }
 
 
