@@ -51,13 +51,6 @@ export const apiClient = {
     /** Dohvati fleet status (UI format) */
     getFleet: () => apiFetch('/api/fleet'),
 
-    /** Toggle ključa u floti */
-    toggleFleetKey: (provider, key) =>
-        apiFetch('/api/fleet/toggle', {
-            method: 'POST',
-            body: JSON.stringify({ provider, key }),
-        }),
-
     /** Dohvati API ključeve (maskirane) */
     getKeys: () => apiFetch('/api/keys'),
 
