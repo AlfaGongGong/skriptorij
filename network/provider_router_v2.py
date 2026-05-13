@@ -139,31 +139,68 @@ class ProviderRouterV2:
     """
 
     def __init__(self, dostupni_kljucevi: Optional[Dict[str, List[str]]] = None):
-        self.dostupni_kljucevi = dostupni_kljucevi or {}
+        # Normaliziramo ključeve na uppercase da se izbjegne case mismatch
+        # između profil.provider (lowercase) i fleet providera (uppercase).
+        self.dostupni_kljucevi = {
+            k.upper(): v for k, v in (dostupni_kljucevi or {}).items()
+        }
         self._health_scores: Dict[str, float] = {}
         # BUG #6 FIX: round-robin index po provideru da se ne koristi uvijek isti ključ
         self._kljuc_index: Dict[str, int] = {}
 
+    @staticmethod
+    def _get_fleet():
+        """Lazy pristup globalnoj fleet instanci — izbjegava circular import."""
+        try:
+            import api_fleet as _af
+            return _af._active_fleet
+        except (ImportError, AttributeError):
+            return None
+
     def set_health_score(self, provider: str, score: float) -> None:
-        self._health_scores[provider] = max(0.0, min(1.0, score))
+        self._health_scores[provider.upper()] = max(0.0, min(1.0, score))
 
     def get_health_score(self, provider: str) -> float:
-        return self._health_scores.get(provider, 1.0)
+        prov_u = provider.upper()
+        if prov_u in self._health_scores:
+            return self._health_scores[prov_u]
+        # Izračunaj dinamički iz fleet success_rate — uvijek svježe
+        fleet = self._get_fleet()
+        if fleet:
+            try:
+                with fleet.lock:
+                    keys = fleet.fleet.get(prov_u, [])
+                    rates = [ks.success_rate for ks in keys if not ks.disabled]
+                if rates:
+                    return sum(rates) / len(rates)
+            except Exception:
+                pass
+        return 1.0
 
     def _provider_dostupan(self, profil: ModelProfile) -> bool:
-        if not self.dostupni_kljucevi:
-            return True
-        kljucevi = self.dostupni_kljucevi.get(profil.provider, [])
-        return len(kljucevi) > 0
+        prov_u = profil.provider.upper()
+        # 1. Provjeri lokalni dict (populira ga init_router_v2 ako je pozvan)
+        if self.dostupni_kljucevi:
+            return len(self.dostupni_kljucevi.get(prov_u, [])) > 0
+        # 2. Fallback: pitaj fleet direktno — radi čak i kad init_router_v2 nije pozvan
+        fleet = self._get_fleet()
+        if fleet:
+            return fleet.get_best_key(prov_u) is not None
+        return True  # optimistički ako nema flote
 
     def _get_kljuc(self, provider: str) -> Optional[str]:
-        kljucevi = self.dostupni_kljucevi.get(provider, [])
-        if not kljucevi:
-            return None
-        # BUG #6 FIX: round-robin umjesto uvijek prvog ključa
-        idx = self._kljuc_index.get(provider, 0) % len(kljucevi)
-        self._kljuc_index[provider] = (idx + 1) % len(kljucevi)
-        return kljucevi[idx]
+        prov_u = provider.upper()
+        # 1. Provjeri lokalni dict
+        kljucevi = self.dostupni_kljucevi.get(prov_u, [])
+        if kljucevi:
+            idx = self._kljuc_index.get(prov_u, 0) % len(kljucevi)
+            self._kljuc_index[prov_u] = (idx + 1) % len(kljucevi)
+            return kljucevi[idx]
+        # 2. Fallback: pitaj fleet direktno
+        fleet = self._get_fleet()
+        if fleet:
+            return fleet.get_best_key(prov_u)
+        return None
 
     def get_best_model(
         self,

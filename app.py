@@ -18,10 +18,6 @@ def _rebuild_epub(eng, shared_stats: dict, shared_controls: dict) -> None:
     """
     from epub.packager import finalize
     try:
-        eng.apply_dropcap_and_toc_all()
-    except AttributeError:
-        pass
-    try:
         eng.buildlive_epub()
     except Exception:
         pass

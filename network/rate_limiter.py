@@ -13,12 +13,14 @@
 
 import asyncio
 import random
+import threading
 import time
 
 # ===== GLOBALNI RATE LIMITER — humanizovano, bez kršenja limita =====
 _PROVIDER_LOCKS: dict = {}
 _LAST_CALLS = {}          # per-provider: koristi se samo za startup anti-burst jitter
 _LAST_CALLS_KEY: dict = {}  # BUG#THROTTLE FIX: per-key timestamp (key_string → float)
+_LAST_CALLS_KEY_LOCK = threading.Lock()  # štiti _LAST_CALLS_KEY od race condition-a
 _PROVIDER_COOLDOWN_UNTIL: dict = {}
 _PROVIDER_DYNAMIC_GAP: dict = {}
 
@@ -269,7 +271,8 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
     # svaki poštuje vlastiti min_gap od svog zadnjeg poziva.
     gap = base_gap + random.uniform(_JITTER_MIN, _JITTER_MAX)
     if key:
-        last = _LAST_CALLS_KEY.get(key, 0.0)
+        with _LAST_CALLS_KEY_LOCK:
+            last = _LAST_CALLS_KEY.get(key, 0.0)
     else:
         # Fallback za pozive bez ključa — per-provider (staro ponašanje)
         last = _LAST_CALLS.get(prov, 0.0)
@@ -281,7 +284,8 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
     # Ažuriraj per-key timestamp
     now2 = time.time()
     if key:
-        _LAST_CALLS_KEY[key] = now2
+        with _LAST_CALLS_KEY_LOCK:
+            _LAST_CALLS_KEY[key] = now2
     else:
         _LAST_CALLS[prov] = now2
 

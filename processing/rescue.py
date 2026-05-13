@@ -25,7 +25,7 @@ async def _spasi_od_sirovog(self, sirovo, chunk, chunk_idx, file_name, prev_ctx,
                 return None, None
             m_name = self.fleet.get_active_model(up) if up != "GEMINI" else "gemini-2.0-flash"
             if not m_name:
-                m_name = "default"
+                continue  # preskači providera bez aktivnog modela
             raw_s, label_s = await self._call_single_provider(up, m_name, lek_sys, p_lek, temp, max_tokens=1400)
             if not raw_s:
                 continue

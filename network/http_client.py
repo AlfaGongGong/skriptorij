@@ -19,6 +19,7 @@
 #             ostali provideri ne throttluju po IP-u.
 
 import asyncio
+import logging
 import random
 import requests
 import threading
@@ -28,6 +29,8 @@ from network.rate_limiter import (
     register_provider_backoff,
     register_provider_runtime_limits,
 )
+
+logger = logging.getLogger(__name__)
 
 # ── Proxy pool za Gemini IP rotaciju ─────────────────────────────────────────
 # Učitava se lazy pri prvom pozivu. Thread-safe jer je samo čitanje nakon init.
@@ -161,6 +164,7 @@ _NO_SYSTEM_ROLE_PATTERNS = ("gemma-",)
 
 # Per-ključ cache: koji model je trenutno aktivan (index u GOOGLE_MODEL_POOL)
 _key_model_cache: dict[str, int] = {}
+# Lock štiti _key_model_cache od race condition-a između paralelnih threadova
 _key_model_cache_lock = threading.Lock()
 
 
@@ -269,8 +273,9 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
         # čime se sprječava da flota šalje burst zahtjeve na isti ključ (BUG 1 FIX).
         try:
             self.fleet.record_request(prov_upper, key)
-        except Exception:
-            pass
+        except Exception as _rr_err:
+            logger.debug("[%s] record_request greška (fleet tracking onesposobljen): %s",
+                         prov_upper, _rr_err)
         try:
             resp = await asyncio.to_thread(
                 requests.post,
@@ -668,15 +673,18 @@ def api_call(
 
     try:
         resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        logger.warning("[api_call] %s mrežna greška: %s", provider.upper(), e)
         return None
 
     if resp.status_code != 200:
+        logger.debug("[api_call] %s HTTP %s", provider.upper(), resp.status_code)
         return None
 
     try:
         data = resp.json()
-    except Exception:
+    except Exception as e:
+        logger.warning("[api_call] %s neispravan JSON: %s", provider.upper(), e)
         return None
 
     return _extract_content(provider.upper(), data)

@@ -3,6 +3,8 @@
 Rute za quality scores — dohvat i prikaz po blokovima i fajlovima.
 """
 
+import logging
+
 from config.settings import PROJECTS_ROOT, INPUT_DIR
 from config.settings import SHARED_CONTROLS
 import json
@@ -13,6 +15,7 @@ from flask import Blueprint, jsonify, request
 from config.settings import CHECKPOINT_BASE_DIR, SHARED_STATS
 
 bp = Blueprint("quality_routes", __name__)
+logger = logging.getLogger(__name__)
 
 
 def _get_quality_cache_path() -> Path | None:
@@ -122,8 +125,9 @@ def get_quality_scores():
             }
         )
 
-    except Exception:
-        return jsonify({"error": str(), "has_data": False}), 500
+    except Exception as e:
+        logger.error("quality_scores greška: %s", e, exc_info=True)
+        return jsonify({"error": "Interna greška pri učitavanju quality scores.", "has_data": False}), 500
 
 
 @bp.route("/api/quality_scores/file/<path:file_name>")
