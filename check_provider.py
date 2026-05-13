@@ -353,9 +353,9 @@ async def provjeri_kljuc(client, kljuc, cfg, idx, ukupno, provjeri_modele, provj
             if len(modeli) > 25:
                 print(f"      {DIM}... i još {len(modeli)-25} modela{RST}")
         elif status == 401:
-            err(f"Modeli: 401 Unauthorized")
+            err("Modeli: 401 Unauthorized")
         elif status == 429:
-            warn(f"Modeli: 429 Rate limit")
+            warn("Modeli: 429 Rate limit")
         else:
             warn(f"Modeli: HTTP {status}")
 
@@ -404,7 +404,7 @@ def ucitaj_kljuceve():
                 return json.load(f)
         print(f"{R}GREŠKA: dev_api.json nije pronađen na:{RST}")
         print(f"  {DEV_API}")
-        print(f"  ./dev_api.json")
+        print("  ./dev_api.json")
         sys.exit(1)
     with open(DEV_API, "r", encoding="utf-8") as f:
         return json.load(f)

@@ -370,7 +370,7 @@ if __name__ == "__main__":
         if rezultat != tekst:
             print(f"    ISPRAVLJENO: {rezultat}")
         else:
-            print(f"    OK — nema promjena")
+            print("    OK — nema promjena")
         print()
 
     print(f"\nAudit log: {AUDIT_LOG_PATH}")

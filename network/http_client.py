@@ -215,6 +215,41 @@ def _build_messages(sys_content: str | None, user_prompt: str, model: str) -> li
     ]
 
 
+def _extract_content(provider: str, data: dict) -> str | None:
+    """
+    Parsira content string iz API response dict-a.
+
+    OpenAI-kompatibilni format (svi osim Cohere v2):
+        {"choices": [{"message": {"content": "..."}}]}
+
+    Cohere v2 format (/v2/chat endpoint):
+        {"message": {"content": [{"type": "text", "text": "..."}]}}
+    """
+    if not data:
+        return None
+
+    if provider == "COHERE":
+        # Cohere /v2/chat vraća drugačiji format od OpenAI
+        try:
+            parts = data["message"]["content"]
+            if isinstance(parts, list):
+                text = " ".join(
+                    p.get("text", "") for p in parts
+                    if isinstance(p, dict) and p.get("type") == "text"
+                ).strip()
+                return text or None
+        except (KeyError, TypeError):
+            pass
+        return None
+
+    # OpenAI-kompatibilni format
+    if "choices" in data and data["choices"]:
+        content = data["choices"][0].get("message", {}).get("content", "")
+        if isinstance(content, str):
+            return content.strip() or None
+    return None
+
+
 async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key,
                            _proxy: dict | None = None):
     """
@@ -413,10 +448,9 @@ async def _call_single_provider(
     if not data:
         return None, None
 
-    if "choices" in data and data["choices"]:
-        content = data["choices"][0].get("message", {}).get("content", "").strip()
-        if content:
-            return content, f"{prov_upper}-{model}"
+    content = _extract_content(prov_upper, data)
+    if content:
+        return content, f"{prov_upper}-{model}"
     return None, None
 
 
@@ -444,7 +478,7 @@ async def _call_gemini_with_full_rotation(
         self.log("[GEMINI] Nema dostupnih ključeva", "warning")
         return None, None
 
-    keys_list.sort(key=lambda ks: ks.health_score, reverse=True)
+    keys_list.sort(key=lambda ks: ks.success_rate, reverse=True)
 
     for ks in keys_list:
         key = ks.key
@@ -495,8 +529,6 @@ async def _call_gemini_with_full_rotation(
                 content = data["choices"][0].get("message", {}).get("content", "").strip()
                 if content:
                     return content, f"GEMINI-{current_model}"
-
-            # ── Rotacija modela nakon neuspješnog zahtjeva ────────────────────
             # Svaki Gemini model ima VLASTITE RPM/RPD kvote (gemini-2.0-flash-lite
             # ima 30 RPM, gemini-2.0-flash ima 15 RPM, gemini-2.5-flash ima 10 RPM).
             # BUG FIX: Prethodna verzija je breakala petlju kad is_active=False
@@ -573,7 +605,6 @@ async def _call_gemini_with_full_rotation(
                     content = data["choices"][0].get("message", {}).get("content", "").strip()
                     if content:
                         return content, f"GEMINI-{current_model}"
-                if not ks.is_active:
                     self.log(
                         f"[GEMINI] Ključ ...{key[-4:]} (novi) — kvota iscrpljena za {current_model} "
                         f"— rotiram na sljedeći model",
@@ -594,3 +625,48 @@ async def _call_gemini_with_full_rotation(
 
     self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
+
+
+def api_call(
+    provider: str,
+    model: str,
+    api_key: str,
+    system: str,
+    user: str,
+    temperature: float = 0.5,
+    max_tokens: int = 2400,
+    timeout: int = 90,
+) -> str | None:
+    """
+    Sinhronizovani (blocking) API poziv — namijenjen za WorkerV2 i druge ne-async kontekste.
+    Vraća content string pri uspjehu, None pri grešci.
+    """
+    from network.provider_urls import get_url
+    url = get_url(provider.upper())
+
+    messages = _build_messages(system, user, model)
+    payload = {
+        "model": model,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "messages": messages,
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+
+    try:
+        resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
+    except requests.exceptions.RequestException:
+        return None
+
+    if resp.status_code != 200:
+        return None
+
+    try:
+        data = resp.json()
+    except Exception:
+        return None
+
+    return _extract_content(provider.upper(), data)

@@ -114,7 +114,7 @@ def _ukloni_inline_stilove(html_fajlovi: list, log_fn=None) -> int:
             if izmijenjeno:
                 fajl.write_text(str(soup), encoding="utf-8")
                 modificirano += 1
-        except: pass
+        except Exception: pass
     if modificirano and log_fn:
         log_fn(f"🎨 Inline stilovi očišćeni u {modificirano} HTML fajl(ov)a.", "tech")
     return modificirano
