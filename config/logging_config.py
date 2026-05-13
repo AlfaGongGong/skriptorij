@@ -5,17 +5,18 @@ import logging
 import sys
 
 
-def configure_logging(level: int = logging.ERROR) -> None:
+def configure_logging(level: int = logging.INFO) -> None:
     """Postavi log level za werkzeug i root logger.
 
-    ERROR i CRITICAL poruke uvijek idu na stdout kako bi bile vidljive
-    u terminalu bez obzira na postavljeni level.
+    INFO i više poruke idu na stdout. ERROR/CRITICAL se posebno bojaju
+    u terminalu kako bi bile odmah vidljive.
     """
-    logging.getLogger("werkzeug").setLevel(level)
+    # Werkzeug request log — ograniči na WARNING da ne zatrpa konzolu
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
     # Standardni handler za zadani level
     root = logging.getLogger()
-    root.setLevel(min(level, logging.ERROR))
+    root.setLevel(level)
 
     # Ukloni eventualnu duplu konfiguraciju
     if not root.handlers:

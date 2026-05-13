@@ -1,9 +1,13 @@
 
 
 """Rute za Fleet Pool — prikaz API ključeva i statistike poziva."""
+import logging
+
 from flask import Blueprint, jsonify, request
 
 from config.settings import CONFIG_PATH
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -78,8 +82,11 @@ def get_fleet():
         fm = get_active_fleet()
         if fm is None:
             fm = FleetManager(config_path=CONFIG_PATH)
-        return jsonify(_normalize_fleet_summary(fm.get_fleet_ui()))
+        data = _normalize_fleet_summary(fm.get_fleet_ui())
+        logger.debug("[fleet] GET /api/fleet — %d provajdera", len(data))
+        return jsonify(data)
     except Exception:
+        logger.exception("[fleet] Greška pri dohvaćanju flote")
         return jsonify({"error": "Greška pri dohvaćanju flote"}), 500
 
 
