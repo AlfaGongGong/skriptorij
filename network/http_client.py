@@ -9,8 +9,9 @@
 # BUG#10 FIX: Per-key semaphore (MAX_CONCURRENT_PER_KEY=1) — uključen.
 #             Sprječava višestruke paralelne pozive istim ključem.
 # BUG#MODEL FIX (v10.5): _GOOGLE_MODEL_POOL_FALLBACK ažuriran — uklonjeni dead preview modeli.
-#             KRITIČNO: 429 na gemini-2.0-flash više ne rotira model — prelazi na
-#             sljedeći ključ (isti model). Model rotacija samo za 404/nepoznat model.
+#             Gemini 429 (RPM) rotira model za isti ključ — svaki model ima nezavisnu
+#             RPM/RPD kvotu. Tek kad su svi modeli jednog ključa iscrpljeni → sljedeći ključ.
+#             Model rotacija za: 429 (RPM), 404 (mrtav model), timeout, nepoznat model.
 # PROXY FIX (v10.6): Gemini requestovi rotiraju kroz external proxy pool da se
 #             izbjegne IP-level throttling. Proxy lista se učitava iz dev_api.json
 #             ("PROXIES" sekcija) ili iz PROXIES_FILE env varijable.
