@@ -641,11 +641,12 @@ def api_call(
     """
     Sinhronizovani (blocking) API poziv — namijenjen za WorkerV2 i druge ne-async kontekste.
     Vraća content string pri uspjehu, None pri grešci.
-    ANTI-BAN: Browser-like headers + rate limiting preko acquire_key/release_key.
+    ANTI-BAN: Browser-like headers + rate limiting preko semaphora.
     """
     from network.provider_urls import get_url
-    from network.rate_limiter import get_key_semaphore, get_provider_semaphore, _throttle_provider
-    import asyncio
+    from network.rate_limiter import get_key_semaphore, get_provider_semaphore
+    import time as _time
+    import random as _random
 
     prov_upper = provider.upper()
     url = get_url(prov_upper)
@@ -672,24 +673,23 @@ def api_call(
     }
 
     # Rate limiting: acquiriraj per-provider i per-key semaphore
+    # (consistent poredak: uvijek provider pa key — izbjegava deadlock)
     prov_sem = get_provider_semaphore(prov_upper)
     key_sem  = get_key_semaphore(api_key)
     prov_sem.acquire()
     key_sem.acquire()
-    logger.debug("[api_call] %s ...%s semaphori zauzeti", prov_upper, api_key[-4:])
+    logger.debug("[api_call] %s semaphori zauzeti", prov_upper)
     try:
         # Jitter da se izbjegne burst (blocking verzija throttlea)
-        import time as _time
-        import random as _random
         _time.sleep(_random.uniform(0.3, 1.5))
 
         try:
             resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
         except requests.exceptions.RequestException as e:
-            logger.warning("[api_call] %s mrežna greška (key=...%s): %s", prov_upper, api_key[-4:], e)
+            logger.warning("[api_call] %s mrežna greška: %s", prov_upper, str(e)[:120])
             return None
 
-        logger.debug("[api_call] %s HTTP %d (key=...%s)", prov_upper, resp.status_code, api_key[-4:])
+        logger.debug("[api_call] %s HTTP %d", prov_upper, resp.status_code)
 
         if resp.status_code == 429:
             retry_after_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
@@ -698,22 +698,22 @@ def api_call(
             except ValueError:
                 ra = 10.0
             wait = min(ra, 120.0) + _random.uniform(0.5, 2.0)
-            logger.warning("[api_call] %s HTTP 429 (key=...%s) — čekam %.1fs", prov_upper, api_key[-4:], wait)
+            logger.warning("[api_call] %s HTTP 429 — čekam %.1fs", prov_upper, wait)
             _time.sleep(wait)
             return None
 
         if resp.status_code != 200:
-            logger.debug("[api_call] %s HTTP neuspjeh %d (key=...%s)", prov_upper, resp.status_code, api_key[-4:])
+            logger.debug("[api_call] %s HTTP neuspjeh %d", prov_upper, resp.status_code)
             return None
 
         try:
             data = resp.json()
         except Exception:
-            logger.warning("[api_call] %s neispravan JSON (key=...%s)", prov_upper, api_key[-4:])
+            logger.warning("[api_call] %s neispravan JSON u odgovoru", prov_upper)
             return None
 
         return _extract_content(prov_upper, data)
     finally:
         key_sem.release()
         prov_sem.release()
-        logger.debug("[api_call] %s ...%s semaphori oslobođeni", prov_upper, api_key[-4:])
+        logger.debug("[api_call] %s semaphori oslobođeni", prov_upper)
