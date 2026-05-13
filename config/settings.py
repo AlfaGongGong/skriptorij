@@ -82,7 +82,6 @@ SHARED_STATS: dict = {
     "pct": 0,
     "est": "--:--:--",
     "fleet_active": 0,
-    "fleet_cooling": 0,
     "live_audit": "Sistem spreman. Čekam inicijalizaciju...",
     "output_file": "",
     "output_dir": str(OUTPUT_DIR),
