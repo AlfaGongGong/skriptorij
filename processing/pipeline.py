@@ -648,7 +648,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             tip_bloka, f"LEKTURA/{prov_l}", tip_ocjenjivanja="lektura",
             prevodilac_provider=prov_l,
         )
-        return finalno, f"LEKTURA/{prov_l}"
+        return finalno, f"LEKTURA/{prov_l}→{prov_kor_l}"
 
     # ════════════════════════════════════════════════════════════════════════
     # PREVOD mod
@@ -789,7 +789,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         f"HR: {BeautifulSoup(finalno, 'html.parser').get_text()[:50]}…"
     )
     self.log("", "accordion", en_text=aud)
-    return finalno, f"{prov1}→{prov2}"
+    return finalno, f"{prov1}→{prov2}→{prov3}"
 
 
 # ── Retry wrapper ─────────────────────────────────────────────────────────────

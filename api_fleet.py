@@ -175,6 +175,7 @@ class KeyState:
         self.calls_rejected: dict      = {
             int(k): int(v)
             for k, v in s.get("calls_rejected", {}).items()
+            if str(k).lstrip("-").isdigit()  # preskoči nevalidne ključeve
         }
 
     # ── BUG#6 FIX: RPM reset ────────────────────────────────────────────────
