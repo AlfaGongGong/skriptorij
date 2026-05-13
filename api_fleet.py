@@ -213,6 +213,11 @@ class KeyState:
                 return False
         # BUG#6 FIX: resetuj RPM prije provjere
         self._reset_rpm_if_needed()
+        # BUG RPM FIX: blokira ključ dok je minutna kvota iscrpljena.
+        # _reset_rpm_if_needed() garantuje da je remaining_minute svježe —
+        # ako je 0 ovdje, znači da su pozivi u ovom 60s prozoru iscrpljeni.
+        if self.remaining_minute <= 0:
+            return False
         return True
 
     @property
@@ -683,6 +688,10 @@ class FleetManager:
 
             elif status_code in (429, 425):
                 ks.calls_rejected[status_code] = ks.calls_rejected.get(status_code, 0) + 1
+                # BUG 5 FIX: zahtjev je stigao do servera — potrošio je RPM slot.
+                # record_request() to dekrementira optimistično, ali kao sigurnosna
+                # mreža postavljamo remaining_minute na 0 da spriječimo daljnje slanje.
+                ks.remaining_minute = 0
                 v  = hget("retry-after")
                 ra = 60.0
                 if v:
