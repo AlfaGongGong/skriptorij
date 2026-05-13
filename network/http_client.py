@@ -673,18 +673,18 @@ def api_call(
 
     try:
         resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
-    except requests.exceptions.RequestException as e:
-        logger.warning("[api_call] %s mrežna greška: %s", provider.upper(), e)
+    except requests.exceptions.RequestException:
+        logger.warning("[api_call] Mrežna greška tokom API poziva")
         return None
 
     if resp.status_code != 200:
-        logger.debug("[api_call] %s HTTP %s", provider.upper(), resp.status_code)
+        logger.debug("[api_call] HTTP neuspjeh tokom API poziva (%s)", resp.status_code)
         return None
 
     try:
         data = resp.json()
-    except Exception as e:
-        logger.warning("[api_call] %s neispravan JSON: %s", provider.upper(), e)
+    except Exception:
+        logger.warning("[api_call] Neispravan JSON u API odgovoru")
         return None
 
     return _extract_content(provider.upper(), data)
