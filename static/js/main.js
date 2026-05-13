@@ -1273,7 +1273,7 @@ function updateExpertFleetHealthBadge(totalActive, totalKeys) {
         ring.setAttribute("data-val", String(pct));
     }
     if (mainEl) mainEl.textContent = `${pct}%`;
-    if (subEl) subEl.textContent = `${totalActive}/${totalKeys} aktivno`;
+    if (subEl) subEl.textContent = `${pct}% avg success`;
     badge.classList.add("has-data");
 }
 
@@ -1320,7 +1320,13 @@ function renderFleet(data) {
     if (simpleCol) simpleCol.textContent = totalLowSr;
     if (simpleErr) simpleErr.textContent = totalFailed;
     document.getElementById("fleet-total-count").textContent = totalKeys;
-    updateExpertFleetHealthBadge(totalKeys, totalKeys);
+    // Za health badge: koristimo ponderisani prosjek success_rate svih ključeva
+    // kao ekvivalent "aktivnih" ključeva (1.0 sr = 1 aktivan ključ ekvivalent)
+    let totalWeightedSr = 0;
+    for (const [, info] of entries) {
+        (info.keys || []).forEach(k => { totalWeightedSr += (k.success_rate ?? 1.0); });
+    }
+    updateExpertFleetHealthBadge(Math.round(totalWeightedSr), totalKeys);
 
     // Render detailed fleet view in expert tab
     const expertC = document.getElementById("expert-fleet-container");
