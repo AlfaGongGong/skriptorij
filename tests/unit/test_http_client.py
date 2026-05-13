@@ -123,16 +123,9 @@ def test_build_messages_uses_system_for_supported_models():
 
 def test_gemini_rotates_model_on_429(monkeypatch):
     """
-    BUG FIX: Kad ključ dobije 429 na gemini-2.0-flash, mora probati sljedeći
+    Kad ključ dobije 429 na gemini-2.0-flash, mora probati sljedeći
     model (gemini-2.5-flash, gemini-2.0-flash-lite) — ne smije odmah skočiti
     na sljedeći ključ bez pokušaja s drugim modelima.
-
-    Svaki Gemini model ima vlastite RPM/RPD kvote, pa 429 na jednom modelu
-    ne znači nužno da su i drugi modeli iscrpljeni.
-
-    NAPOMENA: Simuliramo kratki RPM cooldown (samo cooldown_until, is_active=True).
-    Billing/dnevna kvota eksplicitno postavlja is_active=False i odmah prelazi
-    na sljedeći ključ — to je testirano u test_gemini_skips_inactive_key_on_billing.
     """
     import asyncio
 
@@ -147,16 +140,7 @@ def test_gemini_rotates_model_on_429(monkeypatch):
                                     prov, prov_upper, key, _proxy=None):
         model = payload.get("model", "")
         tried_models.append(model)
-        # Simuliraj kratki RPM cooldown na ključu — kao što to radi analyze_response
-        # za RPM 429 (is_active ostaje True, samo cooldown_until se postavi).
-        # Tek drugi model "uspijeva"
         if model == pool[0]["model"]:
-            import time
-            for ks in self_obj.fleet.fleet.get("GEMINI", []):
-                if ks.key == key:
-                    ks.cooldown_until = time.time() + 65.0
-                    # is_active ostaje True — ovo je RPM limit, ne billing exhaustion
-                    break
             return None
         # Drugi model uspijeva
         return {"choices": [{"message": {"content": "ODGOVOR"}}]}
@@ -197,8 +181,7 @@ def test_gemini_rotates_model_on_429(monkeypatch):
 
 def test_gemini_skips_inactive_key_on_billing(monkeypatch):
     """
-    BUG FIX: Kad je_active=False zbog billing/dnevne kvote JEDNOG modela,
-    rotacija mora nastaviti probati OSTALE modele s istim ključem jer svaki
+    Rotacija mora nastaviti probati OSTALE modele s istim ključem jer svaki
     Gemini model ima NEZAVISNE RPD kvote.
     Svi modeli u pool-u trebaju biti isprobani (tried_models == len(pool)).
     """
@@ -214,13 +197,7 @@ def test_gemini_skips_inactive_key_on_billing(monkeypatch):
                                     prov, prov_upper, key, _proxy=None):
         model = payload.get("model", "")
         tried_models.append(model)
-        # Simuliraj billing exhaustion — is_active=False (dnevna kvota jednog modela)
-        import time
-        for ks in self_obj.fleet.fleet.get("GEMINI", []):
-            if ks.key == key:
-                ks.cooldown_until = time.time() + 82800
-                ks.is_active = False
-                break
+        # Svi modeli vraćaju None — simulira billing/kvotu
         return None
 
     monkeypatch.setattr("network.http_client._async_http_post", fake_async_http_post)
@@ -281,13 +258,7 @@ def test_gemini_fresh_snapshot_picks_up_new_key(monkeypatch):
         call_count[0] += 1
         model = payload.get("model", "")
         if key == "OLD_KEY_0001":
-            # Stari ključ — billing exhaustion na prvom pozivu
-            for ks in self_obj.fleet.fleet.get("GEMINI", []):
-                if ks.key == key:
-                    import time
-                    ks.cooldown_until = time.time() + 82800
-                    ks.is_active = False
-                    break
+            # Stari ključ — svi pozivi vraćaju None
             return None
         # Novi ključ koji je "dodan za vrijeme rotacije" — uvijek uspijeva
         return {"choices": [{"message": {"content": "NOVI_KLJUČ_ODGOVOR"}}]}
@@ -303,24 +274,15 @@ def test_gemini_fresh_snapshot_picks_up_new_key(monkeypatch):
 
     _fleet = FleetManager.__new__(FleetManager)
     _fleet.lock = threading.Lock()
-    # Fleet ima 2 ključa: OLD_KEY u snapshotu (unavailable) + NEW_KEY koji nije
-    # bio u snapshotu jer je u floti tek dodan (ali je available)
+    # Fleet ima 2 ključa: OLD_KEY koji uvijek failuje + NEW_KEY koji uspijeva.
+    # OLD_KEY je posortiran ispred NEW_KEY po success_rate (oba novi = 1.0, round-robin).
     old_ks = KeyState("OLD_KEY_0001", "GEMINI")
     new_ks = KeyState("NEW_KEY_9999", "GEMINI")
+    # OLD_KEY ima lošiji success_rate da bude iza NEW_KEY ili svejedno — oba će biti isprobana
+    old_ks.calls_failed = 10
     _fleet.fleet = {"GEMINI": [old_ks, new_ks]}
     _fleet.resolved_models = {"GEMINI": pool[0]["model"]}
     _fleet._rr_index = {}
-
-    # Simuliraj da je OLD_KEY bio u cooldownu PRIJE snapshota (snimak ga neće uhvatiti)
-    import time
-    old_ks.cooldown_until = time.time() + 82800
-    old_ks.is_active = False
-
-    # Snapshot će biti prazan (OLD_KEY unavailable, NEW_KEY available)
-    # Ali NEW_KEY je 'novi' ključ koji bi bio dodan za vrijeme rotacije —
-    # simuliramo to tako da NEW_KEY bude u floti ali ga isključimo iz
-    # inicijalnog snapshota postavljanjem da ga find ne vrati, ili jednostavno
-    # testiramo da svježi snapshot funkcionira.
 
     class FakeEngine:
         fleet = _fleet

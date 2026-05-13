@@ -29,7 +29,7 @@ class AdaptiveParallelism:
     def _get_window_size(self) -> int:
         """
         Dinamički izračunava veličinu sliding window-a na osnovu
-        broja aktivnih ključeva i RPM limita.
+        broja ključeva u floti.
         """
         fleet = self.engine.fleet
         total_active = fleet.get_total_active_keys()
@@ -37,21 +37,8 @@ class AdaptiveParallelism:
         if total_active == 0:
             return 1
 
-        # Konzervativno: 1 slot per 2 aktivna ključa, min 2, max 6
+        # Konzervativno: 1 slot per 2 ključa, min 2, max 6
         dynamic = max(2, min(total_active // 2, 6))
-
-        # Dodatno: poštuj globalni RPM najsporijeg providera
-        min_rpm = None
-        for prov, keys in fleet.fleet.items():
-            active_keys = [k for k in keys if k.available]
-            if active_keys:
-                rpm = fleet.get_effective_rpm_limit(prov, active_keys[0].key)
-                if rpm > 0:
-                    min_rpm = rpm if min_rpm is None else min(min_rpm, rpm)
-
-        if min_rpm and min_rpm < 15:
-            # Spori provider — smanji window da ne spamujemo
-            dynamic = min(dynamic, 2)
 
         return min(dynamic, _SLIDING_WINDOW_SIZE)
 
