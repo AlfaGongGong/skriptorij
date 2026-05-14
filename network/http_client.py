@@ -1,4 +1,4 @@
-# network/http_client.py — V11.0
+# network/http_client.py — V12.0
 #
 # KOMPLETNI REWRITE pozivne logike po provajderu:
 #

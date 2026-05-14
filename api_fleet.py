@@ -153,7 +153,7 @@ class KeyState:
 
 
 class FleetManager:
-    """V11.0 Fleet Manager — bez hlađenja, kvota i isključivanja ključeva."""
+    """V12.0 Fleet Manager — bez hlađenja, kvota i isključivanja ključeva."""
 
     def __init__(self, config_path="dev_api.json", state_path="api_state.json"):
         self.config_path = Path(config_path)
@@ -480,6 +480,12 @@ class FleetManager:
                 }
         return summary
 
+    @staticmethod
+    def _prov_ui_entry(keys: list) -> dict:
+        ui_keys = [ks.to_ui_dict() for ks in keys]
+        sr = round(sum(k["success_rate"] for k in ui_keys) / len(ui_keys), 4) if ui_keys else 1.0
+        return {"total": len(keys), "success_rate": sr, "keys": ui_keys}
+
     def get_fleet_ui(self) -> dict:
         with self.lock:
             result = {}
@@ -487,16 +493,10 @@ class FleetManager:
                 keys = self.fleet.get(prov, [])
                 if not keys:
                     continue
-                result[prov] = {
-                    "total": len(keys),
-                    "keys":  [ks.to_ui_dict() for ks in keys],
-                }
+                result[prov] = self._prov_ui_entry(keys)
             for prov, keys in self.fleet.items():
                 if prov not in result and keys:
-                    result[prov] = {
-                        "total": len(keys),
-                        "keys":  [ks.to_ui_dict() for ks in keys],
-                    }
+                    result[prov] = self._prov_ui_entry(keys)
         return result
 
     def get_total_active_keys(self) -> int:

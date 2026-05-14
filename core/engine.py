@@ -1,5 +1,5 @@
 """
-core/engine.py — SkriptorijAllInOne V10.2
+core/engine.py — SkriptorijAllInOne V12.0
 
 IZMJENE (knjiga_mode patch + checkpoint putanja):
   - __init__(): self.work_dir i self.checkpoint_dir sada koriste

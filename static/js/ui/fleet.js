@@ -15,7 +15,32 @@ const PROV_ICONS = {
     KLUSTER:'🔗', GEMMA:'🔷',
 };
 
+const PROV_CONSOLE_URLS = {
+    GEMINI:      'https://aistudio.google.com/',
+    GROQ:        'https://console.groq.com/',
+    CEREBRAS:    'https://cloud.cerebras.ai/',
+    SAMBANOVA:   'https://cloud.sambanova.ai/',
+    MISTRAL:     'https://console.mistral.ai/',
+    COHERE:      'https://dashboard.cohere.com/',
+    OPENROUTER:  'https://openrouter.ai/settings/keys',
+    GITHUB:      'https://github.com/settings/tokens',
+    TOGETHER:    'https://api.together.xyz/settings/api-keys',
+    FIREWORKS:   'https://fireworks.ai/account/api-keys',
+    CHUTES:      'https://chutes.ai/app/api-keys',
+    HUGGINGFACE: 'https://huggingface.co/settings/tokens',
+    KLUSTER:     'https://kluster.ai/settings/api-keys',
+    GEMMA:       'https://aistudio.google.com/',
+};
+
 // ─── Pomoćne ────────────────────────────────────────────────────────────────
+
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
 
 function fmtCooldown(s) {
     if (!s || s <= 0) return '';
@@ -177,7 +202,9 @@ function renderProviderBlock(prov, info, isExpert = false) {
       <summary class="fleet-provider-header fq-summary">
         <span class="fq-chevron">▸</span>
         <span class="fq-prov-icon">${icon}</span>
-        <span class="fq-prov-name">${prov}</span>
+        ${PROV_CONSOLE_URLS[prov.toUpperCase()]
+            ? `<a class="fq-prov-name" href="${PROV_CONSOLE_URLS[prov.toUpperCase()]}" target="_blank" rel="noopener noreferrer" title="Otvori konzolu ${escHtml(prov)}">${escHtml(prov)}</a>`
+            : `<span class="fq-prov-name">${escHtml(prov)}</span>`}
         <div class="fleet-health-bar fq-hbar">
           <div class="fleet-health-fill ${barCls}" style="width:${srPct}%"></div>
         </div>

@@ -1,6 +1,6 @@
 """
 Rute za upravljanje obradom knjiga (files, start, status, modeli).
-Dio Skriptorij V10 Turbo Omni-Core sistema.
+Dio Skriptorij V12.0 sistema.
 """
 
 import json
