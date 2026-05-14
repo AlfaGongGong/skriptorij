@@ -37,6 +37,12 @@ from network.rate_limiter import (
 
 logger = logging.getLogger(__name__)
 
+
+class ContentFilterError(Exception):
+    """Chunk blokiran content filterom (Azure/GitHub) — treba preskočiti chunk, ne mijenjati ključ."""
+    pass
+
+
 # ── Proxy — trenutno isključen ────────────────────────────────────────────────
 # Webshare datacenter proksiji blokiraju Google (Max retries exceeded).
 # Ostali provajderi (Groq, Mistral...) blokiraju mobilni IP direktno.
@@ -324,7 +330,11 @@ async def _async_http_post(self, url: str, headers: dict, json_payload: dict,
 
         # ── 400 Bad request ───────────────────────────────────────────────────
         elif resp.status_code == 400:
-            err = str(resp_body)[:200] if resp_body else resp.text[:200]
+            err = str(resp_body)[:300] if resp_body else resp.text[:300]
+            # Azure/GitHub content filter — chunk treba preskočiti, ne mijenjati ključ
+            if any(kw in err.lower() for kw in ("content management policy", "content_filter", "response was filtered")):
+                self.log(f"[{prov_upper}] HTTP 400 — Azure content filter, preskačem chunk", "warning")
+                raise ContentFilterError(f"[{prov_upper}] sadržaj blokiran content filterom")
             self.log(f"[{prov_upper}] HTTP 400: {err}", "warning")
             return None
 

@@ -675,6 +675,10 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             p_fusion, chunk_idx, uloga="PREVODILAC",
             filename=file_name, sys_override=fusion_sys, tip_bloka=tip_bloka,
         )
+        if prov1 == "CONTENT_FILTER":
+            self.log(f"[{file_name}] Blok {chunk_idx}: ⛔ Content filter — chunk preskočen.", "warning")
+            self.chunk_skips += 1
+            return None, "CONTENT_FILTER"
         if not raw_fusion:
             self.chunk_skips += 1
             return None, "N/A"

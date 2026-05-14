@@ -221,7 +221,7 @@
   },
   "ačno": {
     "rod": null,
-    "clue_m": 1,
+    "clue_m": 2,
     "clue_z": 0
   },
   "Netko": {
@@ -281,7 +281,7 @@
   },
   "aku": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Uzete": {
@@ -295,8 +295,8 @@
     "clue_z": 0
   },
   "zovoljan": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "ačna": {
@@ -701,7 +701,7 @@
   },
   "zio": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "eži": {
@@ -741,7 +741,7 @@
   },
   "Shed": {
     "rod": "M",
-    "clue_m": 32,
+    "clue_m": 33,
     "clue_z": 0
   },
   "Stol": {
@@ -925,9 +925,9 @@
     "clue_z": 1
   },
   "Whisper": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Kamo": {
     "rod": null,
@@ -982,7 +982,7 @@
   "pokazala": {
     "rod": null,
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Herself": {
     "rod": null,
@@ -1016,7 +1016,7 @@
   },
   "Bullock": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Bitka": {
@@ -1145,9 +1145,9 @@
     "clue_z": 0
   },
   "Lisa": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 3
   },
   "Nisam": {
     "rod": null,
@@ -1180,6 +1180,21 @@
     "clue_z": 0
   },
   "zoviti": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kompanija": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "sa": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "ljastu": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0

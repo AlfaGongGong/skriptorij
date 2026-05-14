@@ -7025,6 +7025,26 @@
         "Ispitivačom",
         "Ispitivaču"
       ]
+    },
+    "Možda": {
+      "ime": "Možda",
+      "rod": "auto",
+      "padeži": {
+        "N": "Možda",
+        "G": "Možde",
+        "D": "Moždi",
+        "A": "Moždu",
+        "V": "Možda",
+        "I": "Moždom",
+        "L": "Moždi"
+      },
+      "sve_varijante": [
+        "Možde",
+        "Možda",
+        "Moždu",
+        "Moždi",
+        "Moždom"
+      ]
     }
   },
   "few_shot_primjeri": [
@@ -14341,6 +14361,479 @@
       },
       "chunk_ids": [],
       "rijeci_count": 766
+    },
+    "8914": {
+      "broj": 8914,
+      "naslov": "chapter005.html",
+      "summary": "",
+      "lik_count": {
+        "Kapetan": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "506": {
+      "broj": 506,
+      "naslov": "chapter006.html",
+      "summary": "",
+      "lik_count": {
+        "Gospa": 3,
+        "Poručnik": 8,
+        "Jednooko": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 767
+    },
+    "2803": {
+      "broj": 2803,
+      "naslov": "chapter007.html",
+      "summary": "",
+      "lik_count": {
+        "Goblin": 9,
+        "Elmo": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "6251": {
+      "broj": 6251,
+      "naslov": "chapter008.html",
+      "summary": "",
+      "lik_count": {
+        "Ijekavian": 3,
+        "Consistency": 3,
+        "Segment": 4,
+        "Njegovo": 7,
+        "Dobri": 6,
+        "Njegov": 14,
+        "Caricevine": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 694
+    },
+    "2502": {
+      "broj": 2502,
+      "naslov": "chapter009.html",
+      "summary": "",
+      "lik_count": {
+        "Dječak": 7,
+        "Goblin": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 461
+    },
+    "1322": {
+      "broj": 1322,
+      "naslov": "chapter010.html",
+      "summary": "",
+      "lik_count": {
+        "Junipera": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 390
+    },
+    "2923": {
+      "broj": 2923,
+      "naslov": "chapter011.html",
+      "summary": "",
+      "lik_count": {
+        "Pawnbroker": 5,
+        "Candy": 12,
+        "Otto": 6,
+        "Madle": 6,
+        "Neat": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 688
+    },
+    "9421": {
+      "broj": 9421,
+      "naslov": "chapter012.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 20,
+        "Asa": 9,
+        "Raven": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "4917": {
+      "broj": 4917,
+      "naslov": "chapter013.html",
+      "summary": "",
+      "lik_count": {
+        "Candy": 11,
+        "Otto": 9,
+        "Pawnbroker": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "9310": {
+      "broj": 9310,
+      "naslov": "chapter014.html",
+      "summary": "",
+      "lik_count": {
+        "Krage": 22,
+        "Lily": 5,
+        "Raven": 9,
+        "Shed": 24,
+        "Crveni": 11,
+        "Krageu": 3,
+        "Count": 11
+      },
+      "chunk_ids": [],
+      "rijeci_count": 783
+    },
+    "3683": {
+      "broj": 3683,
+      "naslov": "chapter015.html",
+      "summary": "",
+      "lik_count": {
+        "Elmo": 5,
+        "Fraktura": 5,
+        "Kapetan": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 733
+    },
+    "4247": {
+      "broj": 4247,
+      "naslov": "chapter016.html",
+      "summary": "",
+      "lik_count": {
+        "Krage": 11,
+        "Asa": 10,
+        "Shed": 23,
+        "Daj": 3,
+        "Raven": 10,
+        "Ravena": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 753
+    },
+    "6256": {
+      "broj": 6256,
+      "naslov": "chapter017.html",
+      "summary": "",
+      "lik_count": {
+        "Ravnice": 3,
+        "Straha": 3,
+        "One": 3,
+        "Eye": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "5181": {
+      "broj": 5181,
+      "naslov": "chapter018.html",
+      "summary": "",
+      "lik_count": {
+        "Asa": 4,
+        "Šed": 24,
+        "Raven": 13
+      },
+      "chunk_ids": [],
+      "rijeci_count": 744
+    },
+    "4044": {
+      "broj": 4044,
+      "naslov": "chapter024.html",
+      "summary": "",
+      "lik_count": {
+        "Šted": 15,
+        "Asa": 12,
+        "Raven": 7,
+        "Bullock": 10,
+        "Nije": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 603
+    },
+    "8773": {
+      "broj": 8773,
+      "naslov": "chapter020.html",
+      "summary": "",
+      "lik_count": {
+        "The": 10,
+        "Raven": 13,
+        "Shed": 27,
+        "Krage": 10,
+        "Sheda": 3,
+        "Asa": 11,
+        "Darling": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 767
+    },
+    "519": {
+      "broj": 519,
+      "naslov": "chapter021.html",
+      "summary": "",
+      "lik_count": {
+        "Juniper": 5,
+        "Duretile": 5,
+        "Bullocka": 3,
+        "Hargadon": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 784
+    },
+    "3588": {
+      "broj": 3588,
+      "naslov": "chapter022.html",
+      "summary": "",
+      "lik_count": {
+        "Raven": 9,
+        "Krage": 25,
+        "Shed": 19,
+        "Kragea": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 816
+    },
+    "8240": {
+      "broj": 8240,
+      "naslov": "chapter023.html",
+      "summary": "",
+      "lik_count": {
+        "Ograde": 4,
+        "Pokazao": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 779
+    },
+    "6871": {
+      "broj": 6871,
+      "naslov": "chapter025.html",
+      "summary": "",
+      "lik_count": {
+        "Bullock": 8,
+        "Yeah": 4,
+        "Croaker": 3,
+        "Raven": 8,
+        "Darling": 3,
+        "Bullocka": 3,
+        "Elmo": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 818
+    },
+    "3489": {
+      "broj": 3489,
+      "naslov": "chapter026.html",
+      "summary": "",
+      "lik_count": {
+        "Draga": 5,
+        "Gavran": 5,
+        "Shed": 12
+      },
+      "chunk_ids": [],
+      "rijeci_count": 333
+    },
+    "6720": {
+      "broj": 6720,
+      "naslov": "chapter027.html",
+      "summary": "",
+      "lik_count": {
+        "Whisper": 6,
+        "Raven": 10
+      },
+      "chunk_ids": [],
+      "rijeci_count": 779
+    },
+    "1262": {
+      "broj": 1262,
+      "naslov": "chapter028.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 21,
+        "Lily": 9,
+        "Wally": 17,
+        "Wallyja": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 774
+    },
+    "6923": {
+      "broj": 6923,
+      "naslov": "chapter029.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "2612": {
+      "broj": 2612,
+      "naslov": "chapter030.html",
+      "summary": "",
+      "lik_count": {
+        "Kako": 4,
+        "Shed": 14,
+        "Ispitivač": 5,
+        "Asa": 10,
+        "Krage": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 691
+    },
+    "9114": {
+      "broj": 9114,
+      "naslov": "chapter031.html",
+      "summary": "",
+      "lik_count": {
+        "Pawnbroker": 4,
+        "Goblin": 8,
+        "Možda": 3,
+        "Elmo": 6,
+        "Shed": 7,
+        "Ravena": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 810
+    },
+    "4758": {
+      "broj": 4758,
+      "naslov": "chapter001.html",
+      "summary": "",
+      "lik_count": {
+        "Curly": 5,
+        "Croaker": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 756
+    },
+    "766": {
+      "broj": 766,
+      "naslov": "chapter002.html",
+      "summary": "",
+      "lik_count": {
+        "Jednooki": 10,
+        "Lomilac": 3,
+        "Kapetan": 5,
+        "Poručnik": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 715
+    },
+    "6124": {
+      "broj": 6124,
+      "naslov": "chapter003.html",
+      "summary": "",
+      "lik_count": {
+        "Elmo": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 749
+    },
+    "2866": {
+      "broj": 2866,
+      "naslov": "chapter004.html",
+      "summary": "",
+      "lik_count": {
+        "Kapetan": 8,
+        "Croaker": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 766
+    },
+    "2387": {
+      "broj": 2387,
+      "naslov": "chapter005.html",
+      "summary": "",
+      "lik_count": {
+        "Kapetan": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "919": {
+      "broj": 919,
+      "naslov": "chapter006.html",
+      "summary": "",
+      "lik_count": {
+        "Gospa": 3,
+        "Poručnik": 8,
+        "Jednooko": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 767
+    },
+    "2505": {
+      "broj": 2505,
+      "naslov": "chapter007.html",
+      "summary": "",
+      "lik_count": {
+        "Goblin": 9,
+        "Elmo": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "8981": {
+      "broj": 8981,
+      "naslov": "chapter008.html",
+      "summary": "",
+      "lik_count": {
+        "Ijekavian": 3,
+        "Consistency": 3,
+        "Segment": 4,
+        "Njegovo": 7,
+        "Dobri": 6,
+        "Njegov": 14,
+        "Caricevine": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 694
+    },
+    "8430": {
+      "broj": 8430,
+      "naslov": "chapter009.html",
+      "summary": "",
+      "lik_count": {
+        "Dječak": 7,
+        "Goblin": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 461
+    },
+    "566": {
+      "broj": 566,
+      "naslov": "chapter010.html",
+      "summary": "",
+      "lik_count": {
+        "Junipera": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 390
+    },
+    "5034": {
+      "broj": 5034,
+      "naslov": "chapter011.html",
+      "summary": "",
+      "lik_count": {
+        "Pawnbroker": 5,
+        "Candy": 12,
+        "Otto": 6,
+        "Madle": 6,
+        "Neat": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 688
+    },
+    "2465": {
+      "broj": 2465,
+      "naslov": "chapter012.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 20,
+        "Asa": 9,
+        "Raven": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
     }
   }
 }

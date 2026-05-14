@@ -6,7 +6,7 @@
 import random
 import asyncio
 from core.text_utils import _adaptive_temp
-from network.http_client import _call_single_provider
+from network.http_client import _call_single_provider, ContentFilterError
 
 PROVIDER_PRIORITY = {
     "PREVODILAC":      ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
@@ -203,11 +203,15 @@ async def _call_ai_engine(
 
         await asyncio.sleep(random.uniform(0.2, 0.8))
 
-        raw, label = await _call_single_provider(
-            self, prov_upper, model,
-            sys_c, prompt,
-            opt_temp, max_tokens=opt_max_tokens
-        )
+        try:
+            raw, label = await _call_single_provider(
+                self, prov_upper, model,
+                sys_c, prompt,
+                opt_temp, max_tokens=opt_max_tokens
+            )
+        except ContentFilterError as cfe:
+            self.log(f"⛔ [{uloga}] {cfe} — preskačem chunk {chunk_idx}", "warning")
+            return None, "CONTENT_FILTER"
 
         if raw:
             return raw, label
