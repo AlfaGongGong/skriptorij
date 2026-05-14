@@ -17,6 +17,8 @@ import random
 import threading
 import time
 
+from config.system_logger import syslog
+
 logger = logging.getLogger(__name__)
 
 # ===== GLOBALNI RATE LIMITER — humanizovano, bez kršenja limita =====
@@ -74,6 +76,7 @@ def register_provider_backoff(provider: str | None, retry_after: float | None) -
     """
     Registruje provider-level backoff (sekunde) nakon 429.
     Sljedeći zahtjevi prema tom provideru čekaju bar do ovog roka.
+    Propagira i u QuotaTracker (per-key cooldown).
     """
     if not provider:
         return
@@ -91,6 +94,15 @@ def register_provider_backoff(provider: str | None, retry_after: float | None) -
         _PROVIDER_COOLDOWN_UNTIL[prov] = until
         logger.warning("[rate_limiter] %s backoff registrovan: %.1fs (do %s)",
                        prov, ra, time.strftime("%H:%M:%S", time.localtime(until)))
+        syslog.warning("[rate_limiter] %s backoff registrovan: %.1fs (do %s)",
+                       prov, ra, time.strftime("%H:%M:%S", time.localtime(until)))
+
+    # Propagiraj i u QuotaTracker
+    try:
+        from network.quota_tracker import quota_tracker
+        quota_tracker.set_provider_cooldown(prov, ra, reason=f"register_provider_backoff {ra:.0f}s")
+    except Exception as e:
+        logger.debug("[rate_limiter] quota_tracker propagacija backoffa nije uspjela: %s", e)
 
 
 def _to_float(value):
@@ -280,20 +292,41 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
 
 
 async def acquire_key(key: str, provider: str | None = None):
+    # Provjeri QuotaTracker dostupnost PRIJE nego što zauzimamo semafor
+    if provider:
+        try:
+            from network.quota_tracker import quota_tracker
+            ok, reason = quota_tracker.is_key_available(provider, key)
+            if not ok:
+                syslog.debug(
+                    "[rate_limiter] %s ...%s skip — %s",
+                    provider.upper(), key[-4:], reason,
+                )
+                # Ne blokiraj — baci iznimku da caller može probati drugi ključ
+                raise RuntimeError(f"Ključ nedostupan: {reason}")
+        except ImportError:
+            pass
+
     # IP-level per-provider semaphore — zaštita od burst-a prema istom provideru
     if provider:
         prov_sem = get_provider_semaphore(provider)
         await asyncio.to_thread(prov_sem.acquire)
         logger.debug("[rate_limiter] %s IP-semaphore zauzet (key=...%s)", provider.upper(), key[-4:])
+        syslog.debug("[rate_limiter] %s IP-semaphore zauzet (key=...%s)", provider.upper(), key[-4:])
 
     sem = get_key_semaphore(key)
-    # BUG#12 FIX: koristimo threading.Semaphore (process-wide) umjesto asyncio.Semaphore.
-    # asyncio.to_thread akvizira semafor u thread pool-u bez blokiranja event loop-a.
-    # Ovo garantuje da samo jedan thread istovremeno koristi isti ključ.
     await asyncio.to_thread(sem.acquire)
     logger.debug("[rate_limiter] key-semaphore zauzet: ...%s (%s)", key[-4:], (provider or "").upper())
-    # BUG#THROTTLE FIX: prosljeđujemo key da _throttle_provider koristi per-key timing
+    syslog.debug("[rate_limiter] key-semaphore zauzet: ...%s (%s)", key[-4:], (provider or "").upper())
     await _throttle_provider(provider, key=key)
+
+    # Bilježi zahtjev u QuotaTracker
+    if provider:
+        try:
+            from network.quota_tracker import quota_tracker
+            quota_tracker.record_request(provider, key)
+        except Exception:
+            pass
 
 
 def release_key(key: str, provider: str | None = None):
@@ -301,8 +334,10 @@ def release_key(key: str, provider: str | None = None):
     if sem is not None:
         sem.release()
         logger.debug("[rate_limiter] key-semaphore oslobođen: ...%s", key[-4:])
+        syslog.debug("[rate_limiter] key-semaphore oslobođen: ...%s", key[-4:])
     if provider:
         prov_sem = _PROVIDER_SEMAPHORES.get(provider.upper())
         if prov_sem is not None:
             prov_sem.release()
             logger.debug("[rate_limiter] %s IP-semaphore oslobođen", provider.upper())
+            syslog.debug("[rate_limiter] %s IP-semaphore oslobođen", provider.upper())

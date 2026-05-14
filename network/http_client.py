@@ -1,28 +1,33 @@
-
-
-# network/http_client.py — V10.6 ISPRAVKA
+# network/http_client.py — V11.0
 #
-# BUG#4 FIX: Gemma modeli ne podržavaju system role → merge u user poruku
-# BUG#5 FIX: _call_gemini_with_full_rotation sada prima i koristi početni model
-# BUG#9 FIX: 429 recursive retry s istim ključem — uklonjen.
-#            Sada: kratka pauza → None → caller bira drugi ključ/provider.
-# BUG#10 FIX: Per-key semaphore (MAX_CONCURRENT_PER_KEY=1) — uključen.
-#             Sprječava višestruke paralelne pozive istim ključem.
-# BUG#MODEL FIX (v10.5): _GOOGLE_MODEL_POOL_FALLBACK ažuriran — uklonjeni dead preview modeli.
-#             Gemini 429 (RPM) rotira model za isti ključ — svaki model ima nezavisnu
-#             RPM/RPD kvotu. Tek kad su svi modeli jednog ključa iscrpljeni → sljedeći ključ.
-#             Model rotacija za: 429 (RPM), 404 (mrtav model), timeout, nepoznat model.
-# PROXY FIX (v10.6): Gemini requestovi rotiraju kroz external proxy pool da se
-#             izbjegne IP-level throttling. Proxy lista se učitava iz dev_api.json
-#             ("PROXIES" sekcija) ili iz PROXIES_FILE env varijable.
-#             Format: "ip:port:user:pass" po redu. Samo GEMINI koristi proksije —
-#             ostali provideri ne throttluju po IP-u.
+# KOMPLETNI REWRITE pozivne logike po provajderu:
+#
+# GEMINI  — native endpoint (/v1beta/models/{model}:generateContent?key=...)
+#            payload: {contents, systemInstruction, generationConfig}
+#            response: {candidates[0].content.parts[0].text}
+#            Free tier radi samo na native endpointu (OpenAI compat = limit 0)
+#
+# GEMMA   — Together.AI OpenAI-compat endpoint
+#            Nema system role → merge u user poruku
+#            payload: standardni OpenAI {messages, model, temperature, max_tokens}
+#
+# COHERE  — /v2/chat endpoint, OpenAI-compat messages format
+#            response: {message.content[0].text}
+#
+# SVI OSTALI — standardni OpenAI-compat format
+#            payload: {messages, model, temperature, max_tokens}
+#            response: {choices[0].message.content}
+#
+# HTTP 500 — server greška (preopterećen model), ne rotiramo model nego ključ
+# HTTP 429 — razlikujemo: ks.available=False → sljedeći ključ (ne rotiraj model)
+# PROXY    — isključen (Webshare blokira Google; ostali provajderi blokiraju mobilni IP)
 
 import asyncio
 import logging
 import random
 import requests
 import threading
+
 from network.rate_limiter import (
     acquire_key,
     release_key,
@@ -32,125 +37,43 @@ from network.rate_limiter import (
 
 logger = logging.getLogger(__name__)
 
-# ── Proxy pool za Gemini IP rotaciju ─────────────────────────────────────────
-# Učitava se lazy pri prvom pozivu. Thread-safe jer je samo čitanje nakon init.
-_proxy_pool: list[dict] = []
-_proxy_index: int = 0
-_proxy_lock = asyncio.Lock() if False else None  # inicijalizira se u _get_next_proxy
-
-
-def _load_proxy_pool() -> list[dict]:
-    """
-    Učitava proxy listu iz dev_api.json ("PROXIES": ["ip:port:user:pass", ...])
-    ili iz tekstualnog fajla navedenog u PROXIES_FILE env varijabli.
-    Format svake stavke: "ip:port:user:pass"
-    Vraća listu requests-kompatibilnih proxy dictova.
-    """
-    import os, json
-    from pathlib import Path
-
-    raw_lines: list[str] = []
-
-    # 1. Pokušaj iz dev_api.json
-    try:
-        cfg_path = Path("dev_api.json")
-        if cfg_path.exists():
-            data = json.loads(cfg_path.read_text("utf-8"))
-            entries = data.get("PROXIES") or data.get("proxies") or []
-            if isinstance(entries, list):
-                raw_lines = [str(e).strip() for e in entries if e]
-    except Exception:
-        pass
-
-    # 2. Fallback: tekstualni fajl (PROXIES_FILE env ili Webshare_10_proxies.txt)
-    if not raw_lines:
-        proxy_file = os.environ.get("PROXIES_FILE", "Webshare_10_proxies.txt")
-        try:
-            p = Path(proxy_file)
-            if p.exists():
-                raw_lines = [ln.strip() for ln in p.read_text("utf-8").splitlines() if ln.strip()]
-        except Exception:
-            pass
-
-    pool = []
-    for line in raw_lines:
-        parts = line.split(":")
-        if len(parts) == 4:
-            ip, port, user, pw = parts
-            proxy_url = f"http://{user}:{pw}@{ip}:{port}"
-            pool.append({"http": proxy_url, "https": proxy_url})
-        elif len(parts) == 2:
-            # ip:port bez autentifikacije
-            ip, port = parts
-            proxy_url = f"http://{ip}:{port}"
-            pool.append({"http": proxy_url, "https": proxy_url})
-    return pool
-
-
+# ── Proxy — trenutno isključen ────────────────────────────────────────────────
+# Webshare datacenter proksiji blokiraju Google (Max retries exceeded).
+# Ostali provajderi (Groq, Mistral...) blokiraju mobilni IP direktno.
+# Rješenje: residential proksiji (Smartproxy/Oxylabs) kad se nabave.
 def _get_next_proxy() -> dict | None:
-    """
-    Round-robin rotacija kroz proxy pool.
-    Thread-safe bez asyncio.Lock (GIL štiti int inkrementaciju u CPython-u).
-    Vraća None ako proxy pool nije konfiguriran — request ide direktno.
-    """
-    global _proxy_pool, _proxy_index
-    if not _proxy_pool:
-        # Lazy init — učitaj samo jednom
-        _proxy_pool = _load_proxy_pool()
-    if not _proxy_pool:
-        return None
-    proxy = _proxy_pool[_proxy_index % len(_proxy_pool)]
-    _proxy_index += 1
-    return proxy
+    return None
 
-# ── Google model pool — redosljed: gemini-flash prvi (bolji RPD limit) ────────
-# NAPOMENA: gemma-3-27b-it / 12b / 4b ugašeni od maja 2026 (HTTP 404) — uklonjeni.
-# BUG#MODEL FIX: gemini-2.5-flash-lite-preview-06-17 i gemini-2.5-flash-preview-05-20
-#   vraćaju HTTP 404 od maja 2026 — uklonjeni. Zamijenjeni živim modelima.
-# Ovo je statički fallback pool. Dinamički pool se gradi iz model_discovery-a
-# kada su dostupni API ključevi (vidi _get_google_model_pool()).
-# GEMMA FIX: gemma-4-31b-it dodan u pool — najjači Gemma model (RPM=15, RPD=1500).
-#   Koristi iste Gemini API ključeve. _build_messages automatski spaja system+user
-#   poruku jer Gemma ne podržava system role (vidi _NO_SYSTEM_ROLE_PATTERNS).
+
+# ── Google / Gemma model pool ─────────────────────────────────────────────────
+# Gemini modeli → native Google endpoint
+# Gemma modeli  → Together.AI endpoint (drugačiji API ključevi!)
 _GOOGLE_MODEL_POOL_FALLBACK = [
-    {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},  # primarni — stabilan, visoki RPD
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},   # fallback 1 — noviji, stabilna GA verzija
-    {"model": "gemini-2.0-flash-lite", "rpm": 30, "rpd": 1500},  # fallback 2 — visoki RPM, dobar za RPM hitove
-    {"model": "gemma-4-31b-it",        "rpm": 15, "rpd": 1500},  # fallback 3 — najjači Gemma, nezavisna kvota
+    {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},
+    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},
+    {"model": "gemini-2.0-flash-lite", "rpm": 30, "rpd": 1500},
 ]
-# Backward-compatible alias (koristi se direktno u nekim mjestima)
+_GEMMA_MODEL_POOL_FALLBACK = [
+    {"model": "google/gemma-4-9b-it",  "rpm": 15, "rpd": 1000},
+    {"model": "google/gemma-3-27b-it", "rpm": 10, "rpd": 500},
+]
 GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
 
 
 def _get_google_model_pool() -> list[dict]:
-    """
-    Vraća pool Gemini modela za rotaciju.
-    Ako model_discovery ima svježu listu modela za GEMINI, koristi je
-    za određivanje redosljeda unutar statičkog fallback skupa.
-    Modeli koji su označeni kao dead (HTTP 404) se filtriraju iz poola.
-    Inače vraća statički fallback pool (bez dead modela).
-    """
     fallback_by_id = {m["model"]: m for m in _GOOGLE_MODEL_POOL_FALLBACK}
-
     try:
         from network.model_discovery import get_cached_model_list, get_dead_models
         dead = get_dead_models("GEMINI")
         discovered = get_cached_model_list("GEMINI")
         if discovered:
-            # Discovery određuje redosljed unutar whitelistiranog skupa (poznati rpm/rpd).
-            # Dead modeli su isključeni.
-            pool = [fallback_by_id[mid] for mid in discovered if mid in fallback_by_id and mid not in dead]
-            existing_ids = {m["model"] for m in pool}
+            pool = [fallback_by_id[mid] for mid in discovered
+                    if mid in fallback_by_id and mid not in dead]
+            existing = {m["model"] for m in pool}
             for fb in _GOOGLE_MODEL_POOL_FALLBACK:
-                if fb["model"] not in existing_ids and fb["model"] not in dead:
+                if fb["model"] not in existing and fb["model"] not in dead:
                     pool.append(fb)
-            if pool:
-                return pool
-            # Ako su i discovery i fallback prazni (sve dead) — vrati puni fallback
-            # kao zadnji resort (bolji od praznog poola koji bi izazvao ZeroDivisionError)
-            return _GOOGLE_MODEL_POOL_FALLBACK
-
-        # Nema discovery cache-a — filtriraj dead iz statičkog fallbacka
+            return pool if pool else _GOOGLE_MODEL_POOL_FALLBACK
         if dead:
             filtered = [m for m in _GOOGLE_MODEL_POOL_FALLBACK if m["model"] not in dead]
             return filtered if filtered else _GOOGLE_MODEL_POOL_FALLBACK
@@ -158,284 +81,255 @@ def _get_google_model_pool() -> list[dict]:
         pass
     return _GOOGLE_MODEL_POOL_FALLBACK
 
-# Modeli koji NE podržavaju system role — konvertujemo u user poruku.
-_NO_SYSTEM_ROLE = {"gemma-3-27b-it", "gemma-3-12b-it", "gemma-3-4b-it", "gemma-3-1b-it"}
-_NO_SYSTEM_ROLE_PATTERNS = ("gemma-",)
 
-# Per-ključ cache: koji model je trenutno aktivan (index u GOOGLE_MODEL_POOL)
+# ── Per-ključ model cache (koji model je aktivan za koji ključ) ───────────────
 _key_model_cache: dict[str, int] = {}
-# Lock štiti _key_model_cache od race condition-a između paralelnih threadova
 _key_model_cache_lock = threading.Lock()
 
 
-def _supports_system_role(model: str | None) -> bool:
-    if not model:
-        return True
-    m = model.lower().strip()
-    if m in _NO_SYSTEM_ROLE:
-        return False
-    return not any(pat in m for pat in _NO_SYSTEM_ROLE_PATTERNS)
-
-
-def _get_model_for_key(key: str) -> str:
-    """Inicijalni model za ključ — uvijek počni s prvim modelom u pool-u."""
-    pool = _get_google_model_pool()
+def _get_model_for_key(key: str, pool: list[dict] | None = None) -> str:
+    if pool is None:
+        pool = _get_google_model_pool()
     with _key_model_cache_lock:
         if key not in _key_model_cache:
             _key_model_cache[key] = 0
-        idx = _key_model_cache[key]
-        # Provjeri da index nije van opsega (pool se može promijeniti između poziva)
-        if idx >= len(pool):
-            _key_model_cache[key] = 0
-            idx = 0
+        idx = min(_key_model_cache[key], len(pool) - 1)
     return pool[idx]["model"]
 
 
-def _rotate_model_for_key(key: str) -> str | None:
-    """Rotira na sljedeći model u pool-u. Vraća None ako su svi modeli iscrpljeni."""
-    pool = _get_google_model_pool()
+def _rotate_model_for_key(key: str, pool: list[dict] | None = None) -> str | None:
+    if pool is None:
+        pool = _get_google_model_pool()
     with _key_model_cache_lock:
-        start_idx = _key_model_cache.get(key, 0)
-        next_idx  = (start_idx + 1) % len(pool)
-        if next_idx == 0:
-            # Prošli smo krug
+        start = _key_model_cache.get(key, 0)
+        nxt = (start + 1) % len(pool)
+        if nxt == 0:
             return None
-        _key_model_cache[key] = next_idx
-    return pool[next_idx]["model"]
+        _key_model_cache[key] = nxt
+    return pool[nxt]["model"]
+
+
+# ── System role podrška ───────────────────────────────────────────────────────
+_NO_SYSTEM_ROLE_PATTERNS = ("gemma",)
+
+
+def _supports_system_role(model: str) -> bool:
+    m = (model or "").lower()
+    return not any(p in m for p in _NO_SYSTEM_ROLE_PATTERNS)
 
 
 def _build_messages(sys_content: str | None, user_prompt: str, model: str) -> list:
-    """
-    BUG#4 FIX: Gradi messages listu ovisno o podršci za system role.
-    Gemma modeli ne podržavaju system role → spoji u user poruku.
-    """
+    """OpenAI-compat messages lista. Gemma: spoji system+user u jednu poruku."""
     if not sys_content:
         return [{"role": "user", "content": user_prompt}]
-
     if not _supports_system_role(model):
-        # Merge system + user u jednu user poruku
         combined = f"[INSTRUKCIJE]\n{sys_content}\n\n[TEKST ZA OBRADU]\n{user_prompt}"
         return [{"role": "user", "content": combined}]
-
     return [
         {"role": "system", "content": sys_content},
         {"role": "user",   "content": user_prompt},
     ]
 
 
-def _extract_content(provider: str, data: dict) -> str | None:
+# ── Gemini native payload/response ───────────────────────────────────────────
+def _build_gemini_native_payload(sys_content: str | None, user_prompt: str,
+                                  temperature: float, max_tokens: int) -> dict:
     """
-    Parsira content string iz API response dict-a.
+    Native Gemini format:
+      contents: [{role: user, parts: [{text: ...}]}]
+      systemInstruction: {parts: [{text: ...}]}  (opcionalno)
+      generationConfig: {temperature, maxOutputTokens}
+    """
+    payload: dict = {
+        "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        },
+    }
+    if sys_content:
+        payload["systemInstruction"] = {"parts": [{"text": sys_content}]}
+    return payload
 
-    OpenAI-kompatibilni format (svi osim Cohere v2):
-        {"choices": [{"message": {"content": "..."}}]}
 
-    Cohere v2 format (/v2/chat endpoint):
-        {"message": {"content": [{"type": "text", "text": "..."}]}}
+def _extract_gemini_native(data: dict) -> str | None:
+    """
+    Native Gemini response:
+      candidates[0].content.parts[0].text
+    Provjeri finishReason — SAFETY znači blokiran sadržaj.
     """
     if not data:
         return None
-
-    if provider == "COHERE":
-        # Cohere /v2/chat vraća drugačiji format od OpenAI
-        try:
-            parts = data["message"]["content"]
-            if isinstance(parts, list):
-                text = " ".join(
-                    p.get("text", "") for p in parts
-                    if isinstance(p, dict) and p.get("type") == "text"
-                ).strip()
-                return text or None
-        except (KeyError, TypeError):
-            pass
+    try:
+        candidates = data.get("candidates", [])
+        if not candidates:
+            # promptFeedback blok — sigurnosni filter
+            fb = data.get("promptFeedback", {})
+            if fb.get("blockReason"):
+                logger.warning("[GEMINI] Sadržaj blokiran: %s", fb.get("blockReason"))
+            return None
+        cand = candidates[0]
+        finish = cand.get("finishReason", "")
+        if finish == "SAFETY":
+            logger.warning("[GEMINI] Odgovor blokiran (SAFETY filter)")
+            return None
+        parts = cand.get("content", {}).get("parts", [])
+        text = "".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
+        return text or None
+    except (KeyError, IndexError, TypeError):
         return None
 
-    # OpenAI-kompatibilni format
-    if "choices" in data and data["choices"]:
-        content = data["choices"][0].get("message", {}).get("content", "")
-        if isinstance(content, str):
-            return content.strip() or None
+
+# ── Cohere v2 response ────────────────────────────────────────────────────────
+def _extract_cohere(data: dict) -> str | None:
+    """
+    Cohere /v2/chat response:
+      message.content[0].text
+    """
+    if not data:
+        return None
+    try:
+        parts = data["message"]["content"]
+        if isinstance(parts, list):
+            text = " ".join(
+                p.get("text", "") for p in parts
+                if isinstance(p, dict) and p.get("type") == "text"
+            ).strip()
+            return text or None
+    except (KeyError, TypeError):
+        pass
     return None
 
 
-async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, key,
-                           _proxy: dict | None = None):
-    """
-    Generički HTTP POST s ispravnim 429 handlingom.
+# ── Generički OpenAI-compat response ─────────────────────────────────────────
+def _extract_openai_compat(data: dict) -> str | None:
+    """choices[0].message.content"""
+    if not data:
+        return None
+    try:
+        choices = data.get("choices", [])
+        if choices:
+            content = choices[0].get("message", {}).get("content", "")
+            if isinstance(content, str):
+                return content.strip() or None
+    except (KeyError, TypeError):
+        pass
+    return None
 
-    BUG#9 FIX: Uklonjen recursive retry s istim ključem na 429.
-    BUG#10 FIX: Per-key semaphore osigurava max 1 paralelni poziv po ključu.
-    PROXY FIX (v10.6): _proxy parametar omogućava per-request proxy (Gemini).
-    ANTI-BAN: Browser-like User-Agent + Accept headers na svakom zahtjevu.
-    """
-    # ANTI-BAN: dodaj browser-like headers da se izbjegne trivijalna bot-detekcija
-    headers.setdefault("User-Agent",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36")
-    headers.setdefault("Accept", "application/json, text/plain, */*")
-    headers.setdefault("Accept-Language", "en-US,en;q=0.9")
-    headers.setdefault("Accept-Encoding", "gzip, deflate, br")
-    headers.setdefault("Connection", "keep-alive")
 
+def _extract_content(provider: str, data: dict) -> str | None:
+    """Router za response parsiranje po provajderu."""
+    prov = (provider or "").upper()
+    if prov == "COHERE":
+        return _extract_cohere(data)
+    # Gemini native parsira se odvojeno u _call_gemini_with_full_rotation
+    return _extract_openai_compat(data)
+
+
+# ── Generički async HTTP POST ─────────────────────────────────────────────────
+async def _async_http_post(self, url: str, headers: dict, json_payload: dict,
+                            prov: str, prov_upper: str, key: str,
+                            _proxy: dict | None = None) -> dict | None:
+    """
+    Generički async HTTP POST s rate limiting i error handling.
+
+    Vraća parsed JSON dict pri HTTP 200, None u svim ostalim slučajevima.
+    Fleet se ažurira (analyze_response) za sve statuse.
+    """
     await acquire_key(key, prov_upper)
     try:
-        # Bilježi zahtjev PRIJE slanja
-        # čime se sprječava da flota šalje burst zahtjeve na isti ključ (BUG 1 FIX).
         try:
             self.fleet.record_request(prov_upper, key)
-        except Exception as _rr_err:
-            logger.debug("[%s] record_request greška (fleet tracking onesposobljen): %s",
-                         prov_upper, _rr_err)
-        logger.debug("[%s] POST %s (key=...%s)", prov_upper, url.split("//")[-1][:60], key[-4:])
+        except Exception:
+            pass
+
         try:
             resp = await asyncio.to_thread(
-                requests.post,
-                url,
+                requests.post, url,
                 headers=headers,
                 json=json_payload,
                 timeout=(15, 90),
                 verify=True,
-                proxies=_proxy,  # None = direktna veza (svi osim Gemini)
+                proxies=_proxy,
             )
         except requests.exceptions.Timeout:
             self.log(f"[{prov_upper}] Timeout (90s)", "warning")
-            logger.warning("[%s] Timeout pri slanju zahtjeva (key=...%s)", prov_upper, key[-4:])
-            try:
-                self.fleet.record_network_failure(prov, key)
-            except Exception:
-                pass
             return None
         except Exception as e:
             self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
-            logger.error("[%s] Mrežna greška (key=...%s): %s", prov_upper, key[-4:], str(e)[:200])
-            try:
-                self.fleet.record_network_failure(prov, key)
-            except Exception:
-                pass
             return None
 
-        # Parsiramo body za greške (200 ne trebamo parsirati ovdje)
+        # Parsiraj body za ne-200 statuse (za analyze_response i logiranje)
         resp_body = None
         if resp.status_code != 200:
             try:
                 resp_body = resp.json()
             except Exception:
-                resp_body = {"text": resp.text[:300]}
+                resp_body = {"text": resp.text[:400]}
 
         try:
             self.fleet.analyze_response(prov, key, resp.status_code, resp.headers, resp_body)
         except Exception:
             pass
 
+        # ── 200 OK ───────────────────────────────────────────────────────────
         if resp.status_code == 200:
             try:
                 data = resp.json()
                 register_provider_runtime_limits(prov_upper, resp.headers, data)
-                logger.debug("[%s] HTTP 200 OK (key=...%s)", prov_upper, key[-4:])
                 return data
             except Exception:
-                self.log(f"[{prov_upper}] Neispravan JSON u odgovoru", "error")
-                logger.error("[%s] Neispravan JSON u 200 odgovoru (key=...%s)", prov_upper, key[-4:])
+                self.log(f"[{prov_upper}] Neispravan JSON u odgovoru (HTTP 200)", "error")
                 return None
 
+        # ── 429 Rate limit / kvota ────────────────────────────────────────────
         elif resp.status_code in (429, 425):
             register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
-            retry_after_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
+            ra_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
             try:
-                retry_after = float(retry_after_raw) if retry_after_raw else None
+                retry_after = float(ra_raw) if ra_raw else None
             except ValueError:
                 retry_after = None
 
-            # Exponential backoff: poštujemo Retry-After do 120s;
-            # bez Retry-After koristimo eksponencijalni rast po broju uzastopnih 429.
-            if retry_after and retry_after > 0 and retry_after <= 3600:
-                # Poštuj Retry-After header točno (max 120s) — audit: prethodni cap bio 15s
-                backoff = min(retry_after, 120.0)
-                register_provider_backoff(prov_upper, backoff)
-            elif prov_upper in {"GEMINI", "GEMMA"} and not retry_after:
-                # Google često ne šalje Retry-After — kratki backoff da se izbjegne stampedo
-                register_provider_backoff(prov_upper, 5.0)
-            elif not retry_after:
-                register_provider_backoff(prov_upper, 10.0)
-
             if retry_after and retry_after > 3600:
-                self.log(f"[{prov_upper}] Kvota iscrpljena (dnevni limit) — biram drugi ključ", "warning")
-                logger.warning("[%s] HTTP 429 dnevna kvota iscrpljena (key=...%s, retry_after=%.0fs)",
-                               prov_upper, key[-4:], retry_after)
+                self.log(f"[{prov_upper}] Dnevna kvota iscrpljena — biram drugi ključ", "warning")
             else:
-                wait = min(retry_after or 3.0, 120.0) + random.uniform(0.5, 2.0)
+                wait = min(retry_after or 4.0, 120.0) + random.uniform(0.5, 2.0)
                 self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s, biram drugi ključ", "warning")
-                logger.warning("[%s] HTTP 429 rate-limit (key=...%s) — čekam %.1fs",
-                               prov_upper, key[-4:], wait)
                 await asyncio.sleep(wait)
             return None
 
+        # ── 500 Server greška (preopterećen model, ne naša greška) ───────────
+        elif resp.status_code == 500:
+            self.log(f"[{prov_upper}] HTTP 500 (server greška) — biram drugi ključ", "warning")
+            await asyncio.sleep(2.0)
+            return None
+
+        # ── 401/402/403/412 Nevažeći ključ ───────────────────────────────────
         elif resp.status_code in (401, 402, 403, 412):
-            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             self.log(f"[{prov_upper}] HTTP {resp.status_code} — ključ nevažeći", "error")
-            logger.error("[%s] HTTP %d nevažeći ključ (key=...%s)", prov_upper, resp.status_code, key[-4:])
             return None
 
-        elif resp.status_code == 400:
-            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
-            err_msg = str(resp_body)[:200] if resp_body else resp.text[:200]
-            body_l = str(resp_body).lower() if resp_body is not None else resp.text.lower()
-            if (
-                "unknown_model" in body_l
-                or "unknown model" in body_l
-                or "nepoznati model" in body_l
-            ):
-                model_used = (json_payload or {}).get("model", "") if isinstance(json_payload, dict) else ""
-                if model_used:
-                    try:
-                        from network.model_discovery import invalidate_cached_model
-                        next_model = invalidate_cached_model(prov_upper, model_used)
-                        if next_model:
-                            self.log(
-                                f"[{prov_upper}] Model {model_used!r} nepoznat (400) → "
-                                f"invalidiran, sljedeći: {next_model!r}",
-                                "warning",
-                            )
-                        else:
-                            self.log(
-                                f"[{prov_upper}] Model {model_used!r} nepoznat (400) — "
-                                "nema više modela u cacheu",
-                                "warning",
-                            )
-                    except Exception:
-                        pass
-            self.log(f"[{prov_upper}] HTTP 400 Bad Request: {err_msg}", "warning")
-            return None
-
+        # ── 404 Model ne postoji ──────────────────────────────────────────────
         elif resp.status_code == 404:
-            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
-            # Model ne postoji — ukloni iz discovery cachea i pokušaj sljedeći
             model_used = (json_payload or {}).get("model", "") if isinstance(json_payload, dict) else ""
             if model_used:
                 try:
                     from network.model_discovery import invalidate_cached_model
-                    next_model = invalidate_cached_model(prov_upper, model_used)
-                    if next_model:
-                        self.log(
-                            f"[{prov_upper}] Model {model_used!r} ne postoji (404) → "
-                            f"invalidiran, sljedeći: {next_model!r}",
-                            "warning",
-                        )
-                    else:
-                        self.log(
-                            f"[{prov_upper}] Model {model_used!r} ne postoji (404) — "
-                            "nema više modela u cacheu",
-                            "warning",
-                        )
+                    invalidate_cached_model(prov_upper, model_used)
                 except Exception:
-                    self.log(f"[{prov_upper}] HTTP 404 — model ne postoji", "warning")
-            else:
-                self.log(f"[{prov_upper}] HTTP 404 — resurs nije pronađen", "warning")
+                    pass
+            self.log(f"[{prov_upper}] HTTP 404 — model ne postoji", "warning")
             return None
 
+        # ── 400 Bad request ───────────────────────────────────────────────────
+        elif resp.status_code == 400:
+            err = str(resp_body)[:200] if resp_body else resp.text[:200]
+            self.log(f"[{prov_upper}] HTTP 400: {err}", "warning")
+            return None
+
+        # ── Ostali statusi ────────────────────────────────────────────────────
         else:
-            register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             self.log(f"[{prov_upper}] HTTP {resp.status_code}", "warning")
             return None
 
@@ -443,19 +337,167 @@ async def _async_http_post(self, url, headers, json_payload, prov, prov_upper, k
         release_key(key, prov_upper)
 
 
+# ── Gemini poziv (native endpoint) ───────────────────────────────────────────
+async def _call_gemini_with_full_rotation(
+    self, sys_content, user_prompt, opt_temp, max_tokens=2400,
+    preferred_model: str = None,
+):
+    """
+    Poziva Gemini API koristeći native endpoint.
 
+    URL format:  /v1beta/models/{model}:generateContent?key={api_key}
+    Auth:        query parametar ?key= (NE Authorization header)
+    Payload:     native Gemini format (contents, systemInstruction, generationConfig)
+    Response:    candidates[0].content.parts[0].text
+
+    Rotacija:
+      - 429 / 500 / ks.available=False → sljedeći ključ (ne rotiraj model)
+      - 404 / timeout / mrežna greška  → rotiraj model, pa sljedeći ključ
+    """
+    from network.provider_urls import get_gemini_url
+
+    keys_list = [ks for ks in self.fleet.fleet.get("GEMINI", []) if ks.available]
+    if not keys_list:
+        self.log("[GEMINI] Nema dostupnih ključeva", "warning")
+        return None, None
+
+    keys_list.sort(key=lambda ks: ks.success_rate, reverse=True)
+    pool = _get_google_model_pool()
+
+    for ks in keys_list:
+        key = ks.key
+
+        # Odredi početni model
+        if preferred_model and preferred_model in {m["model"] for m in pool}:
+            current_model = preferred_model
+            for i, m in enumerate(pool):
+                if m["model"] == preferred_model:
+                    with _key_model_cache_lock:
+                        _key_model_cache[key] = i
+                    break
+        else:
+            current_model = _get_model_for_key(key, pool)
+
+        tried: set[str] = set()
+
+        for _ in range(len(pool) + 1):
+            if current_model in tried:
+                break
+            tried.add(current_model)
+
+            # Native endpoint: model u URL-u, ključ kao query param
+            url = f"{get_gemini_url(current_model)}?key={key}"
+            headers = {"Content-Type": "application/json"}
+            payload = _build_gemini_native_payload(sys_content, user_prompt, opt_temp, max_tokens)
+
+            data = await _async_http_post(
+                self, url, headers, payload, "GEMINI", "GEMINI", key, _proxy=None
+            )
+
+            if data is not None:
+                content = _extract_gemini_native(data)
+                if content:
+                    return content, f"GEMINI-{current_model}"
+                # data vraćen ali prazan sadržaj (SAFETY filter itd.) → sljedeći model
+            
+            # Ako je ključ ušao u cooldown (429/kvota/500) → sljedeći ključ
+            if not ks.available:
+                self.log(
+                    f"[GEMINI] Ključ ...{key[-4:]} u cooldownu — preskačem na sljedeći ključ",
+                    "warning",
+                )
+                break
+
+            # 404 / timeout / mrežna greška → rotiraj model
+            next_model = _rotate_model_for_key(key, pool)
+            if next_model is None:
+                self.log(f"[GEMINI] Svi modeli iscrpljeni za ključ ...{key[-4:]}", "warning")
+                try:
+                    from network.model_discovery import trigger_rediscover_background
+                    trigger_rediscover_background("GEMINI", key)
+                except Exception:
+                    pass
+                break
+
+            self.log(f"[GEMINI] {current_model} → {next_model}", "warning")
+            current_model = next_model
+            await asyncio.sleep(0.5)
+
+    self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
+    return None, None
+
+
+# ── Gemma poziv (Together.AI) ─────────────────────────────────────────────────
+async def _call_gemma_with_rotation(
+    self, sys_content, user_prompt, opt_temp, max_tokens=2400,
+    preferred_model: str = None,
+):
+    """
+    Poziva Gemma modele putem Together.AI.
+
+    Gemma NE podržava system role → _build_messages spaja u user poruku.
+    Together.AI koristi standardni OpenAI-compat format.
+    API ključevi: GEMMA sekcija u dev_api.json (odvojeni od GEMINI ključeva).
+    """
+    from network.provider_urls import get_url
+    url = get_url("GEMMA")
+
+    keys_list = [ks for ks in self.fleet.fleet.get("GEMMA", []) if ks.available]
+    if not keys_list:
+        self.log("[GEMMA] Nema dostupnih ključeva", "warning")
+        return None, None
+
+    pool = _GEMMA_MODEL_POOL_FALLBACK
+    model = preferred_model or pool[0]["model"]
+
+    for ks in keys_list:
+        key = ks.key
+        # Gemma ne podržava system role — _build_messages to zna
+        messages = _build_messages(sys_content, user_prompt, model)
+        payload = {
+            "model":       model,
+            "temperature": opt_temp,
+            "max_tokens":  max_tokens,
+            "messages":    messages,
+        }
+        headers = {
+            "Content-Type":  "application/json",
+            "Authorization": f"Bearer {key}",
+        }
+        data = await _async_http_post(
+            self, url, headers, payload, "GEMMA", "GEMMA", key
+        )
+        if data:
+            content = _extract_openai_compat(data)
+            if content:
+                return content, f"GEMMA-{model}"
+        if not ks.available:
+            continue
+
+    self.log("[GEMMA] Svi ključevi iscrpljeni", "error")
+    return None, None
+
+
+# ── Generički single-provider poziv (svi ostali) ─────────────────────────────
 async def _call_single_provider(
     self, prov_upper, model, sys_content, user_prompt, opt_temp, max_tokens=2400
 ):
     """
-    Poziva jedan provider/model par.
-    BUG#5 FIX: za GEMINI prosljeđuje model kao hint (ne ignoriše ga).
+    Standardni OpenAI-compat poziv za sve providere osim Gemini i Gemma.
+
+    Cohere: poseban response parser (_extract_cohere)
+    Svi ostali: _extract_openai_compat
     """
     await asyncio.sleep(random.uniform(0.3, 1.5))
 
     if prov_upper == "GEMINI":
-        # BUG#5 FIX: proslijedi model kao preferred_model hint
         return await _call_gemini_with_full_rotation(
+            self, sys_content, user_prompt, opt_temp, max_tokens,
+            preferred_model=model,
+        )
+
+    if prov_upper == "GEMMA":
+        return await _call_gemma_with_rotation(
             self, sys_content, user_prompt, opt_temp, max_tokens,
             preferred_model=model,
         )
@@ -464,20 +506,19 @@ async def _call_single_provider(
     if not key:
         return None, None
 
-    headers = {
-        "Content-Type":  "application/json",
-        "Authorization": f"Bearer {key}",
-    }
     from network.provider_urls import get_url
     url = get_url(prov_upper)
 
     messages = _build_messages(sys_content, user_prompt, model)
-
     payload = {
         "model":       model,
         "temperature": opt_temp,
         "max_tokens":  max_tokens,
         "messages":    messages,
+    }
+    headers = {
+        "Content-Type":  "application/json",
+        "Authorization": f"Bearer {key}",
     }
 
     data = await _async_http_post(self, url, headers, payload, prov_upper, prov_upper, key)
@@ -490,144 +531,7 @@ async def _call_single_provider(
     return None, None
 
 
-async def _call_gemini_with_full_rotation(
-    self, sys_content, user_prompt, opt_temp, max_tokens=2400,
-    preferred_model: str = None,
-):
-    """
-    BUG#4 FIX: Gemma modeli dobijaju merged user poruku umjesto system role.
-    BUG#5 FIX: Počinje s preferred_model ako je naveden.
-
-    Strategija:
-      1. Za svaki dostupni ključ → proba modele počevši od preferred_model
-      2. Ako 429 → rotira model za taj ključ
-      3. Kad su svi modeli jednog ključa potrošeni → sljedeći ključ
-    """
-    from network.provider_urls import get_url
-    url = get_url("GEMINI")
-
-    with self.fleet.lock:
-        keys_list = list(self.fleet.fleet.get("GEMINI", []))
-    if not keys_list:
-        self.log("[GEMINI] Nema dostupnih ključeva", "warning")
-        return None, None
-
-    keys_list.sort(key=lambda ks: ks.success_rate, reverse=True)
-
-    for ks in keys_list:
-        key = ks.key
-
-        # BUG#5 FIX: Ako je preferred_model naveden, počni s njim
-        # Dinamički pool — ne zahtijeva da preferred_model bude u pool-u
-        pool = _get_google_model_pool()
-        allowed_model_ids = {m["model"] for m in pool}
-        if preferred_model and preferred_model in allowed_model_ids:
-            current_model = preferred_model
-            # Postavi cache index na preferred model ako je u pool-u
-            for i, m in enumerate(pool):
-                if m["model"] == preferred_model:
-                    _key_model_cache[key] = i
-                    break
-        else:
-            current_model = _get_model_for_key(key)
-
-        tried_models = set()
-
-        # +1 u opsegu: preferred_model može biti izvan pool-a (dinamički otkriveni model),
-        # pa treba jedan dodatni slot — tried_models skup garantuje bez duplikata.
-        for _ in range(len(pool) + 1):
-            if current_model in tried_models:
-                break
-            tried_models.add(current_model)
-
-            # BUG#4 FIX: Koristi _build_messages koji zna za Gemma ograničenja
-            messages = _build_messages(sys_content, user_prompt, current_model)
-
-            payload = {
-                "model":       current_model,
-                "temperature": opt_temp,
-                "max_tokens":  max_tokens,
-                "messages":    messages,
-            }
-            headers = {
-                "Content-Type":  "application/json",
-                "Authorization": f"Bearer {key}",
-            }
-
-            data = await _async_http_post(
-                self, url, headers, payload, "GEMINI", "GEMINI", key,
-                _proxy=_get_next_proxy(),  # PROXY FIX: svaki poziv dobiva drugi proxy
-            )
-
-            if data and "choices" in data and data["choices"]:
-                content = data["choices"][0].get("message", {}).get("content", "").strip()
-                if content:
-                    return content, f"GEMINI-{current_model}"
-
-            # 404 / nepoznat model / timeout / 429 → rotiraj model za ovaj ključ
-            next_model = _rotate_model_for_key(key)
-            if next_model is None:
-                self.log(f"[GEMINI] Svi modeli iscrpljeni za ključ ...{key[-4:]}", "warning")
-                # Pokušaj hitni re-discovery — možda postoji noviji model koji nije u
-                # statičkom fallback poolu, a API ga nudi kao zamjenu za ugašene modele.
-                try:
-                    from network.model_discovery import trigger_rediscover_background
-                    trigger_rediscover_background("GEMINI", key)
-                except Exception:
-                    pass
-                break
-            self.log(f"[GEMINI] {current_model} → {next_model}", "warning")
-            current_model = next_model
-            await asyncio.sleep(0.5)
-
-    # ── Pokušaj s novim ključevima koji su dodani dok je rotacija bila u toku ──
-    keys_tried = {ks.key for ks in keys_list}
-    with self.fleet.lock:
-        fresh_keys = [
-            ks for ks in self.fleet.fleet.get("GEMINI", [])
-            if ks.key not in keys_tried
-        ]
-    if fresh_keys:
-        fresh_keys.sort(key=lambda ks: ks.success_rate, reverse=True)
-        for ks in fresh_keys:
-            key = ks.key
-            pool = _get_google_model_pool()
-            current_model = _get_model_for_key(key)
-            tried_models: set = set()
-            for _ in range(len(pool) + 1):
-                if current_model in tried_models:
-                    break
-                tried_models.add(current_model)
-                messages = _build_messages(sys_content, user_prompt, current_model)
-                payload = {
-                    "model":       current_model,
-                    "temperature": opt_temp,
-                    "max_tokens":  max_tokens,
-                    "messages":    messages,
-                }
-                headers = {
-                    "Content-Type":  "application/json",
-                    "Authorization": f"Bearer {key}",
-                }
-                data = await _async_http_post(
-                    self, url, headers, payload, "GEMINI", "GEMINI", key,
-                    _proxy=_get_next_proxy(),
-                )
-                if data and "choices" in data and data["choices"]:
-                    content = data["choices"][0].get("message", {}).get("content", "").strip()
-                    if content:
-                        return content, f"GEMINI-{current_model}"
-                next_model = _rotate_model_for_key(key)
-                if next_model is None:
-                    break
-                self.log(f"[GEMINI] {current_model} → {next_model}", "warning")
-                current_model = next_model
-                await asyncio.sleep(0.5)
-
-    self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
-    return None, None
-
-
+# ── Blocking API poziv (za WorkerV2 i ne-async kontekste) ────────────────────
 def api_call(
     provider: str,
     model: str,
@@ -639,81 +543,67 @@ def api_call(
     timeout: int = 90,
 ) -> str | None:
     """
-    Sinhronizovani (blocking) API poziv — namijenjen za WorkerV2 i druge ne-async kontekste.
-    Vraća content string pri uspjehu, None pri grešci.
-    ANTI-BAN: Browser-like headers + rate limiting preko semaphora.
+    Sinhronizovani (blocking) API poziv za WorkerV2 i slične kontekste.
+    Gemini native endpoint se koristi ako je provider GEMINI.
     """
-    from network.provider_urls import get_url
+    from network.provider_urls import get_url, get_gemini_url
     from network.rate_limiter import get_key_semaphore, get_provider_semaphore
     import time as _time
-    import random as _random
 
     prov_upper = provider.upper()
-    url = get_url(prov_upper)
 
-    messages = _build_messages(system, user, model)
-    payload = {
-        "model": model,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "messages": messages,
-    }
-    headers = {
-        "Content-Type":   "application/json",
-        "Authorization":  f"Bearer {api_key}",
-        "User-Agent":     (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/124.0.0.0 Safari/537.36"
-        ),
-        "Accept":          "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection":      "keep-alive",
-    }
+    # Odaberi URL i payload format ovisno o provajderu
+    if prov_upper == "GEMINI":
+        url = f"{get_gemini_url(model)}?key={api_key}"
+        headers = {"Content-Type": "application/json"}
+        payload = _build_gemini_native_payload(system, user, temperature, max_tokens)
+    else:
+        url = get_url(prov_upper)
+        messages = _build_messages(system, user, model)
+        payload = {
+            "model":       model,
+            "temperature": temperature,
+            "max_tokens":  max_tokens,
+            "messages":    messages,
+        }
+        headers = {
+            "Content-Type":  "application/json",
+            "Authorization": f"Bearer {api_key}",
+        }
 
-    # Rate limiting: acquiriraj per-provider i per-key semaphore
-    # (consistent poredak: uvijek provider pa key — izbjegava deadlock)
     prov_sem = get_provider_semaphore(prov_upper)
     key_sem  = get_key_semaphore(api_key)
     prov_sem.acquire()
     key_sem.acquire()
-    logger.debug("[api_call] %s semaphori zauzeti", prov_upper)
     try:
-        # Jitter da se izbjegne burst (blocking verzija throttlea)
-        _time.sleep(_random.uniform(0.3, 1.5))
-
+        _time.sleep(random.uniform(0.3, 1.2))
         try:
             resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
         except requests.exceptions.RequestException as e:
             logger.warning("[api_call] %s mrežna greška: %s", prov_upper, str(e)[:120])
             return None
 
-        logger.debug("[api_call] %s HTTP %d", prov_upper, resp.status_code)
-
         if resp.status_code == 429:
-            retry_after_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
+            ra_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
             try:
-                ra = float(retry_after_raw) if retry_after_raw else 10.0
+                ra = float(ra_raw) if ra_raw else 10.0
             except ValueError:
                 ra = 10.0
-            wait = min(ra, 120.0) + _random.uniform(0.5, 2.0)
-            logger.warning("[api_call] %s HTTP 429 — čekam %.1fs", prov_upper, wait)
-            _time.sleep(wait)
+            _time.sleep(min(ra, 120.0) + random.uniform(0.5, 2.0))
             return None
 
         if resp.status_code != 200:
-            logger.debug("[api_call] %s HTTP neuspjeh %d", prov_upper, resp.status_code)
             return None
 
         try:
             data = resp.json()
         except Exception:
-            logger.warning("[api_call] %s neispravan JSON u odgovoru", prov_upper)
             return None
 
+        if prov_upper == "GEMINI":
+            return _extract_gemini_native(data)
         return _extract_content(prov_upper, data)
+
     finally:
         key_sem.release()
         prov_sem.release()
-        logger.debug("[api_call] %s semaphori oslobođeni", prov_upper)

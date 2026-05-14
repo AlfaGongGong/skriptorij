@@ -128,7 +128,7 @@ PROFILI: Dict[str, ModelProfile] = {
         provider="gemini",
         api_model_string="gemini-3.0-flash",
         temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
-        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
             r"(?i)^(evo prijevoda|evo teksta|naravno|svakako|razumijem)",
             r"(?i)(napomena:|komentar:|translator.*note)",
@@ -143,7 +143,7 @@ PROFILI: Dict[str, ModelProfile] = {
         provider="gemini",
         api_model_string="gemini-3.1-flash-lite-preview-06-17",
         temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
-        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
             r"(?i)^(evo prijevoda|evo teksta|naravno|svakako)",
             r"(?i)(napomena:|komentar:)",
@@ -158,7 +158,7 @@ PROFILI: Dict[str, ModelProfile] = {
         provider="gemini",
         api_model_string="gemini-2.5-flash-lite-preview-06-17",
         temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
-        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
             r"(?i)^(evo prijevoda|evo teksta|naravno|svakako)",
             r"(?i)(napomena:|komentar:)",
@@ -173,7 +173,7 @@ PROFILI: Dict[str, ModelProfile] = {
         provider="gemini",
         api_model_string="gemma-4-26b-it",
         temperatura_po_ulozi={"prevodilac": 0.4, "lektor": 0.3, "validator": 0.15},
-        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
             r"(?i)^(evo prijevoda|evo teksta|naravno)",
             r"(?i)(napomena:|komentar:)",
@@ -189,7 +189,7 @@ PROFILI: Dict[str, ModelProfile] = {
         provider="gemini",
         api_model_string="gemma-4-31b-it",
         temperatura_po_ulozi={"prevodilac": 0.4, "lektor": 0.3, "validator": 0.15},
-        max_tokens_po_ulozi={"prevodilac": 8192, "lektor": 8192, "validator": 4096},
+        max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
             r"(?i)^(evo prijevoda|evo teksta|naravno)",
             r"(?i)(napomena:|komentar:)",

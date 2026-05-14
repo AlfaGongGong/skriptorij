@@ -1,10 +1,13 @@
 # ============================================================================
-# API FLEET MANAGER V11.0 — api_fleet.py
+# API FLEET MANAGER V12.0 — api_fleet.py
 #
-# V11.0: Uklonjena sva mehanizmi hlađenja, kvota, zdravlja ključeva,
-#        isključivanja i uključivanja.
-#        Svaki ključ je uvijek dostupan. Statistika: calls_ok / calls_failed /
-#        calls_rejected (po HTTP kodu) — vidljivo u Fleet Pool UI-u.
+# V12.0: Reintegrisan QuotaTracker — per-key i per-provider praćenje:
+#   • RPM (klizni 60s prozor), RPD (dnevni), TPD (dnevni tokeni)
+#   • Cooldown po ključu (RPM 429 → Retry-After ili profil default)
+#   • Cooldown dnevne kvote (RPD iscrpljen → do slijedećeg reseta)
+#   • Provider-level cooldown (IP ban ili globalni 429)
+#   • Greške po HTTP kodu praćene i u KeyState i u QuotaTracker
+#   • get_best_key() sada poštuje availability iz QuotaTracker-a
 # ============================================================================
 
 import json
@@ -13,6 +16,9 @@ import time
 import math
 import threading
 from pathlib import Path
+
+from config.system_logger import syslog
+from network.quota_tracker import quota_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +82,25 @@ class KeyState:
 
     @property
     def available(self) -> bool:
-        """Ključ je uvijek dostupan — nema hlađenja ni isključivanja."""
-        return True
+        """
+        Ključ je dostupan ako QuotaTracker kaže da jest.
+        Provjera RPM, RPD i cooldown stanja.
+        """
+        ok, reason = quota_tracker.is_key_available(self.provider, self.key)
+        if not ok:
+            logger.debug(
+                "[FleetManager] %s ...%s nedostupan: %s",
+                self.provider, self.key[-4:], reason,
+            )
+        return ok
+
+    def quota_info(self) -> dict:
+        """Vraća QuotaTracker snapshot za ovaj ključ (za UI)."""
+        pq = quota_tracker._get_provider(self.provider)
+        if not pq:
+            return {}
+        kq = pq.get_key(self.key)
+        return kq.to_status_dict() if kq else {}
 
     @property
     def success_rate(self) -> float:
@@ -108,14 +131,24 @@ class KeyState:
         }
 
     def to_ui_dict(self) -> dict:
+        qi = self.quota_info()
         return {
-            "key":           self.masked,
-            "masked":        self.masked,
-            "success_rate":  self.success_rate,
-            "calls_ok":      self.calls_ok,
-            "calls_failed":  self.calls_failed,
+            "key":            self.masked,
+            "masked":         self.masked,
+            "available":      self.available,
+            "success_rate":   self.success_rate,
+            "calls_ok":       self.calls_ok,
+            "calls_failed":   self.calls_failed,
             "calls_rejected": {str(k): v for k, v in self.calls_rejected.items()},
             "total_requests": self.total_requests,
+            # quota info
+            "rpm":            qi.get("rpm_current", 0),
+            "rpm_safe":       qi.get("rpm_safe", 0),
+            "rpd":            qi.get("rpd_current", 0),
+            "rpd_safe":       qi.get("rpd_safe", 0),
+            "tpd":            qi.get("tpd_current", 0),
+            "cooldown_s":     qi.get("cooldown_s", 0.0),
+            "cooldown_reason": qi.get("cooldown_reason", ""),
         }
 
 
@@ -177,6 +210,11 @@ class FleetManager:
                     KeyState(k_str, prov_u, prov_saved.get(k_str))
                 )
             logger.info("[FleetManager] %s: %d ključ(a) učitan(o)", prov_u, len(key_list))
+            syslog.info("[FleetManager] %s: %d ključ(a) učitan(o)", prov_u, len(key_list))
+
+        # Inicijalizuj QuotaTracker iz učitane flote
+        quota_tracker.initialize_from_fleet(self.fleet)
+        syslog.info("[FleetManager] QuotaTracker inicijaliziran iz flote")
 
     def _resolve_models(self):
         """
@@ -251,24 +289,50 @@ class FleetManager:
 
     def get_best_key(self, provider: str):
         """
-        Vraća ključ s najboljim success_rate.
-        Svi ključevi su uvijek dostupni — nema hlađenja.
+        Vraća ključ s najboljim success_rate koji je TRENUTNO DOSTUPAN
+        prema QuotaTracker-u (nije na cooldown-u, nije iscrpio RPM/RPD).
+        Ako nijedan ključ nije dostupan — vraća None.
         """
         prov_u = provider.upper()
         with self.lock:
             keys = self.fleet.get(prov_u, [])
             if not keys:
                 logger.warning("[FleetManager] get_best_key(%s): nema ključeva u floti", prov_u)
+                syslog.warning("[FleetManager] get_best_key(%s): nema ključeva u floti", prov_u)
                 return None
 
-            keys_sorted = sorted(keys, key=lambda x: x.success_rate, reverse=True)
+            # Filtriraj samo dostupne ključeve (QuotaTracker provjera)
+            available = [ks for ks in keys if ks.available]
+            if not available:
+                # Loguj zašto nema dostupnih ključeva
+                reasons = []
+                for ks in keys:
+                    ok, reason = quota_tracker.is_key_available(prov_u, ks.key)
+                    reasons.append(f"...{ks.key[-4:]}: {reason}")
+                syslog.warning(
+                    "[FleetManager] %s: svi ključevi nedostupni — %s",
+                    prov_u, " | ".join(reasons),
+                )
+                logger.warning(
+                    "[FleetManager] get_best_key(%s): svi ključevi nedostupni (%d ključ(a))",
+                    prov_u, len(keys),
+                )
+                return None
+
+            keys_sorted = sorted(available, key=lambda x: x.success_rate, reverse=True)
             top_n  = max(1, math.ceil(len(keys_sorted) * 0.7))
             top    = keys_sorted[:top_n]
             idx    = self._rr_index.get(prov_u, 0) % len(top)
             chosen = top[idx]
             self._rr_index[prov_u] = (idx + 1) % len(top)
-            logger.debug("[FleetManager] get_best_key(%s): odabran ...%s (success_rate=%.2f)",
-                         prov_u, chosen.key[-4:], chosen.success_rate)
+            logger.debug(
+                "[FleetManager] get_best_key(%s): odabran ...%s (success_rate=%.2f, %d/%d dostupno)",
+                prov_u, chosen.key[-4:], chosen.success_rate, len(available), len(keys),
+            )
+            syslog.debug(
+                "[FleetManager] get_best_key(%s): odabran ...%s (sr=%.2f, %d/%d dostupno)",
+                prov_u, chosen.key[-4:], chosen.success_rate, len(available), len(keys),
+            )
             return chosen.key
 
     def get_best_key_for_role(self, role: str):
@@ -324,9 +388,44 @@ class FleetManager:
     def analyze_response(self, provider: str, key: str, status_code: int, headers, body=None):
         """
         Ažurira pozivne brojače ključa prema HTTP status kodu.
-        Nema hlađenja ni isključivanja — samo se bilježe statistike.
+        Poziva QuotaTracker koji upravlja cooldown-om i kvotama.
         """
         prov_u = provider.upper()
+
+        # Izvuci tokene iz body-a
+        tokens = 0
+        if isinstance(body, dict):
+            usage = body.get("usage", {})
+            if isinstance(usage, dict):
+                tokens = int(usage.get("total_tokens", 0) or 0)
+                if tokens == 0:
+                    tokens = int(
+                        (usage.get("prompt_tokens") or 0) +
+                        (usage.get("completion_tokens") or 0)
+                    )
+
+        # Izvuci Retry-After iz headera
+        retry_after = None
+        if headers:
+            for hdr in ("Retry-After", "retry-after", "x-ratelimit-reset-requests"):
+                val = headers.get(hdr)
+                if val:
+                    try:
+                        retry_after = float(val)
+                    except (TypeError, ValueError):
+                        pass
+                    break
+
+        # QuotaTracker — cooldown, kvote, tokeni
+        quota_tracker.record_response(
+            provider=prov_u,
+            key=key,
+            status_code=status_code,
+            tokens=tokens,
+            retry_after=retry_after,
+            headers=headers,
+        )
+
         with self.lock:
             ks = self._find_key(prov_u, key)
             if not ks:
@@ -334,16 +433,37 @@ class FleetManager:
 
             if status_code == 200:
                 ks.calls_ok += 1
-                logger.debug("[FleetManager] %s ...%s → 200 OK (ok=%d)", prov_u, key[-4:], ks.calls_ok)
+                logger.debug(
+                    "[FleetManager] %s ...%s → 200 OK (ok=%d, tokeni=%d)",
+                    prov_u, key[-4:], ks.calls_ok, tokens,
+                )
+                syslog.debug(
+                    "[FleetManager] %s ...%s → 200 OK (ok=%d, tokeni=%d)",
+                    prov_u, key[-4:], ks.calls_ok, tokens,
+                )
             elif status_code >= 500:
                 ks.calls_failed += 1
-                logger.warning("[FleetManager] %s ...%s → %d server error (failed=%d)",
-                               prov_u, key[-4:], status_code, ks.calls_failed)
+                logger.warning(
+                    "[FleetManager] %s ...%s → %d server error (failed=%d)",
+                    prov_u, key[-4:], status_code, ks.calls_failed,
+                )
+                syslog.warning(
+                    "[FleetManager] %s ...%s → %d server error (failed=%d)",
+                    prov_u, key[-4:], status_code, ks.calls_failed,
+                )
             elif status_code >= 400:
                 ks.calls_rejected[status_code] = ks.calls_rejected.get(status_code, 0) + 1
-                logger.warning("[FleetManager] %s ...%s → %d odbijen (rejected[%d]=%d)",
-                               prov_u, key[-4:], status_code, status_code,
-                               ks.calls_rejected[status_code])
+                logger.warning(
+                    "[FleetManager] %s ...%s → %d odbijen (rejected[%d]=%d)",
+                    prov_u, key[-4:], status_code, status_code,
+                    ks.calls_rejected[status_code],
+                )
+                syslog.warning(
+                    "[FleetManager] %s ...%s → %d odbijen (rejected[%d]=%d, retry_after=%s)",
+                    prov_u, key[-4:], status_code, status_code,
+                    ks.calls_rejected[status_code],
+                    f"{retry_after:.0f}s" if retry_after else "n/a",
+                )
 
         self._save_state()
 

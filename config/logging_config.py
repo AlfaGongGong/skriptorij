@@ -10,6 +10,7 @@ def configure_logging(level: int = logging.INFO) -> None:
 
     INFO i više poruke idu na stdout. ERROR/CRITICAL se posebno bojaju
     u terminalu kako bi bile odmah vidljive.
+    Svi logovi se automatski upisuju i u logs/sistem_DD-MM-YYYY.log.
     """
     # Werkzeug request log — ograniči na WARNING da ne zatrpa konzolu
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
@@ -58,5 +59,15 @@ def configure_logging(level: int = logging.INFO) -> None:
     if "_CriticalTerminalHandler" not in existing_types:
         root.addHandler(crit_handler)
 
+    # ── Inicijalizuj file logger (sistem.log po datumu) ───────────────────────
+    # Uvoz pokretanjem side-effecta u system_logger.py — automatski dodaje
+    # DailyFileHandler na root logger koji hvata SVE module.
+    try:
+        from config.system_logger import syslog  # noqa: F401 — inicijalizacija
+        syslog.info("[logging_config] File logging aktivan → logs/sistem_DD-MM-YYYY.log")
+    except Exception as exc:
+        logging.getLogger(__name__).warning(
+            "[logging_config] Nije moguće inicijalizirati file logger: %s", exc
+        )
 
 
