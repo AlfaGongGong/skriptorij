@@ -8,10 +8,13 @@
 # ============================================================================
 
 import json
+import logging
 import time
 import math
 import threading
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 _STATE_DEBOUNCE_INTERVAL = 30.0
 
@@ -141,10 +144,13 @@ class FleetManager:
     def _load_config(self):
         try:
             raw = json.loads(self.config_path.read_text("utf-8"))
-        except Exception:
+            logger.debug("[FleetManager] Konfiguracija učitana iz %s", self.config_path)
+        except Exception as e:
+            logger.warning("[FleetManager] Nije moguće učitati konfiguraciju (%s): %s — flota prazna", self.config_path, e)
             raw = {}
         try:
             saved = json.loads(self.state_path.read_text("utf-8"))
+            logger.debug("[FleetManager] Stanje ključeva učitano iz %s", self.state_path)
         except Exception:
             saved = {}
 
@@ -170,6 +176,7 @@ class FleetManager:
                 self.fleet[prov_u].append(
                     KeyState(k_str, prov_u, prov_saved.get(k_str))
                 )
+            logger.info("[FleetManager] %s: %d ključ(a) učitan(o)", prov_u, len(key_list))
 
     def _resolve_models(self):
         """
@@ -208,8 +215,9 @@ class FleetManager:
             )
             self._last_save_time = time.time()
             self._dirty = False
-        except Exception:
-            pass
+            logger.debug("[FleetManager] Stanje flushed u %s", self.state_path)
+        except Exception as e:
+            logger.error("[FleetManager] Nije moguće snimiti stanje u %s: %s", self.state_path, e)
 
     def _flush_state_safe(self):
         with self._save_lock:
@@ -250,6 +258,7 @@ class FleetManager:
         with self.lock:
             keys = self.fleet.get(prov_u, [])
             if not keys:
+                logger.warning("[FleetManager] get_best_key(%s): nema ključeva u floti", prov_u)
                 return None
 
             keys_sorted = sorted(keys, key=lambda x: x.success_rate, reverse=True)
@@ -258,6 +267,8 @@ class FleetManager:
             idx    = self._rr_index.get(prov_u, 0) % len(top)
             chosen = top[idx]
             self._rr_index[prov_u] = (idx + 1) % len(top)
+            logger.debug("[FleetManager] get_best_key(%s): odabran ...%s (success_rate=%.2f)",
+                         prov_u, chosen.key[-4:], chosen.success_rate)
             return chosen.key
 
     def get_best_key_for_role(self, role: str):
@@ -265,12 +276,17 @@ class FleetManager:
         for prov in preferred:
             key = self.get_best_key(prov)
             if key:
+                logger.debug("[FleetManager] get_best_key_for_role(%s): odabran %s ...%s",
+                             role, prov, key[-4:])
                 return prov, key
         for prov in PROVIDER_ORDER:
             if prov not in preferred:
                 key = self.get_best_key(prov)
                 if key:
+                    logger.debug("[FleetManager] get_best_key_for_role(%s) fallback: %s ...%s",
+                                 role, prov, key[-4:])
                     return prov, key
+        logger.warning("[FleetManager] get_best_key_for_role(%s): nema dostupnih ključeva ni za jedan provajder", role)
         return None, None
 
     # ── Usage & error recording ───────────────────────────────────────────────
@@ -318,10 +334,16 @@ class FleetManager:
 
             if status_code == 200:
                 ks.calls_ok += 1
+                logger.debug("[FleetManager] %s ...%s → 200 OK (ok=%d)", prov_u, key[-4:], ks.calls_ok)
             elif status_code >= 500:
                 ks.calls_failed += 1
+                logger.warning("[FleetManager] %s ...%s → %d server error (failed=%d)",
+                               prov_u, key[-4:], status_code, ks.calls_failed)
             elif status_code >= 400:
                 ks.calls_rejected[status_code] = ks.calls_rejected.get(status_code, 0) + 1
+                logger.warning("[FleetManager] %s ...%s → %d odbijen (rejected[%d]=%d)",
+                               prov_u, key[-4:], status_code, status_code,
+                               ks.calls_rejected[status_code])
 
         self._save_state()
 

@@ -2,6 +2,7 @@
 
 """Rute za upravljanje API ključevima (CRUD)."""
 import json
+import logging
 import re
 import time
 
@@ -16,6 +17,8 @@ _PING_CONNECT_TIMEOUT = 8
 _PING_READ_TIMEOUT    = 20
 
 bp = Blueprint("keys", __name__)
+
+logger = logging.getLogger(__name__)
 
 
 def _reload_active_fleet() -> None:
@@ -46,8 +49,10 @@ def list_keys():
             ]
         return jsonify(result)
     except FileNotFoundError:
+        logger.warning("[keys] Konfiguracijski fajl nije pronađen")
         return jsonify({})
     except Exception:
+        logger.exception("[keys] Greška pri čitanju konfiguracije")
         return jsonify({"error": "Greška pri čitanju konfiguracije"}), 500
 
 
@@ -86,10 +91,12 @@ def add_key(provider):
             json.dump(cfg, f, indent=2, ensure_ascii=False)
         # Odmah aktiviraj novi ključ u aktivnoj floti (bez restarta)
         _reload_active_fleet()
+        logger.info("[keys] Dodan ključ za %s: ...%s", prov_upper, new_key[-6:])
         return jsonify(
             {"status": "ok", "provider": prov_upper, "masked": f"...{new_key[-6:]}"}
         )
     except Exception:
+        logger.exception("[keys] Greška pri dodavanju ključa za %s", prov_upper)
         return jsonify({"error": "Greška pri dodavanju ključa"}), 500
 
 
@@ -114,8 +121,10 @@ def delete_key(provider, idx):
             json.dump(cfg, f, indent=2, ensure_ascii=False)
         # Odmah ukloni obrisani ključ iz aktivne flote (bez restarta)
         _reload_active_fleet()
+        logger.info("[keys] Obrisan ključ[%d] za %s", idx, prov_upper)
         return jsonify({"status": "ok", "provider": prov_upper})
     except Exception:
+        logger.exception("[keys] Greška pri brisanju ključa[%d] za %s", idx, prov_upper)
         return jsonify({"error": "Greška pri brisanju ključa"}), 500
 
 

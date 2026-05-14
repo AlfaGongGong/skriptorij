@@ -1273,7 +1273,7 @@ function updateExpertFleetHealthBadge(totalActive, totalKeys) {
         ring.setAttribute("data-val", String(pct));
     }
     if (mainEl) mainEl.textContent = `${pct}%`;
-    if (subEl) subEl.textContent = `${totalActive}/${totalKeys} aktivno`;
+    if (subEl) subEl.textContent = `${pct}% avg success`;
     badge.classList.add("has-data");
 }
 
@@ -1290,42 +1290,43 @@ function renderFleet(data) {
             '<div style="text-align:center;padding:24px;color:var(--tx-3);font-size:0.75rem">Nema provajdera u floti.</div>';
         return;
     }
-    let totalActive = 0,
-        totalKeys = 0,
-        totalCooling = 0,
-        totalErr = 0;
+    let totalKeys = 0,
+        totalLowSr = 0,
+        totalFailed = 0;
     let html = "";
     for (const [prov, info] of entries) {
-        const active = info.active || 0,
-            total = info.total || 0,
+        const total = info.total || 0,
             keys = info.keys || [];
-        totalActive += active;
         totalKeys += total;
         keys.forEach(k => {
-            if (!k.available && !k.disabled && k.cooldown_remaining > 0)
-                totalCooling++;
+            const sr = k.success_rate ?? 1.0;
+            if ((k.total_requests || 0) > 0 && sr < 0.5) totalLowSr++;
+            totalFailed += k.calls_failed || 0;
         });
-        keys.forEach(k => {
-            if (k.errors && k.errors > 0 && !k.available) totalErr++;
-        });
-        const pct = total > 0 ? Math.round((active / total) * 100) : 0;
-        const barCls = pct >= 60 ? "good" : pct >= 30 ? "warn" : "low";
+        const srPct = Math.round((info.success_rate ?? 1.0) * 100);
+        const barCls = srPct >= 80 ? "good" : srPct >= 50 ? "warn" : "low";
         const icon = PROV_ICONS[prov.toUpperCase()] || "🔑";
         html += `<div class="fleet-provider">
             <div class="fleet-provider-header">
                 <span>${icon}</span>
                 <span style="flex:1;font-weight:600">${prov}</span>
-                <div class="fleet-health-bar"><div class="fleet-health-fill ${barCls}" style="width:${pct}%"></div></div>
-                <span style="font-family:var(--font-mono);font-size:0.7rem;margin-left:6px">${active}/${total}</span>
+                <div class="fleet-health-bar"><div class="fleet-health-fill ${barCls}" style="width:${srPct}%"></div></div>
+                <span style="font-family:var(--font-mono);font-size:0.7rem;margin-left:6px">${total} ključ${total === 1 ? '' : 'a'}</span>
             </div>
         </div>`;
     }
     c.innerHTML = html;
-    if (simpleOk) simpleOk.textContent = totalActive;
-    if (simpleCol) simpleCol.textContent = totalCooling;
-    if (simpleErr) simpleErr.textContent = totalErr;
-    document.getElementById("fleet-total-count").textContent = totalActive;
-    updateExpertFleetHealthBadge(totalActive, totalKeys);
+    if (simpleOk) simpleOk.textContent = totalKeys;
+    if (simpleCol) simpleCol.textContent = totalLowSr;
+    if (simpleErr) simpleErr.textContent = totalFailed;
+    document.getElementById("fleet-total-count").textContent = totalKeys;
+    // Za health badge: koristimo ponderisani prosjek success_rate svih ključeva
+    // kao ekvivalent "aktivnih" ključeva (1.0 sr = 1 aktivan ključ ekvivalent)
+    let totalWeightedSr = 0;
+    for (const [, info] of entries) {
+        (info.keys || []).forEach(k => { totalWeightedSr += (k.success_rate ?? 1.0); });
+    }
+    updateExpertFleetHealthBadge(Math.round(totalWeightedSr), totalKeys);
 
     // Render detailed fleet view in expert tab
     const expertC = document.getElementById("expert-fleet-container");
@@ -1336,79 +1337,32 @@ function renderFleet(data) {
             let expertHtml = "";
             for (const [prov, info] of entries) {
                 const keys = info.keys || [];
-                const active = info.active || 0;
                 const total = info.total || 0;
-                const pct = total > 0 ? Math.round((active / total) * 100) : 0;
-                const barCls = pct >= 60 ? "good" : pct >= 30 ? "warn" : "low";
+                const srPct = Math.round((info.success_rate ?? 1.0) * 100);
+                const barCls = srPct >= 80 ? "good" : srPct >= 50 ? "warn" : "low";
                 const icon = PROV_ICONS[prov.toUpperCase()] || "🔑";
                 const keyPills = keys.map(k => {
-                    const available = k.available && !k.disabled;
-                    const cooling = !k.available && !k.disabled && k.cooldown_remaining > 0;
-                    const disabled = k.disabled;
-                    let cls = "ok", label = `✓ ${k.masked}`, extra = "";
-                    if (disabled) { cls = "off"; label = `○ ${k.masked}`; }
-                    else if (cooling) { cls = "warn"; label = `⏳ ${k.masked}`; extra = `<span style="font-size:0.65rem;opacity:0.7">${Math.ceil(k.cooldown_remaining)}s</span>`; }
-                    else if (!available) { cls = "err"; label = `✕ ${k.masked}`; }
-                    const healthStr = k.health != null ? `<span style="font-size:0.65rem;opacity:0.6">${k.health}%</span>` : "";
-                    return `<span class="key-pill ${cls}" data-prov="${prov}" data-key="${k.masked}">${label}${healthStr}${extra}</span>`;
+                    const sr = k.success_rate ?? 1.0;
+                    const srP = Math.round(sr * 100);
+                    const tot = k.total_requests || 0;
+                    let cls = "ok", label = `✓ ${k.masked}`;
+                    if (tot > 0 && sr < 0.5) { cls = "err"; label = `✕ ${k.masked}`; }
+                    else if (tot > 0 && sr < 0.8) { cls = "warn"; label = `⚠ ${k.masked}`; }
+                    const statsStr = tot > 0 ? `<span style="font-size:0.65rem;opacity:0.6">${srP}%·${tot}</span>` : "";
+                    return `<span class="key-pill ${cls}" title="${k.calls_ok||0} ok / ${k.calls_failed||0} greš. / ${tot} ukupno">${label}${statsStr}</span>`;
                 }).join("");
                 expertHtml += `<div class="fleet-provider" style="margin-bottom:6px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--bd)">
                     <div class="fleet-provider-header">
                         <span>${icon}</span>
                         <span style="flex:1;font-weight:600">${prov}</span>
-                        <div class="fleet-health-bar"><div class="fleet-health-fill ${barCls}" style="width:${pct}%"></div></div>
-                        <span style="font-family:var(--font-mono);font-size:0.7rem;margin-left:6px">${active}/${total}</span>
+                        <div class="fleet-health-bar"><div class="fleet-health-fill ${barCls}" style="width:${srPct}%"></div></div>
+                        <span style="font-family:var(--font-mono);font-size:0.7rem;margin-left:6px">${total} ključ${total === 1 ? '' : 'a'}</span>
                     </div>
                     ${keys.length > 0 ? `<div class="fleet-keys-grid">${keyPills}</div>` : ""}
                 </div>`;
             }
             expertC.innerHTML = expertHtml;
-            expertC.querySelectorAll(".key-pill[data-prov]").forEach(pill => {
-                pill.addEventListener("click", () => {
-                    toggleKey(pill.dataset.prov, pill.dataset.key);
-                });
-            });
         }
-    }
-}
-
-async function toggleKey(provider, key) {
-    try {
-        const r = await fetch("/api/fleet/toggle", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ provider, key })
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-        showToast(
-            `${provider}: ${d.disabled ? "🔴 onemogućen" : "🟢 aktiviran"}`,
-            d.disabled ? "warning" : "success"
-        );
-        pollFleet();
-    } catch (e) {
-        showToast("Toggle greška: " + e.message, "error");
-    }
-}
-
-async function reviveAllKeys(provider) {
-    try {
-        const body = provider ? { provider } : {};
-        const r = await fetch("/api/fleet/revive", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-        const label = provider || "sve provajdere";
-        showToast(
-            `⚡ Resetovano ${d.revived} ključeva (${label})`,
-            "success"
-        );
-        pollFleet();
-    } catch (e) {
-        showToast("Greška pri resetovanju: " + e.message, "error");
     }
 }
 
@@ -2200,14 +2154,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     document
         .getElementById("btn-stop")
         ?.addEventListener("click", () => sendControl("stop"));
-
-    // Revive (reset hlađenja) dugmad — fleet tab i expert tab
-    document
-        .getElementById("btn-revive-keys")
-        ?.addEventListener("click", () => reviveAllKeys());
-    document
-        .getElementById("btn-revive-keys-expert")
-        ?.addEventListener("click", () => reviveAllKeys());
 
     // Download dugmad
     document
