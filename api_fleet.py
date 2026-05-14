@@ -153,7 +153,7 @@ class KeyState:
 
 
 class FleetManager:
-    """V11.0 Fleet Manager — bez hlađenja, kvota i isključivanja ključeva."""
+    """V12.0 Fleet Manager — bez hlađenja, kvota i isključivanja ključeva."""
 
     def __init__(self, config_path="dev_api.json", state_path="api_state.json"):
         self.config_path = Path(config_path)
@@ -487,15 +487,19 @@ class FleetManager:
                 keys = self.fleet.get(prov, [])
                 if not keys:
                     continue
+                ui_keys = [ks.to_ui_dict() for ks in keys]
                 result[prov] = {
-                    "total": len(keys),
-                    "keys":  [ks.to_ui_dict() for ks in keys],
+                    "total":        len(keys),
+                    "success_rate": round(sum(k["success_rate"] for k in ui_keys) / len(ui_keys), 4) if ui_keys else 1.0,
+                    "keys":         ui_keys,
                 }
             for prov, keys in self.fleet.items():
                 if prov not in result and keys:
+                    ui_keys = [ks.to_ui_dict() for ks in keys]
                     result[prov] = {
-                        "total": len(keys),
-                        "keys":  [ks.to_ui_dict() for ks in keys],
+                        "total":        len(keys),
+                        "success_rate": round(sum(k["success_rate"] for k in ui_keys) / len(ui_keys), 4) if ui_keys else 1.0,
+                        "keys":         ui_keys,
                     }
         return result
 

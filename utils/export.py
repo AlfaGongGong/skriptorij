@@ -57,7 +57,7 @@ def generate_json_report(epub_path: str, stats: dict) -> bytes:
     meta = get_epub_metadata(epub_path)
     report = {
         "generated_at": datetime.now().isoformat(),
-        "skriptorij_version": "V8",
+        "skriptorij_version": "V12.0",
         "epub_metadata": meta,
         "translation_stats": {
             "blocks_translated": stats.get("stvarno_prevedeno", 0),
