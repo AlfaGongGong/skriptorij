@@ -34,6 +34,14 @@ const PROV_CONSOLE_URLS = {
 
 // ─── Pomoćne ────────────────────────────────────────────────────────────────
 
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 function fmtCooldown(s) {
     if (!s || s <= 0) return '';
     if (s < 60)  return `${Math.round(s)}s`;
@@ -195,8 +203,8 @@ function renderProviderBlock(prov, info, isExpert = false) {
         <span class="fq-chevron">▸</span>
         <span class="fq-prov-icon">${icon}</span>
         ${PROV_CONSOLE_URLS[prov.toUpperCase()]
-            ? `<a class="fq-prov-name" href="${PROV_CONSOLE_URLS[prov.toUpperCase()]}" target="_blank" rel="noopener noreferrer" title="Otvori konzolu ${prov}">${prov}</a>`
-            : `<span class="fq-prov-name">${prov}</span>`}
+            ? `<a class="fq-prov-name" href="${PROV_CONSOLE_URLS[prov.toUpperCase()]}" target="_blank" rel="noopener noreferrer" title="Otvori konzolu ${escHtml(prov)}">${escHtml(prov)}</a>`
+            : `<span class="fq-prov-name">${escHtml(prov)}</span>`}
         <div class="fleet-health-bar fq-hbar">
           <div class="fleet-health-fill ${barCls}" style="width:${srPct}%"></div>
         </div>
