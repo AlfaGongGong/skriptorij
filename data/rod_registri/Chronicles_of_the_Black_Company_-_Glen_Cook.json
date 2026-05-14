@@ -130,9 +130,9 @@
     "clue_z": 0
   },
   "Ona": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "su": {
     "rod": "M",
@@ -741,7 +741,7 @@
   },
   "Shed": {
     "rod": "M",
-    "clue_m": 33,
+    "clue_m": 34,
     "clue_z": 0
   },
   "Stol": {
@@ -1198,5 +1198,10 @@
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
+  },
+  "Moja": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
   }
 }
