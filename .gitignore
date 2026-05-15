@@ -54,3 +54,26 @@ env
 *.bak_*
 *.backup_*
 node_modules/
+# ========== DODATNO ==========
+
+# Backup fajlovi od fix skripti
+*.bak_final
+*.bak_revert
+*.bak_simplify
+*.bak_bodylog
+*.bak_prompts
+*.bak_add429
+*.bak_*
+
+# Runtime
+api_state.json
+last_book.json
+
+# Checkpoint podaci (preveliki, generisani)
+*_skr_*/
+checkpoints/
+
+# Output knjige
+output/
+*.epub_out/
+(LIVE)_*
