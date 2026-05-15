@@ -1404,12 +1404,13 @@ async function loadKeys() {
         container.innerHTML = '<div style="color:var(--tx-3);font-size:0.8rem;padding:8px 0">Odaberi provajdera da vidiš ključeve.</div>';
         return;
     }
+    const selectedProvUpper = selectedProv.toUpperCase();
     try {
         const r = await fetch("/api/keys");
         const data = await r.json();
         const entries = Object.entries(data || {});
         // filter to only selected provider
-        const filtered = entries.filter(([prov]) => prov.toUpperCase() === selectedProv.toUpperCase());
+        const filtered = entries.filter(([prov]) => prov.toUpperCase() === selectedProvUpper);
         if (filtered.length === 0 || !filtered[0][1]?.length) {
             container.innerHTML = `<div style="color:var(--tx-3);font-size:0.75rem">Nema ključeva za ${selectedProv}.</div>`;
             return;
