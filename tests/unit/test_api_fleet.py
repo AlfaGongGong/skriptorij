@@ -41,27 +41,29 @@ def test_calls_ok_increments_on_200(tmp_path):
 
 
 def test_calls_rejected_increments_on_429(tmp_path):
-    """analyze_response za 429 mora inkrementovati calls_rejected[429]."""
+    """analyze_response za 429 mora inkrementovati calls_rejected[429].
+    QuotaTracker primjenjuje cooldown na 429, pa je ključ privremeno nedostupan."""
     fm = _make_fleet(tmp_path)
     ks = fm.fleet["GROQ"][0]
 
     fm.analyze_response("GROQ", ks.key, 429, {}, None)
 
     assert ks.calls_rejected.get(429, 0) == 1
-    # Ključ ostaje dostupan — nema hlađenja
-    assert ks.available is True
+    # QuotaTracker primjenjuje cooldown nakon 429 — ključ je privremeno nedostupan
+    assert ks.available is False
 
 
 def test_calls_rejected_increments_on_401(tmp_path):
-    """analyze_response za 401 mora biti u calls_rejected[401]."""
+    """analyze_response za 401 mora biti u calls_rejected[401].
+    QuotaTracker primjenjuje cooldown na 401 (1h), pa je ključ privremeno nedostupan."""
     fm = _make_fleet(tmp_path)
     ks = fm.fleet["GROQ"][0]
 
     fm.analyze_response("GROQ", ks.key, 401, {}, None)
 
     assert ks.calls_rejected.get(401, 0) == 1
-    # Ključ ostaje dostupan — nema hlađenja
-    assert ks.available is True
+    # QuotaTracker primjenjuje 1h cooldown nakon 401 — ključ je privremeno nedostupan
+    assert ks.available is False
 
 
 def test_calls_failed_increments_on_500(tmp_path):
@@ -172,6 +174,6 @@ def test_multiple_analyze_responses(tmp_path):
     assert ks.calls_ok == 2
     assert ks.calls_rejected.get(429, 0) == 1
     assert ks.calls_rejected.get(401, 0) == 1
-    # Ključ uvijek dostupan
-    assert ks.available is True
+    # QuotaTracker primjenjuje cooldown nakon 429/401 — ključ je privremeno nedostupan
+    assert ks.available is False
 

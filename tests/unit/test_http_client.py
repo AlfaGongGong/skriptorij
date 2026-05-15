@@ -138,12 +138,13 @@ def test_gemini_rotates_model_on_429(monkeypatch):
 
     async def fake_async_http_post(self_obj, url, headers, payload,
                                     prov, prov_upper, key, _proxy=None):
-        model = payload.get("model", "")
+        # Model je u URL-u za Gemini native: .../models/{model}:generateContent
+        model = url.split("/models/")[-1].split(":")[0] if "/models/" in url else ""
         tried_models.append(model)
         if model == pool[0]["model"]:
             return None
-        # Drugi model uspijeva
-        return {"choices": [{"message": {"content": "ODGOVOR"}}]}
+        # Drugi model uspijeva — Gemini native format
+        return {"candidates": [{"content": {"parts": [{"text": "ODGOVOR"}]}}]}
 
     monkeypatch.setattr("network.http_client._async_http_post", fake_async_http_post)
     monkeypatch.setattr("network.http_client._get_next_proxy", lambda: None)
@@ -256,12 +257,11 @@ def test_gemini_fresh_snapshot_picks_up_new_key(monkeypatch):
     async def fake_async_http_post(self_obj, url, headers, payload,
                                     prov, prov_upper, key, _proxy=None):
         call_count[0] += 1
-        model = payload.get("model", "")
         if key == "OLD_KEY_0001":
             # Stari ključ — svi pozivi vraćaju None
             return None
-        # Novi ključ koji je "dodan za vrijeme rotacije" — uvijek uspijeva
-        return {"choices": [{"message": {"content": "NOVI_KLJUČ_ODGOVOR"}}]}
+        # Novi ključ koji je "dodan za vrijeme rotacije" — Gemini native format
+        return {"candidates": [{"content": {"parts": [{"text": "NOVI_KLJUČ_ODGOVOR"}]}}]}
 
     monkeypatch.setattr("network.http_client._async_http_post", fake_async_http_post)
     monkeypatch.setattr("network.http_client._get_next_proxy", lambda: None)
