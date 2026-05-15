@@ -242,6 +242,18 @@ body.light .app-header {
     font-size: 0.68rem;
 }
 
+.header-live-stage {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    text-shadow: 0 0 8px var(--accent-2), 0 0 16px rgba(6, 182, 212, 0.5);
+    animation: blink 1.4s ease-in-out infinite;
+    border-left: 1px solid var(--bd);
+    padding-left: 8px;
+    margin-left: 2px;
+}
+
 /* ── Status Dot ────────────────────────────────────────────────────────────── */
 .dot {
     width: 6px;
@@ -801,9 +813,22 @@ input:focus {
 }
 .pipe-step.active {
     color: var(--accent-2);
+    text-shadow: 0 0 8px var(--accent-2), 0 0 18px rgba(6, 182, 212, 0.55);
+    font-weight: 700;
+    transform: scale(1.08);
 }
 .pipe-step.done {
     color: var(--emerald);
+}
+/* When processing, dim non-active, non-done steps */
+.pipeline.processing .pipe-step:not(.active):not(.done) {
+    opacity: 0.2;
+}
+.pipeline.processing .pipe-step.done {
+    opacity: 0.45;
+}
+.pipeline.processing .pipe-step::after {
+    opacity: 0.3;
 }
 
 /* Live preview */
@@ -3943,6 +3968,17 @@ body::before {
     flex: 1;
     font-weight: 600;
     font-size: 0.82rem;
+    color: var(--tx-1);
+    text-decoration: none;
+}
+a.fq-prov-name {
+    color: var(--accent-2);
+    cursor: pointer;
+    transition: color var(--t-fast) var(--ease);
+}
+a.fq-prov-name:hover {
+    color: var(--sky);
+    text-decoration: underline;
 }
 .fq-hbar {
     width: 40px;

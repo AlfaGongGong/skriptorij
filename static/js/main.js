@@ -952,7 +952,7 @@ function updateStatus(s) {
                 loadEpubPreview();
             } else if (!isFinished && pct > 5) {
                 titleEl.textContent = `⏳ U toku — ${pct}%`;
-                subtitleEl.textContent = "Djelimičan pregled dostupan";
+                subtitleEl.textContent = "Obrada u toku...";
                 strip.style.borderColor = "rgba(245,158,11,0.3)";
                 strip.style.background = "rgba(245,158,11,0.06)";
                 finalBtn?.classList.add("hidden");
@@ -1117,6 +1117,15 @@ function fmtTime(s) {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 }
 
+// Maps each step id to display label for header live stage
+const PIPE_STAGE_LABELS = {
+    "pipe-analiza":  "🔬 Analiza",
+    "pipe-prevod":   "🌐 Prevod",
+    "pipe-lektor":   "✍ Lektura",
+    "pipe-korektor": "📐 Korekcija",
+    "pipe-gotovo":   "✅ Gotovo"
+};
+
 function updatePipeline(status, pct) {
     const steps = [
         "pipe-analiza",
@@ -1125,34 +1134,55 @@ function updatePipeline(status, pct) {
         "pipe-korektor",
         "pipe-gotovo"
     ];
+    const pipeline = document.getElementById("pipeline");
     steps.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove("active", "done");
     });
+    pipeline?.classList.remove("processing");
+
+    let activeStep = null;
     if (pct >= 100) {
         steps.forEach(id => document.getElementById(id)?.classList.add("done"));
-        return;
-    }
-    if (status.includes("ANALIZ")) {
+    } else if (status.includes("ANALIZ")) {
+        activeStep = "pipe-analiza";
         document.getElementById("pipe-analiza")?.classList.add("active");
     } else if (pct < 30) {
         document.getElementById("pipe-analiza")?.classList.add("done");
+        activeStep = "pipe-prevod";
         document.getElementById("pipe-prevod")?.classList.add("active");
     } else if (pct < 60) {
         ["pipe-analiza", "pipe-prevod"].forEach(id =>
             document.getElementById(id)?.classList.add("done")
         );
+        activeStep = "pipe-lektor";
         document.getElementById("pipe-lektor")?.classList.add("active");
     } else if (pct < 85) {
         ["pipe-analiza", "pipe-prevod", "pipe-lektor"].forEach(id =>
             document.getElementById(id)?.classList.add("done")
         );
+        activeStep = "pipe-korektor";
         document.getElementById("pipe-korektor")?.classList.add("active");
     } else {
         ["pipe-analiza", "pipe-prevod", "pipe-lektor", "pipe-korektor"].forEach(
             id => document.getElementById(id)?.classList.add("done")
         );
+        activeStep = "pipe-gotovo";
         document.getElementById("pipe-gotovo")?.classList.add("active");
+    }
+
+    if (activeStep) pipeline?.classList.add("processing");
+
+    // Update header live stage badge
+    const liveStage = document.getElementById("header-live-stage");
+    if (liveStage) {
+        if (activeStep && pct < 100) {
+            liveStage.textContent = PIPE_STAGE_LABELS[activeStep] || "";
+            liveStage.classList.remove("hidden");
+        } else {
+            liveStage.textContent = "";
+            liveStage.classList.add("hidden");
+        }
     }
 }
 
@@ -1369,17 +1399,24 @@ function renderFleet(data) {
 async function loadKeys() {
     const container = document.getElementById("keys-list-container");
     if (!container) return;
+    const selectedProv = document.getElementById("key-provider-select")?.value || "";
+    if (!selectedProv) {
+        container.innerHTML = '<div style="color:var(--tx-3);font-size:0.8rem;padding:8px 0">Odaberi provajdera da vidiš ključeve.</div>';
+        return;
+    }
+    const selectedProvUpper = selectedProv.toUpperCase();
     try {
         const r = await fetch("/api/keys");
         const data = await r.json();
         const entries = Object.entries(data || {});
-        if (entries.length === 0) {
-            container.innerHTML =
-                '<div style="color:var(--tx-3)">Nema unesenih API ključeva.</div>';
+        // filter to only selected provider
+        const filtered = entries.filter(([prov]) => prov.toUpperCase() === selectedProvUpper);
+        if (filtered.length === 0 || !filtered[0][1]?.length) {
+            container.innerHTML = `<div style="color:var(--tx-3);font-size:0.75rem">Nema ključeva za ${selectedProv}.</div>`;
             return;
         }
         let html = "";
-        entries.forEach(([prov, keys]) => {
+        filtered.forEach(([prov, keys]) => {
             (keys || []).forEach((masked, idx) => {
                 html += `<div class="key-row">
                     <span class="key-prov-badge">${PROV_ICONS[prov.toUpperCase()] || "🔑"} ${prov}</span>
@@ -2063,6 +2100,29 @@ function nextEpubChapter() {
     }
 }
 
+// ═══════════════ DOWNLOAD MODAL ═════════════════════
+function closeDownloadModal() {
+    const m = document.getElementById("download-modal");
+    if (m) m.classList.remove("open");
+}
+
+async function confirmDownloadLive() {
+    closeDownloadModal();
+    try {
+        const r = await fetch("/api/download_live");
+        if (!r.ok) { showToast("Live download nije dostupan.", "warning"); return; }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "live_preview.epub";
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        showToast("Greška: " + e.message, "error");
+    }
+}
+
 // ═══════════════ INIT ═══════════════════════════
 document.addEventListener("DOMContentLoaded", async function () {
     // [v2.0.1] Pokrećemo load knjiga i modela paralelno
@@ -2157,25 +2217,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // Download dugmad
     document
-async function requestLiveDownload() {
-    try {
-        const r = await fetch("/api/download_live");
-        if (!r.ok) { showToast("Live download nije dostupan.", "warning"); return; }
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "live_preview.epub";
-        a.click();
-        URL.revokeObjectURL(url);
-    } catch (e) {
-        showToast("Greška pri downloadu: " + e.message, "error");
-    }
-}
-
-        document.getElementById("btn-download-live")
-        ?.addEventListener("click", requestLiveDownload);
-    document
         .getElementById("btn-download-final")
         ?.addEventListener("click", () => {
             window.location.href = "/api/download";
@@ -2183,29 +2224,7 @@ async function requestLiveDownload() {
 
     // Download modal dugmad
     document
-function closeDownloadModal() {
-    const m = document.getElementById("download-modal");
-    if (m) m.classList.remove("open");
-}
-
-async function confirmDownloadLive() {
-    closeDownloadModal();
-    try {
-        const r = await fetch("/api/download_live");
-        if (!r.ok) { showToast("Live download nije dostupan.", "warning"); return; }
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "live_preview.epub";
-        a.click();
-        URL.revokeObjectURL(url);
-    } catch (e) {
-        showToast("Greška: " + e.message, "error");
-    }
-}
-
-        document.getElementById("btn-close-download-modal")
+        .getElementById("btn-close-download-modal")
         ?.addEventListener("click", closeDownloadModal);
     document
         .getElementById("btn-confirm-download-live")
@@ -2259,6 +2278,14 @@ async function confirmDownloadLive() {
         ?.addEventListener("change", function () {
             onBookChange(this.value);
         });
+
+    // API ključevi — dodavanje i odabir provajdera
+    document
+        .getElementById("btn-add-key")
+        ?.addEventListener("click", addKey);
+    document
+        .getElementById("key-provider-select")
+        ?.addEventListener("change", loadKeys);
 });
 
 // ── FIX 2.3: Custom tooltip popover ──────────────────────────────────────────
