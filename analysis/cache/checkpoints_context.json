@@ -7142,6 +7142,2095 @@
         "Marronu",
         "Marron"
       ]
+    },
+    "Kompanije": {
+      "ime": "Kompanije",
+      "rod": "auto",
+      "padeži": {
+        "N": "Kompanije",
+        "G": "Kompanijea",
+        "D": "Kompanijeu",
+        "A": "Kompanijea",
+        "V": "Kompanije",
+        "I": "Kompanijeom",
+        "L": "Kompanijeu"
+      },
+      "sve_varijante": [
+        "Kompanijeom",
+        "Kompanijea",
+        "Kompanije",
+        "Kompanijeu"
+      ]
+    },
+    "Shede": {
+      "ime": "Shede",
+      "rod": "auto",
+      "padeži": {
+        "N": "Shede",
+        "G": "Shedea",
+        "D": "Shedeu",
+        "A": "Shedea",
+        "V": "Shede",
+        "I": "Shedeom",
+        "L": "Shedeu"
+      },
+      "sve_varijante": [
+        "Shede",
+        "Shedea",
+        "Shedeom",
+        "Shedeu"
+      ]
+    },
+    "Pawnbrokera": {
+      "ime": "Pawnbrokera",
+      "rod": "auto",
+      "padeži": {
+        "N": "Pawnbrokera",
+        "G": "Pawnbrokere",
+        "D": "Pawnbrokeri",
+        "A": "Pawnbrokeru",
+        "V": "Pawnbrokera",
+        "I": "Pawnbrokerom",
+        "L": "Pawnbrokeri"
+      },
+      "sve_varijante": [
+        "Pawnbrokere",
+        "Pawnbrokeri",
+        "Pawnbrokeru",
+        "Pawnbrokerom",
+        "Pawnbrokera"
+      ]
+    },
+    "Asu": {
+      "ime": "Asu",
+      "rod": "auto",
+      "padeži": {
+        "N": "Asu",
+        "G": "Asua",
+        "D": "Asuu",
+        "A": "Asua",
+        "V": "Asu",
+        "I": "Asuom",
+        "L": "Asuu"
+      },
+      "sve_varijante": [
+        "Asu",
+        "Asuu",
+        "Asua",
+        "Asuom"
+      ]
+    },
+    "Elmova": {
+      "ime": "Elmova",
+      "rod": "auto",
+      "padeži": {
+        "N": "Elmova",
+        "G": "Elmove",
+        "D": "Elmovi",
+        "A": "Elmovu",
+        "V": "Elmova",
+        "I": "Elmovom",
+        "L": "Elmovi"
+      },
+      "sve_varijante": [
+        "Elmovu",
+        "Elmovom",
+        "Elmovi",
+        "Elmove",
+        "Elmova"
+      ]
+    },
+    "Gospođa": {
+      "ime": "Gospođa",
+      "rod": "auto",
+      "padeži": {
+        "N": "Gospođa",
+        "G": "Gospođe",
+        "D": "Gospođi",
+        "A": "Gospođu",
+        "V": "Gospođa",
+        "I": "Gospođom",
+        "L": "Gospođi"
+      },
+      "sve_varijante": [
+        "Gospođu",
+        "Gospođe",
+        "Gospođom",
+        "Gospođi",
+        "Gospođa"
+      ]
+    },
+    "Silent": {
+      "ime": "Silent",
+      "rod": "auto",
+      "padeži": {
+        "N": "Silent",
+        "G": "Silenta",
+        "D": "Silentu",
+        "A": "Silenta",
+        "V": "Silent",
+        "I": "Silentom",
+        "L": "Silentu"
+      },
+      "sve_varijante": [
+        "Silentu",
+        "Silenta",
+        "Silentom",
+        "Silent"
+      ]
+    },
+    "Meadenvil": {
+      "ime": "Meadenvil",
+      "rod": "auto",
+      "padeži": {
+        "N": "Meadenvil",
+        "G": "Meadenvila",
+        "D": "Meadenvilu",
+        "A": "Meadenvila",
+        "V": "Meadenvil",
+        "I": "Meadenvilom",
+        "L": "Meadenvilu"
+      },
+      "sve_varijante": [
+        "Meadenvila",
+        "Meadenvilu",
+        "Meadenvil",
+        "Meadenvilom"
+      ]
+    },
+    "Poručnika": {
+      "ime": "Poručnika",
+      "rod": "auto",
+      "padeži": {
+        "N": "Poručnika",
+        "G": "Poručnike",
+        "D": "Poručniki",
+        "A": "Poručniku",
+        "V": "Poručnika",
+        "I": "Poručnikom",
+        "L": "Poručniki"
+      },
+      "sve_varijante": [
+        "Poručniki",
+        "Poručnike",
+        "Poručnikom",
+        "Poručniku",
+        "Poručnika"
+      ]
+    },
+    "Kompanija": {
+      "ime": "Kompanija",
+      "rod": "auto",
+      "padeži": {
+        "N": "Kompanija",
+        "G": "Kompanije",
+        "D": "Kompaniji",
+        "A": "Kompaniju",
+        "V": "Kompanija",
+        "I": "Kompanijom",
+        "L": "Kompaniji"
+      },
+      "sve_varijante": [
+        "Kompaniji",
+        "Kompaniju",
+        "Kompanija",
+        "Kompanije",
+        "Kompanijom"
+      ]
+    },
+    "Kingpina": {
+      "ime": "Kingpina",
+      "rod": "auto",
+      "padeži": {
+        "N": "Kingpina",
+        "G": "Kingpine",
+        "D": "Kingpini",
+        "A": "Kingpinu",
+        "V": "Kingpina",
+        "I": "Kingpinom",
+        "L": "Kingpini"
+      },
+      "sve_varijante": [
+        "Kingpina",
+        "Kingpine",
+        "Kingpinom",
+        "Kingpinu",
+        "Kingpini"
+      ]
+    },
+    "Maron": {
+      "ime": "Maron",
+      "rod": "auto",
+      "padeži": {
+        "N": "Maron",
+        "G": "Marona",
+        "D": "Maronu",
+        "A": "Marona",
+        "V": "Maron",
+        "I": "Maronom",
+        "L": "Maronu"
+      },
+      "sve_varijante": [
+        "Maronom",
+        "Maronu",
+        "Maron",
+        "Marona"
+      ]
+    },
+    "Ona": {
+      "ime": "Ona",
+      "rod": "auto",
+      "padeži": {
+        "N": "Ona",
+        "G": "One",
+        "D": "Oni",
+        "A": "Onu",
+        "V": "Ona",
+        "I": "Onom",
+        "L": "Oni"
+      },
+      "sve_varijante": [
+        "One",
+        "Onu",
+        "Onom",
+        "Ona",
+        "Oni"
+      ]
+    },
+    "Selkirk": {
+      "ime": "Selkirk",
+      "rod": "auto",
+      "padeži": {
+        "N": "Selkirk",
+        "G": "Selkirka",
+        "D": "Selkirku",
+        "A": "Selkirka",
+        "V": "Selkirk",
+        "I": "Selkirkom",
+        "L": "Selkirku"
+      },
+      "sve_varijante": [
+        "Selkirku",
+        "Selkirk",
+        "Selkirka",
+        "Selkirkom"
+      ]
+    },
+    "Hagop": {
+      "ime": "Hagop",
+      "rod": "auto",
+      "padeži": {
+        "N": "Hagop",
+        "G": "Hagopa",
+        "D": "Hagopu",
+        "A": "Hagopa",
+        "V": "Hagop",
+        "I": "Hagopom",
+        "L": "Hagopu"
+      },
+      "sve_varijante": [
+        "Hagop",
+        "Hagopom",
+        "Hagopa",
+        "Hagopu"
+      ]
+    },
+    "Pogledao": {
+      "ime": "Pogledao",
+      "rod": "auto",
+      "padeži": {
+        "N": "Pogledao",
+        "G": "Pogledaoa",
+        "D": "Pogledaou",
+        "A": "Pogledaoa",
+        "V": "Pogledao",
+        "I": "Pogledaoom",
+        "L": "Pogledaou"
+      },
+      "sve_varijante": [
+        "Pogledao",
+        "Pogledaoa",
+        "Pogledaoom",
+        "Pogledaou"
+      ]
+    },
+    "Pogledaj": {
+      "ime": "Pogledaj",
+      "rod": "auto",
+      "padeži": {
+        "N": "Pogledaj",
+        "G": "Pogledaja",
+        "D": "Pogledaju",
+        "A": "Pogledaja",
+        "V": "Pogledaj",
+        "I": "Pogledajom",
+        "L": "Pogledaju"
+      },
+      "sve_varijante": [
+        "Pogledajom",
+        "Pogledaj",
+        "Pogledaja",
+        "Pogledaju"
+      ]
+    },
+    "Juniperu": {
+      "ime": "Juniperu",
+      "rod": "auto",
+      "padeži": {
+        "N": "Juniperu",
+        "G": "Juniperua",
+        "D": "Juniperuu",
+        "A": "Juniperua",
+        "V": "Juniperu",
+        "I": "Juniperuom",
+        "L": "Juniperuu"
+      },
+      "sve_varijante": [
+        "Juniperu",
+        "Juniperuu",
+        "Juniperuom",
+        "Juniperua"
+      ]
+    },
+    "Ravenovom": {
+      "ime": "Ravenovom",
+      "rod": "auto",
+      "padeži": {
+        "N": "Ravenovom",
+        "G": "Ravenovoma",
+        "D": "Ravenovomu",
+        "A": "Ravenovoma",
+        "V": "Ravenovom",
+        "I": "Ravenovomom",
+        "L": "Ravenovomu"
+      },
+      "sve_varijante": [
+        "Ravenovoma",
+        "Ravenovomom",
+        "Ravenovom",
+        "Ravenovomu"
+      ]
+    },
+    "Svi": {
+      "ime": "Svi",
+      "rod": "auto",
+      "padeži": {
+        "N": "Svi",
+        "G": "Svia",
+        "D": "Sviu",
+        "A": "Svia",
+        "V": "Svi",
+        "I": "Sviom",
+        "L": "Sviu"
+      },
+      "sve_varijante": [
+        "Svia",
+        "Svi",
+        "Sviom",
+        "Sviu"
+      ]
+    },
+    "Krojčer": {
+      "ime": "Krojčer",
+      "rod": "auto",
+      "padeži": {
+        "N": "Krojčer",
+        "G": "Krojčera",
+        "D": "Krojčeru",
+        "A": "Krojčera",
+        "V": "Krojčer",
+        "I": "Krojčerom",
+        "L": "Krojčeru"
+      },
+      "sve_varijante": [
+        "Krojčer",
+        "Krojčera",
+        "Krojčeru",
+        "Krojčerom"
+      ]
+    },
+    "Čuo": {
+      "ime": "Čuo",
+      "rod": "auto",
+      "padeži": {
+        "N": "Čuo",
+        "G": "Čuoa",
+        "D": "Čuou",
+        "A": "Čuoa",
+        "V": "Čuo",
+        "I": "Čuoom",
+        "L": "Čuou"
+      },
+      "sve_varijante": [
+        "Čuou",
+        "Čuo",
+        "Čuoom",
+        "Čuoa"
+      ]
+    },
+    "Dobro": {
+      "ime": "Dobro",
+      "rod": "auto",
+      "padeži": {
+        "N": "Dobro",
+        "G": "Dobroa",
+        "D": "Dobrou",
+        "A": "Dobroa",
+        "V": "Dobro",
+        "I": "Dobroom",
+        "L": "Dobrou"
+      },
+      "sve_varijante": [
+        "Dobroa",
+        "Dobrou",
+        "Dobro",
+        "Dobroom"
+      ]
+    },
+    "Ravnici": {
+      "ime": "Ravnici",
+      "rod": "auto",
+      "padeži": {
+        "N": "Ravnici",
+        "G": "Ravnicia",
+        "D": "Ravniciu",
+        "A": "Ravnicia",
+        "V": "Ravnici",
+        "I": "Ravniciom",
+        "L": "Ravniciu"
+      },
+      "sve_varijante": [
+        "Ravnicia",
+        "Ravniciom",
+        "Ravnici",
+        "Ravniciu"
+      ]
+    },
+    "Jedno": {
+      "ime": "Jedno",
+      "rod": "auto",
+      "padeži": {
+        "N": "Jedno",
+        "G": "Jednoa",
+        "D": "Jednou",
+        "A": "Jednoa",
+        "V": "Jedno",
+        "I": "Jednoom",
+        "L": "Jednou"
+      },
+      "sve_varijante": [
+        "Jednoa",
+        "Jednoom",
+        "Jedno",
+        "Jednou"
+      ]
+    },
+    "Oko": {
+      "ime": "Oko",
+      "rod": "auto",
+      "padeži": {
+        "N": "Oko",
+        "G": "Okoa",
+        "D": "Okou",
+        "A": "Okoa",
+        "V": "Oko",
+        "I": "Okoom",
+        "L": "Okou"
+      },
+      "sve_varijante": [
+        "Okou",
+        "Okoom",
+        "Oko",
+        "Okoa"
+      ]
+    },
+    "Ljudi": {
+      "ime": "Ljudi",
+      "rod": "auto",
+      "padeži": {
+        "N": "Ljudi",
+        "G": "Ljudia",
+        "D": "Ljudiu",
+        "A": "Ljudia",
+        "V": "Ljudi",
+        "I": "Ljudiom",
+        "L": "Ljudiu"
+      },
+      "sve_varijante": [
+        "Ljudiom",
+        "Ljudi",
+        "Ljudia",
+        "Ljudiu"
+      ]
+    },
+    "Jednog": {
+      "ime": "Jednog",
+      "rod": "auto",
+      "padeži": {
+        "N": "Jednog",
+        "G": "Jednoga",
+        "D": "Jednogu",
+        "A": "Jednoga",
+        "V": "Jednog",
+        "I": "Jednogom",
+        "L": "Jednogu"
+      },
+      "sve_varijante": [
+        "Jednoga",
+        "Jednogu",
+        "Jednog",
+        "Jednogom"
+      ]
+    },
+    "Oka": {
+      "ime": "Oka",
+      "rod": "auto",
+      "padeži": {
+        "N": "Oka",
+        "G": "Oke",
+        "D": "Oki",
+        "A": "Oku",
+        "V": "Oka",
+        "I": "Okom",
+        "L": "Oki"
+      },
+      "sve_varijante": [
+        "Oke",
+        "Oka",
+        "Oki",
+        "Okom",
+        "Oku"
+      ]
+    },
+    "Charmu": {
+      "ime": "Charmu",
+      "rod": "auto",
+      "padeži": {
+        "N": "Charmu",
+        "G": "Charmua",
+        "D": "Charmuu",
+        "A": "Charmua",
+        "V": "Charmu",
+        "I": "Charmuom",
+        "L": "Charmuu"
+      },
+      "sve_varijante": [
+        "Charmuom",
+        "Charmu",
+        "Charmua",
+        "Charmuu"
+      ]
+    },
+    "Stari": {
+      "ime": "Stari",
+      "rod": "auto",
+      "padeži": {
+        "N": "Stari",
+        "G": "Staria",
+        "D": "Stariu",
+        "A": "Staria",
+        "V": "Stari",
+        "I": "Stariom",
+        "L": "Stariu"
+      },
+      "sve_varijante": [
+        "Staria",
+        "Stariom",
+        "Stariu",
+        "Stari"
+      ]
+    },
+    "Oaru": {
+      "ime": "Oaru",
+      "rod": "auto",
+      "padeži": {
+        "N": "Oaru",
+        "G": "Oarua",
+        "D": "Oaruu",
+        "A": "Oarua",
+        "V": "Oaru",
+        "I": "Oaruom",
+        "L": "Oaruu"
+      },
+      "sve_varijante": [
+        "Oaru",
+        "Oarua",
+        "Oaruom",
+        "Oaruu"
+      ]
+    },
+    "Bomanz": {
+      "ime": "Bomanz",
+      "rod": "auto",
+      "padeži": {
+        "N": "Bomanz",
+        "G": "Bomanza",
+        "D": "Bomanzu",
+        "A": "Bomanza",
+        "V": "Bomanz",
+        "I": "Bomanzom",
+        "L": "Bomanzu"
+      },
+      "sve_varijante": [
+        "Bomanzom",
+        "Bomanz",
+        "Bomanzu",
+        "Bomanza"
+      ]
+    },
+    "Tokar": {
+      "ime": "Tokar",
+      "rod": "auto",
+      "padeži": {
+        "N": "Tokar",
+        "G": "Tokara",
+        "D": "Tokaru",
+        "A": "Tokara",
+        "V": "Tokar",
+        "I": "Tokarom",
+        "L": "Tokaru"
+      },
+      "sve_varijante": [
+        "Tokara",
+        "Tokar",
+        "Tokaru",
+        "Tokarom"
+      ]
+    },
+    "Nisam": {
+      "ime": "Nisam",
+      "rod": "auto",
+      "padeži": {
+        "N": "Nisam",
+        "G": "Nisama",
+        "D": "Nisamu",
+        "A": "Nisama",
+        "V": "Nisam",
+        "I": "Nisamom",
+        "L": "Nisamu"
+      },
+      "sve_varijante": [
+        "Nisam",
+        "Nisama",
+        "Nisamom",
+        "Nisamu"
+      ]
+    },
+    "Corbie": {
+      "ime": "Corbie",
+      "rod": "auto",
+      "padeži": {
+        "N": "Corbie",
+        "G": "Corbiea",
+        "D": "Corbieu",
+        "A": "Corbiea",
+        "V": "Corbie",
+        "I": "Corbieom",
+        "L": "Corbieu"
+      },
+      "sve_varijante": [
+        "Corbiea",
+        "Corbie",
+        "Corbieu",
+        "Corbieom"
+      ]
+    },
+    "Besand": {
+      "ime": "Besand",
+      "rod": "auto",
+      "padeži": {
+        "N": "Besand",
+        "G": "Besanda",
+        "D": "Besandu",
+        "A": "Besanda",
+        "V": "Besand",
+        "I": "Besandom",
+        "L": "Besandu"
+      },
+      "sve_varijante": [
+        "Besandu",
+        "Besanda",
+        "Besandom",
+        "Besand"
+      ]
+    },
+    "Barrowland": {
+      "ime": "Barrowland",
+      "rod": "auto",
+      "padeži": {
+        "N": "Barrowland",
+        "G": "Barrowlanda",
+        "D": "Barrowlandu",
+        "A": "Barrowlanda",
+        "V": "Barrowland",
+        "I": "Barrowlandom",
+        "L": "Barrowlandu"
+      },
+      "sve_varijante": [
+        "Barrowlandu",
+        "Barrowlandom",
+        "Barrowland",
+        "Barrowlanda"
+      ]
+    },
+    "Barrowlanda": {
+      "ime": "Barrowlanda",
+      "rod": "auto",
+      "padeži": {
+        "N": "Barrowlanda",
+        "G": "Barrowlande",
+        "D": "Barrowlandi",
+        "A": "Barrowlandu",
+        "V": "Barrowlanda",
+        "I": "Barrowlandom",
+        "L": "Barrowlandi"
+      },
+      "sve_varijante": [
+        "Barrowlandu",
+        "Barrowlande",
+        "Barrowlandom",
+        "Barrowlandi",
+        "Barrowlanda"
+      ]
+    },
+    "Korbie": {
+      "ime": "Korbie",
+      "rod": "auto",
+      "padeži": {
+        "N": "Korbie",
+        "G": "Korbiea",
+        "D": "Korbieu",
+        "A": "Korbiea",
+        "V": "Korbie",
+        "I": "Korbieom",
+        "L": "Korbieu"
+      },
+      "sve_varijante": [
+        "Korbie",
+        "Korbieom",
+        "Korbiea",
+        "Korbieu"
+      ]
+    },
+    "Case": {
+      "ime": "Case",
+      "rod": "auto",
+      "padeži": {
+        "N": "Case",
+        "G": "Casea",
+        "D": "Caseu",
+        "A": "Casea",
+        "V": "Case",
+        "I": "Caseom",
+        "L": "Caseu"
+      },
+      "sve_varijante": [
+        "Caseu",
+        "Caseom",
+        "Case",
+        "Casea"
+      ]
+    },
+    "Stance": {
+      "ime": "Stance",
+      "rod": "auto",
+      "padeži": {
+        "N": "Stance",
+        "G": "Stancea",
+        "D": "Stanceu",
+        "A": "Stancea",
+        "V": "Stance",
+        "I": "Stanceom",
+        "L": "Stanceu"
+      },
+      "sve_varijante": [
+        "Stanceom",
+        "Stanceu",
+        "Stance",
+        "Stancea"
+      ]
+    },
+    "Stancil": {
+      "ime": "Stancil",
+      "rod": "auto",
+      "padeži": {
+        "N": "Stancil",
+        "G": "Stancila",
+        "D": "Stancilu",
+        "A": "Stancila",
+        "V": "Stancil",
+        "I": "Stancilom",
+        "L": "Stancilu"
+      },
+      "sve_varijante": [
+        "Stancila",
+        "Stancil",
+        "Stancilom",
+        "Stancilu"
+      ]
+    },
+    "Jasmine": {
+      "ime": "Jasmine",
+      "rod": "auto",
+      "padeži": {
+        "N": "Jasmine",
+        "G": "Jasminea",
+        "D": "Jasmineu",
+        "A": "Jasminea",
+        "V": "Jasmine",
+        "I": "Jasmineom",
+        "L": "Jasmineu"
+      },
+      "sve_varijante": [
+        "Jasminea",
+        "Jasmine",
+        "Jasmineom",
+        "Jasmineu"
+      ]
+    },
+    "Sweet": {
+      "ime": "Sweet",
+      "rod": "auto",
+      "padeži": {
+        "N": "Sweet",
+        "G": "Sweeta",
+        "D": "Sweetu",
+        "A": "Sweeta",
+        "V": "Sweet",
+        "I": "Sweetom",
+        "L": "Sweetu"
+      },
+      "sve_varijante": [
+        "Sweetom",
+        "Sweeta",
+        "Sweetu",
+        "Sweet"
+      ]
+    },
+    "Uzele": {
+      "ime": "Uzele",
+      "rod": "auto",
+      "padeži": {
+        "N": "Uzele",
+        "G": "Uzelea",
+        "D": "Uzeleu",
+        "A": "Uzelea",
+        "V": "Uzele",
+        "I": "Uzeleom",
+        "L": "Uzeleu"
+      },
+      "sve_varijante": [
+        "Uzelea",
+        "Uzeleom",
+        "Uzeleu",
+        "Uzele"
+      ]
+    },
+    "Ako": {
+      "ime": "Ako",
+      "rod": "auto",
+      "padeži": {
+        "N": "Ako",
+        "G": "Akoa",
+        "D": "Akou",
+        "A": "Akoa",
+        "V": "Ako",
+        "I": "Akoom",
+        "L": "Akou"
+      },
+      "sve_varijante": [
+        "Akou",
+        "Akoom",
+        "Ako",
+        "Akoa"
+      ]
+    },
+    "Natporučnik": {
+      "ime": "Natporučnik",
+      "rod": "auto",
+      "padeži": {
+        "N": "Natporučnik",
+        "G": "Natporučnika",
+        "D": "Natporučniku",
+        "A": "Natporučnika",
+        "V": "Natporučnik",
+        "I": "Natporučnikom",
+        "L": "Natporučniku"
+      },
+      "sve_varijante": [
+        "Natporučnika",
+        "Natporučnik",
+        "Natporučniku",
+        "Natporučnikom"
+      ]
+    },
+    "Šutljivac": {
+      "ime": "Šutljivac",
+      "rod": "auto",
+      "padeži": {
+        "N": "Šutljivac",
+        "G": "Šutljivaca",
+        "D": "Šutljivacu",
+        "A": "Šutljivaca",
+        "V": "Šutljivac",
+        "I": "Šutljivacom",
+        "L": "Šutljivacu"
+      },
+      "sve_varijante": [
+        "Šutljivac",
+        "Šutljivacu",
+        "Šutljivaca",
+        "Šutljivacom"
+      ]
+    },
+    "Men": {
+      "ime": "Men",
+      "rod": "auto",
+      "padeži": {
+        "N": "Men",
+        "G": "Mena",
+        "D": "Menu",
+        "A": "Mena",
+        "V": "Men",
+        "I": "Menom",
+        "L": "Menu"
+      },
+      "sve_varijante": [
+        "Menom",
+        "Mena",
+        "Men",
+        "Menu"
+      ]
+    },
+    "Pop": {
+      "ime": "Pop",
+      "rod": "auto",
+      "padeži": {
+        "N": "Pop",
+        "G": "Popa",
+        "D": "Popu",
+        "A": "Popa",
+        "V": "Pop",
+        "I": "Popom",
+        "L": "Popu"
+      },
+      "sve_varijante": [
+        "Popa",
+        "Pop",
+        "Popu",
+        "Popom"
+      ]
+    },
+    "Bijela": {
+      "ime": "Bijela",
+      "rod": "auto",
+      "padeži": {
+        "N": "Bijela",
+        "G": "Bijele",
+        "D": "Bijeli",
+        "A": "Bijelu",
+        "V": "Bijela",
+        "I": "Bijelom",
+        "L": "Bijeli"
+      },
+      "sve_varijante": [
+        "Bijelu",
+        "Bijela",
+        "Bijele",
+        "Bijelom",
+        "Bijeli"
+      ]
+    },
+    "Ruža": {
+      "ime": "Ruža",
+      "rod": "auto",
+      "padeži": {
+        "N": "Ruža",
+        "G": "Ruže",
+        "D": "Ruži",
+        "A": "Ružu",
+        "V": "Ruža",
+        "I": "Ružom",
+        "L": "Ruži"
+      },
+      "sve_varijante": [
+        "Ruže",
+        "Ružu",
+        "Ruža",
+        "Ruži",
+        "Ružom"
+      ]
+    },
+    "Kao": {
+      "ime": "Kao",
+      "rod": "auto",
+      "padeži": {
+        "N": "Kao",
+        "G": "Kaoa",
+        "D": "Kaou",
+        "A": "Kaoa",
+        "V": "Kao",
+        "I": "Kaoom",
+        "L": "Kaou"
+      },
+      "sve_varijante": [
+        "Kaoom",
+        "Kao",
+        "Kaoa",
+        "Kaou"
+      ]
+    },
+    "Samo": {
+      "ime": "Samo",
+      "rod": "auto",
+      "padeži": {
+        "N": "Samo",
+        "G": "Samoa",
+        "D": "Samou",
+        "A": "Samoa",
+        "V": "Samo",
+        "I": "Samoom",
+        "L": "Samou"
+      },
+      "sve_varijante": [
+        "Samoom",
+        "Samoa",
+        "Samo",
+        "Samou"
+      ]
+    },
+    "Vjetra": {
+      "ime": "Vjetra",
+      "rod": "auto",
+      "padeži": {
+        "N": "Vjetra",
+        "G": "Vjetre",
+        "D": "Vjetri",
+        "A": "Vjetru",
+        "V": "Vjetra",
+        "I": "Vjetrom",
+        "L": "Vjetri"
+      },
+      "sve_varijante": [
+        "Vjetru",
+        "Vjetri",
+        "Vjetre",
+        "Vjetra",
+        "Vjetrom"
+      ]
+    },
+    "Ruže": {
+      "ime": "Ruže",
+      "rod": "auto",
+      "padeži": {
+        "N": "Ruže",
+        "G": "Ružea",
+        "D": "Ružeu",
+        "A": "Ružea",
+        "V": "Ruže",
+        "I": "Ružeom",
+        "L": "Ružeu"
+      },
+      "sve_varijante": [
+        "Ruže",
+        "Ružeom",
+        "Ružea",
+        "Ružeu"
+      ]
+    },
+    "Korbiovo": {
+      "ime": "Korbiovo",
+      "rod": "auto",
+      "padeži": {
+        "N": "Korbiovo",
+        "G": "Korbiovoa",
+        "D": "Korbiovou",
+        "A": "Korbiovoa",
+        "V": "Korbiovo",
+        "I": "Korbiovoom",
+        "L": "Korbiovou"
+      },
+      "sve_varijante": [
+        "Korbiovou",
+        "Korbiovoa",
+        "Korbiovoom",
+        "Korbiovo"
+      ]
+    },
+    "Kes": {
+      "ime": "Kes",
+      "rod": "auto",
+      "padeži": {
+        "N": "Kes",
+        "G": "Kesa",
+        "D": "Kesu",
+        "A": "Kesa",
+        "V": "Kes",
+        "I": "Kesom",
+        "L": "Kesu"
+      },
+      "sve_varijante": [
+        "Kesa",
+        "Kes",
+        "Kesom",
+        "Kesu"
+      ]
+    },
+    "Pukovnik": {
+      "ime": "Pukovnik",
+      "rod": "auto",
+      "padeži": {
+        "N": "Pukovnik",
+        "G": "Pukovnika",
+        "D": "Pukovniku",
+        "A": "Pukovnika",
+        "V": "Pukovnik",
+        "I": "Pukovnikom",
+        "L": "Pukovniku"
+      },
+      "sve_varijante": [
+        "Pukovnikom",
+        "Pukovnika",
+        "Pukovniku",
+        "Pukovnik"
+      ]
+    },
+    "Tko": {
+      "ime": "Tko",
+      "rod": "auto",
+      "padeži": {
+        "N": "Tko",
+        "G": "Tkoa",
+        "D": "Tkou",
+        "A": "Tkoa",
+        "V": "Tko",
+        "I": "Tkoom",
+        "L": "Tkou"
+      },
+      "sve_varijante": [
+        "Tko",
+        "Tkoom",
+        "Tkou",
+        "Tkoa"
+      ]
+    },
+    "Dog": {
+      "ime": "Dog",
+      "rod": "auto",
+      "padeži": {
+        "N": "Dog",
+        "G": "Doga",
+        "D": "Dogu",
+        "A": "Doga",
+        "V": "Dog",
+        "I": "Dogom",
+        "L": "Dogu"
+      },
+      "sve_varijante": [
+        "Dogom",
+        "Dogu",
+        "Dog",
+        "Doga"
+      ]
+    },
+    "Goblina": {
+      "ime": "Goblina",
+      "rod": "auto",
+      "padeži": {
+        "N": "Goblina",
+        "G": "Gobline",
+        "D": "Goblini",
+        "A": "Goblinu",
+        "V": "Goblina",
+        "I": "Goblinom",
+        "L": "Goblini"
+      },
+      "sve_varijante": [
+        "Goblina",
+        "Gobline",
+        "Goblini",
+        "Goblinom",
+        "Goblinu"
+      ]
+    },
+    "Oar": {
+      "ime": "Oar",
+      "rod": "auto",
+      "padeži": {
+        "N": "Oar",
+        "G": "Oara",
+        "D": "Oaru",
+        "A": "Oara",
+        "V": "Oar",
+        "I": "Oarom",
+        "L": "Oaru"
+      },
+      "sve_varijante": [
+        "Oar",
+        "Oarom",
+        "Oaru",
+        "Oara"
+      ]
+    },
+    "Tracker": {
+      "ime": "Tracker",
+      "rod": "auto",
+      "padeži": {
+        "N": "Tracker",
+        "G": "Trackera",
+        "D": "Trackeru",
+        "A": "Trackera",
+        "V": "Tracker",
+        "I": "Trackerom",
+        "L": "Trackeru"
+      },
+      "sve_varijante": [
+        "Trackeru",
+        "Trackerom",
+        "Trackera",
+        "Tracker"
+      ]
+    },
+    "Jednogled": {
+      "ime": "Jednogled",
+      "rod": "auto",
+      "padeži": {
+        "N": "Jednogled",
+        "G": "Jednogleda",
+        "D": "Jednogledu",
+        "A": "Jednogleda",
+        "V": "Jednogled",
+        "I": "Jednogledom",
+        "L": "Jednogledu"
+      },
+      "sve_varijante": [
+        "Jednogled",
+        "Jednogleda",
+        "Jednogledu",
+        "Jednogledom"
+      ]
+    },
+    "Svića": {
+      "ime": "Svića",
+      "rod": "auto",
+      "padeži": {
+        "N": "Svića",
+        "G": "Sviće",
+        "D": "Svići",
+        "A": "Sviću",
+        "V": "Svića",
+        "I": "Svićom",
+        "L": "Svići"
+      },
+      "sve_varijante": [
+        "Svićom",
+        "Sviću",
+        "Svića",
+        "Sviće",
+        "Svići"
+      ]
+    },
+    "Kovač": {
+      "ime": "Kovač",
+      "rod": "auto",
+      "padeži": {
+        "N": "Kovač",
+        "G": "Kovača",
+        "D": "Kovaču",
+        "A": "Kovača",
+        "V": "Kovač",
+        "I": "Kovačom",
+        "L": "Kovaču"
+      },
+      "sve_varijante": [
+        "Kovačom",
+        "Kovača",
+        "Kovač",
+        "Kovaču"
+      ]
+    },
+    "Odjećar": {
+      "ime": "Odjećar",
+      "rod": "auto",
+      "padeži": {
+        "N": "Odjećar",
+        "G": "Odjećara",
+        "D": "Odjećaru",
+        "A": "Odjećara",
+        "V": "Odjećar",
+        "I": "Odjećarom",
+        "L": "Odjećaru"
+      },
+      "sve_varijante": [
+        "Odjećarom",
+        "Odjećar",
+        "Odjećara",
+        "Odjećaru"
+      ]
+    },
+    "Slatki": {
+      "ime": "Slatki",
+      "rod": "auto",
+      "padeži": {
+        "N": "Slatki",
+        "G": "Slatkia",
+        "D": "Slatkiu",
+        "A": "Slatkia",
+        "V": "Slatki",
+        "I": "Slatkiom",
+        "L": "Slatkiu"
+      },
+      "sve_varijante": [
+        "Slatkia",
+        "Slatkiom",
+        "Slatki",
+        "Slatkiu"
+      ]
+    },
+    "Korbiju": {
+      "ime": "Korbiju",
+      "rod": "auto",
+      "padeži": {
+        "N": "Korbiju",
+        "G": "Korbijua",
+        "D": "Korbijuu",
+        "A": "Korbijua",
+        "V": "Korbiju",
+        "I": "Korbijuom",
+        "L": "Korbijuu"
+      },
+      "sve_varijante": [
+        "Korbiju",
+        "Korbijuom",
+        "Korbijua",
+        "Korbijuu"
+      ]
+    },
+    "Jednomak": {
+      "ime": "Jednomak",
+      "rod": "auto",
+      "padeži": {
+        "N": "Jednomak",
+        "G": "Jednomaka",
+        "D": "Jednomaku",
+        "A": "Jednomaka",
+        "V": "Jednomak",
+        "I": "Jednomakom",
+        "L": "Jednomaku"
+      },
+      "sve_varijante": [
+        "Jednomaku",
+        "Jednomaka",
+        "Jednomak",
+        "Jednomakom"
+      ]
+    },
+    "Guard": {
+      "ime": "Guard",
+      "rod": "auto",
+      "padeži": {
+        "N": "Guard",
+        "G": "Guarda",
+        "D": "Guardu",
+        "A": "Guarda",
+        "V": "Guard",
+        "I": "Guardom",
+        "L": "Guardu"
+      },
+      "sve_varijante": [
+        "Guardom",
+        "Guard",
+        "Guarda",
+        "Guardu"
+      ]
+    },
+    "Trackera": {
+      "ime": "Trackera",
+      "rod": "auto",
+      "padeži": {
+        "N": "Trackera",
+        "G": "Trackere",
+        "D": "Trackeri",
+        "A": "Trackeru",
+        "V": "Trackera",
+        "I": "Trackerom",
+        "L": "Trackeri"
+      },
+      "sve_varijante": [
+        "Trackeri",
+        "Trackerom",
+        "Trackeru",
+        "Trackere",
+        "Trackera"
+      ]
+    },
+    "Gardisti": {
+      "ime": "Gardisti",
+      "rod": "auto",
+      "padeži": {
+        "N": "Gardisti",
+        "G": "Gardistia",
+        "D": "Gardistiu",
+        "A": "Gardistia",
+        "V": "Gardisti",
+        "I": "Gardistiom",
+        "L": "Gardistiu"
+      },
+      "sve_varijante": [
+        "Gardistiu",
+        "Gardistiom",
+        "Gardisti",
+        "Gardistia"
+      ]
+    },
+    "Traper": {
+      "ime": "Traper",
+      "rod": "auto",
+      "padeži": {
+        "N": "Traper",
+        "G": "Trapera",
+        "D": "Traperu",
+        "A": "Trapera",
+        "V": "Traper",
+        "I": "Traperom",
+        "L": "Traperu"
+      },
+      "sve_varijante": [
+        "Traperom",
+        "Traper",
+        "Traperu",
+        "Trapera"
+      ]
+    },
+    "Korbu": {
+      "ime": "Korbu",
+      "rod": "auto",
+      "padeži": {
+        "N": "Korbu",
+        "G": "Korbua",
+        "D": "Korbuu",
+        "A": "Korbua",
+        "V": "Korbu",
+        "I": "Korbuom",
+        "L": "Korbuu"
+      },
+      "sve_varijante": [
+        "Korbu",
+        "Korbuu",
+        "Korbuom",
+        "Korbua"
+      ]
+    },
+    "Vrana": {
+      "ime": "Vrana",
+      "rod": "auto",
+      "padeži": {
+        "N": "Vrana",
+        "G": "Vrane",
+        "D": "Vrani",
+        "A": "Vranu",
+        "V": "Vrana",
+        "I": "Vranom",
+        "L": "Vrani"
+      },
+      "sve_varijante": [
+        "Vrani",
+        "Vranu",
+        "Vranom",
+        "Vrane",
+        "Vrana"
+      ]
+    },
+    "Vran": {
+      "ime": "Vran",
+      "rod": "auto",
+      "padeži": {
+        "N": "Vran",
+        "G": "Vrana",
+        "D": "Vranu",
+        "A": "Vrana",
+        "V": "Vran",
+        "I": "Vranom",
+        "L": "Vranu"
+      },
+      "sve_varijante": [
+        "Vrana",
+        "Vranu",
+        "Vranom",
+        "Vran"
+      ]
+    },
+    "Ardath": {
+      "ime": "Ardath",
+      "rod": "auto",
+      "padeži": {
+        "N": "Ardath",
+        "G": "Ardatha",
+        "D": "Ardathu",
+        "A": "Ardatha",
+        "V": "Ardath",
+        "I": "Ardathom",
+        "L": "Ardathu"
+      },
+      "sve_varijante": [
+        "Ardathom",
+        "Ardatha",
+        "Ardath",
+        "Ardathu"
+      ]
+    },
+    "Glory": {
+      "ime": "Glory",
+      "rod": "auto",
+      "padeži": {
+        "N": "Glory",
+        "G": "Glorya",
+        "D": "Gloryu",
+        "A": "Glorya",
+        "V": "Glory",
+        "I": "Gloryom",
+        "L": "Gloryu"
+      },
+      "sve_varijante": [
+        "Glory",
+        "Gloryu",
+        "Gloryom",
+        "Glorya"
+      ]
+    },
+    "Taken": {
+      "ime": "Taken",
+      "rod": "auto",
+      "padeži": {
+        "N": "Taken",
+        "G": "Takena",
+        "D": "Takenu",
+        "A": "Takena",
+        "V": "Taken",
+        "I": "Takenom",
+        "L": "Takenu"
+      },
+      "sve_varijante": [
+        "Takena",
+        "Takenu",
+        "Taken",
+        "Takenom"
+      ]
+    },
+    "Horse": {
+      "ime": "Horse",
+      "rod": "auto",
+      "padeži": {
+        "N": "Horse",
+        "G": "Horsea",
+        "D": "Horseu",
+        "A": "Horsea",
+        "V": "Horse",
+        "I": "Horseom",
+        "L": "Horseu"
+      },
+      "sve_varijante": [
+        "Horsea",
+        "Horse",
+        "Horseu",
+        "Horseom"
+      ]
+    },
+    "Plain": {
+      "ime": "Plain",
+      "rod": "auto",
+      "padeži": {
+        "N": "Plain",
+        "G": "Plaina",
+        "D": "Plainu",
+        "A": "Plaina",
+        "V": "Plain",
+        "I": "Plainom",
+        "L": "Plainu"
+      },
+      "sve_varijante": [
+        "Plaina",
+        "Plain",
+        "Plainom",
+        "Plainu"
+      ]
+    },
+    "Hole": {
+      "ime": "Hole",
+      "rod": "auto",
+      "padeži": {
+        "N": "Hole",
+        "G": "Holea",
+        "D": "Holeu",
+        "A": "Holea",
+        "V": "Hole",
+        "I": "Holeom",
+        "L": "Holeu"
+      },
+      "sve_varijante": [
+        "Holeom",
+        "Holea",
+        "Holeu",
+        "Hole"
+      ]
+    },
+    "Father": {
+      "ime": "Father",
+      "rod": "auto",
+      "padeži": {
+        "N": "Father",
+        "G": "Fathera",
+        "D": "Fatheru",
+        "A": "Fathera",
+        "V": "Father",
+        "I": "Fatherom",
+        "L": "Fatheru"
+      },
+      "sve_varijante": [
+        "Fathera",
+        "Fatherom",
+        "Father",
+        "Fatheru"
+      ]
+    },
+    "Tree": {
+      "ime": "Tree",
+      "rod": "auto",
+      "padeži": {
+        "N": "Tree",
+        "G": "Treea",
+        "D": "Treeu",
+        "A": "Treea",
+        "V": "Tree",
+        "I": "Treeom",
+        "L": "Treeu"
+      },
+      "sve_varijante": [
+        "Treea",
+        "Treeu",
+        "Treeom",
+        "Tree"
+      ]
+    },
+    "How": {
+      "ime": "How",
+      "rod": "auto",
+      "padeži": {
+        "N": "How",
+        "G": "Howa",
+        "D": "Howu",
+        "A": "Howa",
+        "V": "How",
+        "I": "Howom",
+        "L": "Howu"
+      },
+      "sve_varijante": [
+        "How",
+        "Howom",
+        "Howu",
+        "Howa"
+      ]
+    },
+    "Blue": {
+      "ime": "Blue",
+      "rod": "auto",
+      "padeži": {
+        "N": "Blue",
+        "G": "Bluea",
+        "D": "Blueu",
+        "A": "Bluea",
+        "V": "Blue",
+        "I": "Blueom",
+        "L": "Blueu"
+      },
+      "sve_varijante": [
+        "Blue",
+        "Bluea",
+        "Blueu",
+        "Blueom"
+      ]
+    },
+    "Willy": {
+      "ime": "Willy",
+      "rod": "auto",
+      "padeži": {
+        "N": "Willy",
+        "G": "Willya",
+        "D": "Willyu",
+        "A": "Willya",
+        "V": "Willy",
+        "I": "Willyom",
+        "L": "Willyu"
+      },
+      "sve_varijante": [
+        "Willyom",
+        "Willya",
+        "Willy",
+        "Willyu"
+      ]
+    },
+    "Credence": {
+      "ime": "Credence",
+      "rod": "auto",
+      "padeži": {
+        "N": "Credence",
+        "G": "Credencea",
+        "D": "Credenceu",
+        "A": "Credencea",
+        "V": "Credence",
+        "I": "Credenceom",
+        "L": "Credenceu"
+      },
+      "sve_varijante": [
+        "Credencea",
+        "Credence",
+        "Credenceom",
+        "Credenceu"
+      ]
+    },
+    "Sylith": {
+      "ime": "Sylith",
+      "rod": "auto",
+      "padeži": {
+        "N": "Sylith",
+        "G": "Sylitha",
+        "D": "Sylithu",
+        "A": "Sylitha",
+        "V": "Sylith",
+        "I": "Sylithom",
+        "L": "Sylithu"
+      },
+      "sve_varijante": [
+        "Sylith",
+        "Sylitha",
+        "Sylithu",
+        "Sylithom"
+      ]
+    },
+    "Dorotea": {
+      "ime": "Dorotea",
+      "rod": "auto",
+      "padeži": {
+        "N": "Dorotea",
+        "G": "Dorotee",
+        "D": "Dorotei",
+        "A": "Doroteu",
+        "V": "Dorotea",
+        "I": "Doroteom",
+        "L": "Dorotei"
+      },
+      "sve_varijante": [
+        "Dorotei",
+        "Dorotea",
+        "Doroteom",
+        "Dorotee",
+        "Doroteu"
+      ]
+    },
+    "Jaunt": {
+      "ime": "Jaunt",
+      "rod": "auto",
+      "padeži": {
+        "N": "Jaunt",
+        "G": "Jaunta",
+        "D": "Jauntu",
+        "A": "Jaunta",
+        "V": "Jaunt",
+        "I": "Jauntom",
+        "L": "Jauntu"
+      },
+      "sve_varijante": [
+        "Jaunta",
+        "Jauntu",
+        "Jauntom",
+        "Jaunt"
+      ]
+    },
+    "Her": {
+      "ime": "Her",
+      "rod": "auto",
+      "padeži": {
+        "N": "Her",
+        "G": "Hera",
+        "D": "Heru",
+        "A": "Hera",
+        "V": "Her",
+        "I": "Herom",
+        "L": "Heru"
+      },
+      "sve_varijante": [
+        "Her",
+        "Herom",
+        "Hera",
+        "Heru"
+      ]
+    },
+    "Limper": {
+      "ime": "Limper",
+      "rod": "auto",
+      "padeži": {
+        "N": "Limper",
+        "G": "Limpera",
+        "D": "Limperu",
+        "A": "Limpera",
+        "V": "Limper",
+        "I": "Limperom",
+        "L": "Limperu"
+      },
+      "sve_varijante": [
+        "Limperom",
+        "Limpera",
+        "Limperu",
+        "Limper"
+      ]
+    },
+    "Company": {
+      "ime": "Company",
+      "rod": "auto",
+      "padeži": {
+        "N": "Company",
+        "G": "Companya",
+        "D": "Companyu",
+        "A": "Companya",
+        "V": "Company",
+        "I": "Companyom",
+        "L": "Companyu"
+      },
+      "sve_varijante": [
+        "Companyom",
+        "Company",
+        "Companya",
+        "Companyu"
+      ]
+    },
+    "All": {
+      "ime": "All",
+      "rod": "auto",
+      "padeži": {
+        "N": "All",
+        "G": "Alla",
+        "D": "Allu",
+        "A": "Alla",
+        "V": "All",
+        "I": "Allom",
+        "L": "Allu"
+      },
+      "sve_varijante": [
+        "Allom",
+        "Alla",
+        "All",
+        "Allu"
+      ]
+    },
+    "Nobody": {
+      "ime": "Nobody",
+      "rod": "auto",
+      "padeži": {
+        "N": "Nobody",
+        "G": "Nobodya",
+        "D": "Nobodyu",
+        "A": "Nobodya",
+        "V": "Nobody",
+        "I": "Nobodyom",
+        "L": "Nobodyu"
+      },
+      "sve_varijante": [
+        "Nobody",
+        "Nobodyu",
+        "Nobodya",
+        "Nobodyom"
+      ]
+    },
+    "Gollancz": {
+      "ime": "Gollancz",
+      "rod": "auto",
+      "padeži": {
+        "N": "Gollancz",
+        "G": "Gollancza",
+        "D": "Gollanczu",
+        "A": "Gollancza",
+        "V": "Gollancz",
+        "I": "Gollanczom",
+        "L": "Gollanczu"
+      },
+      "sve_varijante": [
+        "Gollanczom",
+        "Gollancz",
+        "Gollancza",
+        "Gollanczu"
+      ]
+    },
+    "Glen": {
+      "ime": "Glen",
+      "rod": "auto",
+      "padeži": {
+        "N": "Glen",
+        "G": "Glena",
+        "D": "Glenu",
+        "A": "Glena",
+        "V": "Glen",
+        "I": "Glenom",
+        "L": "Glenu"
+      },
+      "sve_varijante": [
+        "Glena",
+        "Glenu",
+        "Glenom",
+        "Glen"
+      ]
+    },
+    "Cook": {
+      "ime": "Cook",
+      "rod": "auto",
+      "padeži": {
+        "N": "Cook",
+        "G": "Cooka",
+        "D": "Cooku",
+        "A": "Cooka",
+        "V": "Cook",
+        "I": "Cookom",
+        "L": "Cooku"
+      },
+      "sve_varijante": [
+        "Cooka",
+        "Cook",
+        "Cooku",
+        "Cookom"
+      ]
+    },
+    "Tally": {
+      "ime": "Tally",
+      "rod": "auto",
+      "padeži": {
+        "N": "Tally",
+        "G": "Tallya",
+        "D": "Tallyu",
+        "A": "Tallya",
+        "V": "Tally",
+        "I": "Tallyom",
+        "L": "Tallyu"
+      },
+      "sve_varijante": [
+        "Tallyom",
+        "Tally",
+        "Tallya",
+        "Tallyu"
+      ]
+    },
+    "Samantha": {
+      "ime": "Samantha",
+      "rod": "auto",
+      "padeži": {
+        "N": "Samantha",
+        "G": "Samanthe",
+        "D": "Samanthi",
+        "A": "Samanthu",
+        "V": "Samantha",
+        "I": "Samanthom",
+        "L": "Samanthi"
+      },
+      "sve_varijante": [
+        "Samanthom",
+        "Samanthi",
+        "Samantha",
+        "Samanthe",
+        "Samanthu"
+      ]
+    },
+    "Davidu": {
+      "ime": "Davidu",
+      "rod": "auto",
+      "padeži": {
+        "N": "Davidu",
+        "G": "Davidua",
+        "D": "Daviduu",
+        "A": "Davidua",
+        "V": "Davidu",
+        "I": "Daviduom",
+        "L": "Daviduu"
+      },
+      "sve_varijante": [
+        "Davidu",
+        "Davidua",
+        "Daviduu",
+        "Daviduom"
+      ]
+    },
+    "Josh": {
+      "ime": "Josh",
+      "rod": "auto",
+      "padeži": {
+        "N": "Josh",
+        "G": "Josha",
+        "D": "Joshu",
+        "A": "Josha",
+        "V": "Josh",
+        "I": "Joshom",
+        "L": "Joshu"
+      },
+      "sve_varijante": [
+        "Joshu",
+        "Josh",
+        "Josha",
+        "Joshom"
+      ]
+    },
+    "Junior": {
+      "ime": "Junior",
+      "rod": "auto",
+      "padeži": {
+        "N": "Junior",
+        "G": "Juniora",
+        "D": "Junioru",
+        "A": "Juniora",
+        "V": "Junior",
+        "I": "Juniorom",
+        "L": "Junioru"
+      },
+      "sve_varijante": [
+        "Juniorom",
+        "Junior",
+        "Junioru",
+        "Juniora"
+      ]
+    },
+    "Heights": {
+      "ime": "Heights",
+      "rod": "auto",
+      "padeži": {
+        "N": "Heights",
+        "G": "Heightsa",
+        "D": "Heightsu",
+        "A": "Heightsa",
+        "V": "Heights",
+        "I": "Heightsom",
+        "L": "Heightsu"
+      },
+      "sve_varijante": [
+        "Heightsom",
+        "Heightsa",
+        "Heightsu",
+        "Heights"
+      ]
+    },
+    "Barmen": {
+      "ime": "Barmen",
+      "rod": "auto",
+      "padeži": {
+        "N": "Barmen",
+        "G": "Barmena",
+        "D": "Barmenu",
+        "A": "Barmena",
+        "V": "Barmen",
+        "I": "Barmenom",
+        "L": "Barmenu"
+      },
+      "sve_varijante": [
+        "Barmena",
+        "Barmenu",
+        "Barmen",
+        "Barmenom"
+      ]
     }
   },
   "few_shot_primjeri": [
@@ -7992,17 +10081,17 @@
     },
     "2798": {
       "broj": 2798,
-      "naslov": "chapter01.xhtml",
+      "naslov": "chapter084.html",
       "summary": "",
       "lik_count": {
-        "God": 4,
-        "Bag": 4,
-        "Mom": 8,
-        "Corinne": 4,
-        "Alan": 3
+        "Barrowlanda": 4,
+        "Jednogled": 3,
+        "Svića": 4,
+        "Kovač": 6,
+        "Odjećar": 4
       },
       "chunk_ids": [],
-      "rijeci_count": 854
+      "rijeci_count": 719
     },
     "6668": {
       "broj": 6668,
@@ -8593,11 +10682,15 @@
     },
     "1388": {
       "broj": 1388,
-      "naslov": "chapter03.xhtml",
+      "naslov": "chapter034.html",
       "summary": "",
-      "lik_count": {},
+      "lik_count": {
+        "Ona": 3,
+        "Lady": 3,
+        "Kompanije": 3
+      },
       "chunk_ids": [],
-      "rijeci_count": 174
+      "rijeci_count": 750
     },
     "3387": {
       "broj": 3387,
@@ -9284,15 +11377,17 @@
     },
     "2520": {
       "broj": 2520,
-      "naslov": "chapter16.xhtml",
+      "naslov": "chapter011.html",
       "summary": "",
       "lik_count": {
-        "Sidra": 11,
-        "Sidri": 4,
-        "Selena": 7
+        "Pawnbroker": 5,
+        "Candy": 12,
+        "Otto": 6,
+        "Madle": 6,
+        "Neat": 6
       },
       "chunk_ids": [],
-      "rijeci_count": 787
+      "rijeci_count": 688
     },
     "349": {
       "broj": 349,
@@ -10166,11 +12261,22 @@
     },
     "5662": {
       "broj": 5662,
-      "naslov": "chapter0019.html",
+      "naslov": "chapter115.html",
       "summary": "",
-      "lik_count": {},
+      "lik_count": {
+        "Lady": 6,
+        "One": 3,
+        "Eye": 3,
+        "Raven": 8,
+        "Company": 4,
+        "Darling": 4,
+        "Silent": 4,
+        "You": 6,
+        "All": 3,
+        "Nobody": 5
+      },
       "chunk_ids": [],
-      "rijeci_count": 152
+      "rijeci_count": 799
     },
     "359": {
       "broj": 359,
@@ -10411,13 +12517,14 @@
     },
     "676": {
       "broj": 676,
-      "naslov": "chapter0004.html",
+      "naslov": "chapter001.html",
       "summary": "",
       "lik_count": {
-        "Barry": 9
+        "Curly": 5,
+        "Croaker": 3
       },
       "chunk_ids": [],
-      "rijeci_count": 770
+      "rijeci_count": 756
     },
     "1175": {
       "broj": 1175,
@@ -11772,13 +13879,13 @@
     },
     "1750": {
       "broj": 1750,
-      "naslov": "30_Chapter23.html",
+      "naslov": "chapter010.html",
       "summary": "",
       "lik_count": {
-        "Burned": 3
+        "Junipera": 3
       },
       "chunk_ids": [],
-      "rijeci_count": 784
+      "rijeci_count": 390
     },
     "1226": {
       "broj": 1226,
@@ -12388,14 +14495,11 @@
     },
     "7084": {
       "broj": 7084,
-      "naslov": "chapter04.xhtml",
+      "naslov": "chapter0002.html",
       "summary": "",
-      "lik_count": {
-        "Negdje": 4,
-        "Majka": 7
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 780
+      "rijeci_count": 757
     },
     "3742": {
       "broj": 3742,
@@ -12630,11 +14734,16 @@
     },
     "6926": {
       "broj": 6926,
-      "naslov": "cover.xhtml",
+      "naslov": "chapter028.html",
       "summary": "",
-      "lik_count": {},
+      "lik_count": {
+        "Shed": 21,
+        "Lily": 9,
+        "Wally": 17,
+        "Wallyja": 3
+      },
       "chunk_ids": [],
-      "rijeci_count": 81
+      "rijeci_count": 774
     },
     "1822": {
       "broj": 1822,
@@ -13066,11 +15175,11 @@
     },
     "1233": {
       "broj": 1233,
-      "naslov": "chapter0000_split_001.html",
+      "naslov": "chapter0001.html",
       "summary": "",
       "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 100
+      "rijeci_count": 707
     },
     "1062": {
       "broj": 1062,
@@ -14704,19 +16813,14 @@
     },
     "6871": {
       "broj": 6871,
-      "naslov": "chapter025.html",
+      "naslov": "chapter068.html",
       "summary": "",
       "lik_count": {
-        "Bullock": 8,
-        "Yeah": 4,
-        "Croaker": 3,
-        "Raven": 8,
-        "Darling": 3,
-        "Bullocka": 3,
-        "Elmo": 4
+        "Uzele": 3,
+        "Ravnici": 4
       },
       "chunk_ids": [],
-      "rijeci_count": 818
+      "rijeci_count": 703
     },
     "3489": {
       "broj": 3489,
@@ -14743,16 +16847,16 @@
     },
     "1262": {
       "broj": 1262,
-      "naslov": "chapter028.html",
+      "naslov": "chapter022.html",
       "summary": "",
       "lik_count": {
-        "Shed": 21,
-        "Lily": 9,
-        "Wally": 17,
-        "Wallyja": 3
+        "Raven": 9,
+        "Krage": 25,
+        "Shed": 19,
+        "Kragea": 3
       },
       "chunk_ids": [],
-      "rijeci_count": 774
+      "rijeci_count": 816
     },
     "6923": {
       "broj": 6923,
@@ -15208,6 +17312,1973 @@
       },
       "chunk_ids": [],
       "rijeci_count": 762
+    },
+    "7463": {
+      "broj": 7463,
+      "naslov": "chapter034.html",
+      "summary": "",
+      "lik_count": {
+        "Lady": 3,
+        "Kompanije": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 751
+    },
+    "3885": {
+      "broj": 3885,
+      "naslov": "chapter035.html",
+      "summary": "",
+      "lik_count": {
+        "Lisa": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 770
+    },
+    "8652": {
+      "broj": 8652,
+      "naslov": "chapter036.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 10,
+        "Lisa": 5,
+        "Shede": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 792
+    },
+    "7864": {
+      "broj": 7864,
+      "naslov": "chapter037.html",
+      "summary": "",
+      "lik_count": {
+        "Croaker": 4,
+        "Otto": 3,
+        "Shed": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "2880": {
+      "broj": 2880,
+      "naslov": "chapter038.html",
+      "summary": "",
+      "lik_count": {
+        "Juniper": 5,
+        "Asa": 15,
+        "Pawnbroker": 18,
+        "Shed": 26,
+        "Raven": 8,
+        "Pawnbrokera": 3,
+        "Asu": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 734
+    },
+    "4124": {
+      "broj": 4124,
+      "naslov": "chapter039.html",
+      "summary": "",
+      "lik_count": {
+        "Asu": 3,
+        "Elmova": 5,
+        "Goblin": 8,
+        "Asa": 6,
+        "Raven": 7,
+        "Kapetan": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "341": {
+      "broj": 341,
+      "naslov": "chapter040.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 774
+    },
+    "1628": {
+      "broj": 1628,
+      "naslov": "chapter041.html",
+      "summary": "",
+      "lik_count": {
+        "Šed": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 794
+    },
+    "6928": {
+      "broj": 6928,
+      "naslov": "chapter042.html",
+      "summary": "",
+      "lik_count": {
+        "Whisper": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "6081": {
+      "broj": 6081,
+      "naslov": "chapter043.html",
+      "summary": "",
+      "lik_count": {
+        "One": 9,
+        "Eye": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 743
+    },
+    "1620": {
+      "broj": 1620,
+      "naslov": "chapter044.html",
+      "summary": "",
+      "lik_count": {
+        "Poručnik": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 733
+    },
+    "5565": {
+      "broj": 5565,
+      "naslov": "chapter045.html",
+      "summary": "",
+      "lik_count": {
+        "Gospođa": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 784
+    },
+    "2232": {
+      "broj": 2232,
+      "naslov": "chapter046.html",
+      "summary": "",
+      "lik_count": {
+        "One": 3,
+        "Eye": 3,
+        "Goblin": 4,
+        "Silent": 7,
+        "Poručnik": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 770
+    },
+    "8927": {
+      "broj": 8927,
+      "naslov": "chapter047.html",
+      "summary": "",
+      "lik_count": {
+        "Meadenvil": 4,
+        "Poručnika": 3,
+        "Kompanija": 3,
+        "Lady": 4,
+        "Kingpina": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 777
+    },
+    "4885": {
+      "broj": 4885,
+      "naslov": "chapter002.html",
+      "summary": "",
+      "lik_count": {
+        "Jednooki": 10,
+        "Lomilac": 3,
+        "Kapetan": 5,
+        "Poručnik": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 715
+    },
+    "7965": {
+      "broj": 7965,
+      "naslov": "chapter003.html",
+      "summary": "",
+      "lik_count": {
+        "Elmo": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 749
+    },
+    "3185": {
+      "broj": 3185,
+      "naslov": "chapter004.html",
+      "summary": "",
+      "lik_count": {
+        "Kapetan": 8,
+        "Croaker": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 766
+    },
+    "2179": {
+      "broj": 2179,
+      "naslov": "chapter005.html",
+      "summary": "",
+      "lik_count": {
+        "Kapetan": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "731": {
+      "broj": 731,
+      "naslov": "chapter006.html",
+      "summary": "",
+      "lik_count": {
+        "Gospa": 3,
+        "Poručnik": 8,
+        "Jednooko": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 767
+    },
+    "5289": {
+      "broj": 5289,
+      "naslov": "chapter007.html",
+      "summary": "",
+      "lik_count": {
+        "Goblin": 9,
+        "Elmo": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "280": {
+      "broj": 280,
+      "naslov": "chapter008.html",
+      "summary": "",
+      "lik_count": {
+        "Ijekavian": 3,
+        "Consistency": 3,
+        "Segment": 4,
+        "Njegovo": 7,
+        "Dobri": 6,
+        "Njegov": 14,
+        "Caricevine": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 694
+    },
+    "9952": {
+      "broj": 9952,
+      "naslov": "chapter009.html",
+      "summary": "",
+      "lik_count": {
+        "Dječak": 7,
+        "Goblin": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 461
+    },
+    "5420": {
+      "broj": 5420,
+      "naslov": "chapter012.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 20,
+        "Asa": 9,
+        "Raven": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "8722": {
+      "broj": 8722,
+      "naslov": "chapter013.html",
+      "summary": "",
+      "lik_count": {
+        "Candy": 11,
+        "Otto": 9,
+        "Pawnbroker": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "2521": {
+      "broj": 2521,
+      "naslov": "chapter014.html",
+      "summary": "",
+      "lik_count": {
+        "Krage": 22,
+        "Lily": 5,
+        "Raven": 9,
+        "Shed": 24,
+        "Crveni": 11,
+        "Krageu": 3,
+        "Count": 11
+      },
+      "chunk_ids": [],
+      "rijeci_count": 783
+    },
+    "5814": {
+      "broj": 5814,
+      "naslov": "chapter015.html",
+      "summary": "",
+      "lik_count": {
+        "Elmo": 5,
+        "Fraktura": 5,
+        "Kapetan": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 733
+    },
+    "4244": {
+      "broj": 4244,
+      "naslov": "chapter016.html",
+      "summary": "",
+      "lik_count": {
+        "Krage": 11,
+        "Asa": 10,
+        "Shed": 23,
+        "Daj": 3,
+        "Raven": 10,
+        "Ravena": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 753
+    },
+    "2891": {
+      "broj": 2891,
+      "naslov": "chapter017.html",
+      "summary": "",
+      "lik_count": {
+        "Ravnice": 3,
+        "Straha": 3,
+        "One": 3,
+        "Eye": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "3776": {
+      "broj": 3776,
+      "naslov": "chapter018.html",
+      "summary": "",
+      "lik_count": {
+        "Asa": 4,
+        "Šed": 24,
+        "Raven": 13
+      },
+      "chunk_ids": [],
+      "rijeci_count": 744
+    },
+    "5497": {
+      "broj": 5497,
+      "naslov": "chapter019.html",
+      "summary": "",
+      "lik_count": {
+        "Uzeti": 8,
+        "Limpera": 5,
+        "Gospa": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 732
+    },
+    "7929": {
+      "broj": 7929,
+      "naslov": "chapter020.html",
+      "summary": "",
+      "lik_count": {
+        "The": 10,
+        "Raven": 13,
+        "Shed": 27,
+        "Krage": 10,
+        "Sheda": 3,
+        "Asa": 11,
+        "Darling": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 767
+    },
+    "5938": {
+      "broj": 5938,
+      "naslov": "chapter021.html",
+      "summary": "",
+      "lik_count": {
+        "Juniper": 5,
+        "Duretile": 5,
+        "Bullocka": 3,
+        "Hargadon": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 784
+    },
+    "5798": {
+      "broj": 5798,
+      "naslov": "chapter023.html",
+      "summary": "",
+      "lik_count": {
+        "Ograde": 4,
+        "Pokazao": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 779
+    },
+    "5489": {
+      "broj": 5489,
+      "naslov": "chapter024.html",
+      "summary": "",
+      "lik_count": {
+        "Šted": 15,
+        "Asa": 12,
+        "Raven": 7,
+        "Bullock": 10,
+        "Nije": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 603
+    },
+    "744": {
+      "broj": 744,
+      "naslov": "chapter025.html",
+      "summary": "",
+      "lik_count": {
+        "Bullock": 8,
+        "Yeah": 4,
+        "Croaker": 3,
+        "Raven": 8,
+        "Darling": 3,
+        "Bullocka": 3,
+        "Elmo": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 818
+    },
+    "8222": {
+      "broj": 8222,
+      "naslov": "chapter026.html",
+      "summary": "",
+      "lik_count": {
+        "Draga": 5,
+        "Gavran": 5,
+        "Shed": 12
+      },
+      "chunk_ids": [],
+      "rijeci_count": 333
+    },
+    "3403": {
+      "broj": 3403,
+      "naslov": "chapter027.html",
+      "summary": "",
+      "lik_count": {
+        "Whisper": 6,
+        "Raven": 10
+      },
+      "chunk_ids": [],
+      "rijeci_count": 779
+    },
+    "9990": {
+      "broj": 9990,
+      "naslov": "chapter029.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "8860": {
+      "broj": 8860,
+      "naslov": "chapter030.html",
+      "summary": "",
+      "lik_count": {
+        "Kako": 4,
+        "Shed": 14,
+        "Ispitivač": 5,
+        "Asa": 10,
+        "Krage": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 691
+    },
+    "8330": {
+      "broj": 8330,
+      "naslov": "chapter031.html",
+      "summary": "",
+      "lik_count": {
+        "Pawnbroker": 4,
+        "Goblin": 8,
+        "Možda": 3,
+        "Elmo": 6,
+        "Shed": 7,
+        "Ravena": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 810
+    },
+    "5488": {
+      "broj": 5488,
+      "naslov": "chapter032.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 7,
+        "Sue": 5,
+        "Gilberta": 3,
+        "Nije": 7,
+        "Lisa": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 805
+    },
+    "4168": {
+      "broj": 4168,
+      "naslov": "chapter033.html",
+      "summary": "",
+      "lik_count": {
+        "Sue": 8,
+        "Šed": 11,
+        "Sada": 4,
+        "Maron": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 793
+    },
+    "4861": {
+      "broj": 4861,
+      "naslov": "chapter035.html",
+      "summary": "",
+      "lik_count": {
+        "Lisa": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 770
+    },
+    "8362": {
+      "broj": 8362,
+      "naslov": "chapter036.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 10,
+        "Lisa": 5,
+        "Shede": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 792
+    },
+    "9001": {
+      "broj": 9001,
+      "naslov": "chapter037.html",
+      "summary": "",
+      "lik_count": {
+        "Croaker": 4,
+        "Otto": 3,
+        "Shed": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "3348": {
+      "broj": 3348,
+      "naslov": "chapter038.html",
+      "summary": "",
+      "lik_count": {
+        "Juniper": 5,
+        "Asa": 16,
+        "Pawnbroker": 18,
+        "Shed": 26,
+        "Raven": 7,
+        "Pawnbrokera": 3,
+        "Asu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 742
+    },
+    "4195": {
+      "broj": 4195,
+      "naslov": "chapter039.html",
+      "summary": "",
+      "lik_count": {
+        "Asu": 3,
+        "Elmova": 5,
+        "Goblin": 8,
+        "Asa": 6,
+        "Raven": 7,
+        "Kapetan": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "5451": {
+      "broj": 5451,
+      "naslov": "chapter040.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 774
+    },
+    "1424": {
+      "broj": 1424,
+      "naslov": "chapter041.html",
+      "summary": "",
+      "lik_count": {
+        "Šed": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 794
+    },
+    "5894": {
+      "broj": 5894,
+      "naslov": "chapter042.html",
+      "summary": "",
+      "lik_count": {
+        "Whisper": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "5874": {
+      "broj": 5874,
+      "naslov": "chapter043.html",
+      "summary": "",
+      "lik_count": {
+        "One": 9,
+        "Eye": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 743
+    },
+    "3150": {
+      "broj": 3150,
+      "naslov": "chapter044.html",
+      "summary": "",
+      "lik_count": {
+        "Poručnik": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 733
+    },
+    "8681": {
+      "broj": 8681,
+      "naslov": "chapter045.html",
+      "summary": "",
+      "lik_count": {
+        "Gospođa": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 784
+    },
+    "9890": {
+      "broj": 9890,
+      "naslov": "chapter046.html",
+      "summary": "",
+      "lik_count": {
+        "One": 3,
+        "Eye": 3,
+        "Goblin": 4,
+        "Silent": 7,
+        "Poručnik": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 770
+    },
+    "5711": {
+      "broj": 5711,
+      "naslov": "chapter047.html",
+      "summary": "",
+      "lik_count": {
+        "Meadenvil": 4,
+        "Poručnika": 3,
+        "Kompanija": 3,
+        "Lady": 4,
+        "Kingpina": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 777
+    },
+    "9683": {
+      "broj": 9683,
+      "naslov": "chapter048.html",
+      "summary": "",
+      "lik_count": {
+        "One": 7,
+        "Eye": 6,
+        "Goblin": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 778
+    },
+    "9995": {
+      "broj": 9995,
+      "naslov": "chapter049.html",
+      "summary": "",
+      "lik_count": {
+        "Selkirk": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 749
+    },
+    "4020": {
+      "broj": 4020,
+      "naslov": "chapter050.html",
+      "summary": "",
+      "lik_count": {
+        "Asu": 3,
+        "Hagop": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 814
+    },
+    "3486": {
+      "broj": 3486,
+      "naslov": "chapter051.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 8,
+        "Darling": 3,
+        "Lady": 3,
+        "Pogledao": 4,
+        "Hagop": 4,
+        "Asa": 5,
+        "Pogledaj": 4,
+        "Croaker": 3,
+        "Juniperu": 3,
+        "Raven": 5,
+        "One": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 810
+    },
+    "1560": {
+      "broj": 1560,
+      "naslov": "chapter052.html",
+      "summary": "",
+      "lik_count": {
+        "Ravenovom": 3,
+        "One": 4,
+        "Eye": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 775
+    },
+    "5179": {
+      "broj": 5179,
+      "naslov": "chapter053.html",
+      "summary": "",
+      "lik_count": {
+        "Jednooko": 6,
+        "Svi": 3,
+        "Krojčer": 4,
+        "Šed": 10,
+        "Goblin": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 765
+    },
+    "4071": {
+      "broj": 4071,
+      "naslov": "chapter054.html",
+      "summary": "",
+      "lik_count": {
+        "Shed": 4,
+        "Čuo": 3,
+        "Eye": 3,
+        "Dobro": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 776
+    },
+    "1930": {
+      "broj": 1930,
+      "naslov": "chapter055.html",
+      "summary": "",
+      "lik_count": {
+        "Goblin": 11,
+        "One": 7,
+        "Eye": 7,
+        "Silent": 4,
+        "Limpera": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 766
+    },
+    "9125": {
+      "broj": 9125,
+      "naslov": "chapter056.html",
+      "summary": "",
+      "lik_count": {
+        "One": 4,
+        "Eye": 4,
+        "Limpera": 3,
+        "Croaker": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 759
+    },
+    "2909": {
+      "broj": 2909,
+      "naslov": "chapter057.html",
+      "summary": "",
+      "lik_count": {
+        "Ravnici": 3,
+        "Jedno": 7,
+        "Oko": 3,
+        "Ljudi": 3,
+        "Jednog": 3,
+        "Oka": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 719
+    },
+    "2317": {
+      "broj": 2317,
+      "naslov": "chapter058.html",
+      "summary": "",
+      "lik_count": {
+        "Charmu": 3,
+        "Darling": 4,
+        "Stari": 5,
+        "Lady": 7,
+        "Goblin": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "9539": {
+      "broj": 9539,
+      "naslov": "chapter059.html",
+      "summary": "",
+      "lik_count": {
+        "Oaru": 3,
+        "Bomanz": 10,
+        "Tokar": 5,
+        "Nisam": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "2461": {
+      "broj": 2461,
+      "naslov": "chapter060.html",
+      "summary": "",
+      "lik_count": {
+        "Corbie": 15
+      },
+      "chunk_ids": [],
+      "rijeci_count": 622
+    },
+    "3652": {
+      "broj": 3652,
+      "naslov": "chapter061.html",
+      "summary": "",
+      "lik_count": {
+        "Oko": 7,
+        "Jedno": 8,
+        "Goblin": 7,
+        "Elmo": 5,
+        "Uzeti": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 655
+    },
+    "2011": {
+      "broj": 2011,
+      "naslov": "chapter062.html",
+      "summary": "",
+      "lik_count": {
+        "Silent": 8,
+        "Ravnici": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 755
+    },
+    "4304": {
+      "broj": 4304,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "The": 9,
+        "Rodric": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 720
+    },
+    "2567": {
+      "broj": 2567,
+      "naslov": "chapter064.html",
+      "summary": "",
+      "lik_count": {
+        "Barrowland": 7,
+        "Barrowlanda": 3,
+        "Korbie": 9,
+        "Case": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 724
+    },
+    "2151": {
+      "broj": 2151,
+      "naslov": "chapter065.html",
+      "summary": "",
+      "lik_count": {
+        "Goblin": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 745
+    },
+    "9504": {
+      "broj": 9504,
+      "naslov": "chapter066.html",
+      "summary": "",
+      "lik_count": {
+        "Bomanz": 13,
+        "Stance": 6,
+        "Stancil": 4,
+        "Jasmine": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 715
+    },
+    "4617": {
+      "broj": 4617,
+      "naslov": "chapter067.html",
+      "summary": "",
+      "lik_count": {
+        "Corbie": 15,
+        "Sweet": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 698
+    },
+    "4089": {
+      "broj": 4089,
+      "naslov": "chapter069.html",
+      "summary": "",
+      "lik_count": {
+        "Darling": 5,
+        "Ona": 5,
+        "Croaker": 4,
+        "Ako": 5,
+        "Lady": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 573
+    },
+    "9354": {
+      "broj": 9354,
+      "naslov": "chapter070.html",
+      "summary": "",
+      "lik_count": {
+        "Bomanz": 9,
+        "Tokar": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 514
+    },
+    "5029": {
+      "broj": 5029,
+      "naslov": "chapter071.html",
+      "summary": "",
+      "lik_count": {
+        "Barrowland": 4,
+        "Corbie": 8,
+        "Oaru": 4,
+        "Case": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 636
+    },
+    "9657": {
+      "broj": 9657,
+      "naslov": "chapter072.html",
+      "summary": "",
+      "lik_count": {
+        "Darling": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 761
+    },
+    "7235": {
+      "broj": 7235,
+      "naslov": "chapter073.html",
+      "summary": "",
+      "lik_count": {
+        "Uzeti": 5,
+        "Elmo": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 754
+    },
+    "8000": {
+      "broj": 8000,
+      "naslov": "chapter074.html",
+      "summary": "",
+      "lik_count": {
+        "Oko": 7,
+        "Goblin": 6,
+        "Kako": 4,
+        "Natporučnik": 6,
+        "Šutljivac": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 714
+    },
+    "7389": {
+      "broj": 7389,
+      "naslov": "chapter075.html",
+      "summary": "",
+      "lik_count": {
+        "Bomanz": 8,
+        "Nije": 5,
+        "Možda": 3,
+        "Men": 5,
+        "Pop": 4,
+        "Stancil": 5,
+        "Besand": 11
+      },
+      "chunk_ids": [],
+      "rijeci_count": 788
+    },
+    "8287": {
+      "broj": 8287,
+      "naslov": "chapter076.html",
+      "summary": "",
+      "lik_count": {
+        "Ako": 4,
+        "Case": 6,
+        "Corbie": 17
+      },
+      "chunk_ids": [],
+      "rijeci_count": 727
+    },
+    "2583": {
+      "broj": 2583,
+      "naslov": "chapter077.html",
+      "summary": "",
+      "lik_count": {
+        "Darling": 8,
+        "Croaker": 4,
+        "Bijela": 3,
+        "Ruža": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 614
+    },
+    "8536": {
+      "broj": 8536,
+      "naslov": "chapter078.html",
+      "summary": "",
+      "lik_count": {
+        "Jednog": 7,
+        "Goblin": 9,
+        "Croaker": 4,
+        "Kao": 3,
+        "Samo": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 704
+    },
+    "6428": {
+      "broj": 6428,
+      "naslov": "chapter079.html",
+      "summary": "",
+      "lik_count": {
+        "Darling": 11,
+        "One": 3,
+        "Eye": 3,
+        "Ona": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 721
+    },
+    "5872": {
+      "broj": 5872,
+      "naslov": "chapter080.html",
+      "summary": "",
+      "lik_count": {
+        "Ravnice": 3,
+        "Vjetra": 3,
+        "Jedno": 4,
+        "Oko": 4,
+        "Goblin": 5,
+        "Ruže": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 735
+    },
+    "5134": {
+      "broj": 5134,
+      "naslov": "chapter081.html",
+      "summary": "",
+      "lik_count": {
+        "Korbiovo": 3,
+        "Kes": 10,
+        "Pukovnik": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 650
+    },
+    "4869": {
+      "broj": 4869,
+      "naslov": "chapter082.html",
+      "summary": "",
+      "lik_count": {
+        "Goblin": 10,
+        "One": 8,
+        "Eye": 8,
+        "Tko": 4,
+        "Dog": 3,
+        "Croaker": 5,
+        "Goblina": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 701
+    },
+    "5829": {
+      "broj": 5829,
+      "naslov": "chapter083.html",
+      "summary": "",
+      "lik_count": {
+        "Oar": 4,
+        "One": 5,
+        "Eye": 5,
+        "Tracker": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 734
+    },
+    "529": {
+      "broj": 529,
+      "naslov": "chapter085.html",
+      "summary": "",
+      "lik_count": {
+        "Slatki": 5,
+        "Korbiju": 3,
+        "Kes": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 436
+    },
+    "3140": {
+      "broj": 3140,
+      "naslov": "chapter086.html",
+      "summary": "",
+      "lik_count": {
+        "Jednomak": 8,
+        "Goblin": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 574
+    },
+    "7167": {
+      "broj": 7167,
+      "naslov": "chapter087.html",
+      "summary": "",
+      "lik_count": {
+        "Goblin": 3,
+        "One": 3,
+        "Eye": 3,
+        "The": 19,
+        "Guard": 3,
+        "Tracker": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 775
+    },
+    "5325": {
+      "broj": 5325,
+      "naslov": "chapter088.html",
+      "summary": "",
+      "lik_count": {
+        "Trackera": 5,
+        "Gardisti": 4,
+        "Tracker": 13,
+        "One": 3,
+        "Eye": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 719
+    },
+    "6305": {
+      "broj": 6305,
+      "naslov": "chapter089.html",
+      "summary": "",
+      "lik_count": {
+        "Jedno": 8,
+        "Traper": 5,
+        "Korbu": 3,
+        "Vrana": 10,
+        "Vran": 15
+      },
+      "chunk_ids": [],
+      "rijeci_count": 735
+    },
+    "2983": {
+      "broj": 2983,
+      "naslov": "chapter090.html",
+      "summary": "",
+      "lik_count": {
+        "Bomanz": 13,
+        "Ardath": 3,
+        "Tokar": 6,
+        "Stancil": 5,
+        "Glory": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 722
+    },
+    "5749": {
+      "broj": 5749,
+      "naslov": "chapter091.html",
+      "summary": "",
+      "lik_count": {
+        "Ravena": 3,
+        "Raven": 7,
+        "Možda": 5,
+        "Goblin": 3,
+        "One": 3,
+        "Eye": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 726
+    },
+    "1948": {
+      "broj": 1948,
+      "naslov": "chapter092.html",
+      "summary": "",
+      "lik_count": {
+        "Oko": 9,
+        "Vrana": 4,
+        "Goblin": 7,
+        "Jedno": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 755
+    },
+    "848": {
+      "broj": 848,
+      "naslov": "chapter093.html",
+      "summary": "",
+      "lik_count": {
+        "Tracker": 10,
+        "Eye": 6,
+        "One": 6,
+        "Croaker": 3,
+        "Taken": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 763
+    },
+    "7075": {
+      "broj": 7075,
+      "naslov": "chapter094.html",
+      "summary": "",
+      "lik_count": {
+        "Whisper": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 705
+    },
+    "2673": {
+      "broj": 2673,
+      "naslov": "chapter095.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 749
+    },
+    "3821": {
+      "broj": 3821,
+      "naslov": "chapter111.html",
+      "summary": "",
+      "lik_count": {
+        "The": 23,
+        "Lady": 5,
+        "Barrowland": 4,
+        "One": 5,
+        "Raven": 3,
+        "Silent": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 764
+    },
+    "133": {
+      "broj": 133,
+      "naslov": "chapter097.html",
+      "summary": "",
+      "lik_count": {
+        "Horse": 6,
+        "Plain": 3,
+        "What": 4,
+        "Taken": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 753
+    },
+    "2881": {
+      "broj": 2881,
+      "naslov": "chapter098.html",
+      "summary": "",
+      "lik_count": {
+        "Lady": 6,
+        "Plain": 6,
+        "The": 7,
+        "Hole": 3,
+        "Elmo": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 777
+    },
+    "2300": {
+      "broj": 2300,
+      "naslov": "chapter099.html",
+      "summary": "",
+      "lik_count": {
+        "Ardath": 3,
+        "She": 7,
+        "Otto": 6,
+        "Elmo": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 790
+    },
+    "9811": {
+      "broj": 9811,
+      "naslov": "chapter100.html",
+      "summary": "",
+      "lik_count": {
+        "The": 17,
+        "Lady": 5,
+        "Father": 7,
+        "Tree": 7,
+        "Darling": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 771
+    },
+    "6030": {
+      "broj": 6030,
+      "naslov": "chapter101.html",
+      "summary": "",
+      "lik_count": {
+        "Lady": 9,
+        "Taken": 4,
+        "She": 7,
+        "Silent": 3,
+        "Darling": 10
+      },
+      "chunk_ids": [],
+      "rijeci_count": 769
+    },
+    "4211": {
+      "broj": 4211,
+      "naslov": "chapter102.html",
+      "summary": "",
+      "lik_count": {
+        "Tree": 5,
+        "One": 7,
+        "Eye": 5,
+        "Father": 4,
+        "The": 13
+      },
+      "chunk_ids": [],
+      "rijeci_count": 760
+    },
+    "2944": {
+      "broj": 2944,
+      "naslov": "chapter103.html",
+      "summary": "",
+      "lik_count": {
+        "Raven": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 410
+    },
+    "7819": {
+      "broj": 7819,
+      "naslov": "chapter104.html",
+      "summary": "",
+      "lik_count": {
+        "Lady": 8,
+        "Darling": 4,
+        "One": 6,
+        "Goblin": 5,
+        "Eye": 5,
+        "Tracker": 3,
+        "Elmo": 3,
+        "Taken": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "1418": {
+      "broj": 1418,
+      "naslov": "chapter105.html",
+      "summary": "",
+      "lik_count": {
+        "The": 7,
+        "One": 3,
+        "Eye": 4,
+        "Raven": 10,
+        "Whisper": 3,
+        "Goblin": 5,
+        "She": 5,
+        "How": 3,
+        "Bomanz": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "3811": {
+      "broj": 3811,
+      "naslov": "chapter106.html",
+      "summary": "",
+      "lik_count": {
+        "Blue": 3,
+        "Willy": 3,
+        "Lady": 3,
+        "Silent": 5,
+        "One": 4,
+        "She": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 722
+    },
+    "4969": {
+      "broj": 4969,
+      "naslov": "chapter107.html",
+      "summary": "",
+      "lik_count": {
+        "The": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 341
+    },
+    "2981": {
+      "broj": 2981,
+      "naslov": "chapter108.html",
+      "summary": "",
+      "lik_count": {
+        "Lady": 8,
+        "Ardath": 5,
+        "Credence": 6,
+        "Sylith": 5,
+        "Dorotea": 6,
+        "Tracker": 6,
+        "Silent": 3,
+        "Jaunt": 4,
+        "Dominator": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "3592": {
+      "broj": 3592,
+      "naslov": "chapter109.html",
+      "summary": "",
+      "lik_count": {
+        "The": 9,
+        "Croaker": 4,
+        "What": 6,
+        "Lady": 7,
+        "But": 3,
+        "Taken": 4,
+        "She": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 744
+    },
+    "8633": {
+      "broj": 8633,
+      "naslov": "chapter110.html",
+      "summary": "",
+      "lik_count": {
+        "Taken": 5,
+        "Goblin": 3,
+        "One": 3,
+        "Eye": 3,
+        "Case": 3,
+        "The": 10,
+        "Her": 6,
+        "What": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 777
+    },
+    "3313": {
+      "broj": 3313,
+      "naslov": "chapter112.html",
+      "summary": "",
+      "lik_count": {
+        "The": 12,
+        "Limper": 3,
+        "Raven": 7,
+        "Lady": 6,
+        "Dominator": 3,
+        "Case": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 786
+    },
+    "1987": {
+      "broj": 1987,
+      "naslov": "chapter113.html",
+      "summary": "",
+      "lik_count": {
+        "The": 20,
+        "Limper": 3,
+        "Oar": 3,
+        "Lady": 6,
+        "She": 9,
+        "Barrowland": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "5793": {
+      "broj": 5793,
+      "naslov": "chapter114.html",
+      "summary": "",
+      "lik_count": {
+        "Raven": 4,
+        "The": 22,
+        "Darling": 10,
+        "Lady": 7,
+        "Silent": 5,
+        "Dominator": 4,
+        "One": 4,
+        "Eye": 4,
+        "Taken": 3,
+        "Limper": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 782
+    },
+    "5202": {
+      "broj": 5202,
+      "naslov": "container.xml",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 8
+    },
+    "2101": {
+      "broj": 2101,
+      "naslov": "copyright.html",
+      "summary": "",
+      "lik_count": {
+        "Gollancz": 3,
+        "Glen": 5,
+        "Cook": 5,
+        "The": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 210
+    },
+    "8941": {
+      "broj": 8941,
+      "naslov": "cover.xml",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 7
+    },
+    "8294": {
+      "broj": 8294,
+      "naslov": "dedication001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 17
+    },
+    "6762": {
+      "broj": 6762,
+      "naslov": "dedication002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 19
+    },
+    "5552": {
+      "broj": 5552,
+      "naslov": "dedication003.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 8
+    },
+    "9826": {
+      "broj": 9826,
+      "naslov": "part001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 6
+    },
+    "2785": {
+      "broj": 2785,
+      "naslov": "part002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 5
+    },
+    "3434": {
+      "broj": 3434,
+      "naslov": "part003.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 6
+    },
+    "6550": {
+      "broj": 6550,
+      "naslov": "toc.html",
+      "summary": "",
+      "lik_count": {
+        "Juniper": 32,
+        "Tally": 5,
+        "The": 10,
+        "Meadenvil": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 277
+    },
+    "2783": {
+      "broj": 2783,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "1194": {
+      "broj": 1194,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "7609": {
+      "broj": 7609,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "9591": {
+      "broj": 9591,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "9386": {
+      "broj": 9386,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "2776": {
+      "broj": 2776,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "7007": {
+      "broj": 7007,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "2860": {
+      "broj": 2860,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "1006": {
+      "broj": 1006,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "2024": {
+      "broj": 2024,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 13,
+        "Samantha": 3,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 763
+    },
+    "3029": {
+      "broj": 3029,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "7153": {
+      "broj": 7153,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "1288": {
+      "broj": 1288,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "1461": {
+      "broj": 1461,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 739
+    },
+    "4082": {
+      "broj": 4082,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 791
+    },
+    "4845": {
+      "broj": 4845,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "438": {
+      "broj": 438,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "1225": {
+      "broj": 1225,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Junior": 4,
+        "Seashore": 7,
+        "Park": 4,
+        "Heights": 3,
+        "Central": 3,
+        "Avenue": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 865
+    },
+    "9731": {
+      "broj": 9731,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "6640": {
+      "broj": 6640,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "5617": {
+      "broj": 5617,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 792
+    },
+    "9775": {
+      "broj": 9775,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "2523": {
+      "broj": 2523,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "6441": {
+      "broj": 6441,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "1180": {
+      "broj": 1180,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 16,
+        "Franny": 10
+      },
+      "chunk_ids": [],
+      "rijeci_count": 764
+    },
+    "20": {
+      "broj": 20,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "7076": {
+      "broj": 7076,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "5770": {
+      "broj": 5770,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "6452": {
+      "broj": 6452,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "8138": {
+      "broj": 8138,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "2849": {
+      "broj": 2849,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "3697": {
+      "broj": 3697,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "6011": {
+      "broj": 6011,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "5800": {
+      "broj": 5800,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "8179": {
+      "broj": 8179,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "4015": {
+      "broj": 4015,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "2428": {
+      "broj": 2428,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "3826": {
+      "broj": 3826,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
     }
   }
 }

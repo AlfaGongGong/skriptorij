@@ -1,8 +1,16 @@
 # network/quota_tracker.py
 # ============================================================================
-# QUOTA TRACKER V1.0 — Per-provider, per-key praćenje limita i hlađenja
+# QUOTA TRACKER V1.1 — Per-provider, per-key praćenje limita i hlađenja
+#
+# V1.1: min_gap_s integriran u KeyQuota
+#   • min_gap_s se sada prenosi kroz register_key → add_key → KeyQuota.__init__
+#   • is_available() provjerava min_gap PRVO — sprječava paralelne pozive
+#     s istog ključa koji dolaze brže nego što provider dopušta
+#   • record_request() ažurira _last_request_time za praćenje razmaka
+#   • initialize_from_fleet() uzima min_gap iz provider_profiles.get_min_gap()
 #
 # Prati za svaki ključ posebno, i za svaki provajder posebno:
+#   • min_gap — minimalni razmak između poziva jednog ključa (sekunde)
 #   • RPM  — zahtjevi u tekućoj minutnoj prozoru (60s klizni prozor)
 #   • RPD  — zahtjevi u tekućem danu (reset u ponoć po UTC — ili po prvom
 #             pozivu ako provajder ima custom reset prozor)
@@ -100,13 +108,17 @@ class KeyQuota:
     Thread-safe: svi pristupi su zaštićeni internim lock-om.
     """
 
-    def __init__(self, key: str, provider: str, rpm_safe: int, rpd_safe: int):
+    def __init__(self, key: str, provider: str, rpm_safe: int, rpd_safe: int, min_gap_s: float = 0.0):
         self.key         = key
         self.provider    = provider.upper()
         self.rpm_safe    = rpm_safe    # limit zahtjeva po minuti (za ovaj ključ)
         self.rpd_safe    = rpd_safe    # limit zahtjeva po danu (0 = neograničen)
+        self.min_gap_s   = min_gap_s   # minimalni razmak između poziva (sekunde)
 
         self._lock = threading.Lock()
+
+        # min_gap: timestamp zadnjeg zahtjeva — za provjeru min razmaka
+        self._last_request_time: float = 0.0
 
         # RPM: klizni prozor (deque timestampova zadnjih 60s)
         self._rpm_window: deque[float] = deque()
@@ -196,13 +208,21 @@ class KeyQuota:
             now = time.time()
             self._check_daily_reset()
 
-            # 1. Cooldown provjera
+            # 1. min_gap provjera — spriječava više poziva s istog ključa u kratkom intervalu
+            if self.min_gap_s > 0 and self._last_request_time > 0:
+                elapsed = now - self._last_request_time
+                if elapsed < self.min_gap_s:
+                    wait = self.min_gap_s - elapsed
+                    reason = f"min_gap ({elapsed:.2f}s < {self.min_gap_s:.1f}s, čekanje {wait:.2f}s)"
+                    return False, reason
+
+            # 2. Cooldown provjera
             if self._cooldown_until > now:
                 remaining = self._cooldown_until - now
                 reason = f"cooldown {remaining:.0f}s ({self._cooldown_reason})"
                 return False, reason
 
-            # 2. RPM provjera
+            # 3. RPM provjera
             self._clean_rpm_window(now)
             if self.rpm_safe > 0 and len(self._rpm_window) >= self.rpm_safe:
                 oldest = self._rpm_window[0] if self._rpm_window else now
@@ -210,7 +230,7 @@ class KeyQuota:
                 reason = f"RPM limit ({len(self._rpm_window)}/{self.rpm_safe}, čekanje {wait:.1f}s)"
                 return False, reason
 
-            # 3. RPD provjera
+            # 4. RPD provjera
             if self.rpd_safe > 0 and self._rpd_count >= self.rpd_safe:
                 next_reset = _next_reset_timestamp(self._reset_hour)
                 remaining = max(0.0, next_reset - now)
@@ -234,6 +254,7 @@ class KeyQuota:
             self._clean_rpm_window(now)
             self._rpm_window.append(now)
             self._rpd_count += 1
+            self._last_request_time = now
 
     def record_tokens(self, token_count: int):
         """Bilježi potrošene tokene u dnevnom TPD brojaču."""
@@ -388,13 +409,13 @@ class ProviderQuota:
         self._provider_cooldown_until: float = 0.0
         self._provider_cooldown_reason: str = ""
 
-    def add_key(self, key: str, rpm_safe: int, rpd_safe: int) -> KeyQuota:
+    def add_key(self, key: str, rpm_safe: int, rpd_safe: int, min_gap_s: float = 0.0) -> KeyQuota:
         with self._lock:
             if key not in self._keys:
-                self._keys[key] = KeyQuota(key, self.provider, rpm_safe, rpd_safe)
+                self._keys[key] = KeyQuota(key, self.provider, rpm_safe, rpd_safe, min_gap_s)
                 syslog.debug(
-                    "[quota] %s: registrovan ključ ...%s (rpm_safe=%d, rpd_safe=%d)",
-                    self.provider, key[-4:], rpm_safe, rpd_safe,
+                    "[quota] %s: registrovan ključ ...%s (rpm_safe=%d, rpd_safe=%d, min_gap=%.1fs)",
+                    self.provider, key[-4:], rpm_safe, rpd_safe, min_gap_s,
                 )
             return self._keys[key]
 
@@ -477,13 +498,13 @@ class QuotaTracker:
 
     # ── Inicijalizacija ──────────────────────────────────────────────────────
 
-    def register_key(self, provider: str, key: str, rpm_safe: int = 15, rpd_safe: int = 1000):
+    def register_key(self, provider: str, key: str, rpm_safe: int = 15, rpd_safe: int = 1000, min_gap_s: float = 0.0):
         """Registruje ključ u tracker. Poziva se iz FleetManager._load_config()."""
         prov = provider.upper()
         with self._lock:
             if prov not in self._providers:
                 self._providers[prov] = ProviderQuota(prov)
-        self._providers[prov].add_key(key, rpm_safe, rpd_safe)
+        self._providers[prov].add_key(key, rpm_safe, rpd_safe, min_gap_s)
 
     def initialize_from_fleet(self, fleet: dict):
         """
@@ -491,16 +512,18 @@ class QuotaTracker:
         fleet = {PROVIDER: [KeyState, ...], ...}
         """
         try:
-            from network.provider_profiles import get_rpm_safe, get_rpd_safe
+            from network.provider_profiles import get_rpm_safe, get_rpd_safe, get_min_gap
         except ImportError:
             def get_rpm_safe(p): return 15
             def get_rpd_safe(p): return 1000
+            def get_min_gap(p): return 0.0
 
         for provider, key_states in fleet.items():
             rpm_safe = get_rpm_safe(provider)
             rpd_safe = get_rpd_safe(provider)
+            min_gap_s = get_min_gap(provider)
             for ks in key_states:
-                self.register_key(provider, ks.key, rpm_safe, rpd_safe)
+                self.register_key(provider, ks.key, rpm_safe, rpd_safe, min_gap_s)
 
         syslog.info(
             "[quota] Inicijalizacija iz flote: %d provajdera, %d ključeva ukupno",
