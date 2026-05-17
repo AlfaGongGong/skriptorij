@@ -6,7 +6,7 @@ import random
 
 # Veličina sliding window-a — maksimalno N aktivnih chunka u isto vrijeme.
 # Za 8 ključeva to znači 4 paralelna poziva (konzervativno, bez DDoS-a)
-_SLIDING_WINDOW_SIZE = 4
+_SLIDING_WINDOW_SIZE = 1  # 5 RPM free tier = serijski rad
 
 
 class AdaptiveParallelism:

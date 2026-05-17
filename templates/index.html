@@ -488,11 +488,7 @@
             <!-- TABS -->
             <div class="card" style="padding: 16px">
                 <nav class="tab-nav">
-                    <button class="tab-btn active" data-tab="tab-fleet">
-                        🛡 Flota
-                        <span class="badge" id="fleet-total-count">0</span>
-                    </button>
-                    <button class="tab-btn" data-tab="tab-quality">
+                    <button class="tab-btn active" data-tab="tab-quality">
                         🎯 Kvalitet
                         <span
                             class="badge badge-amber hidden"
@@ -511,56 +507,8 @@
                     </button>
                 </nav>
 
-                <!-- Fleet tab -->
-                <div class="tab-panel active" id="tab-fleet">
-                    <div id="fleet-simple-summary">
-                        <div class="fleet-summary-box ok">
-                            <div
-                                class="fleet-summary-value"
-                                id="fleet-ok-count"
-                            >
-                                0
-                            </div>
-                            <div class="fleet-summary-label">
-                                Ukupno ključeva
-                            </div>
-                        </div>
-                        <div class="fleet-summary-box warn">
-                            <div
-                                class="fleet-summary-value"
-                                id="fleet-cooling-count"
-                            >
-                                0
-                            </div>
-                            <div class="fleet-summary-label">
-                                Loš success rate (&lt;50%)
-                            </div>
-                        </div>
-                        <div class="fleet-summary-box err">
-                            <div
-                                class="fleet-summary-value"
-                                id="fleet-err-count"
-                            >
-                                0
-                            </div>
-                            <div class="fleet-summary-label">Neuspjelih poziva</div>
-                        </div>
-                    </div>
-                    <div id="fleet-cards-container">
-                        <div
-                            style="
-                                text-align: center;
-                                padding: 20px;
-                                color: var(--tx-3);
-                            "
-                        >
-                            Učitavam flotu...
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Quality tab -->
-                <div class="tab-panel" id="tab-quality">
+                <div class="tab-panel active" id="tab-quality">
                     <div
                         id="quality-loading"
                         style="
@@ -983,8 +931,9 @@
         <!-- /#app -->
 
         <!-- Fleet Pool renderer V2.0 — mora biti poslije main.js -->
-        <script src="/static/js/main.js"></script>
-        <script src="/static/js/ui/fleet.js"></script>
+        <script src="/static/js/main.js?v=2"></script>
+        <script src="/static/js/ui/fleet.js?v=2"></script>
+
 
 
 

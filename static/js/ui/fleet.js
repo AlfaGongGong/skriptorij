@@ -250,7 +250,8 @@ function renderFleet(data) {
     if (simpleOk)  simpleOk.textContent  = totalKeys;
     if (simpleCol) simpleCol.textContent = totalLowSr;
     if (simpleErr) simpleErr.textContent = totalFailed;
-    document.getElementById('fleet-total-count').textContent = totalKeys;
+    const fleetTotalBadge = document.getElementById('fleet-total-count');
+    if (fleetTotalBadge) fleetTotalBadge.textContent = totalKeys;
 
     // Health badge u expert tabu
     let totalWeightedSr = 0;
@@ -293,3 +294,4 @@ function updateFleetTotalCount(n) {
     const b = document.getElementById('fleet-total-count');
     if (b) b.textContent = n;
 }
+window.renderFleet = renderFleet;

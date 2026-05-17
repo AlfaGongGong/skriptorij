@@ -73,12 +73,12 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
     "GEMINI": ProviderProfile(
         name="GEMINI",
         rpm_hard=15,
-        rpm_safe=12,           # 80% od 15 — s marginom
+        rpm_safe=5,            # 5 RPM na free tieru idemo do hard limita — min_gap=2s štiti
         rpd_hard=1500,
         rpd_safe=1275,         # 85% od 1500
         tpm_hard=1_000_000,
-        min_gap_s=5.0,         # 60/12 = 5s po ključu
-        cooldown_429_s=65.0,   # malo više od 60s RPM window-a
+        min_gap_s=12.0,        # 60s / 5 RPM = 12s (free tier limit) 60/15=4s, ali 2s s 7 ključeva=14 RPM (<15 hard)
+        cooldown_429_s=12.0,   # FIX: 12s (free tier ne podnosi 65s)
         supports_system_role=True,
         preferred_roles=["LEKTOR", "POLISH", "SCORER", "ANALIZA"],
         avoid_roles=[],        # radi sve

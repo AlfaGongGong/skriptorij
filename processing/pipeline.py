@@ -15,7 +15,9 @@ import asyncio
 import re
 import json
 import os as _os
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+import warnings
+warnings.filterwarnings('ignore', category=XMLParsedAsHTMLWarning)
 from core.text_utils import (
     _smart_extract,
     _agresivno_cisti,
@@ -76,6 +78,22 @@ try:
 except ImportError:
     _zabilježi_prev = None
     _SCORER_V2_OK = False
+# ── Samoučeći sistem V1.0 ──────────────────────────────────────────────────
+try:
+    from core.few_shot_global import dodaj_odlican_prevod, formatiraj_za_prompt
+    _FEW_SHOT_OK = True
+except ImportError:
+    dodaj_odlican_prevod = None
+    formatiraj_za_prompt = None
+    _FEW_SHOT_OK = False
+
+try:
+    from core.skip_oracle import moze_skipovati_korektor
+    _SKIP_ORACLE_OK = True
+except ImportError:
+    moze_skipovati_korektor = None
+    _SKIP_ORACLE_OK = False
+
 
 # ── Karantena detektor (singleton, lazy init) ────────────────────────────────
 _karantena_detektor = None
@@ -670,6 +688,15 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         fusion_sys = self._get_prevodilac_prompt(
             glosar_chunk=rel_glosar, prev_kraj=prev_ctx, tip_bloka=tip_bloka
         )
+        # V1.0: Dodaj few-shot primjere iz globalne baze
+        if _FEW_SHOT_OK and formatiraj_za_prompt:
+            try:
+                en_plain = BeautifulSoup(chunk, "html.parser").get_text()[:300]
+                fs_text = formatiraj_za_prompt(en_plain, tip_bloka, max_n=2)
+                if fs_text:
+                    fusion_sys += "\n" + fs_text
+            except Exception:
+                pass
         p_fusion = f"Engleski tekst za prevod:\n{chunk}"
         raw_fusion, prov1 = await self._call_ai_engine(
             p_fusion, chunk_idx, uloga="PREVODILAC",
@@ -736,12 +763,31 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             finalno = sirovo
 
     # ── KOREKTOR pass (temp 0.15) ─────────────────────────────────────────────
+    # V1.0: Skip Oracle — preskoči korektor ako je lektor jedva išta mijenjao
     pre_korektor = finalno
-    raw_kor, prov3 = await self._call_ai_engine(
-        finalno, chunk_idx, uloga="KOREKTOR",
-        filename=file_name, tip_bloka=tip_bloka,
-    )
-    if raw_kor:
+    skip_kor = False
+    if _SKIP_ORACLE_OK and moze_skipovati_korektor:
+        try:
+            prevod_score = self.shared_stats.get("quality_scores", {}).get(
+                f"{file_name}_blok_{chunk_idx}", 0.0
+            )
+            moze, razlog = moze_skipovati_korektor(prevod_score, sirovo, finalno)
+            if moze:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ⚡ Korektor preskočen ({razlog})",
+                    "tech",
+                )
+                skip_kor = True
+                prov3 = "SKIP_ORACLE"
+        except Exception:
+            pass
+    
+    if not skip_kor:
+        raw_kor, prov3 = await self._call_ai_engine(
+            finalno, chunk_idx, uloga="KOREKTOR",
+            filename=file_name, tip_bloka=tip_bloka,
+        )
+    if not skip_kor and raw_kor:
         kor = _smart_extract(raw_kor)
         if kor and not _je_placeholder_lokalni(kor) and len(kor.strip()) > 20:
             if _je_sumnjiv_gubitak_teksta(pre_korektor, kor, uloga="LEKTOR"):
@@ -784,6 +830,12 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     prevedeni=hr_tekst,
                     score=qs_score,
                 )
+                # V1.0: Dodaj i u GLOBALNI few-shot (za sve buduće knjige)
+                if _FEW_SHOT_OK and dodaj_odlican_prevod:
+                    try:
+                        dodaj_odlican_prevod(en_tekst, hr_tekst, qs_score, tip_bloka)
+                    except Exception:
+                        pass
         except Exception:
             pass
 

@@ -9231,6 +9231,120 @@
         "Barmen",
         "Barmenom"
       ]
+    },
+    "Owens": {
+      "ime": "Owens",
+      "rod": "auto",
+      "padeži": {
+        "N": "Owens",
+        "G": "Owensa",
+        "D": "Owensu",
+        "A": "Owensa",
+        "V": "Owens",
+        "I": "Owensom",
+        "L": "Owensu"
+      },
+      "sve_varijante": [
+        "Owens",
+        "Owensu",
+        "Owensa",
+        "Owensom"
+      ]
+    },
+    "Amber": {
+      "ime": "Amber",
+      "rod": "auto",
+      "padeži": {
+        "N": "Amber",
+        "G": "Ambera",
+        "D": "Amberu",
+        "A": "Ambera",
+        "V": "Amber",
+        "I": "Amberom",
+        "L": "Amberu"
+      },
+      "sve_varijante": [
+        "Amberom",
+        "Ambera",
+        "Amberu",
+        "Amber"
+      ]
+    },
+    "Theodore": {
+      "ime": "Theodore",
+      "rod": "auto",
+      "padeži": {
+        "N": "Theodore",
+        "G": "Theodorea",
+        "D": "Theodoreu",
+        "A": "Theodorea",
+        "V": "Theodore",
+        "I": "Theodoreom",
+        "L": "Theodoreu"
+      },
+      "sve_varijante": [
+        "Theodoreom",
+        "Theodore",
+        "Theodoreu",
+        "Theodorea"
+      ]
+    },
+    "Jefferson": {
+      "ime": "Jefferson",
+      "rod": "auto",
+      "padeži": {
+        "N": "Jefferson",
+        "G": "Jeffersona",
+        "D": "Jeffersonu",
+        "A": "Jeffersona",
+        "V": "Jefferson",
+        "I": "Jeffersonom",
+        "L": "Jeffersonu"
+      },
+      "sve_varijante": [
+        "Jeffersonu",
+        "Jeffersona",
+        "Jeffersonom",
+        "Jefferson"
+      ]
+    },
+    "Benjamin": {
+      "ime": "Benjamin",
+      "rod": "auto",
+      "padeži": {
+        "N": "Benjamin",
+        "G": "Benjamina",
+        "D": "Benjaminu",
+        "A": "Benjamina",
+        "V": "Benjamin",
+        "I": "Benjaminom",
+        "L": "Benjaminu"
+      },
+      "sve_varijante": [
+        "Benjaminom",
+        "Benjamina",
+        "Benjaminu",
+        "Benjamin"
+      ]
+    },
+    "Run": {
+      "ime": "Run",
+      "rod": "auto",
+      "padeži": {
+        "N": "Run",
+        "G": "Runa",
+        "D": "Runu",
+        "A": "Runa",
+        "V": "Run",
+        "I": "Runom",
+        "L": "Runu"
+      },
+      "sve_varijante": [
+        "Runa",
+        "Runom",
+        "Runu",
+        "Run"
+      ]
     }
   },
   "few_shot_primjeri": [
@@ -10286,13 +10400,13 @@
     },
     "5206": {
       "broj": 5206,
-      "naslov": "author.xhtml",
+      "naslov": "chapter0013.html",
       "summary": "",
       "lik_count": {
-        "The": 3
+        "Amrita": 3
       },
       "chunk_ids": [],
-      "rijeci_count": 82
+      "rijeci_count": 672
     },
     "2373": {
       "broj": 2373,
@@ -10643,11 +10757,13 @@
     },
     "2167": {
       "broj": 2167,
-      "naslov": "acknowledgements.xhtml",
+      "naslov": "chapter0004.html",
       "summary": "",
-      "lik_count": {},
+      "lik_count": {
+        "Barry": 9
+      },
       "chunk_ids": [],
-      "rijeci_count": 38
+      "rijeci_count": 772
     },
     "665": {
       "broj": 665,
@@ -10773,14 +10889,15 @@
     },
     "2403": {
       "broj": 2403,
-      "naslov": "chapter07.xhtml",
+      "naslov": "chapter0021.html",
       "summary": "",
       "lik_count": {
-        "Bridget": 12,
-        "Mardy": 8
+        "Sada": 3,
+        "Jeffrey": 5,
+        "Anthea": 6
       },
       "chunk_ids": [],
-      "rijeci_count": 757
+      "rijeci_count": 818
     },
     "3476": {
       "broj": 3476,
@@ -10858,11 +10975,11 @@
     },
     "7668": {
       "broj": 7668,
-      "naslov": "chapter15.xhtml",
+      "naslov": "chapter0010.html",
       "summary": "",
       "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 128
+      "rijeci_count": 740
     },
     "5949": {
       "broj": 5949,
@@ -11188,11 +11305,11 @@
     },
     "3515": {
       "broj": 3515,
-      "naslov": "container.xml",
+      "naslov": "chapter0000_split_002.html",
       "summary": "",
       "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 69
+      "rijeci_count": 321
     },
     "1522": {
       "broj": 1522,
@@ -11277,11 +11394,14 @@
     },
     "9210": {
       "broj": 9210,
-      "naslov": "chapter06.xhtml",
+      "naslov": "chapter0023.html",
       "summary": "",
-      "lik_count": {},
+      "lik_count": {
+        "Stuart": 7,
+        "Barry": 5
+      },
       "chunk_ids": [],
-      "rijeci_count": 83
+      "rijeci_count": 867
     },
     "9876": {
       "broj": 9876,
@@ -11436,13 +11556,13 @@
     },
     "9581": {
       "broj": 9581,
-      "naslov": "chapter21.xhtml",
+      "naslov": "chapter0011.html",
       "summary": "",
       "lik_count": {
-        "Adachukwu": 8
+        "Josh": 3
       },
       "chunk_ids": [],
-      "rijeci_count": 687
+      "rijeci_count": 845
     },
     "8237": {
       "broj": 8237,
@@ -11588,13 +11708,14 @@
     },
     "5263": {
       "broj": 5263,
-      "naslov": "chapter0001.html",
+      "naslov": "chapter0005.html",
       "summary": "",
       "lik_count": {
-        "Tama": 3
+        "Alda": 4,
+        "May": 5
       },
       "chunk_ids": [],
-      "rijeci_count": 746
+      "rijeci_count": 730
     },
     "116": {
       "broj": 116,
@@ -12090,11 +12211,14 @@
     },
     "187": {
       "broj": 187,
-      "naslov": "chapter0000_split_000.html",
+      "naslov": "chapter0003.html",
       "summary": "",
-      "lik_count": {},
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
       "chunk_ids": [],
-      "rijeci_count": 7
+      "rijeci_count": 758
     },
     "1879": {
       "broj": 1879,
@@ -12421,14 +12545,11 @@
     },
     "538": {
       "broj": 538,
-      "naslov": "chapter0035.html",
+      "naslov": "chapter0002.html",
       "summary": "",
-      "lik_count": {
-        "Award": 6,
-        "Fantasy": 4
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 631
+      "rijeci_count": 757
     },
     "1221": {
       "broj": 1221,
@@ -12701,15 +12822,16 @@
     },
     "3033": {
       "broj": 3033,
-      "naslov": "chapter0021.html",
+      "naslov": "chapter0018.html",
       "summary": "",
       "lik_count": {
-        "Sada": 3,
-        "Jeffrey": 5,
-        "Anthea": 5
+        "Owens": 3,
+        "Lily": 10,
+        "Tetka": 3,
+        "Nije": 3
       },
       "chunk_ids": [],
-      "rijeci_count": 777
+      "rijeci_count": 522
     },
     "9177": {
       "broj": 9177,
@@ -12933,11 +13055,11 @@
     },
     "7276": {
       "broj": 7276,
-      "naslov": "04_Copyright.html",
+      "naslov": "chapter0000_split_001.html",
       "summary": "",
       "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 171
+      "rijeci_count": 98
     },
     "8890": {
       "broj": 8890,
@@ -13101,13 +13223,18 @@
     },
     "8810": {
       "broj": 8810,
-      "naslov": "20_Chapter13.html",
+      "naslov": "chapter0019.html",
       "summary": "",
       "lik_count": {
-        "Nema": 5
+        "Amber": 4,
+        "Watson": 4,
+        "Michael": 11,
+        "Michaela": 5,
+        "Theodore": 4,
+        "Jefferson": 4
       },
       "chunk_ids": [],
-      "rijeci_count": 750
+      "rijeci_count": 852
     },
     "3911": {
       "broj": 3911,
@@ -13228,11 +13355,11 @@
     },
     "5594": {
       "broj": 5594,
-      "naslov": "01_Halftitle.html",
+      "naslov": "chapter0001.html",
       "summary": "",
       "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 15
+      "rijeci_count": 707
     },
     "1579": {
       "broj": 1579,
@@ -13280,11 +13407,15 @@
     },
     "324": {
       "broj": 324,
-      "naslov": "05_Dedication.html",
+      "naslov": "chapter0029.html",
       "summary": "",
-      "lik_count": {},
+      "lik_count": {
+        "Graceville": 9,
+        "Abbie": 7,
+        "Gracevilleu": 3
+      },
       "chunk_ids": [],
-      "rijeci_count": 9
+      "rijeci_count": 784
     },
     "5097": {
       "broj": 5097,
@@ -14132,18 +14263,11 @@
     },
     "1626": {
       "broj": 1626,
-      "naslov": "acknowledgements.xhtml",
+      "naslov": "chapter0006.html",
       "summary": "",
-      "lik_count": {
-        "The": 7,
-        "Dark": 5,
-        "Magazine": 3,
-        "Fantasy": 3,
-        "Science": 3,
-        "Fiction": 3
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 352
+      "rijeci_count": 856
     },
     "7165": {
       "broj": 7165,
@@ -14222,15 +14346,14 @@
     },
     "3111": {
       "broj": 3111,
-      "naslov": "chapter07.xhtml",
+      "naslov": "chapter0015.html",
       "summary": "",
       "lik_count": {
-        "Bridget": 12,
-        "Fridge": 3,
-        "Mardy": 8
+        "Barmen": 4,
+        "Rumson": 8
       },
       "chunk_ids": [],
-      "rijeci_count": 811
+      "rijeci_count": 793
     },
     "4727": {
       "broj": 4727,
@@ -14380,19 +14503,11 @@
     },
     "4893": {
       "broj": 4893,
-      "naslov": "author.xhtml",
+      "naslov": "chapter0000_split_000.html",
       "summary": "",
-      "lik_count": {
-        "Black": 3,
-        "Shirley": 3,
-        "Jackson": 3,
-        "The": 9,
-        "New": 4,
-        "Fantasy": 3,
-        "Horror": 3
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 648
+      "rijeci_count": 66
     },
     "9884": {
       "broj": 9884,
@@ -14503,11 +14618,11 @@
     },
     "3742": {
       "broj": 3742,
-      "naslov": "chapter05.xhtml",
+      "naslov": "chapter0000_split_001.html",
       "summary": "",
       "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 786
+      "rijeci_count": 98
     },
     "4466": {
       "broj": 4466,
@@ -14607,17 +14722,11 @@
     },
     "659": {
       "broj": 659,
-      "naslov": "chapter15.xhtml",
+      "naslov": "chapter0006.html",
       "summary": "",
-      "lik_count": {
-        "Brata": 4,
-        "Fresnel": 4,
-        "Old": 3,
-        "Ellis": 4,
-        "Lulubelle": 5
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 760
+      "rijeci_count": 856
     },
     "7863": {
       "broj": 7863,
@@ -14655,14 +14764,11 @@
     },
     "926": {
       "broj": 926,
-      "naslov": "chapter19.xhtml",
+      "naslov": "chapter0017.html",
       "summary": "",
-      "lik_count": {
-        "Ibn": 7,
-        "Ghazija": 6
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 794
+      "rijeci_count": 829
     },
     "1200": {
       "broj": 1200,
@@ -14755,13 +14861,11 @@
     },
     "882": {
       "broj": 882,
-      "naslov": "editor.xhtml",
+      "naslov": "chapter0000_split_000.html",
       "summary": "",
-      "lik_count": {
-        "Fantasy": 3
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 146
+      "rijeci_count": 66
     },
     "5275": {
       "broj": 5275,
@@ -14958,13 +15062,13 @@
     },
     "8283": {
       "broj": 8283,
-      "naslov": "chapter0012.html",
+      "naslov": "chapter0013.html",
       "summary": "",
       "lik_count": {
-        "Tako": 4
+        "Amrita": 3
       },
       "chunk_ids": [],
-      "rijeci_count": 752
+      "rijeci_count": 672
     },
     "8162": {
       "broj": 8162,
@@ -15001,18 +15105,11 @@
     },
     "312": {
       "broj": 312,
-      "naslov": "acknowledgements.xhtml",
+      "naslov": "chapter0000_split_000.html",
       "summary": "",
-      "lik_count": {
-        "The": 7,
-        "Dark": 5,
-        "Magazine": 3,
-        "Fantasy": 3,
-        "Science": 3,
-        "Fiction": 3
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 352
+      "rijeci_count": 66
     },
     "5884": {
       "broj": 5884,
@@ -15219,11 +15316,11 @@
     },
     "1868": {
       "broj": 1868,
-      "naslov": "chapter0000_split_001.html",
+      "naslov": "chapter0031.html",
       "summary": "",
       "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 100
+      "rijeci_count": 860
     },
     "9422": {
       "broj": 9422,
@@ -15478,16 +15575,14 @@
     },
     "9199": {
       "broj": 9199,
-      "naslov": "chapter017.html",
+      "naslov": "chapter0003.html",
       "summary": "",
       "lik_count": {
-        "Ravnice": 3,
-        "Straha": 3,
-        "One": 3,
-        "Eye": 3
+        "Jane": 14,
+        "Franny": 9
       },
       "chunk_ids": [],
-      "rijeci_count": 747
+      "rijeci_count": 758
     },
     "6806": {
       "broj": 6806,
@@ -15729,15 +15824,16 @@
     },
     "480": {
       "broj": 480,
-      "naslov": "chapter015.html",
+      "naslov": "chapter0018.html",
       "summary": "",
       "lik_count": {
-        "Elmo": 5,
-        "Fraktura": 5,
-        "Kapetan": 5
+        "Owens": 3,
+        "Lily": 10,
+        "Tetka": 3,
+        "Nije": 3
       },
       "chunk_ids": [],
-      "rijeci_count": 733
+      "rijeci_count": 522
     },
     "5840": {
       "broj": 5840,
@@ -16243,15 +16339,13 @@
     },
     "6418": {
       "broj": 6418,
-      "naslov": "chapter006.html",
+      "naslov": "chapter0004.html",
       "summary": "",
       "lik_count": {
-        "Gospa": 3,
-        "Poručnik": 8,
-        "Jednooko": 5
+        "Barry": 9
       },
       "chunk_ids": [],
-      "rijeci_count": 767
+      "rijeci_count": 772
     },
     "1534": {
       "broj": 1534,
@@ -16491,15 +16585,15 @@
     },
     "9444": {
       "broj": 9444,
-      "naslov": "chapter026.html",
+      "naslov": "chapter0012.html",
       "summary": "",
       "lik_count": {
-        "Draga": 5,
-        "Gavran": 5,
-        "Shed": 12
+        "Frank": 6,
+        "Seashore": 9,
+        "Park": 4
       },
       "chunk_ids": [],
-      "rijeci_count": 333
+      "rijeci_count": 796
     },
     "3099": {
       "broj": 3099,
@@ -16776,16 +16870,14 @@
     },
     "519": {
       "broj": 519,
-      "naslov": "chapter021.html",
+      "naslov": "chapter0023.html",
       "summary": "",
       "lik_count": {
-        "Juniper": 5,
-        "Duretile": 5,
-        "Bullocka": 3,
-        "Hargadon": 4
+        "Stuart": 7,
+        "Barry": 5
       },
       "chunk_ids": [],
-      "rijeci_count": 784
+      "rijeci_count": 867
     },
     "3588": {
       "broj": 3588,
@@ -16991,14 +17083,11 @@
     },
     "8430": {
       "broj": 8430,
-      "naslov": "chapter009.html",
+      "naslov": "chapter0000_split_002.html",
       "summary": "",
-      "lik_count": {
-        "Dječak": 7,
-        "Goblin": 3
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 461
+      "rijeci_count": 321
     },
     "566": {
       "broj": 566,
@@ -17026,15 +17115,11 @@
     },
     "2465": {
       "broj": 2465,
-      "naslov": "chapter012.html",
+      "naslov": "chapter0000_split_002.html",
       "summary": "",
-      "lik_count": {
-        "Shed": 20,
-        "Asa": 9,
-        "Raven": 5
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 772
+      "rijeci_count": 321
     },
     "8856": {
       "broj": 8856,
@@ -17409,13 +17494,14 @@
     },
     "6928": {
       "broj": 6928,
-      "naslov": "chapter042.html",
+      "naslov": "chapter0008.html",
       "summary": "",
       "lik_count": {
-        "Whisper": 3
+        "Ellen": 4,
+        "Harpootlian": 4
       },
       "chunk_ids": [],
-      "rijeci_count": 747
+      "rijeci_count": 785
     },
     "6081": {
       "broj": 6081,
@@ -17478,16 +17564,11 @@
     },
     "4885": {
       "broj": 4885,
-      "naslov": "chapter002.html",
+      "naslov": "chapter0001.html",
       "summary": "",
-      "lik_count": {
-        "Jednooki": 10,
-        "Lomilac": 3,
-        "Kapetan": 5,
-        "Poručnik": 5
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 715
+      "rijeci_count": 707
     },
     "7965": {
       "broj": 7965,
@@ -17522,15 +17603,11 @@
     },
     "731": {
       "broj": 731,
-      "naslov": "chapter006.html",
+      "naslov": "chapter0002.html",
       "summary": "",
-      "lik_count": {
-        "Gospa": 3,
-        "Poručnik": 8,
-        "Jednooko": 5
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 767
+      "rijeci_count": 757
     },
     "5289": {
       "broj": 5289,
@@ -17716,17 +17793,13 @@
     },
     "5489": {
       "broj": 5489,
-      "naslov": "chapter024.html",
+      "naslov": "chapter0009.html",
       "summary": "",
       "lik_count": {
-        "Šted": 15,
-        "Asa": 12,
-        "Raven": 7,
-        "Bullock": 10,
-        "Nije": 4
+        "Rodric": 4
       },
       "chunk_ids": [],
-      "rijeci_count": 603
+      "rijeci_count": 731
     },
     "744": {
       "broj": 744,
@@ -17820,16 +17893,14 @@
     },
     "4168": {
       "broj": 4168,
-      "naslov": "chapter033.html",
+      "naslov": "chapter0003.html",
       "summary": "",
       "lik_count": {
-        "Sue": 8,
-        "Šed": 11,
-        "Sada": 4,
-        "Maron": 5
+        "Jane": 14,
+        "Franny": 9
       },
       "chunk_ids": [],
-      "rijeci_count": 793
+      "rijeci_count": 758
     },
     "4861": {
       "broj": 4861,
@@ -18683,20 +18754,11 @@
     },
     "7819": {
       "broj": 7819,
-      "naslov": "chapter104.html",
+      "naslov": "chapter0002.html",
       "summary": "",
-      "lik_count": {
-        "Lady": 8,
-        "Darling": 4,
-        "One": 6,
-        "Goblin": 5,
-        "Eye": 5,
-        "Tracker": 3,
-        "Elmo": 3,
-        "Taken": 4
-      },
+      "lik_count": {},
       "chunk_ids": [],
-      "rijeci_count": 785
+      "rijeci_count": 757
     },
     "1418": {
       "broj": 1418,
@@ -19159,14 +19221,18 @@
     },
     "1180": {
       "broj": 1180,
-      "naslov": "chapter0003.html",
+      "naslov": "chapter0019.html",
       "summary": "",
       "lik_count": {
-        "Jane": 16,
-        "Franny": 10
+        "Amber": 4,
+        "Watson": 4,
+        "Michael": 11,
+        "Michaela": 5,
+        "Theodore": 4,
+        "Jefferson": 4
       },
       "chunk_ids": [],
-      "rijeci_count": 764
+      "rijeci_count": 852
     },
     "20": {
       "broj": 20,
@@ -19279,6 +19345,3324 @@
       },
       "chunk_ids": [],
       "rijeci_count": 730
+    },
+    "1344": {
+      "broj": 1344,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "6286": {
+      "broj": 6286,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "5732": {
+      "broj": 5732,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "2526": {
+      "broj": 2526,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "4190": {
+      "broj": 4190,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "8256": {
+      "broj": 8256,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "5417": {
+      "broj": 5417,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "6033": {
+      "broj": 6033,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "5322": {
+      "broj": 5322,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 8,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 737
+    },
+    "3566": {
+      "broj": 3566,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 791
+    },
+    "972": {
+      "broj": 972,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "The": 9,
+        "Rodric": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 720
+    },
+    "1224": {
+      "broj": 1224,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "4888": {
+      "broj": 4888,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "2286": {
+      "broj": 2286,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "5942": {
+      "broj": 5942,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "5176": {
+      "broj": 5176,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "6722": {
+      "broj": 6722,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "838": {
+      "broj": 838,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "2094": {
+      "broj": 2094,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "6930": {
+      "broj": 6930,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 12,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 756
+    },
+    "1849": {
+      "broj": 1849,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "12": {
+      "broj": 12,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "4539": {
+      "broj": 4539,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "9498": {
+      "broj": 9498,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "986": {
+      "broj": 986,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "9966": {
+      "broj": 9966,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "7126": {
+      "broj": 7126,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "7159": {
+      "broj": 7159,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "4737": {
+      "broj": 4737,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "6382": {
+      "broj": 6382,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "5577": {
+      "broj": 5577,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "3639": {
+      "broj": 3639,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "1403": {
+      "broj": 1403,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "8014": {
+      "broj": 8014,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "3892": {
+      "broj": 3892,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "7044": {
+      "broj": 7044,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "3421": {
+      "broj": 3421,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "2988": {
+      "broj": 2988,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "4570": {
+      "broj": 4570,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 739
+    },
+    "9056": {
+      "broj": 9056,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "7378": {
+      "broj": 7378,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "The": 9,
+        "Rodric": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 720
+    },
+    "7639": {
+      "broj": 7639,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "1578": {
+      "broj": 1578,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "4477": {
+      "broj": 4477,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Junior": 4,
+        "Seashore": 7,
+        "Park": 4,
+        "Heights": 3,
+        "Central": 3,
+        "Avenue": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 865
+    },
+    "5895": {
+      "broj": 5895,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "9400": {
+      "broj": 9400,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "7693": {
+      "broj": 7693,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 792
+    },
+    "7645": {
+      "broj": 7645,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "The": 10,
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 794
+    },
+    "3373": {
+      "broj": 3373,
+      "naslov": "chapter0017.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 840
+    },
+    "9477": {
+      "broj": 9477,
+      "naslov": "chapter0018.html",
+      "summary": "",
+      "lik_count": {
+        "The": 18,
+        "Lily": 12,
+        "You": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 692
+    },
+    "2501": {
+      "broj": 2501,
+      "naslov": "chapter0019.html",
+      "summary": "",
+      "lik_count": {
+        "Watson": 3,
+        "Michael": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "3184": {
+      "broj": 3184,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "3868": {
+      "broj": 3868,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "1656": {
+      "broj": 1656,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "4911": {
+      "broj": 4911,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "6587": {
+      "broj": 6587,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "8241": {
+      "broj": 8241,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "9846": {
+      "broj": 9846,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "7617": {
+      "broj": 7617,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "1291": {
+      "broj": 1291,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "1680": {
+      "broj": 1680,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 739
+    },
+    "355": {
+      "broj": 355,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "5076": {
+      "broj": 5076,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "The": 9,
+        "Rodric": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 720
+    },
+    "1190": {
+      "broj": 1190,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "3662": {
+      "broj": 3662,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "6509": {
+      "broj": 6509,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Junior": 4,
+        "Seashore": 7,
+        "Park": 4,
+        "Heights": 3,
+        "Central": 3,
+        "Avenue": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 865
+    },
+    "6978": {
+      "broj": 6978,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "9899": {
+      "broj": 9899,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "4454": {
+      "broj": 4454,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 792
+    },
+    "8506": {
+      "broj": 8506,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "The": 10,
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 794
+    },
+    "5499": {
+      "broj": 5499,
+      "naslov": "chapter0017.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 840
+    },
+    "3388": {
+      "broj": 3388,
+      "naslov": "chapter0018.html",
+      "summary": "",
+      "lik_count": {
+        "The": 18,
+        "Lily": 12,
+        "You": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 692
+    },
+    "2527": {
+      "broj": 2527,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "8516": {
+      "broj": 8516,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "6507": {
+      "broj": 6507,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "4505": {
+      "broj": 4505,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "2629": {
+      "broj": 2629,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "1654": {
+      "broj": 1654,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "2251": {
+      "broj": 2251,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "7734": {
+      "broj": 7734,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "649": {
+      "broj": 649,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "5133": {
+      "broj": 5133,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "2378": {
+      "broj": 2378,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "6198": {
+      "broj": 6198,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "5381": {
+      "broj": 5381,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "8600": {
+      "broj": 8600,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "3149": {
+      "broj": 3149,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "7951": {
+      "broj": 7951,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "3995": {
+      "broj": 3995,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "8223": {
+      "broj": 8223,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "3255": {
+      "broj": 3255,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "8361": {
+      "broj": 8361,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "3966": {
+      "broj": 3966,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "8478": {
+      "broj": 8478,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "7344": {
+      "broj": 7344,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "8679": {
+      "broj": 8679,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "2472": {
+      "broj": 2472,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "1459": {
+      "broj": 1459,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "6496": {
+      "broj": 6496,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "3931": {
+      "broj": 3931,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "1489": {
+      "broj": 1489,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "6371": {
+      "broj": 6371,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "1632": {
+      "broj": 1632,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "7492": {
+      "broj": 7492,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "Rodric": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "7150": {
+      "broj": 7150,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "7216": {
+      "broj": 7216,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "5338": {
+      "broj": 5338,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "3199": {
+      "broj": 3199,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "1343": {
+      "broj": 1343,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "4437": {
+      "broj": 4437,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "6945": {
+      "broj": 6945,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "4446": {
+      "broj": 4446,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "7778": {
+      "broj": 7778,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "1096": {
+      "broj": 1096,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "799": {
+      "broj": 799,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "5057": {
+      "broj": 5057,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "1422": {
+      "broj": 1422,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "778": {
+      "broj": 778,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "9336": {
+      "broj": 9336,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "2076": {
+      "broj": 2076,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "3365": {
+      "broj": 3365,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "527": {
+      "broj": 527,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "2984": {
+      "broj": 2984,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "1319": {
+      "broj": 1319,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "3734": {
+      "broj": 3734,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "3472": {
+      "broj": 3472,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "994": {
+      "broj": 994,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "4713": {
+      "broj": 4713,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "4270": {
+      "broj": 4270,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "2267": {
+      "broj": 2267,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "2577": {
+      "broj": 2577,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "201": {
+      "broj": 201,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "4239": {
+      "broj": 4239,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "Rodric": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "8883": {
+      "broj": 8883,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "8444": {
+      "broj": 8444,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "2031": {
+      "broj": 2031,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Seashore": 9,
+        "Park": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "9324": {
+      "broj": 9324,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "4266": {
+      "broj": 4266,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "645": {
+      "broj": 645,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 793
+    },
+    "5355": {
+      "broj": 5355,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 768
+    },
+    "2299": {
+      "broj": 2299,
+      "naslov": "chapter0017.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 829
+    },
+    "2367": {
+      "broj": 2367,
+      "naslov": "chapter0018.html",
+      "summary": "",
+      "lik_count": {
+        "Owens": 3,
+        "Lily": 10,
+        "Tetka": 3,
+        "Nije": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 522
+    },
+    "793": {
+      "broj": 793,
+      "naslov": "chapter0019.html",
+      "summary": "",
+      "lik_count": {
+        "Amber": 4,
+        "Watson": 4,
+        "Michael": 11,
+        "Michaela": 5,
+        "Theodore": 4,
+        "Jefferson": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 852
+    },
+    "4990": {
+      "broj": 4990,
+      "naslov": "chapter0020.html",
+      "summary": "",
+      "lik_count": {
+        "Kohler": 14,
+        "Campion": 5,
+        "Jack": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 821
+    },
+    "2636": {
+      "broj": 2636,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "6435": {
+      "broj": 6435,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "5505": {
+      "broj": 5505,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "8869": {
+      "broj": 8869,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "4576": {
+      "broj": 4576,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "5049": {
+      "broj": 5049,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "315": {
+      "broj": 315,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "8284": {
+      "broj": 8284,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "7181": {
+      "broj": 7181,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "1162": {
+      "broj": 1162,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "84": {
+      "broj": 84,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "8776": {
+      "broj": 8776,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "Rodric": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "7858": {
+      "broj": 7858,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "9936": {
+      "broj": 9936,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Seashore": 9,
+        "Park": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "4243": {
+      "broj": 4243,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "402": {
+      "broj": 402,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "7258": {
+      "broj": 7258,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 793
+    },
+    "7058": {
+      "broj": 7058,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 768
+    },
+    "9679": {
+      "broj": 9679,
+      "naslov": "chapter0017.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 829
+    },
+    "95": {
+      "broj": 95,
+      "naslov": "chapter0018.html",
+      "summary": "",
+      "lik_count": {
+        "Owens": 3,
+        "Lily": 10,
+        "Tetka": 3,
+        "Nije": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 522
+    },
+    "5150": {
+      "broj": 5150,
+      "naslov": "chapter0020.html",
+      "summary": "",
+      "lik_count": {
+        "Kohler": 14,
+        "Campion": 5,
+        "Jack": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 821
+    },
+    "1027": {
+      "broj": 1027,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "8661": {
+      "broj": 8661,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "4182": {
+      "broj": 4182,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "4877": {
+      "broj": 4877,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "1472": {
+      "broj": 1472,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 793
+    },
+    "8768": {
+      "broj": 8768,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "836": {
+      "broj": 836,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "3308": {
+      "broj": 3308,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "1990": {
+      "broj": 1990,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "1722": {
+      "broj": 1722,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "Rodric": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "942": {
+      "broj": 942,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "8157": {
+      "broj": 8157,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "8122": {
+      "broj": 8122,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Seashore": 9,
+        "Park": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "5067": {
+      "broj": 5067,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "2916": {
+      "broj": 2916,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 793
+    },
+    "3346": {
+      "broj": 3346,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 768
+    },
+    "140": {
+      "broj": 140,
+      "naslov": "chapter0018.html",
+      "summary": "",
+      "lik_count": {
+        "Owens": 3,
+        "Lily": 10,
+        "Tetka": 3,
+        "Nije": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 522
+    },
+    "8775": {
+      "broj": 8775,
+      "naslov": "chapter0019.html",
+      "summary": "",
+      "lik_count": {
+        "Amber": 4,
+        "Watson": 4,
+        "Michael": 11,
+        "Michaela": 5,
+        "Theodore": 4,
+        "Jefferson": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 852
+    },
+    "8850": {
+      "broj": 8850,
+      "naslov": "chapter0020.html",
+      "summary": "",
+      "lik_count": {
+        "Kohler": 14,
+        "Campion": 5,
+        "Jack": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 821
+    },
+    "3897": {
+      "broj": 3897,
+      "naslov": "chapter0022.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 817
+    },
+    "6109": {
+      "broj": 6109,
+      "naslov": "chapter0023.html",
+      "summary": "",
+      "lik_count": {
+        "Stuart": 7,
+        "Barry": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 867
+    },
+    "3261": {
+      "broj": 3261,
+      "naslov": "chapter0024.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 748
+    },
+    "2936": {
+      "broj": 2936,
+      "naslov": "chapter0025.html",
+      "summary": "",
+      "lik_count": {
+        "Jodi": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "165": {
+      "broj": 165,
+      "naslov": "chapter0026.html",
+      "summary": "",
+      "lik_count": {
+        "John": 16,
+        "Benjamin": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "4233": {
+      "broj": 4233,
+      "naslov": "chapter0027.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 762
+    },
+    "8907": {
+      "broj": 8907,
+      "naslov": "chapter0028.html",
+      "summary": "",
+      "lik_count": {
+        "Orford": 4,
+        "Sarah": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "5047": {
+      "broj": 5047,
+      "naslov": "chapter0029.html",
+      "summary": "",
+      "lik_count": {
+        "Graceville": 9,
+        "Abbie": 7,
+        "Gracevilleu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 784
+    },
+    "6534": {
+      "broj": 6534,
+      "naslov": "chapter0030.html",
+      "summary": "",
+      "lik_count": {
+        "Tomai": 25,
+        "Run": 6,
+        "Kork": 11,
+        "Mogu": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "978": {
+      "broj": 978,
+      "naslov": "chapter0031.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 860
+    },
+    "6410": {
+      "broj": 6410,
+      "naslov": "chapter0032.html",
+      "summary": "",
+      "lik_count": {
+        "San": 5,
+        "Francisco": 3,
+        "Kinneyja": 3,
+        "Kinney": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 745
+    },
+    "3267": {
+      "broj": 3267,
+      "naslov": "chapter0033.html",
+      "summary": "",
+      "lik_count": {
+        "Sibley": 9,
+        "Leonard": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 706
+    },
+    "9064": {
+      "broj": 9064,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "7074": {
+      "broj": 7074,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "291": {
+      "broj": 291,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "8356": {
+      "broj": 8356,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "5674": {
+      "broj": 5674,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "4555": {
+      "broj": 4555,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "9571": {
+      "broj": 9571,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "8799": {
+      "broj": 8799,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "2492": {
+      "broj": 2492,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "1112": {
+      "broj": 1112,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "1463": {
+      "broj": 1463,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "Rodric": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "2291": {
+      "broj": 2291,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "8707": {
+      "broj": 8707,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "4472": {
+      "broj": 4472,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Seashore": 9,
+        "Park": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "3863": {
+      "broj": 3863,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "4923": {
+      "broj": 4923,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "2418": {
+      "broj": 2418,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 793
+    },
+    "4518": {
+      "broj": 4518,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 768
+    },
+    "410": {
+      "broj": 410,
+      "naslov": "chapter0017.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 829
+    },
+    "2957": {
+      "broj": 2957,
+      "naslov": "chapter0018.html",
+      "summary": "",
+      "lik_count": {
+        "Owens": 3,
+        "Lily": 10,
+        "Tetka": 3,
+        "Nije": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 522
+    },
+    "5125": {
+      "broj": 5125,
+      "naslov": "chapter0019.html",
+      "summary": "",
+      "lik_count": {
+        "Amber": 4,
+        "Watson": 4,
+        "Michael": 11,
+        "Michaela": 5,
+        "Theodore": 4,
+        "Jefferson": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 852
+    },
+    "1951": {
+      "broj": 1951,
+      "naslov": "chapter0020.html",
+      "summary": "",
+      "lik_count": {
+        "Kohler": 14,
+        "Campion": 5,
+        "Jack": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 821
+    },
+    "8583": {
+      "broj": 8583,
+      "naslov": "chapter0021.html",
+      "summary": "",
+      "lik_count": {
+        "Sada": 3,
+        "Jeffrey": 5,
+        "Anthea": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 818
+    },
+    "3590": {
+      "broj": 3590,
+      "naslov": "chapter0022.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 817
+    },
+    "4035": {
+      "broj": 4035,
+      "naslov": "chapter0024.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 748
+    },
+    "2718": {
+      "broj": 2718,
+      "naslov": "chapter0025.html",
+      "summary": "",
+      "lik_count": {
+        "Jodi": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "469": {
+      "broj": 469,
+      "naslov": "chapter0026.html",
+      "summary": "",
+      "lik_count": {
+        "John": 16,
+        "Benjamin": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "3448": {
+      "broj": 3448,
+      "naslov": "chapter0027.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 762
+    },
+    "6274": {
+      "broj": 6274,
+      "naslov": "chapter0028.html",
+      "summary": "",
+      "lik_count": {
+        "Orford": 4,
+        "Sarah": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "6131": {
+      "broj": 6131,
+      "naslov": "chapter0029.html",
+      "summary": "",
+      "lik_count": {
+        "Graceville": 9,
+        "Abbie": 7,
+        "Gracevilleu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 784
+    },
+    "2377": {
+      "broj": 2377,
+      "naslov": "chapter0030.html",
+      "summary": "",
+      "lik_count": {
+        "Tomai": 25,
+        "Run": 6,
+        "Kork": 11,
+        "Mogu": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "466": {
+      "broj": 466,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "8641": {
+      "broj": 8641,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "1402": {
+      "broj": 1402,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "5214": {
+      "broj": 5214,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "6540": {
+      "broj": 6540,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "9686": {
+      "broj": 9686,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "8923": {
+      "broj": 8923,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "2900": {
+      "broj": 2900,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "3359": {
+      "broj": 3359,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "Rodric": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "6525": {
+      "broj": 6525,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "6584": {
+      "broj": 6584,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "4494": {
+      "broj": 4494,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Seashore": 9,
+        "Park": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "7964": {
+      "broj": 7964,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "5431": {
+      "broj": 5431,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "1792": {
+      "broj": 1792,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 768
+    },
+    "5595": {
+      "broj": 5595,
+      "naslov": "chapter0017.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 829
+    },
+    "5866": {
+      "broj": 5866,
+      "naslov": "chapter0019.html",
+      "summary": "",
+      "lik_count": {
+        "Amber": 4,
+        "Watson": 4,
+        "Michael": 11,
+        "Michaela": 5,
+        "Theodore": 4,
+        "Jefferson": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 852
+    },
+    "4257": {
+      "broj": 4257,
+      "naslov": "chapter0020.html",
+      "summary": "",
+      "lik_count": {
+        "Kohler": 14,
+        "Campion": 5,
+        "Jack": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 821
+    },
+    "6594": {
+      "broj": 6594,
+      "naslov": "chapter0021.html",
+      "summary": "",
+      "lik_count": {
+        "Sada": 3,
+        "Jeffrey": 5,
+        "Anthea": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 818
+    },
+    "1754": {
+      "broj": 1754,
+      "naslov": "chapter0022.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 817
+    },
+    "7574": {
+      "broj": 7574,
+      "naslov": "chapter0024.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 748
+    },
+    "6186": {
+      "broj": 6186,
+      "naslov": "chapter0025.html",
+      "summary": "",
+      "lik_count": {
+        "Jodi": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "856": {
+      "broj": 856,
+      "naslov": "chapter0026.html",
+      "summary": "",
+      "lik_count": {
+        "John": 16,
+        "Benjamin": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "9561": {
+      "broj": 9561,
+      "naslov": "chapter0027.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 762
+    },
+    "2539": {
+      "broj": 2539,
+      "naslov": "chapter0028.html",
+      "summary": "",
+      "lik_count": {
+        "Orford": 4,
+        "Sarah": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "6482": {
+      "broj": 6482,
+      "naslov": "chapter0029.html",
+      "summary": "",
+      "lik_count": {
+        "Graceville": 9,
+        "Abbie": 7,
+        "Gracevilleu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 784
+    },
+    "8019": {
+      "broj": 8019,
+      "naslov": "chapter0030.html",
+      "summary": "",
+      "lik_count": {
+        "Tomai": 25,
+        "Run": 6,
+        "Kork": 11,
+        "Mogu": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "8925": {
+      "broj": 8925,
+      "naslov": "chapter0032.html",
+      "summary": "",
+      "lik_count": {
+        "San": 5,
+        "Francisco": 3,
+        "Kinneyja": 3,
+        "Kinney": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 745
+    },
+    "7194": {
+      "broj": 7194,
+      "naslov": "chapter0033.html",
+      "summary": "",
+      "lik_count": {
+        "Sibley": 9,
+        "Leonard": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 706
+    },
+    "5250": {
+      "broj": 5250,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "7697": {
+      "broj": 7697,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "8004": {
+      "broj": 8004,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "8125": {
+      "broj": 8125,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "5755": {
+      "broj": 5755,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "6856": {
+      "broj": 6856,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "323": {
+      "broj": 323,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "983": {
+      "broj": 983,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "723": {
+      "broj": 723,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "184": {
+      "broj": 184,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "Rodric": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "8257": {
+      "broj": 8257,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "3051": {
+      "broj": 3051,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "8713": {
+      "broj": 8713,
+      "naslov": "chapter0013.html",
+      "summary": "",
+      "lik_count": {
+        "Amrita": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 672
+    },
+    "5261": {
+      "broj": 5261,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "7191": {
+      "broj": 7191,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "7547": {
+      "broj": 7547,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "682": {
+      "broj": 682,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "7731": {
+      "broj": 7731,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "3899": {
+      "broj": 3899,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "4140": {
+      "broj": 4140,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "8153": {
+      "broj": 8153,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "1130": {
+      "broj": 1130,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "7091": {
+      "broj": 7091,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "824": {
+      "broj": 824,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "6698": {
+      "broj": 6698,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "4493": {
+      "broj": 4493,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Seashore": 9,
+        "Park": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "4863": {
+      "broj": 4863,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "7578": {
+      "broj": 7578,
+      "naslov": "chapter0015.html",
+      "summary": "",
+      "lik_count": {
+        "Barmen": 4,
+        "Rumson": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 793
+    },
+    "513": {
+      "broj": 513,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 768
+    },
+    "417": {
+      "broj": 417,
+      "naslov": "chapter0017.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 829
+    },
+    "8097": {
+      "broj": 8097,
+      "naslov": "chapter0020.html",
+      "summary": "",
+      "lik_count": {
+        "Kohler": 14,
+        "Campion": 5,
+        "Jack": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 821
+    },
+    "6016": {
+      "broj": 6016,
+      "naslov": "chapter0021.html",
+      "summary": "",
+      "lik_count": {
+        "Sada": 3,
+        "Jeffrey": 5,
+        "Anthea": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 818
+    },
+    "2315": {
+      "broj": 2315,
+      "naslov": "chapter0022.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 817
+    },
+    "4600": {
+      "broj": 4600,
+      "naslov": "chapter0023.html",
+      "summary": "",
+      "lik_count": {
+        "Stuart": 7,
+        "Barry": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 867
+    },
+    "7110": {
+      "broj": 7110,
+      "naslov": "chapter0024.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 748
+    },
+    "4292": {
+      "broj": 4292,
+      "naslov": "chapter0025.html",
+      "summary": "",
+      "lik_count": {
+        "Jodi": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "130": {
+      "broj": 130,
+      "naslov": "chapter0026.html",
+      "summary": "",
+      "lik_count": {
+        "John": 16,
+        "Benjamin": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "3220": {
+      "broj": 3220,
+      "naslov": "chapter0027.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 762
+    },
+    "6462": {
+      "broj": 6462,
+      "naslov": "chapter0028.html",
+      "summary": "",
+      "lik_count": {
+        "Orford": 4,
+        "Sarah": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "2528": {
+      "broj": 2528,
+      "naslov": "chapter0029.html",
+      "summary": "",
+      "lik_count": {
+        "Graceville": 9,
+        "Abbie": 7,
+        "Gracevilleu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 784
+    },
+    "9411": {
+      "broj": 9411,
+      "naslov": "chapter0030.html",
+      "summary": "",
+      "lik_count": {
+        "Tomai": 25,
+        "Run": 6,
+        "Kork": 11,
+        "Mogu": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "1046": {
+      "broj": 1046,
+      "naslov": "chapter0031.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 860
+    },
+    "9902": {
+      "broj": 9902,
+      "naslov": "chapter0032.html",
+      "summary": "",
+      "lik_count": {
+        "San": 5,
+        "Francisco": 3,
+        "Kinneyja": 3,
+        "Kinney": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 745
+    },
+    "9521": {
+      "broj": 9521,
+      "naslov": "chapter0033.html",
+      "summary": "",
+      "lik_count": {
+        "Sibley": 9,
+        "Leonard": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 706
+    },
+    "917": {
+      "broj": 917,
+      "naslov": "chapter0000_split_000.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 66
+    },
+    "7558": {
+      "broj": 7558,
+      "naslov": "chapter0000_split_001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 98
+    },
+    "7370": {
+      "broj": 7370,
+      "naslov": "chapter0000_split_002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 321
+    },
+    "9257": {
+      "broj": 9257,
+      "naslov": "chapter0001.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 707
+    },
+    "3883": {
+      "broj": 3883,
+      "naslov": "chapter0002.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 757
+    },
+    "105": {
+      "broj": 105,
+      "naslov": "chapter0003.html",
+      "summary": "",
+      "lik_count": {
+        "Jane": 14,
+        "Franny": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 758
+    },
+    "528": {
+      "broj": 528,
+      "naslov": "chapter0004.html",
+      "summary": "",
+      "lik_count": {
+        "Barry": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 772
+    },
+    "416": {
+      "broj": 416,
+      "naslov": "chapter0005.html",
+      "summary": "",
+      "lik_count": {
+        "Alda": 4,
+        "May": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 730
+    },
+    "4056": {
+      "broj": 4056,
+      "naslov": "chapter0006.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 856
+    },
+    "1917": {
+      "broj": 1917,
+      "naslov": "chapter0007.html",
+      "summary": "",
+      "lik_count": {
+        "Reci": 3,
+        "David": 9,
+        "Vincent": 8,
+        "Davidu": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 736
+    },
+    "7442": {
+      "broj": 7442,
+      "naslov": "chapter0008.html",
+      "summary": "",
+      "lik_count": {
+        "Ellen": 4,
+        "Harpootlian": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "7640": {
+      "broj": 7640,
+      "naslov": "chapter0009.html",
+      "summary": "",
+      "lik_count": {
+        "Rodric": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 731
+    },
+    "6888": {
+      "broj": 6888,
+      "naslov": "chapter0010.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 740
+    },
+    "7320": {
+      "broj": 7320,
+      "naslov": "chapter0011.html",
+      "summary": "",
+      "lik_count": {
+        "Josh": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 845
+    },
+    "8990": {
+      "broj": 8990,
+      "naslov": "chapter0012.html",
+      "summary": "",
+      "lik_count": {
+        "Frank": 6,
+        "Seashore": 9,
+        "Park": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 796
+    },
+    "9469": {
+      "broj": 9469,
+      "naslov": "chapter0014.html",
+      "summary": "",
+      "lik_count": {
+        "Zašto": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 752
+    },
+    "7683": {
+      "broj": 7683,
+      "naslov": "chapter0016.html",
+      "summary": "",
+      "lik_count": {
+        "Russell": 11,
+        "Edward": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 768
+    },
+    "3115": {
+      "broj": 3115,
+      "naslov": "chapter0017.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 829
+    },
+    "9180": {
+      "broj": 9180,
+      "naslov": "chapter0018.html",
+      "summary": "",
+      "lik_count": {
+        "Owens": 3,
+        "Lily": 10,
+        "Tetka": 3,
+        "Nije": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 522
+    },
+    "8026": {
+      "broj": 8026,
+      "naslov": "chapter0019.html",
+      "summary": "",
+      "lik_count": {
+        "Amber": 4,
+        "Watson": 4,
+        "Michael": 11,
+        "Michaela": 5,
+        "Theodore": 4,
+        "Jefferson": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 852
+    },
+    "3967": {
+      "broj": 3967,
+      "naslov": "chapter0020.html",
+      "summary": "",
+      "lik_count": {
+        "Kohler": 14,
+        "Campion": 5,
+        "Jack": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 821
+    },
+    "8308": {
+      "broj": 8308,
+      "naslov": "chapter0021.html",
+      "summary": "",
+      "lik_count": {
+        "Sada": 3,
+        "Jeffrey": 5,
+        "Anthea": 6
+      },
+      "chunk_ids": [],
+      "rijeci_count": 818
+    },
+    "442": {
+      "broj": 442,
+      "naslov": "chapter0022.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 817
+    },
+    "2868": {
+      "broj": 2868,
+      "naslov": "chapter0023.html",
+      "summary": "",
+      "lik_count": {
+        "Stuart": 7,
+        "Barry": 5
+      },
+      "chunk_ids": [],
+      "rijeci_count": 867
+    },
+    "8262": {
+      "broj": 8262,
+      "naslov": "chapter0024.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 748
+    },
+    "7131": {
+      "broj": 7131,
+      "naslov": "chapter0025.html",
+      "summary": "",
+      "lik_count": {
+        "Jodi": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "4637": {
+      "broj": 4637,
+      "naslov": "chapter0026.html",
+      "summary": "",
+      "lik_count": {
+        "John": 16,
+        "Benjamin": 3
+      },
+      "chunk_ids": [],
+      "rijeci_count": 785
+    },
+    "1983": {
+      "broj": 1983,
+      "naslov": "chapter0027.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 762
+    },
+    "5238": {
+      "broj": 5238,
+      "naslov": "chapter0028.html",
+      "summary": "",
+      "lik_count": {
+        "Orford": 4,
+        "Sarah": 7
+      },
+      "chunk_ids": [],
+      "rijeci_count": 747
+    },
+    "7930": {
+      "broj": 7930,
+      "naslov": "chapter0030.html",
+      "summary": "",
+      "lik_count": {
+        "Tomai": 25,
+        "Run": 6,
+        "Kork": 11,
+        "Mogu": 4
+      },
+      "chunk_ids": [],
+      "rijeci_count": 781
+    },
+    "420": {
+      "broj": 420,
+      "naslov": "chapter0031.html",
+      "summary": "",
+      "lik_count": {},
+      "chunk_ids": [],
+      "rijeci_count": 860
+    },
+    "7336": {
+      "broj": 7336,
+      "naslov": "chapter0032.html",
+      "summary": "",
+      "lik_count": {
+        "San": 5,
+        "Francisco": 3,
+        "Kinneyja": 3,
+        "Kinney": 8
+      },
+      "chunk_ids": [],
+      "rijeci_count": 745
+    },
+    "307": {
+      "broj": 307,
+      "naslov": "chapter0033.html",
+      "summary": "",
+      "lik_count": {
+        "Sibley": 9,
+        "Leonard": 9
+      },
+      "chunk_ids": [],
+      "rijeci_count": 706
     }
   }
 }

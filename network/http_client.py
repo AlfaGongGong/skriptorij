@@ -55,9 +55,10 @@ def _get_next_proxy() -> dict | None:
 # Gemini modeli → native Google endpoint
 # Gemma modeli  → Together.AI endpoint (drugačiji API ključevi!)
 _GOOGLE_MODEL_POOL_FALLBACK = [
-    {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 500},
-    {"model": "gemini-2.0-flash-lite", "rpm": 30, "rpd": 1500},
+    {"model": "gemini-3.1-flash-lite",  "rpm": 15, "rpd": 500},
+    {"model": "gemini-2.5-flash-lite",  "rpm": 10, "rpd": 20},
+    {"model": "gemini-2.5-flash",       "rpm": 5,  "rpd": 20},
+    {"model": "gemini-3-flash",         "rpm": 5,  "rpd": 20},
 ]
 _GEMMA_MODEL_POOL_FALLBACK = [
     {"model": "google/gemma-4-9b-it",  "rpm": 15, "rpd": 1000},
@@ -301,7 +302,8 @@ async def _async_http_post(self, url: str, headers: dict, json_payload: dict,
                 self.log(f"[{prov_upper}] Dnevna kvota iscrpljena — biram drugi ključ", "warning")
             else:
                 wait = min(retry_after or 4.0, 120.0) + random.uniform(0.5, 2.0)
-                self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s, biram drugi ključ", "warning")
+                body_preview = str(resp_body)[:300] if resp_body else "nema body-ja"
+                self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s | {body_preview}", "warning")
                 await asyncio.sleep(wait)
             return None
 
@@ -409,7 +411,25 @@ async def _call_gemini_with_full_rotation(
                 if content:
                     return content, f"GEMINI-{current_model}"
                 # data vraćen ali prazan sadržaj (SAFETY filter itd.) → sljedeći model
-            
+
+            # PATCH3: Direktni Google URL fallback ako Worker nije odgovoran za fail
+            # Pokušavamo direktni URL samo ako ključ nije u cooldownu
+            # (cooldown = Google problem; bez cooldowna = možda Worker problem)
+            elif ks.available:
+                from network.provider_urls import get_gemini_direct_url
+                direct_url = f"{get_gemini_direct_url(current_model)}?key={key}"
+                self.log(
+                    f"[GEMINI] Worker fallback — probam direktni Google URL za {current_model}",
+                    "warning",
+                )
+                data_direct = await _async_http_post(
+                    self, direct_url, headers, payload, "GEMINI", "GEMINI", key, _proxy=None
+                )
+                if data_direct is not None:
+                    content = _extract_gemini_native(data_direct)
+                    if content:
+                        return content, f"GEMINI-direct-{current_model}"
+
             # Ako je ključ ušao u cooldown (429/kvota/500) → sljedeći ključ
             if not ks.available:
                 self.log(

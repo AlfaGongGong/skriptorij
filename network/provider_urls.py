@@ -30,11 +30,18 @@ def get_url(prov):
 
 # Cloudflare Worker proxy — zaobilazi IP blokade prema Google API-u
 GEMINI_BASE_URL = "https://booklyfi.jasenkobozinovic.workers.dev"
+GEMINI_DIRECT_BASE_URL = "https://generativelanguage.googleapis.com"  # PATCH3: direktni fallback
 
 def get_gemini_url(model: str) -> str:
     """
-    Vraća native Gemini endpoint s ugrađenim modelom, kroz Cloudflare Worker proxy.
-    Native endpoint podržava free tier (za razliku od /v1beta/openai/ koji zahtijeva billing).
-    Worker transparentno proslijeđuje zahtjev Googleu sa svoje IP adrese.
+    Vraća native Gemini endpoint kroz Cloudflare Worker proxy.
+    Primarni URL — Worker zaobilazi IP blokade prema Googleu.
     """
     return f"{GEMINI_BASE_URL}/v1beta/models/{model}:generateContent"
+
+def get_gemini_direct_url(model: str) -> str:
+    """
+    PATCH3: Direktni Google API URL (fallback kad Worker vrati 429/pade).
+    Bez proxy-ja — može biti blokiran za neke IP-ove ali vrijedi probati.
+    """
+    return f"{GEMINI_DIRECT_BASE_URL}/v1beta/models/{model}:generateContent"

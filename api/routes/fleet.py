@@ -38,21 +38,37 @@ def _normalize_fleet_summary(raw: dict) -> dict:
         for k in keys:
             if isinstance(k, str):
                 norm_keys.append({
-                    "key":           k[:8] + "...",
-                    "calls_ok":      0,
-                    "calls_failed":  0,
-                    "calls_rejected": {},
-                    "success_rate":  1.0,
-                    "total_requests": 0,
+                    "masked":          "..." + k[-6:] if len(k) > 6 else "***",
+                    "available":       True,
+                    "calls_ok":        0,
+                    "calls_failed":    0,
+                    "calls_rejected":  {},
+                    "success_rate":    1.0,
+                    "total_requests":  0,
+                    "rpm":             0,
+                    "rpm_safe":        0,
+                    "rpd":             0,
+                    "rpd_safe":        0,
+                    "tpd":             0,
+                    "cooldown_s":      0.0,
+                    "cooldown_reason": "",
                 })
             elif isinstance(k, dict):
                 norm_keys.append({
-                    "key":            k.get("key", k.get("masked", "???"))[:8] + "...",
-                    "calls_ok":       k.get("calls_ok", 0),
-                    "calls_failed":   k.get("calls_failed", 0),
-                    "calls_rejected": k.get("calls_rejected", {}),
-                    "success_rate":   k.get("success_rate", 1.0),
-                    "total_requests": k.get("total_requests", 0),
+                    "masked":          k.get("masked", k.get("key", "???")),
+                    "available":       k.get("available", True),
+                    "calls_ok":        k.get("calls_ok", 0),
+                    "calls_failed":    k.get("calls_failed", 0),
+                    "calls_rejected":  k.get("calls_rejected", {}),
+                    "success_rate":    k.get("success_rate", 1.0),
+                    "total_requests":  k.get("total_requests", 0),
+                    "rpm":             k.get("rpm", 0),
+                    "rpm_safe":        k.get("rpm_safe", 0),
+                    "rpd":             k.get("rpd", 0),
+                    "rpd_safe":        k.get("rpd_safe", 0),
+                    "tpd":             k.get("tpd", 0),
+                    "cooldown_s":      k.get("cooldown_s", 0.0),
+                    "cooldown_reason": k.get("cooldown_reason", ""),
                 })
 
         total = info.get("total", len(norm_keys))
@@ -88,7 +104,6 @@ def get_fleet():
     except Exception:
         logger.exception("[fleet] Greška pri dohvaćanju flote")
         return jsonify({"error": "Greška pri dohvaćanju flote"}), 500
-
 
 
 

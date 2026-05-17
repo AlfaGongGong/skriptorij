@@ -332,42 +332,19 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
 
 async def acquire_key(key: str, provider: str | None = None):
     # Provjeri QuotaTracker dostupnost PRIJE nego što zauzimamo semafor
-    # V2 FIX: Ako ključ nije dostupan zbog min_gap — SAČEKAJ, nemoj baciti grešku.
-    # RuntimeError bi ubio chunk (ode u ERROR), a min_gap znači samo "sačekaj par sekundi".
     if provider:
         try:
             from network.quota_tracker import quota_tracker
             ok, reason = quota_tracker.is_key_available(provider, key)
             if not ok:
-                # Ako je min_gap ili kratki cooldown (≤15s) — sačekaj
-                # Ako je RPD iscrpljen ili dugi cooldown — baci grešku
-                if "min_gap" in reason or ("cooldown" in reason and "čekanje" in reason):
-                    # Izvuci broj sekundi iz reason stringa
-                    import re as _re
-                    match = _re.search(r'([\d.]+)s', reason)
-                    wait_s = float(match.group(1)) if match else 5.0
-                    wait_s = min(wait_s, 15.0)  # max 15s čekanja
-                    syslog.debug(
-                        "[rate_limiter] %s ...%s čekam %.1fs — %s",
-                        provider.upper(), key[-4:], wait_s, reason,
-                    )
-                    await asyncio.sleep(wait_s)
-                elif "RPD" in reason or "dnevna" in reason.lower():
-                    syslog.debug(
-                        "[rate_limiter] %s ...%s skip — %s",
-                        provider.upper(), key[-4:], reason,
-                    )
-                    raise RuntimeError(f"Ključ nedostupan (RPD): {reason}")
-                else:
-                    syslog.debug(
-                        "[rate_limiter] %s ...%s skip — %s",
-                        provider.upper(), key[-4:], reason,
-                    )
-                    raise RuntimeError(f"Ključ nedostupan: {reason}")
+                syslog.debug(
+                    "[rate_limiter] %s ...%s skip — %s",
+                    provider.upper(), key[-4:], reason,
+                )
+                # Ne blokiraj — baci iznimku da caller može probati drugi ključ
+                raise RuntimeError(f"Ključ nedostupan: {reason}")
         except ImportError:
             pass
-        except RuntimeError:
-            raise  # propagiraj dalje
 
     # IP-level per-provider semaphore — zaštita od burst-a prema istom provideru
     if provider:

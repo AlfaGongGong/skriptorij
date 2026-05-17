@@ -322,6 +322,10 @@ class FleetManager:
             keys_sorted = sorted(available, key=lambda x: x.success_rate, reverse=True)
             top_n  = max(1, math.ceil(len(keys_sorted) * 0.7))
             top    = keys_sorted[:top_n]
+            # Ne biraj ključeve s sr=0.0 (samo 401/greške) osim ako nema drugog izbora
+            non_zero = [ks for ks in top if ks.success_rate > 0.0]
+            if non_zero:
+                top = non_zero
             idx    = self._rr_index.get(prov_u, 0) % len(top)
             chosen = top[idx]
             self._rr_index[prov_u] = (idx + 1) % len(top)
