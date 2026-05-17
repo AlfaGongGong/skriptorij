@@ -78,5 +78,3 @@ output/
 *.epub_out/
 (LIVE)_*
 quota_cooldowns.json
-quota_cooldowns.json
-*.zip
