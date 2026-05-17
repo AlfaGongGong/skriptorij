@@ -4,19 +4,11 @@ Promovira kandidate iz karantene u aktivne kalkove nakon provjere.
 Schema: kandidat → na_cekanju → potvrđen | odbijen
 """
 
-import re
 import json
 import sqlite3
 import logging
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
-
-try:
-    from rapidfuzz import fuzz
-    RAPIDFUZZ_DOSTUPAN = True
-except ImportError:
-    RAPIDFUZZ_DOSTUPAN = False
 
 log = logging.getLogger(__name__)
 

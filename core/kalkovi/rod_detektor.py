@@ -344,10 +344,8 @@ def _koriguj_chunk(
         # Odaberi par: tražimo pogrešan rod, zamjenjujemo ispravnim
         if rod == "Ž":
             pogresni = GPR_M_Z   # muška forma = pogrešna za ženski lik
-            ispravni = GPR_Z_M   # ženski oblici (za lookup)
         else:
             pogresni = GPR_Z_M   # ženska forma = pogrešna za muški lik
-            ispravni = GPR_M_Z
 
         ime_esc = re.escape(ime)
 
@@ -592,8 +590,6 @@ rod_detektor: RodDetektor = RodDetektor()
 # ── CLI test ─────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    import sys
-
     logging.basicConfig(level=logging.DEBUG, format="%(levelname)s %(message)s")
 
     testovi = [
