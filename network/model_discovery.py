@@ -350,6 +350,21 @@ def clear_dead_models(provider: str = None) -> None:
             _dead_models.pop(provider.upper(), None)
 
 
+def clear_model_list_cache(provider: str = None) -> None:
+    """
+    Briše cache listu modela za dati provajder (ili sve provajdere ako provider=None).
+    Namijenjena testovima da spriječe međusobnu kontaminaciju stanja keša.
+    """
+    with _cache_lock:
+        if provider is None:
+            _model_list_cache.clear()
+            _model_cache.clear()
+        else:
+            prov = provider.upper()
+            _model_list_cache.pop(prov, None)
+            _model_cache.pop(prov, None)
+
+
 def get_cached_model(provider: str) -> Optional[str]:
     """Vraća cached model ID ako cache nije istekao, inače None."""
     prov = provider.upper()
