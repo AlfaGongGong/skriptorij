@@ -352,8 +352,6 @@ morfo_validator: MorfoValidator = MorfoValidator()
 
 
 if __name__ == "__main__":
-    import sys
-
     print("=== MorfoValidator — lokalni test (bez AI) ===\n")
 
     testovi = [

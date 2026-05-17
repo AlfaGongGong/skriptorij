@@ -5,9 +5,9 @@ Nasljednik provider_router.py — backward compatible.
 """
 
 import logging
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Optional, Tuple, List, Dict
 
-from core.model_profiles import PROFILI, ModelProfile, get_profili_za_ulogu
+from core.model_profiles import PROFILI, ModelProfile
 
 # Per-provider profili — limiti, uloge, kvalitet
 try:

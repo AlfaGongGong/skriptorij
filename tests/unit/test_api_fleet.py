@@ -1,16 +1,18 @@
 import json
-import time
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from api_fleet import FleetManager
+from network.quota_tracker import quota_tracker
 
 
 def _make_fleet(tmp_path, provider="GROQ", key="gsk_test_1234567890"):
     cfg = tmp_path / "dev_api.json"
     state = tmp_path / "api_state.json"
+    quota_tracker._providers.clear()
+    quota_tracker._PERSIST_PATH = str(tmp_path / "quota_cooldowns.json")
     cfg.write_text(json.dumps({provider: [key]}), "utf-8")
     return FleetManager(config_path=str(cfg), state_path=str(state))
 
@@ -176,4 +178,3 @@ def test_multiple_analyze_responses(tmp_path):
     assert ks.calls_rejected.get(401, 0) == 1
     # QuotaTracker primjenjuje cooldown nakon 429/401 — ključ je privremeno nedostupan
     assert ks.available is False
-

@@ -129,8 +129,6 @@ def _zamijeni_epub_css(html_fajlovi: list, work_dir, log_fn=None) -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 import zipfile
 
-import unicodedata as _unicodedata
-
 def _booklyfi_charset_filter(tekst: str) -> str:
     """
     Uklanja izolirane ćirilične znakove iz latiničnog teksta.
@@ -335,4 +333,3 @@ class EpubParser:
 
         except Exception:
             return f"Poglavlje {idx + 1}", raw_html, raw_html[:200]
-

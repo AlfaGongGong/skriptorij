@@ -21,7 +21,6 @@
 # ============================================================================
 
 import logging
-import os
 import threading
 from datetime import datetime
 from logging.handlers import BaseRotatingHandler

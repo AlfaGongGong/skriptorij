@@ -5,7 +5,7 @@ Nasljednik core/prompts.py — backward compatible.
 Koristi core/model_profiles.py za model-specifična upozorenja.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 
 
 # ─────────────────────────────────────────────────────────────

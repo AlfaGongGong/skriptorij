@@ -15,7 +15,16 @@ except Exception:
 
 SVE_LISTE = _DA + _EKAVIZMI + _DINAMICKI
 
-__all__ = ["SVE_LISTE", "_DA", "_EKAVIZMI", "_DINAMICKI", "reload_dinamicki_kalkove"]
+__all__ = [
+    "SVE_LISTE",
+    "_DA",
+    "_EKAVIZMI",
+    "_DINAMICKI",
+    "PLEONAZMI",
+    "DIJALOG",
+    "GLAGOLI",
+    "reload_dinamicki_kalkove",
+]
 
 
 def reload_dinamicki_kalkove() -> int:
