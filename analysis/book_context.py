@@ -25,7 +25,6 @@ import json
 import logging
 import os
 import re
-import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -367,7 +366,6 @@ class BookContext:
         učitava njihov .chk sadržaj i dodaje u few_shot_primjeri.
         Vraća broj novih primjera dodanih.
         """
-        import os
         qs_path = Path(quality_scores_path)
         chk_dir = Path(checkpoint_dir)
 
@@ -406,7 +404,6 @@ class BookContext:
 
                 # Originalni EN tekst — tražimo u prevod.chk ako postoji
                 prevod_chk = chk_dir / f"{stem_key}.prevod.chk"
-                originalni = ""
                 if prevod_chk.exists():
                     # prevod.chk čuva sirovi prijevod, ne original — preskačemo EN
                     pass

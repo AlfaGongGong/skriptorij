@@ -31,7 +31,6 @@ import threading
 from network.rate_limiter import (
     acquire_key,
     release_key,
-    register_provider_backoff,
     register_provider_runtime_limits,
 )
 

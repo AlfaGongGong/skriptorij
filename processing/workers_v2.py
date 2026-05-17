@@ -17,7 +17,6 @@ Tijek jednog chunka:
 
 import logging
 import re
-import time
 from typing import Optional, Dict, Any, List
 
 logger = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ except ImportError:
     _profiles_ok = False
 
 try:
-    from core.prompts_v2 import get_system_prompt, get_temperatura, get_max_tokens as gmt_v2
+    from core.prompts_v2 import get_system_prompt
     _prompts_v2_ok = True
 except ImportError:
     logger.warning("workers_v2: core.prompts_v2 nije dostupan, koristim core.prompts")
@@ -86,7 +85,7 @@ try:
     from core.kalkovi.dinamicki_detektor import DinamickiDetektor as _DinamickiDetektor
     _detektor = _DinamickiDetektor()
     _DETEKTOR_AKTIVAN = True
-except Exception as _det_e:
+except Exception:
     _DETEKTOR_AKTIVAN = False
     _detektor = None
 
@@ -95,7 +94,7 @@ try:
     from core.kalkovi.rod_detektor import RodDetektor as _RodDetektor
     _rod_detektor = _RodDetektor()
     _ROD_DETEKTOR_AKTIVAN = True
-except Exception as _rod_e:
+except Exception:
     _ROD_DETEKTOR_AKTIVAN = False
     _rod_detektor = None
 

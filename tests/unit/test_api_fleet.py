@@ -1,5 +1,4 @@
 import json
-import time
 import sys
 import os
 
@@ -176,4 +175,3 @@ def test_multiple_analyze_responses(tmp_path):
     assert ks.calls_rejected.get(401, 0) == 1
     # QuotaTracker primjenjuje cooldown nakon 429/401 — ključ je privremeno nedostupan
     assert ks.available is False
-
