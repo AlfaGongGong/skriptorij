@@ -31,7 +31,6 @@ import threading
 from network.rate_limiter import (
     acquire_key,
     release_key,
-    register_provider_backoff,
     register_provider_runtime_limits,
 )
 
@@ -58,7 +57,7 @@ _GOOGLE_MODEL_POOL_FALLBACK = [
     {"model": "gemini-3.1-flash-lite",  "rpm": 15, "rpd": 500},
     {"model": "gemini-2.5-flash-lite",  "rpm": 10, "rpd": 20},
     {"model": "gemini-2.5-flash",       "rpm": 5,  "rpd": 20},
-    {"model": "gemini-3-flash",         "rpm": 5,  "rpd": 20},
+    {"model": "gemini-2.0-flash",       "rpm": 15, "rpd": 1500},
 ]
 _GEMMA_MODEL_POOL_FALLBACK = [
     {"model": "google/gemma-4-9b-it",  "rpm": 15, "rpd": 1000},
@@ -411,24 +410,6 @@ async def _call_gemini_with_full_rotation(
                 if content:
                     return content, f"GEMINI-{current_model}"
                 # data vraćen ali prazan sadržaj (SAFETY filter itd.) → sljedeći model
-
-            # PATCH3: Direktni Google URL fallback ako Worker nije odgovoran za fail
-            # Pokušavamo direktni URL samo ako ključ nije u cooldownu
-            # (cooldown = Google problem; bez cooldowna = možda Worker problem)
-            elif ks.available:
-                from network.provider_urls import get_gemini_direct_url
-                direct_url = f"{get_gemini_direct_url(current_model)}?key={key}"
-                self.log(
-                    f"[GEMINI] Worker fallback — probam direktni Google URL za {current_model}",
-                    "warning",
-                )
-                data_direct = await _async_http_post(
-                    self, direct_url, headers, payload, "GEMINI", "GEMINI", key, _proxy=None
-                )
-                if data_direct is not None:
-                    content = _extract_gemini_native(data_direct)
-                    if content:
-                        return content, f"GEMINI-direct-{current_model}"
 
             # Ako je ključ ušao u cooldown (429/kvota/500) → sljedeći ključ
             if not ks.available:

@@ -453,7 +453,6 @@ def primijeni_u_qa_benchmark(conn: sqlite3.Connection) -> dict:
 
         # Formatiraj red kao ostatak liste
         # Npr.: (r"\bna kraju krajeva\b",   "kalk: na kraju krajeva"),
-        pattern_repr = repr(pattern).replace("'", '"')
         # Ukloni vanjski r"..." i dodaj raw prefix
         pattern_str = f'r"{pattern}"'
         red = f"    ({pattern_str:<45} {repr(opis):<55}),  # AUTO: {sada}"

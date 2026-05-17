@@ -26,8 +26,6 @@ Napomena o patternima:
   primorati, tjerati, pustiti, dati (dopuštanje), pomoći, učiti (koga)
 """
 
-import re
-
 # ─────────────────────────────────────────────────────────────────────────────
 # POMOĆNI BUILDER — generira sve lične oblike za dati glagol
 # ─────────────────────────────────────────────────────────────────────────────

@@ -8,8 +8,9 @@ import network.model_discovery as _md
 
 
 def _reset_dead_models():
-    """Pomoćnik: čisti dead_models state između testova."""
+    """Pomoćnik: čisti dead_models i model list cache između testova."""
     _md.clear_dead_models()
+    _md.clear_model_list_cache()
 
 
 def test_google_pool_uses_only_whitelisted_models(monkeypatch):

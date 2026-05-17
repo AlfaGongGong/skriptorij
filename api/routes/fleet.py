@@ -3,7 +3,7 @@
 """Rute za Fleet Pool — prikaz API ključeva i statistike poziva."""
 import logging
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 
 from config.settings import CONFIG_PATH
 
@@ -104,6 +104,5 @@ def get_fleet():
     except Exception:
         logger.exception("[fleet] Greška pri dohvaćanju flote")
         return jsonify({"error": "Greška pri dohvaćanju flote"}), 500
-
 
 

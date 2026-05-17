@@ -864,7 +864,6 @@ async def process_chunk_with_retry(
         )
         try:
             tip_bloka = detektuj_tip_bloka(chunk)
-            rel_glosar = self._extract_relevant_glossary(chunk)
             chapter_summary = self._get_chapter_summary_for_lektor(file_name)
 
             worker = WorkerV2(

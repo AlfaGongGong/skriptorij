@@ -4,7 +4,6 @@ Promovira potvrđene kalkove u aktivnu listu + rollback zaštita.
 """
 
 import re
-import json
 import sqlite3
 import logging
 from pathlib import Path

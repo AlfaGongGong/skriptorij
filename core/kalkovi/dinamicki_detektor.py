@@ -5,25 +5,17 @@ Stack: classla + hunspell + regex + rapidfuzz
 """
 
 import re
-import json
 import sqlite3
 import subprocess
 import logging
 from pathlib import Path
 from collections import defaultdict
-from typing import Optional
 
 try:
     import classla
     CLASSLA_DOSTUPAN = True
 except ImportError:
     CLASSLA_DOSTUPAN = False
-
-try:
-    from rapidfuzz import fuzz
-    RAPIDFUZZ_DOSTUPAN = True
-except ImportError:
-    RAPIDFUZZ_DOSTUPAN = False
 
 from core.kalkovi import SVE_LISTE
 
