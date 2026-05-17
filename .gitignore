@@ -79,3 +79,4 @@ output/
 (LIVE)_*
 quota_cooldowns.json
 quota_cooldowns.json
+*.zip
