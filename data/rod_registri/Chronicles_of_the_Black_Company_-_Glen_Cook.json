@@ -226,7 +226,7 @@
   },
   "Netko": {
     "rod": "M",
-    "clue_m": 20,
+    "clue_m": 21,
     "clue_z": 0
   },
   "Vidljivost": {
@@ -521,7 +521,7 @@
   },
   "eža": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 11,
     "clue_z": 0
   },
   "Buntovnik": {
@@ -771,7 +771,7 @@
   },
   "ežu": {
     "rod": "M",
-    "clue_m": 13,
+    "clue_m": 14,
     "clue_z": 0
   },
   "Hladno": {
@@ -2456,17 +2456,17 @@
   },
   "Curly": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Ples": {
     "rod": null,
-    "clue_m": 1,
+    "clue_m": 2,
     "clue_z": 0
   },
   "Starac": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Milost": {
@@ -3710,9 +3710,9 @@
     "clue_z": 0
   },
   "Plata": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Milosrđe": {
     "rod": "M",
@@ -4238,5 +4238,15 @@
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
+  },
+  "Riječ": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Beryl": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
   }
 }
