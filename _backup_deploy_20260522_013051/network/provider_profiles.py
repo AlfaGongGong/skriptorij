@@ -65,30 +65,28 @@ class ProviderProfile:
 PROVIDER_PROFILES: dict[str, ProviderProfile] = {
 
     # ── GEMINI ──────────────────────────────────────────────────────────────
-    # Free tier (dashboard 22.05.2026 + deprecation stranica):
-    #   gemini-3.5-flash      — 10 RPM / 500 RPD  — STABLE, nema shutdown  ← PRIMARNI
-    #   gemini-3.1-flash-lite — 15 RPM / 500 RPD  — STABLE, shutdown maj 2027
-    #   gemini-2.5-flash      — 10 RPM / 1500 RPD — deprecated okt 2026 (fallback)
-    #   gemini-2.5-flash-lite — 15 RPM / 1500 RPD — deprecated okt 2026 (fallback)
-    #   gemini-2.0-flash      — DEPRECATED, shutdown 1. JUNA 2026 — NE KORISTITI!
-    #
-    # rpm_hard=10 jer je primarni 3.5-flash limitiran na 10 RPM
-    # Sa 8 ključeva × 500 RPD = 4000 RPD/dan na stable modelima
+    # Free tier (provjereno dashboard 22.05.2026):
+    #   gemini-2.0-flash      — 15 RPM / 1500 RPD / 1M TPM  ← primarni model
+    #   gemini-2.5-flash      — 10 RPM / 1500 RPD / 1M TPM
+    #   gemini-2.5-flash-lite — 15 RPM / 1500 RPD / 1M TPM
+    #   gemini-3.1-flash-lite — 15 RPM / 500 RPD
+    #   gemini-3.1-flash      — 10 RPM / 500 RPD
+    # Sa 8 ključeva: 120 RPM / 12000 RPD ukupno (konzervativno: 2.0+2.5 pool)
     # Google šalje "quota" i "resource exhausted" za SVE 429 — i RPM i dnevne
     "GEMINI": ProviderProfile(
         name="GEMINI",
-        rpm_hard=10,
-        rpm_safe=8,            # 80% od 10 RPM po ključu (3.5-flash primarni)
-        rpd_hard=500,
-        rpd_safe=425,          # 85% od 500 RPD po ključu (stable modeli)
+        rpm_hard=15,
+        rpm_safe=12,           # 12/15 RPM po ključu — 80% kapaciteta, ostavlja marginu
+        rpd_hard=1500,
+        rpd_safe=1275,         # 85% od 1500
         tpm_hard=1_000_000,
-        min_gap_s=7.5,         # 60s / 8 rpm_safe = 7.5s razmak između poziva jednog ključa
+        min_gap_s=5.0,         # 60s / 12 rpm_safe = 5s razmak između poziva jednog ključa
         cooldown_429_s=15.0,   # 15s cooldown po ključu nakon RPM 429
         supports_system_role=True,
         preferred_roles=["LEKTOR", "POLISH", "SCORER", "ANALIZA"],
         avoid_roles=[],        # radi sve
         quality_tier=1,
-        notes="Primarni: 3.5-flash (stable, nema shutdown). 8 ključeva × 500 RPD = 4000 RPD/dan. 2.5 fallback do okt 2026.",
+        notes="Primarni: gemini-2.0-flash + 2.5 pool. 8 ključeva × 1500 RPD = 12000 RPD/dan.",
     ),
 
     # ── GROQ ────────────────────────────────────────────────────────────────

@@ -468,6 +468,78 @@
     "tip": "naracija"
   },
   {
+    "en": "Elmo grinned. “Keep your eye on him. Croaker, take notes. I want to know who he tells. And who they tell. We gave him something\n         that ought to spread like the clap.”\n      Zouad was a dead man",
+    "bs": "{\n „korektura\": \"Elmo se osmjehnuo. Drži oko na njega. Croaker, uzmi bilješke. Želim znati kome on kaže i kome oni kažu. Dali smo mu nešto što bi trebalo širiti kao kuga.\\n\\nZouad je bio mrtav čovjek ",
+    "score": 10.0,
+    "tip": "poetski"
+  },
+  {
+    "en": "Hardass Raven. Mocking me. And who was that out there roaming around the camp, breaking it up wherever the men were amusing\n         themselves with a little torture? Who had a ten-year-old girl trail",
+    "bs": "Čvrstokosti Raven. Ismejava me. A tko je bio onaj vani, koji je lutao kampom, razbijajući sve gdje su ljudi zabavljali mučenjem? Tko je imao desetogodišnju djevojčicu za sobom na starom magarcu? Nije ",
+    "score": 10.0,
+    "tip": "poetski"
+  },
+  {
+    "en": "RoseThe argument with the Captain raged for two hours. He was unyielding. He did not accept my arguments, legal or moral. Time\n         brought others into the fray, as they came to the Captain on bus",
+    "bs": "\nRuža\nSvađa s Kapetanom rasplamsala se dva sata. On je bio nepokolebljiv. Ni pravne ni moralne argumente nije prihvaćao. Vrijeme je donijelo druge u sukob, kako su se javljali kod Kapetana po poslovim",
+    "score": 10.0,
+    "tip": "poetski"
+  },
+  {
+    "en": "Shed spat. “I’d better send for the Custodians.”A voice said, “He’s waited this long, let him wait a little longer.”Shed whirled. Raven and Darling stood behind his mother. “What?”“He might be the ans",
+    "bs": "Shed pljunu. *„Bolje da pozovem Čuvare.“*\nGlas je odjeknuo: *„Čekao je toliko, neka čeka još malo.“*\nShed se okrenuo. Raven i Darling stajali su iza njegove majke. *„Što?“*\n„Možda je on rješenje tvoji",
+    "score": 10.0,
+    "tip": "poetski"
+  },
+  {
+    "en": "The old man eased off his mount, presented his bona fides. Elmo found them acceptable. Then he announced, “I’ve got twenty\n         pounds of stuff here.” He tapped a case behind his saddle. “Every da",
+    "bs": "Starac se polako spustio s magarca, pružio svoje uvjerenje. Elmo ih je našao prihvatljivima. Zatim je objavio:\n\n— „Imam ovdje dvadeset funti materijala.” Tapnuo je po kovčegu iza sedla.\n— „Svaki prokl",
+    "score": 10.0,
+    "tip": "poetski"
+  },
+  {
+    "en": "I was not sure I wanted to read its contents.It won the battle.",
+    "bs": "Nisam bio siguran hoću li pročitati sadržaj.\n\nPaket je pobijedio.",
+    "score": 10.0,
+    "tip": "naracija"
+  },
+  {
+    "en": "Flight WestDespite my exoneration by the tree, I never quite regained my former status with my comrades. Always there was a certain reserve,\n         perhaps as much from envy of my apparent sudden fe",
+    "bs": "\nLet na zapad\nDakle me drvo oprostilo, nikad više nisam bio isti među svojim. Uvijek je ostajala neka rezerva,\n možda koliko iz ljubomore na moju naglo steknutu žensku blagodat, toliko iz povjerenja k",
+    "score": 10.0,
+    "tip": "poetski"
+  },
+  {
+    "en": "xml version=\"1.0\" encoding=\"UTF-8\"?",
+    "bs": "Tekst koji ste priložili ne sadrži dijalog ni sadržaj koji bi se mogao prevesti na bosanski/hrvatski jezik u skladu s pravilima koja sam navio. Izgleda kao dio XML dokumenta koji opisuje strukturu ele",
+    "score": 10.0,
+    "tip": "dijalog"
+  },
+  {
+    "en": "THE BLACKCOMPANY",
+    "bs": "CRNODRUŠTVO",
+    "score": 10.0,
+    "tip": "naracija"
+  },
+  {
+    "en": "SHADOWSLINGER",
+    "bs": "SJENEOSTAJU",
+    "score": 10.0,
+    "tip": "naracija"
+  },
+  {
+    "en": "THE WHITEROSE",
+    "bs": "Bijelaruža",
+    "score": 10.0,
+    "tip": "naracija"
+  },
+  {
+    "en": "What was happening back there? Was this some scheme to leave our people at the Rebel’s mercy? It had become clear, toward\n         the end, that the Lady’s strategy involved maximum destruction. That ",
+    "bs": "Što se zbivalo tamo? Da li je to bio neki plan da ostavimo naše ljude na milost pobunjenika? Konačno se pokazalo da Gospa namjerava maksimalno uništenje. željela je preživi samo mali dio jedne ili dru",
+    "score": 10.0,
+    "tip": "naracija"
+  },
+  {
     "en": "Legati B ilo je dovoljno čudesa i znamenja, kaže Jednooko. Mi smo krivi što smo ih pogrešno protumačili. Jednookojeva invalidnost \n na nikakav način ne ometa njegovo izvanredno poznavanje prošlosti. Munja iz vedrog neba udarila je na Necropolitanskom brdu. Jedan udar pogodio je brončanu ploču koja j",
     "bs": "Legati B ilo je dovoljno čudesa i znamenja, kaže Jednooko. Mi smo krivi što smo ih pogrešno protumačili. Jednookojeva invalidnost \n na nikakav način ne ometa njegovo izvanredno poznavanje prošlosti. Munja iz vedrog neba udarila je na Necropolitanskom brdu. Jedan udar pogodio je brončanu ploču koja je zatvarala grob forvalake,\n uništivši pola čarolije zarobljavanja. Padale su kamene kugle. Kipovi su krvavili. Svешtenici u nekoliko hramova izvijestili su \n o žrtvama bez srca ili jetre. Jedna žrtva",
     "score": 9.8,
@@ -1126,77 +1198,5 @@
     "bs": "„Da. Pogledaj. Soulcatcher mi je rekao da ti dokumenti sadrže Limperovo pravo ime. Također uključuju tajne papire čarobnjaka Bomanza, gdje je navodno ukodirano pravo ime Lady.“ — „Čudo!“ izbaci Goblin. — „Točno.“ — „Što to ima veze s nama?“ zapita se One-Eye. — „Limper želi natrag svoje ime. Pretpostavi da vidi gomilu momaka i kola koja odlaze odatle? Što će on zaključiti? Asa mu je dao lažne informacije o tome da su oni s Ravenom. Asa ne zna sve što smo radili.“ Silent mu se uvalja u riječ, zna",
     "score": 9.8,
     "tip": "dijalog"
-  },
-  {
-    "en": "Nisam se osjećao sigurno. Nisam imao mnogo prilika za komandovanje u polju. Nisam naučio kako se nositi s osjećajima koji dolaze kad znate da su ljudi ubijeni pokušavajući izvršiti vaše naredbe. — Oni dolaze. Javljači su izašli iz šume, dolazeći uz Šejkerovu cestu među produžavajućim sjencama. —Misl",
-    "bs": "Nisam se osjećao sigurno. Nisam imao mnogo prilika za komandovanje u polju. Nisam naučio kako se nositi s osjećajima koji dolaze kad znate da su ljudi ubijeni pokušavajući izvršiti vaše naredbe. — Oni dolaze. Javljači su izašli iz šume, dolazeći uz Šejkerovu cestu među produžavajućim sjencama. —Mislim da ih je šest, rekao sam. —Ne. Sedam. Oni moraju biti izbjegli one tipove. — Čini se da su svi ranjeni. — Element iznenađenja. Limper je s njima? Možeš li vidjeti? — Ne. Onaj… To je Asa. Čort, to j",
-    "score": 9.8,
-    "tip": "dijalog"
-  },
-  {
-    "en": "U pokretu M oramo se odmoriti,” protestirao je One-Eye. „Neće biti odmora dok ne budemo mrtvi,” odgovorio sam. „Sada smo na drugoj strani, One-Eye. Učinili smo ono što Rebel nije mogao. Dobili smo Limpera, posljednjeg od originalnih Taken. Ona će nas goniti čim očisti ove ostatke crnog zamka. Moramo",
-    "bs": "U pokretu M oramo se odmoriti,” protestirao je One-Eye. „Neće biti odmora dok ne budemo mrtvi,” odgovorio sam. „Sada smo na drugoj strani, One-Eye. Učinili smo ono što Rebel nije mogao. Dobili smo Limpera, posljednjeg od originalnih Taken. Ona će nas goniti čim očisti ove ostatke crnog zamka. Moramo — ako nas ne uhvati brzo, svaki Rebel u pet tisuća milja će se razbjesniti i pokušati nešto. Preostala su samo dva Takhea, i samo Whisper vrijedi nešto.” „Da. Znam. Željno razmišljanje. Čovjek ne mož",
-    "score": 9.8,
-    "tip": "dijalog"
-  },
-  {
-    "en": "Prošli smo kroz tunel koji vodi do našeg skrovišta — onog smrdljivog, plesnivog, vlažnog, uskog zečjeg jamca, utvrde koja se drži samo od otpora. To je odvratno, ali to je srce i duša „New White Rose“ pobune. Nova nadanja, kako se šapuće među zarobljenim narodima. „Rebel Man“ nadanja za one od nas k",
-    "bs": "Prošli smo kroz tunel koji vodi do našeg skrovišta — onog smrdljivog, plesnivog, vlažnog, uskog zečjeg jamca, utvrde koja se drži samo od otpora. To je odvratno, ali to je srce i duša „New White Rose“ pobune. Nova nadanja, kako se šapuće među zarobljenim narodima. „Rebel Man“ nadanja za one od nas koji ovdje žive. To je loše kao i svaki štakorski podrum — iako čovjek može otići. Ako ne boji poduhvat u svijetu gdje mu sav moć „The King“ carstva stoji na vratu.",
-    "score": 9.8,
-    "tip": "dijalog"
-  },
-  {
-    "en": "Stari čovjek spustio se s konja, predložio svoje ovjerene overene isprave. Elmo ih je pronašao prihvatljivima. Zatim je objavio: „Imam ovdje dvadeset funti robe.“ Prikovao je prstom kovčeg iza sedla. „Svaki prokleti grad dodao je na teret.“ — „Samo si sam napravio cijeli put?“ upitao sam. — „Svaki k",
-    "bs": "Stari čovjek spustio se s konja, predložio svoje ovjerene overene isprave. Elmo ih je pronašao prihvatljivima. Zatim je objavio: „Imam ovdje dvadeset funti robe.“ Prikovao je prstom kovčeg iza sedla. „Svaki prokleti grad dodao je na teret.“ — „Samo si sam napravio cijeli put?“ upitao sam. — „Svaki korak od Oara.“ — „Oar? To je…“ — Više od tisuću milja. nisam znao imamo nekoga tamo. Ali ima puno toga što ne znam o organizaciji koju je Darling okupila. Provodim vrijeme pokušavajući izvući od ovih ",
-    "score": 9.8,
-    "tip": "dijalog"
-  },
-  {
-    "en": "„Ni ovdje ni tamo“, Bomanz šapne. „Vrijeme za polazak na teren. Ovdje, ovdje — motika, čarobni štap, vreće… Možda je Tokar ipak bio u pravu. Možda bih trebao uzeti pomoćnika. Četke, pomoć da nosim sve to. Tranzit, karte — ne smijem zaboraviti te stvari. Što još? Trake za obeležavanje… Taj prokleti M",
-    "bs": "„Ni ovdje ni tamo“, Bomanz šapne. „Vrijeme za polazak na teren. Ovdje, ovdje — motika, čarobni štap, vreće… Možda je Tokar ipak bio u pravu. Možda bih trebao uzeti pomoćnika. Četke, pomoć da nosim sve to. Tranzit, karte — ne smijem zaboraviti te stvari. Što još? Trake za obeležavanje… Taj prokleti Men Fu.“ Natjera stvari u torbu i objesi opremu sve oko sebe, okupi motiku, grabulju i tranzit. „Jasmina, Jasmina! Otvori prokleta vrata.“ Ona se zagleda kroz zavjese koje sakrivaju njihove živeće pros",
-    "score": 9.8,
-    "tip": "dijalog"
-  },
-  {
-    "en": "Nedavno prošlo: Corbie B arrowland se prostire daleko na sjeveru od Charma, u Staroj šumi, čije su legende o Bijeloj ruži postale nepismeno nasljeđe. Corbie je stigao u taj grad ljeti nakon što se Dominator nije uspio probiti iz svog groba kroz Juniper. Našao je sluge Gospe u visoko podignutom moral",
-    "bs": "Nedavno prošlo: Corbie B arrowland se prostire daleko na sjeveru od Charma, u Staroj šumi, čije su legende o Bijeloj ruži postale nepismeno nasljeđe. Corbie je stigao u taj grad ljeti nakon što se Dominator nije uspio probiti iz svog groba kroz Juniper. Našao je sluge Gospe u visoko podignutom moralu. Veliko zlo iz Velikog baruta više nije predstavljalo opasnost. Posljednji ostaci pobunjenika bili su razbijeni. Carstvo više nije imalo neprijatelja koji bi značio nešto. Veliki komet, glasnik svih",
-    "score": 9.8,
-    "tip": "naracija"
-  },
-  {
-    "en": "Prvo što sam morao učiniti bilo je odgoditi stvari. Otto je trebao uskoro doći **i** me razriješiti. Vatra bi ga upozorila. On bi vidio stranca, pa se spustio **i** probudio Rupu. „Zdravo“, reče. On se **zaustavi** — razmijeni pogled s svojim mješancem. Pas polako dođe naprijed, uhuša zrak, pretražu",
-    "bs": "Prvo što sam morao učiniti bilo je odgoditi stvari. Otto je trebao uskoro doći **i** me razriješiti. Vatra bi ga upozorila. On bi vidio stranca, pa se spustio **i** probudio Rupu. „Zdravo“, reče. On se **zaustavi** — razmijeni pogled s svojim mješancem. Pas polako dođe naprijed, uhuša zrak, pretražuje okolinu. Zaustavi se nekoliko koraka dalje, potrese se kao da je mokar, slegne se na trbuh. Stranac dođe naprijed samo toliko. „Sjedi“, pozove. On spusti sjedalo, spusti kovčeg **i** sjedne. Bio je",
-    "score": 9.8,
-    "tip": "dijalog"
-  },
-  {
-    "en": "O dnedavno, kada je Dominator i njegovi slugovi pali i bili zakopani u svojim humcima iza prepreka izrađenih od najboljih magijskih moći svog vremena, Bijela Ruža je naredila da se postavi vječna straža. Straža koja nije bila odgovorna nikome, zadužena za sprečavanje uskrsnuća mrtvog zla ispod humak",
-    "bs": "O dnedavno, kada je Dominator i njegovi slugovi pali i bili zakopani u svojim humcima iza prepreka izrađenih od najboljih magijskih moći svog vremena, Bijela Ruža je naredila da se postavi vječna straža. Straža koja nije bila odgovorna nikome, zadužena za sprečavanje uskrsnuća mrtvog zla ispod humaka. Bijela Ruža je razumjela ljudsku prirodu. Uvijek će biti onih koji će vidjeti korist u korištenju ili slijedanju Dominatora. Uvijek će biti obožavatelji zla koji će željeti osloboditi svog šampiona",
-    "score": 9.8,
-    "tip": "naracija"
-  },
-  {
-    "en": "Senka pade preko mojih nogu. Vratio sam se među žive. Tragač stajao je pokraj mene. „Izgledaš uznemireno“, reče. Moram priznati, pokazao je svaku moguću uljudnost. Pogledao sam prema onima koji su patrolirali — podsjetnici na borbu. Rekao sam: „Ja sam vojnik, ostario, umorio i zbunjen. Ratujem još o",
-    "bs": "Senka pade preko mojih nogu. Vratio sam se među žive. Tragač stajao je pokraj mene. „Izgledaš uznemireno“, reče. Moram priznati, pokazao je svaku moguću uljudnost. Pogledao sam prema onima koji su patrolirali — podsjetnici na borbu. Rekao sam: „Ja sam vojnik, ostario, umorio i zbunjen. Ratujem još od prije nego što si ti rođen. A da sam išta postigao… nije ni da sam vidio.“ Nasmiješio se tanko, gotovo tajanstveno. To me je uznemiravalo. Sve što je radio — uznemiravalo me je. Čak i njegov proklet",
-    "score": 9.8,
-    "tip": "dijalog"
-  },
-  {
-    "en": "{„finalno_polirano\": \" Komet je nestao. Pun mjesec je jahao nebo ukra\\u0161eno dijamantima. Velika sjena je pre\\u0161la preko zvijezda, zaklanjaju\\u0107i Mlije\\u010dni put. Glava, shvatio je Bomanz. Glava tame. Vukova glava, koja je grizla mjesec. \\u2026 Pa je nestala. Opet se na\\u0161ao s \\u017eeno",
-    "bs": "{„finalno_polirano\": \" Komet je nestao. Pun mjesec je jahao nebo ukra\\u0161eno dijamantima. Velika sjena je pre\\u0161la preko zvijezda, zaklanjaju\\u0107i Mlije\\u010dni put. Glava, shvatio je Bomanz. Glava tame. Vukova glava, koja je grizla mjesec. \\u2026 Pa je nestala. Opet se na\\u0161ao s \\u017eenom, \\u0161etaju\\u0107i kroz \\u0161umu, spoti\\u010duju\\u0107i se o sun\\u010dane zrake. Ona mu je obe\\u0107avala ne\\u0161to. \\u2026 \\n Probudio se. Jasmine ga je tresla. \\u201cBo! Snova\\u0161 opet. Probu",
-    "score": 9.8,
-    "tip": "dijalog"
-  },
-  {
-    "en": "Ravnica straha A ko se razljutiš i izađeš na Darling, možeš propustiti mnogo. Elmo, One-Eye, Goblin, Otto, ti tipovi vole me izazivati. Nisu namjeravali me upoznati s ničim. Svi su ostali pošli za njima. Čak i Tracker, koji je izgledao da mi se sviđa i pričao je sa mnom više nego svi ostali zajedno,",
-    "bs": "Ravnica straha A ko se razljutiš i izađeš na Darling, možeš propustiti mnogo. Elmo, One-Eye, Goblin, Otto, ti tipovi vole me izazivati. Nisu namjeravali me upoznati s ničim. Svi su ostali pošli za njima. Čak i Tracker, koji je izgledao da mi se sviđa i pričao je sa mnom više nego svi ostali zajedno, nije dao nikakav namig. Zato, kada je dan došao, pošao sam gore u potpunoj neznanju. Spakirao sam uobičajenu opremu za polje. Naše tradicije su teška pješadija, iako većinom danas vozimo konje. Svi s",
-    "score": 9.8,
-    "tip": "naracija"
-  },
-  {
-    "en": "Menhir je progovorio. Nisam mogao razabrati njegove riječi. Ali su ljudi počeli napredovati. Za minutu su mi najgore sumnjanja bila potvrđena. Penjali su se uz bok stvora, na njegova leđa, gdje se inače gnijezdile mante. Mirisalo je. Mirisalo je kao ništa što sam ranije mirisao, i snažno. Bogato, mo",
-    "bs": "Menhir je progovorio. Nisam mogao razabrati njegove riječi. Ali su ljudi počeli napredovati. Za minutu su mi najgore sumnjanja bila potvrđena. Penjali su se uz bok stvora, na njegova leđa, gdje se inače gnijezdile mante. Mirisalo je. Mirisalo je kao ništa što sam ranije mirisao, i snažno. Bogato, mogli bismo reći. Nije nužno bio loš miris, ali oštar. I činilo se čudnim na dodir. Nije bilo ni dlakavo, ni ljuskasto, ni rogasto. Nije bilo baš sluzavo, ali ipak mekano i klizavo, poput punog, izložen",
-    "score": 9.8,
-    "tip": "naracija"
   }
 ]

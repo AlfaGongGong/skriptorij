@@ -304,10 +304,8 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
     # Svaki ključ ima vlastitu liniju vremena — ključevi rade paralelno,
     # svaki poštuje vlastiti min_gap od svog zadnjeg poziva.
     gap = base_gap + random.uniform(1.0, 3.0)
-    # BUG FIX (kritičan): asyncio.sleep NE SMI biti unutar locka.
-    # Prethodno: lock zauzet → sleep unutar locka → svi ostali ključevi čekaju
-    # puni gap → efektivno serijalni rad umjesto paralelnog.
-    # Ispravak: unutar locka samo pročitaj/rezerviši slot, spavaj VAN locka.
+    # NOVO: Provider-level lock — SERIJSKI throttle (samo jedan task čeka odjednom)
+    # Ovo sprečava da više taskova istovremeno spava i probudi se simultano.
     lock = await _ensure_provider_lock(prov)
     async with lock:
         if key:
@@ -318,20 +316,18 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
             last = _LAST_CALLS.get(prov, 0.0)
 
         wait = (last + gap) - time.time()
-        # Rezerviši slot odmah — ostali ključevi mogu odmah ući u lock
-        # i procijeniti vlastiti wait bez blokiranja na ovom ključu.
-        now2 = time.time() + max(wait, 0)
+        if wait > 0:
+            logger.debug("[rate_limiter] %s ...%s throttle %.2fs (gap=%.2f+jitter)",
+                         prov, (key or "")[-4:], wait, base_gap)
+            await asyncio.sleep(wait)
+
+        # Ažuriraj per-key timestamp
+        now2 = time.time()
         if key:
             with _LAST_CALLS_KEY_LOCK:
                 _LAST_CALLS_KEY[key] = now2
         else:
             _LAST_CALLS[prov] = now2
-
-    # Sleep VAN locka — paralelni ključevi ne čekaju jedni na druge
-    if wait > 0:
-        logger.debug("[rate_limiter] %s ...%s throttle %.2fs (gap=%.2f+jitter)",
-                     prov, (key or "")[-4:], wait, base_gap)
-        await asyncio.sleep(wait)
 
 
 async def acquire_key(key: str, provider: str | None = None):

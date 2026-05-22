@@ -1,16 +1,58 @@
-# API ključevi (NIKAD NE COMMITUJ)
+# ========== API KLJUČEVI (NIKAD NE COMMITUJ) ==========
 dev_api.json
 api_state.json
 proxies.json
 *.key
 *.pem
 
-# Backup fajlovi
+# ========== BACKUP FAJLOVI I FOLDERI ==========
+_backup_*/
+backups/
 *.backup
 *.bak
-backups/
+*.bak_*
+*.bak_final
+*.bak_revert
+*.bak_simplify
+*.bak_bodylog
+*.bak_prompts
+*.bak_add429
 
-# Python
+# ========== ZIP ARHIVE ==========
+*.zip
+*.tar.gz
+*.rar
+
+# ========== CLASSLA I AI MODELI (PREVELIKI) ==========
+data/classla_resources/
+*.pt
+*.h5
+*.pkl
+
+# ========== PODACI O KNJIGAMA (PREVELIKI) ==========
+data/*.epub
+data/*.mobi
+data/_skr_*/
+data/(LIVE)_*
+# Umjesto:
+data/(LIVE)_*
+
+# Koristi:
+data/\(LIVE\)_*
+
+# ========== CHECKPOINT I GENERISANI PODACI ==========
+*_skr_*/
+checkpoints/
+
+# ========== OUTPUT KNJIGE ==========
+output/
+*.epub_out/
+
+# ========== RUNTIME FAJLOVI ==========
+last_book.json
+quota_cooldowns.json
+
+# ========== PYTHON ==========
 __pycache__/
 *.pyc
 *.pyo
@@ -18,63 +60,27 @@ __pycache__/
 dist/
 build/
 
-# Podaci o knjigama (preveliki)
-data/*.epub
-data/*.mobi
-data/_skr_*/
-data/(LIVE)_*
+# ========== SKRIPTE ==========
+*.sh
+fixpy.py
+fix.sh
 
-# IDE
+# ========== LOGOVI I TEKST ==========
+*.log
+*.txt
+
+# ========== IDE ==========
 .vscode/
 .idea/
 *.swp
 
-# OS
+# ========== OS ==========
 .DS_Store
 Thumbs.db
 
-# Logovi
-*.log
-*.txt
-
-
-# Jednokratne patch skripte
-fix.sh
-*.sh
-fixpy.py
-
-# Runtime fajlovi
-last_book.json
-
-# Kompletan kod export
-PROJEKAT_KOMPLETAN_KOD_*.txt
-
-# Environment
-env
-*.bak_*
-*.backup_*
+# ========== ENVIRONMENT ==========
+env/
 node_modules/
-# ========== DODATNO ==========
 
-# Backup fajlovi od fix skripti
-*.bak_final
-*.bak_revert
-*.bak_simplify
-*.bak_bodylog
-*.bak_prompts
-*.bak_add429
-*.bak_*
-
-# Runtime
-api_state.json
-last_book.json
-
-# Checkpoint podaci (preveliki, generisani)
-*_skr_*/
-checkpoints/
-
-# Output knjige
-output/
-*.epub_out/
-(LIVE)_*
-quota_cooldowns.json
+# ========== KOMPLETAN KOD EXPORT ==========
+PROJEKAT_KOMPLETAN_KOD_*.txt

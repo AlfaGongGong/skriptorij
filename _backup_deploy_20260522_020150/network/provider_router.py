@@ -27,7 +27,7 @@ MODEL_MAP = {
     "MISTRAL":     "mistral-small-latest",
     "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
     "GROQ":        "llama-3.3-70b-versatile",
-    "GEMINI":      "gemini-3.5-flash",          # STABLE, nema shutdown — 2.0-flash deprecated 1.6.2026
+    "GEMINI":      "gemini-2.0-flash",          # FIX: gemma-3-27b-it ugašen (404)
     "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
     "COHERE":      "command-r-plus-08-2024",
     "CHUTES":      "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
@@ -65,34 +65,6 @@ MAX_TOKENS_MAP = {
 }
 
 _MODEL_TUNING_BY_ID = {
-    "gemini-3.5-flash": {
-        "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
-        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
-        "SCORER":    {"temp_mul": 0.70, "max_tokens": 256},
-    },
-    "gemini-3.1-flash-lite": {
-        "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2000},
-        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2000},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 600},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1600},
-        "SCORER":    {"temp_mul": 0.70, "max_tokens": 256},
-    },
-    "gemini-2.5-flash": {
-        "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
-        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
-        "SCORER":    {"temp_mul": 0.70, "max_tokens": 256},
-    },
-    "gemini-2.5-flash-lite": {
-        "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2000},
-        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2000},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 600},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1600},
-        "SCORER":    {"temp_mul": 0.70, "max_tokens": 256},
-    },
     "gemini-2.0-flash": {
         "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
         "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
@@ -213,68 +185,36 @@ async def _call_ai_engine(
         if p not in ordered:
             ordered.append(p)
 
-    # MAX 2 prolaza kroz listu — drugi prolaz se dešava samo ako su svi bili
-    # u kratkom cooldownu (min_gap/RPM). Drugi prolaz čeka najkraći cooldown.
-    for attempt in range(2):
-        skipped_due_to_cooldown = []
+    for prov_upper in ordered:
+        if self.shared_controls.get("stop"):
+            return None, "N/A"
 
-        for prov_upper in ordered:
-            if self.shared_controls.get("stop"):
-                return None, "N/A"
+        key = self.fleet.get_best_key(prov_upper)
+        if not key:
+            continue
 
-            key = self.fleet.get_best_key(prov_upper)
-            if not key:
-                # Provjeri je li razlog kratki cooldown ili nema ključeva uopće
-                keys = self.fleet.fleet.get(prov_upper, [])
-                if keys:
-                    skipped_due_to_cooldown.append(prov_upper)
-                continue
+        model = self.fleet.get_active_model(prov_upper) or MODEL_MAP.get(prov_upper)
+        if not model:
+            continue
 
-            model = self.fleet.get_active_model(prov_upper) or MODEL_MAP.get(prov_upper)
-            if not model:
-                continue
+        opt_temp, opt_max_tokens = _resolve_model_generation_params(
+            uloga, model, base_temp, base_max_tokens
+        )
 
-            opt_temp, opt_max_tokens = _resolve_model_generation_params(
-                uloga, model, base_temp, base_max_tokens
+        await asyncio.sleep(random.uniform(0.2, 0.8))
+
+        try:
+            raw, label = await _call_single_provider(
+                self, prov_upper, model,
+                sys_c, prompt,
+                opt_temp, max_tokens=opt_max_tokens
             )
+        except ContentFilterError as cfe:
+            self.log(f"⛔ [{uloga}] {cfe} — preskačem chunk {chunk_idx}", "warning")
+            return None, "CONTENT_FILTER"
 
-            await asyncio.sleep(random.uniform(0.2, 0.8))
-
-            try:
-                raw, label = await _call_single_provider(
-                    self, prov_upper, model,
-                    sys_c, prompt,
-                    opt_temp, max_tokens=opt_max_tokens
-                )
-            except ContentFilterError as cfe:
-                self.log(f"⛔ [{uloga}] {cfe} — preskačem chunk {chunk_idx}", "warning")
-                return None, "CONTENT_FILTER"
-
-            if raw:
-                return raw, label
-
-        # Svi provajderi preskočeni — ako je razlog kratki cooldown, čekaj i pokušaj ponovo
-        if attempt == 0 and skipped_due_to_cooldown:
-            # Nađi najkraći preostali cooldown među preskočenim provajderima
-            from network.quota_tracker import quota_tracker
-            min_wait = 60.0
-            for prov_upper in skipped_due_to_cooldown:
-                for ks in self.fleet.fleet.get(prov_upper, []):
-                    ok, reason = quota_tracker.is_key_available(prov_upper, ks.key)
-                    if not ok:
-                        import re as _re
-                        m = _re.search(r'([\d.]+)s', reason)
-                        secs = float(m.group(1)) if m else 60.0
-                        if secs < min_wait:
-                            min_wait = secs
-            wait_s = min(min_wait + 1.0, 30.0)
-            self.log(
-                f"⏳ [{uloga}] Svi provajderi u kratkom cooldownu — čekam {wait_s:.1f}s (blok {chunk_idx})",
-                "warning"
-            )
-            await asyncio.sleep(wait_s)
-            continue  # drugi prolaz
-        break
+        if raw:
+            return raw, label
 
     self.log(f"❌ [{uloga}] Svi provideri iscrpljeni za blok {chunk_idx}", "error")
     return None, "N/A"

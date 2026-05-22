@@ -533,21 +533,23 @@ class FleetManager:
 
 
 # ── Google model pool ─────────────────────────────────────────────────────────
-# Sinkronizirano s http_client.py::_GOOGLE_MODEL_POOL_FALLBACK (22.05.2026)
+# Poredano po iskoristivosti (RPD × RPM):
+#   1. gemini-3.1-flash-lite  — RPM 15, RPD 500  → throughput prvak Free tier-a
+#   2. gemini-2.5-flash-lite  — RPM 10, RPD 20   — noviji, bolji kvalitet od lite
+#   3. gemini-2.5-flash       — RPM 5,  RPD 20   — najbolji kvalitet Free tier-a
+#   4. gemini-3.5-flash       — RPM 5,  RPD 20   — alternativa 2.5-flash
+#   5. gemini-3.1-flash       — RPM 5,  RPD 20   — GA verzija 3.x serije
 #
-# DEPRECATION STATUS:
-#   gemini-2.0-flash      — DEPRECATED, shutdown 1. juna 2026 — IZBAČEN
-#   gemini-2.5-flash/lite — deprecated okt 2026, ali RPD=1500 → fallback dok traju
-#   gemini-3.1-flash-lite — STABLE, shutdown maj 2027
-#   gemini-3.5-flash      — STABLE, nema shutdown datuma — PRIMARNI
+# MRTVI (Free tier 0/0/0 od maja 2026) — uklonjeni:
+#   gemini-2.0-flash, gemini-2.0-flash-lite
 #
-# RPD (dashboard 22.05.2026): 3.x = 500/key, 2.5 = 1500/key
-# Poredano: stable modeli prvi, deprecated fallback
+# Mora biti sinkronizirano s http_client.py::_GOOGLE_MODEL_POOL_FALLBACK
 GOOGLE_MODEL_POOL = [
-    {"model": "gemini-3.5-flash",      "rpm": 10, "rpd": 500},   # #1 — STABLE, nema shutdown, best quality
-    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},   # #2 — STABLE, max throughput
-    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 1500},  # #3 — deprecated okt 2026, visok RPD
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 1500},  # #4 — deprecated okt 2026, bolji kvalitet
+    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},   # #1 — max throughput
+    {"model": "gemini-2.5-flash-lite", "rpm": 10, "rpd": 20},    # #2 — kvalitet/brzina balans
+    {"model": "gemini-2.5-flash",      "rpm": 5,  "rpd": 20},    # #3 — best Free quality
+    {"model": "gemini-3.5-flash",      "rpm": 5,  "rpd": 20},    # #4 — alternativa 2.5
+    {"model": "gemini-3.1-flash",      "rpm": 5,  "rpd": 20},    # #5 — GA 3.x fallback
 ]
 
 

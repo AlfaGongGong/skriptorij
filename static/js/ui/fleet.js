@@ -1,11 +1,10 @@
 /**
- * fleet.js — Fleet Pool renderer  (V2.0 — quota/usage po ključu)
+ * fleet.js — Fleet Pool renderer (V2.1 — fix expert-fleet-container)
  *
- * renderFleet(data)        — glavni entry point, poziva se iz main.js
- * updateFleetTotalCount(n) — ažurira badge u tabu
- *
- * Svaki provajder je <details> dropdown.
- * Unutar njega: tabela s po-ključnim podacima (RPM, RPD, TPD, cooldown).
+ * FIX 19.05.2026: renderFleet() koristio fleet-cards-container koji ne postoji
+ * u HTML-u → odmah return → "Učitavam fleet..." zauvijek.
+ * Sada koristi expert-fleet-container kao primarni, fleet-cards-container
+ * kao opcioni zaseban kontejner.
  */
 
 const PROV_ICONS = {
@@ -32,8 +31,6 @@ const PROV_CONSOLE_URLS = {
     GEMMA:       'https://aistudio.google.com/',
 };
 
-// ─── Pomoćne ────────────────────────────────────────────────────────────────
-
 function escHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
@@ -44,7 +41,7 @@ function escHtml(str) {
 
 function fmtCooldown(s) {
     if (!s || s <= 0) return '';
-    if (s < 60)  return `${Math.round(s)}s`;
+    if (s < 60)   return `${Math.round(s)}s`;
     if (s < 3600) return `${Math.floor(s/60)}m ${Math.round(s%60)}s`;
     return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
 }
@@ -56,7 +53,6 @@ function fmtNum(n) {
     return String(n);
 }
 
-/** Vraća CSS klasu na osnovu popunjenosti (current/safe). */
 function quotaCls(current, safe) {
     if (!safe) return '';
     const pct = current / safe;
@@ -65,7 +61,6 @@ function quotaCls(current, safe) {
     return 'quota-ok';
 }
 
-/** Mini progress bar za kvotu. */
 function quotaBar(current, safe) {
     if (!safe) return '';
     const pct = Math.min(100, Math.round((current / safe) * 100));
@@ -73,55 +68,44 @@ function quotaBar(current, safe) {
     return `<div class="fq-bar"><div class="fq-bar-fill ${cls}" style="width:${pct}%"></div></div>`;
 }
 
-// ─── Per-key redak u tabeli ──────────────────────────────────────────────────
-
 function renderKeyRow(k) {
-    const avail    = k.available !== false;
-    const sr       = k.success_rate ?? 1.0;
-    const srPct    = Math.round(sr * 100);
-    const srCls    = sr >= 0.8 ? 'good' : sr >= 0.5 ? 'warn' : 'low';
+    const avail  = k.available !== false;
+    const sr     = k.success_rate ?? 1.0;
+    const srPct  = Math.round(sr * 100);
+    const srCls  = sr >= 0.8 ? 'good' : sr >= 0.5 ? 'warn' : 'low';
 
-    // status indikator
     let statusIcon, statusCls;
     if (!avail && k.cooldown_s > 0) {
-        statusIcon = '❄';
-        statusCls  = 'key-status-cool';
+        statusIcon = '❄'; statusCls = 'key-status-cool';
     } else if (!avail) {
-        statusIcon = '✕';
-        statusCls  = 'key-status-err';
+        statusIcon = '✕'; statusCls = 'key-status-err';
     } else {
-        statusIcon = '●';
-        statusCls  = 'key-status-ok';
+        statusIcon = '●'; statusCls = 'key-status-ok';
     }
 
-    // rejected breakdown (samo 429 i 5xx)
-    const rej = k.calls_rejected || {};
+    const rej  = k.calls_rejected || {};
     const r429 = rej['429'] || 0;
     const r5xx = Object.entries(rej)
         .filter(([code]) => Number(code) >= 500)
         .reduce((s, [, v]) => s + v, 0);
 
-    // cooldown cell
     const cdSecs = k.cooldown_s || 0;
     const cdText = cdSecs > 0
         ? `<span class="fq-cooldown" title="${k.cooldown_reason || ''}">${fmtCooldown(cdSecs)}</span>`
         : '<span class="fq-none">—</span>';
 
-    // RPM cell
     const rpmText = (k.rpm_safe > 0)
         ? `<span class="${quotaCls(k.rpm, k.rpm_safe)}">${k.rpm ?? 0}</span>` +
           `<span class="fq-safe">/${k.rpm_safe}</span>` +
           quotaBar(k.rpm, k.rpm_safe)
         : `<span>${k.rpm ?? 0}</span>`;
 
-    // RPD cell
     const rpdText = (k.rpd_safe > 0)
         ? `<span class="${quotaCls(k.rpd, k.rpd_safe)}">${fmtNum(k.rpd)}</span>` +
           `<span class="fq-safe">/${fmtNum(k.rpd_safe)}</span>` +
           quotaBar(k.rpd, k.rpd_safe)
         : `<span>${fmtNum(k.rpd ?? 0)}</span>`;
 
-    // TPD cell
     const tpdText = (k.tpd != null && k.tpd > 0)
         ? `<span>${fmtNum(k.tpd)}</span>`
         : '<span class="fq-none">—</span>';
@@ -155,16 +139,13 @@ function renderKeyRow(k) {
     </tr>`;
 }
 
-// ─── Provider blok (details/summary + tabela) ────────────────────────────────
-
 function renderProviderBlock(prov, info, isExpert = false) {
-    const keys    = info.keys || [];
-    const total   = info.total || keys.length;
-    const icon    = PROV_ICONS[prov.toUpperCase()] || '🔑';
-    const srPct   = Math.round((info.success_rate ?? 1.0) * 100);
-    const barCls  = srPct >= 80 ? 'good' : srPct >= 50 ? 'warn' : 'low';
+    const keys   = info.keys || [];
+    const total  = info.total || keys.length;
+    const icon   = PROV_ICONS[prov.toUpperCase()] || '🔑';
+    const srPct  = Math.round((info.success_rate ?? 1.0) * 100);
+    const barCls = srPct >= 80 ? 'good' : srPct >= 50 ? 'warn' : 'low';
 
-    // koliko ključeva je na cooldownu
     const cooling = keys.filter(k => (k.cooldown_s || 0) > 0).length;
     const unavail = keys.filter(k => k.available === false).length;
     const coolBadge = cooling > 0
@@ -184,9 +165,9 @@ function renderProviderBlock(prov, info, isExpert = false) {
               <th class="fq-th"></th>
               <th class="fq-th">Ključ</th>
               <th class="fq-th">SR%</th>
-              <th class="fq-th" title="Requests Per Minute (tekući/limit)">RPM</th>
-              <th class="fq-th" title="Requests Per Day (tekući/limit)">RPD</th>
-              <th class="fq-th" title="Tokens Per Day (tekući)">TPD</th>
+              <th class="fq-th" title="Requests Per Minute">RPM</th>
+              <th class="fq-th" title="Requests Per Day">RPD</th>
+              <th class="fq-th" title="Tokens Per Day">TPD</th>
               <th class="fq-th" title="Uspješni · 429 · 5xx · mrežne greške">Pozivi</th>
               <th class="fq-th">Cooldown</th>
             </tr>
@@ -217,10 +198,10 @@ function renderProviderBlock(prov, info, isExpert = false) {
     </details>`;
 }
 
-// ─── Glavni export ───────────────────────────────────────────────────────────
-
 function renderFleet(data) {
-    const c        = document.getElementById('fleet-cards-container');
+    // FIX: fleet-cards-container ne postoji u HTML-u — koristi expert-fleet-container
+    const c        = document.getElementById('fleet-cards-container')
+                  || document.getElementById('expert-fleet-container');
     const simpleOk  = document.getElementById('fleet-ok-count');
     const simpleCol = document.getElementById('fleet-cooling-count');
     const simpleErr = document.getElementById('fleet-err-count');
@@ -228,14 +209,14 @@ function renderFleet(data) {
 
     const entries = Object.entries(data || {});
     if (entries.length === 0) {
-        c.innerHTML = '<div class="fq-empty fq-empty-full">Nema provajdera u floti.</div>';
+        const expertC2 = document.getElementById('expert-fleet-container');
+        if (expertC2) expertC2.innerHTML = '<div class="fq-empty fq-empty-full">Nema provajdera u floti.</div>';
         if (simpleOk)  simpleOk.textContent  = 0;
         if (simpleCol) simpleCol.textContent = 0;
         if (simpleErr) simpleErr.textContent = 0;
         return;
     }
 
-    // Agregirane brojke za summary boxes
     let totalKeys = 0, totalLowSr = 0, totalFailed = 0;
     for (const [, info] of entries) {
         const keys = info.keys || [];
@@ -253,7 +234,6 @@ function renderFleet(data) {
     const fleetTotalBadge = document.getElementById('fleet-total-count');
     if (fleetTotalBadge) fleetTotalBadge.textContent = totalKeys;
 
-    // Health badge u expert tabu
     let totalWeightedSr = 0;
     for (const [, info] of entries) {
         (info.keys || []).forEach(k => { totalWeightedSr += (k.success_rate ?? 1.0); });
@@ -262,31 +242,28 @@ function renderFleet(data) {
         updateExpertFleetHealthBadge(Math.round(totalWeightedSr), totalKeys);
     }
 
-    // Fleet tab — provider dropdowni
-    c.innerHTML = entries.map(([prov, info]) => renderProviderBlock(prov, info, false)).join('');
-
-    // Animacija chevron-a na open/close
-    c.querySelectorAll('.fq-details').forEach(det => {
-        det.addEventListener('toggle', () => {
-            const ch = det.querySelector('.fq-chevron');
-            if (ch) ch.style.transform = det.open ? 'rotate(90deg)' : '';
-        });
-    });
-
-    // Expert tab — isti blokovi
+    // Expert kontejner — uvijek postoji
     const expertC = document.getElementById('expert-fleet-container');
     if (expertC) {
-        if (entries.length === 0) {
-            expertC.innerHTML = '<div class="fq-empty fq-empty-full">Nema provajdera u floti.</div>';
-        } else {
-            expertC.innerHTML = entries.map(([prov, info]) => renderProviderBlock(prov, info, true)).join('');
-            expertC.querySelectorAll('.fq-details').forEach(det => {
-                det.addEventListener('toggle', () => {
-                    const ch = det.querySelector('.fq-chevron');
-                    if (ch) ch.style.transform = det.open ? 'rotate(90deg)' : '';
-                });
+        expertC.innerHTML = entries.map(([prov, info]) => renderProviderBlock(prov, info, true)).join('');
+        expertC.querySelectorAll('.fq-details').forEach(det => {
+            det.addEventListener('toggle', () => {
+                const ch = det.querySelector('.fq-chevron');
+                if (ch) ch.style.transform = det.open ? 'rotate(90deg)' : '';
             });
-        }
+        });
+    }
+
+    // Fleet tab kontejner — samo ako postoji kao zaseban element
+    const fleetC = document.getElementById('fleet-cards-container');
+    if (fleetC && fleetC !== expertC) {
+        fleetC.innerHTML = entries.map(([prov, info]) => renderProviderBlock(prov, info, false)).join('');
+        fleetC.querySelectorAll('.fq-details').forEach(det => {
+            det.addEventListener('toggle', () => {
+                const ch = det.querySelector('.fq-chevron');
+                if (ch) ch.style.transform = det.open ? 'rotate(90deg)' : '';
+            });
+        });
     }
 }
 

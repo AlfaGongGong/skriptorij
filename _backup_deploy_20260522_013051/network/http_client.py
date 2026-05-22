@@ -48,29 +48,21 @@ def _get_next_proxy() -> dict | None:
 
 
 # ── Google / Gemma model pool ─────────────────────────────────────────────────
-# Model pool — Free tier limiti (dashboard 22.05.2026 + deprecation stranica):
+# Model pool — Free tier limiti po modelu (provjereno dashboard 22.05.2026):
+#   gemini-2.0-flash      — RPM 15, RPD 1500  → max RPD, pouzdan
+#   gemini-2.5-flash      — RPM 10, RPD 1500  → bolji kvalitet, isti RPD
+#   gemini-2.5-flash-lite — RPM 15, RPD 1500  → brži, isti RPD
+#   gemini-3.1-flash-lite — RPM 15, RPD 500   → max throughput, manji RPD
+#   gemini-3.1-flash      — RPM 10, RPD 500   → 3.x generacija, manji RPD
 #
-# DEPRECATION STATUS (ne koristiti deprecated modele kao primarne!):
-#   gemini-2.0-flash      — DEPRECATED, shutdown 1. JUNA 2026 (za ~10 dana) — NE KORISTITI
-#   gemini-2.0-flash-lite — DEPRECATED, shutdown 1. JUNA 2026
-#   gemini-2.5-flash      — shutdown 16. okt 2026, preporuka: migrirati na 3.5-flash
-#   gemini-2.5-flash-lite — shutdown 16. okt 2026, preporuka: migrirati na 3.1-flash-lite
-#   gemini-3.1-flash-lite — STABLE, shutdown maj 2027
-#   gemini-3.5-flash      — STABLE, nema shutdown datuma — najpouzdaniji dugoročno
-#
-# RPD po dashboardu (1 ključ, 22.05.2026):
-#   gemini-2.5-flash/lite — 1500 RPD (ali deprecated)
-#   gemini-3.x            — 500 RPD (stable, dugovječni)
-#
-# STRATEGIJA: primarno 3.5-flash + 3.1-flash-lite (stable, bez shutdown),
-#             2.5 kao fallback dok traju (do okt 2026).
-#             2.0-flash izbačen — shutdown za ~10 dana!
+# Poredano po RPD (primarni kriterij) pa RPM:
 # Mora biti sinkronizirano s api_fleet.py::GOOGLE_MODEL_POOL
 _GOOGLE_MODEL_POOL_FALLBACK = [
-    {"model": "gemini-3.5-flash",      "rpm": 10, "rpd": 500},   # #1 — STABLE, nema shutdown, best quality
-    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},   # #2 — STABLE, max throughput, shutdown maj 2027
-    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 1500},  # #3 — deprecated okt 2026, visok RPD
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 1500},  # #4 — deprecated okt 2026, bolji kvalitet
+    {"model": "gemini-2.0-flash",      "rpm": 15, "rpd": 1500},  # #1 — max RPD + max RPM
+    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 1500},  # #2 — max RPD, brži
+    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 1500},  # #3 — max RPD, bolji kvalitet
+    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},   # #4 — manji RPD, throughput
+    {"model": "gemini-3.1-flash",      "rpm": 10, "rpd": 500},   # #5 — manji RPD, fallback
 ]
 _GEMMA_MODEL_POOL_FALLBACK = [
     {"model": "google/gemma-4-26b-it", "rpm": 15, "rpd": 1500},  # #1 — veći, bolji quality
@@ -333,27 +325,7 @@ async def _call_gemini_with_full_rotation(
 ):
     from network.provider_urls import get_gemini_url
 
-    # Ako su svi ključevi privremeno u min_gap/kratkom cooldownu — sačekaj najkraćeg
-    # umjesto da odmah odustanemo. "Nema dostupnih" zbog min_gap nije greška — samo čekanje.
-    _all_ks = self.fleet.fleet.get("GEMINI", [])
-    keys_list = [ks for ks in _all_ks if ks.available]
-    if not keys_list and _all_ks:
-        from network.quota_tracker import quota_tracker
-        waits = []
-        for ks in _all_ks:
-            ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
-            if not ok:
-                import re as _re
-                # Kratki cooldown (min_gap ili RPM cooldown ≤60s) — vrijedi čekati
-                m = _re.search(r'([\d.]+)s', reason)
-                secs = float(m.group(1)) if m else 99999.0
-                if secs <= 60.0:
-                    waits.append(secs)
-        if waits:
-            wait_s = min(waits) + 0.5
-            self.log(f"[GEMINI] Svi ključevi u kratkom cooldownu — čekam {wait_s:.1f}s", "warning")
-            await asyncio.sleep(wait_s)
-            keys_list = [ks for ks in _all_ks if ks.available]
+    keys_list = [ks for ks in self.fleet.fleet.get("GEMINI", []) if ks.available]
     if not keys_list:
         self.log("[GEMINI] Nema dostupnih ključeva", "warning")
         return None, None

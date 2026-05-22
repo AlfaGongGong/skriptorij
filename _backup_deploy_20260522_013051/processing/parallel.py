@@ -66,19 +66,8 @@ class AdaptiveParallelism:
         async def process_one(idx, chunk):
             async with semaphore:
                 try:
-                    # Stagger proporcionalan min_gap-u provajdera — ne fiksan 0.1-0.8s.
-                    # S window_size=1 i min_gap=7.5s (Gemini 3.5-flash): stagger je 0s
-                    # (već serijski). S window_size=2: idx 0 → 0s, idx 1 → 3.75s.
-                    # Ovo sprečava thundering herd gdje svi kreneu u 0.7s prozoru.
-                    try:
-                        from network.provider_profiles import get_min_gap
-                        _prov = getattr(self.engine, '_primary_provider', 'GEMINI')
-                        _gap = get_min_gap(_prov)
-                    except Exception:
-                        _gap = 7.5
-                    stagger = (idx % max(window_size, 1)) * (_gap / max(window_size, 1))
-                    stagger += random.uniform(0.1, 0.5)  # mali jitter
-                    await asyncio.sleep(stagger)
+                    # Stagger: mali jitter da ne krenu svi u istom trenutku
+                    await asyncio.sleep(random.uniform(0.1, 0.8))
 
                     p_ctx = p_ctx_func(chunks, idx)
                     n_ctx = n_ctx_func(chunks, idx)
