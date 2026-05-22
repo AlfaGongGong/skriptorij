@@ -181,7 +181,14 @@ class ProviderQuota:
         }
 
     def set_provider_cooldown(self, seconds: float, reason: str = ""):
-        pass
+        """Propagira cooldown na SVE ključeve ovog provajdera."""
+        with self._lock:
+            for kq in self._keys.values():
+                kq.set_cooldown_external(seconds, reason)
+            logger.info(
+                "[ProviderQuota] %s — cooldown %.0fs na %d ključ(a): %s",
+                self.provider, seconds, len(self._keys), reason,
+            )
 
     def provider_cooldown_remaining(self) -> float:
         return 0.0
@@ -292,7 +299,10 @@ class QuotaTracker:
         return kq.is_available()
 
     def set_provider_cooldown(self, provider: str, seconds: float, reason: str = ""):
-        pass
+        """Propagira cooldown na SVE ključeve provajdera."""
+        pq = self._get_provider(provider.upper())
+        if pq:
+            pq.set_provider_cooldown(seconds, reason)
 
     def set_key_cooldown(self, provider: str, key: str, seconds: float, reason: str = ""):
         pq = self._get_provider(provider.upper())

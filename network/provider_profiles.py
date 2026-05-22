@@ -330,6 +330,28 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=3,
         notes="Slično Together.ai — varijabilni rate limiti po modelu.",
     ),
+
+    # ── GEMMA ───────────────────────────────────────────────────────────────
+    # Gemma 4 modeli na Google Gemini native endpointu (isti API kao Gemini).
+    # gemma-4-26b-it = 15 RPM / 1500 RPD po ključu (dashboard 22.05.2026)
+    # gemma-4-31b-it = 15 RPM / 1500 RPD po ključu
+    # Koristi GEMINI ključeve. Format: native (contents/systemInstruction).
+    # Gemma NE podržava system role — merge u user poruku.
+    "GEMMA": ProviderProfile(
+        name="GEMMA",
+        rpm_hard=15,
+        rpm_safe=12,           # 80% od 15 RPM
+        rpd_hard=1500,
+        rpd_safe=1275,         # 85% od 1500
+        tpm_hard=1_000_000,
+        min_gap_s=5.0,         # 60/12 = 5.0s
+        cooldown_429_s=15.0,   # isto kao Gemini — Google API
+        supports_system_role=False,  # Gemma nema system role
+        preferred_roles=["LEKTOR", "POLISH"],
+        avoid_roles=["SCORER"],
+        quality_tier=2,
+        notes="Gemma 4 na Gemini native endpointu. Koristi GEMINI ključeve. 15 RPM / 1500 RPD.",
+    ),
 }
 
 
