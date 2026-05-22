@@ -7,9 +7,11 @@
 #            response: {candidates[0].content.parts[0].text}
 #            Free tier radi samo na native endpointu (OpenAI compat = limit 0)
 #
-# GEMMA   — Together.AI OpenAI-compat endpoint
+# GEMMA   — Gemini native endpoint (same as Gemini)
+#            Gemma 4 modeli na Google API-u s ?key= auth
 #            Nema system role → merge u user poruku
-#            payload: standardni OpenAI {messages, model, temperature, max_tokens}
+#            payload: {contents, systemInstruction, generationConfig}
+#            response: {candidates[0].content.parts[0].text}
 #
 # COHERE  — /v2/chat endpoint, OpenAI-compat messages format
 #            response: {message.content[0].text}
@@ -73,8 +75,8 @@ _GOOGLE_MODEL_POOL_FALLBACK = [
     {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 1500},  # #4 — deprecated okt 2026, bolji kvalitet
 ]
 _GEMMA_MODEL_POOL_FALLBACK = [
-    {"model": "google/gemma-4-26b-it", "rpm": 15, "rpd": 1500},  # #1 — veći, bolji quality
-    {"model": "google/gemma-4-31b-it", "rpm": 15, "rpd": 1500},  # #2 — alternativa
+    {"model": "gemma-4-26b-it", "rpm": 15, "rpd": 1500},  # #1 — veći, bolji quality
+    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},  # #2 — alternativa
 ]
 GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
 
@@ -419,46 +421,97 @@ async def _call_gemini_with_full_rotation(
     return None, None
 
 
-# ── Gemma poziv (Together.AI) ─────────────────────────────────────────────────
+# ── Gemma poziv (Gemini native endpoint) ──────────────────────────────────────
+# FIX bugs #1-5, #9-10: Gemma 4 modeli idu na Gemini native endpoint (ne Together.AI).
+# Auth: ?key={key} u URL-u (ne Bearer header)
+# Payload: contents/systemInstruction format (ne OpenAI messages)
+# Model string: gemma-4-26b-it (ne google/gemma-4-26b-it)
+# Ključevi: GEMINI fleet (ne GEMMA fleet)
+# Response: _extract_gemini_native (ne _extract_openai_compat)
+# Model rotation: rotira model pri 429 (kao Gemini)
 async def _call_gemma_with_rotation(
     self, sys_content, user_prompt, opt_temp, max_tokens=2400,
     preferred_model: str = None,
 ):
-    from network.provider_urls import get_url
-    url = get_url("GEMMA")
+    from network.provider_urls import get_gemini_url
 
-    keys_list = [ks for ks in self.fleet.fleet.get("GEMMA", []) if ks.available]
+    # Koristi GEMINI ključeve (Gemma 4 je na Google API-u)
+    _all_ks = self.fleet.fleet.get("GEMINI", [])
+    keys_list = [ks for ks in _all_ks if ks.available]
+    if not keys_list and _all_ks:
+        from network.quota_tracker import quota_tracker
+        waits = []
+        for ks in _all_ks:
+            ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
+            if not ok:
+                import re as _re
+                m = _re.search(r'([\d.]+)s', reason)
+                secs = float(m.group(1)) if m else 99999.0
+                if secs <= 60.0:
+                    waits.append(secs)
+        if waits:
+            wait_s = min(waits) + 0.5
+            self.log(f"[GEMMA] Svi ključevi u kratkom cooldownu — čekam {wait_s:.1f}s", "warning")
+            await asyncio.sleep(wait_s)
+            keys_list = [ks for ks in _all_ks if ks.available]
     if not keys_list:
-        self.log("[GEMMA] Nema dostupnih ključeva", "warning")
+        self.log("[GEMMA] Nema dostupnih GEMINI ključeva", "warning")
         return None, None
 
+    keys_list.sort(key=lambda ks: ks.success_rate, reverse=True)
     pool = _GEMMA_MODEL_POOL_FALLBACK
-    model = preferred_model or pool[0]["model"]
 
     for ks in keys_list:
         key = ks.key
-        messages = _build_messages(sys_content, user_prompt, model)
-        payload = {
-            "model":       model,
-            "temperature": opt_temp,
-            "max_tokens":  max_tokens,
-            "messages":    messages,
-        }
-        headers = {
-            "Content-Type":  "application/json",
-            "Authorization": f"Bearer {key}",
-        }
-        data = await _async_http_post(
-            self, url, headers, payload, "GEMMA", "GEMMA", key
-        )
-        if data:
-            content = _extract_openai_compat(data)
-            if content:
-                return content, f"GEMMA-{model}"
-        if not ks.available:
-            continue
 
-    self.log("[GEMMA] Svi ključevi iscrpljeni", "error")
+        if preferred_model and preferred_model in {m["model"] for m in pool}:
+            current_model = preferred_model
+        else:
+            current_model = pool[0]["model"]
+
+        tried: set[str] = set()
+
+        for _ in range(len(pool) + 1):
+            if current_model in tried:
+                break
+            tried.add(current_model)
+
+            url = f"{get_gemini_url(current_model)}?key={key}"
+            headers = {"Content-Type": "application/json"}
+            payload = _build_gemini_native_payload(sys_content, user_prompt, opt_temp, max_tokens)
+
+            data = await _async_http_post(
+                self, url, headers, payload, "GEMMA", "GEMINI", key, _proxy=None
+            )
+
+            if data is not None:
+                content = _extract_gemini_native(data)
+                if content:
+                    return content, f"GEMMA-{current_model}"
+
+            if not ks.available:
+                self.log(
+                    f"[GEMMA] Ključ ...{key[-4:]} u cooldownu — preskačem na sljedeći ključ",
+                    "warning",
+                )
+                break
+
+            # Model rotation pri 429 (bug #9 fix)
+            next_idx = None
+            for i, m in enumerate(pool):
+                if m["model"] == current_model:
+                    next_idx = i + 1
+                    break
+            if next_idx is not None and next_idx < len(pool):
+                next_model = pool[next_idx]["model"]
+                self.log(f"[GEMMA] {current_model} → {next_model}", "warning")
+                current_model = next_model
+                await asyncio.sleep(0.5)
+            else:
+                self.log(f"[GEMMA] Svi modeli iscrpljeni za ključ ...{key[-4:]}", "warning")
+                break
+
+    self.log("[GEMMA] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
 
 
@@ -526,7 +579,7 @@ def api_call(
 
     prov_upper = provider.upper()
 
-    if prov_upper == "GEMINI":
+    if prov_upper in ("GEMINI", "GEMMA"):
         url = f"{get_gemini_url(model)}?key={api_key}"
         headers = {"Content-Type": "application/json"}
         payload = _build_gemini_native_payload(system, user, temperature, max_tokens)
@@ -588,7 +641,7 @@ def api_call(
         except Exception:
             return None
 
-        if prov_upper == "GEMINI":
+        if prov_upper in ("GEMINI", "GEMMA"):
             return _extract_gemini_native(data)
         return _extract_content(prov_upper, data)
 

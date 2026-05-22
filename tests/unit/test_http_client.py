@@ -19,8 +19,8 @@ def test_google_pool_uses_only_whitelisted_models(monkeypatch):
         "network.model_discovery.get_cached_model_list",
         lambda _provider: [
             "gemini-3-flash",
-            "gemini-2.5-flash",       # GA verzija (whitelisted); preview je uklonjen (404)
-            "gemini-2.0-flash",
+            "gemini-2.5-flash",       # GA verzija (whitelisted)
+            "gemini-3.5-flash",
             "some-random-model",
         ],
     )
@@ -34,7 +34,7 @@ def test_google_pool_uses_only_whitelisted_models(monkeypatch):
     assert "some-random-model" not in model_ids
     # Whitelistirani modeli su prisutni; discovery određuje redosljed
     assert model_ids[0] == "gemini-2.5-flash"
-    assert "gemini-2.0-flash" in model_ids
+    assert "gemini-3.5-flash" in model_ids
 
 
 def test_google_pool_falls_back_when_discovery_empty(monkeypatch):
@@ -61,7 +61,7 @@ def test_google_pool_excludes_dead_models(monkeypatch):
 
     assert dead_model not in model_ids
     # Ostali whitelistirani modeli ostaju
-    assert "gemini-2.0-flash" in model_ids
+    assert "gemini-3.5-flash" in model_ids
 
 
 def test_google_pool_all_dead_returns_full_fallback(monkeypatch):

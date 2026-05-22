@@ -16,7 +16,6 @@ def get_url(prov):
         "MISTRAL":     "https://api.mistral.ai/v1/chat/completions",
         "SAMBANOVA":   "https://api.sambanova.ai/v1/chat/completions",
         "TOGETHER":    "https://api.together.xyz/v1/chat/completions",
-        "GEMMA":       "https://api.together.xyz/v1/chat/completions",
         "OPENROUTER":  "https://openrouter.ai/api/v1/chat/completions",
         "COHERE":      "https://api.cohere.com/v2/chat",
         "GITHUB":      "https://models.inference.ai.azure.com/chat/completions",
