@@ -25,7 +25,17 @@ def _rebuild_epub(eng, shared_stats: dict, shared_controls: dict) -> None:
 
 
 # ── Fleet singleton ───────────────────────────────────────────────────────────
-_fleet_fallback = FleetManager(config_path="dev_api.json")
+try:
+    from config.settings import CONFIG_PATH as _CONFIG_PATH
+except ImportError:
+    _CONFIG_PATH = "dev_api.json"
+
+_fleet_fallback = FleetManager(config_path=_CONFIG_PATH)
+
+# FIX: Registruj fleet kao aktivan — bez ovoga _reload_active_fleet() ne radi,
+# pa dodavanje/brisanje ključeva kroz UI ne osvježava prikaz flote.
+from api_fleet import register_active_fleet
+register_active_fleet(_fleet_fallback)
 
 
 def _get_fleet() -> FleetManager:
@@ -780,7 +790,7 @@ def create_app() -> Flask:
             if not key or len(key) < 8:
                 return jsonify({"error": "Ključ je prekratak (min 8 znakova)"}), 400
             prov_u   = provider.upper()
-            cfg_path = Path("dev_api.json")
+            cfg_path = Path(_CONFIG_PATH)
             try:
                 cfg = json.loads(cfg_path.read_text("utf-8"))
             except Exception:
@@ -802,7 +812,7 @@ def create_app() -> Flask:
     def api_keys_delete(provider, index):
         try:
             prov_u   = provider.upper()
-            cfg_path = Path("dev_api.json")
+            cfg_path = Path(_CONFIG_PATH)
             cfg      = json.loads(cfg_path.read_text("utf-8"))
             if prov_u not in cfg or not isinstance(cfg[prov_u], list):
                 return jsonify({"error": "Provajder nije pronađen"}), 404
