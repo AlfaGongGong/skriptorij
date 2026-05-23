@@ -1,8 +1,10 @@
 import os
 import json
 import re
+import time
 import threading
 import traceback
+import requests
 from pathlib import Path
 from flask import (
     Flask, make_response, redirect, render_template,
@@ -66,6 +68,9 @@ except ImportError:
     SHARED_CONTROLS: dict = {"stop": False, "pause": False, "reset": False}
 
 _engine_thread: threading.Thread | None = None
+_PING_CONNECT_TIMEOUT = 8
+_PING_READ_TIMEOUT = 20
+_MAX_PING_ERROR_LEN = 120
 
 
 # ── Pomoćne ──────────────────────────────────────────────────────────────────
@@ -824,6 +829,115 @@ def create_app() -> Flask:
             return jsonify({"ok": True, "removed": removed[:8] + "..."})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/keys/<provider>/<int:index>/ping", methods=["POST"])
+    def api_keys_ping(provider, index):
+        try:
+            from config.ai_config import MODEL_MAP, GOOGLE_MODEL_POOL, get_gemini_url
+            from network.provider_urls import get_url as _get_provider_url
+
+            prov_u = re.sub(r"[^A-Z0-9_]", "", provider.upper())
+            if not prov_u:
+                return jsonify({"error": "Neispravan naziv provajdera"}), 400
+
+            cfg_path = Path(_CONFIG_PATH)
+            cfg = json.loads(cfg_path.read_text("utf-8"))
+            raw = cfg.get(prov_u)
+            if raw is None:
+                return jsonify({"error": "Provajder nije pronađen"}), 404
+
+            keys_list = raw if isinstance(raw, list) else raw.get("keys", [])
+            if index < 0 or index >= len(keys_list):
+                return jsonify({"error": "Index van granica"}), 400
+
+            key = str(keys_list[index]).strip()
+            if not key:
+                return jsonify({"error": "Prazan ključ"}), 400
+
+            model = MODEL_MAP.get(prov_u, "")
+            if not model and prov_u == "GEMINI":
+                model = GOOGLE_MODEL_POOL[0]["model"]
+
+            if prov_u in ("GEMINI", "GEMMA"):
+                url = f"{get_gemini_url(model)}?key={key}"
+                headers = {"Content-Type": "application/json"}
+                payload = {
+                    "contents": [{"role": "user", "parts": [{"text": "ok"}]}],
+                    "generationConfig": {"temperature": 0.0, "maxOutputTokens": 1},
+                }
+            else:
+                try:
+                    url = _get_provider_url(prov_u)
+                except Exception:
+                    return jsonify({"error": f"Nepodržan provajder: {prov_u}"}), 400
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {key}",
+                }
+                payload = {
+                    "model": model,
+                    "max_tokens": 1,
+                    "messages": [{"role": "user", "content": "ok"}],
+                }
+
+            t0 = time.time()
+            resp = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=(_PING_CONNECT_TIMEOUT, _PING_READ_TIMEOUT),
+            )
+            latency = int((time.time() - t0) * 1000)
+            sc = resp.status_code
+
+            if sc == 200:
+                return jsonify({"ok": True, "latency_ms": latency, "status_code": sc})
+            if sc == 429:
+                try:
+                    body = resp.json()
+                    err = (
+                        body.get("error", {}).get("message", str(body))[:_MAX_PING_ERROR_LEN]
+                        if isinstance(body, dict)
+                        else str(body)[:_MAX_PING_ERROR_LEN]
+                    )
+                except Exception:
+                    err = "Rate limit"
+                return jsonify({
+                    "ok": False,
+                    "latency_ms": latency,
+                    "status_code": sc,
+                    "error": f"429 Rate limit — {err}",
+                })
+            if sc in (401, 403):
+                return jsonify({
+                    "ok": False,
+                    "latency_ms": latency,
+                    "status_code": sc,
+                    "error": "Ključ nevažeći (401/403)",
+                })
+
+            try:
+                err = str(resp.json())[:_MAX_PING_ERROR_LEN]
+            except Exception:
+                err = (resp.text or "")[:_MAX_PING_ERROR_LEN]
+            return jsonify({
+                "ok": False,
+                "latency_ms": latency,
+                "status_code": sc,
+                "error": err or f"HTTP {sc}",
+            })
+        except requests.exceptions.Timeout:
+            elapsed_ms = int((time.time() - t0) * 1000) if "t0" in locals() else (_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT) * 1000
+            return jsonify({
+                "ok": False,
+                "latency_ms": elapsed_ms,
+                "status_code": 0,
+                "error": f"Timeout ({_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT}s)",
+            })
+        except FileNotFoundError:
+            return jsonify({"error": "Konfiguracija nije pronađena"}), 404
+        except Exception:
+            return jsonify({"error": "Greška pri testiranju ključa"}), 500
 
     # ═════════════════════════════════════════════════════════════════════════
     # FLEET

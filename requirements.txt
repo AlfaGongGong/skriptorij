@@ -21,3 +21,6 @@ ebooklib>=0.18
 #   pip install classla==2.2.1 obeliks==1.1.6
 # classla==2.2.1
 # obeliks==1.1.6
+
+# ── Testovi ───────────────────────────────────────────────────────────────────
+pytest>=9.0.0
