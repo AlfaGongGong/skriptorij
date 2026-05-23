@@ -924,9 +924,10 @@ def create_app() -> Flask:
                 "error": err or f"HTTP {sc}",
             })
         except requests.exceptions.Timeout:
+            elapsed_ms = int((time.time() - t0) * 1000) if "t0" in locals() else (_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT) * 1000
             return jsonify({
                 "ok": False,
-                "latency_ms": (_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT) * 1000,
+                "latency_ms": elapsed_ms,
                 "status_code": 0,
                 "error": f"Timeout ({_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT}s)",
             })
