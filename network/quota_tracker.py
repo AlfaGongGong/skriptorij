@@ -214,8 +214,11 @@ class QuotaTracker:
 
     def initialize_from_fleet(self, fleet: dict):
         for provider, key_states in fleet.items():
+            prov_u = provider.upper()
             for ks in key_states:
-                self.register_key(provider, ks.key, min_gap_s=2.0)
+                self.register_key(prov_u, ks.key, min_gap_s=2.0)
+                if prov_u == "GEMINI":
+                    self.register_key("GEMMA", ks.key, min_gap_s=2.0)
         logger.info("QuotaTracker inicijaliziran: %d provajdera", len(fleet))
         self._restore_cooldowns()
 

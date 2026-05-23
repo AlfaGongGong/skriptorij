@@ -5,38 +5,9 @@
 
 import random
 import asyncio
+from config.ai_config import MODEL_MAP, PROVIDER_PRIORITY
 from core.text_utils import _adaptive_temp
 from network.http_client import _call_single_provider, ContentFilterError
-
-PROVIDER_PRIORITY = {
-    "PREVODILAC":      ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMINI", "GEMMA", "MISTRAL", "OPENROUTER", "GITHUB"],
-    "LEKTOR":          ["GEMINI", "GEMMA", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
-    "KOREKTOR":        ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "SAMBANOVA", "GITHUB"],
-    "VALIDATOR":       ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "GUARDIAN":        ["GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
-    "POLISH":          ["GEMINI", "MISTRAL", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
-    "ANALIZA":         ["CEREBRAS", "GROQ", "MISTRAL", "SAMBANOVA", "GEMINI", "GITHUB"],
-    "CHAPTER_SUMMARY": ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "GITHUB"],
-    "GLOSAR_UPDATE":   ["GEMINI", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "SCORER":          ["GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
-}
-
-MODEL_MAP = {
-    "CEREBRAS":    "llama-4-scout-17b-16e-instruct",
-    "SAMBANOVA":   "Meta-Llama-3.3-70B-Instruct",
-    "MISTRAL":     "mistral-small-latest",
-    "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    "GROQ":        "llama-3.3-70b-versatile",
-    "GEMINI":      "gemini-3.5-flash",          # STABLE, nema shutdown — 2.0-flash deprecated 1.6.2026
-    "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
-    "COHERE":      "command-r-plus-08-2024",
-    "CHUTES":      "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
-    "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
-    "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
-    "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA":       "gemma-4-26b-it",      # Google native endpoint — isti API kao Gemini, isti ključevi
-    "GITHUB":      "gpt-4o",                    # GitHub Models: jak backup kad Gemini presuši
-}
 
 TEMP_MAP = {
     "PREVODILAC":      0.32,
@@ -304,3 +275,303 @@ async def _call_ai_engine(
 
     self.log(f"❌ [{uloga}] Svi provideri iscrpljeni za blok {chunk_idx}", "error")
     return None, "N/A"
+
+
+# ── V2 routing merge ───────────────────────────────────────────────────────────
+
+"""
+BooklyFi — network/provider_router_v2.py
+V10.5: Model-aware rutiranje s per-provider profilima (avoid_roles, quality_tier).
+Nasljednik provider_router.py — backward compatible.
+"""
+
+import logging
+from typing import Optional, Tuple, List, Dict
+
+from core.model_profiles import PROFILI, ModelProfile
+
+# Per-provider profili — limiti, uloge, kvalitet
+try:
+    from network.provider_profiles import (
+        should_avoid_for_role as _pp_avoid,
+        get_quality_tier as _pp_tier,
+    )
+    _PROFILES_OK = True
+except ImportError:
+    _PROFILES_OK = False
+    def _pp_avoid(provider: str, role: str) -> bool:
+        return False
+    def _pp_tier(provider: str) -> int:
+        return 3
+
+logger = logging.getLogger(__name__)
+
+
+# ─────────────────────────────────────────────────────────────
+# SCORING LOGIKA
+# ─────────────────────────────────────────────────────────────
+
+# Težine za scoring po dimenzijama (suma = 1.0)
+_SCORE_TEZINE = {
+    "preferred_role_match": 0.40,   # uloga je u preferred_roles
+    "tip_bloka_bonus": 0.15,        # bonus za specifični tip bloka
+    "rpm_availability": 0.25,       # relativni rpm (viši = bolje)
+    "blacklist_penalty": -1.0,      # diskvalifikacija ako je blacklisted
+}
+
+# Bonus za model-tip_bloka kombinacije empirijski određene
+_TIP_BLOKA_BONUSI: Dict[str, Dict[str, float]] = {
+    "dijalog": {
+        "gemini_3_flash": 0.12,        # FIX: bili set elementi bez vrijednosti
+        "gemini_31_flash_lite": 0.12,
+        "gemini_25_flash_lite": 0.12,
+        "gemma4_26b": 0.10,
+        "gemma4_31b": 0.10,
+        "gemini_25_flash": 0.15,
+        "gemini_20_flash": 0.10,
+        "mistral_large": 0.05,
+    },
+    "poetski": {
+        "gemini_25_flash": 0.20,
+        "gemini_20_flash": 0.15,
+    },
+    "naracija": {
+        "gemini_25_flash": 0.10,
+        "gemini_20_flash": 0.08,
+        "command_r_plus_cohere": 0.05,
+    },
+    "tehnicki": {
+        "mistral_large": 0.15,
+        "deepseek_openrouter": 0.10,
+        "qwen_chutes": 0.05,
+    },
+    "dark_fantasy": {
+        "gemini_25_flash": 0.20,
+        "gemini_20_flash": 0.12,
+        "gemini_3_flash": 0.10,
+    },
+    "horror_akcija": {
+        "gemini_25_flash": 0.18,
+        "gemini_20_flash": 0.10,
+    },
+    "horror_atmosfera": {
+        "gemini_25_flash": 0.20,
+        "gemini_3_flash": 0.10,
+        "gemini_20_flash": 0.12,
+    },
+}
+
+# Maximalni rpm u fleeti (za normalizaciju)
+_MAX_RPM = 30
+
+
+def _score_model(
+    profil: ModelProfile,
+    uloga: str,
+    tip_bloka: Optional[str] = None,
+) -> float:
+    """
+    Izračunava suitability score za model na osnovu uloge i tipa bloka.
+    Vraća float 0.0–1.0+. Blacklisted ili avoid modeli vraćaju -1.0.
+
+    V10.5: Integrira per-provider avoid_roles i quality_tier iz provider_profiles.
+    """
+    # Diskvalifikacija iz ModelProfile blackliste
+    if uloga in profil.blacklisted_roles:
+        return -1.0
+
+    # Diskvalifikacija iz ProviderProfile avoid_roles
+    # (npr. GROQ ne za SCORER, GITHUB ne za PREVODILAC, MISTRAL ne za bulk)
+    if _PROFILES_OK and _pp_avoid(profil.provider, uloga):
+        return -1.0
+
+    score = 0.0
+
+    # Preferred role match
+    if uloga in profil.preferred_roles:
+        score += _SCORE_TEZINE["preferred_role_match"]
+
+    # Tip bloka bonus
+    if tip_bloka and tip_bloka in _TIP_BLOKA_BONUSI:
+        score += _TIP_BLOKA_BONUSI[tip_bloka].get(profil.ime, 0.0)
+
+    # RPM availability (normalizirano)
+    rpm_score = min(profil.rpm_limit / _MAX_RPM, 1.0) if profil.rpm_limit > 0 else 0.0
+    score += rpm_score * _SCORE_TEZINE["rpm_availability"]
+
+    # Quality tier bonus iz provider_profiles (tier 1 = +0.10, tier 4 = 0)
+    # Osigurava da tier-1 provajderi (Gemini, GitHub) dobiju prednost
+    if _PROFILES_OK:
+        tier = _pp_tier(profil.provider)
+        tier_bonus = max(0.0, (4 - tier) * 0.04)  # tier1=+0.12, tier2=+0.08, tier3=+0.04, tier4=0
+        score += tier_bonus
+
+    return score
+
+
+# ─────────────────────────────────────────────────────────────
+# GLAVNI ROUTER
+# ─────────────────────────────────────────────────────────────
+
+class ProviderRouterV2:
+    """
+    Model-aware router koji bira optimalni model za svaki zadatak.
+    Koristi ModelProfile scoring + dostupnost API ključeva.
+    """
+
+    def __init__(self, dostupni_kljucevi: Optional[Dict[str, List[str]]] = None):
+        # Normaliziramo ključeve na uppercase da se izbjegne case mismatch
+        # između profil.provider (lowercase) i fleet providera (uppercase).
+        self.dostupni_kljucevi = {
+            k.upper(): v for k, v in (dostupni_kljucevi or {}).items()
+        }
+        self._health_scores: Dict[str, float] = {}
+        # BUG #6 FIX: round-robin index po provideru da se ne koristi uvijek isti ključ
+        self._kljuc_index: Dict[str, int] = {}
+
+    @staticmethod
+    def _get_fleet():
+        """Lazy pristup globalnoj fleet instanci — izbjegava circular import."""
+        try:
+            import api_fleet as _af
+            return _af._active_fleet
+        except (ImportError, AttributeError):
+            return None
+
+    def set_health_score(self, provider: str, score: float) -> None:
+        self._health_scores[provider.upper()] = max(0.0, min(1.0, score))
+
+    def get_health_score(self, provider: str) -> float:
+        prov_u = provider.upper()
+        if prov_u in self._health_scores:
+            return self._health_scores[prov_u]
+        # Izračunaj dinamički iz fleet success_rate — uvijek svježe
+        fleet = self._get_fleet()
+        if fleet:
+            try:
+                with fleet.lock:
+                    keys = fleet.fleet.get(prov_u, [])
+                    rates = [ks.success_rate for ks in keys]
+                if rates:
+                    return sum(rates) / len(rates)
+            except Exception:
+                pass
+        return 1.0
+
+    def _provider_dostupan(self, profil: ModelProfile) -> bool:
+        prov_u = profil.provider.upper()
+        # 1. Provjeri lokalni dict (populira ga init_router_v2 ako je pozvan)
+        if self.dostupni_kljucevi:
+            return len(self.dostupni_kljucevi.get(prov_u, [])) > 0
+        # 2. Fallback: pitaj fleet direktno — radi čak i kad init_router_v2 nije pozvan
+        fleet = self._get_fleet()
+        if fleet:
+            return fleet.get_best_key(prov_u) is not None
+        return True  # optimistički ako nema flote
+
+    def _get_kljuc(self, provider: str) -> Optional[str]:
+        prov_u = provider.upper()
+        # 1. Provjeri lokalni dict
+        kljucevi = self.dostupni_kljucevi.get(prov_u, [])
+        if kljucevi:
+            idx = self._kljuc_index.get(prov_u, 0) % len(kljucevi)
+            self._kljuc_index[prov_u] = (idx + 1) % len(kljucevi)
+            return kljucevi[idx]
+        # 2. Fallback: pitaj fleet direktno
+        fleet = self._get_fleet()
+        if fleet:
+            return fleet.get_best_key(prov_u)
+        return None
+
+    def get_best_model(
+        self,
+        uloga: str,
+        tip_bloka: Optional[str] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> Optional[Tuple[str, str, Optional[str]]]:
+        """
+        Vraća (provider, api_model_string, api_key) za optimalni model.
+        """
+        exclude = exclude or []
+        kandidati = []
+
+        for ime, profil in PROFILI.items():
+            if ime in exclude:
+                continue
+            if not self._provider_dostupan(profil):
+                continue
+
+            score = _score_model(profil, uloga, tip_bloka)
+            if score < 0:
+                continue
+
+            health = self.get_health_score(profil.provider)
+            if health < 0.1:
+                logger.warning(f"Provider {profil.provider} health={health:.2f} — preskačem")
+                continue
+
+            final_score = score * health
+            kandidati.append((final_score, ime, profil))
+
+        if not kandidati:
+            logger.error(f"Nema dostupnih modela za ulogu={uloga}, tip_bloka={tip_bloka}")
+            return None
+
+        kandidati.sort(key=lambda x: x[0], reverse=True)
+        best_score, best_ime, best_profil = kandidati[0]
+
+        api_key = self._get_kljuc(best_profil.provider)
+        logger.info(
+            f"RouterV2: uloga={uloga} tip={tip_bloka} → "
+            f"{best_ime} ({best_profil.provider}) score={best_score:.3f}"
+        )
+        return best_profil.provider, best_profil.api_model_string, api_key
+
+    def get_ranked_models(
+        self,
+        uloga: str,
+        tip_bloka: Optional[str] = None,
+    ) -> List[Tuple[float, str, ModelProfile]]:
+        result = []
+        for ime, profil in PROFILI.items():
+            if not self._provider_dostupan(profil):
+                continue
+            score = _score_model(profil, uloga, tip_bloka)
+            if score < 0:
+                continue
+            health = self.get_health_score(profil.provider)
+            result.append((score * health, ime, profil))
+        result.sort(key=lambda x: x[0], reverse=True)
+        return result
+
+    def log_ranking(self, uloga: str, tip_bloka: Optional[str] = None) -> None:
+        ranking = self.get_ranked_models(uloga, tip_bloka)
+        logger.debug(f"=== Ranking: uloga={uloga} tip={tip_bloka} ===")
+        for score, ime, profil in ranking:
+            logger.debug(f"  {score:.3f}  {ime:30s}  {profil.provider}")
+
+
+# Singleton instanca
+provider_router_v2 = ProviderRouterV2()
+
+
+def init_router_v2(dostupni_kljucevi: Dict[str, List[str]]) -> None:
+    """Inicijalizira router s dostupnim ključevima. Poziva se iz app.py pri startu."""
+    global provider_router_v2
+    provider_router_v2 = ProviderRouterV2(dostupni_kljucevi)
+    logger.info(f"RouterV2 inicijaliziran. Provideri: {list(dostupni_kljucevi.keys())}")
+
+
+if __name__ == "__main__":
+    router = ProviderRouterV2()
+    print("=== Test: prevodilac / dijalog ===")
+    result = router.get_best_model("prevodilac", "dijalog")
+    print(f"Rezultat: {result}")
+    print()
+    print("=== Test: validator ===")
+    result2 = router.get_best_model("validator")
+    print(f"Rezultat: {result2}")
+    print()
+    print("=== Ranking: prevodilac / poetski ===")
+    for score, ime, profil in router.get_ranked_models("prevodilac", "poetski"):
+        print(f"  {score:.3f}  {ime}")

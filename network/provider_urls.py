@@ -2,11 +2,15 @@
 # ISPRAVKE:
 #   BUG#3 FIX: COHERE URL ažuriran s v1/chat na v2/chat
 #   ENDPOINT FIX (v10.7): GEMINI prebačen na native endpoint.
-#     OpenAI-kompatibilni endpoint (/v1beta/openai/) ima free_tier limit=0
-#     od maja 2026 — Google ga je ograničio na pay-as-you-go billing.
-#     Native endpoint (/v1beta/models/{model}:generateContent) podržava
-#     free tier. Model se ugrađuje u URL — get_gemini_url(model) za Gemini.
-#   CF-PROXY (v10.8): Gemini preusmjeren kroz Cloudflare Worker.
+#   Centralne Gemini URL konstante i helperi su u config.ai_config.
+
+from config.ai_config import (
+    GEMINI_BASE_URL,
+    GEMINI_DIRECT_BASE_URL,
+    get_gemini_direct_url,
+    get_gemini_url,
+)
+
 
 def get_url(prov):
     urls = {
@@ -19,7 +23,7 @@ def get_url(prov):
         "MISTRAL":     "https://api.mistral.ai/v1/chat/completions",
         "SAMBANOVA":   "https://api.sambanova.ai/v1/chat/completions",
         "TOGETHER":    "https://api.together.xyz/v1/chat/completions",
-        "GEMMA":       "https://api.together.xyz/v1/chat/completions",
+        "GEMMA":       "INVALID_USE_get_gemini_url(model)_NOT_get_url",
         "OPENROUTER":  "https://openrouter.ai/api/v1/chat/completions",
         "COHERE":      "https://api.cohere.com/v2/chat",
         "GITHUB":      "https://models.inference.ai.azure.com/chat/completions",
@@ -31,20 +35,3 @@ def get_url(prov):
     return urls.get(prov.upper(), urls["GROQ"])
 
 
-# Cloudflare Worker proxy — zaobilazi IP blokade prema Google API-u
-GEMINI_BASE_URL = "https://booklyfi.jasenkobozinovic.workers.dev"
-GEMINI_DIRECT_BASE_URL = "https://generativelanguage.googleapis.com"  # PATCH3: direktni fallback
-
-def get_gemini_url(model: str) -> str:
-    """
-    Vraća native Gemini endpoint kroz Cloudflare Worker proxy.
-    Primarni URL — Worker zaobilazi IP blokade prema Googleu.
-    """
-    return f"{GEMINI_BASE_URL}/v1beta/models/{model}:generateContent"
-
-def get_gemini_direct_url(model: str) -> str:
-    """
-    PATCH3: Direktni Google API URL (fallback kad Worker vrati 429/pade).
-    Bez proxy-ja — može biti blokiran za neke IP-ove ali vrijedi probati.
-    """
-    return f"{GEMINI_DIRECT_BASE_URL}/v1beta/models/{model}:generateContent"
