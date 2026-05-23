@@ -9,8 +9,8 @@ from core.text_utils import _adaptive_temp
 from network.http_client import _call_single_provider, ContentFilterError
 
 PROVIDER_PRIORITY = {
-    "PREVODILAC":      ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
-    "LEKTOR":          ["GEMINI", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
+    "PREVODILAC":      ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMINI", "GEMMA", "MISTRAL", "OPENROUTER", "GITHUB"],
+    "LEKTOR":          ["GEMINI", "GEMMA", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
     "KOREKTOR":        ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "SAMBANOVA", "GITHUB"],
     "VALIDATOR":       ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
     "GUARDIAN":        ["GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
@@ -34,7 +34,7 @@ MODEL_MAP = {
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA":       None,                 # DEAD: 404 na Gemini API od maja 2026 — preskači
+    "GEMMA":       "gemma-4-26b-it",      # Google native endpoint — isti API kao Gemini, isti ključevi
     "GITHUB":      "gpt-4o",                    # GitHub Models: jak backup kad Gemini presuši
 }
 
@@ -99,7 +99,7 @@ _MODEL_TUNING_BY_ID = {
         "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
         "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
     },
-    "gemma-3-27b-it": {
+    "gemma-4-26b-it": {
         "PREVODILAC": {"temp_mul": 0.82, "max_tokens": 1800},
         "LEKTOR": {"temp_mul": 0.85, "max_tokens": 1800},
         "VALIDATOR": {"temp_mul": 0.70, "max_tokens": 600},

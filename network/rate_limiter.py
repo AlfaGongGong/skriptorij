@@ -42,7 +42,7 @@ except ImportError:
         "GEMINI": 5.0,   "GROQ": 2.5,   "CEREBRAS": 2.5,  "SAMBANOVA": 7.5,
         "MISTRAL": 62.0, "COHERE": 3.75, "OPENROUTER": 4.0, "GITHUB": 7.5,
         "TOGETHER": 3.75, "FIREWORKS": 3.75, "CHUTES": 7.5,
-        "HUGGINGFACE": 8.6, "KLUSTER": 5.0, "GEMMA": 5.0,
+        "HUGGINGFACE": 8.6, "KLUSTER": 5.0, "GEMMA": 7.5,
     }
     def _provider_gap(prov: str) -> float:
         return _PROVIDER_MIN_GAP_FALLBACK.get(prov.upper(), 5.0)
@@ -242,7 +242,8 @@ MAX_CONCURRENT_PER_KEY = 1
 # prema istom provideru (neovisno o broju ključeva) da se izbjegne IP ban.
 _PROVIDER_SEMAPHORES: dict[str, _threading.Semaphore] = {}
 _PROVIDER_SEMAPHORES_LOCK = _threading.Lock()
-MAX_CONCURRENT_PER_PROVIDER = 2  # max paralelnih zahtjeva prema istom provideru
+MAX_CONCURRENT_PER_PROVIDER = 1  # FIX: Google throttluje na IP nivou — max 1 konkurentni po provajderu
+                                  # Gemini free tier: burst → IP-level 401. Serijalno je sigurno.
 
 
 def get_key_semaphore(key: str) -> _threading.Semaphore:
@@ -373,11 +374,6 @@ async def acquire_key(key: str, provider: str | None = None):
         except RuntimeError:
             raise  # propagiraj dalje
 
-    # BUG#7 FIX: Throttle PRIJE semafora — ne drži semafor za vrijeme spavanja.
-    # Prethodno: semafor zauzet → throttle sleep (do 10s) → ostali ključevi blokirani.
-    # Ispravak: throttle (čeka min_gap) → zauzmi semafor → pošalji zahtjev → oslobodi.
-    await _throttle_provider(provider, key=key)
-
     # IP-level per-provider semaphore — zaštita od burst-a prema istom provideru
     if provider:
         prov_sem = get_provider_semaphore(provider)
@@ -389,6 +385,7 @@ async def acquire_key(key: str, provider: str | None = None):
     await asyncio.to_thread(sem.acquire)
     logger.debug("[rate_limiter] key-semaphore zauzet: ...%s (%s)", key[-4:], (provider or "").upper())
     syslog.debug("[rate_limiter] key-semaphore zauzet: ...%s (%s)", key[-4:], (provider or "").upper())
+    await _throttle_provider(provider, key=key)
 
     # Bilježi zahtjev u QuotaTracker
     if provider:

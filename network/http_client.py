@@ -75,8 +75,8 @@ _GOOGLE_MODEL_POOL_FALLBACK = [
     {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 1500},  # #4 — deprecated okt 2026, bolji kvalitet
 ]
 _GEMMA_MODEL_POOL_FALLBACK = [
-    {"model": "gemma-4-26b-it", "rpm": 15, "rpd": 1500},  # #1 — veći, bolji quality
-    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},  # #2 — alternativa
+    {"model": "gemma-4-26b-it", "rpm": 15, "rpd": 1500},  # #1 — Google native, bolji quality
+    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},  # #2 — alternativa/fallback
 ]
 GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
 

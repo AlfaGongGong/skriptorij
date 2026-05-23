@@ -56,8 +56,8 @@ FALLBACK_MODELS: dict[str, str] = {
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    # BUG-A FIX: GEMMA (gemma-3-27b-it) uklonjen — HTTP 404 od maja 2026.
-    # Ako se GEMMA provider ponovo aktivira, ovdje treba staviti validan model.
+    # GEMMA: Google native — gemma-4-26b-it / gemma-4-31b-it (potvrđeni maj 2026)
+    "GEMMA":       "gemma-4-26b-it",
     # GitHub Models: gpt-4o je jači od gpt-4o-mini i dostupan je na free tier
     "GITHUB":      "gpt-4o",
 }
@@ -748,8 +748,22 @@ def startup_key_check(fleet_manager) -> None:
         # i NE za 429 s /models endpointa.
         # Razlog: /v1/models ima odvojene (niže) limite od /v1/chat/completions —
         # 429 na /models ne znači da je completions kvota iscrpljena.
+        #
+        # CRITICAL FIX (22.05.2026): Groq /v1/models vraća 401 za ispravne ključeve
+        # (potvrđen Groq bug). Isti problem može biti na GITHUB i HUGGINGFACE.
+        # Ključevi koji dobiju 401 na /models ali rade na /chat/completions
+        # ne smiju biti blacklistirani 24h.
+        # Rješenje: za provajdere s poznatim /models 401 bugom — samo loguj, ne blacklistiraj.
+        _SKIP_MODELS_401_BLACKLIST = {"GEMINI", "GROQ", "GITHUB", "HUGGINGFACE", "KLUSTER", "CHUTES"}
         if status in (401, 402, 403, 412):
-            fleet_manager.analyze_response(prov, ks.key, status, resp.headers, body)
+            if prov in _SKIP_MODELS_401_BLACKLIST:
+                logger.warning(
+                    "[KeyCheck] %s ...%s → HTTP %d na /models — NIJE blacklistiran "
+                    "(poznat bug ovog provajdera na /models endpointu)",
+                    prov, ks.key[-4:], status,
+                )
+            else:
+                fleet_manager.analyze_response(prov, ks.key, status, resp.headers, body)
 
         if status == 200:
             logger.info("[KeyCheck] %s ...%s → OK", prov, ks.key[-4:])

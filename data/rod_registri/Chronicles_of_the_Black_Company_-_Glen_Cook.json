@@ -1,18 +1,18 @@
 {
   "Kapetan": {
     "rod": "M",
-    "clue_m": 108,
+    "clue_m": 124,
     "clue_z": 0
   },
   "Raven": {
     "rod": "M",
-    "clue_m": 164,
+    "clue_m": 168,
     "clue_z": 0
   },
   "Možda": {
     "rod": "M",
-    "clue_m": 21,
-    "clue_z": 7
+    "clue_m": 22,
+    "clue_z": 8
   },
   "Elma": {
     "rod": null,
@@ -21,17 +21,17 @@
   },
   "Elmo": {
     "rod": "M",
-    "clue_m": 68,
+    "clue_m": 73,
     "clue_z": 0
   },
   "žnje": {
     "rod": "M",
-    "clue_m": 29,
+    "clue_m": 32,
     "clue_z": 0
   },
   "Limper": {
     "rod": "M",
-    "clue_m": 30,
+    "clue_m": 32,
     "clue_z": 0
   },
   "Zrak": {
@@ -46,7 +46,7 @@
   },
   "On": {
     "rod": "M",
-    "clue_m": 178,
+    "clue_m": 188,
     "clue_z": 0
   },
   "Tišina": {
@@ -61,7 +61,7 @@
   },
   "tvi": {
     "rod": "M",
-    "clue_m": 60,
+    "clue_m": 61,
     "clue_z": 0
   },
   "Catcher": {
@@ -116,7 +116,7 @@
   },
   "ze": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 10,
     "clue_z": 0
   },
   "tvaca": {
@@ -201,12 +201,12 @@
   },
   "tav": {
     "rod": "M",
-    "clue_m": 146,
+    "clue_m": 151,
     "clue_z": 0
   },
   "šav": {
     "rod": "M",
-    "clue_m": 17,
+    "clue_m": 18,
     "clue_z": 0
   },
   "zovoljni": {
@@ -216,7 +216,7 @@
   },
   "mljao": {
     "rod": "M",
-    "clue_m": 24,
+    "clue_m": 27,
     "clue_z": 0
   },
   "ačno": {
@@ -226,7 +226,7 @@
   },
   "Netko": {
     "rod": "M",
-    "clue_m": 21,
+    "clue_m": 22,
     "clue_z": 0
   },
   "Vidljivost": {
@@ -236,7 +236,7 @@
   },
   "tvog": {
     "rod": "M",
-    "clue_m": 31,
+    "clue_m": 33,
     "clue_z": 0
   },
   "Čuvar": {
@@ -296,17 +296,17 @@
   },
   "zovoljan": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 7,
     "clue_z": 0
   },
   "ačna": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 7,
     "clue_z": 0
   },
   "tvih": {
     "rod": "M",
-    "clue_m": 58,
+    "clue_m": 62,
     "clue_z": 0
   },
   "Kada": {
@@ -331,7 +331,7 @@
   },
   "ačnu": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 10,
     "clue_z": 0
   },
   "Lovac": {
@@ -371,12 +371,12 @@
   },
   "Poručnik": {
     "rod": "M",
-    "clue_m": 23,
+    "clue_m": 24,
     "clue_z": 0
   },
   "Grad": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 11,
     "clue_z": 0
   },
   "Jednooko": {
@@ -482,7 +482,7 @@
   "Noć": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 8
+    "clue_z": 9
   },
   "lje": {
     "rod": "M",
@@ -511,7 +511,7 @@
   },
   "One-Eye": {
     "rod": "M",
-    "clue_m": 47,
+    "clue_m": 49,
     "clue_z": 0
   },
   "Zvijer": {
@@ -536,7 +536,7 @@
   },
   "tvima": {
     "rod": "M",
-    "clue_m": 16,
+    "clue_m": 18,
     "clue_z": 0
   },
   "Vrisalica": {
@@ -561,7 +561,7 @@
   },
   "Goblin": {
     "rod": "M",
-    "clue_m": 76,
+    "clue_m": 78,
     "clue_z": 0
   },
   "Vičalica": {
@@ -570,9 +570,9 @@
     "clue_z": 0
   },
   "Straža": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Šaputaljka": {
     "rod": null,
@@ -592,7 +592,7 @@
   "Vjerojatno": {
     "rod": "Ž",
     "clue_m": 9,
-    "clue_z": 7
+    "clue_z": 8
   },
   "se": {
     "rod": "Ž",
@@ -621,7 +621,7 @@
   },
   "Čovjek": {
     "rod": "M",
-    "clue_m": 21,
+    "clue_m": 22,
     "clue_z": 0
   },
   "Naglo": {
@@ -651,7 +651,7 @@
   },
   "žnja": {
     "rod": "M",
-    "clue_m": 14,
+    "clue_m": 15,
     "clue_z": 0
   },
   "Šutljivac": {
@@ -661,7 +661,7 @@
   },
   "tve": {
     "rod": "M",
-    "clue_m": 34,
+    "clue_m": 36,
     "clue_z": 0
   },
   "Često": {
@@ -671,7 +671,7 @@
   },
   "Silent": {
     "rod": "M",
-    "clue_m": 19,
+    "clue_m": 20,
     "clue_z": 0
   },
   "Tajna": {
@@ -701,7 +701,7 @@
   },
   "zio": {
     "rod": "M",
-    "clue_m": 26,
+    "clue_m": 27,
     "clue_z": 0
   },
   "eži": {
@@ -751,7 +751,7 @@
   },
   "Candy": {
     "rod": "M",
-    "clue_m": 15,
+    "clue_m": 19,
     "clue_z": 0
   },
   "Otto": {
@@ -831,7 +831,7 @@
   },
   "tvac": {
     "rod": "M",
-    "clue_m": 19,
+    "clue_m": 20,
     "clue_z": 0
   },
   "Leš": {
@@ -871,7 +871,7 @@
   },
   "Vrisak": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "zne": {
@@ -976,7 +976,7 @@
   },
   "Sada": {
     "rod": "M",
-    "clue_m": 16,
+    "clue_m": 17,
     "clue_z": 2
   },
   "pokazala": {
@@ -1001,7 +1001,7 @@
   },
   "Logor": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Svijet": {
@@ -1151,7 +1151,7 @@
   },
   "Nisam": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Napetost": {
@@ -1187,7 +1187,7 @@
   "Kompanija": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 5
+    "clue_z": 6
   },
   "sa": {
     "rod": "M",
@@ -1206,7 +1206,7 @@
   },
   "Da": {
     "rod": "Ž",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 4
   },
   "da": {
@@ -1351,7 +1351,7 @@
   },
   "Narednik": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "zi": {
@@ -1366,7 +1366,7 @@
   },
   "ziti": {
     "rod": "M",
-    "clue_m": 8,
+    "clue_m": 9,
     "clue_z": 0
   },
   "ne": {
@@ -1441,7 +1441,7 @@
   },
   "šteći": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "šaviji": {
@@ -1465,8 +1465,8 @@
     "clue_z": 5
   },
   "tvoj": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Sastanak": {
@@ -1631,7 +1631,7 @@
   },
   "Tihi": {
     "rod": null,
-    "clue_m": 1,
+    "clue_m": 2,
     "clue_z": 0
   },
   "Djevojka": {
@@ -1741,7 +1741,7 @@
   },
   "ačne": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 7,
     "clue_z": 0
   },
   "Bomanz": {
@@ -1796,7 +1796,7 @@
   },
   "mlja": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "vicu": {
@@ -2497,21 +2497,21 @@
   "Kolona": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 4
   },
   "Mercy": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "zovoljnu": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Sindik": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 8,
     "clue_z": 0
   },
   "Zapravo": {
@@ -2521,7 +2521,7 @@
   },
   "Tom-Tom": {
     "rod": "M",
-    "clue_m": 30,
+    "clue_m": 40,
     "clue_z": 0
   },
   "ačnijeg": {
@@ -2531,13 +2531,13 @@
   },
   "Sjevernjak": {
     "rod": null,
-    "clue_m": 1,
+    "clue_m": 2,
     "clue_z": 0
   },
   "Forvalaka": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 5
+    "clue_z": 6
   },
   "aza": {
     "rod": null,
@@ -2550,8 +2550,8 @@
     "clue_z": 0
   },
   "Sanduk": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Match": {
@@ -2565,9 +2565,9 @@
     "clue_z": 2
   },
   "Oluja": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Čak": {
     "rod": "M",
@@ -2581,7 +2581,7 @@
   },
   "zovoljniji": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "štili": {
@@ -2602,11 +2602,11 @@
   "Žena": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 4
   },
   "Jednooki": {
     "rod": "M",
-    "clue_m": 18,
+    "clue_m": 19,
     "clue_z": 0
   },
   "ačnih": {
@@ -2620,19 +2620,19 @@
     "clue_z": 0
   },
   "Kakva": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Oficir": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Granica": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "knuo": {
     "rod": null,
@@ -2646,12 +2646,12 @@
   },
   "Doughbelly": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Zouad": {
     "rod": null,
-    "clue_m": 0,
+    "clue_m": 1,
     "clue_z": 1
   },
   "ota": {
@@ -2660,18 +2660,18 @@
     "clue_z": 0
   },
   "Obično": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Molitva": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Goblinu": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "umjesto": {
@@ -2686,18 +2686,18 @@
   },
   "Flick": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "mljah": {
     "rod": null,
-    "clue_m": 1,
+    "clue_m": 2,
     "clue_z": 0
   },
   "Pjesma": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Cornie": {
     "rod": "M",
@@ -2741,7 +2741,7 @@
   },
   "ko": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 7,
     "clue_z": 0
   },
   "Natporučnik": {
@@ -3720,8 +3720,8 @@
     "clue_z": 0
   },
   "Jašćić": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Nered": {
@@ -3730,13 +3730,13 @@
     "clue_z": 0
   },
   "Sinđik": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 4,
     "clue_z": 0
   },
   "štio": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Plesač": {
@@ -3806,7 +3806,7 @@
   },
   "Pickles": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Dekoracija": {
@@ -4248,5 +4248,45 @@
     "rod": null,
     "clue_m": 0,
     "clue_z": 1
+  },
+  "Smijeh": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Razdraženost": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Meč": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Blago": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Hromi": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Gavrana": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Šepavac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Hramotvorac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
   }
 }

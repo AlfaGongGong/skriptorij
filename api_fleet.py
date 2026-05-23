@@ -284,15 +284,15 @@ class FleetManager:
                 )
                 return None
 
-            keys_sorted = sorted(available, key=lambda x: x.success_rate, reverse=True)
-            top_n  = max(1, math.ceil(len(keys_sorted) * 0.7))
-            top    = keys_sorted[:top_n]
-            non_zero = [ks for ks in top if ks.success_rate > 0.0]
-            if non_zero:
-                top = non_zero
-            idx    = self._rr_index.get(prov_u, 0) % len(top)
-            chosen = top[idx]
-            self._rr_index[prov_u] = (idx + 1) % len(top)
+            # FIX: round-robin po svim dostupnim ključevima.
+            # Prethodni kod: non_zero filter je excludovao sve ključeve s 0 ok/failed
+            # (novi ključevi) pa je uvijek birao isti ključ koji je već imao uspjeha.
+            # Rezultat: jedan ključ troši svu kvotu, ostali miruju.
+            # Ispravak: RR po svim dostupnim ključevima, bez filtera po success_rate.
+            # success_rate ostaje za logging i statistiku ali ne utječe na selekciju.
+            idx    = self._rr_index.get(prov_u, 0) % len(available)
+            chosen = available[idx]
+            self._rr_index[prov_u] = (idx + 1) % len(available)
             logger.debug(
                 "[FleetManager] get_best_key(%s): odabran ...%s (success_rate=%.2f, %d/%d dostupno)",
                 prov_u, chosen.key[-4:], chosen.success_rate, len(available), len(keys),

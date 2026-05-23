@@ -7,7 +7,12 @@
 # ===== URL GENERATORI =====
 
 def _url_gemini_compat():
-    return "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+    # ZABRANJEN ENDPOINT od maja 2026 — OpenAI-kompatibilni endpoint ima free_tier limit=0.
+    # Sav Gemini promet mora ići kroz native endpoint via get_gemini_url(model).
+    raise RuntimeError(
+        "GEMINI OpenAI-compat endpoint (/v1beta/openai/) je zabranjen za free tier od maja 2026. "
+        "Koristi get_gemini_url(model) iz network.provider_urls."
+    )
 
 
 def _url_groq():

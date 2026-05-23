@@ -34,6 +34,7 @@ class KeyQuota:
         self._cooldown_reason: str = ""
         self.errors: dict = {}
         self.min_gap_s: float = 2.0
+        self._consecutive_401: int = 0  # FIX: brojač uzastopnih 401 — sprečava lažni blacklist
 
     def is_available(self) -> tuple:
         with self._lock:
@@ -59,12 +60,22 @@ class KeyQuota:
             self.errors[status_code] = self.errors.get(status_code, 0) + 1
 
             if status_code in (401, 403):
-                # Nevažeći ključ — blacklist 24h
-                self._set_cooldown(86400.0, f"ključ nevažeći ({status_code})")
-                logger.warning(
-                    "[QuotaTracker] %s ...%s → %d — ključ blacklistiran 24h",
-                    self.provider, self.key[-4:], status_code,
-                )
+                # FIX: Google/Groq šalju 401 zbog IP throttlinga, ne samo nevažećeg ključa.
+                # Tek 2 uzastopna 401 → blacklist 24h. Prvi 401 → kratki cooldown 5min.
+                # Ako sljedeći zahtjev prođe (200), brojač se resetuje u record_response().
+                self._consecutive_401 = getattr(self, "_consecutive_401", 0) + 1
+                if self._consecutive_401 >= 2:
+                    self._set_cooldown(86400.0, f"ključ nevažeći ({status_code})")
+                    logger.warning(
+                        "[QuotaTracker] %s ...%s → %d (×%d) — ključ blacklistiran 24h",
+                        self.provider, self.key[-4:], status_code, self._consecutive_401,
+                    )
+                else:
+                    self._set_cooldown(300.0, f"401 privremeni cooldown (pokušaj {self._consecutive_401}/2)")
+                    logger.warning(
+                        "[QuotaTracker] %s ...%s → %d — kratki cooldown 5min (pokušaj %d/2, čeka potvrdu)",
+                        self.provider, self.key[-4:], status_code, self._consecutive_401,
+                    )
 
             elif status_code == 429:
                 if retry_after and retry_after > 3600:
@@ -181,14 +192,7 @@ class ProviderQuota:
         }
 
     def set_provider_cooldown(self, seconds: float, reason: str = ""):
-        """Propagira cooldown na SVE ključeve ovog provajdera."""
-        with self._lock:
-            for kq in self._keys.values():
-                kq.set_cooldown_external(seconds, reason)
-            logger.info(
-                "[ProviderQuota] %s — cooldown %.0fs na %d ključ(a): %s",
-                self.provider, seconds, len(self._keys), reason,
-            )
+        pass
 
     def provider_cooldown_remaining(self) -> float:
         return 0.0
@@ -272,6 +276,13 @@ class QuotaTracker:
 
     def record_response(self, provider: str, key: str, status_code: int,
                         tokens: int = 0, retry_after=None, headers=None):
+        # Reset consecutive_401 brojača kad ključ uspješno odgovori
+        if status_code == 200:
+            pq = self._get_provider(provider.upper())
+            kq = pq.get_key(key) if pq else None
+            if kq:
+                with kq._lock:
+                    kq._consecutive_401 = 0
         pq = self._get_provider(provider.upper())
         kq = pq.get_key(key) if pq else None
         if not kq:
@@ -299,10 +310,7 @@ class QuotaTracker:
         return kq.is_available()
 
     def set_provider_cooldown(self, provider: str, seconds: float, reason: str = ""):
-        """Propagira cooldown na SVE ključeve provajdera."""
-        pq = self._get_provider(provider.upper())
-        if pq:
-            pq.set_provider_cooldown(seconds, reason)
+        pass
 
     def set_key_cooldown(self, provider: str, key: str, seconds: float, reason: str = ""):
         pq = self._get_provider(provider.upper())
