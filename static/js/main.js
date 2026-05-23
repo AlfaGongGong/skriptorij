@@ -1248,7 +1248,7 @@ function restoreAppState() {
 }
 
 // ═══════════════ FLEET ═════════════════════════════════
-const PROV_ICONS = {
+const KEY_PROV_ICONS = {
     GEMINI: "♊",
     GROQ: "⚡",
     CEREBRAS: "🔬",
@@ -1331,7 +1331,7 @@ async function loadKeys() {
         filtered.forEach(([prov, keys]) => {
             (keys || []).forEach((masked, idx) => {
                 html += `<div class="key-row">
-                    <span class="key-prov-badge">${PROV_ICONS[prov.toUpperCase()] || "🔑"} ${prov}</span>
+                    <span class="key-prov-badge">${KEY_PROV_ICONS[prov.toUpperCase()] || "🔑"} ${prov}</span>
                     <span class="key-masked">${masked}</span>
                     <button class="key-ping-btn" data-provider="${prov}" data-index="${idx}" title="Testiraj ključ">🔍</button>
                     <button class="key-del-btn" data-provider="${prov}" data-index="${idx}" title="Obriši">✕</button>
