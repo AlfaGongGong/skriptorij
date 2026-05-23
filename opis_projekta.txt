@@ -1,6 +1,6 @@
 ================================================================================
 BOOKLYFI TURBO V10 — KOMPLETNI OPIS PROJEKTA
-Ažurirano: 2026-05-10
+Ažurirano: 2026-05-23
 Projekt: AI-powered sistem za prijevod i lekturu EPUB/MOBI knjiga
 ================================================================================
 
@@ -11,7 +11,7 @@ Projekt: AI-powered sistem za prijevod i lekturu EPUB/MOBI knjiga
 
 skriptorij/
 ├── main.py                          # Entry point; pokreće Flask, Termux browser
-├── app.py                           # Flask factory; sve rute i blueprinti
+├── app.py                           # Flask factory; runtime rute (monolitni @app.route)
 ├── run.py                           # Alternativni launcher; orkestrira run loop
 ├── api_fleet.py                     # FleetManager singleton; API key upravljanje
 ├── tts.py                           # Text-to-Speech pipeline (Kokoro TTS)
@@ -26,7 +26,7 @@ skriptorij/
 │   └── logging_config.py            # Konfiguracija Python loggera
 │
 ├── api/
-│   ├── __init__.py                  # register_blueprints()
+│   ├── __init__.py                  # register_blueprints() helper (trenutno nepozvan u runtime-u)
 │   ├── file_browser.py              # /api/browse, /api/upload_from_path
 │   ├── middleware/
 │   │   └── __init__.py
@@ -199,15 +199,15 @@ FUNKCIJE:
 ════════════════════════════════════════════════════════
  app.py
 ════════════════════════════════════════════════════════
-SVRHA: Flask application factory. Definiše sve HTTP rute, registruje blueprinte,
-       obrađuje upload/download knjiga, status, pregled, EPUB preview, review.
-       NAPOMENA: Stari monolitni app.py koji postoji uz novi modularni sistem.
-       Oba su aktivna (create_app() je zajednički ulaz).
+SVRHA: Flask application factory. Definiše sve runtime HTTP rute direktno u app.py
+       (monolitni @app.route), obrađuje upload/download knjiga, status, pregled,
+       EPUB preview i review tok.
+       NAPOMENA: api/routes blueprint moduli postoje, ali nisu registrovani u create_app().
 
-IMPORTI: os, re, json, time, threading, asyncio, pathlib, flask (Flask, Blueprint,
+IMPORTI: os, re, json, time, threading, asyncio, pathlib, flask (Flask,
          jsonify, request, send_file, redirect, url_for, render_template, session),
          werkzeug.utils, api_fleet, config.settings, run.start_skriptorij_from_master,
-         epub.packager, utils.file_utils, utils.export, api.__init__.register_blueprints
+         epub.packager, utils.file_utils, utils.export
 
 FUNKCIJE:
   _rebuild_epub(book_name)
@@ -235,7 +235,7 @@ FUNKCIJE:
     → Briše sve checkpoint i cache fajlove za zadanu knjigu.
 
   create_app()
-    → Flask factory funkcija. Kreira Flask app, registruje blueprinte iz api/,
+    → Flask factory funkcija. Kreira Flask app i definiše rute direktno u app.py,
       definiše rute: /, /intro, /api/books, /api/start, /api/status, /api/quality,
       /api/quality_scores, /api/keys, /api/fleet, /api/download, /epub/preview,
       /api/review/*, /control/*, /api/export/*, i dr.
@@ -444,14 +444,15 @@ FUNKCIJE:
 ════════════════════════════════════════════════════════
  api/__init__.py
 ════════════════════════════════════════════════════════
-SVRHA: Registracija Flask blueprinta iz api/routes/ u app factory.
+SVRHA: Registracija Flask blueprinta iz api/routes/ (helper modul; trenutno nepozvan
+       iz runtime create_app putanje).
 
 IMPORTI: flask.Flask, svi blueprinti iz api/routes/
 
 FUNKCIJE:
   register_blueprints(app)
     → Registruje sve blueprinte (books_bp, processing_bp, fleet_bp, keys_bp,
-      qualities_bp, quality_bp, export_bp, control_bp) u Flask app.
+      qualities_bp, quality_bp, export_bp, control_bp) ako se helper eksplicitno pozove.
 
 ════════════════════════════════════════════════════════
  api/file_browser.py
@@ -1876,7 +1877,7 @@ quality_scores.json — dict {file_stem + "_" + chunk_idx: {score, timestamp, pr
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   python3 main.py                      # Standardni start
-  python3 -m pytest tests/ -v          # Pokretanje testova (18 testova)
+  python3 -m pytest tests/ -v          # Pokretanje testova (trenutno 54 testa)
 
   SKRIPTORIJ_PORT=8080                 # Port Flask servera
   SKRIPTORIJ_CONFIG=dev_api.json       # Putanja do API ključeva

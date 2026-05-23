@@ -189,9 +189,13 @@
     │
     ├── tests/                       # 🧪 Test suite
     │   ├── unit/
-    │   │   └── test_validators.py   # Unit tests for validators
+    │   │   ├── test_api_fleet.py
+    │   │   ├── test_http_client.py
+    │   │   ├── test_provider_router.py
+    │   │   ├── test_rate_limiter.py
+    │   │   └── test_validators.py
     │   └── integration/
-    │       └── test_api_routes.py   # Integration tests for API routes
+    │       └── test_api_routes.py
     │
     ├── Dockerfile                   # Docker image definition
     ├── docker-compose.yml           # Docker Compose configuration
@@ -207,7 +211,8 @@
     ```
     Browser ──► Flask (app.py)
     │
-    ├─► api/routes/       (HTTP layer — Flask Blueprints)
+    ├─► app.py routes     (HTTP layer — monolithic @app.route endpoints)
+    ├─► api/routes/       (modular blueprint modules; currently not runtime-wired)
     ├─► config/settings   (Shared state and paths)
     ├─► core/             (Business logic)
     ├─► processing/       (Pipeline and workers)
@@ -215,7 +220,7 @@
     │
     api_fleet.py ◄─── FleetManager singleton
     (Key rotation,         (register_active_fleet /
-    cooldown, semaphore)   get_active_fleet)
+    counters, semaphores)  get_active_fleet)
     ```
 
     ---
@@ -408,7 +413,7 @@
     ### Running Tests
 
     ```bash
-    # Full test suite (39 tests)
+    # Full test suite (currently 54 tests)
     python3 -m pytest tests/ -v
 
     # Unit tests only
@@ -418,7 +423,7 @@
     python3 -m pytest tests/integration/ -v
 
     # Short output (errors only)
-    python3 -m pytest tests/ -v --tb = short
+    python3 -m pytest tests/ -v --tb=short
     ```
 
     ### Syntax Check
@@ -432,10 +437,10 @@
 
     ```bash
     # Explicit port
-    SKRIPTORIJ_PORT = 9000 python main.py
+    SKRIPTORIJ_PORT=9000 python main.py
 
     # Disable workers_v2 (legacy mode)
-    BOOKLYFI_V2 = 0 python main.py
+    BOOKLYFI_V2=0 python main.py
     ```
 
     ---
