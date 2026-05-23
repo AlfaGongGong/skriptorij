@@ -168,8 +168,9 @@ def test_ping_key_uses_gemma_native_payload(client, tmp_path, monkeypatch):
     with app.test_client() as local_client:
         resp = local_client.post("/api/keys/GEMMA/0/ping")
 
+    default_gemma_model = MODEL_MAP["GEMMA"]
     assert resp.status_code == 200
-    assert f"/v1beta/models/{MODEL_MAP['GEMMA']}:generateContent" in captured["url"]
+    assert f"/v1beta/models/{default_gemma_model}:generateContent" in captured["url"]
     assert "?key=gemma_test_key" in captured["url"]
     assert "Authorization" not in captured["headers"]
     assert "contents" in captured["json"]

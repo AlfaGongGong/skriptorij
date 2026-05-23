@@ -15,7 +15,7 @@ from config.ai_config import (
 def get_url(prov):
     prov_upper = prov.upper()
     if prov_upper in {"GEMINI", "GEMMA"}:
-        raise ValueError(f"{prov_upper} mora koristiti get_gemini_url(model)")
+        raise ValueError(f"{prov_upper} mora koristiti funkciju get_gemini_url(model)")
 
     urls = {
         "GROQ":        "https://api.groq.com/openai/v1/chat/completions",
@@ -32,4 +32,3 @@ def get_url(prov):
         "KLUSTER":     "https://api.kluster.ai/v1/chat/completions",
     }
     return urls.get(prov_upper, urls["GROQ"])
-

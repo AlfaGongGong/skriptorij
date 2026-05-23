@@ -329,7 +329,7 @@ def test_gemini_resets_key_model_cache_after_full_exhaustion(monkeypatch):
     pool = http_client._GOOGLE_MODEL_POOL_FALLBACK
     key = "RESET_KEY_1234"
 
-    async def fake_async_http_post(self_obj, url, headers, payload,
+    async def fake_async_http_post(client_instance, url, headers, payload,
                                     prov, prov_upper, key, _proxy=None):
         return None
 

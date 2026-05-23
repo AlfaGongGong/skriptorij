@@ -85,10 +85,12 @@ def get_gemini_direct_url(model: str) -> str:
 
 
 def get_google_model_for_key(key_index: int) -> dict:
+    """Return the pooled Google model assigned to a key index via modulo rotation."""
     return GOOGLE_MODEL_POOL[key_index % len(GOOGLE_MODEL_POOL)]
 
 
 def get_next_google_model(current_model: str) -> dict:
+    """Return the next Google model in the pool, or the first one if not found."""
     for i, model in enumerate(GOOGLE_MODEL_POOL):
         if model["model"] == current_model:
             return GOOGLE_MODEL_POOL[(i + 1) % len(GOOGLE_MODEL_POOL)]

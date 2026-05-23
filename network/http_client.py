@@ -97,7 +97,7 @@ def _rotate_model_for_key(key: str, pool: list[dict] | None = None) -> str | Non
 
 def _reset_model_for_key(key: str, idx: int = 0) -> None:
     with _key_model_cache_lock:
-        _key_model_cache[key] = max(0, idx)
+        _key_model_cache[key] = idx if idx >= 0 else 0
 
 
 # ── System role podrška ───────────────────────────────────────────────────────

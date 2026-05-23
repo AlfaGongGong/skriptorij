@@ -98,6 +98,7 @@ PROFILI: Dict[str, ModelProfile] = {
         ime="gemini_20_flash",
         provider="gemini",
         api_model_string=AI_MODEL_STRINGS["gemini_20_flash"],
+        # Stable replacement limits are lower than the retired 2.0 profile.
         rpm_limit=10,
         rpd_limit=500,
         snage=[
