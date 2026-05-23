@@ -84,3 +84,12 @@ node_modules/
 
 # ========== KOMPLETAN KOD EXPORT ==========
 PROJEKAT_KOMPLETAN_KOD_*.txtTrashRecover/
+
+# Backup folderi
+_backup_*/
+
+# Data folder
+data/
+
+# Ostalo smeće
+TrashRecover/

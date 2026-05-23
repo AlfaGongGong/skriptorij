@@ -10904,45 +10904,6 @@
         "Vladara",
         "Vladaru"
       ]
-    },
-    "Jalena": {
-      "ime": "Jalena",
-      "rod": "auto",
-      "padeži": {
-        "N": "Jalena",
-        "G": "Jalene",
-        "D": "Jaleni",
-        "A": "Jalenu",
-        "V": "Jalena",
-        "I": "Jalenom",
-        "L": "Jaleni"
-      },
-      "sve_varijante": [
-        "Jalenom",
-        "Jalenu",
-        "Jalene",
-        "Jalena",
-        "Jaleni"
-      ]
-    },
-    "Lichvar": {
-      "ime": "Lichvar",
-      "rod": "auto",
-      "padeži": {
-        "N": "Lichvar",
-        "G": "Lichvara",
-        "D": "Lichvaru",
-        "A": "Lichvara",
-        "V": "Lichvar",
-        "I": "Lichvarom",
-        "L": "Lichvaru"
-      },
-      "sve_varijante": [
-        "Lichvar",
-        "Lichvara",
-        "Lichvaru",
-        "Lichvarom"
-      ]
     }
   },
   "few_shot_primjeri": [
@@ -27958,43 +27919,6 @@
       },
       "chunk_ids": [],
       "rijeci_count": 757
-    },
-    "2454": {
-      "broj": 2454,
-      "naslov": "chapter002.html",
-      "summary": "",
-      "lik_count": {
-        "One": 3,
-        "Eye": 3,
-        "Kapetan": 11,
-        "Jalena": 5,
-        "Raven": 10
-      },
-      "chunk_ids": [],
-      "rijeci_count": 753
-    },
-    "3620": {
-      "broj": 3620,
-      "naslov": "chapter001.html",
-      "summary": "",
-      "lik_count": {
-        "Curly": 5,
-        "Croaker": 3
-      },
-      "chunk_ids": [],
-      "rijeci_count": 757
-    },
-    "295": {
-      "broj": 295,
-      "naslov": "chapter002.html",
-      "summary": "",
-      "lik_count": {
-        "Jednooki": 11,
-        "Lichvar": 4,
-        "Poručnik": 5
-      },
-      "chunk_ids": [],
-      "rijeci_count": 733
     }
   }
 }
