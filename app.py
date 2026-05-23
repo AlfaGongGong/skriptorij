@@ -866,7 +866,10 @@ def create_app() -> Flask:
                     "generationConfig": {"temperature": 0.0, "maxOutputTokens": 1},
                 }
             else:
-                url = _get_provider_url(prov_u)
+                try:
+                    url = _get_provider_url(prov_u)
+                except Exception:
+                    return jsonify({"error": f"Nepodržan provajder: {prov_u}"}), 400
                 headers = {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {key}",
