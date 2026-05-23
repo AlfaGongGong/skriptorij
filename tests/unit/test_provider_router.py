@@ -30,7 +30,7 @@ def test_resolve_model_generation_params_applies_family_fallback():
     assert max_tokens == 2200
 
 
-def test_call_ai_engine_uses_gemma_quota_state_for_gemma_provider(monkeypatch):
+def test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider(monkeypatch):
     class FakeQuotaTracker:
         def __init__(self):
             self.providers = []
