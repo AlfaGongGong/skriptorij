@@ -194,8 +194,8 @@ async def _call_ai_engine(
                 return None, "N/A"
 
             # GEMINI i GEMMA upravljaju ključevima interno (_call_gemini/gemma_with_rotation).
-            # get_best_key("GEMMA") uvijek vraća None jer GEMMA nema zasebne ključeve u
-            # quota_trackeru — koristi GEMINI ključeve. Zato ih ne blokiramo ovdje.
+            # GEMMA koristi isti key material kao GEMINI, ali ima zaseban cooldown namespace
+            # u quota_trackeru kako Gemini 429 ne bi blokirao Gemmu u routeru.
             if prov_upper in ("GEMINI", "GEMMA"):
                 # Provjeri ima li GEMINI ključeva uopće (GEMMA koristi iste)
                 gemini_keys = self.fleet.fleet.get("GEMINI", [])
@@ -203,9 +203,10 @@ async def _call_ai_engine(
                     continue
                 # Ako su SVI GEMINI ključevi u dugom cooldownu (>60s) — preskači
                 from network.quota_tracker import quota_tracker
+                quota_provider = "GEMMA" if prov_upper == "GEMMA" else "GEMINI"
                 has_available_or_short_cd = False
                 for ks in gemini_keys:
-                    ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
+                    ok, reason = quota_tracker.is_key_available(quota_provider, ks.key)
                     if ok:
                         has_available_or_short_cd = True
                         break

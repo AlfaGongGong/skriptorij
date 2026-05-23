@@ -357,3 +357,58 @@ def test_gemini_resets_key_model_cache_after_full_exhaustion(monkeypatch):
     asyncio.run(http_client._call_gemini_with_full_rotation(FakeEngine(fleet), None, "test", 0.5, 100))
 
     assert http_client._get_model_for_key(key, pool) == pool[0]["model"]
+
+
+def test_gemma_rotation_checks_gemma_cooldown_tracker(monkeypatch):
+    import asyncio
+
+    class FakeKeyState:
+        def __init__(self):
+            self.key = "GEMMA_KEY_1234"
+            self.success_rate = 1.0
+            self._available_checks = 0
+
+        @property
+        def available(self):
+            self._available_checks += 1
+            return self._available_checks > 1
+
+    class FakeQuotaTracker:
+        def __init__(self):
+            self.providers = []
+
+        def is_key_available(self, provider, key):
+            self.providers.append(provider)
+            if provider != "GEMMA":
+                raise AssertionError(f"unexpected provider lookup: {provider}")
+            if len(self.providers) < 3:
+                return False, "cooldown 1s (RPM 429)"
+            return True, ""
+
+    fake_quota_tracker = FakeQuotaTracker()
+    monkeypatch.setattr("network.quota_tracker.quota_tracker", fake_quota_tracker)
+
+    async def fake_async_http_post(self_obj, url, headers, payload,
+                                    prov, prov_upper, key, _proxy=None):
+        return {"candidates": [{"content": {"parts": [{"text": "GEMMA ODGOVOR"}]}}]}
+
+    async def _noop_sleep(_s):
+        pass
+
+    monkeypatch.setattr("network.http_client._async_http_post", fake_async_http_post)
+    monkeypatch.setattr("asyncio.sleep", _noop_sleep)
+
+    class FakeEngine:
+        def __init__(self):
+            self.fleet = type("Fleet", (), {"fleet": {"GEMINI": [FakeKeyState()]}})()
+
+        def log(self, msg, level="info"):
+            pass
+
+    content, label = asyncio.run(
+        http_client._call_gemma_with_rotation(FakeEngine(), None, "test", 0.5, 100)
+    )
+
+    assert content == "GEMMA ODGOVOR"
+    assert label == "GEMMA-gemma-4-26b-it"
+    assert fake_quota_tracker.providers == ["GEMMA", "GEMMA", "GEMMA"]
