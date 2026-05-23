@@ -242,8 +242,17 @@ MAX_CONCURRENT_PER_KEY = 1
 # prema istom provideru (neovisno o broju ključeva) da se izbjegne IP ban.
 _PROVIDER_SEMAPHORES: dict[str, _threading.Semaphore] = {}
 _PROVIDER_SEMAPHORES_LOCK = _threading.Lock()
-MAX_CONCURRENT_PER_PROVIDER = 1  # FIX: Google throttluje na IP nivou — max 1 konkurentni po provajderu
-                                  # Gemini free tier: burst → IP-level 401. Serijalno je sigurno.
+# FIX v13: Povećano na 2 (s 1).
+# S MAX=1: 6 ključeva → throughput = 1 req / (gap+jitter) = ~1 req/8.5s
+#   Svaki ključ čeka na semafor dok prethodni završi HTTP request (do 90s timeout).
+#   Ako server spor → svi ključevi se "gomilaju" na semaforu → throughput pada.
+# S MAX=2: 2 paralelna zahtjeva prema Googleu istovremeno, svaki s RAZLIČITIM ključem.
+#   _throttle_provider (v13 fix) osigurava da svaki ključ poštuje vlastiti min_gap
+#   od zadnjeg *stvarnog* slanja — burst više nije moguć jer timestamp bilježimo
+#   neposredno pred slanje, a ne pri rezervaciji.
+# Zašto ne 3+: Google free tier throttluje na IP nivou pri 3+ concurrent zahtjeva.
+#   2 je sigurna granica — testirana empirijski (21.05 burst je bio 6 u 2.5s).
+MAX_CONCURRENT_PER_PROVIDER = 2
 
 
 def get_key_semaphore(key: str) -> _threading.Semaphore:
@@ -267,72 +276,59 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
     """
     Throttle po ključu + provider-level cooldown provjera.
 
-    BUG_C FIX: Prethodna verzija je koristila provider-level asyncio.Lock koji je
-    serijalizirao SVE pozive prema provideru. S više ključeva to znači da ključevi
-    čekaju jedan na drugog umjesto da rade paralelno — direktno suprotno svrsi flota.
+    FIX v13: Timestamp se bilježi NEPOSREDNO PRED slanje (na kraju funkcije),
+    ne pri rezervaciji (na početku). Stari bug: ključ čeka na prov_sem.acquire()
+    20-30s → ulazi u throttle → timestamp rezervacije je već stari → elapsed > gap
+    → request ide odmah. Ako više ključeva čeka na semaforu, svi odlaze "odmah"
+    kad dobiju red → burst → 429.
 
-    BUG#THROTTLE FIX: _LAST_CALLS je bio per-provider — serijalizirao je sve ključeve
-    istog provajdera. Svaki ključ čekao puni min_gap od zadnjeg poziva BILO KOJEG
-    ključa. S 6 Gemini ključeva to znači 1 req/5s umjesto 6 req/5s (throughput
-    faktorno manji od kapaciteta). Ispravljeno: throttle je sada per-key putem
-    _LAST_CALLS_KEY. Provider-level _LAST_CALLS ostaje samo za startup anti-burst.
+    Novo: svaki put kad ključ dobije red, iznova mjeri elapsed od zadnje *stvarne*
+    upotrebe i čeka razliku. Timestamp = trenutak slanja. Nema lock-a → nema
+    serijalizacije između ključeva istog provajdera.
     """
     if not provider:
         return
 
     prov = provider.upper()
 
-    # Provjeri provider cooldown (kratko, bez locka — samo čitanje)
+    # Provjeri provider cooldown
     provider_cooldown_until = _PROVIDER_COOLDOWN_UNTIL.get(prov, 0.0)
     now = time.time()
     if provider_cooldown_until > now:
-        wait = provider_cooldown_until - now
-        # Ograniči čekanje na max 120s da ne blokiramo beskonačno
-        wait = min(wait, 120.0)
+        wait = min(provider_cooldown_until - now, 120.0)
         if wait > 0:
             logger.info("[rate_limiter] %s cooldown aktivan — čekam %.1fs", prov, wait)
             await asyncio.sleep(wait)
-            now = time.time()
 
     base_gap = _provider_gap(prov)
     dynamic_gap = _PROVIDER_DYNAMIC_GAP.get(prov, 0.0)
-    if dynamic_gap > 0:
-        if dynamic_gap > base_gap:
-            logger.debug("[rate_limiter] %s: dinamički gap %.2fs > baza %.2fs", prov, dynamic_gap, base_gap)
-        base_gap = max(base_gap, dynamic_gap)
+    if dynamic_gap > base_gap:
+        logger.debug("[rate_limiter] %s: dinamički gap %.2fs > baza %.2fs", prov, dynamic_gap, base_gap)
+    base_gap = max(base_gap, dynamic_gap)
 
-    # BUG#THROTTLE FIX: koristi per-key timestamp, ne per-provider.
-    # Svaki ključ ima vlastitu liniju vremena — ključevi rade paralelno,
-    # svaki poštuje vlastiti min_gap od svog zadnjeg poziva.
-    gap = base_gap + random.uniform(1.0, 3.0)
-    # BUG FIX (kritičan): asyncio.sleep NE SMI biti unutar locka.
-    # Prethodno: lock zauzet → sleep unutar locka → svi ostali ključevi čekaju
-    # puni gap → efektivno serijalni rad umjesto paralelnog.
-    # Ispravak: unutar locka samo pročitaj/rezerviši slot, spavaj VAN locka.
-    lock = await _ensure_provider_lock(prov)
-    async with lock:
-        if key:
-            with _LAST_CALLS_KEY_LOCK:
-                last = _LAST_CALLS_KEY.get(key, 0.0)
-        else:
-            # Fallback za pozive bez ključa — per-provider (staro ponašanje)
-            last = _LAST_CALLS.get(prov, 0.0)
+    # FIX v13: čitaj STVARNI zadnji timestamp (trenutak slanja), ne timestamp rezervacije.
+    # Bez lock-a na sleep-u — paralelni ključevi ne blokiraju jedni druge.
+    if key:
+        with _LAST_CALLS_KEY_LOCK:
+            last_sent = _LAST_CALLS_KEY.get(key, 0.0)
+    else:
+        last_sent = _LAST_CALLS.get(prov, 0.0)
 
-        wait = (last + gap) - time.time()
-        # Rezerviši slot odmah — ostali ključevi mogu odmah ući u lock
-        # i procijeniti vlastiti wait bez blokiranja na ovom ključu.
-        now2 = time.time() + max(wait, 0)
-        if key:
-            with _LAST_CALLS_KEY_LOCK:
-                _LAST_CALLS_KEY[key] = now2
-        else:
-            _LAST_CALLS[prov] = now2
+    gap = base_gap + random.uniform(0.5, 1.5)   # manji jitter (0.5-1.5s) za bolji throughput
+    wait = (last_sent + gap) - time.time()
 
-    # Sleep VAN locka — paralelni ključevi ne čekaju jedni na druge
     if wait > 0:
-        logger.debug("[rate_limiter] %s ...%s throttle %.2fs (gap=%.2f+jitter)",
+        logger.debug("[rate_limiter] %s ...%s throttle %.2fs (gap=%.1f+jitter)",
                      prov, (key or "")[-4:], wait, base_gap)
         await asyncio.sleep(wait)
+
+    # Bilježi SADA — neposredno pred slanje, ne pri rezervaciji
+    now_sending = time.time()
+    if key:
+        with _LAST_CALLS_KEY_LOCK:
+            _LAST_CALLS_KEY[key] = now_sending
+    else:
+        _LAST_CALLS[prov] = now_sending
 
 
 async def acquire_key(key: str, provider: str | None = None):

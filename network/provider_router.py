@@ -222,13 +222,39 @@ async def _call_ai_engine(
             if self.shared_controls.get("stop"):
                 return None, "N/A"
 
-            key = self.fleet.get_best_key(prov_upper)
-            if not key:
-                # Provjeri je li razlog kratki cooldown ili nema ključeva uopće
-                keys = self.fleet.fleet.get(prov_upper, [])
-                if keys:
+            # GEMINI i GEMMA upravljaju ključevima interno (_call_gemini/gemma_with_rotation).
+            # get_best_key("GEMMA") uvijek vraća None jer GEMMA nema zasebne ključeve u
+            # quota_trackeru — koristi GEMINI ključeve. Zato ih ne blokiramo ovdje.
+            if prov_upper in ("GEMINI", "GEMMA"):
+                # Provjeri ima li GEMINI ključeva uopće (GEMMA koristi iste)
+                gemini_keys = self.fleet.fleet.get("GEMINI", [])
+                if not gemini_keys:
+                    continue
+                # Ako su SVI GEMINI ključevi u dugom cooldownu (>60s) — preskači
+                from network.quota_tracker import quota_tracker
+                has_available_or_short_cd = False
+                for ks in gemini_keys:
+                    ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
+                    if ok:
+                        has_available_or_short_cd = True
+                        break
+                    import re as _re
+                    m = _re.search(r'([\d.]+)s', reason)
+                    secs = float(m.group(1)) if m else 99999.0
+                    if secs <= 60.0:
+                        has_available_or_short_cd = True
+                        break
+                if not has_available_or_short_cd:
                     skipped_due_to_cooldown.append(prov_upper)
-                continue
+                    continue
+            else:
+                key = self.fleet.get_best_key(prov_upper)
+                if not key:
+                    # Provjeri je li razlog kratki cooldown ili nema ključeva uopće
+                    keys = self.fleet.fleet.get(prov_upper, [])
+                    if keys:
+                        skipped_due_to_cooldown.append(prov_upper)
+                    continue
 
             model = self.fleet.get_active_model(prov_upper) or MODEL_MAP.get(prov_upper)
             if not model:

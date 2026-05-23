@@ -310,7 +310,11 @@ class QuotaTracker:
         return kq.is_available()
 
     def set_provider_cooldown(self, provider: str, seconds: float, reason: str = ""):
-        pass
+        """Propagira cooldown na sve kljuceve datog provajdera."""
+        pq = self._get_provider(provider.upper())
+        if pq:
+            pq.set_provider_cooldown(seconds, reason)
+            self._persist_cooldowns()
 
     def set_key_cooldown(self, provider: str, key: str, seconds: float, reason: str = ""):
         pq = self._get_provider(provider.upper())

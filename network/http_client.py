@@ -277,19 +277,11 @@ async def _async_http_post(self, url: str, headers: dict, json_payload: dict,
 
         elif resp.status_code in (429, 425):
             register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
-            ra_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
-            try:
-                retry_after = float(ra_raw) if ra_raw else None
-            except ValueError:
-                retry_after = None
-
-            if retry_after and retry_after > 3600:
-                self.log(f"[{prov_upper}] Dnevna kvota iscrpljena — biram drugi ključ", "warning")
-            else:
-                wait = min(retry_after or 4.0, 120.0) + random.uniform(0.5, 2.0)
-                body_preview = str(resp_body)[:300] if resp_body else "nema body-ja"
-                self.log(f"[{prov_upper}] HTTP 429 — pauza {wait:.1f}s | {body_preview}", "warning")
-                await asyncio.sleep(wait)
+            body_preview = str(resp_body)[:300] if resp_body else "nema body-ja"
+            self.log(f"[{prov_upper}] HTTP 429 — cooldown postavlja quota_tracker | {body_preview}", "warning")
+            # NE spavamo ovdje — analyze_response/quota_tracker vec postavlja cooldown
+            # na kljuc. Sleep ovdje blokira worker, pa kad se probudi svi cekaci
+            # prolaze odjednom (burst). Pravilni throttle je u acquire_key/rate_limiter.
             return None
 
         elif resp.status_code == 500:

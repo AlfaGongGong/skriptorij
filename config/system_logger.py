@@ -122,7 +122,7 @@ def _initialize_system_logger() -> logging.Logger:
         # ── Dedicirani logger za sistem.log ───────────────────────────────────
         sys_logger = logging.getLogger("system")
         sys_logger.setLevel(logging.DEBUG)
-        sys_logger.propagate = True  # propagira i na root (konzola) handler
+        sys_logger.propagate = False  # ne propagira na root — izbjegava duplikate u logu
 
         # File handler — jedan fajl po danu
         file_handler = DailyFileHandler(_LOG_DIR)
