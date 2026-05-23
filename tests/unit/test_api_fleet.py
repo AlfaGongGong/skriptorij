@@ -178,3 +178,19 @@ def test_multiple_analyze_responses(tmp_path):
     assert ks.calls_rejected.get(401, 0) == 1
     # QuotaTracker primjenjuje cooldown nakon 429/401 — ključ je privremeno nedostupan
     assert ks.available is False
+
+
+def test_load_config_clones_gemini_keys_for_gemma(tmp_path):
+    cfg = tmp_path / "dev_api.json"
+    state = tmp_path / "api_state.json"
+    quota_tracker._providers.clear()
+    quota_tracker._PERSIST_PATH = str(tmp_path / "quota_cooldowns.json")
+    cfg.write_text(json.dumps({"GEMINI": ["gem_key_1234567890"]}), "utf-8")
+
+    fm = FleetManager(config_path=str(cfg), state_path=str(state))
+
+    assert "GEMINI" in fm.fleet
+    assert "GEMMA" in fm.fleet
+    assert [ks.key for ks in fm.fleet["GEMMA"]] == [ks.key for ks in fm.fleet["GEMINI"]]
+    ok, _reason = quota_tracker.is_key_available("GEMMA", "gem_key_1234567890")
+    assert ok is True
