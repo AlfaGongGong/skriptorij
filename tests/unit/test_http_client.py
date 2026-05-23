@@ -381,7 +381,7 @@ def test_gemma_rotation_checks_gemma_cooldown_tracker(monkeypatch):
             self.providers.append(provider)
             if provider != "GEMMA":
                 raise AssertionError(f"unexpected provider lookup: {provider}")
-            if len(self.providers) == 1:
+            if len(self.providers) < 3:
                 return False, "cooldown 1s (RPM 429)"
             return True, ""
 
@@ -411,4 +411,4 @@ def test_gemma_rotation_checks_gemma_cooldown_tracker(monkeypatch):
 
     assert content == "GEMMA ODGOVOR"
     assert label == "GEMMA-gemma-4-26b-it"
-    assert fake_quota_tracker.providers == ["GEMMA", "GEMMA"]
+    assert fake_quota_tracker.providers == ["GEMMA", "GEMMA", "GEMMA"]
