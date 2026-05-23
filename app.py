@@ -928,7 +928,7 @@ def create_app() -> Flask:
                 "ok": False,
                 "latency_ms": (_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT) * 1000,
                 "status_code": 0,
-                "error": "Timeout (20s)",
+                "error": f"Timeout ({_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT}s)",
             })
         except FileNotFoundError:
             return jsonify({"error": "Konfiguracija nije pronađena"}), 404
