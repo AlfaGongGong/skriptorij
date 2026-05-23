@@ -7,11 +7,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List
 
+# STVARNI RPD LIMITI (dashboard 23.05.2026, free tier):
+#   gemini-3.5-flash:      RPD=20/ključ  — PREMALO
+#   gemini-2.5-flash:      RPD=20/ključ  — PREMALO
+#   gemini-2.5-flash-lite: RPD= 7/ključ  — ZANEMARIVO
+#   gemini-3.1-flash-lite: RPD=500/ključ — JEDINI KORISTAN
 GOOGLE_MODEL_POOL = [
-    {"model": "gemini-3.5-flash", "rpm": 10, "rpd": 20},
     {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
-    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 20},
-    {"model": "gemini-2.5-flash", "rpm": 10, "rpd": 20},
 ]
 
 GEMMA_MODEL_POOL = [
@@ -19,17 +21,19 @@ GEMMA_MODEL_POOL = [
     {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},
 ]
 
+# GEMMA je nositelj (#1) za sve Google uloge — 1500 RPD/ključ.
+# GEMINI je fallback (#2).
 PROVIDER_PRIORITY = {
-    "PREVODILAC": ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMINI", "GEMMA", "MISTRAL", "OPENROUTER", "GITHUB"],
-    "LEKTOR": ["GEMINI", "GEMMA", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
-    "KOREKTOR": ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "SAMBANOVA", "GITHUB"],
-    "VALIDATOR": ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "GUARDIAN": ["GEMINI", "GEMMA", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
-    "POLISH": ["GEMINI", "GEMMA", "MISTRAL", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
-    "ANALIZA": ["CEREBRAS", "GROQ", "MISTRAL", "SAMBANOVA", "GEMINI", "GITHUB"],
-    "CHAPTER_SUMMARY": ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "GITHUB"],
-    "GLOSAR_UPDATE": ["GEMINI", "GEMMA", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "SCORER": ["GEMINI", "GEMMA", "MISTRAL", "OPENROUTER", "GITHUB"],
+    "PREVODILAC":      ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMMA", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
+    "LEKTOR":          ["GEMMA", "GEMINI", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
+    "KOREKTOR":        ["CEREBRAS", "GROQ", "GEMMA", "GEMINI", "MISTRAL", "SAMBANOVA", "GITHUB"],
+    "VALIDATOR":       ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
+    "GUARDIAN":        ["GEMMA", "GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
+    "POLISH":          ["GEMMA", "GEMINI", "MISTRAL", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
+    "ANALIZA":         ["CEREBRAS", "GROQ", "MISTRAL", "SAMBANOVA", "GEMMA", "GEMINI", "GITHUB"],
+    "CHAPTER_SUMMARY": ["CEREBRAS", "GROQ", "GEMMA", "GEMINI", "MISTRAL", "GITHUB"],
+    "GLOSAR_UPDATE":   ["GEMMA", "GEMINI", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
+    "SCORER":          ["GEMMA", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
 }
 
 AI_MODEL_STRINGS = {
