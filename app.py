@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import time
 import threading
 import traceback
 import requests
@@ -67,6 +68,9 @@ except ImportError:
     SHARED_CONTROLS: dict = {"stop": False, "pause": False, "reset": False}
 
 _engine_thread: threading.Thread | None = None
+_PING_CONNECT_TIMEOUT = 8
+_PING_READ_TIMEOUT = 20
+_MAX_PING_ERROR_LEN = 120
 
 
 # ── Pomoćne ──────────────────────────────────────────────────────────────────
@@ -829,7 +833,6 @@ def create_app() -> Flask:
     @app.route("/api/keys/<provider>/<int:index>/ping", methods=["POST"])
     def api_keys_ping(provider, index):
         try:
-            import time
             from config.ai_config import MODEL_MAP, GOOGLE_MODEL_POOL, get_gemini_url
             from network.provider_urls import get_url as _get_provider_url
 
@@ -875,7 +878,12 @@ def create_app() -> Flask:
                 }
 
             t0 = time.time()
-            resp = requests.post(url, headers=headers, json=payload, timeout=(8, 20))
+            resp = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=(_PING_CONNECT_TIMEOUT, _PING_READ_TIMEOUT),
+            )
             latency = int((time.time() - t0) * 1000)
             sc = resp.status_code
 
@@ -885,9 +893,9 @@ def create_app() -> Flask:
                 try:
                     body = resp.json()
                     err = (
-                        body.get("error", {}).get("message", str(body))[:120]
+                        body.get("error", {}).get("message", str(body))[:_MAX_PING_ERROR_LEN]
                         if isinstance(body, dict)
-                        else str(body)[:120]
+                        else str(body)[:_MAX_PING_ERROR_LEN]
                     )
                 except Exception:
                     err = "Rate limit"
@@ -906,9 +914,9 @@ def create_app() -> Flask:
                 })
 
             try:
-                err = str(resp.json())[:120]
+                err = str(resp.json())[:_MAX_PING_ERROR_LEN]
             except Exception:
-                err = (resp.text or "")[:120]
+                err = (resp.text or "")[:_MAX_PING_ERROR_LEN]
             return jsonify({
                 "ok": False,
                 "latency_ms": latency,
@@ -918,14 +926,14 @@ def create_app() -> Flask:
         except requests.exceptions.Timeout:
             return jsonify({
                 "ok": False,
-                "latency_ms": 20000,
+                "latency_ms": (_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT) * 1000,
                 "status_code": 0,
                 "error": "Timeout (20s)",
             })
         except FileNotFoundError:
             return jsonify({"error": "Konfiguracija nije pronađena"}), 404
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except Exception:
+            return jsonify({"error": "Greška pri testiranju ključa"}), 500
 
     # ═════════════════════════════════════════════════════════════════════════
     # FLEET
