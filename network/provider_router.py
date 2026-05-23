@@ -563,14 +563,21 @@ def init_router_v2(dostupni_kljucevi: Dict[str, List[str]]) -> None:
 
 
 if __name__ == "__main__":
+    def _mask_result(result):
+        if not result:
+            return result
+        provider, model, api_key = result
+        masked = f"...{api_key[-4:]}" if api_key else None
+        return provider, model, masked
+
     router = ProviderRouterV2()
     print("=== Test: prevodilac / dijalog ===")
     result = router.get_best_model("prevodilac", "dijalog")
-    print(f"Rezultat: {result}")
+    print(f"Rezultat: {_mask_result(result)}")
     print()
     print("=== Test: validator ===")
     result2 = router.get_best_model("validator")
-    print(f"Rezultat: {result2}")
+    print(f"Rezultat: {_mask_result(result2)}")
     print()
     print("=== Ranking: prevodilac / poetski ===")
     for score, ime, profil in router.get_ranked_models("prevodilac", "poetski"):

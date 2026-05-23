@@ -64,6 +64,24 @@ def test_google_pool_excludes_dead_models(monkeypatch):
     assert "gemini-3.5-flash" in model_ids
 
 
+def test_google_pool_preserves_static_order_after_dead_filter(monkeypatch):
+    _reset_dead_models()
+    monkeypatch.setattr(
+        "network.model_discovery.get_dead_models",
+        lambda _p: frozenset({"gemini-3.5-flash"}),
+    )
+
+    pool = http_client._get_google_model_pool()
+    model_ids = [m["model"] for m in pool]
+
+    assert model_ids[0] == "gemini-3.1-flash-lite"
+    assert model_ids == [
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash",
+    ]
+
+
 def test_google_pool_all_dead_returns_full_fallback(monkeypatch):
     """Kad su SVI modeli dead, mora se vratiti puni fallback (sigurnosna mreža)."""
     _reset_dead_models()

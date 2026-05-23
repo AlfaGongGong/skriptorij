@@ -380,6 +380,8 @@ async def _call_gemini_with_full_rotation(
             current_model = next_model
             await asyncio.sleep(0.5)
 
+    # Nakon potpune iscrpljenosti vrati svaki ključ na prvi model iz statičkog
+    # poola, tako da sljedeći ciklus opet krene od primarnog stabilnog modela.
     for ks in keys_list:
         _reset_model_for_key(ks.key)
 

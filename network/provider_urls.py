@@ -13,17 +13,16 @@ from config.ai_config import (
 
 
 def get_url(prov):
+    prov_upper = prov.upper()
+    if prov_upper in {"GEMINI", "GEMMA"}:
+        raise ValueError(f"{prov_upper} mora koristiti get_gemini_url(model)")
+
     urls = {
-        # GEMINI: get_url("GEMINI") ne smije biti pozvan direktno — koristi get_gemini_url(model).
-        # Ova stavka je fallback-only i namjerno pogrešna da otkrije greške.
-        # Svaki kod koji poziva get_url("GEMINI") je bug — treba koristiti _call_gemini_with_full_rotation.
-        "GEMINI":      "INVALID_USE_get_gemini_url(model)_NOT_get_url",
         "GROQ":        "https://api.groq.com/openai/v1/chat/completions",
         "CEREBRAS":    "https://api.cerebras.ai/v1/chat/completions",
         "MISTRAL":     "https://api.mistral.ai/v1/chat/completions",
         "SAMBANOVA":   "https://api.sambanova.ai/v1/chat/completions",
         "TOGETHER":    "https://api.together.xyz/v1/chat/completions",
-        "GEMMA":       "INVALID_USE_get_gemini_url(model)_NOT_get_url",
         "OPENROUTER":  "https://openrouter.ai/api/v1/chat/completions",
         "COHERE":      "https://api.cohere.com/v2/chat",
         "GITHUB":      "https://models.inference.ai.azure.com/chat/completions",
@@ -32,6 +31,5 @@ def get_url(prov):
         "HUGGINGFACE": "https://router.huggingface.co/v1/chat/completions",
         "KLUSTER":     "https://api.kluster.ai/v1/chat/completions",
     }
-    return urls.get(prov.upper(), urls["GROQ"])
-
+    return urls.get(prov_upper, urls["GROQ"])
 

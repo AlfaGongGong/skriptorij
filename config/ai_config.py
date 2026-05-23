@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import List
+
 GOOGLE_MODEL_POOL = [
     {"model": "gemini-3.5-flash", "rpm": 10, "rpd": 500},
     {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
@@ -31,6 +34,8 @@ PROVIDER_PRIORITY = {
 
 AI_MODEL_STRINGS = {
     "gemini_25_flash": "gemini-2.5-flash",
+    # Backward-compatible alias: the old gemini_20_flash profile now targets
+    # the stable replacement model after gemini-2.0-flash deprecation.
     "gemini_20_flash": "gemini-3.5-flash",
     "gemini_3_flash": "gemini-3.0-flash",
     "gemini_31_flash_lite": "gemini-3.1-flash-lite",
@@ -92,11 +97,6 @@ def get_next_google_model(current_model: str) -> dict:
 
 def get_model_api_string(profile_name: str, fallback: str = "") -> str:
     return AI_MODEL_STRINGS.get(profile_name, fallback)
-
-
-from dataclasses import dataclass
-from typing import List
-
 
 @dataclass
 class ProviderProfile:
