@@ -30,6 +30,10 @@ import random
 import requests
 import threading
 
+from config.ai_config import (
+    GEMMA_MODEL_POOL as _GEMMA_MODEL_POOL_FALLBACK,
+    GOOGLE_MODEL_POOL as _GOOGLE_MODEL_POOL_FALLBACK,
+)
 from network.rate_limiter import (
     acquire_key,
     release_key,
@@ -50,57 +54,18 @@ def _get_next_proxy() -> dict | None:
 
 
 # ── Google / Gemma model pool ─────────────────────────────────────────────────
-# Model pool — Free tier limiti (dashboard 22.05.2026 + deprecation stranica):
-#
-# DEPRECATION STATUS (ne koristiti deprecated modele kao primarne!):
-#   gemini-2.0-flash      — DEPRECATED, shutdown 1. JUNA 2026 (za ~10 dana) — NE KORISTITI
-#   gemini-2.0-flash-lite — DEPRECATED, shutdown 1. JUNA 2026
-#   gemini-2.5-flash      — shutdown 16. okt 2026, preporuka: migrirati na 3.5-flash
-#   gemini-2.5-flash-lite — shutdown 16. okt 2026, preporuka: migrirati na 3.1-flash-lite
-#   gemini-3.1-flash-lite — STABLE, shutdown maj 2027
-#   gemini-3.5-flash      — STABLE, nema shutdown datuma — najpouzdaniji dugoročno
-#
-# RPD po dashboardu (1 ključ, 22.05.2026):
-#   gemini-2.5-flash/lite — 1500 RPD (ali deprecated)
-#   gemini-3.x            — 500 RPD (stable, dugovječni)
-#
-# STRATEGIJA: primarno 3.5-flash + 3.1-flash-lite (stable, bez shutdown),
-#             2.5 kao fallback dok traju (do okt 2026).
-#             2.0-flash izbačen — shutdown za ~10 dana!
-# Mora biti sinkronizirano s api_fleet.py::GOOGLE_MODEL_POOL
-_GOOGLE_MODEL_POOL_FALLBACK = [
-    {"model": "gemini-3.5-flash",      "rpm": 10, "rpd": 500},   # #1 — STABLE, nema shutdown, best quality
-    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},   # #2 — STABLE, max throughput, shutdown maj 2027
-    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 1500},  # #3 — deprecated okt 2026, visok RPD
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 1500},  # #4 — deprecated okt 2026, bolji kvalitet
-]
-_GEMMA_MODEL_POOL_FALLBACK = [
-    {"model": "gemma-4-26b-it", "rpm": 15, "rpd": 1500},  # #1 — Google native, bolji quality
-    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},  # #2 — alternativa/fallback
-]
 GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
 
 
 def _get_google_model_pool() -> list[dict]:
-    fallback_by_id = {m["model"]: m for m in _GOOGLE_MODEL_POOL_FALLBACK}
     try:
-        from network.model_discovery import get_cached_model_list, get_dead_models
+        from network.model_discovery import get_dead_models
         dead = get_dead_models("GEMINI")
-        discovered = get_cached_model_list("GEMINI")
-        if discovered:
-            pool = [fallback_by_id[mid] for mid in discovered
-                    if mid in fallback_by_id and mid not in dead]
-            existing = {m["model"] for m in pool}
-            for fb in _GOOGLE_MODEL_POOL_FALLBACK:
-                if fb["model"] not in existing and fb["model"] not in dead:
-                    pool.append(fb)
-            return pool if pool else _GOOGLE_MODEL_POOL_FALLBACK
-        if dead:
-            filtered = [m for m in _GOOGLE_MODEL_POOL_FALLBACK if m["model"] not in dead]
-            return filtered if filtered else _GOOGLE_MODEL_POOL_FALLBACK
     except Exception:
-        pass
-    return _GOOGLE_MODEL_POOL_FALLBACK
+        dead = frozenset()
+
+    filtered = [m for m in _GOOGLE_MODEL_POOL_FALLBACK if m["model"] not in dead]
+    return filtered if filtered else _GOOGLE_MODEL_POOL_FALLBACK
 
 
 # ── Per-ključ model cache ─────────────────────────────────────────────────────
@@ -128,6 +93,11 @@ def _rotate_model_for_key(key: str, pool: list[dict] | None = None) -> str | Non
             return None
         _key_model_cache[key] = nxt
     return pool[nxt]["model"]
+
+
+def _reset_model_for_key(key: str, idx: int = 0) -> None:
+    with _key_model_cache_lock:
+        _key_model_cache[key] = idx if idx >= 0 else 0
 
 
 # ── System role podrška ───────────────────────────────────────────────────────
@@ -397,6 +367,7 @@ async def _call_gemini_with_full_rotation(
 
             next_model = _rotate_model_for_key(key, pool)
             if next_model is None:
+                _reset_model_for_key(key)
                 self.log(f"[GEMINI] Svi modeli iscrpljeni za ključ ...{key[-4:]}", "warning")
                 try:
                     from network.model_discovery import trigger_rediscover_background
@@ -408,6 +379,11 @@ async def _call_gemini_with_full_rotation(
             self.log(f"[GEMINI] {current_model} → {next_model}", "warning")
             current_model = next_model
             await asyncio.sleep(0.5)
+
+    # Nakon potpune iscrpljenosti vrati svaki ključ na prvi model iz statičkog
+    # poola, tako da sljedeći ciklus opet krene od primarnog stabilnog modela.
+    for ks in keys_list:
+        _reset_model_for_key(ks.key)
 
     self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
     return None, None

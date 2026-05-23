@@ -31,7 +31,9 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-GEMINI_MODEL = "gemini-2.5-flash"
+from config.ai_config import MORFO_VALIDATOR_MODEL
+
+GEMINI_MODEL = MORFO_VALIDATOR_MODEL
 MAX_CHUNK_ZNAKOVA = 4000
 MIN_ZNAKOVA_ZA_AI = 50
 AUDIT_LOG_PATH = Path("logs/morfo_audit.jsonl")

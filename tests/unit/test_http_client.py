@@ -32,8 +32,8 @@ def test_google_pool_uses_only_whitelisted_models(monkeypatch):
     # Modeli koji nisu u statičkom fallback whitelistu ostaju van poola
     assert "gemini-3-flash" not in model_ids
     assert "some-random-model" not in model_ids
-    # Whitelistirani modeli su prisutni; discovery određuje redosljed
-    assert model_ids[0] == "gemini-2.5-flash"
+    # Whitelistirani modeli su prisutni; statički ai_config redosljed ostaje autoritativan
+    assert model_ids[0] == "gemini-3.5-flash"
     assert "gemini-3.5-flash" in model_ids
 
 
@@ -62,6 +62,24 @@ def test_google_pool_excludes_dead_models(monkeypatch):
     assert dead_model not in model_ids
     # Ostali whitelistirani modeli ostaju
     assert "gemini-3.5-flash" in model_ids
+
+
+def test_google_pool_preserves_static_order_after_dead_filter(monkeypatch):
+    _reset_dead_models()
+    monkeypatch.setattr(
+        "network.model_discovery.get_dead_models",
+        lambda _p: frozenset({"gemini-3.5-flash"}),
+    )
+
+    pool = http_client._get_google_model_pool()
+    model_ids = [m["model"] for m in pool]
+
+    assert model_ids[0] == "gemini-3.1-flash-lite"
+    assert model_ids == [
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash",
+    ]
 
 
 def test_google_pool_all_dead_returns_full_fallback(monkeypatch):
@@ -300,3 +318,42 @@ def test_gemini_fresh_snapshot_picks_up_new_key(monkeypatch):
     assert content == "NOVI_KLJUČ_ODGOVOR", (
         "Svježi snapshot treba uhvatiti novi ključ i uspjeti"
     )
+
+
+def test_gemini_resets_key_model_cache_after_full_exhaustion(monkeypatch):
+    import asyncio
+    import threading
+    from api_fleet import FleetManager, KeyState
+
+    _reset_dead_models()
+    pool = http_client._GOOGLE_MODEL_POOL_FALLBACK
+    key = "RESET_KEY_1234"
+
+    async def fake_async_http_post(client_instance, url, headers, payload,
+                                    prov, prov_upper, key, _proxy=None):
+        return None
+
+    monkeypatch.setattr("network.http_client._async_http_post", fake_async_http_post)
+
+    async def _noop_sleep(_s):
+        pass
+
+    monkeypatch.setattr("asyncio.sleep", _noop_sleep)
+
+    fleet = FleetManager.__new__(FleetManager)
+    fleet.lock = threading.Lock()
+    fleet.fleet = {"GEMINI": [KeyState(key, "GEMINI")]}
+    fleet.resolved_models = {"GEMINI": pool[0]["model"]}
+    fleet._rr_index = {}
+
+    class FakeEngine:
+        def __init__(self, fleet_obj):
+            self.fleet = fleet_obj
+
+        def log(self, msg, level="info"):
+            pass
+
+    http_client._key_model_cache[key] = len(pool) - 1
+    asyncio.run(http_client._call_gemini_with_full_rotation(FakeEngine(fleet), None, "test", 0.5, 100))
+
+    assert http_client._get_model_for_key(key, pool) == pool[0]["model"]

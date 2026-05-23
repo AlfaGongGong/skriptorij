@@ -9,6 +9,7 @@ import time
 import requests
 from flask import Blueprint, jsonify, request
 
+from config.ai_config import GOOGLE_MODEL_POOL, MODEL_MAP, get_gemini_url
 from config.settings import CONFIG_PATH
 from network.provider_urls import get_url as _get_provider_url
 
@@ -155,22 +156,28 @@ def ping_key(provider, idx):
     if not key:
         return jsonify({"error": "Prazan ključ"}), 400
 
-    from network.http_client import GOOGLE_MODEL_POOL
-    from network.provider_router import MODEL_MAP
-    url   = _get_provider_url(prov_upper)
     model = MODEL_MAP.get(prov_upper, "")
     if not model and prov_upper == "GEMINI":
         model = GOOGLE_MODEL_POOL[0]["model"]
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {key}",
-    }
-    payload = {
-        "model": model,
-        "max_tokens": 1,
-        "messages": [{"role": "user", "content": "ok"}],
-    }
+    if prov_upper in ("GEMINI", "GEMMA"):
+        url = f"{get_gemini_url(model)}?key={key}"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": "ok"}]}],
+            "generationConfig": {"temperature": 0.0, "maxOutputTokens": 1},
+        }
+    else:
+        url = _get_provider_url(prov_upper)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {key}",
+        }
+        payload = {
+            "model": model,
+            "max_tokens": 1,
+            "messages": [{"role": "user", "content": "ok"}],
+        }
 
     t0 = time.time()
     try:

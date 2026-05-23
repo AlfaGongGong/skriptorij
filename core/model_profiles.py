@@ -8,6 +8,8 @@ i anti-patterne karakteristične za taj model.
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 
+from config.ai_config import AI_MODEL_STRINGS
+
 
 @dataclass
 class ModelProfile:
@@ -54,7 +56,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "gemini_25_flash": ModelProfile(
         ime="gemini_25_flash",
         provider="gemini",
-        api_model_string="gemini-2.5-flash-preview-05-20",
+        api_model_string=AI_MODEL_STRINGS["gemini_25_flash"],
         rpm_limit=10,
         rpd_limit=500,
         snage=[
@@ -90,12 +92,15 @@ PROFILI: Dict[str, ModelProfile] = {
         notes="Primarni model za kvalitetne prolaze. Sklon meta-komentarima — anti_meta patch obavezan.",
     ),
 
+    # Backward-compatible profile key retained so older references keep working,
+    # but the actual API target is now the stable replacement model.
     "gemini_20_flash": ModelProfile(
         ime="gemini_20_flash",
         provider="gemini",
-        api_model_string="gemini-2.0-flash",
-        rpm_limit=15,
-        rpd_limit=1500,
+        api_model_string=AI_MODEL_STRINGS["gemini_20_flash"],
+        # Stable replacement limits are lower than the retired 2.0 profile.
+        rpm_limit=10,
+        rpd_limit=500,
         snage=[
             "brz",
             "pouzdan",
@@ -120,13 +125,13 @@ PROFILI: Dict[str, ModelProfile] = {
         temp_lektor=0.68,
         temp_validator=0.35,
         max_tokens_chunk=2048,
-        notes="Pouzdana alternativa za gemini_25_flash kada je rpm limit dostignut.",
+        notes="Kompatibilni profil sada koristi stable gemini-3.5-flash nakon gašenja gemini-2.0-flash.",
     ),
 
     "gemini_3_flash": ModelProfile(
         ime="gemini_3_flash",
         provider="gemini",
-        api_model_string="gemini-3.0-flash",
+        api_model_string=AI_MODEL_STRINGS["gemini_3_flash"],
         temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
         max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
@@ -141,7 +146,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "gemini_31_flash_lite": ModelProfile(
         ime="gemini_31_flash_lite",
         provider="gemini",
-        api_model_string="gemini-3.1-flash-lite-preview-06-17",
+        api_model_string=AI_MODEL_STRINGS["gemini_31_flash_lite"],
         temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
         max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
@@ -156,7 +161,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "gemini_25_flash_lite": ModelProfile(
         ime="gemini_25_flash_lite",
         provider="gemini",
-        api_model_string="gemini-2.5-flash-lite-preview-06-17",
+        api_model_string=AI_MODEL_STRINGS["gemini_25_flash_lite"],
         temperatura_po_ulozi={"prevodilac": 0.3, "lektor": 0.2, "validator": 0.1},
         max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
@@ -171,7 +176,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "gemma4_26b": ModelProfile(
         ime="gemma4_26b",
         provider="gemini",
-        api_model_string="gemma-4-26b-it",
+        api_model_string=AI_MODEL_STRINGS["gemma4_26b"],
         temperatura_po_ulozi={"prevodilac": 0.4, "lektor": 0.3, "validator": 0.15},
         max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
@@ -187,7 +192,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "gemma4_31b": ModelProfile(
         ime="gemma4_31b",
         provider="gemini",
-        api_model_string="gemma-4-31b-it",
+        api_model_string=AI_MODEL_STRINGS["gemma4_31b"],
         temperatura_po_ulozi={"prevodilac": 0.4, "lektor": 0.3, "validator": 0.15},
         max_tokens_po_ulozi={"prevodilac": 2048, "lektor": 2048, "validator": 1024},
         anti_patterne=[
@@ -203,7 +208,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "gemma3_27b": ModelProfile(
         ime="gemma3_27b",
         provider="gemini",
-        api_model_string="gemma-3-27b-it",
+        api_model_string=AI_MODEL_STRINGS["gemma3_27b"],
         rpm_limit=30,
         rpd_limit=14400,
         snage=[
@@ -239,7 +244,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "llama33_70b_groq": ModelProfile(
         ime="llama33_70b_groq",
         provider="groq",
-        api_model_string="llama-3.3-70b-versatile",
+        api_model_string=AI_MODEL_STRINGS["llama33_70b_groq"],
         rpm_limit=30,
         rpd_limit=14400,
         snage=[
@@ -275,7 +280,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "llama31_70b_cerebras": ModelProfile(
         ime="llama31_70b_cerebras",
         provider="cerebras",
-        api_model_string="llama-3.1-70b",
+        api_model_string=AI_MODEL_STRINGS["llama31_70b_cerebras"],
         rpm_limit=30,
         rpd_limit=0,
         snage=[
@@ -312,7 +317,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "mistral_large": ModelProfile(
         ime="mistral_large",
         provider="mistral",
-        api_model_string="mistral-large-latest",
+        api_model_string=AI_MODEL_STRINGS["mistral_large"],
         rpm_limit=10,
         rpd_limit=0,
         snage=[
@@ -342,7 +347,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "mistral_nemo": ModelProfile(
         ime="mistral_nemo",
         provider="mistral",
-        api_model_string="open-mistral-nemo",
+        api_model_string=AI_MODEL_STRINGS["mistral_nemo"],
         rpm_limit=10,
         rpd_limit=0,
         snage=[
@@ -367,7 +372,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "command_r_plus_cohere": ModelProfile(
         ime="command_r_plus_cohere",
         provider="cohere",
-        api_model_string="command-r-plus",
+        api_model_string=AI_MODEL_STRINGS["command_r_plus_cohere"],
         rpm_limit=10,
         rpd_limit=1000,
         snage=[
@@ -396,7 +401,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "llama_sambanova": ModelProfile(
         ime="llama_sambanova",
         provider="sambanova",
-        api_model_string="Meta-Llama-3.1-70B-Instruct",
+        api_model_string=AI_MODEL_STRINGS["llama_sambanova"],
         rpm_limit=10,
         rpd_limit=0,
         snage=[
@@ -424,7 +429,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "deepseek_openrouter": ModelProfile(
         ime="deepseek_openrouter",
         provider="openrouter",
-        api_model_string="deepseek/deepseek-chat",
+        api_model_string=AI_MODEL_STRINGS["deepseek_openrouter"],
         rpm_limit=10,
         rpd_limit=0,
         snage=[
@@ -451,7 +456,7 @@ PROFILI: Dict[str, ModelProfile] = {
     "qwen_chutes": ModelProfile(
         ime="qwen_chutes",
         provider="chutes",
-        api_model_string="Qwen/Qwen2.5-72B-Instruct",
+        api_model_string=AI_MODEL_STRINGS["qwen_chutes"],
         rpm_limit=10,
         rpd_limit=0,
         snage=[

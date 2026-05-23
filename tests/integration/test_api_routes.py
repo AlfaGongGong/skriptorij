@@ -1,13 +1,16 @@
 
 
 """Integration testovi za API rute."""
+import json
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 import pytest
+from flask import Flask
 from app import create_app
+from config.ai_config import MODEL_MAP
 
 
 @pytest.fixture
@@ -101,4 +104,74 @@ def test_start_missing_book(client):
     assert resp.status_code == 400
 
 
+def test_ping_key_uses_gemini_native_payload(client, tmp_path, monkeypatch):
+    import api.routes.keys as keys_routes
 
+    cfg = tmp_path / "dev_api.json"
+    cfg.write_text(json.dumps({"GEMINI": ["gem_test_key"]}), "utf-8")
+    monkeypatch.setattr(keys_routes, "CONFIG_PATH", str(cfg))
+    app = Flask(__name__)
+    app.register_blueprint(keys_routes.bp)
+
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {}
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        captured["url"] = url
+        captured["headers"] = headers
+        captured["json"] = json
+        return FakeResponse()
+
+    monkeypatch.setattr(keys_routes.requests, "post", fake_post)
+
+    with app.test_client() as local_client:
+        resp = local_client.post("/api/keys/GEMINI/0/ping")
+
+    assert resp.status_code == 200
+    assert "/v1beta/models/" in captured["url"]
+    assert "?key=gem_test_key" in captured["url"]
+    assert "Authorization" not in captured["headers"]
+    assert "contents" in captured["json"]
+    assert "messages" not in captured["json"]
+
+
+def test_ping_key_uses_gemma_native_payload(client, tmp_path, monkeypatch):
+    import api.routes.keys as keys_routes
+
+    cfg = tmp_path / "dev_api.json"
+    cfg.write_text(json.dumps({"GEMMA": ["gemma_test_key"]}), "utf-8")
+    monkeypatch.setattr(keys_routes, "CONFIG_PATH", str(cfg))
+    app = Flask(__name__)
+    app.register_blueprint(keys_routes.bp)
+
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {}
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        captured["url"] = url
+        captured["headers"] = headers
+        captured["json"] = json
+        return FakeResponse()
+
+    monkeypatch.setattr(keys_routes.requests, "post", fake_post)
+
+    with app.test_client() as local_client:
+        resp = local_client.post("/api/keys/GEMMA/0/ping")
+
+    default_gemma_model = MODEL_MAP["GEMMA"]
+    assert resp.status_code == 200
+    assert f"/v1beta/models/{default_gemma_model}:generateContent" in captured["url"]
+    assert "?key=gemma_test_key" in captured["url"]
+    assert "Authorization" not in captured["headers"]
+    assert "contents" in captured["json"]
+    assert "messages" not in captured["json"]

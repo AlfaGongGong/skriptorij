@@ -23,6 +23,7 @@ import threading
 from pathlib import Path
 
 from config.system_logger import syslog
+from config.ai_config import GOOGLE_MODEL_POOL, get_google_model_for_key, get_next_google_model
 from network.quota_tracker import quota_tracker
 
 logger = logging.getLogger(__name__)
@@ -171,6 +172,12 @@ class FleetManager:
             logger.debug("[FleetManager] Stanje ključeva učitano iz %s", self.state_path)
         except Exception:
             saved = {}
+
+        if "GEMINI" in raw and "GEMMA" not in raw:
+            raw["GEMMA"] = raw["GEMINI"]
+
+        self.fleet = {}
+        self._rr_index = {}
 
         for prov, data in raw.items():
             prov_u = prov.upper()
@@ -532,31 +539,3 @@ class FleetManager:
         return None
 
 
-# ── Google model pool ─────────────────────────────────────────────────────────
-# Sinkronizirano s http_client.py::_GOOGLE_MODEL_POOL_FALLBACK (22.05.2026)
-#
-# DEPRECATION STATUS:
-#   gemini-2.0-flash      — DEPRECATED, shutdown 1. juna 2026 — IZBAČEN
-#   gemini-2.5-flash/lite — deprecated okt 2026, ali RPD=1500 → fallback dok traju
-#   gemini-3.1-flash-lite — STABLE, shutdown maj 2027
-#   gemini-3.5-flash      — STABLE, nema shutdown datuma — PRIMARNI
-#
-# RPD (dashboard 22.05.2026): 3.x = 500/key, 2.5 = 1500/key
-# Poredano: stable modeli prvi, deprecated fallback
-GOOGLE_MODEL_POOL = [
-    {"model": "gemini-3.5-flash",      "rpm": 10, "rpd": 500},   # #1 — STABLE, nema shutdown, best quality
-    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},   # #2 — STABLE, max throughput
-    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 1500},  # #3 — deprecated okt 2026, visok RPD
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 1500},  # #4 — deprecated okt 2026, bolji kvalitet
-]
-
-
-def get_google_model_for_key(key_index):
-    return GOOGLE_MODEL_POOL[key_index % len(GOOGLE_MODEL_POOL)]
-
-
-def get_next_google_model(current_model):
-    for i, m in enumerate(GOOGLE_MODEL_POOL):
-        if m["model"] == current_model:
-            return GOOGLE_MODEL_POOL[(i + 1) % len(GOOGLE_MODEL_POOL)]
-    return GOOGLE_MODEL_POOL[0]

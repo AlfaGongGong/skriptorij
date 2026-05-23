@@ -171,14 +171,28 @@ def _score_model_strength(provider: str, model_id: str) -> float:
     elif "qwen" in m:
         score += 1.0
 
-    if "gemini-3" in m:
-        score += 7.0
-    elif "gemini-2.5" in m:
-        score += 6.0
-    elif "gemini-2.0" in m:
-        score += 5.0
-    elif "gemini-1.5" in m:
-        score += 3.0
+    if provider.upper() == "GEMINI":
+        if "gemini-3.5-flash" in m:
+            score += 8.0
+        elif "gemini-3.1-flash-lite" in m:
+            score += 7.5
+        elif "gemini-2.5-flash-lite" in m:
+            score += 5.5
+        elif "gemini-2.5-flash" in m:
+            score += 5.0
+        elif "gemini-2.0" in m:
+            score -= 20.0
+        elif "gemini-1.5" in m:
+            score += 1.0
+    else:
+        if "gemini-3" in m:
+            score += 7.0
+        elif "gemini-2.5" in m:
+            score += 6.0
+        elif "gemini-2.0" in m:
+            score += 5.0
+        elif "gemini-1.5" in m:
+            score += 3.0
 
     if "gemma-4" in m or "gemma4" in m:
         score += 3.5
