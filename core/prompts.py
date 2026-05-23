@@ -456,7 +456,7 @@ PRAVILA — OBAVEZNA:
 5. Vraćaš SAMO prevedeni tekst — bez komentara, objašnjenja, zaglavlja.
 6. Čuvaš stil i ton originala (dijalog, naracija, atmosfera).
 7. Vlastita imena likova i mjesta čuvaš iz glosara — ne mijenjaš ih.
-8. Glagolske oblike birišpravno: "uzdisnuo" → "uzdahnuo", "popivajući" → "ispijajući".
+8. Glagolske oblike biraš ispravno: "uzdisnuo" → "uzdahnuo", "popivajući" → "ispijajući".
 """
 
 BASE_LEKTOR = """Ti si vrhunski lektor za bosanski/hrvatski jezik i književni stil.
