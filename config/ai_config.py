@@ -8,10 +8,10 @@ from dataclasses import dataclass
 from typing import List
 
 GOOGLE_MODEL_POOL = [
-    {"model": "gemini-3.5-flash", "rpm": 10, "rpd": 500},
+    {"model": "gemini-3.5-flash", "rpm": 10, "rpd": 20},
     {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
-    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 1500},
-    {"model": "gemini-2.5-flash", "rpm": 10, "rpd": 1500},
+    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 20},
+    {"model": "gemini-2.5-flash", "rpm": 10, "rpd": 20},
 ]
 
 GEMMA_MODEL_POOL = [
@@ -24,12 +24,12 @@ PROVIDER_PRIORITY = {
     "LEKTOR": ["GEMINI", "GEMMA", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
     "KOREKTOR": ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "SAMBANOVA", "GITHUB"],
     "VALIDATOR": ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "GUARDIAN": ["GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
-    "POLISH": ["GEMINI", "MISTRAL", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
+    "GUARDIAN": ["GEMINI", "GEMMA", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
+    "POLISH": ["GEMINI", "GEMMA", "MISTRAL", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
     "ANALIZA": ["CEREBRAS", "GROQ", "MISTRAL", "SAMBANOVA", "GEMINI", "GITHUB"],
     "CHAPTER_SUMMARY": ["CEREBRAS", "GROQ", "GEMINI", "MISTRAL", "GITHUB"],
-    "GLOSAR_UPDATE": ["GEMINI", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "SCORER": ["GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
+    "GLOSAR_UPDATE": ["GEMINI", "GEMMA", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
+    "SCORER": ["GEMINI", "GEMMA", "MISTRAL", "OPENROUTER", "GITHUB"],
 }
 
 AI_MODEL_STRINGS = {
@@ -70,7 +70,7 @@ MODEL_MAP = {
     "GITHUB": "gpt-4o",
 }
 
-MORFO_VALIDATOR_MODEL = GOOGLE_MODEL_POOL[0]["model"]
+MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"
 
 GEMINI_BASE_URL = "https://booklyfi.jasenkobozinovic.workers.dev"
 GEMINI_DIRECT_BASE_URL = "https://generativelanguage.googleapis.com"

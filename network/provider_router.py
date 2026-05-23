@@ -203,9 +203,10 @@ async def _call_ai_engine(
                     continue
                 # Ako su SVI GEMINI ključevi u dugom cooldownu (>60s) — preskači
                 from network.quota_tracker import quota_tracker
+                quota_provider = "GEMMA" if prov_upper == "GEMMA" else "GEMINI"
                 has_available_or_short_cd = False
                 for ks in gemini_keys:
-                    ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
+                    ok, reason = quota_tracker.is_key_available(quota_provider, ks.key)
                     if ok:
                         has_available_or_short_cd = True
                         break

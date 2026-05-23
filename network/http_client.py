@@ -402,15 +402,19 @@ async def _call_gemma_with_rotation(
     preferred_model: str = None,
 ):
     from network.provider_urls import get_gemini_url
+    from network.quota_tracker import quota_tracker
 
     # Koristi GEMINI ključeve (Gemma 4 je na Google API-u)
     _all_ks = self.fleet.fleet.get("GEMINI", [])
-    keys_list = [ks for ks in _all_ks if ks.available]
+    keys_list = []
+    for ks in _all_ks:
+        ok, _reason = quota_tracker.is_key_available("GEMMA", ks.key)
+        if ok:
+            keys_list.append(ks)
     if not keys_list and _all_ks:
-        from network.quota_tracker import quota_tracker
         waits = []
         for ks in _all_ks:
-            ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
+            ok, reason = quota_tracker.is_key_available("GEMMA", ks.key)
             if not ok:
                 import re as _re
                 m = _re.search(r'([\d.]+)s', reason)
@@ -421,7 +425,11 @@ async def _call_gemma_with_rotation(
             wait_s = min(waits) + 0.5
             self.log(f"[GEMMA] Svi ključevi u kratkom cooldownu — čekam {wait_s:.1f}s", "warning")
             await asyncio.sleep(wait_s)
-            keys_list = [ks for ks in _all_ks if ks.available]
+            keys_list = []
+            for ks in _all_ks:
+                ok, _reason = quota_tracker.is_key_available("GEMMA", ks.key)
+                if ok:
+                    keys_list.append(ks)
     if not keys_list:
         self.log("[GEMMA] Nema dostupnih GEMINI ključeva", "warning")
         return None, None
@@ -457,7 +465,8 @@ async def _call_gemma_with_rotation(
                 if content:
                     return content, f"GEMMA-{current_model}"
 
-            if not ks.available:
+            key_ok, _reason = quota_tracker.is_key_available("GEMMA", key)
+            if not key_ok:
                 self.log(
                     f"[GEMMA] Ključ ...{key[-4:]} u cooldownu — preskačem na sljedeći ključ",
                     "warning",
