@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 import pytest
 from flask import Flask
 from app import create_app
+from config.ai_config import MODEL_MAP
 
 
 @pytest.fixture
@@ -168,9 +169,8 @@ def test_ping_key_uses_gemma_native_payload(client, tmp_path, monkeypatch):
         resp = local_client.post("/api/keys/GEMMA/0/ping")
 
     assert resp.status_code == 200
-    assert "/v1beta/models/gemma-4-26b-it:generateContent" in captured["url"]
+    assert f"/v1beta/models/{MODEL_MAP['GEMMA']}:generateContent" in captured["url"]
     assert "?key=gemma_test_key" in captured["url"]
     assert "Authorization" not in captured["headers"]
     assert "contents" in captured["json"]
     assert "messages" not in captured["json"]
-

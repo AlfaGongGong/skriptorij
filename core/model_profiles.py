@@ -92,6 +92,8 @@ PROFILI: Dict[str, ModelProfile] = {
         notes="Primarni model za kvalitetne prolaze. Sklon meta-komentarima — anti_meta patch obavezan.",
     ),
 
+    # Backward-compatible profile key retained so older references keep working,
+    # but the actual API target is now the stable replacement model.
     "gemini_20_flash": ModelProfile(
         ime="gemini_20_flash",
         provider="gemini",

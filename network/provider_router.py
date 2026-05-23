@@ -564,11 +564,9 @@ def init_router_v2(dostupni_kljucevi: Dict[str, List[str]]) -> None:
 
 if __name__ == "__main__":
     def _mask_result(result):
-        if not result:
+        if not isinstance(result, tuple) or len(result) < 2:
             return result
-        provider, model, api_key = result
-        masked = f"...{api_key[-4:]}" if api_key else None
-        return provider, model, masked
+        return result[:2]
 
     router = ProviderRouterV2()
     print("=== Test: prevodilac / dijalog ===")

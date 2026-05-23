@@ -385,56 +385,56 @@ try:
     from core.model_profiles import PROFILI, get_anti_patterne, get_temp, get_max_tokens
     _profiles_ok = True
 except ImportError:
-    logger.warning("workers_v2: core.model_profiles nije dostupan, koristim defaults")
+    logger.warning("workers: core.model_profiles nije dostupan, koristim defaults")
     _profiles_ok = False
 
 try:
     from core.prompts_v2 import get_system_prompt
     _prompts_v2_ok = True
 except ImportError:
-    logger.warning("workers_v2: core.prompts_v2 nije dostupan, koristim core.prompts")
+    logger.warning("workers: core.prompts_v2 nije dostupan, koristim core.prompts")
     _prompts_v2_ok = False
 
 try:
     from core.prompt_injector import PromptInjector
     _injector_ok = True
 except ImportError:
-    logger.warning("workers_v2: core.prompt_injector nije dostupan")
+    logger.warning("workers: core.prompt_injector nije dostupan")
     _injector_ok = False
 
 try:
     from core.kalkovi.engine import kalkovi_engine
     _kalkovi_ok = True
 except ImportError:
-    logger.warning("workers_v2: kalkovi_engine nije dostupan")
+    logger.warning("workers: kalkovi_engine nije dostupan")
     _kalkovi_ok = False
 
 try:
     from core.validators.morfo_validator import morfo_validator
     _validator_ok = True
 except ImportError:
-    logger.warning("workers_v2: morfo_validator nije dostupan")
+    logger.warning("workers: morfo_validator nije dostupan")
     _validator_ok = False
 
 try:
     from network.provider_router_v2 import provider_router_v2
     _router_v2_ok = True
 except ImportError:
-    logger.warning("workers_v2: provider_router_v2 nije dostupan")
+    logger.warning("workers: provider_router_v2 nije dostupan")
     _router_v2_ok = False
 
 try:
     from core.quality import ocijeni_kvalitet
     _quality_ok = True
 except ImportError:
-    logger.warning("workers_v2: core.quality nije dostupan")
+    logger.warning("workers: core.quality nije dostupan")
     _quality_ok = False
 
 try:
     from core.qa_benchmark import qa_benchmark as _qa_benchmark
     _qa_benchmark_ok = True
 except ImportError:
-    logger.warning("workers_v2: core.qa_benchmark nije dostupan")
+    logger.warning("workers: core.qa_benchmark nije dostupan")
     _qa_benchmark_ok = False
 
 # Korak 11 — Dinamicki detektor (pasivni mod)
