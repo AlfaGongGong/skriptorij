@@ -7,17 +7,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List
 
-# STVARNI RPD LIMITI (dashboard 23.05.2026, free tier):
-#   gemini-3.5-flash:      RPD=20/ključ  — PREMALO
-#   gemini-2.5-flash:      RPD=20/ključ  — PREMALO
-#   gemini-2.5-flash-lite: RPD= 7/ključ  — ZANEMARIVO
-#   gemini-3.1-flash-lite: RPD=500/ključ — JEDINI KORISTAN
+# RPD limiti (free tier, maj 2026):
+#   gemini-3.5-flash:      10 RPM / 20 RPD  — primarni, stabilan
+#   gemini-3.1-flash-lite: 15 RPM / 500 RPD — visok RPD fallback
+#   gemini-2.5-flash-lite: 15 RPM / 20 RPD
+#   gemini-2.5-flash:      10 RPM / 20 RPD
 GOOGLE_MODEL_POOL = [
+    {"model": "gemini-3.5-flash",     "rpm": 10, "rpd": 20},
     {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
+    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 20},
+    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 20},
 ]
 
 GEMMA_MODEL_POOL = [
-    {"model": "gemma-4-26b-a4b-it", "rpm": 15, "rpd": 1500},
+    {"model": "gemma-4-26b-it", "rpm": 15, "rpd": 1500},
     {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},
 ]
 
@@ -89,7 +92,7 @@ AI_MODEL_STRINGS = {
     "gemini_3_flash": "gemini-3.0-flash",
     "gemini_31_flash_lite": "gemini-3.1-flash-lite",
     "gemini_25_flash_lite": "gemini-2.5-flash-lite",
-    "gemma4_26b": "gemma-4-26b-a4b-it",
+    "gemma4_26b": "gemma-4-26b-it",
     "gemma4_31b": "gemma-4-31b-it",
     "gemma3_27b": "gemma-3-27b-it",
     "llama33_70b_groq": "llama-3.3-70b-versatile",

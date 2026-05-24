@@ -1,13 +1,34 @@
-# network/provider_router.py
-# BUGFIX:
-#   B21: Debug log "[DEBUG VALIDATOR] provider=..." ostao u produkciji —
-#        uklonjen. Taj log se ispisivao za SVAKI AI poziv.
+"""network/provider_router.py
+
+AI routing logika. Odabir provajdera i modela prema ulozi, tipu bloka i dostupnosti.
+"""
 
 import random
 import asyncio
+import logging
+from typing import Optional, Tuple, List, Dict
+
 from config.ai_config import MODEL_MAP, PROVIDER_PRIORITY
 from core.text_utils import _adaptive_temp
+from core.model_profiles import PROFILI, ModelProfile
 from network.http_client import _call_single_provider, ContentFilterError
+
+try:
+    from network.provider_profiles import (
+        should_avoid_for_role as _pp_avoid,
+        get_quality_tier as _pp_tier,
+    )
+    _PROFILES_OK = True
+except ImportError:
+    _PROFILES_OK = False
+    def _pp_avoid(provider: str, role: str) -> bool:
+        return False
+    def _pp_tier(provider: str) -> int:
+        return 3
+
+logger = logging.getLogger(__name__)
+
+# ── Temperatura i token mape po ulozi ────────────────────────────────────────
 
 TEMP_MAP = {
     "PREVODILAC":      0.32,
@@ -38,81 +59,76 @@ MAX_TOKENS_MAP = {
 _MODEL_TUNING_BY_ID = {
     "gemini-3.5-flash": {
         "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
-        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
-        "SCORER":    {"temp_mul": 0.70, "max_tokens": 256},
+        "LEKTOR":     {"temp_mul": 0.90, "max_tokens": 2200},
+        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 700},
+        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
+        "SCORER":     {"temp_mul": 0.70, "max_tokens": 256},
     },
     "gemini-3.1-flash-lite": {
         "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2000},
-        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2000},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 600},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1600},
-        "SCORER":    {"temp_mul": 0.70, "max_tokens": 256},
+        "LEKTOR":     {"temp_mul": 0.92, "max_tokens": 2000},
+        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 600},
+        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1600},
+        "SCORER":     {"temp_mul": 0.70, "max_tokens": 256},
     },
     "gemini-2.5-flash": {
         "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
-        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
-        "SCORER":    {"temp_mul": 0.70, "max_tokens": 256},
+        "LEKTOR":     {"temp_mul": 0.90, "max_tokens": 2200},
+        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 700},
+        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
+        "SCORER":     {"temp_mul": 0.70, "max_tokens": 256},
     },
     "gemini-2.5-flash-lite": {
         "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2000},
-        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2000},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 600},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1600},
-        "SCORER":    {"temp_mul": 0.70, "max_tokens": 256},
+        "LEKTOR":     {"temp_mul": 0.92, "max_tokens": 2000},
+        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 600},
+        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1600},
+        "SCORER":     {"temp_mul": 0.70, "max_tokens": 256},
     },
     "gemini-2.0-flash": {
         "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
-        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
-        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
+        "LEKTOR":     {"temp_mul": 0.90, "max_tokens": 2200},
+        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 700},
+        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
     },
     "gemma-4-26b-it": {
         "PREVODILAC": {"temp_mul": 0.82, "max_tokens": 1800},
-        "LEKTOR": {"temp_mul": 0.85, "max_tokens": 1800},
-        "VALIDATOR": {"temp_mul": 0.70, "max_tokens": 600},
-        "KOREKTOR": {"temp_mul": 0.95, "max_tokens": 1400},
+        "LEKTOR":     {"temp_mul": 0.85, "max_tokens": 1800},
+        "VALIDATOR":  {"temp_mul": 0.70, "max_tokens": 600},
+        "KOREKTOR":   {"temp_mul": 0.95, "max_tokens": 1400},
     },
     "mistral-small-latest": {
         "PREVODILAC": {"temp_mul": 0.92, "max_tokens": 2400},
-        "LEKTOR": {"temp_mul": 0.95, "max_tokens": 2400},
-        "VALIDATOR": {"temp_mul": 0.85, "max_tokens": 700},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 2000},
+        "LEKTOR":     {"temp_mul": 0.95, "max_tokens": 2400},
+        "VALIDATOR":  {"temp_mul": 0.85, "max_tokens": 700},
+        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 2000},
     },
     "command-r-plus-08-2024": {
         "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2200},
-        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2200},
-        "VALIDATOR": {"temp_mul": 0.80, "max_tokens": 700},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
+        "LEKTOR":     {"temp_mul": 0.92, "max_tokens": 2200},
+        "VALIDATOR":  {"temp_mul": 0.80, "max_tokens": 700},
+        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
     },
     "gpt-4o": {
         "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2400},
-        "LEKTOR": {"temp_mul": 0.93, "max_tokens": 2400},
-        "VALIDATOR": {"temp_mul": 0.80, "max_tokens": 700},
-        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
+        "LEKTOR":     {"temp_mul": 0.93, "max_tokens": 2400},
+        "VALIDATOR":  {"temp_mul": 0.80, "max_tokens": 700},
+        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
     },
 }
 
 _MODEL_FAMILY_TUNING = {
     "gemini-": {"temp_mul": 0.90, "max_tokens": 2200},
-    "gemma-": {"temp_mul": 0.84, "max_tokens": 1800},
-    "mistral": {"temp_mul": 0.95, "max_tokens": 2400},
-    "command-r": {"temp_mul": 0.92, "max_tokens": 2200},
-    "gpt-4": {"temp_mul": 0.93, "max_tokens": 2400},
-    "llama": {"temp_mul": 0.98, "max_tokens": 2600},
-    "deepseek": {"temp_mul": 0.95, "max_tokens": 2300},
+    "gemma-":  {"temp_mul": 0.84, "max_tokens": 1800},
+    "mistral":     {"temp_mul": 0.95, "max_tokens": 2400},
+    "command-r":   {"temp_mul": 0.92, "max_tokens": 2200},
+    "gpt-4":       {"temp_mul": 0.93, "max_tokens": 2400},
+    "llama":       {"temp_mul": 0.98, "max_tokens": 2600},
+    "deepseek":    {"temp_mul": 0.95, "max_tokens": 2300},
 }
 
 
 def _resolve_model_generation_params(uloga: str, model: str, base_temp: float, base_max_tokens: int) -> tuple[float, int]:
-    """
-    Model-specifični tuning preko:
-      1) tačnog model ID override-a
-      2) fallback family heuristike
-    """
     role = (uloga or "").upper()
     model_l = (model or "").lower()
 
@@ -140,9 +156,6 @@ async def _call_ai_engine(
     uloga="LEKTOR", filename="",
     sys_override=None, tip_bloka="naracija"
 ):
-    """
-    B21 FIX: Uklonjen debug log koji se ispisivao za svaki AI poziv.
-    """
     svi_upper = {p.upper() for p in self.fleet.fleet.keys()}
     base_temp = _adaptive_temp(uloga, tip_bloka, TEMP_MAP.get(uloga, 0.35))
     base_max_tokens = MAX_TOKENS_MAP.get(uloga, 2400)
@@ -176,16 +189,11 @@ async def _call_ai_engine(
             sys_c = QUALITY_SCORER_SYS
 
     preferred = PROVIDER_PRIORITY.get(uloga, [])
-    ordered = []
-    for p in preferred:
-        if p in svi_upper:
-            ordered.append(p)
+    ordered = [p for p in preferred if p in svi_upper]
     for p in svi_upper:
         if p not in ordered:
             ordered.append(p)
 
-    # MAX 2 prolaza kroz listu — drugi prolaz se dešava samo ako su svi bili
-    # u kratkom cooldownu (min_gap/RPM). Drugi prolaz čeka najkraći cooldown.
     for attempt in range(2):
         skipped_due_to_cooldown = []
 
@@ -193,24 +201,26 @@ async def _call_ai_engine(
             if self.shared_controls.get("stop"):
                 return None, "N/A"
 
-            # GEMINI i GEMMA upravljaju ključevima interno (_call_gemini/gemma_with_rotation).
-            # GEMMA koristi isti key material kao GEMINI, ali ima zaseban cooldown namespace
-            # u quota_trackeru kako Gemini 429 ne bi blokirao Gemmu u routeru.
+            # GEMINI i GEMMA dijele iste ključeve, ali imaju zasebne cooldown namespace-ove
+            # u quota_trackeru — Gemini 429 ne blokira Gemmu automatski.
             if prov_upper in ("GEMINI", "GEMMA"):
-                # Provjeri ima li GEMINI ključeva uopće (GEMMA koristi iste)
                 gemini_keys = self.fleet.fleet.get("GEMINI", [])
                 if not gemini_keys:
                     continue
-                # Ako su SVI GEMINI ključevi u dugom cooldownu (>60s) — preskači
                 from network.quota_tracker import quota_tracker
-                quota_provider = "GEMMA" if prov_upper == "GEMMA" else "GEMINI"
+                import re as _re
                 has_available_or_short_cd = False
                 for ks in gemini_keys:
-                    ok, reason = quota_tracker.is_key_available(quota_provider, ks.key)
+                    if prov_upper == "GEMMA":
+                        # Za GEMMA: provjeri GEMINI namespace (zajednički ključ)
+                        # pa zatim GEMMA namespace (zaseban cooldown)
+                        quota_tracker.is_key_available("GEMINI", ks.key)
+                        ok, reason = quota_tracker.is_key_available("GEMMA", ks.key)
+                    else:
+                        ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
                     if ok:
                         has_available_or_short_cd = True
                         break
-                    import re as _re
                     m = _re.search(r'([\d.]+)s', reason)
                     secs = float(m.group(1)) if m else 99999.0
                     if secs <= 60.0:
@@ -222,7 +232,6 @@ async def _call_ai_engine(
             else:
                 key = self.fleet.get_best_key(prov_upper)
                 if not key:
-                    # Provjeri je li razlog kratki cooldown ili nema ključeva uopće
                     keys = self.fleet.fleet.get(prov_upper, [])
                     if keys:
                         skipped_due_to_cooldown.append(prov_upper)
@@ -251,9 +260,7 @@ async def _call_ai_engine(
             if raw:
                 return raw, label
 
-        # Svi provajderi preskočeni — ako je razlog kratki cooldown, čekaj i pokušaj ponovo
         if attempt == 0 and skipped_due_to_cooldown:
-            # Nađi najkraći preostali cooldown među preskočenim provajderima
             from network.quota_tracker import quota_tracker
             min_wait = 60.0
             for prov_upper in skipped_due_to_cooldown:
@@ -271,168 +278,90 @@ async def _call_ai_engine(
                 "warning"
             )
             await asyncio.sleep(wait_s)
-            continue  # drugi prolaz
+            continue
         break
 
     self.log(f"❌ [{uloga}] Svi provideri iscrpljeni za blok {chunk_idx}", "error")
     return None, "N/A"
 
 
-# ── V2 routing merge ───────────────────────────────────────────────────────────
+# ── V2 Routing ────────────────────────────────────────────────────────────────
 
-"""
-BooklyFi — network/provider_router_v2.py
-V10.5: Model-aware rutiranje s per-provider profilima (avoid_roles, quality_tier).
-Nasljednik provider_router.py — backward compatible.
-"""
-
-import logging
-from typing import Optional, Tuple, List, Dict
-
-from core.model_profiles import PROFILI, ModelProfile
-
-# Per-provider profili — limiti, uloge, kvalitet
-try:
-    from network.provider_profiles import (
-        should_avoid_for_role as _pp_avoid,
-        get_quality_tier as _pp_tier,
-    )
-    _PROFILES_OK = True
-except ImportError:
-    _PROFILES_OK = False
-    def _pp_avoid(provider: str, role: str) -> bool:
-        return False
-    def _pp_tier(provider: str) -> int:
-        return 3
-
-logger = logging.getLogger(__name__)
-
-
-# ─────────────────────────────────────────────────────────────
-# SCORING LOGIKA
-# ─────────────────────────────────────────────────────────────
-
-# Težine za scoring po dimenzijama (suma = 1.0)
 _SCORE_TEZINE = {
-    "preferred_role_match": 0.40,   # uloga je u preferred_roles
-    "tip_bloka_bonus": 0.15,        # bonus za specifični tip bloka
-    "rpm_availability": 0.25,       # relativni rpm (viši = bolje)
-    "blacklist_penalty": -1.0,      # diskvalifikacija ako je blacklisted
+    "preferred_role_match": 0.40,
+    "tip_bloka_bonus":      0.15,
+    "rpm_availability":     0.25,
+    "blacklist_penalty":    -1.0,
 }
 
-# Bonus za model-tip_bloka kombinacije empirijski određene
 _TIP_BLOKA_BONUSI: Dict[str, Dict[str, float]] = {
     "dijalog": {
-        "gemini_3_flash": 0.12,        # FIX: bili set elementi bez vrijednosti
+        "gemini_3_flash":       0.12,
         "gemini_31_flash_lite": 0.12,
         "gemini_25_flash_lite": 0.12,
-        "gemma4_26b": 0.10,
-        "gemma4_31b": 0.10,
-        "gemini_25_flash": 0.15,
-        "gemini_20_flash": 0.10,
-        "mistral_large": 0.05,
+        "gemma4_26b":           0.10,
+        "gemma4_31b":           0.10,
+        "gemini_25_flash":      0.15,
+        "gemini_20_flash":      0.10,
+        "mistral_large":        0.05,
     },
     "poetski": {
         "gemini_25_flash": 0.20,
         "gemini_20_flash": 0.15,
     },
     "naracija": {
-        "gemini_25_flash": 0.10,
-        "gemini_20_flash": 0.08,
+        "gemini_25_flash":      0.10,
+        "gemini_20_flash":      0.08,
         "command_r_plus_cohere": 0.05,
     },
     "tehnicki": {
-        "mistral_large": 0.15,
+        "mistral_large":     0.15,
         "deepseek_openrouter": 0.10,
-        "qwen_chutes": 0.05,
+        "qwen_chutes":       0.05,
     },
     "dark_fantasy": {
         "gemini_25_flash": 0.20,
-        "gemini_20_flash": 0.12,
-        "gemini_3_flash": 0.10,
-    },
-    "horror_akcija": {
-        "gemini_25_flash": 0.18,
-        "gemini_20_flash": 0.10,
-    },
-    "horror_atmosfera": {
-        "gemini_25_flash": 0.20,
-        "gemini_3_flash": 0.10,
-        "gemini_20_flash": 0.12,
+        "gemini_20_flash": 0.15,
     },
 }
 
-# Maximalni rpm u fleeti (za normalizaciju)
-_MAX_RPM = 30
+_MAX_RPM = 30.0
 
 
-def _score_model(
-    profil: ModelProfile,
-    uloga: str,
-    tip_bloka: Optional[str] = None,
-) -> float:
-    """
-    Izračunava suitability score za model na osnovu uloge i tipa bloka.
-    Vraća float 0.0–1.0+. Blacklisted ili avoid modeli vraćaju -1.0.
-
-    V10.5: Integrira per-provider avoid_roles i quality_tier iz provider_profiles.
-    """
-    # Diskvalifikacija iz ModelProfile blackliste
-    if uloga in profil.blacklisted_roles:
-        return -1.0
-
-    # Diskvalifikacija iz ProviderProfile avoid_roles
-    # (npr. GROQ ne za SCORER, GITHUB ne za PREVODILAC, MISTRAL ne za bulk)
+def _score_model(profil: ModelProfile, uloga: str, tip_bloka: Optional[str] = None) -> float:
     if _PROFILES_OK and _pp_avoid(profil.provider, uloga):
         return -1.0
 
     score = 0.0
 
-    # Preferred role match
     if uloga in profil.preferred_roles:
         score += _SCORE_TEZINE["preferred_role_match"]
 
-    # Tip bloka bonus
     if tip_bloka and tip_bloka in _TIP_BLOKA_BONUSI:
         score += _TIP_BLOKA_BONUSI[tip_bloka].get(profil.ime, 0.0)
 
-    # RPM availability (normalizirano)
     rpm_score = min(profil.rpm_limit / _MAX_RPM, 1.0) if profil.rpm_limit > 0 else 0.0
     score += rpm_score * _SCORE_TEZINE["rpm_availability"]
 
-    # Quality tier bonus iz provider_profiles (tier 1 = +0.10, tier 4 = 0)
-    # Osigurava da tier-1 provajderi (Gemini, GitHub) dobiju prednost
     if _PROFILES_OK:
         tier = _pp_tier(profil.provider)
-        tier_bonus = max(0.0, (4 - tier) * 0.04)  # tier1=+0.12, tier2=+0.08, tier3=+0.04, tier4=0
-        score += tier_bonus
+        score += max(0.0, (4 - tier) * 0.04)
 
     return score
 
 
-# ─────────────────────────────────────────────────────────────
-# GLAVNI ROUTER
-# ─────────────────────────────────────────────────────────────
-
 class ProviderRouterV2:
-    """
-    Model-aware router koji bira optimalni model za svaki zadatak.
-    Koristi ModelProfile scoring + dostupnost API ključeva.
-    """
+    """Model-aware router koji bira optimalni model za svaki zadatak."""
 
     def __init__(self, dostupni_kljucevi: Optional[Dict[str, List[str]]] = None):
-        # Normaliziramo ključeve na uppercase da se izbjegne case mismatch
-        # između profil.provider (lowercase) i fleet providera (uppercase).
         self.dostupni_kljucevi = {
             k.upper(): v for k, v in (dostupni_kljucevi or {}).items()
         }
         self._health_scores: Dict[str, float] = {}
-        # BUG #6 FIX: round-robin index po provideru da se ne koristi uvijek isti ključ
         self._kljuc_index: Dict[str, int] = {}
 
     @staticmethod
     def _get_fleet():
-        """Lazy pristup globalnoj fleet instanci — izbjegava circular import."""
         try:
             import api_fleet as _af
             return _af._active_fleet
@@ -446,7 +375,6 @@ class ProviderRouterV2:
         prov_u = provider.upper()
         if prov_u in self._health_scores:
             return self._health_scores[prov_u]
-        # Izračunaj dinamički iz fleet success_rate — uvijek svježe
         fleet = self._get_fleet()
         if fleet:
             try:
@@ -461,24 +389,20 @@ class ProviderRouterV2:
 
     def _provider_dostupan(self, profil: ModelProfile) -> bool:
         prov_u = profil.provider.upper()
-        # 1. Provjeri lokalni dict (populira ga init_router_v2 ako je pozvan)
         if self.dostupni_kljucevi:
             return len(self.dostupni_kljucevi.get(prov_u, [])) > 0
-        # 2. Fallback: pitaj fleet direktno — radi čak i kad init_router_v2 nije pozvan
         fleet = self._get_fleet()
         if fleet:
             return fleet.get_best_key(prov_u) is not None
-        return True  # optimistički ako nema flote
+        return True
 
     def _get_kljuc(self, provider: str) -> Optional[str]:
         prov_u = provider.upper()
-        # 1. Provjeri lokalni dict
         kljucevi = self.dostupni_kljucevi.get(prov_u, [])
         if kljucevi:
             idx = self._kljuc_index.get(prov_u, 0) % len(kljucevi)
             self._kljuc_index[prov_u] = (idx + 1) % len(kljucevi)
             return kljucevi[idx]
-        # 2. Fallback: pitaj fleet direktno
         fleet = self._get_fleet()
         if fleet:
             return fleet.get_best_key(prov_u)
@@ -490,9 +414,6 @@ class ProviderRouterV2:
         tip_bloka: Optional[str] = None,
         exclude: Optional[List[str]] = None,
     ) -> Optional[Tuple[str, str, Optional[str]]]:
-        """
-        Vraća (provider, api_model_string, api_key) za optimalni model.
-        """
         exclude = exclude or []
         kandidati = []
 
@@ -508,14 +429,13 @@ class ProviderRouterV2:
 
             health = self.get_health_score(profil.provider)
             if health < 0.1:
-                logger.warning(f"Provider {profil.provider} health={health:.2f} — preskačem")
+                logger.warning("Provider %s health=%.2f — preskačem", profil.provider, health)
                 continue
 
-            final_score = score * health
-            kandidati.append((final_score, ime, profil))
+            kandidati.append((score * health, ime, profil))
 
         if not kandidati:
-            logger.error(f"Nema dostupnih modela za ulogu={uloga}, tip_bloka={tip_bloka}")
+            logger.error("Nema dostupnih modela za ulogu=%s, tip_bloka=%s", uloga, tip_bloka)
             return None
 
         kandidati.sort(key=lambda x: x[0], reverse=True)
@@ -523,8 +443,8 @@ class ProviderRouterV2:
 
         api_key = self._get_kljuc(best_profil.provider)
         logger.info(
-            f"RouterV2: uloga={uloga} tip={tip_bloka} → "
-            f"{best_ime} ({best_profil.provider}) score={best_score:.3f}"
+            "RouterV2: uloga=%s tip=%s → %s (%s) score=%.3f",
+            uloga, tip_bloka, best_ime, best_profil.provider, best_score,
         )
         return best_profil.provider, best_profil.api_model_string, api_key
 
@@ -545,39 +465,11 @@ class ProviderRouterV2:
         result.sort(key=lambda x: x[0], reverse=True)
         return result
 
-    def log_ranking(self, uloga: str, tip_bloka: Optional[str] = None) -> None:
-        ranking = self.get_ranked_models(uloga, tip_bloka)
-        logger.debug(f"=== Ranking: uloga={uloga} tip={tip_bloka} ===")
-        for score, ime, profil in ranking:
-            logger.debug(f"  {score:.3f}  {ime:30s}  {profil.provider}")
 
-
-# Singleton instanca
 provider_router_v2 = ProviderRouterV2()
 
 
 def init_router_v2(dostupni_kljucevi: Dict[str, List[str]]) -> None:
-    """Inicijalizira router s dostupnim ključevima. Poziva se iz app.py pri startu."""
     global provider_router_v2
     provider_router_v2 = ProviderRouterV2(dostupni_kljucevi)
-    logger.info(f"RouterV2 inicijaliziran. Provideri: {list(dostupni_kljucevi.keys())}")
-
-
-if __name__ == "__main__":
-    def _mask_result(result):
-        if not isinstance(result, tuple) or len(result) < 2:
-            return result
-        return result[:2]
-
-    router = ProviderRouterV2()
-    print("=== Test: prevodilac / dijalog ===")
-    result = router.get_best_model("prevodilac", "dijalog")
-    print(f"Rezultat: {_mask_result(result)}")
-    print()
-    print("=== Test: validator ===")
-    result2 = router.get_best_model("validator")
-    print(f"Rezultat: {_mask_result(result2)}")
-    print()
-    print("=== Ranking: prevodilac / poetski ===")
-    for score, ime, profil in router.get_ranked_models("prevodilac", "poetski"):
-        print(f"  {score:.3f}  {ime}")
+    logger.info("RouterV2 inicijaliziran. Provideri: %s", list(dostupni_kljucevi.keys()))

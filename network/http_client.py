@@ -1,28 +1,18 @@
-# network/http_client.py — V12.0
-#
-# KOMPLETNI REWRITE pozivne logike po provajderu:
-#
-# GEMINI  — native endpoint (/v1beta/models/{model}:generateContent?key=...)
-#            payload: {contents, systemInstruction, generationConfig}
-#            response: {candidates[0].content.parts[0].text}
-#            Free tier radi samo na native endpointu (OpenAI compat = limit 0)
-#
-# GEMMA   — Gemini native endpoint (same as Gemini)
-#            Gemma 4 modeli na Google API-u s ?key= auth
-#            Nema system role → merge u user poruku
-#            payload: {contents, systemInstruction, generationConfig}
-#            response: {candidates[0].content.parts[0].text}
-#
-# COHERE  — /v2/chat endpoint, OpenAI-compat messages format
-#            response: {message.content[0].text}
-#
-# SVI OSTALI — standardni OpenAI-compat format
-#            payload: {messages, model, temperature, max_tokens}
-#            response: {choices[0].message.content}
-#
-# HTTP 500 — server greška (preopterećen model), ne rotiramo model nego ključ
-# HTTP 429 — razlikujemo: ks.available=False → sljedeći ključ (ne rotiraj model)
-# PROXY    — isključen (Webshare blokira Google; ostali provajderi blokiraju mobilni IP)
+"""network/http_client.py
+
+HTTP sloj za sve AI pozive.
+
+GEMINI/GEMMA — native endpoint (/v1beta/models/{model}:generateContent?key=...)
+  payload: {contents, systemInstruction, generationConfig}
+  response: {candidates[0].content.parts[0].text}
+
+COHERE — /v2/chat endpoint
+  response: {message.content[0].text}
+
+Svi ostali — OpenAI-compat format
+  payload: {messages, model, temperature, max_tokens}
+  response: {choices[0].message.content}
+"""
 
 import asyncio
 import logging
@@ -44,28 +34,34 @@ logger = logging.getLogger(__name__)
 
 
 class ContentFilterError(Exception):
-    """Chunk blokiran content filterom (Azure/GitHub) — treba preskočiti chunk, ne mijenjati ključ."""
+    """Chunk blokiran content filterom — treba preskočiti chunk, ne mijenjati ključ."""
     pass
 
 
-# ── Proxy — trenutno isključen ────────────────────────────────────────────────
 def _get_next_proxy() -> dict | None:
     return None
 
 
-# ── Google / Gemma model pool ─────────────────────────────────────────────────
+# ── Google model pool ─────────────────────────────────────────────────────────
 GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
 
 
 def _get_google_model_pool() -> list[dict]:
     try:
-        from network.model_discovery import get_dead_models
+        from network.model_discovery import get_cached_model_list, get_dead_models
+        discovered = set(get_cached_model_list("GEMINI"))
         dead = get_dead_models("GEMINI")
     except Exception:
+        discovered = set()
         dead = frozenset()
 
-    filtered = [m for m in _GOOGLE_MODEL_POOL_FALLBACK if m["model"] not in dead]
-    return filtered if filtered else _GOOGLE_MODEL_POOL_FALLBACK
+    if discovered:
+        pool = [m for m in _GOOGLE_MODEL_POOL_FALLBACK
+                if m["model"] in discovered and m["model"] not in dead]
+    else:
+        pool = [m for m in _GOOGLE_MODEL_POOL_FALLBACK if m["model"] not in dead]
+
+    return pool if pool else _GOOGLE_MODEL_POOL_FALLBACK
 
 
 # ── Per-ključ model cache ─────────────────────────────────────────────────────
@@ -147,8 +143,7 @@ def _extract_gemini_native(data: dict) -> str | None:
                 logger.warning("[GEMINI] Sadržaj blokiran: %s", fb.get("blockReason"))
             return None
         cand = candidates[0]
-        finish = cand.get("finishReason", "")
-        if finish == "SAFETY":
+        if cand.get("finishReason") == "SAFETY":
             logger.warning("[GEMINI] Odgovor blokiran (SAFETY filter)")
             return None
         parts = cand.get("content", {}).get("parts", [])
@@ -175,7 +170,7 @@ def _extract_cohere(data: dict) -> str | None:
     return None
 
 
-# ── Generički OpenAI-compat response ─────────────────────────────────────────
+# ── OpenAI-compat response ────────────────────────────────────────────────────
 def _extract_openai_compat(data: dict) -> str | None:
     if not data:
         return None
@@ -191,8 +186,7 @@ def _extract_openai_compat(data: dict) -> str | None:
 
 
 def _extract_content(provider: str, data: dict) -> str | None:
-    prov = (provider or "").upper()
-    if prov == "COHERE":
+    if (provider or "").upper() == "COHERE":
         return _extract_cohere(data)
     return _extract_openai_compat(data)
 
@@ -248,14 +242,11 @@ async def _async_http_post(self, url: str, headers: dict, json_payload: dict,
         elif resp.status_code in (429, 425):
             register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             body_preview = str(resp_body)[:300] if resp_body else "nema body-ja"
-            self.log(f"[{prov_upper}] HTTP 429 — cooldown postavlja quota_tracker | {body_preview}", "warning")
-            # NE spavamo ovdje — analyze_response/quota_tracker vec postavlja cooldown
-            # na kljuc. Sleep ovdje blokira worker, pa kad se probudi svi cekaci
-            # prolaze odjednom (burst). Pravilni throttle je u acquire_key/rate_limiter.
+            self.log(f"[{prov_upper}] HTTP 429 — cooldown | {body_preview}", "warning")
             return None
 
         elif resp.status_code == 500:
-            self.log(f"[{prov_upper}] HTTP 500 (server greška) — biram drugi ključ", "warning")
+            self.log(f"[{prov_upper}] HTTP 500 (server greška)", "warning")
             await asyncio.sleep(2.0)
             return None
 
@@ -277,7 +268,7 @@ async def _async_http_post(self, url: str, headers: dict, json_payload: dict,
         elif resp.status_code == 400:
             err = str(resp_body)[:300] if resp_body else resp.text[:300]
             if any(kw in err.lower() for kw in ("content management policy", "content_filter", "response was filtered")):
-                self.log(f"[{prov_upper}] HTTP 400 — Azure content filter, preskačem chunk", "warning")
+                self.log(f"[{prov_upper}] HTTP 400 — content filter", "warning")
                 raise ContentFilterError(f"[{prov_upper}] sadržaj blokiran content filterom")
             self.log(f"[{prov_upper}] HTTP 400: {err}", "warning")
             return None
@@ -297,8 +288,6 @@ async def _call_gemini_with_full_rotation(
 ):
     from network.provider_urls import get_gemini_url
 
-    # Ako su svi ključevi privremeno u min_gap/kratkom cooldownu — sačekaj najkraćeg
-    # umjesto da odmah odustanemo. "Nema dostupnih" zbog min_gap nije greška — samo čekanje.
     _all_ks = self.fleet.fleet.get("GEMINI", [])
     keys_list = [ks for ks in _all_ks if ks.available]
     if not keys_list and _all_ks:
@@ -308,7 +297,6 @@ async def _call_gemini_with_full_rotation(
             ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
             if not ok:
                 import re as _re
-                # Kratki cooldown (min_gap ili RPM cooldown ≤60s) — vrijedi čekati
                 m = _re.search(r'([\d.]+)s', reason)
                 secs = float(m.group(1)) if m else 99999.0
                 if secs <= 60.0:
@@ -359,10 +347,7 @@ async def _call_gemini_with_full_rotation(
                     return content, f"GEMINI-{current_model}"
 
             if not ks.available:
-                self.log(
-                    f"[GEMINI] Ključ ...{key[-4:]} u cooldownu — preskačem na sljedeći ključ",
-                    "warning",
-                )
+                self.log(f"[GEMINI] Ključ ...{key[-4:]} u cooldownu — preskačem", "warning")
                 break
 
             next_model = _rotate_model_for_key(key, pool)
@@ -380,8 +365,6 @@ async def _call_gemini_with_full_rotation(
             current_model = next_model
             await asyncio.sleep(0.5)
 
-    # Nakon potpune iscrpljenosti vrati svaki ključ na prvi model iz statičkog
-    # poola, tako da sljedeći ciklus opet krene od primarnog stabilnog modela.
     for ks in keys_list:
         _reset_model_for_key(ks.key)
 
@@ -389,14 +372,7 @@ async def _call_gemini_with_full_rotation(
     return None, None
 
 
-# ── Gemma poziv (Gemini native endpoint) ──────────────────────────────────────
-# FIX bugs #1-5, #9-10: Gemma 4 modeli idu na Gemini native endpoint (ne Together.AI).
-# Auth: ?key={key} u URL-u (ne Bearer header)
-# Payload: contents/systemInstruction format (ne OpenAI messages)
-# Model string: gemma-4-26b-it (ne google/gemma-4-26b-it)
-# Ključevi: GEMINI fleet (ne GEMMA fleet)
-# Response: _extract_gemini_native (ne _extract_openai_compat)
-# Model rotation: rotira model pri 429 (kao Gemini)
+# ── Gemma poziv (Gemini native endpoint) ─────────────────────────────────────
 async def _call_gemma_with_rotation(
     self, sys_content, user_prompt, opt_temp, max_tokens=2400,
     preferred_model: str = None,
@@ -404,7 +380,6 @@ async def _call_gemma_with_rotation(
     from network.provider_urls import get_gemini_url
     from network.quota_tracker import quota_tracker
 
-    # Koristi GEMINI ključeve (Gemma 4 je na Google API-u)
     _all_ks = self.fleet.fleet.get("GEMINI", [])
     keys_list = []
     for ks in _all_ks:
@@ -439,12 +414,7 @@ async def _call_gemma_with_rotation(
 
     for ks in keys_list:
         key = ks.key
-
-        if preferred_model and preferred_model in {m["model"] for m in pool}:
-            current_model = preferred_model
-        else:
-            current_model = pool[0]["model"]
-
+        current_model = preferred_model if preferred_model and preferred_model in {m["model"] for m in pool} else pool[0]["model"]
         tried: set[str] = set()
 
         for _ in range(len(pool) + 1):
@@ -467,18 +437,10 @@ async def _call_gemma_with_rotation(
 
             key_ok, _reason = quota_tracker.is_key_available("GEMMA", key)
             if not key_ok:
-                self.log(
-                    f"[GEMMA] Ključ ...{key[-4:]} u cooldownu — preskačem na sljedeći ključ",
-                    "warning",
-                )
+                self.log(f"[GEMMA] Ključ ...{key[-4:]} u cooldownu — preskačem", "warning")
                 break
 
-            # Model rotation pri 429 (bug #9 fix)
-            next_idx = None
-            for i, m in enumerate(pool):
-                if m["model"] == current_model:
-                    next_idx = i + 1
-                    break
+            next_idx = next((i + 1 for i, m in enumerate(pool) if m["model"] == current_model), None)
             if next_idx is not None and next_idx < len(pool):
                 next_model = pool[next_idx]["model"]
                 self.log(f"[GEMMA] {current_model} → {next_model}", "warning")
@@ -500,14 +462,12 @@ async def _call_single_provider(
 
     if prov_upper == "GEMINI":
         return await _call_gemini_with_full_rotation(
-            self, sys_content, user_prompt, opt_temp, max_tokens,
-            preferred_model=model,
+            self, sys_content, user_prompt, opt_temp, max_tokens, preferred_model=model,
         )
 
     if prov_upper == "GEMMA":
         return await _call_gemma_with_rotation(
-            self, sys_content, user_prompt, opt_temp, max_tokens,
-            preferred_model=model,
+            self, sys_content, user_prompt, opt_temp, max_tokens, preferred_model=model,
         )
 
     key = self.fleet.get_best_key(prov_upper)
@@ -579,22 +539,21 @@ def api_call(
     prov_sem.acquire()
     key_sem.acquire()
     try:
-        # Poštivanje min_gap iz QuotaTracker — kritično za Gemini free tier
-        # Bez ovoga: api_call() šalje zahtjeve svake 0.3-1.2s bez obzira na RPM limit
         try:
             from network.quota_tracker import quota_tracker
             import re as _re
             ok, reason = quota_tracker.is_key_available(prov_upper, api_key)
             if not ok:
                 _m = _re.search(r'([\d.]+)s', reason)
-                wait_s = float(_m.group(1)) if _m else 5.0
-                wait_s = min(wait_s, 60.0)
-                logger.debug("[api_call] %s ...%s min_gap cekanje %.1fs", prov_upper, api_key[-4:], wait_s)
+                wait_s = min(float(_m.group(1)) if _m else 5.0, 60.0)
+                logger.debug("[api_call] %s ...%s čekanje %.1fs", prov_upper, api_key[-4:], wait_s)
                 _time.sleep(wait_s)
             quota_tracker.record_request(prov_upper, api_key)
         except Exception:
             pass
-        _time.sleep(random.uniform(0.5, 2.0))  # humanizovani jitter
+
+        _time.sleep(random.uniform(0.5, 2.0))
+
         try:
             resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
         except requests.exceptions.RequestException as e:

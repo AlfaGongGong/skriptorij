@@ -1,13 +1,12 @@
-# network/quota_tracker.py — FIX 21.05.2026
-#
-# PROMJENA: record_error za 429 bez retry_after sada koristi cooldown_429_s iz
-# provider_profiles.py umjesto hardkodiranih 10s.
-# Ovo je ključni fix za Gemini 429 petlju koja je uzrokovala blacklistanje ključeva:
-#   - Gemini RPM 429 ("RATE_LIMIT_EXCEEDED") ne šalje Retry-After header
-#   - Prethodno: cooldown = 10s → ključ odmah dostupan → burst → Google IP ban → 401
-#   - Sada: cooldown = profil cooldown_429_s (12s za Gemini) → ključ blokiran → nema bursta
+"""network/quota_tracker.py
 
+Per-ključ cooldown praćenje. Prati RPM/RPD iscrpljenost i cooldown stanje
+svakog API ključa. Podaci se persistiraju na disk kako bi preživjeli restart.
+"""
+
+import json
 import logging
+import os
 import threading
 import time
 from typing import Optional
@@ -16,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 def _get_cooldown_429_s(provider: str) -> float:
-    """Vraća cooldown_429_s iz profila, uz fallback na 15s."""
     try:
         from network.provider_profiles import get_cooldown_429
         return get_cooldown_429(provider)
@@ -34,7 +32,7 @@ class KeyQuota:
         self._cooldown_reason: str = ""
         self.errors: dict = {}
         self.min_gap_s: float = 2.0
-        self._consecutive_401: int = 0  # FIX: brojač uzastopnih 401 — sprečava lažni blacklist
+        self._consecutive_401: int = 0
 
     def is_available(self) -> tuple:
         with self._lock:
@@ -60,9 +58,6 @@ class KeyQuota:
             self.errors[status_code] = self.errors.get(status_code, 0) + 1
 
             if status_code in (401, 403):
-                # FIX: Google/Groq šalju 401 zbog IP throttlinga, ne samo nevažećeg ključa.
-                # Tek 2 uzastopna 401 → blacklist 24h. Prvi 401 → kratki cooldown 5min.
-                # Ako sljedeći zahtjev prođe (200), brojač se resetuje u record_response().
                 self._consecutive_401 = getattr(self, "_consecutive_401", 0) + 1
                 if self._consecutive_401 >= 2:
                     self._set_cooldown(86400.0, f"ključ nevažeći ({status_code})")
@@ -73,13 +68,12 @@ class KeyQuota:
                 else:
                     self._set_cooldown(300.0, f"401 privremeni cooldown (pokušaj {self._consecutive_401}/2)")
                     logger.warning(
-                        "[QuotaTracker] %s ...%s → %d — kratki cooldown 5min (pokušaj %d/2, čeka potvrdu)",
+                        "[QuotaTracker] %s ...%s → %d — kratki cooldown 5min (pokušaj %d/2)",
                         self.provider, self.key[-4:], status_code, self._consecutive_401,
                     )
 
             elif status_code == 429:
                 if retry_after and retry_after > 3600:
-                    # Dnevna kvota (RPD) — Google šalje retryDelay ~86400s ili do ponoći
                     cooldown_s = min(float(retry_after), 90000.0)
                     reason = "RPD kvota (dnevni limit)"
                     logger.warning(
@@ -97,13 +91,10 @@ class KeyQuota:
                     cooldown_s = min(float(retry_after), 120.0)
                     reason = "RPM 429 (Retry-After)"
                 else:
-                    # FIX: nema Retry-After → koristi profil cooldown_429_s, ne 10s
-                    # Gemini RPM 429 ne šalje header — 10s nije dovoljno, uzrokuje burst
                     cooldown_s = _get_cooldown_429_s(self.provider)
                     reason = f"RPM 429 (profil {cooldown_s:.0f}s)"
                     logger.info(
-                        "[QuotaTracker] %s ...%s → 429 bez Retry-After "
-                        "— cooldown iz profila: %.0fs",
+                        "[QuotaTracker] %s ...%s → 429 bez Retry-After — cooldown: %.0fs",
                         self.provider, self.key[-4:], cooldown_s,
                     )
                 self._set_cooldown(cooldown_s, reason)
@@ -223,7 +214,6 @@ class QuotaTracker:
         self._restore_cooldowns()
 
     def _restore_cooldowns(self):
-        import json, os
         try:
             if not os.path.exists(self._PERSIST_PATH):
                 return
@@ -233,7 +223,7 @@ class QuotaTracker:
             restored = 0
             for prov, keys in data.items():
                 for key, info in keys.items():
-                    until  = info.get("cooldown_until", 0)
+                    until = info.get("cooldown_until", 0)
                     reason = info.get("cooldown_reason", "")
                     if until > now:
                         remaining = until - now
@@ -242,17 +232,12 @@ class QuotaTracker:
                         if kq:
                             kq.set_cooldown_external(remaining, reason)
                             restored += 1
-                            logger.info(
-                                "[QuotaTracker] Obnovljen cooldown %s ...%s: %.0fs (%.1fh) — %s",
-                                prov, key[-4:], remaining, remaining / 3600, reason,
-                            )
             if restored:
                 logger.info("[QuotaTracker] Obnovljeno %d cooldown(a) s diska", restored)
         except Exception as e:
             logger.warning("[QuotaTracker] Nije moguće obnoviti cooldown stanje: %s", e)
 
     def _persist_cooldowns(self):
-        import json
         now = time.time()
         data = {}
         with self._lock:
@@ -262,7 +247,7 @@ class QuotaTracker:
                         until = kq._cooldown_until
                         if until > now:
                             data.setdefault(prov, {})[key] = {
-                                "cooldown_until":  until,
+                                "cooldown_until": until,
                                 "cooldown_reason": kq._cooldown_reason,
                             }
         try:
@@ -279,7 +264,6 @@ class QuotaTracker:
 
     def record_response(self, provider: str, key: str, status_code: int,
                         tokens: int = 0, retry_after=None, headers=None):
-        # Reset consecutive_401 brojača kad ključ uspješno odgovori
         if status_code == 200:
             pq = self._get_provider(provider.upper())
             kq = pq.get_key(key) if pq else None
@@ -313,7 +297,6 @@ class QuotaTracker:
         return kq.is_available()
 
     def set_provider_cooldown(self, provider: str, seconds: float, reason: str = ""):
-        """Propagira cooldown na sve kljuceve datog provajdera."""
         pq = self._get_provider(provider.upper())
         if pq:
             pq.set_provider_cooldown(seconds, reason)
