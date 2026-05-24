@@ -1,6 +1,6 @@
 ================================================================================
 BOOKLYFI TURBO V10 — KOMPLETNI OPIS PROJEKTA
-Ažurirano: 2026-05-23
+Ažurirano: 2026-05-24
 Projekt: AI-powered sistem za prijevod i lekturu EPUB/MOBI knjiga
 ================================================================================
 
@@ -49,7 +49,6 @@ skriptorij/
 │   ├── model_profiles.py            # ModelProfile dataclass; scorovi modela
 │   ├── prompt_injector.py           # PromptInjector; dinamički system prompt
 │   ├── prompts.py                   # Statički prompti (PREVODILAC, LEKTOR...)
-│   ├── prompts_v2.py                # Prošireni prompti V2
 │   ├── qa_benchmark.py              # QABenchmark; offline analiza kvaliteta
 │   ├── quality.py                   # _scoruj_kvalitetu(); heuristika + AI rubrik
 │   ├── quality_scorer_v2.py         # TranslatorTracker; scorer provider odabir
@@ -78,18 +77,17 @@ skriptorij/
 │   ├── parallel.py                  # AdaptiveParallelism; paralelni chunkovi
 │   ├── rescue.py                    # _spasi_od_sirovog(); fallback ekstrakcija
 │   ├── retro.py                     # retroaktivna_relektura_v10()
-│   ├── workers.py                   # Workeri V1 (legacy per-file loop)
-│   └── workers_v2.py                # WorkerV2 (aktivan); sinhroni worker objekat
+│   └── workers.py                   # WorkerV2 (aktivan); ProviderRouterV2 + PromptsV2
 │
 ├── network/
 │   ├── __init__.py
-│   ├── http_client.py               # _async_http_post(); Gemini full rotation
+│   ├── http_client.py               # _async_http_post(); Gemini/Gemma full rotation
 │   ├── model_discovery.py           # Auto-discovery modela; /v1/models polling
-│   ├── provider_router.py           # _call_ai_engine(); LEKTOR/PREVODILAC routing
-│   ├── provider_router_v2.py        # ProviderRouterV2; health score routing
+│   ├── provider_profiles.py         # Compat wrapper; profili provajdera iz ai_config
+│   ├── provider_router.py           # _call_ai_engine() + ProviderRouterV2; routing
 │   ├── provider_urls.py             # get_url(prov); URL mapa 14 provajdera
-│   ├── rate_limiter.py              # asyncio.Semaphore per-key; acquire/release
-│   └── urls.py                      # _url_*() helper funkcije po provajderu
+│   ├── quota_tracker.py             # Per-key cooldown praćenje; RPM/RPD/429 state
+│   └── rate_limiter.py              # threading.Semaphore per-key+provider; acquire/release
 │
 ├── analysis/
 │   ├── __init__.py
@@ -115,10 +113,15 @@ skriptorij/
 │   ├── __init__.py
 │   ├── unit/
 │   │   ├── __init__.py
-│   │   └── test_validators.py       # 6 unit testova za file_utils
+│   │   ├── test_ai_config.py            # 3 unit testa za config/ai_config
+│   │   ├── test_api_fleet.py            # 14 unit testova za api_fleet
+│   │   ├── test_http_client.py          # 15 unit testova za network/http_client
+│   │   ├── test_provider_router.py      # 3 unit testa za network/provider_router
+│   │   ├── test_rate_limiter.py         # 2 unit testa za network/rate_limiter
+│   │   └── test_validators.py           # 6 unit testova za utils/file_utils
 │   └── integration/
 │       ├── __init__.py
-│       └── test_api_routes.py       # 12 integracijskih testova Flask ruta
+│       └── test_api_routes.py           # 16 integracijskih testova Flask ruta
 │
 ├── static/
 │   ├── css/
@@ -322,54 +325,37 @@ FUNKCIJE / KLASE:
     → Vraća aktivni FleetManager singleton.
 
   class KeyState:
-    → Dataclass koji prati stanje jednog API ključa.
-    __init__(key, provider, saved) — inicijalizira iz saved stanja ili default
-    _reset_rpm_if_needed() — resetira RPM brojač ako je prošla minuta
-    available() — property; True ako ključ nije u cooldownu i nema prekoračenja
-    cooldown_remaining() — preostalo vrijeme cooldowna u sekundama
-    health_score() — float 0.0-1.0; omjer uspješnih poziva
+    → Dataclass koji prati stanje jednog API ključa. Nema cooldown/disable mehanizme.
+    __init__(key, provider) — inicijalizira s defaultima
+    available() — property; uvijek True (cooldown rješava quota_tracker)
+    success_rate — property; calls_ok / (calls_ok + calls_failed)
     masked() — vraća maskirani ključ (zadnjih 6 znakova)
-    record_error() — bilježi grešku; stavlja u cooldown ako je previše grešaka
+    record_request(provider, key) — bilježi total_requests i last_used
+    analyze_response(status_code, headers, body) — broji statuse:
+      200→calls_ok, 4xx→calls_rejected[code], 5xx→calls_failed[code]
     to_dict() — serijalizacija u dict za state persistence
     to_ui_dict() — dict za prikaz u UI (bez punog ključa)
-
-  _is_quota_exhausted_body(body)
-    → Provjerava da li je 429 odgovor zbog kvote (a ne rate-limita).
-      Traži ključne riječi iz _QUOTA_KEYWORDS frozenset-a u body tekstu.
 
   class FleetManager:
     → Singleton klasa koja upravlja svim API ključevima za sve provajdere.
     __init__(config_path, state_path) — učitava ključeve i state
-    _load_config() — čita dev_api.json; kreira KeyState za svaki ključ
+    _load_config() — čita dev_api.json; kreira KeyState; klonira GEMINI→GEMMA
     _resolve_models() — za svaki prov. bira aktivni model iz discovery cache-a
     _save_state() — serijalizuje stanje u api_state.json
-    _flush_state() — atomarni write state fajla (temp file + rename)
-    _flush_state_safe() — _flush_state() s exception handlerom
     flush_now() — javni poziv za trenutni flush stanja
     reload() — live reload iz dev_api.json bez restarta servera
     get_active_model(provider_upper) — vraća model koji se koristi za provajdera
-    get_best_key(provider) — iterator; vraća sljedeći dostupni ključ za provajdera
-    get_best_key_for_role(role) — iterator; bira provajdera prema ulozi (LEKTOR...)
-    record_request(provider, key) — bilježi RPM i RPD za ključ
-    record_usage(provider, key, req_count, success) — bilježi uspjeh/neuspjeh
+    get_best_key(provider) — vraća sljedeći dostupni ključ za provajdera
+    record_request(provider, key) — bilježi RPM za ključ
     analyze_response(provider, key, status_code, headers, body) — obrađuje HTTP
-      odgovor; postavlja cooldown pri 429, bilježi grešku pri ostalim kodovima
-    get_rpm_used(provider, key) — vraća broj zahtjeva u tekućoj minuti
-    get_effective_rpm_limit(provider, key) — vraća RPM limit za ključ
-    get_backoff_for_provider(provider) — vraća backoff vrijeme za provajdera
-    get_global_cooldown(provider) — vraća globalnu pauzu za provajdera
+      odgovor; delegira cooldown na quota_tracker, broji statuse u KeyState
+    record_network_failure(provider, key) — bilježi timeout/mrežnu grešku
     toggle_key(provider, key_val) — uključuje ili isključuje API ključ
-    revive_all(provider) — resetira cooldown za sve ključeve (ili po provajderu)
-    get_fleet_summary() — vraća sažetak stanja flote (aktivni/cooldown/greška)
+    revive_all(provider) — resetira cooldown u quota_trackeru za provajdera
+    get_fleet_summary() — vraća sažetak stanja flote (ukupno/raspoloživo/greška)
     get_fleet_ui() — vraća kompletne UI podatke za sve provajdere
     get_total_active_keys() — ukupan broj aktivnih ključeva
-    _find_key(prov_u, key_str) — interni helper; pronalazi KeyState po stringu
-
-  get_google_model_for_key(key_index)
-    → Vraća Gemini model za zadani indeks ključa (rotacija modela).
-
-  get_next_google_model(current_model)
-    → Vraća sljedeći Gemini model u cikličnoj rotaciji.
+    load_config(fleet, config_path) — standalone loader za testove
 
 ════════════════════════════════════════════════════════
  tts.py
@@ -727,7 +713,7 @@ KLASA SkriptorijAllInOne:
   _call_ai_engine(*args) → delegira na network.provider_router
 
   process_chunk_with_ai(*args) → delegira na processing.pipeline
-  process_single_file_worker(*args) → delegira na processing.workers/workers_v2
+  process_single_file_worker(*args) → delegira na processing.workers
 
   analiziraj_knjigu(intro_text) → delegira na analysis.book_context.analiziraj_knjigu()
   _inkrementalna_analiza_glosara(poglavlje_tekst, poglavlje_ime) → delegira
@@ -998,7 +984,7 @@ FUNKCIJE:
  core/retry_engine.py
 ════════════════════════════════════════════════════════
 SVRHA: RetryEngine za sinhrono ponavljanje obrade loših chunkova.
-       Koristi se iz workers_v2.py za offline retry bez AI poziva.
+       Koristi se iz processing/workers.py za offline retry bez AI poziva.
 
 IMPORTI: json, pathlib, time, logging, dataclasses, typing
 
@@ -1290,59 +1276,41 @@ FUNKCIJE:
 ════════════════════════════════════════════════════════
  processing/workers.py
 ════════════════════════════════════════════════════════
-SVRHA: Workeri V1 (legacy). Per-file async petlja za obradu poglavlja.
-       Zamijenjen workers_v2.py (USE_WORKERS_V2=1).
+SVRHA: Aktivan worker sloj. WorkerV2 objekat koji obrađuje jedan chunk
+       s punom kontrolom prompta, ProviderRouterV2 odabirom modela,
+       anti-patternima i postprocessingom. Nasljeđuje per-file async petlju
+       iz V1 logike u istom fajlu.
 
 IMPORTI: asyncio, json, pathlib, logging, re, bs4, api_fleet,
-         core.text_utils, core.chunking, core.quality, processing.parallel,
-         processing.pipeline
+         core.text_utils, core.chunking, core.quality, core.model_profiles,
+         processing.parallel, processing.pipeline, processing.rescue,
+         network.provider_router
 
 FUNKCIJE:
+  _ocisti_anti_patterne(tekst, model_ime) → Uklanja model-specifične
+    anti-patterne iz teksta (definisani u ModelProfile.anti_patterne).
+
   _robust_json_parse(raw) → Pokušava parsirati JSON iz AI odgovora;
     fallback na regex ekstrakciju ako direktni parse ne uspije.
 
   _validiraj_glosar_poglavlja(engine, poglavlje_tekst, file_name) → Async.
     Poziva AI da provjeri konzistentnost glosara u poglavlju.
 
-  process_single_file_worker(self, file_path) → Async.
-    Legacy V1 worker: čita HTML, dijeli na chunkove, obrađuje paralelno,
-    sprema rezultat u EPUB. Koristi AdaptiveParallelism.
-    → get_p_ctx(chunks_list, idx) — inline; prethodni kontekst
-    → get_n_ctx(chunks_list, idx) — inline; sljedeći kontekst
-
-════════════════════════════════════════════════════════
- processing/workers_v2.py
-════════════════════════════════════════════════════════
-SVRHA: Workeri V2 (aktivan). Sinhroni WorkerV2 objekat koji obrađuje jedan
-       chunk s punom kontrolom prompta, anti-patternima i postprocessingom.
-
-IMPORTI: os, json, re, time, logging, pathlib, typing, requests,
-         core.model_profiles, core.text_utils, core.prompts,
-         core.kalkovi.engine, api_fleet, processing.rescue
-
-KONSTANTE: USE_WORKERS_V2 (env flag, default 1)
-
-FUNKCIJE:
-  _ocisti_anti_patterne(tekst, model_ime) → Uklanja model-specifične
-    anti-patterne iz teksta (definisani u ModelProfile.anti_patterne).
-
 KLASA WorkerV2:
   __init__(uloga, engine, knjiga_id, chunk_idx, file_name, ...) → Inicijalizira
     worker za specifičnu ulogu i chunk.
   _sklopi_prompt(model_ime, chunk_tekst) → Gradi kompletni prompt za model:
     system_prompt + kontekst blok (glosar, few-shot, summary) + user tekst.
-  _api_poziv(provider, key, model, messages, temp) → Sinhroni HTTP POST;
-    koristi requests library. Obrađuje response, rate limit i error kodove.
   _postprocessing(tekst, model_ime) → Primjenjuje čišćenje, anti-patterne,
     tipografiju na AI odgovor.
-  obradi_chunk(chunk_tekst, provider, key, model) → Kompletna obrada chunka:
-    _sklopi_prompt → _api_poziv → _postprocessing. Vraća obrađeni tekst.
+  obradi_chunk(chunk_tekst, exclude_modeli) → Kompletna obrada chunka s
+    ProviderRouterV2 odabirom modela. Vraća obrađeni tekst.
   pokreni_qa_benchmark(chunk_tekst, obrađeni_tekst) → Pokreće QA analizu
     i vraća dict s metrikama.
 
-FUNKCIJE:
-  obradi_chunk_v2(uloga, engine, chunk, ...) → Factory wrapper koji kreira
-    WorkerV2 instancu i poziva obradi_chunk().
+  process_single_file_worker(self, file_path) → Async.
+    Per-file petlja: čita HTML, dijeli na chunkove, obrađuje paralelno,
+    sprema rezultat u EPUB. Koristi AdaptiveParallelism.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1359,103 +1327,124 @@ IMPORTI: asyncio, aiohttp, json, time, logging, typing, api_fleet,
          network.rate_limiter, network.provider_urls
 
 FUNKCIJE:
-  _get_google_model_pool() → Lista Gemini modela dostupnih za rotaciju.
-  _get_model_for_key(key) → Vraća trenutno aktivni Gemini model za API ključ.
-  _rotate_model_for_key(key) → Rotira na sljedeći Gemini model za ključ.
+  _get_google_model_pool() → Lista Gemini modela filtirana po discovery whitelist i dead
+    modelima. Fallback na GOOGLE_MODEL_POOL iz config/ai_config ako discovery prazan.
+    GOOGLE_MODEL_POOL = [gemini-3.5-flash (rpd=5000), gemini-3.1-flash-lite (rpd=1000),
+                         gemini-2.5-flash-lite (rpd=500), gemini-2.5-flash (rpd=500)].
+  _get_model_for_key(key, pool) → Vraća Gemini model za ključ (per-ključ cache).
+  _rotate_model_for_key(key, pool) → Rotira na sljedeći model za ključ; None = krug.
+  _reset_model_for_key(key, idx) → Resetira model cache za ključ na idx (default 0).
+  _supports_system_role(model) → False za gemma modele (ne podržavaju system rolu).
   _build_messages(sys_content, user_prompt, model) → Gradi messages listu za
-    chat completion API formatu. Za Gemini kreira special format.
+    OpenAI-compat API. Za gemma modele spaja system+user u jedan user prompt.
+  _build_gemini_native_payload(sys_content, user_prompt, temperature, max_tokens)
+    → Gradi Gemini native payload ({contents, systemInstruction, generationConfig}).
+  _extract_gemini_native(data) → Ekstraktuje tekst iz Gemini native odgovora.
+  _extract_cohere(data) → Ekstraktuje tekst iz Cohere /v2/chat odgovora.
+  _extract_openai_compat(data) → Ekstraktuje tekst iz OpenAI-compat odgovora.
 
   _async_http_post(self, url, headers, json_payload, prov, prov_upper, key)
-    → Async. Šalje HTTP POST zahtjev, obrađuje response, poziva
-      FleetManager.analyze_response() za 429/error handling.
-      Acquire/release key semaphore. Vraća (status_code, response_text) ili None.
+    → Async. Šalje HTTP POST, poziva FleetManager.analyze_response() za
+      429/error handling. Acquire/release key+provider semaphore. Vraća dict ili None.
+      Podiže ContentFilterError za HTTP 400 content filter odgovore.
 
-  _call_single_provider(self, uloga, tip_bloka, messages, prov, prov_upper, key,
-                         model, temperature)
-    → Async. Poziva _async_http_post() za jednog provajdera. Obrađuje Gemini
-      posebno (_call_gemini_with_full_rotation). Vraća tekst ili None.
+  _call_single_provider(self, prov_upper, model, sys_content, user_prompt,
+                         opt_temp, max_tokens)
+    → Async. Rutira na _call_gemini_with_full_rotation / _call_gemma_with_rotation
+      za GEMINI/GEMMA, ili direktan _async_http_post za ostale provajdere.
 
-  _call_gemini_with_full_rotation(self, messages, key, temperature)
-    → Async. Specijalna logika za Gemini: rotira kroz sve modele u pool-u
-      dok ne nađe radni ili iscrpi sve opcije.
+  _call_gemini_with_full_rotation(self, sys_content, user_prompt, opt_temp,
+                                   max_tokens, preferred_model)
+    → Async. Iterira GEMINI ključeve sortirane po success_rate. Za svaki ključ
+      rotira kroz sve modele u pool-u (tried set) dok ne dobije odgovor.
+      Poziva trigger_rediscover_background kad su svi modeli iscrpljeni.
+
+  _call_gemma_with_rotation(self, sys_content, user_prompt, opt_temp,
+                              max_tokens, preferred_model)
+    → Async. Koristi GEMINI ključeve, ali s GEMMA_MODEL_POOL modelima (gemma-4-26b-it)
+      i GEMMA quota_tracker namespace-om za cooldown.
+
+  api_call(provider, model, api_key, system, user, temperature, max_tokens, timeout)
+    → Sinhroni blocking poziv za WorkerV2. Acquires per-provider i per-key
+      threading.Semaphore, šalje requests.post(), vraća string ili None.
 
 ════════════════════════════════════════════════════════
  network/model_discovery.py
 ════════════════════════════════════════════════════════
-SVRHA: Automatsko otkrivanje najboljeg dostupnog modela za svakog provajdera.
-       Pita /v1/models endpoint, scoruje modele, kešira rezultat 3600s.
+SVRHA: Automatsko otkrivanje dostupnih modela za Gemini i OpenAI-compat provajdere.
+       Kešira rezultate 3600s. Prati "dead" modele (404) i auto-revive pri re-discovery.
 
-IMPORTI: asyncio, aiohttp, json, time, logging, threading, pathlib, typing,
-         api_fleet, network.provider_urls
+IMPORTI: requests, json, time, threading, pathlib, logging, typing
 
-FALLBACK_MODELS — dict zadanih modela po provajderu ako discovery ne uspije.
+KONSTANTE:
+  GEMINI_MODELS_WHITELIST — frozenset Gemini model ID-ova koji su podržani.
+    Trenutno: gemini-3.5-flash, gemini-3.1-flash-lite, gemini-2.5-flash-lite,
+    gemini-2.5-flash, gemini-2.0-flash, gemma-4-26b-it, gemma-4-31b-it.
 
 FUNKCIJE:
-  _is_valid_chat_model(provider, model_id) → True ako model_id izgleda kao
-    chat completion model (filtrira embedding, whisper i sl. modele).
-  _score_model_strength(provider, model_id) → Float score (0-100) na osnovu
-    imena modela: parametri (70B > 8B), generacija (4 > 3), posebni bonusi.
-  fetch_models(provider, api_key, timeout) → Async poziv /v1/models; vraća
-    listu validnih chat modela.
-  get_cached_model(provider) → Vraća keširani model za provajdera ili None.
-  get_cached_model_list(provider) → Keširana lista modela.
-  _set_cached_model(provider, model_id) → Postavi model u in-memory cache.
-  _set_cached_model_list(provider, model_list) → Postavi listu u cache.
-  select_best_model(provider, api_key) → Async. Fetcha modele i bira
-    onaj s najvišim _score_model_strength() scorom. Kešira rezultat.
-  invalidate_cached_model(provider, model_id) → Ukloni model iz cachea
-    i odaberi sljedeći; korisno kad model vrati 404.
-  _refresh_worker(provider_keys) → Async. Background worker koji periodicno
-    osvježava cache za sve provajdere (TTL=3600s).
+  get_cached_model(provider) → Vraća keširani model ID za provajdera ili None.
+  get_cached_model_list(provider) → Keširana lista modela za provajdera.
+  set_cached_model_list(provider, model_list) → Postavi listu (revivira dead modele).
+  invalidate_cached_model(provider, model_id) → Označi model dead i ukloni iz cachea.
+  mark_model_dead(provider, model_id) → Označi model dead (404 ili neupotrebljiv).
+  get_dead_models(provider) → frozenset dead modela za provajdera.
+  clear_dead_models(provider) → Obriši sve dead modele za provajdera.
+
+  _is_valid_chat_model(provider, model_id) → True ako model izgleda kao chat model
+    (filtrira embedding, whisper, vision-only).
+  _score_model_strength(provider, model_id) → Float score (0-100) za selekciju.
+  _fetch_gemini_native_models(api_key, timeout) → Dohvati modele s Gemini
+    /v1beta/models endpointa. Filtrira po GEMINI_MODELS_WHITELIST.
+  _fetch_openai_compat_models(provider, api_key, timeout) → Dohvati modele
+    s /v1/models endpointa (OpenAI format).
+
+  select_best_model(provider, api_key) → Async. Fetcha i kešira best model.
   start_background_refresh(fleet_manager) → Pokretanje background refresh threada.
-  prime_cache_sync(fleet_manager) → Sinhrono punjenje cachea pri startu za
-    sve dostupne provajdere (poziva se iz core/engine.py).
-  startup_key_check(fleet_manager) → Async. Proba sve ključeve pri startu:
-    429→quota exhausted, 200→OK, ostalo→greška.
-    → _check_one(prov, ks) — inline async; provjera jednog ključa.
+  prime_cache_sync(fleet_manager) → Sinhrono punjenje cachea pri startu.
+  startup_key_check(fleet_manager) → Async. Proba sve ključeve (429/200/error).
+  trigger_rediscover_background(provider, key) → Triggerira re-discovery u pozadini
+    kad su svi modeli iscrpljeni.
 
 ════════════════════════════════════════════════════════
  network/provider_router.py
 ════════════════════════════════════════════════════════
-SVRHA: Routing AI poziva na odgovarajući provajder prema ulozi (PREVODILAC,
-       LEKTOR, KOREKTOR, SCORER) s fallback logikom i key rotacijom.
+SVRHA: Routing AI poziva po ulozi (PREVODILAC, LEKTOR, KOREKTOR...) s per-model
+       temperature/token tuniranjem i cooldown fallback logikom.
+       Sadrži i ProviderRouterV2 koji bira optimalni model po scoru.
 
-IMPORTI: asyncio, logging, typing, api_fleet, network.http_client,
-         network.provider_urls, network.model_discovery
+IMPORTI: random, asyncio, logging, typing, config.ai_config, core.text_utils,
+         core.model_profiles, network.http_client, network.provider_profiles
 
-KONSTANTE: MODEL_MAP — dict {uloga: [lista_provajdera]} koji definira prioritet
-           provajdera za svaku ulogu u pipelinu.
-
-FUNKCIJE:
-  _call_ai_engine(self, uloga, tip_bloka, messages, temperature, knjiga_id)
-    → Async. Iterira kroz provajdere iz MODEL_MAP[uloga] i ključeve.
-      Za svaki par (provider, key): poziva _call_single_provider().
-      Vraća prvi uspješni odgovor ili None ako svi ne uspiju.
-
-════════════════════════════════════════════════════════
- network/provider_router_v2.py
-════════════════════════════════════════════════════════
-SVRHA: V2 router s health score praćenjem i pametnim sortiranjem provajdera.
-
-IMPORTI: logging, threading, typing, api_fleet, core.model_profiles
+KONSTANTE:
+  TEMP_MAP — temperatura po ulozi (PREVODILAC=0.32, LEKTOR=0.45, SCORER=0.05...)
+  MAX_TOKENS_MAP — max_tokens po ulozi (PREVODILAC/LEKTOR=2800, SCORER=256...)
+  _MODEL_TUNING_BY_ID — per-model per-uloga temp_mul i max_tokens overridi.
+  _MODEL_FAMILY_TUNING — per-family fallback tuning (gemini-, mistral, gpt-4...).
 
 FUNKCIJE:
-  _score_model(profil, uloga, tip_bloka, health_score) → Float kombinirani score:
-    model_score * uloga_bonus * health_score.
+  _resolve_model_generation_params(uloga, model, base_temp, base_max_tokens)
+    → Vraća (temperature, max_tokens) s primijenjenim per-model ili per-family
+      tuniranjem. Exact match > family prefix > base vrijednost.
+
+  _call_ai_engine(self, prompt, chunk_idx, uloga, filename, sys_override, tip_bloka)
+    → Async. Iterira providere iz PROVIDER_PRIORITY[uloga]. Za GEMINI/GEMMA
+      provjerava quota_tracker cooldown. Za ostale: get_best_key() + _call_single_provider().
+      GEMMA 429 ne blokira GEMINI ključeve (zaseban namespace u quota_trackeru).
+      Čeka kratak cooldown i ponavlja do 2 puta ako su svi u cooldownu.
+
+  _score_model(profil, uloga, tip_bloka) → Float score za ProviderRouterV2:
+    preferred_role_match (0.40) + tip_bloka_bonus (0.15) + rpm_availability (0.25)
+    + tier_bonus (0.04-0.12). Vraća -1.0 za diskvalificirane (avoid_roles).
 
 KLASA ProviderRouterV2:
-  __init__(dostupni_kljucevi) → Inicijalizira health score dict.
-  set_health_score(provider, score) / get_health_score(provider) → R/W health.
-  _provider_dostupan(profil) → True ako provajder ima aktivne ključeve.
-  _get_kljuc(provider) → Vraća dostupan ključ za provajdera ili None.
-  get_best_model(uloga, tip_bloka, exclude) → Vraća (ModelProfile, key) par
-    za najpogodniji dostupan model za zadanu ulogu.
-  get_ranked_models(uloga, tip_bloka, n) → Vraća top N modela sortirane po
-    kombiniranom scoru.
-  log_ranking(uloga, tip_bloka) → Ispisuje ranking u log za debug.
+  __init__(dostupni_kljucevi) → Inicijalizira s opcionalnim dict ključeva.
+  set_health_score(provider, score) / get_health_score(provider) → R/W health score.
+  get_best_model(uloga, tip_bloka, exclude) → Vraća (provider, api_model_string, key)
+    za najpogodniji model. Sortira po final_score = _score_model * health.
+  get_ranked_models(uloga, tip_bloka) → Lista svih (score, ime, profil) sortirana.
+  init_router_v2(dostupni_kljucevi) → Kreira globalnu instancu provider_router_v2.
 
-FUNKCIJE:
-  init_router_v2(dostupni_kljucevi) → Kreira i registruje globalnu V2 instancu.
+SINGLETON: provider_router_v2 — globalna instanca ProviderRouterV2.
 
 ════════════════════════════════════════════════════════
  network/provider_urls.py
@@ -1466,40 +1455,68 @@ IMPORTI: nema vanjskih
 
 FUNKCIJE:
   get_url(prov) → Vraća chat completions URL za zadani provajder (uppercase string).
-    Mapira: GEMINI, GROQ, CEREBRAS, SAMBANOVA, MISTRAL, COHERE, OPENROUTER,
-    GITHUB, TOGETHER, FIREWORKS, CHUTES, HUGGINGFACE, KLUSTER, GEMMA.
+    Mapira: GROQ, CEREBRAS, SAMBANOVA, MISTRAL, COHERE, OPENROUTER,
+    GITHUB, TOGETHER, FIREWORKS, CHUTES, HUGGINGFACE, KLUSTER.
+  get_gemini_url(model_id) → Vraća Gemini/Gemma native endpoint URL za model.
+    Format: https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent
+
+════════════════════════════════════════════════════════
+ network/quota_tracker.py
+════════════════════════════════════════════════════════
+SVRHA: Per-ključ cooldown praćenje za sve provajdere. Bilježi 429 (RPM/RPD),
+       401/403 (invalid key), i min_gap između zahtjeva. Persistira stanje na disk.
+
+IMPORTI: json, logging, os, threading, time, typing
+
+KLASE:
+  KeyQuota — stanje jednog ključa: cooldown_until, reason, consecutive_401, errors.
+    is_available() → (bool, reason_str): False ako u cooldownu ili min_gap nije istekao.
+    record_request() → bilježi last_request_time.
+    record_error(status_code, retry_after) → postavlja cooldown:
+      401/403 × 2 → 24h blacklist; 429+Retry-After>3600 → RPD (do 90000s);
+      429+Retry-After>60 → dugi cooldown; 429 default → profil cooldown (15s).
+    set_cooldown_external(seconds, reason) → postavi cooldown izvana.
+
+  ProviderQuota — skup KeyQuota za jednog provajdera.
+    add_key / get_key / get_available_keys / get_status_summary.
+
+  QuotaTracker — globalni singleton.
+    register_key(provider, key, rpm_safe, rpd_safe, min_gap_s) → registruj ključ.
+    initialize_from_fleet(fleet) → popuni iz FleetManager + klonira GEMINI→GEMMA.
+    record_request(provider, key) / record_response(provider, key, status_code, ...)
+    is_key_available(provider, key) → (bool, reason).
+    set_key_cooldown / set_provider_cooldown → ručni cooldown.
+    _persist_cooldowns() / _restore_cooldowns() → JSON serijalizacija na disk.
+
+SINGLETON: quota_tracker — globalna instanca QuotaTracker.
 
 ════════════════════════════════════════════════════════
  network/rate_limiter.py
 ════════════════════════════════════════════════════════
-SVRHA: Per-key asyncio.Semaphore za sprečavanje paralelnih poziva istim ključem.
-       Plus provider-level lock i global lock za koordinaciju.
+SVRHA: Per-key i per-provider semaphore zaštita + throttling pacing.
+       threading.Semaphore radi cross-thread (asyncio.to_thread kompatibilno).
 
-IMPORTI: asyncio, logging, typing, api_fleet
+IMPORTI: asyncio, logging, random, threading, time, network.provider_profiles
+
+KONSTANTE:
+  MAX_CONCURRENT_PER_KEY = 1 — samo 1 simultani poziv po ključu.
+  MAX_CONCURRENT_PER_PROVIDER = 2 — IP-level zaštita (maks 2 paralelna po provajderu).
 
 FUNKCIJE:
-  _ensure_provider_lock(prov) → Async. Lazy kreiranje asyncio.Lock po provajderu.
-  _ensure_global_lock() → Async. Lazy kreiranje globalnog asyncio.Lock-a.
-  _safe_get_model(fleet, prov_upper, default) → Thread-safe dohvat modela iz fleet-a.
-  _get_key_state(fleet, prov_upper, key) → Dohvati KeyState objekt za ključ.
-    → _FakeKS — inline klasa; placeholder ako ključ nije u fleet-u.
-  get_key_semaphore(key) → Vraća (ili kreira) asyncio.Semaphore za ključ.
-    MAX_CONCURRENT_PER_KEY=1 znači samo jedan simultani poziv po ključu.
-  acquire_key(key) → Async. Čeka na semaphore za ključ.
-  release_key(key) → Oslobađa semaphore za ključ.
+  register_provider_backoff(provider, retry_after) → Postavi provider-level cooldown.
+  register_provider_runtime_limits(provider, headers, body) → EWMA prilagodba
+    dinamičkog gapa na osnovu RPM/TPM headera i token troška iz body-ja.
 
-════════════════════════════════════════════════════════
- network/urls.py
-════════════════════════════════════════════════════════
-SVRHA: Helper funkcije koje vraćaju URL za svaki provajder. Alternativa provider_urls.py.
+  get_key_semaphore(key) → threading.Semaphore za ključ (lazy kreiranje).
+  get_provider_semaphore(provider) → threading.Semaphore za provajdera.
 
-IMPORTI: nema vanjskih
+  acquire_key(key, provider) → Async. Acquires provider semaphore pa key semaphore
+    (konzistentan redosljed, bez deadlocka). Poziva _throttle_provider().
+    Baca RuntimeError ako je ključ u RPD cooldownu.
+  release_key(key, provider) → Oslobađa key i provider semaphore.
 
-FUNKCIJE (po jedna po provajderu, sve vraćaju string URL):
-  _url_gemini_compat(), _url_groq(), _url_samba(), _url_cerebras(),
-  _url_mistral(), _url_cohere(), _url_openrouter(), _url_github(),
-  _url_together(), _url_fireworks(), _url_chutes(), _url_huggingface(),
-  _url_kluster(), _url_gemma(), _url_daisy()
+  _throttle_provider(provider, key) → Async. Primjenjuje provider cooldown +
+    base_gap + dynamic_gap + jitter čekanje između zahtjeva.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1877,13 +1894,12 @@ quality_scores.json — dict {file_stem + "_" + chunk_idx: {score, timestamp, pr
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   python3 main.py                      # Standardni start
-  python3 -m pytest tests/ -v          # Pokretanje testova (trenutno 54 testa)
+  python3 -m pytest tests/ -v          # Pokretanje testova (trenutno 59 testova)
 
   SKRIPTORIJ_PORT=8080                 # Port Flask servera
   SKRIPTORIJ_CONFIG=dev_api.json       # Putanja do API ključeva
   SKRIPTORIJ_INPUT_DIR=~/data          # Ulazne knjige
   SKRIPTORIJ_OUTPUT_DIR=~/output       # Izlazne knjige
-  BOOKLYFI_V2=1                        # Aktivira WorkerV2 (preporučeno)
   PYTHONUNBUFFERED=1                   # Real-time logovi
 
 ================================================================================

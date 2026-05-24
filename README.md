@@ -56,7 +56,7 @@
     | 🪣 Chutes AI | [chutes.ai](https://chutes.ai) | Free LLM endpoint |
     | 🤗 HuggingFace | [huggingface.co](https://huggingface.co) | Inference API / serverless |
     | 🔗 Kluster AI | [kluster.ai](https://kluster.ai) | OpenAI-compatible endpoint |
-    | 🔷 Gemma (Together) | — | Google Gemma models via Together |
+    | 🔷 Gemma | — | Google Gemma via Gemini native endpoint (same API keys as Gemini) |
 
     ### Installation
 
@@ -144,18 +144,19 @@
     │
     ├── processing/                  # 🔄 Pipeline modules
     │   ├── pipeline.py              # 3-pass pipeline: TRANSLATOR → PROOFREADER → EDITOR
-    │   ├── workers.py               # Async chunk workers (V1)
-    │   ├── workers_v2.py            # Async chunk workers (V2, active)
+    │   ├── workers.py               # WorkerV2 (active) + per-file async loop
     │   ├── parallel.py              # Parallel chapter processing
     │   ├── retro.py                 # RETRO re-proofreading of low-quality blocks
     │   └── rescue.py                # Recovery from raw AI responses
     │
     ├── network/                     # 🌍 Network layer
-    │   ├── http_client.py           # HTTP POST with per-key semaphore and 429 handling
-    │   ├── rate_limiter.py          # Per-key semaphore + provider backoff + adaptive runtime pacing
+    │   ├── http_client.py           # Async HTTP: Gemini/Gemma rotation, 429 handling
+    │   ├── model_discovery.py       # Model discovery; whitelist filter, dead tracking
+    │   ├── provider_profiles.py     # Compat wrapper for ai_config provider profiles
+    │   ├── provider_router.py       # Role-based routing + ProviderRouterV2 scoring
     │   ├── provider_urls.py         # URL map for all 14 providers
-    │   ├── provider_router.py       # Routing by role (TRANSLATOR, PROOFREADER, etc.)
-    │   └── urls.py                  # Legacy URL helpers
+    │   ├── quota_tracker.py         # Per-key RPM/RPD cooldown state; disk persistence
+    │   └── rate_limiter.py          # threading.Semaphore per-key + provider; backoff
     │
     ├── analysis/                    # 📊 Book analysis
     │   └── book_context.py          # Dynamic glossary — character, tone, and genre analysis
@@ -187,8 +188,9 @@
     │   ├── index.html               # Main UI (dashboard)
     │   └── intro.html               # Cinematic intro screen
     │
-    ├── tests/                       # 🧪 Test suite
+    ├── tests/                       # 🧪 Test suite (59 tests, all passing)
     │   ├── unit/
+    │   │   ├── test_ai_config.py
     │   │   ├── test_api_fleet.py
     │   │   ├── test_http_client.py
     │   │   ├── test_provider_router.py
@@ -260,7 +262,6 @@
     | `SKRIPTORIJ_PORT` | `8080` | Flask server port |
     | `SKRIPTORIJ_CONFIG` | `dev_api.json` | Path to the key configuration file |
     | `PYTHONUNBUFFERED` | `1` | Real-time log output in Docker |
-    | `BOOKLYFI_V2` | `1` | Enables workers_v2 (recommended) |
 
     ### Proxy Configuration (`proxies.json`)
 
@@ -413,7 +414,7 @@
     ### Running Tests
 
     ```bash
-    # Full test suite (currently 54 tests)
+    # Full test suite (currently 59 tests, all passing)
     python3 -m pytest tests/ -v
 
     # Unit tests only
@@ -438,9 +439,6 @@
     ```bash
     # Explicit port
     SKRIPTORIJ_PORT=9000 python main.py
-
-    # Disable workers_v2 (legacy mode)
-    BOOKLYFI_V2=0 python main.py
     ```
 
     ---
