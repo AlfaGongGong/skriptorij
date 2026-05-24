@@ -17,23 +17,68 @@ GOOGLE_MODEL_POOL = [
 ]
 
 GEMMA_MODEL_POOL = [
-    {"model": "gemma-4-26b-it", "rpm": 15, "rpd": 1500},
+    {"model": "gemma-4-26b-a4b-it", "rpm": 15, "rpd": 1500},
     {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},
 ]
 
 # GEMMA je nositelj (#1) za sve Google uloge — 1500 RPD/ključ.
 # GEMINI je fallback (#2).
 PROVIDER_PRIORITY = {
-    "PREVODILAC":      ["CEREBRAS", "SAMBANOVA", "GROQ", "TOGETHER", "FIREWORKS", "GEMMA", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
-    "LEKTOR":          ["GEMMA", "GEMINI", "MISTRAL", "CEREBRAS", "GROQ", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
-    "KOREKTOR":        ["CEREBRAS", "GROQ", "GEMMA", "GEMINI", "MISTRAL", "SAMBANOVA", "GITHUB"],
-    "VALIDATOR":       ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "GUARDIAN":        ["GEMMA", "GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
-    "POLISH":          ["GEMMA", "GEMINI", "MISTRAL", "COHERE", "TOGETHER", "SAMBANOVA", "GITHUB"],
-    "ANALIZA":         ["CEREBRAS", "GROQ", "MISTRAL", "SAMBANOVA", "GEMMA", "GEMINI", "GITHUB"],
+    "PREVODILAC": [
+        "CEREBRAS",
+        "SAMBANOVA",
+        "GROQ",
+        "TOGETHER",
+        "FIREWORKS",
+        "GEMMA",
+        "GEMINI",
+        "MISTRAL",
+        "OPENROUTER",
+        "GITHUB",
+    ],
+    "LEKTOR": [
+        "GEMMA",
+        "GEMINI",
+        "MISTRAL",
+        "CEREBRAS",
+        "GROQ",
+        "COHERE",
+        "TOGETHER",
+        "SAMBANOVA",
+        "GITHUB",
+    ],
+    "KOREKTOR": [
+        "CEREBRAS",
+        "GROQ",
+        "GEMMA",
+        "GEMINI",
+        "MISTRAL",
+        "SAMBANOVA",
+        "GITHUB",
+    ],
+    "VALIDATOR": ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
+    "GUARDIAN": ["GEMMA", "GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
+    "POLISH": [
+        "GEMMA",
+        "GEMINI",
+        "MISTRAL",
+        "COHERE",
+        "TOGETHER",
+        "SAMBANOVA",
+        "GITHUB",
+    ],
+    "ANALIZA": [
+        "CEREBRAS",
+        "GROQ",
+        "MISTRAL",
+        "SAMBANOVA",
+        "GEMMA",
+        "GEMINI",
+        "GITHUB",
+    ],
     "CHAPTER_SUMMARY": ["CEREBRAS", "GROQ", "GEMMA", "GEMINI", "MISTRAL", "GITHUB"],
-    "GLOSAR_UPDATE":   ["GEMMA", "GEMINI", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "SCORER":          ["GEMMA", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
+    "GLOSAR_UPDATE": ["GEMMA", "GEMINI", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
+    "SCORER": ["GEMMA", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
 }
 
 AI_MODEL_STRINGS = {
@@ -44,7 +89,7 @@ AI_MODEL_STRINGS = {
     "gemini_3_flash": "gemini-3.0-flash",
     "gemini_31_flash_lite": "gemini-3.1-flash-lite",
     "gemini_25_flash_lite": "gemini-2.5-flash-lite",
-    "gemma4_26b": "gemma-4-26b-it",
+    "gemma4_26b": "gemma-4-26b-a4b-it",
     "gemma4_31b": "gemma-4-31b-it",
     "gemma3_27b": "gemma-3-27b-it",
     "llama33_70b_groq": "llama-3.3-70b-versatile",
@@ -81,7 +126,8 @@ GEMINI_DIRECT_BASE_URL = "https://generativelanguage.googleapis.com"
 
 
 def get_gemini_url(model: str) -> str:
-    return f"{GEMINI_BASE_URL}/v1beta/models/{model}:generateContent"
+    # FIX: direktno na Google API, zaobiđi Cloudflare worker (timeout/404)
+    return f"{GEMINI_DIRECT_BASE_URL}/v1beta/models/{model}:generateContent"
 
 
 def get_gemini_direct_url(model: str) -> str:
@@ -104,20 +150,21 @@ def get_next_google_model(current_model: str) -> dict:
 def get_model_api_string(profile_name: str, fallback: str = "") -> str:
     return AI_MODEL_STRINGS.get(profile_name, fallback)
 
+
 @dataclass
 class ProviderProfile:
-    name: str                       # uppercase ime ("GEMINI", "GROQ" ...)
-    rpm_hard: int                   # stvarni API limit
-    rpm_safe: int                   # naša granica (koristimo ovo)
-    rpd_hard: int                   # dnevni hard limit (0 = nepoznat/visok)
-    rpd_safe: int                   # naša dnevna granica
-    tpm_hard: int                   # token/min limit (0 = nebitan)
-    min_gap_s: float                # min razmak između poziva JEDNOG ključa
-    cooldown_429_s: float           # kratki cooldown na RPM 429 (ne kvota!)
-    supports_system_role: bool      # prihvata {"role":"system"}?
-    preferred_roles: List[str]      # uloge u kojima je odličan
-    avoid_roles: List[str]          # uloge za koje je loš
-    quality_tier: int               # 1=top, 2=solid, 3=ok, 4=fallback
+    name: str  # uppercase ime ("GEMINI", "GROQ" ...)
+    rpm_hard: int  # stvarni API limit
+    rpm_safe: int  # naša granica (koristimo ovo)
+    rpd_hard: int  # dnevni hard limit (0 = nepoznat/visok)
+    rpd_safe: int  # naša dnevna granica
+    tpm_hard: int  # token/min limit (0 = nebitan)
+    min_gap_s: float  # min razmak između poziva JEDNOG ključa
+    cooldown_429_s: float  # kratki cooldown na RPM 429 (ne kvota!)
+    supports_system_role: bool  # prihvata {"role":"system"}?
+    preferred_roles: List[str]  # uloge u kojima je odličan
+    avoid_roles: List[str]  # uloge za koje je loš
+    quality_tier: int  # 1=top, 2=solid, 3=ok, 4=fallback
     notes: str = ""
 
     @property
@@ -138,7 +185,6 @@ class ProviderProfile:
 # ─────────────────────────────────────────────────────────────────────────────
 
 PROVIDER_PROFILES: dict[str, ProviderProfile] = {
-
     # ── GEMINI ──────────────────────────────────────────────────────────────
     # Free tier (dashboard 22.05.2026 + deprecation stranica):
     #   gemini-3.5-flash      — 10 RPM / 500 RPD  — STABLE, nema shutdown  ← PRIMARNI
@@ -153,19 +199,18 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
     "GEMINI": ProviderProfile(
         name="GEMINI",
         rpm_hard=10,
-        rpm_safe=8,            # 80% od 10 RPM po ključu (3.5-flash primarni)
+        rpm_safe=8,  # 80% od 10 RPM po ključu (3.5-flash primarni)
         rpd_hard=500,
-        rpd_safe=425,          # 85% od 500 RPD po ključu (stable modeli)
+        rpd_safe=425,  # 85% od 500 RPD po ključu (stable modeli)
         tpm_hard=1_000_000,
-        min_gap_s=7.5,         # 60s / 8 rpm_safe = 7.5s razmak između poziva jednog ključa
-        cooldown_429_s=15.0,   # 15s cooldown po ključu nakon RPM 429
+        min_gap_s=7.5,  # 60s / 8 rpm_safe = 7.5s razmak između poziva jednog ključa
+        cooldown_429_s=15.0,  # 15s cooldown po ključu nakon RPM 429
         supports_system_role=True,
         preferred_roles=["LEKTOR", "POLISH", "SCORER", "ANALIZA"],
-        avoid_roles=[],        # radi sve
+        avoid_roles=[],  # radi sve
         quality_tier=1,
         notes="Primarni: 3.5-flash (stable, nema shutdown). 8 ključeva × 500 RPD = 4000 RPD/dan. 2.5 fallback do okt 2026.",
     ),
-
     # ── GROQ ────────────────────────────────────────────────────────────────
     # Free tier: llama-3.3-70b-versatile = 30 RPM / 1000 RPD / 131K TPM
     # llama-3.1-8b-instant = 30 RPM / 14400 RPD (sekundarni model)
@@ -178,7 +223,7 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         rpd_hard=1000,
         rpd_safe=850,
         tpm_hard=131_072,
-        min_gap_s=2.5,         # 60/24 = 2.5s
+        min_gap_s=2.5,  # 60/24 = 2.5s
         cooldown_429_s=65.0,
         supports_system_role=True,
         preferred_roles=["PREVODILAC", "KOREKTOR"],
@@ -186,7 +231,6 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=2,
         notes="Brz. 5 ključeva. RPD je usko grlo — čuvati za prevod/korektor.",
     ),
-
     # ── SAMBANOVA ───────────────────────────────────────────────────────────
     # Free tier: Meta-Llama-3.3-70B = 10 RPM / 10000 RPD / 4096 TPM
     # TPM je JAKO nizak (4096) — dugi promptovi momentalno gaze limit
@@ -198,8 +242,8 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         rpm_safe=8,
         rpd_hard=10_000,
         rpd_safe=8_500,
-        tpm_hard=4_096,        # KRITIČNO nizak!
-        min_gap_s=7.5,         # 60/8 = 7.5s
+        tpm_hard=4_096,  # KRITIČNO nizak!
+        min_gap_s=7.5,  # 60/8 = 7.5s
         cooldown_429_s=70.0,
         supports_system_role=True,
         preferred_roles=["PREVODILAC", "KOREKTOR"],
@@ -207,7 +251,6 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=2,
         notes="Visok RPD ali KRITIČNO nizak TPM (4096). Koristiti kratke promptove!",
     ),
-
     # ── COHERE ──────────────────────────────────────────────────────────────
     # Free tier: command-r-plus = 20 RPM / 1000 RPD (trial key)
     # API v2 format — drugačiji od OpenAI (provider_urls.py već ima ispravku)
@@ -219,8 +262,8 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         rpm_safe=16,
         rpd_hard=1_000,
         rpd_safe=850,
-        tpm_hard=0,            # nije ograničen na free tier
-        min_gap_s=3.75,        # 60/16
+        tpm_hard=0,  # nije ograničen na free tier
+        min_gap_s=3.75,  # 60/16
         cooldown_429_s=65.0,
         supports_system_role=True,
         preferred_roles=["LEKTOR", "POLISH"],
@@ -228,7 +271,6 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=2,
         notes="Odličan za lekturu/polish. V2 API format.",
     ),
-
     # ── OPENROUTER ──────────────────────────────────────────────────────────
     # Free tier: :free modeli — limiti variraju po modelu (~20 RPM / 200 RPD)
     # RPD je JAKO nizak na free modelima — čuvati za fallback
@@ -249,7 +291,6 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=3,
         notes="Fallback. RPD izuzetno nizak po ključu (200). Čuvati za krajnji slučaj.",
     ),
-
     # ── GITHUB MODELS ───────────────────────────────────────────────────────
     # Free tier: gpt-4o = 10 RPM / 50 RPD (JAKO nizak!)
     # gpt-4o-mini = 15 RPM / 150 RPD
@@ -259,7 +300,7 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         name="GITHUB",
         rpm_hard=10,
         rpm_safe=8,
-        rpd_hard=50,           # gpt-4o — izuzetno nizak
+        rpd_hard=50,  # gpt-4o — izuzetno nizak
         rpd_safe=42,
         tpm_hard=0,
         min_gap_s=7.5,
@@ -267,10 +308,9 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         supports_system_role=True,
         preferred_roles=["SCORER", "ANALIZA"],  # gpt-4o je dobar scorer ali čuva RPD
         avoid_roles=["PREVODILAC", "KOREKTOR"],  # RPD prenizak za bulk
-        quality_tier=1,        # kvalitet je top ali limitiran
+        quality_tier=1,  # kvalitet je top ali limitiran
         notes="gpt-4o. KRITIČNO nizak RPD (50/dan po ključu). Samo za scorer/analizu.",
     ),
-
     # ── KLUSTER ─────────────────────────────────────────────────────────────
     # Free tier: llama-3.3-70b = ~15 RPM / neograničen RPD (po dokumentaciji)
     # Relativno novi provajder — stabilnost varira
@@ -279,8 +319,8 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         name="KLUSTER",
         rpm_hard=15,
         rpm_safe=12,
-        rpd_hard=0,            # neograničen (po dokumentaciji)
-        rpd_safe=5_000,        # konzervativna gornja granica
+        rpd_hard=0,  # neograničen (po dokumentaciji)
+        rpd_safe=5_000,  # konzervativna gornja granica
         tpm_hard=0,
         min_gap_s=5.0,
         cooldown_429_s=65.0,
@@ -290,7 +330,6 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=3,
         notes="Neograničen RPD. Kvalitet solidan. Dobar za bulk prevod.",
     ),
-
     # ── CHUTES ──────────────────────────────────────────────────────────────
     # Free tier: deepseek-r1-distill, qwen modeli
     # Limiti nisu javno dokumentirani — konzervativne pretpostavke
@@ -310,7 +349,6 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=3,
         notes="DeepSeek/Qwen modeli. Limiti nedokumentirani — konzervativno.",
     ),
-
     # ── HUGGINGFACE ─────────────────────────────────────────────────────────
     # HF Inference API (router): llama-3.3-70b
     # Free tier limiti su strogi i nepredvidivi (queue based)
@@ -322,46 +360,44 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         rpd_hard=0,
         rpd_safe=2_000,
         tpm_hard=0,
-        min_gap_s=8.6,         # 60/7
-        cooldown_429_s=90.0,   # HF često treba dulje da se oporavi
+        min_gap_s=8.6,  # 60/7
+        cooldown_429_s=90.0,  # HF često treba dulje da se oporavi
         supports_system_role=True,
         preferred_roles=["PREVODILAC"],
         avoid_roles=["SCORER", "ANALIZA", "LEKTOR"],
         quality_tier=4,
         notes="Samo 3 ključa. Queue-based, latencija nepredvidiva. Zadnji fallback.",
     ),
-
     # ── MISTRAL ─────────────────────────────────────────────────────────────
     # Free tier (La Plateforme): 1 ključ — POZOR!
     # mistral-small-latest = 1 RPM (!) na free tier — gotovo neupotrebljiv bulk
     # Čuvati isključivo za kvalitetne one-off pozive (scorer, posebni slučajevi)
     "MISTRAL": ProviderProfile(
         name="MISTRAL",
-        rpm_hard=1,            # free tier je 1 RPM!
+        rpm_hard=1,  # free tier je 1 RPM!
         rpm_safe=1,
         rpd_hard=0,
-        rpd_safe=200,          # pretpostavljamo konzervativno
+        rpd_safe=200,  # pretpostavljamo konzervativno
         tpm_hard=0,
-        min_gap_s=62.0,        # 60s + buffer — praktično jedan poziv u minuti
+        min_gap_s=62.0,  # 60s + buffer — praktično jedan poziv u minuti
         cooldown_429_s=120.0,
         supports_system_role=True,
-        preferred_roles=["SCORER"],   # samo za posebne slučajeve
+        preferred_roles=["SCORER"],  # samo za posebne slučajeve
         avoid_roles=["PREVODILAC", "KOREKTOR", "LEKTOR"],  # prenizak RPM
         quality_tier=2,
         notes="SAMO 1 KLJUČ i 1 RPM na free tier! Koristiti samo za scorer/posebne slučajeve.",
     ),
-
     # ── CEREBRAS ────────────────────────────────────────────────────────────
     # Free tier: llama-3.3-70b = 30 RPM / 10000 RPD / 131K TPM (procjena)
     # Izuzetno brzak (kompajlovani silikon). Preferiran za PREVODILAC/KOREKTOR.
     "CEREBRAS": ProviderProfile(
         name="CEREBRAS",
         rpm_hard=30,
-        rpm_safe=24,           # 80% od 30
+        rpm_safe=24,  # 80% od 30
         rpd_hard=10_000,
         rpd_safe=8_500,
         tpm_hard=131_072,
-        min_gap_s=2.5,         # 60/24
+        min_gap_s=2.5,  # 60/24
         cooldown_429_s=65.0,
         supports_system_role=True,
         preferred_roles=["PREVODILAC", "KOREKTOR"],
@@ -369,17 +405,16 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=2,
         notes="Kompajlovani silikon — najbrži inferens. Dobar za PREVODILAC/KOREKTOR.",
     ),
-
     # ── TOGETHER ────────────────────────────────────────────────────────────
     # Free tier: 60 RPM / 60 RPD (konzervativno) — rate limiti variraju po modelu
     "TOGETHER": ProviderProfile(
         name="TOGETHER",
         rpm_hard=60,
-        rpm_safe=16,           # konzervativno — modeli imaju različite limite
+        rpm_safe=16,  # konzervativno — modeli imaju različite limite
         rpd_hard=0,
         rpd_safe=2_000,
         tpm_hard=0,
-        min_gap_s=3.75,        # 60/16
+        min_gap_s=3.75,  # 60/16
         cooldown_429_s=65.0,
         supports_system_role=True,
         preferred_roles=["PREVODILAC"],
@@ -387,7 +422,6 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=3,
         notes="Različiti modeli s različitim limitima. Konzervativni RPM.",
     ),
-
     # ── FIREWORKS ───────────────────────────────────────────────────────────
     # Free tier: 60 RPM / varijabilno RPD
     "FIREWORKS": ProviderProfile(
@@ -405,7 +439,6 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         quality_tier=3,
         notes="Slično Together.ai — varijabilni rate limiti po modelu.",
     ),
-
     # ── GEMMA ───────────────────────────────────────────────────────────────
     # Gemma 4 modeli na Google Gemini native endpointu (isti API kao Gemini).
     # gemma-4-26b-it = 15 RPM / 1500 RPD po ključu (dashboard 22.05.2026)
@@ -415,12 +448,12 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
     "GEMMA": ProviderProfile(
         name="GEMMA",
         rpm_hard=15,
-        rpm_safe=12,           # 80% od 15 RPM
+        rpm_safe=12,  # 80% od 15 RPM
         rpd_hard=1500,
-        rpd_safe=1275,         # 85% od 1500
+        rpd_safe=1275,  # 85% od 1500
         tpm_hard=1_000_000,
-        min_gap_s=5.0,         # 60/12 = 5.0s
-        cooldown_429_s=15.0,   # isto kao Gemini — Google API
+        min_gap_s=5.0,  # 60/12 = 5.0s
+        cooldown_429_s=15.0,  # isto kao Gemini — Google API
         supports_system_role=False,  # Gemma nema system role
         preferred_roles=["LEKTOR", "POLISH"],
         avoid_roles=["SCORER"],
@@ -433,6 +466,7 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPER FUNKCIJE — koriste se iz api_fleet.py, rate_limiter.py i router-a
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def get_profile(provider: str) -> ProviderProfile | None:
     """Vraća profil za provajdera ili None ako nije poznat."""
