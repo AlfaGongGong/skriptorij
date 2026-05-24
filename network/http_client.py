@@ -414,7 +414,8 @@ async def _call_gemma_with_rotation(
 
     for ks in keys_list:
         key = ks.key
-        current_model = preferred_model if preferred_model and preferred_model in {m["model"] for m in pool} else pool[0]["model"]
+        pool_models = {m["model"] for m in pool}
+        current_model = preferred_model if (preferred_model and preferred_model in pool_models) else pool[0]["model"]
         tried: set[str] = set()
 
         for _ in range(len(pool) + 1):
