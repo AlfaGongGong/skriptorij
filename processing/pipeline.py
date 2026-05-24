@@ -60,11 +60,11 @@ except ImportError:
     PromptInjector = None
     _INJECTOR_OK = False
 
-# ── V10.4 workers_v2 integracija ────────────────────────────────────────────
+# ── Workers integracija ─────────────────────────────────────────────────────
 USE_WORKERS_V2: bool = _os.environ.get("BOOKLYFI_V2", "1").strip() == "1"
 
 try:
-    from processing.workers_v2 import WorkerV2
+    from processing.workers import WorkerV2
     _V2_DOSTUPAN = True
 except ImportError:
     WorkerV2 = None
