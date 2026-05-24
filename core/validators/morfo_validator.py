@@ -2,6 +2,9 @@
 core/validators/morfo_validator.py
 ────────────────────────────────────
 AI morfološki validator — zaseban prolaz NAKON prijevoda, PRIJE .chk upisa.
+
+Koristi network.http_client.api_call umjesto google.generativeai SDK —
+prolazi kroz quota_tracker, rate_limiter i fleet management.
 """
 
 from __future__ import annotations
@@ -27,13 +30,14 @@ except ImportError:
     _BLACKLIST_DOSTUPAN = False
     BLACKLIST_PROMPT_BLOK = ""
     HALUCIRANI_OBLICI = {}
-    def skeniraj_halucinacije(tekst): return []
+    def skeniraj_halucinacije(tekst): return []  # noqa: E704
 
 logger = logging.getLogger(__name__)
 
-from config.ai_config import MORFO_VALIDATOR_MODEL
+from config.ai_config import MORFO_VALIDATOR_MODEL, MODEL_MAP
 
-GEMINI_MODEL = MORFO_VALIDATOR_MODEL
+VALIDATOR_MODEL = MORFO_VALIDATOR_MODEL
+VALIDATOR_PROVIDER = "GEMINI"
 MAX_CHUNK_ZNAKOVA = 4000
 MIN_ZNAKOVA_ZA_AI = 50
 AUDIT_LOG_PATH = Path("logs/morfo_audit.jsonl")
@@ -97,53 +101,69 @@ def _korisnik_prompt(tekst: str) -> str:
 Vrati JSON s rezultatom."""
 
 
-def _pozovi_gemini(
-    tekst: str,
-    api_key: str,
-    timeout: int = 30,
-) -> tuple[str, list[dict]]:
-    try:
-        import google.generativeai as genai
-    except ImportError:
-        raise RuntimeError(
-            "google-generativeai nije instaliran. "
-            "Pokrenuti: pip install google-generativeai"
-        )
-
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(
-        model_name=GEMINI_MODEL,
-        system_instruction=_system_prompt(),
-    )
-
-    generation_config = genai.types.GenerationConfig(
-        temperature=0.1,
-        max_output_tokens=MAX_CHUNK_ZNAKOVA * 2,
-        response_mime_type="application/json",
-    )
-
-    odgovor = model.generate_content(
-        _korisnik_prompt(tekst),
-        generation_config=generation_config,
-    )
-
-    raw = odgovor.text.strip()
+def _parsiraj_ai_odgovor(raw: str, originalni: str) -> tuple[str, list[dict]]:
+    """Parsira JSON odgovor AI-a i vraća (ispravljeni_tekst, izmjene)."""
+    raw = raw.strip()
     raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
     raw = re.sub(r'\s*```$', '', raw, flags=re.MULTILINE)
     raw = raw.strip()
 
     data = json.loads(raw)
-
-    ispravljeni = data.get("tekst", tekst)
+    ispravljeni = data.get("tekst", originalni)
     izmjene = data.get("izmjene", [])
 
-    if len(ispravljeni) < len(tekst) * 0.7:
+    if len(ispravljeni) < len(originalni) * 0.7:
         raise ValueError(
-            f"AI vratio drastično kraći tekst ({len(ispravljeni)} vs {len(tekst)} znakova). "
+            f"AI vratio drastično kraći tekst ({len(ispravljeni)} vs {len(originalni)} znakova). "
             "Odbacivam — failsafe aktiviran."
         )
 
     return ispravljeni, izmjene
+
+
+def _pozovi_ai(
+    tekst: str,
+    api_key: str,
+    fleet=None,
+) -> tuple[str, list[dict]]:
+    """
+    Šalje tekst na AI validator kroz http_client.api_call.
+    Koristi GEMINI provider i VALIDATOR_MODEL iz ai_config.
+    """
+    from network.http_client import api_call
+
+    sys_prompt = _system_prompt()
+    usr_prompt = _korisnik_prompt(tekst)
+
+    # Odaberi model: iz fleeta ako je dostupan, inače iz MODEL_MAP
+    model = VALIDATOR_MODEL
+
+    odgovor = api_call(
+        provider=VALIDATOR_PROVIDER,
+        model=model,
+        api_key=api_key,
+        system=sys_prompt,
+        user=usr_prompt,
+        temperature=0.1,
+        max_tokens=MAX_CHUNK_ZNAKOVA * 2,
+    )
+
+    if not odgovor:
+        raise RuntimeError("api_call vratio prazan odgovor")
+
+    return _parsiraj_ai_odgovor(odgovor, tekst)
+
+
+def _dohvati_api_key(fleet=None) -> Optional[str]:
+    """Dohvata API ključ iz fleeta ili env varijable."""
+    if fleet is not None:
+        try:
+            ks = fleet.get_best_key(VALIDATOR_PROVIDER, "VALIDATOR")
+            if ks:
+                return ks.key if hasattr(ks, "key") else str(ks)
+        except Exception:
+            pass
+    return os.environ.get("GEMINI_API_KEY")
 
 
 def _regex_zamjene(tekst: str) -> tuple[str, list[dict]]:
@@ -155,8 +175,6 @@ def _regex_zamjene(tekst: str) -> tuple[str, list[dict]]:
         if not pattern.search(rezultat):
             continue
 
-        # re.sub s callableom — ispravno, bez index-shift buga koji nastaje
-        # ako se koristio finditer + ručna zamjena po pozicijama u originalnom stringu
         def _zamijeni(m, _isp=ispravno):
             orig = m.group(0)
             zamjena = (_isp[0].upper() + _isp[1:]) if orig[0].isupper() else _isp
@@ -204,6 +222,7 @@ def validiraj_tekst(
     chunk_id: int = 0,
     force_ai: bool = False,
     skip_ai: bool = False,
+    fleet=None,
 ) -> str:
     """
     Javno sučelje — validira tekst i vraća ispravljenu verziju.
@@ -230,10 +249,12 @@ def validiraj_tekst(
         # Korak 3: Odluka o AI prolazu
         trebamo_ai = (force_ai or len(pre_nalazi) > 0) and not skip_ai
 
-        if trebamo_ai and api_key is None:
-            api_key = os.environ.get("GEMINI_API_KEY")
+        if trebamo_ai:
+            efektivni_key = api_key or _dohvati_api_key(fleet)
+        else:
+            efektivni_key = None
 
-        if trebamo_ai and api_key:
+        if trebamo_ai and efektivni_key:
             logger.info(
                 f"[morfo_validator] AI prolaz: knjiga={knjiga_id} chunk={chunk_id} "
                 f"pre_screening={len(pre_nalazi)} oblika"
@@ -256,7 +277,7 @@ def validiraj_tekst(
 
             for pokusaj in range(MAX_RETRIES + 1):
                 try:
-                    ai_tekst, ai_izmjene = _pozovi_gemini(tekst_za_ai, api_key)
+                    ai_tekst, ai_izmjene = _pozovi_ai(tekst_za_ai, efektivni_key, fleet)
                     rezultat.ai_korissten = True
                     break
                 except Exception as e:
@@ -278,7 +299,7 @@ def validiraj_tekst(
                 rezultat.greska = zadnja_greska
                 rezultat.validirani_tekst = tekst_nakon_regex
 
-        elif trebamo_ai and not api_key:
+        elif trebamo_ai and not efektivni_key:
             logger.warning(
                 "[morfo_validator] Pre-screening našao sumnjive oblike, "
                 "ali API ključ nije dostupan. Koristim samo regex."
@@ -301,7 +322,14 @@ def validiraj_tekst(
 
 class MorfoValidator:
     """
-    Wrapper klasa za upotrebu u pipeline.py.
+    Wrapper klasa za upotrebu u pipeline.py / workers.py.
+
+    Koristi http_client.api_call za AI prolaz — sav promet prolazi kroz
+    quota_tracker, rate_limiter i fleet management (ne zaobilazi ništa).
+
+    Upotreba u pipeline.py:
+        self.morfo_validator = MorfoValidator(skip_ai=(api_key is None))
+        self.morfo_validator.set_engine(self)  # daje pristup fleet manageru
     """
 
     def __init__(
@@ -309,14 +337,35 @@ class MorfoValidator:
         api_key: Optional[str] = None,
         skip_ai: bool = False,
     ):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self._api_key = api_key
         self.skip_ai = skip_ai
+        self._engine = None
         self._statistika = {
             "ukupno": 0,
             "ai_koristen": 0,
             "izmjenjeno": 0,
             "gresaka": 0,
         }
+
+    def set_engine(self, engine) -> None:
+        """
+        Povežuje validator s engine-om/pipeline-om.
+        Engine mora imati atribut 'fleet' (FleetManager).
+        Nakon poziva, validator koristi fleet za dohvaćanje API ključeva
+        i poštuje quota_tracker/rate_limiter kao i ostatak pipeline-a.
+        """
+        self._engine = engine
+        logger.debug("[morfo_validator] Engine postavljen — koristim fleet za AI pozive")
+
+    @property
+    def _fleet(self):
+        return getattr(self._engine, "fleet", None) if self._engine else None
+
+    @property
+    def api_key(self) -> Optional[str]:
+        """Dohvaća API ključ: iz fleeta ako je engine postavljen, inače direktno."""
+        key = _dohvati_api_key(self._fleet)
+        return key or self._api_key
 
     def validiraj(
         self,
@@ -325,13 +374,20 @@ class MorfoValidator:
         chunk_id: int = 0,
     ) -> str:
         self._statistika["ukupno"] += 1
-        rezultat_tekst = validiraj_tekst(
-            tekst=tekst,
-            api_key=self.api_key,
-            knjiga_id=knjiga_id,
-            chunk_id=chunk_id,
-            skip_ai=self.skip_ai,
-        )
+        try:
+            rezultat_tekst = validiraj_tekst(
+                tekst=tekst,
+                api_key=self._api_key,
+                knjiga_id=knjiga_id,
+                chunk_id=chunk_id,
+                skip_ai=self.skip_ai,
+                fleet=self._fleet,
+            )
+        except Exception as e:
+            logger.error(f"[morfo_validator] validiraj() greška: {e}")
+            self._statistika["gresaka"] += 1
+            return tekst
+
         if rezultat_tekst != tekst:
             self._statistika["izmjenjeno"] += 1
         return rezultat_tekst
@@ -340,14 +396,16 @@ class MorfoValidator:
         return dict(self._statistika)
 
     def __repr__(self) -> str:
+        ima_fleet = self._fleet is not None
         return (
-            f"MorfoValidator(ai={'enabled' if self.api_key else 'disabled'}, "
+            f"MorfoValidator(fleet={'OK' if ima_fleet else 'N/A'}, "
+            f"skip_ai={self.skip_ai}, "
             f"ukupno={self._statistika['ukupno']})"
         )
 
 
 # ---------------------------------------------------------------------------
-# Gotova instanca — importira se u workers_v2.py / pipeline.py
+# Gotova instanca — importira se u workers.py / pipeline.py
 # ---------------------------------------------------------------------------
 
 morfo_validator: MorfoValidator = MorfoValidator()

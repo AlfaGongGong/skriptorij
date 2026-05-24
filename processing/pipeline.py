@@ -370,6 +370,7 @@ def _init_book_context(self, knjiga_id: str):
                 api_key=api_key,
                 skip_ai=(api_key is None),
             )
+            self.morfo_validator.set_engine(self)
         except Exception as e:
             logging.warning(f"[pipeline] MorfoValidator init greška: {e}")
             self.morfo_validator = None

@@ -32,7 +32,8 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 CACHE_DIR = Path("analysis/cache")
-GEMINI_MODEL = "gemini-2.5-flash"
+SUMMARY_PROVIDER = "GEMINI"
+SUMMARY_MAX_TOKENS = 200
 
 # ── Deklinacijski predlošci za vlastita imena ──────────────────────────────
 _MUSKI_NASTAVCI = [
@@ -134,6 +135,7 @@ class BookContext:
     def __post_init__(self):
         if self.api_key is None:
             self.api_key = os.environ.get("GEMINI_API_KEY")
+        self._engine = None
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         self._cache_path = CACHE_DIR / f"{self.knjiga_id}_context.json"
         self._ucitaj_cache()
@@ -278,35 +280,72 @@ class BookContext:
         self._spremi_cache()
         return poglavlje
 
+    def set_engine(self, engine) -> None:
+        """
+        Povežuje BookContext s engine-om/pipeline-om.
+        Engine mora imati atribut 'fleet' (FleetManager).
+        Koristi se za dohvaćanje API ključeva kroz fleet management
+        umjesto direktnog google.generativeai SDK poziva.
+        """
+        self._engine = engine
+        logger.debug("[book_context] Engine postavljen — koristim fleet za AI pozive")
+
+    def _dohvati_api_key(self) -> Optional[str]:
+        """Dohvaća API ključ: iz fleeta ako je engine postavljen, inače direktno."""
+        fleet = getattr(self._engine, "fleet", None) if self._engine else None
+        if fleet is not None:
+            try:
+                ks = fleet.get_best_key(SUMMARY_PROVIDER, "CHAPTER_SUMMARY")
+                if ks:
+                    return ks.key if hasattr(ks, "key") else str(ks)
+            except Exception:
+                pass
+        return self.api_key or os.environ.get("GEMINI_API_KEY")
+
     def _generiraj_summary(self, tekst: str, broj: int, naslov: str) -> str:
-        """AI summary poglavlja via Gemini."""
+        """
+        AI summary poglavlja kroz http_client.api_call.
+        Koristi fleet management i quota_tracker — ne zaobilazi nikakav sloj.
+        """
+        from config.ai_config import MODEL_MAP, GOOGLE_MODEL_POOL
+        from network.http_client import api_call
+
+        efektivni_key = self._dohvati_api_key()
+        if not efektivni_key:
+            return self._fallback_summary(tekst, {})
+
+        model = GOOGLE_MODEL_POOL[0]["model"]
+        uzorak = tekst[:3000] if len(tekst) > 3000 else tekst
+
+        sys_prompt = (
+            "Ti si asistent koji piše kratke summaryje poglavlja na bosanskom jeziku. "
+            "Odgovaraš ISKLJUČIVO kratkim sažetkom (2-3 rečenice, max 150 riječi). "
+            "Bez komentara, bez uvoda — samo čisti sadržaj."
+        )
+        usr_prompt = (
+            f"Napiši KRATKI summary (2-3 rečenice, max 150 riječi) poglavlja {broj}"
+            f"{f' — {naslov}' if naslov else ''} na bosanskom jeziku.\n"
+            f"Fokus: ključni događaji, likovi, atmosfera.\n"
+            f"NE komentariši prijevod. SAMO summary sadržaja.\n\n"
+            f"Tekst poglavlja (početak):\n{uzorak}"
+        )
+
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=self.api_key)
-            model = genai.GenerativeModel(GEMINI_MODEL)
-
-            uzorak = tekst[:3000] if len(tekst) > 3000 else tekst
-
-            prompt = (
-                f"Napiši KRATKI summary (2-3 rečenice, max 150 riječi) poglavlja {broj}"
-                f"{f' — {naslov}' if naslov else ''} na bosanskom jeziku.\n"
-                f"Fokus: ključni događaji, likovi, atmosfera.\n"
-                f"NE komentariši prijevod. SAMO summary sadržaja.\n\n"
-                f"Tekst poglavlja (početak):\n{uzorak}"
+            odgovor = api_call(
+                provider=SUMMARY_PROVIDER,
+                model=model,
+                api_key=efektivni_key,
+                system=sys_prompt,
+                user=usr_prompt,
+                temperature=0.3,
+                max_tokens=SUMMARY_MAX_TOKENS,
             )
-
-            odgovor = model.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
-                    temperature=0.3,
-                    max_output_tokens=200,
-                ),
-            )
-            return odgovor.text.strip()
-
+            if odgovor and odgovor.strip():
+                return odgovor.strip()
         except Exception as e:
             logger.warning(f"[book_context] Summary generiranje neuspješno: {e}")
-            return self._fallback_summary(tekst, {})
+
+        return self._fallback_summary(tekst, {})
 
     def _fallback_summary(self, tekst: str, lik_count: dict) -> str:
         """Statistički fallback summary bez AI."""

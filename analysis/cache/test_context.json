@@ -1,0 +1,28 @@
+{
+  "knjiga_id": "test",
+  "naslov_knjige": "",
+  "autor": "",
+  "glosar": {
+    "Takeshi": {
+      "ime": "Takeshi",
+      "rod": "M",
+      "padeži": {
+        "N": "Takeshi",
+        "G": "Takeshia",
+        "D": "Takeshiu",
+        "A": "Takeshia",
+        "V": "Takeshi",
+        "I": "Takeshiom",
+        "L": "Takeshiu"
+      },
+      "sve_varijante": [
+        "Takeshia",
+        "Takeshiom",
+        "Takeshi",
+        "Takeshiu"
+      ]
+    }
+  },
+  "few_shot_primjeri": [],
+  "poglavlja": {}
+}

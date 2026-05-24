@@ -62,6 +62,12 @@ class SkriptorijAllInOne:
 
         self.context_mgr = BookContextManager(self.checkpoint_dir, self.log)
         self.book_context = self.context_mgr.book_context
+        # Povežuj book_context s engine-om da koristi fleet za AI summary pozive
+        try:
+            if self.book_context and hasattr(self.book_context, "set_engine"):
+                self.book_context.set_engine(self)
+        except Exception:
+            pass
         self.knjiga_analizirana = False
         self.glosar_tekst = ""
 

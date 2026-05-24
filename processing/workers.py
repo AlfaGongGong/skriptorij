@@ -389,10 +389,10 @@ except ImportError:
     _profiles_ok = False
 
 try:
-    from core.prompts_v2 import get_system_prompt
+    from core.prompts import get_system_prompt
     _prompts_v2_ok = True
 except ImportError:
-    logger.warning("workers: core.prompts_v2 nije dostupan, koristim core.prompts")
+    logger.warning("workers: core.prompts nije dostupan, koristim fallback")
     _prompts_v2_ok = False
 
 try:
@@ -417,7 +417,7 @@ except ImportError:
     _validator_ok = False
 
 try:
-    from network.provider_router_v2 import provider_router_v2
+    from network.provider_router import provider_router_v2
     _router_v2_ok = True
 except ImportError:
     logger.warning("workers: provider_router_v2 nije dostupan")
