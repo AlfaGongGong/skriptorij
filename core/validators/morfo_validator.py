@@ -34,7 +34,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-from config.ai_config import MORFO_VALIDATOR_MODEL, MODEL_MAP
+from config.ai_config import MORFO_VALIDATOR_MODEL
 
 VALIDATOR_MODEL = MORFO_VALIDATOR_MODEL
 VALIDATOR_PROVIDER = "GEMINI"

@@ -307,7 +307,7 @@ class BookContext:
         AI summary poglavlja kroz http_client.api_call.
         Koristi fleet management i quota_tracker — ne zaobilazi nikakav sloj.
         """
-        from config.ai_config import MODEL_MAP, GOOGLE_MODEL_POOL
+        from config.ai_config import GOOGLE_MODEL_POOL
         from network.http_client import api_call
 
         efektivni_key = self._dohvati_api_key()
