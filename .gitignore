@@ -1,0 +1,81 @@
+# ========== API KLJUČEVI (NIKAD NE COMMITUJ) ==========
+dev_api.json
+api_state.json
+proxies.json
+*.key
+*.pem
+
+# ========== BACKUP FAJLOVI I FOLDERI ==========
+_backup_*/
+backups/
+*.backup
+*.bak
+*.bak_*
+*.bak_final
+*.bak_revert
+*.bak_simplify
+*.bak_bodylog
+*.bak_prompts
+*.bak_add429
+
+# ========== ZIP ARHIVE ==========
+*.zip
+*.tar.gz
+*.rar
+
+# ========== CLASSLA I AI MODELI (PREVELIKI) ==========
+data/classla_resources/
+*.pt
+*.h5
+*.pkl
+
+# ========== PODACI O KNJIGAMA (PREVELIKI) ==========
+data/*.epub
+data/*.mobi
+data/_skr_*/
+data/\(LIVE\)_*
+
+# ========== CHECKPOINT I GENERISANI PODACI ==========
+*_skr_*/
+checkpoints/
+
+# ========== OUTPUT KNJIGE ==========
+output/
+*.epub_out/
+
+# ========== RUNTIME FAJLOVI ==========
+last_book.json
+quota_cooldowns.json
+
+# ========== PYTHON ==========
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ========== SKRIPTE ==========
+*.sh
+fixpy.py
+fix.sh
+
+# ========== LOGOVI I TEKST ==========
+*.log
+*.txt
+
+# ========== IDE ==========
+.vscode/
+.idea/
+*.swp
+
+# ========== OS ==========
+.DS_Store
+Thumbs.db
+
+# ========== ENVIRONMENT ==========
+env/
+node_modules/
+
+# ========== OSTALO ==========
+TrashRecover/

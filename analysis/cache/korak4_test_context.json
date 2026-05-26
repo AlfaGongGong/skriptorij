@@ -1,0 +1,92 @@
+{
+  "knjiga_id": "korak4_test",
+  "naslov_knjige": "",
+  "autor": "",
+  "glosar": {
+    "Takeshi": {
+      "ime": "Takeshi",
+      "rod": "M",
+      "padeži": {
+        "N": "Takeshi",
+        "G": "Takeshia",
+        "D": "Takeshiu",
+        "A": "Takeshia",
+        "V": "Takeshi",
+        "I": "Takeshiom",
+        "L": "Takeshiu"
+      },
+      "sve_varijante": [
+        "Takeshi",
+        "Takeshiom",
+        "Takeshia",
+        "Takeshiu"
+      ]
+    },
+    "Ana": {
+      "ime": "Ana",
+      "rod": "Ž",
+      "padeži": {
+        "N": "Ana",
+        "G": "Ane",
+        "D": "Ani",
+        "A": "Anu",
+        "V": "Ana",
+        "I": "Anom",
+        "L": "Ani"
+      },
+      "sve_varijante": [
+        "Anom",
+        "Ana",
+        "Ani",
+        "Ane",
+        "Anu"
+      ]
+    },
+    "Bancroft": {
+      "ime": "Bancroft",
+      "rod": "auto",
+      "padeži": {
+        "N": "Bancroft",
+        "G": "Bancrofta",
+        "D": "Bancroftu",
+        "A": "Bancrofta",
+        "V": "Bancroft",
+        "I": "Bancroftom",
+        "L": "Bancroftu"
+      },
+      "sve_varijante": [
+        "Bancroftom",
+        "Bancrofta",
+        "Bancroft",
+        "Bancroftu"
+      ]
+    },
+    "Sarah": {
+      "ime": "Sarah",
+      "rod": "Ž",
+      "padeži": {
+        "N": "Sarah",
+        "G": "Saraha",
+        "D": "Sarahu",
+        "A": "Saraha",
+        "V": "Sarah",
+        "I": "Sarahom",
+        "L": "Sarahu"
+      },
+      "sve_varijante": [
+        "Sarahu",
+        "Sarahom",
+        "Saraha",
+        "Sarah"
+      ]
+    }
+  },
+  "few_shot_primjeri": [
+    {
+      "originalni": "He didn't know what to say.",
+      "prevedeni": "Nije znao što reći.",
+      "komentar": "Bez kalkova, prirodan BS"
+    }
+  ],
+  "poglavlja": {}
+}

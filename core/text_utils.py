@@ -1,0 +1,429 @@
+# core/text_utils.py
+#
+# BUGFIX:
+#   B02: _detektuj_en_ostatke — vraćala 0.0 za SVE tekstove koji imaju ikoji
+#        HR dijakritički znak, čak i ako je 90% tekst engleski.
+#        Ispravka: HR dijakritici smanjuju EN score ali ga ne nulliraju.
+#   B07: _automatska_korekcija — regex operisao na HTML-u pa propuštao
+#        matcheve u "bio je u stanju da<br> uradi". Sada strip HTML tagova.
+#        Dodano još kalkova koji su bili propušteni.
+#   B19: _strip_ai_json broken regex `r"?` ``` `\s*$"` — fixed u svim fajlovima
+#        gdje se pojavljuje (ovdje je _smart_extract).
+
+import re
+import json
+from bs4 import BeautifulSoup
+try:
+    from core.kalkovi.engine import primijeni_html_safe as _kalkovi_primijeni
+except ImportError:
+    _kalkovi_primijeni = lambda t, **kw: t
+
+import re as _re_tu
+
+# Shared regex za detekciju HTML taga (ne entiteta) u stringu.
+# Koristi se u workers.py i retro.py — definirano ovdje da nema dupliciranja.
+_HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
+
+def _booklyfi_fix_spojnice(tekst: str) -> str:
+    """
+    Ispravlja slijepljene riječi nastale pri chunking/joining operacijama.
+    1. "daBancroftovi" → "da Bancroftovi"  (malo+Veliko bez razmaka)
+    2. "B io je"       → "Bio je"           (slovo+razmak+slova = razlomljena riječ)
+    3. Višestruki razmaci → jedan razmak
+    """
+    if not tekst:
+        return tekst
+    # Fix 1: malo slovo direktno uz veliko (bez razmaka) — ubaci razmak
+    # Izuzetak: HTML tagovi, akronimi, vlastita imena s apostrofom
+    tekst = _re_tu.sub(
+        r'(?<=[a-zčćšžđ])(?=[A-ZČĆŠŽĐ])',
+        ' ',
+        tekst
+    )
+    # Fix 2: Izolirano slovo + razmak + nastavak (razlomljena riječ pri copy/paste)
+    # "B io" → "Bio", "P oglavlje" → "Poglavlje"
+    tekst = _re_tu.sub(
+        r'\b([A-ZČĆŠŽĐ])\s+([a-zčćšžđ]{2,})',
+        lambda m: m.group(1) + m.group(2),
+        tekst
+    )
+    # Fix 3: višestruki razmaci (osim newline)
+    tekst = _re_tu.sub(r'[^\S\n]{2,}', ' ', tekst)
+    return tekst
+
+
+
+
+# FIX: Strane riječi koje EN detektor NE smije brojati kao engleski ostatak
+_STRANI_JEZIK_WHITELIST = frozenset({
+    # Njemački (čest u književnim prijevodima)
+    "der", "die", "das", "den", "dem", "des", "ein", "eine", "einen",
+    "und", "oder", "nicht", "mit", "von", "bei", "nach", "aus", "auf",
+    "ist", "war", "hat", "haben", "sein", "sind", "wird", "wurde",
+    "ich", "du", "er", "wir", "ihr", "mich", "mein", "lassen",
+    "schlemmen", "nacht", "mann", "herr", "gut", "verdammte",
+    # Latinski
+    "et", "ad", "per", "sub", "pro", "de", "ex",
+    # Talijanski/Španski
+    "el", "los", "del", "una",
+})
+
+_HR_DIACRITICALS = frozenset("šćčžđŠĆČŽĐ")
+
+
+def _strip_html_wrapper(tekst: str) -> str:
+    """
+    Uklanja <html><body>...</body></html> omotače koje AI modeli ponekad
+    dodaju oko HTML fragmenata koje im je proslijeđen. Vraća samo sadržaj
+    <body> taga. Ako nema <html>/<body> omotača, vraća tekst nepromijenjen.
+    """
+    if not tekst or "<html" not in tekst.lower():
+        return tekst
+    try:
+        s = BeautifulSoup(tekst, "html.parser")
+        if s.body:
+            inner = "".join(str(c) for c in s.body.children)
+            # Samo zamijeni ako smo dobili nešto korisno (ne prazno)
+            if inner.strip():
+                return inner
+    except Exception:
+        pass
+    return tekst
+
+
+def _smart_extract(raw: str) -> str:
+    if not raw:
+        return ""
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(?:json)?\s*", "", raw)
+        raw = re.sub(r"\s*```\s*$", "", raw)  # B19 FIX: bio r"?```\s*$"
+
+    # Normalizacija tipografskih navodnika → ASCII prije JSON parsiranja.
+    # Neki AI modeli (posebno manji) prate "NAVODNICI" pravilo premijerno i
+    # koriste „..." i u JSON omotaču (ključevi, graničnici stringa), što
+    # proizvodi nevaljani JSON. Normalizacijom omogućavamo uspješan json.loads.
+    _TYPO_Q = re.compile(r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b]')
+
+    for candidate in (raw, _TYPO_Q.sub('"', raw)):
+        try:
+            data = json.loads(candidate)
+            if isinstance(data, dict):
+                # B01 FIX: "finalno_polirano" je prvi — to je što LEKTOR_TEMPLATE vraća
+                for k in ["finalno_polirano", "korektura", "translated", "tekst", "text"]:
+                    if k in data and data[k]:
+                        return _strip_html_wrapper(str(data[k]).strip())
+        except Exception:
+            pass
+
+    # Regex fallback za finalno_polirano: pohlepni (.+) namjerno hvata vrijednosti
+    # s neescape-danim ASCII navodnicima unutar HTML-a (npr. dijalog sekcije).
+    # Ispravno-escapirani JSON je već uhvaćen json.loads iznad.
+    # Pohlepni backtracking je O(n) — nema eksponencijalnog rizika za ovaj obrazac.
+    m = re.search(r'"finalno_polirano"\s*:\s*"(.+)"\s*\}?\s*$', raw, re.DOTALL)
+    if m:
+        return m.group(1)
+
+    # Regex fallback za korektura (KOREKTOR prolaz) — pohlepni, isti princip.
+    m = re.search(r'"korektura"\s*:\s*"(.+)"\s*\}?\s*$', raw, re.DOTALL)
+    if m:
+        return m.group(1)
+
+    cist = _agresivno_cisti(raw)
+    # Odbaci ako je AI vratio anotacijski odgovor umjesto čistog teksta
+    if _je_ai_anotacija(cist):
+        return ""
+    return cist
+
+
+def _agresivno_cisti(tekst: str) -> str:
+    if not tekst:
+        return ""
+    tekst = re.sub(r"```.*?```", "", tekst, flags=re.DOTALL)
+    tekst = re.sub(r"<OVDJE_IDI_[A-Z_]+>", "", tekst)
+    tekst = _strip_html_wrapper(tekst)
+    return _ocisti_ai_markere(tekst.strip())
+
+
+def _ocisti_ai_markere(tekst: str) -> str:
+    for p in [
+        r"\bNaravno[,!]?\b",
+        r"\bSvakako[,!]?\b",
+        r"Evo (?:rezultata|prijevoda)",
+        r"Izvolite",
+    ]:
+        tekst = re.sub(p, "", tekst, flags=re.IGNORECASE)
+    return tekst.strip()
+
+
+def _je_placeholder(tekst: str) -> bool:
+    cist = re.sub(r"<[^>]+>", "", tekst).strip().lower()
+    return cist in {"lektorisani tekst ovdje", "korigirani tekst ovdje"}
+
+
+# ── Detekcija AI anotacija (annotation-style odgovora) ───────────────────────
+# Kada AI (Lektor/Korektor) umjesto čistog teksta vrati listu izmjena u
+# markdown formatu (npr. "1. **Interpunkcija:** → **novo**"), taj odgovor
+# NIKAD ne smije ući u .chk fajlove niti u EPUB izlaz.
+
+# Minimalan broj pronađenih anotacijskih obrazaca da bi tekst bio odbačen
+_MIN_ANOTACIJA_PATTERNS: int = 2
+
+_ANOTACIJA_PATERN_RE = re.compile(
+    r"""
+    (?:
+        ^\d+\.\s+\*\*[^\n*]{1,60}:?\*\*      # "1. **Tipografija:**" na početku retka
+      | →\s+(?:\*\*|„)                         # "→ **novo**" ili "→ „novo""
+      | \*\*[A-ZŠĆČŽĐ][a-zšćčžđA-ZŠĆČŽĐ\s]{1,40}:\*\*  # "**Sekcija:**"
+      | ^[-—]\s+(?:Dodan|Ispravlj|Zamijen)  # "— Dodano ...", "— Dodan ...", "- Ispravljeno ..."
+    )
+    """,
+    re.MULTILINE | re.VERBOSE,
+)
+
+
+def _je_ai_anotacija(tekst: str) -> bool:
+    """
+    Detektuje da li je AI vratio format anotacija/bilješki o izmjenama
+    umjesto čistog teksta.  Primjeri:
+
+        1. **Tipografija:** „staro" → **„novo"**
+        2. **Interpunkcija:** — Dodana em-crtica ...
+        - *„staro"* → **„novo"** (objašnjenje)
+
+    Ako se nađe ≥_MIN_ANOTACIJA_PATTERNS takva obrasca tekst se tretira
+    kao nevaljana anotacija.  Vraća True → pozivalac pada na fallback tekst.
+    """
+    if not tekst or len(tekst) < 20:
+        return False
+    return len(_ANOTACIJA_PATERN_RE.findall(tekst)) >= _MIN_ANOTACIJA_PATTERNS
+
+
+_EN_STOPWORDS = frozenset({
+    "the", "and", "was", "for", "with", "his", "they",
+    "have", "from", "this", "that", "are", "not", "but",
+    "had", "her", "she", "him", "been", "when", "into",
+    "there", "then", "than", "would", "could", "their",
+})
+
+
+def _detektuj_en_ostatke(tekst: str) -> float:
+    """
+    B02 FIX — Stara verzija vraćala 0.0 za SVE tekstove s ikim HR dijakritičkim
+    znakom. To znači da blok "the big house. Kuća. the car. the man. č" nikad
+    nije triggerovao rescue (0.0 < 0.08 → ok). Sada: HR dijakritici smanjuju
+    score ali ne nulliraju ga — HR tekst normalno dobija nizak score jer ima
+    malo EN stop-word, mješani tekst dobija proporcionalan score.
+    """
+    try:
+        cist = re.sub(r"<[^>]+>", "", tekst).lower()
+        words = re.findall(r"\b[a-z]{2,}\b", cist)
+        if not words:
+            return 0.0
+
+        # Broj HR dijakritičkih znakova smanjuje EN signal
+        hr_chars = sum(1 for c in cist if c in _HR_DIACRITICALS)
+        hr_ratio = hr_chars / max(1, len(cist))
+
+        en_hits = sum(1 for w in words if w in _EN_STOPWORDS)
+        raw_en_ratio = en_hits / len(words)
+
+        # Ako ima izrazite HR dijakritike (>0.5% teksta), smanji EN score
+        # ali ne nulliraj. 0.005 HR ratio → 50% penalty na EN score.
+        if hr_ratio > 0.005:
+            damping = max(0.0, 1.0 - (hr_ratio / 0.01))
+            return round(raw_en_ratio * damping, 4)
+
+        return round(raw_en_ratio, 4)
+
+    except Exception:
+        return 0.0
+
+
+def _detektuj_halucinaciju(original: str, prijevod: str, uloga: str = "LEKTOR") -> bool:
+    try:
+        orig_len = len(re.sub(r"<[^>]+>", "", original).strip())
+        prev_len = len(re.sub(r"<[^>]+>", "", prijevod).strip())
+        if orig_len == 0 or prev_len < 15:
+            return False
+        ratio = prev_len / orig_len
+        # LEKTOR: stroga provjera (prijevod→HR ne smije puno rasti/padati)
+        if uloga == "LEKTOR" and (ratio < 0.92 or ratio > 1.12):
+            return True
+        # RETRO: šire granice — blokovi s lošom ocjenom mogu zahtijevati
+        # značajniju preradu (npr. ostatak engleskog koji lektor ispravlja)
+        if uloga == "RETRO" and (ratio < 0.75 or ratio > 1.35):
+            return True
+        # PREVODILAC: HR je obično 10-30% duži od EN — šire granice
+        if uloga == "PREVODILAC" and (ratio < 0.70 or ratio > 1.50):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def detektuj_tip_bloka(html_chunk: str) -> str:
+    """
+    Određuje tip bloka na osnovu HTML sadržaja.
+    Vraća: 'dijalog' | 'poetski' | 'opis' | 'naracija'
+    """
+    cist = BeautifulSoup(html_chunk, "html.parser").get_text()
+
+    dialog_markers = len(re.findall(r'(?:^|\n)\s*[—"„]', cist))
+    recjenice = [r.strip() for r in re.split(r"[.!?]+", cist) if r.strip()]
+    if recjenice:
+        dash_count = len(re.findall(r"[—–-]{1,2}", cist))
+        quote_count = len(re.findall(r'[„""\']+ ', cist))
+        if (dialog_markers / max(1, len(recjenice)) > 0.25
+                or (dash_count + quote_count) > len(recjenice) * 0.4):
+            return "dijalog"
+
+    br_count = len(re.findall(r"<br\s*/?>", html_chunk, re.IGNORECASE))
+    em_block = bool(re.search(
+        r"<(?:em|i)[^>]*>.*?</(?:em|i)>", html_chunk, re.IGNORECASE | re.DOTALL
+    ))
+    prosjecna_duljina = (
+        sum(len(r) for r in recjenice) / max(1, len(recjenice)) if recjenice else 0
+    )
+    if br_count >= 3 or (em_block and prosjecna_duljina < 60):
+        return "poetski"
+    if prosjecna_duljina < 40 and len(recjenice) >= 3:
+        return "poetski"
+
+    glagoli_govora = len(re.findall(
+        r"\b(?:said|told|asked|replied|whispered|shouted|answered"
+        r"|reče|odvrati|upita|prošaputa)\b",
+        cist, re.IGNORECASE,
+    ))
+    if prosjecna_duljina > 120 and glagoli_govora == 0:
+        return "opis"
+
+    return "naracija"
+
+
+def _adaptive_temp(uloga: str, tip_bloka: str, bazna_temp: float) -> float:
+    if uloga in ("LEKTOR", "GUARDIAN"):
+        if tip_bloka == "dijalog":
+            return min(bazna_temp + 0.15, 0.72)
+        if tip_bloka == "poetski":
+            return min(bazna_temp + 0.25, 0.82)
+        if tip_bloka == "opis":
+            return min(bazna_temp + 0.05, 0.55)
+    if uloga == "POLISH":
+        if tip_bloka == "poetski":
+            return 0.85
+        if tip_bloka == "dijalog":
+            return 0.75
+        if tip_bloka == "opis":
+            return 0.60
+    if uloga == "PREVODILAC":
+        if tip_bloka == "dijalog":
+            return min(bazna_temp + 0.08, 0.30)
+        if tip_bloka == "poetski":
+            return min(bazna_temp + 0.15, 0.38)
+    return bazna_temp
+
+
+def _post_process_tipografija(tekst: str) -> str:
+    """
+    Post-processing tipografskih konvencija za BS/HR standard.
+    """
+    # Tri tačke
+    tekst = re.sub(r"(?<!\.)\.\.\.(?!\.)", "…", tekst)
+    tekst = re.sub(r"(?<![.\u2026])\.\.(?![.\u2026])", ".", tekst)
+
+    # Četiri+ tačke → …
+    tekst = re.sub(r"\.{4,}", "…", tekst)
+
+    # Dijalog em-crtica — na početku linije
+    tekst = re.sub(r"(?m)^\s*--\s*", "— ", tekst)
+    tekst = re.sub(r"(?m)^\s*-\s+(?=[A-ZČĆŠŽĐ\u201e\"])", "— ", tekst)
+
+    # Em-crtica mid-sentence: " -- " ili "--" između slova/zareza → " — "
+    tekst = re.sub(r"(?<=[^\s\n])--(?=[^\s\n])", "—", tekst)
+    tekst = re.sub(r"\s+--\s+", " — ", tekst)
+
+    # En-crtica za raspone brojeva
+    tekst = re.sub(r"(\d)\s*-\s*(\d)", r"\1–\2", tekst)
+
+    # Em-crtica bez razmaka → s razmacima (ne na početku linije)
+    tekst = re.sub(r"(?<=[^\s\n\u2014])—(?=[^\s\n\u2014])", " — ", tekst)
+
+    # Navodnici: ASCII "..." → BS/HR standard „..." u tekstualnom sadržaju
+    # Isključuje HTML atribute (ne smije biti < > unutar navodnika).
+    # Limit od 400 znakova: štiti od premoći na HTML atribute s dugačkim vrijednostima;
+    # književni citat gotovo nikad ne prelazi 400 znakova unutar jednog para navodnika.
+    tekst = re.sub(r'"([^"<>\n\r]{1,400})"', r'„\1"', tekst)
+    # Zamijeni zaostale dvostruke navodnike koji nisu dio HTML-a
+    tekst = re.sub(r'\u201c([^"\u201c\u201d<>\n\r]{1,400})\u201d', r'„\1"', tekst)
+
+    # Whitespace ispred interpunkcije
+    tekst = re.sub(r"\s+([,;:!?])", r"\1", tekst)
+
+    # Dvostruki razmaci → jedan
+    tekst = re.sub(r"  +", " ", tekst)
+
+    return tekst
+
+
+def _automatska_korekcija(tekst: str) -> str:
+    """
+    B07 FIX: Sada strip HTML tagova prije regex matchinga, pa vrati HTML strukturu.
+    Prošireno s više kalkova koji su bili propušteni.
+    """
+    # Radi na čistom tekstu → primijeni korekcije → tekst se vraća u HTML blok
+    # NAPOMENA: korekcije se primjenjuju samo na text nodove, HTML tagovi ostaju
+    def _korigiraj_cist(cist: str) -> str:
+        zamjene = [
+            # ── Modalni kalkovi (da + prezent → infinitiv) ──────────────────
+            (r"\bbio\s+je\s+u\s+stanju\s+da\b",         "mogao je"),
+            (r"\bbila\s+je\s+u\s+stanju\s+da\b",         "mogla je"),
+            (r"\bnije\s+bio\s+u\s+mogu[ćc]nosti\b",      "nije mogao"),
+            (r"\bnije\s+bila\s+u\s+mogu[ćc]nosti\b",     "nije mogla"),
+            (r"\buspio\s+je\s+da\s+uradi\b",              "uspio je uraditi"),
+            (r"\bpokušao\s+je\s+da\b",                    "pokušao je"),
+            (r"\bpokušala\s+je\s+da\b",                   "pokušala je"),
+            (r"\bodlučio\s+je\s+da\b",                    "odlučio je"),
+            (r"\bodlučila\s+je\s+da\b",                   "odlučila je"),
+            (r"\bhtio\s+je\s+da\b",                       "htio je"),
+            (r"\bhtjela\s+je\s+da\b",                     "htjela je"),
+            (r"\bmorao\s+je\s+da\b",                      "morao je"),
+            (r"\bmorala\s+je\s+da\b",                     "morala je"),
+            (r"\bmorao\s+sam\s+da\b",                     "morao sam"),
+            (r"\bmorala\s+sam\s+da\b",                    "morala sam"),
+            (r"\bznao\s+je\s+da\b\s+(?=\w+i\b)",         "znao je"),
+            # ── Srpski oblici → HR ───────────────────────────────────────────
+            (r"\bsaglasan\b",                              "suglasan"),
+            (r"\bsaglasnost\b",                            "suglasnost"),
+            (r"\bpreduzeti\b",                             "poduzeti"),
+            (r"\bpreduzeo\b",                              "poduzeo"),
+            (r"\bpreduzeće\b",                             "poduzeće"),
+            (r"\bpreduzima\b",                             "poduzima"),
+            (r"\buočio\s+je\s+da\b",                      "uočio je kako"),
+            # ── Fraze/kalkovi ─────────────────────────────────────────────────
+            (r"\bu\s+pogledu\s+toga\b",                   "što se toga tiče"),
+            (r"\bimati\s+u\s+vidu\b",                     "imati na umu"),
+            (r"\bna\s+kraju\s+krajeva\b",                 "naposljetku"),
+            (r"\bu\s+cilju\s+toga\s+da\b",               "kako bi"),
+            (r"\bs\s+ciljem\s+da\b",                      "s namjerom da"),
+            (r"\bu\s+smislu\s+toga\b",                    "u tom smislu"),
+            (r"\bkao\s+rezultat\s+toga\b",               "stoga"),
+            (r"\bprovesti\s+u\s+djelo\b",                "ostvariti"),
+            (r"\bkoristeć[ia]\s+se\b",                    "koristeći"),
+            (r"\bod\s+strane\s+(\w+)a\b",                r"od \1a"),  # samo glajšanje
+        ]
+        for pattern, zamjena in zamjene:
+            cist = re.sub(pattern, zamjena, cist, flags=re.IGNORECASE)
+        return cist
+
+    # Parsiramo HTML, korigiramo samo tekst nodove
+    try:
+        soup = BeautifulSoup(tekst, "html.parser")
+        for node in soup.find_all(string=True):
+            korigiran = _korigiraj_cist(node.string)
+            if korigiran != node.string:
+                node.replace_with(korigiran)
+        return str(soup)
+    except Exception:
+        # Fallback: direktna zamjena na cijelom tekstu
+        return _korigiraj_cist(tekst)
