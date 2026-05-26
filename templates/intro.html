@@ -1,0 +1,86 @@
+
+
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKLYFI TURBO CHARGED — Loading...</title>
+    <meta name="theme-color" content="#020617">
+
+    <!-- Preconnect for fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+          rel="stylesheet">
+
+    <!-- Intro styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/intro.css') }}">
+</head>
+<body>
+
+    <!-- ── Intro overlay ──────────────────────────────────────────────────── -->
+    <div id="intro-overlay" role="dialog" aria-label="Uvodni ekran" aria-modal="true">
+
+        <!-- V8 Book Turbo ghost background -->
+        <div id="intro-svg-bg" aria-hidden="true">
+            <img src="{{ url_for('static', filename='img/V8_book_turbo.svg') }}" alt="">
+        </div>
+
+        <!-- Three.js WebGL canvas -->
+        <canvas id="intro-threejs-canvas"></canvas>
+
+        <!-- UI text layer (shown from Phase 6) -->
+        <div id="intro-ui-layer">
+            <div id="intro-logo-text" aria-live="polite">
+                <span class="letter" data-l="B">B</span><span
+                      class="letter" data-l="O">O</span><span
+                      class="letter" data-l="O">O</span><span
+                      class="letter" data-l="K">K</span><span
+                      class="letter" data-l="L">L</span><span
+                      class="letter" data-l="Y">Y</span><span
+                      class="letter" data-l="F">F</span><span
+                      class="letter" data-l="I">I</span>
+            </div>
+            <div id="intro-subtitle-text">TURBO CHARGED &thinsp;&#9889;</div>
+            <div id="intro-loading-text">Initializing BOOKLYFI&hellip;</div>
+        </div>
+
+        <!-- Progress bar (shown from Phase 2) -->
+        <div id="intro-progress-wrap" aria-hidden="true">
+            <div id="intro-progress-bar-bg">
+                <div id="intro-progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <!-- Visual effects overlays -->
+        <div id="intro-bloom-overlay" aria-hidden="true"></div>
+        <div id="intro-fade-overlay"  aria-hidden="true"></div>
+
+        <!-- Pre-animation loader — visible immediately (CSS only, no JS needed).
+             Hidden by intro-animation.js once the 3D scene starts. -->
+        <div id="intro-pre-load" aria-hidden="true">
+            <span class="ipl-dot"></span>
+            <span class="ipl-dot"></span>
+            <span class="ipl-dot"></span>
+        </div>
+
+        <!-- Skip button (shown after 2 s) -->
+        <button class="skip-intro-btn" id="skip-intro-btn"
+                onclick="skipIntro()" aria-label="Preskoči intro">
+            Preskoči
+        </button>
+    </div>
+
+    <!-- ── Three.js (local, r160 — last UMD build) ──────────────────────── -->
+    <script src="{{ url_for('static', filename='js/intro/three.min.js') }}"></script>
+
+    <!-- ── Intro animation modules ───────────────────────────────────────── -->
+    <script src="{{ url_for('static', filename='js/intro/particle-system.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/intro/post-processing.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/intro/intro-animation.js') }}"></script>
+
+</body>
+</html>
+
+
