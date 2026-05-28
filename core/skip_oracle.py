@@ -16,7 +16,7 @@ MIN_SLICNOST_LEKTOR_IZLAZ = 0.92  # lektor izlaz mora biti 92% sličan ulazu
 def _plain_text(html_text):
     try:
         return BeautifulSoup(html_text or "", "html.parser").get_text(" ", strip=True)
-    except:
+    except Exception:  # NOTE #1 fix: bare except zamjenjen
         return (html_text or "").strip()
 
 def _similarity(a, b):

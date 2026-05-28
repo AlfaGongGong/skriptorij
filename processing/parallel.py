@@ -6,7 +6,7 @@ import random
 
 # Veličina sliding window-a — maksimalno N aktivnih chunka u isto vrijeme.
 # Za 8 ključeva to znači 4 paralelna poziva (konzervativno, bez DDoS-a)
-_SLIDING_WINDOW_SIZE = 1  # 5 RPM free tier = serijski rad
+_SLIDING_WINDOW_SIZE = 6  # PROBLEM #1 fix: bio 1 (ubijao dinamički algoritam); sada = gornja granica iz _get_window_size (max 6)
 
 
 class AdaptiveParallelism:
@@ -66,19 +66,40 @@ class AdaptiveParallelism:
         async def process_one(idx, chunk):
             async with semaphore:
                 try:
-                    # Stagger proporcionalan min_gap-u provajdera — ne fiksan 0.1-0.8s.
-                    # S window_size=1 i min_gap=7.5s (Gemini 3.5-flash): stagger je 0s
-                    # (već serijski). S window_size=2: idx 0 → 0s, idx 1 → 3.75s.
-                    # Ovo sprečava thundering herd gdje svi kreneu u 0.7s prozoru.
+                    # ── Stagger — samo za blokove koji idu na API ─────────────
+                    # Cache hit (.chk postoji + score ≥ threshold) ne ide na
+                    # mrežu pa nema smisla čekati API throttle interval.
+                    _is_cache_hit = False
                     try:
-                        from config.ai_config import get_min_gap
-                        _prov = getattr(self.engine, '_primary_provider', 'GEMINI')
-                        _gap = get_min_gap(_prov)
+                        from core.quality import _QUALITY_RESCUE_THRESHOLD
+                        _chk = (
+                            self.engine.checkpoint_dir
+                            / f"{file_name}_blok_{idx}.chk"
+                        )
+                        if _chk.exists():
+                            _qs  = self.engine.shared_stats.get("quality_scores", {})
+                            _raw = _qs.get(f"{file_name}_blok_{idx}")
+                            _sc  = float(_raw) if _raw is not None else None
+                            # cache hit ako: score nepoznat (bit će scorovan)
+                            # ILI score iznad threshold-a
+                            _is_cache_hit = (_sc is None or _sc >= _QUALITY_RESCUE_THRESHOLD)
                     except Exception:
-                        _gap = 7.5
-                    stagger = (idx % max(window_size, 1)) * (_gap / max(window_size, 1))
-                    stagger += random.uniform(0.1, 0.5)  # mali jitter
-                    await asyncio.sleep(stagger)
+                        pass
+
+                    if not _is_cache_hit:
+                        # Stagger proporcionalan min_gap-u provajdera — ne fiksan 0.1-0.8s.
+                        # S window_size=1 i min_gap=7.5s (Gemini 3.5-flash): stagger je 0s
+                        # (već serijski). S window_size=2: idx 0 → 0s, idx 1 → 3.75s.
+                        # Ovo sprečava thundering herd gdje svi krenu u 0.7s prozoru.
+                        try:
+                            from config.ai_config import get_min_gap
+                            _prov = getattr(self.engine, '_primary_provider', 'GEMINI')
+                            _gap = get_min_gap(_prov)
+                        except Exception:
+                            _gap = 7.5
+                        stagger = (idx % max(window_size, 1)) * (_gap / max(window_size, 1))
+                        stagger += random.uniform(0.1, 0.5)  # mali jitter
+                        await asyncio.sleep(stagger)
 
                     p_ctx = p_ctx_func(chunks, idx)
                     n_ctx = n_ctx_func(chunks, idx)

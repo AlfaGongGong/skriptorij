@@ -190,8 +190,10 @@ class FleetManager:
             if isinstance(data, list):
                 key_list = [k.strip() for k in data if isinstance(k, str) and k.strip()]
             elif isinstance(data, dict):
-                for v in data.values():
-                    if isinstance(v, dict) and "key" in v:
+                for k, v in data.items():
+                    if isinstance(v, dict) and "key" not in v:
+                        key_list.append(k.strip())
+                    elif isinstance(v, dict) and "key" in v:
                         key_list.append(v["key"].strip())
                     elif isinstance(v, str) and v.strip():
                         key_list.append(v.strip())
@@ -291,15 +293,15 @@ class FleetManager:
                 )
                 return None
 
-            # FIX: round-robin po svim dostupnim ključevima.
-            # Prethodni kod: non_zero filter je excludovao sve ključeve s 0 ok/failed
-            # (novi ključevi) pa je uvijek birao isti ključ koji je već imao uspjeha.
-            # Rezultat: jedan ključ troši svu kvotu, ostali miruju.
-            # Ispravak: RR po svim dostupnim ključevima, bez filtera po success_rate.
-            # success_rate ostaje za logging i statistiku ali ne utječe na selekciju.
-            idx    = self._rr_index.get(prov_u, 0) % len(available)
+            # RR rotacija s monotonim brojačem — ne ovisi o len(available).
+            # Prethodni kod: index = rr % len(available) pa novi_rr = (index+1) % len(available)
+            # Problem: kad available raste/pada (cooldown dolazi/odlazi) wraparound skoči
+            # na isti ključ više puta uzastopno. Rješenje: rr je monotoni brojač,
+            # biramo available[rr % len(available)] i inkrementujemo za 1.
+            rr  = self._rr_index.get(prov_u, 0)
+            idx = rr % len(available)
             chosen = available[idx]
-            self._rr_index[prov_u] = (idx + 1) % len(available)
+            self._rr_index[prov_u] = rr + 1
             logger.debug(
                 "[FleetManager] get_best_key(%s): odabran ...%s (success_rate=%.2f, %d/%d dostupno)",
                 prov_u, chosen.key[-4:], chosen.success_rate, len(available), len(keys),
@@ -365,6 +367,8 @@ class FleetManager:
         prov_u = provider.upper()
 
         # Izvuci tokene iz body-a
+        # OpenAI-compat format:  body["usage"]["total_tokens"] / prompt_tokens + completion_tokens
+        # Gemini native format:  body["usageMetadata"]["totalTokenCount"]
         tokens = 0
         if isinstance(body, dict):
             usage = body.get("usage", {})
@@ -375,6 +379,11 @@ class FleetManager:
                         (usage.get("prompt_tokens") or 0) +
                         (usage.get("completion_tokens") or 0)
                     )
+            if tokens == 0:
+                # Gemini native API
+                meta = body.get("usageMetadata", {})
+                if isinstance(meta, dict):
+                    tokens = int(meta.get("totalTokenCount", 0) or 0)
 
         # Izvuci Retry-After iz headera
         retry_after = None
@@ -529,8 +538,13 @@ class FleetManager:
         return result
 
     def get_total_active_keys(self) -> int:
+        # PROBLEM #2 fix: broji samo dostupne ključeve (available=True),
+        # ne sve — ključevi u cooldownu ne smiju utjecati na window_size
         with self.lock:
-            return sum(len(keys) for keys in self.fleet.values())
+            return sum(
+                1 for keys in self.fleet.values()
+                for ks in keys if ks.available
+            )
 
     def _find_key(self, prov_u: str, key_str: str):
         for ks in self.fleet.get(prov_u, []):

@@ -767,6 +767,8 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     # V1.0: Skip Oracle — preskoči korektor ako je lektor jedva išta mijenjao
     pre_korektor = finalno
     skip_kor = False
+    prov3 = "N/A"      # BUG #1/#2 fix: inicijalizacija prije uvjetnih blokova
+    raw_kor = None     # BUG #1/#2 fix: spriječava UnboundLocalError pri exceptu
     if _SKIP_ORACLE_OK and moze_skipovati_korektor:
         try:
             prevod_score = self.shared_stats.get("quality_scores", {}).get(
@@ -876,8 +878,8 @@ async def process_chunk_with_retry(
             )
 
             # WorkerV2.obradi_chunk je sinkron — pokreni u thread pool-u
-            loop = asyncio.get_event_loop()
-            rezultat = await loop.run_in_executor(
+            # BUG #6 fix: get_event_loop() deprecated u Python 3.10+
+            rezultat = await asyncio.get_running_loop().run_in_executor(
                 None,
                 lambda: worker.obradi_chunk(chunk)
             )
