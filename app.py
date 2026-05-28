@@ -940,6 +940,87 @@ def create_app() -> Flask:
             return jsonify({"error": "Greška pri testiranju ključa"}), 500
 
     # ═════════════════════════════════════════════════════════════════════════
+
+    # ─────────────────────────────────────────────────────────────────────
+    # KEY RENEWAL — Smart reset pri obnovi ključa od provajdera
+    # ─────────────────────────────────────────────────────────────────────
+
+    @app.route("/api/keys/<provider>/<int:index>/renew", methods=["POST"])
+    def api_keys_renew(provider, index):
+        """
+        Resetuje stanje ključa prema tipu obnove od provajdera.
+        Body: { "mode": "rpm_reset" | "rpd_reset" | "full_reset" | "unban" }
+        """
+        _VALID_RENEWAL_MODES = {"rpm_reset", "rpd_reset", "full_reset", "unban"}
+        _RENEWAL_LABELS = {
+            "rpm_reset":  "Minutni RPM cooldown resetovan",
+            "rpd_reset":  "Dnevna kvota resetovana (provider ponoćni reset)",
+            "full_reset": "Potpuni reset ključa (regenerisan ili operatorski)",
+            "unban":      "Ključ odbanovan (provider reaktivirao nalog)",
+        }
+        try:
+            prov_u = re.sub(r"[^A-Z0-9_]", "", provider.upper())
+            if not prov_u:
+                return jsonify({"error": "Neispravan naziv provajdera"}), 400
+            data = request.get_json(silent=True) or {}
+            mode = data.get("mode", "").strip().lower()
+            if mode not in _VALID_RENEWAL_MODES:
+                return jsonify({
+                    "error": f"Neispravan mode '{mode}'. Dozvoljeni: {', '.join(sorted(_VALID_RENEWAL_MODES))}",
+                    "valid_modes": sorted(_VALID_RENEWAL_MODES),
+                }), 400
+            cfg = json.loads(Path(_CONFIG_PATH).read_text("utf-8"))
+            raw = cfg.get(prov_u)
+            if raw is None:
+                return jsonify({"error": f"Provajder {prov_u} nije pronađen"}), 404
+            keys_list = raw if isinstance(raw, list) else raw.get("keys", [])
+            if index < 0 or index >= len(keys_list):
+                return jsonify({"error": "Indeks van opsega"}), 400
+            key = keys_list[index].strip()
+            if not key:
+                return jsonify({"error": "Prazan ključ"}), 400
+            from network.key_renewal import renew_key
+            result = renew_key(prov_u, key, mode)
+            result["mode_label"] = _RENEWAL_LABELS.get(mode, mode)
+            return jsonify(result), 200 if result["ok"] else 500
+        except FileNotFoundError:
+            return jsonify({"error": "Konfiguracija nije pronađena"}), 404
+        except Exception:
+            logger.exception("[api_keys_renew] Greška")
+            return jsonify({"error": "Greška pri resetovanju ključa"}), 500
+
+    @app.route("/api/keys/<provider>/renew_all", methods=["POST"])
+    def api_keys_renew_all(provider):
+        """
+        Resetuje sve ključeve jednog provajdera.
+        Body: { "mode": "rpd_reset" | "full_reset" | "unban" }
+        """
+        _BATCH_MODES = {"rpd_reset", "full_reset", "unban"}
+        _RENEWAL_LABELS = {
+            "rpd_reset":  "Dnevna kvota resetovana (provider ponoćni reset)",
+            "full_reset": "Potpuni reset svih ključeva",
+            "unban":      "Svi ključevi odbanovani",
+        }
+        try:
+            prov_u = re.sub(r"[^A-Z0-9_]", "", provider.upper())
+            if not prov_u:
+                return jsonify({"error": "Neispravan naziv provajdera"}), 400
+            data = request.get_json(silent=True) or {}
+            mode = data.get("mode", "").strip().lower()
+            if mode not in _BATCH_MODES:
+                return jsonify({
+                    "error": f"Neispravan mode '{mode}'. Za renew_all dozvoljeni: {', '.join(sorted(_BATCH_MODES))}",
+                    "valid_modes": sorted(_BATCH_MODES),
+                }), 400
+            from network.key_renewal import renew_provider
+            result = renew_provider(prov_u, mode)
+            result["mode_label"] = _RENEWAL_LABELS.get(mode, mode)
+            status = 200 if result["ok"] else (207 if result.get("success", 0) > 0 else 500)
+            return jsonify(result), status
+        except Exception:
+            logger.exception("[api_keys_renew_all] Greška")
+            return jsonify({"error": "Greška pri resetovanju provajdera"}), 500
+
     # FLEET
     # ═════════════════════════════════════════════════════════════════════════
 
