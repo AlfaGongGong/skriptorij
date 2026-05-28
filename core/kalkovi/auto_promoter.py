@@ -107,7 +107,7 @@ def get_stats():
             "SELECT COUNT(*) FROM (SELECT pattern FROM kandidati GROUP BY pattern HAVING SUM(pojavljivanja) >= ?)",
             (MIN_POTVRDA,)
         ).fetchone()[0]
-    except:
+    except Exception:  # NOTE #1 fix: bare except zamjenjen
         ukupno, spremni = 0, 0
     conn.close()
     return {"ukupno_kandidata": ukupno, "spremno_za_promociju": spremni}

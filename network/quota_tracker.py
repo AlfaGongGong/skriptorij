@@ -9,6 +9,7 @@ import logging
 import os
 import threading
 import time
+from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -57,9 +58,11 @@ class KeyQuota:
         with self._lock:
             self.errors[status_code] = self.errors.get(status_code, 0) + 1
 
-            if status_code in (401, 403):
+            if status_code in (401, 402, 403):
+                # 402 = Payment Required / ključ nevažeći (SambaNova i sl.)
+                # 401/403 = neautoriziran / zabranjen pristup
                 self._consecutive_401 = getattr(self, "_consecutive_401", 0) + 1
-                if self._consecutive_401 >= 2:
+                if status_code == 402 or self._consecutive_401 >= 2:
                     self._set_cooldown(86400.0, f"ključ nevažeći ({status_code})")
                     logger.warning(
                         "[QuotaTracker] %s ...%s → %d (×%d) — ključ blacklistiran 24h",
@@ -147,6 +150,9 @@ class ProviderQuota:
         self.provider = provider.upper()
         self._lock = threading.Lock()
         self._keys: dict[str, KeyQuota] = {}
+        # BUG #4 fix: provider-level cooldown stanje
+        self._provider_cooldown_until: float = 0.0
+        self._provider_cooldown_reason: str = ""
 
     def add_key(self, key: str, rpm_safe: int = 0, rpd_safe: int = 0, min_gap_s: float = 2.0) -> KeyQuota:
         with self._lock:
@@ -173,24 +179,34 @@ class ProviderQuota:
         with self._lock:
             keys_status = [kq.to_status_dict() for kq in self._keys.values()]
         available = sum(1 for s in keys_status if s["cooldown_s"] == 0)
+        with self._lock:
+            prov_cd = max(0.0, self._provider_cooldown_until - time.time())
+            prov_reason = self._provider_cooldown_reason
         return {
             "provider": self.provider,
-            "provider_cooldown_s": 0,
-            "provider_cooldown_reason": "",
+            "provider_cooldown_s": round(prov_cd, 1),
+            "provider_cooldown_reason": prov_reason,
             "total_keys": len(keys_status),
             "available_keys": available,
             "keys": keys_status,
         }
 
     def set_provider_cooldown(self, seconds: float, reason: str = ""):
-        pass
+        """BUG #4 fix: postavlja provider-level cooldown (bio no-op)."""
+        new_until = time.time() + seconds
+        with self._lock:
+            if new_until > self._provider_cooldown_until:
+                self._provider_cooldown_until = new_until
+                self._provider_cooldown_reason = reason
 
     def provider_cooldown_remaining(self) -> float:
-        return 0.0
+        with self._lock:
+            return max(0.0, self._provider_cooldown_until - time.time())
 
 
 class QuotaTracker:
-    _PERSIST_PATH = "quota_cooldowns.json"
+    # BUG #5 fix: apsolutna putanja — cooldowni više ne ovise o cwd()
+    _PERSIST_PATH = str(Path(__file__).resolve().parent.parent / "quota_cooldowns.json")
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -204,12 +220,19 @@ class QuotaTracker:
         self._providers[prov].add_key(key, rpm_safe, rpd_safe, min_gap_s)
 
     def initialize_from_fleet(self, fleet: dict):
+        try:
+            from config.ai_config import get_min_gap as _get_min_gap
+        except ImportError:
+            _get_min_gap = lambda p: 2.0  # noqa: E731
+
         for provider, key_states in fleet.items():
             prov_u = provider.upper()
+            gap = _get_min_gap(prov_u)
             for ks in key_states:
-                self.register_key(prov_u, ks.key, min_gap_s=2.0)
+                self.register_key(prov_u, ks.key, min_gap_s=gap)
                 if prov_u == "GEMINI":
-                    self.register_key("GEMMA", ks.key, min_gap_s=2.0)
+                    gemma_gap = _get_min_gap("GEMMA")
+                    self.register_key("GEMMA", ks.key, min_gap_s=gemma_gap)
         logger.info("QuotaTracker inicijaliziran: %d provajdera", len(fleet))
         self._restore_cooldowns()
 
@@ -264,17 +287,14 @@ class QuotaTracker:
 
     def record_response(self, provider: str, key: str, status_code: int,
                         tokens: int = 0, retry_after=None, headers=None):
-        if status_code == 200:
-            pq = self._get_provider(provider.upper())
-            kq = pq.get_key(key) if pq else None
-            if kq:
-                with kq._lock:
-                    kq._consecutive_401 = 0
+        # BUG #7 fix: jedan lookup umjesto dva — thread-safer, bez duplog _get_provider
         pq = self._get_provider(provider.upper())
         kq = pq.get_key(key) if pq else None
         if not kq:
             return
         if status_code == 200:
+            with kq._lock:
+                kq._consecutive_401 = 0
             kq.record_success(tokens)
         elif status_code >= 400:
             if retry_after is None and headers:

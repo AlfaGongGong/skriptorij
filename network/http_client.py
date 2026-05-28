@@ -155,7 +155,11 @@ def _extract_gemini_native(data: dict) -> str | None:
             logger.warning("[GEMINI] Odgovor blokiran (SAFETY filter)")
             return None
         parts = cand.get("content", {}).get("parts", [])
-        text = "".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
+        text = "".join(
+            p.get("text", "")
+            for p in parts
+            if isinstance(p, dict) and not p.get("thought", False)
+        ).strip()
         return text or None
     except (KeyError, IndexError, TypeError):
         return None
@@ -212,7 +216,8 @@ async def _async_http_post(
     key: str,
     _proxy: dict | None = None,
 ) -> dict | None:
-    await acquire_key(key, prov_upper)
+    # FIX: prov za semaphore — GEMMA i GEMINI zasebni, ne dijele 90s blokadu
+    await acquire_key(key, prov)
     try:
         try:
             self.fleet.record_request(prov_upper, key)
@@ -231,10 +236,13 @@ async def _async_http_post(
             )
         except requests.exceptions.Timeout:
             self.log(f"[{prov_upper}] Timeout (90s)", "warning")
-            # FIX: timeout treba evidentirati cooldown da rotation skoči na sljedeći ključ
             try:
                 from network.quota_tracker import quota_tracker
+
                 quota_tracker.set_key_cooldown(prov_upper, key, 30.0, "timeout 90s")
+                # FIX: postavi cooldown i pod prov (GEMMA) da Gemma zna preskočiti ključ
+                if prov != prov_upper:
+                    quota_tracker.set_key_cooldown(prov, key, 30.0, "timeout 90s")
             except Exception:
                 pass
             return None
@@ -249,6 +257,18 @@ async def _async_http_post(
             except Exception:
                 resp_body = {"text": resp.text[:400]}
 
+        # FIX tokeni=0: za 200 OK parsiramo JSON PRIJE analyze_response
+        # kako bi tokens ekstrakcija u analyze_response imala body s usage poljem.
+        if resp.status_code == 200:
+            try:
+                data = resp.json()
+                resp_body = data  # <-- proslijedi body s usage tokenima
+            except Exception:
+                self.log(
+                    f"[{prov_upper}] Neispravan JSON u odgovoru (HTTP 200)", "error"
+                )
+                return None
+
         try:
             self.fleet.analyze_response(
                 prov, key, resp.status_code, resp.headers, resp_body
@@ -257,15 +277,8 @@ async def _async_http_post(
             pass
 
         if resp.status_code == 200:
-            try:
-                data = resp.json()
-                register_provider_runtime_limits(prov_upper, resp.headers, data)
-                return data
-            except Exception:
-                self.log(
-                    f"[{prov_upper}] Neispravan JSON u odgovoru (HTTP 200)", "error"
-                )
-                return None
+            register_provider_runtime_limits(prov_upper, resp.headers, data)
+            return data
 
         elif resp.status_code in (429, 425):
             register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
@@ -280,8 +293,16 @@ async def _async_http_post(
             return None
 
         elif resp.status_code == 500:
+            try:
+                from network.quota_tracker import quota_tracker as _qt
+
+                _qt.set_key_cooldown(prov_upper, key, 60.0, "500 server greška")
+                if prov != prov_upper:
+                    _qt.set_key_cooldown(prov, key, 60.0, "500 server greška")
+            except Exception:
+                pass
             self.log(
-                f"[{prov_upper}] HTTP 500 (server greška) — biram drugi ključ",
+                f"[{prov_upper}] HTTP 500 — cooldown 60s na ključu ...{key[-4:]}",
                 "warning",
             )
             await asyncio.sleep(2.0)
@@ -334,7 +355,7 @@ async def _async_http_post(
             return None
 
     finally:
-        release_key(key, prov_upper)
+        release_key(key, prov)
 
 
 # ── Gemini poziv (native endpoint) ───────────────────────────────────────────
@@ -540,22 +561,16 @@ async def _call_gemma_with_rotation(
                 if content:
                     return content, f"GEMMA-{current_model}"
 
-            # FIX: timeout ne postavlja GEMMA cooldown, pa provjeri i ks.available
-            # (isti pattern kao u _call_gemini_with_full_rotation)
-            if not ks.available:
+            # Provjeri GEMMA cooldown — ne ks.available koji gleda GEMINI cooldown
+            key_ok_gemma, _r = quota_tracker.is_key_available("GEMMA", key)
+            if not key_ok_gemma:
                 self.log(
-                    f"[GEMMA] Ključ ...{key[-4:]} nedostupan (timeout/429) — preskačem na sljedeći ključ",
+                    f"[GEMMA] Ključ ...{key[-4:]} nedostupan (GEMMA cooldown) — preskačem na sljedeći ključ",
                     "warning",
                 )
                 break
 
-            key_ok, _reason = quota_tracker.is_key_available("GEMMA", key)
-            if not key_ok:
-                self.log(
-                    f"[GEMMA] Ključ ...{key[-4:]} u cooldownu — preskačem na sljedeći ključ",
-                    "warning",
-                )
-                break
+            # BUG #3 fix: dupli is_key_available(GEMMA) blok uklonjen
 
             # Model rotation pri 429 (bug #9 fix)
             next_idx = None
@@ -700,6 +715,23 @@ def api_call(
         _time.sleep(random.uniform(0.5, 2.0))  # humanizovani jitter
         try:
             resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
+        except requests.exceptions.Timeout:
+            logger.warning(
+                "[api_call] %s ...%s Timeout (%ss)", prov_upper, api_key[-4:], timeout
+            )
+            try:
+                quota_tracker.set_key_cooldown(prov_upper, api_key, 30.0, "timeout 90s")
+                if prov_upper == "GEMINI":
+                    quota_tracker.set_key_cooldown(
+                        "GEMMA", api_key, 30.0, "timeout 90s"
+                    )
+                elif prov_upper == "GEMMA":
+                    quota_tracker.set_key_cooldown(
+                        "GEMINI", api_key, 30.0, "timeout 90s"
+                    )
+            except Exception:
+                pass
+            return None
         except requests.exceptions.RequestException as e:
             logger.warning("[api_call] %s mrežna greška: %s", prov_upper, str(e)[:120])
             return None
@@ -710,6 +742,20 @@ def api_call(
                 ra = float(ra_raw) if ra_raw else 10.0
             except ValueError:
                 ra = 10.0
+            try:
+                quota_tracker.set_key_cooldown(
+                    prov_upper, api_key, min(ra, 120.0), "429 RPM"
+                )
+                if prov_upper == "GEMINI":
+                    quota_tracker.set_key_cooldown(
+                        "GEMMA", api_key, min(ra, 120.0), "429 RPM"
+                    )
+                elif prov_upper == "GEMMA":
+                    quota_tracker.set_key_cooldown(
+                        "GEMINI", api_key, min(ra, 120.0), "429 RPM"
+                    )
+            except Exception:
+                pass
             _time.sleep(min(ra, 120.0) + random.uniform(0.5, 2.0))
             return None
 
