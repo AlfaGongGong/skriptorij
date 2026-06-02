@@ -507,6 +507,7 @@
                     </button>
                 <button class="tab-btn" data-tab="zamjene" id="tab-btn-zamjene">🔤 Zamjene</button>
         <button class="tab-btn" data-tab="zamjene" id="tab-btn-zamjene">🔤 Zamjene</button>
+        <button class="tab-btn" data-tab="zamjene" id="tab-btn-zamjene">🔤 Zamjene</button>
         </nav>
 
                 <!-- Quality tab -->
@@ -946,6 +947,97 @@
 
 
 
+        <!-- ════════════════════════════════════════════════════
+             SMART NAME REPLACER TAB — Skriptorij 02.06.2026
+             ════════════════════════════════════════════════════ -->
+        <div class="tab-panel" id="panel-zamjene" style="display:none">
+            <div class="section-header">
+                <h2 class="section-title">🔤 Smart Name Replacer</h2>
+                <span class="section-subtitle">Normalizacija vlastitih imena i entiteta kroz cijelu knjigu</span>
+            </div>
+
+            <!-- ── Odabir knjige ──────────────────────────────────── -->
+            <div class="nr-card">
+                <div class="nr-row">
+                    <label class="nr-label">Knjiga</label>
+                    <select id="nr-book-select" class="nr-select">
+                        <option value="">— odaberi knjigu —</option>
+                    </select>
+                    <button class="btn btn-sm" id="nr-refresh-books" title="Osvježi listu">↺</button>
+                </div>
+                <div class="nr-row" id="nr-replacement-info" style="display:none">
+                    <span class="nr-badge nr-badge-info" id="nr-replacement-status"></span>
+                    <button class="btn btn-sm" id="nr-btn-preview" style="display:none">👁 Pregledaj fajl</button>
+                </div>
+            </div>
+
+            <!-- ── Akcijski gumbi ─────────────────────────────────── -->
+            <div class="nr-card nr-actions-card">
+                <div class="nr-actions-row">
+                    <button class="btn btn-primary" id="nr-btn-scan" disabled>
+                        <span class="btn-icon">🔍</span>
+                        <span class="btn-label">Skeniraj i zamijeni</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline" id="nr-btn-apply-file" disabled style="display:none">
+                        <span class="btn-icon">⚡</span>
+                        <span class="btn-label">Primijeni .replacement</span>
+                    </button>
+                </div>
+                <div class="nr-status-row" id="nr-status-row" style="display:none">
+                    <span class="dot dot-active" id="nr-status-dot"></span>
+                    <span id="nr-status-text" class="nr-status-text">Obrada u toku...</span>
+                </div>
+            </div>
+
+            <!-- ── Rezultati / statistike ─────────────────────────── -->
+            <div class="nr-card" id="nr-results-card" style="display:none">
+                <div class="nr-stats-row">
+                    <div class="nr-stat">
+                        <span class="nr-stat-num" id="nr-stat-entities">—</span>
+                        <span class="nr-stat-label">entiteta</span>
+                    </div>
+                    <div class="nr-stat">
+                        <span class="nr-stat-num" id="nr-stat-found">—</span>
+                        <span class="nr-stat-label">varijanti</span>
+                    </div>
+                    <div class="nr-stat nr-stat-accent">
+                        <span class="nr-stat-num" id="nr-stat-applied">—</span>
+                        <span class="nr-stat-label">zamjena</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Audit log ──────────────────────────────────────── -->
+            <div class="nr-card nr-log-card" id="nr-log-card" style="display:none">
+                <div class="nr-log-header">
+                    <span class="nr-log-title">Log</span>
+                    <button class="btn btn-sm nr-log-clear" id="nr-btn-clear-log">× Očisti</button>
+                </div>
+                <div class="audit-log" id="nr-audit-log"></div>
+            </div>
+
+            <!-- ── Preview / edit zamjena ─────────────────────────── -->
+            <div class="nr-card nr-preview-card" id="nr-preview-card" style="display:none">
+                <div class="nr-preview-header">
+                    <span class="nr-preview-title">📄 Zamjene</span>
+                    <div class="nr-preview-actions">
+                        <button class="btn btn-sm btn-success" id="nr-btn-apply-edited">⚡ Primijeni</button>
+                        <button class="btn btn-sm" id="nr-btn-close-preview">× Zatvori</button>
+                    </div>
+                </div>
+                <div class="nr-preview-hint">
+                    Format: <code>original#->#ispravka</code> — jedan per red.
+                    Redovi koji počinju s <code>#!</code> su komentari.
+                </div>
+                <textarea class="nr-textarea" id="nr-replacement-textarea"
+                    placeholder="original#->#ispravka&#10;varijanta#->#kanonska_forma"
+                    spellcheck="false"></textarea>
+                <div class="nr-pairs-count" id="nr-pairs-count"></div>
+            </div>
+        </div>
+        <!-- /panel-zamjene -->
+
+        
         <!-- ════════════════════════════════════════════════════
              SMART NAME REPLACER TAB — Skriptorij 02.06.2026
              ════════════════════════════════════════════════════ -->
