@@ -1459,6 +1459,8 @@ function switchTab(tabId) {
     if (tabId === "tab-quality") loadQualityScores();
     if (tabId === "tab-history") renderHistory();
     if (tabId === "tab-epub") loadEpubPreview();
+    if (tabId === "panel-zamjene") loadNRBooks();
+    if (tabId === "panel-tts-filter") loadTTSBooks();
 }
 
 // ═══════════════ QUALITY SCORES ═════════════════════
@@ -3002,3 +3004,817 @@ const NameReplacer = (() => {
         });
     });
 })();
+
+
+// ═══════════════════════════════════════════════════════════
+// ZamjeneTab — Name Replacer UI modul
+// Ubačen: fix_zamjene_tab_02_06_2026.sh
+// ═══════════════════════════════════════════════════════════
+(function ZamjeneTab() {
+    'use strict';
+
+    // ── State ──────────────────────────────────────────────
+    let _selectedBook   = '';
+    let _replacementPath = '';
+    let _scanning       = false;
+
+    // ── DOM refs (lazy) ────────────────────────────────────
+    function $id(id) { return document.getElementById(id); }
+
+    function _log(msg, type) {
+        const log = $id('zamjene-log');
+        if (!log) return;
+        log.style.display = 'block';
+        const ts  = new Date().toLocaleTimeString('bs', { hour12: false });
+        const cls = type === 'ok' ? 'log-ok'
+                  : type === 'warn' ? 'log-warn'
+                  : type === 'err'  ? 'log-err'
+                  : 'log-info';
+        const lbl = type === 'ok' ? 'OK'
+                  : type === 'warn' ? 'UPOZ'
+                  : type === 'err'  ? 'GREŠKA'
+                  : 'INFO';
+        const div = document.createElement('div');
+        div.className = 'log-entry ' + cls;
+        div.innerHTML = `<span class="log-ts">${ts}</span>`
+                      + `<span class="log-label">${lbl}</span>`
+                      + `<span class="log-msg">${_esc(msg)}</span>`;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function _esc(s) {
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function _setStat(id, val) {
+        const el = $id(id);
+        if (el) el.textContent = val;
+    }
+
+    // ── Učitaj knjige ──────────────────────────────────────
+    async function _loadBooks() {
+        const sel = $id('zamjene-book-select');
+        if (!sel) return;
+        try {
+            const endpoints = ['/api/books', '/api/files', '/api/epub_files'];
+            let books = [];
+            for (const ep of endpoints) {
+                try {
+                    const r = await fetch(ep);
+                    if (r.ok) {
+                        const d = await r.json();
+                        books = d.books || d.files || d || [];
+                        if (books.length) break;
+                    }
+                } catch (_) {}
+            }
+            sel.innerHTML = '<option value="">— odaberi knjigu —</option>';
+            books.forEach(b => {
+                const name = typeof b === 'string' ? b : (b.name || b.filename || b.file || String(b));
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                sel.appendChild(opt);
+            });
+            if (books.length === 0) {
+                _log('Nema EPUB knjiga u input folderu', 'warn');
+            }
+        } catch (e) {
+            _log('Greška pri učitavanju knjiga: ' + e.message, 'err');
+        }
+    }
+
+    // ── Skeniranje ──────────────────────────────────────────
+    async function _scan() {
+        if (_scanning || !_selectedBook) return;
+        _scanning = true;
+
+        const scanBtn    = $id('btn-zamjene-scan');
+        const previewBtn = $id('btn-zamjene-preview');
+        const applyBtn   = $id('btn-zamjene-apply');
+        const stats      = $id('zamjene-stats');
+        const log        = $id('zamjene-log');
+
+        if (scanBtn) { scanBtn.disabled = true; scanBtn.textContent = '⏳ Skeniram...'; }
+        if (log)     { log.innerHTML = ''; log.style.display = 'block'; }
+        if (stats)   stats.style.display = 'none';
+        if (previewBtn) previewBtn.style.display = 'none';
+        if (applyBtn)   applyBtn.style.display = 'none';
+
+        _log(`Pokrećem skeniranje: ${_selectedBook}`, 'info');
+
+        try {
+            const res = await fetch('/api/name_replacer/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ book: _selectedBook }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                _log('Greška: ' + (data.error || `HTTP ${res.status}`), 'err');
+                return;
+            }
+
+            const count = data.count || data.zamjena_count || 0;
+            _replacementPath = data.replacement_file || data.path || '';
+
+            _log(`Skeniranje završeno: ${count} zamjena`, 'ok');
+            if (data.log && Array.isArray(data.log)) {
+                data.log.forEach(entry => _log(entry, 'info'));
+            }
+
+            _setStat('zamjene-count', count);
+            _setStat('zamjene-status', count > 0 ? '✅ Gotovo' : '⚠️ Nema zamjena');
+            if (stats) stats.style.display = 'block';
+
+            const badge = $id('zamjene-badge');
+            if (badge && count > 0) {
+                badge.textContent = `${count} zamjena`;
+                badge.style.display = 'inline-block';
+            }
+
+            if (_replacementPath) {
+                if (previewBtn) { previewBtn.style.display = 'inline-block'; previewBtn.disabled = false; }
+                if (applyBtn)   { applyBtn.style.display   = 'inline-block'; applyBtn.disabled   = false; }
+            }
+
+        } catch (e) {
+            _log('Greška: ' + e.message, 'err');
+        } finally {
+            _scanning = false;
+            if (scanBtn) {
+                scanBtn.disabled = false;
+                scanBtn.textContent = '🔍 Skeniraj i zamijeni';
+            }
+        }
+    }
+
+    // ── Preview ─────────────────────────────────────────────
+    async function _preview() {
+        if (!_replacementPath) return;
+        const area = $id('zamjene-preview-area');
+        const ta   = $id('zamjene-textarea');
+        if (!area || !ta) return;
+
+        try {
+            const r = await fetch('/api/name_replacer/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: _replacementPath }),
+            });
+            const d = await r.json();
+            ta.value = d.content || '';
+            area.style.display = 'block';
+            _log('Učitan .replacement fajl za pregled', 'info');
+        } catch (e) {
+            _log('Greška pri čitanju fajla: ' + e.message, 'err');
+        }
+    }
+
+    // ── Apply ───────────────────────────────────────────────
+    async function _apply() {
+        if (!_selectedBook || !_replacementPath) return;
+        _log('Primjenjujem zamjene na checkpoint fajlove...', 'info');
+        const applyBtn = $id('btn-zamjene-apply');
+        if (applyBtn) applyBtn.disabled = true;
+
+        try {
+            const r = await fetch('/api/name_replacer/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ book: _selectedBook, path: _replacementPath }),
+            });
+            const d = await r.json();
+            if (!r.ok) {
+                _log('Greška: ' + (d.error || `HTTP ${r.status}`), 'err');
+                return;
+            }
+            _log(`Primijenjeno: ${d.applied || 0} zamjena u ${d.files || 0} fajlova`, 'ok');
+            _setStat('zamjene-status', '✅ Primijenjeno');
+        } catch (e) {
+            _log('Greška: ' + e.message, 'err');
+        } finally {
+            if (applyBtn) applyBtn.disabled = false;
+        }
+    }
+
+    // ── Sačuvaj edit ────────────────────────────────────────
+    async function _saveEdit() {
+        const ta = $id('zamjene-textarea');
+        if (!ta || !_replacementPath) return;
+        try {
+            const r = await fetch('/api/name_replacer/write', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: _replacementPath, content: ta.value }),
+            });
+            const d = await r.json();
+            if (r.ok) _log('Izmjene sačuvane', 'ok');
+            else       _log('Greška: ' + (d.error || 'Nepoznato'), 'err');
+        } catch (e) {
+            _log('Greška: ' + e.message, 'err');
+        }
+    }
+
+    // ── Hookuj se na tab sistem ─────────────────────────────
+    function _hookTabSystem() {
+        // Pristup 1: patch globalnog switchTab()
+        if (typeof window.switchTab === 'function') {
+            const orig = window.switchTab;
+            window.switchTab = function(tabName, ...rest) {
+                orig.call(this, tabName, ...rest);
+                if (tabName === 'zamjene') _onActivate();
+            };
+        }
+
+        // Pristup 2: MutationObserver na display promjenu panela
+        const panel = $id('panel-zamjene');
+        if (panel) {
+            new MutationObserver(() => {
+                if (panel.style.display !== 'none' && panel.offsetParent !== null) {
+                    _onActivate();
+                }
+            }).observe(panel, { attributes: true, attributeFilter: ['style', 'class'] });
+        }
+
+        // Pristup 3: delegirani click na data-tab="zamjene"
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-tab="zamjene"]');
+            if (!btn) return;
+
+            // Sakrij sve ostale panele
+            document.querySelectorAll('[id^="panel-"]').forEach(p => {
+                p.style.display = 'none';
+            });
+            // Aktiviraj naš panel
+            const myPanel = $id('panel-zamjene');
+            if (myPanel) myPanel.style.display = 'block';
+
+            // Deaktiviraj ostale tabove
+            document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            _onActivate();
+        }, true);
+    }
+
+    function _onActivate() {
+        // Učitaj knjige samo ako select je prazan
+        const sel = $id('zamjene-book-select');
+        if (sel && sel.options.length <= 1) _loadBooks();
+    }
+
+    // ── Bind event handlers ─────────────────────────────────
+    function _bindEvents() {
+        const sel = $id('zamjene-book-select');
+        if (sel) {
+            sel.addEventListener('change', function() {
+                _selectedBook = this.value;
+                const scanBtn = $id('btn-zamjene-scan');
+                if (scanBtn) scanBtn.disabled = !_selectedBook;
+                // Reset state
+                _replacementPath = '';
+                const pb = $id('btn-zamjene-preview');
+                const ab = $id('btn-zamjene-apply');
+                const pa = $id('zamjene-preview-area');
+                const st = $id('zamjene-stats');
+                const log = $id('zamjene-log');
+                if (pb) { pb.style.display = 'none'; pb.disabled = true; }
+                if (ab) { ab.style.display = 'none'; ab.disabled = true; }
+                if (pa) pa.style.display = 'none';
+                if (st) st.style.display = 'none';
+                if (log) { log.innerHTML = ''; log.style.display = 'none'; }
+            });
+        }
+
+        const scanBtn = $id('btn-zamjene-scan');
+        if (scanBtn) scanBtn.addEventListener('click', _scan);
+
+        const previewBtn = $id('btn-zamjene-preview');
+        if (previewBtn) previewBtn.addEventListener('click', _preview);
+
+        const applyBtn = $id('btn-zamjene-apply');
+        if (applyBtn) applyBtn.addEventListener('click', _apply);
+
+        const saveEditBtn = $id('btn-zamjene-save-edit');
+        if (saveEditBtn) saveEditBtn.addEventListener('click', _saveEdit);
+    }
+
+    // ── Init ────────────────────────────────────────────────
+    function init() {
+        _hookTabSystem();
+        _bindEvents();
+        console.log('[ZamjeneTab] Inicijaliziran');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+// ═══════════════════════════════════════════════════════════
+// /ZamjeneTab
+// ═══════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════
+// NAMES REPLACEMENT (NR) — Zamjene Imena Tab
+// Shared logic: loadNRBooks, scanNR, previewNR, applyNR
+// ═══════════════════════════════════════════════════════════
+
+async function loadNRBooks() {
+    const sel = document.getElementById("nr-book-select");
+    if (!sel) return;
+    try {
+        const r = await fetch("/api/books");
+        const d = await r.json();
+        const files = d.books ? d.books.map(b => b.name || b) : (d.files || []);
+        sel.innerHTML = '<option value="">— odaberi knjigu —</option>';
+        files.forEach(f => {
+            const name = typeof f === "string" ? f : f.name || f;
+            const path = typeof f === "string" ? f : f.path || f.name || f;
+            sel.appendChild(new Option(name, path));
+        });
+        // Ako postoji aktivna knjiga, predaberi je
+        const active = STATE.book || localStorage.getItem("bf_last_book");
+        if (active && Array.from(sel.options).some(o => o.value === active)) {
+            sel.value = active;
+            await _nrCheckReplacementFile(active);
+        }
+    } catch (e) {
+        console.warn("loadNRBooks:", e.message);
+    }
+}
+
+async function _nrCheckReplacementFile(book) {
+    if (!book) return;
+    const infoRow = document.getElementById("nr-replacement-info");
+    const statusBadge = document.getElementById("nr-replacement-status");
+    const btnPreview = document.getElementById("nr-btn-preview");
+    const btnScan = document.getElementById("nr-btn-scan");
+    const btnApply = document.getElementById("nr-btn-apply-file");
+    if (!infoRow) return;
+    try {
+        const r = await fetch(`/api/names/status?book=${encodeURIComponent(book)}`);
+        const d = await r.json();
+        infoRow.style.display = "";
+        if (d.has_replacement) {
+            if (statusBadge) {
+                statusBadge.textContent = `✅ .replacement: ${d.pairs_count || 0} parova`;
+                statusBadge.className = "nr-badge nr-badge-ok";
+            }
+            if (btnPreview) btnPreview.style.display = "";
+            if (btnApply) { btnApply.disabled = false; btnApply.style.display = ""; }
+        } else {
+            if (statusBadge) {
+                statusBadge.textContent = "ℹ Nema .replacement fajla — skeniraj da ga kreiraš";
+                statusBadge.className = "nr-badge nr-badge-info";
+            }
+            if (btnPreview) btnPreview.style.display = "none";
+            if (btnApply) { btnApply.disabled = true; btnApply.style.display = "none"; }
+        }
+        if (btnScan) btnScan.disabled = false;
+    } catch (_) {
+        if (btnScan) btnScan.disabled = false;
+    }
+}
+
+async function _nrRunScan() {
+    const sel = document.getElementById("nr-book-select");
+    const book = sel?.value;
+    if (!book) { showToast("Odaberi knjigu!", "warning"); return; }
+
+    const btnScan = document.getElementById("nr-btn-scan");
+    const statusRow = document.getElementById("nr-status-row");
+    const statusTxt = document.getElementById("nr-status-text");
+    const resultsCard = document.getElementById("nr-results-card");
+    const logCard = document.getElementById("nr-log-card");
+    const auditLog = document.getElementById("nr-audit-log");
+
+    if (btnScan) { btnScan.disabled = true; btnScan.querySelector(".btn-label").textContent = "Skenira..."; }
+    if (statusRow) statusRow.style.display = "";
+    if (statusTxt) statusTxt.textContent = "Skeniram nazive...";
+    if (logCard) logCard.style.display = "";
+    if (auditLog) auditLog.innerHTML = "";
+
+    function nrLog(msg, cls = "log-info") {
+        if (!auditLog) return;
+        const d = document.createElement("div");
+        d.className = "log-entry " + cls;
+        d.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString("bs-BA",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span><span class="log-msg">${msg}</span>`;
+        auditLog.appendChild(d);
+        auditLog.scrollTop = auditLog.scrollHeight;
+    }
+
+    try {
+        nrLog("🔍 Pokrenuto skeniranje zamjena...", "log-system");
+        const r = await fetch("/api/names/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ book })
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+
+        // Ažuriraj statistike
+        if (resultsCard) resultsCard.style.display = "";
+        const setNR = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setNR("nr-stat-entities", d.entities ?? d.names_found ?? "—");
+        setNR("nr-stat-found", d.variants ?? d.variants_found ?? "—");
+        setNR("nr-stat-applied", d.applied ?? d.replacements_made ?? "—");
+
+        if (statusRow) statusRow.style.display = "none";
+        nrLog(`✅ Gotovo — ${d.applied ?? d.replacements_made ?? 0} zamjena primijenjeno`, "log-success");
+        showToast(`Zamjene završene: ${d.applied ?? 0} zamjena`, "success");
+
+        // Osvježi status fajla
+        await _nrCheckReplacementFile(book);
+
+    } catch (e) {
+        nrLog(`❌ Greška: ${e.message}`, "log-critical");
+        showToast("NR greška: " + e.message, "error");
+        if (statusRow) statusRow.style.display = "none";
+    } finally {
+        if (btnScan) { btnScan.disabled = false; btnScan.querySelector(".btn-label").textContent = "Skeniraj i zamijeni"; }
+    }
+}
+
+async function _nrPreviewFile() {
+    const sel = document.getElementById("nr-book-select");
+    const book = sel?.value;
+    if (!book) return;
+    const previewCard = document.getElementById("nr-preview-card");
+    const textarea = document.getElementById("nr-replacement-textarea");
+    const countEl = document.getElementById("nr-pairs-count");
+    if (!previewCard || !textarea) return;
+    try {
+        const r = await fetch(`/api/names/replacement?book=${encodeURIComponent(book)}`);
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        if (window._hlEditor && document.getElementById("nr-replacement-textarea") === window._hlEditor._ta) {
+            window._hlEditor.applyText(d.content || "");
+        } else {
+            textarea.value = d.content || "";
+        }
+        const pairs = (d.content || "").split("\n").filter(l => l.includes("#->#") && !l.startsWith("#!")).length;
+        if (countEl) countEl.textContent = pairs + " parova";
+        previewCard.style.display = "";
+    } catch (e) {
+        showToast("Greška pri učitavanju: " + e.message, "error");
+    }
+}
+
+async function _nrApplyEdited() {
+    const sel = document.getElementById("nr-book-select");
+    const book = sel?.value;
+    if (!book) return;
+    const textarea = document.getElementById("nr-replacement-textarea");
+    const content = textarea?.value || "";
+    try {
+        const r = await fetch("/api/names/replacement", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ book, content })
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        showToast("✅ Zamjene sačuvane!", "success");
+        const previewCard = document.getElementById("nr-preview-card");
+        if (previewCard) previewCard.style.display = "none";
+        await _nrCheckReplacementFile(book);
+    } catch (e) {
+        showToast("Greška pri snimanju: " + e.message, "error");
+    }
+}
+
+async function _nrApplyFile() {
+    const sel = document.getElementById("nr-book-select");
+    const book = sel?.value;
+    if (!book) return;
+    try {
+        const r = await fetch("/api/names/apply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ book })
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        showToast(`✅ Primijenjeno: ${d.applied ?? 0} zamjena`, "success");
+        const setNR = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setNR("nr-stat-applied", d.applied ?? "—");
+        const resultsCard = document.getElementById("nr-results-card");
+        if (resultsCard) resultsCard.style.display = "";
+    } catch (e) {
+        showToast("Greška: " + e.message, "error");
+    }
+}
+
+function initNR() {
+    // Book select
+    const sel = document.getElementById("nr-book-select");
+    if (sel && !sel.dataset.nrBound) {
+        sel.addEventListener("change", () => _nrCheckReplacementFile(sel.value));
+        sel.dataset.nrBound = "1";
+    }
+    // Refresh books
+    const btnRefresh = document.getElementById("nr-refresh-books");
+    if (btnRefresh && !btnRefresh.dataset.nrBound) {
+        btnRefresh.addEventListener("click", loadNRBooks);
+        btnRefresh.dataset.nrBound = "1";
+    }
+    // Scan
+    const btnScan = document.getElementById("nr-btn-scan");
+    if (btnScan && !btnScan.dataset.nrBound) {
+        btnScan.addEventListener("click", _nrRunScan);
+        btnScan.dataset.nrBound = "1";
+    }
+    // Preview
+    const btnPreview = document.getElementById("nr-btn-preview");
+    if (btnPreview && !btnPreview.dataset.nrBound) {
+        btnPreview.addEventListener("click", _nrPreviewFile);
+        btnPreview.dataset.nrBound = "1";
+    }
+    // Apply edited
+    const btnApplyEdited = document.getElementById("nr-btn-apply-edited");
+    if (btnApplyEdited && !btnApplyEdited.dataset.nrBound) {
+        btnApplyEdited.addEventListener("click", _nrApplyEdited);
+        btnApplyEdited.dataset.nrBound = "1";
+    }
+    // Close preview
+    const btnClosePreview = document.getElementById("nr-btn-close-preview");
+    if (btnClosePreview && !btnClosePreview.dataset.nrBound) {
+        btnClosePreview.addEventListener("click", () => {
+            const card = document.getElementById("nr-preview-card");
+            if (card) card.style.display = "none";
+        });
+        btnClosePreview.dataset.nrBound = "1";
+    }
+    // Apply file
+    const btnApplyFile = document.getElementById("nr-btn-apply-file");
+    if (btnApplyFile && !btnApplyFile.dataset.nrBound) {
+        btnApplyFile.addEventListener("click", _nrApplyFile);
+        btnApplyFile.dataset.nrBound = "1";
+    }
+    // Clear log
+    const btnClearLog = document.getElementById("nr-btn-clear-log");
+    if (btnClearLog && !btnClearLog.dataset.nrBound) {
+        btnClearLog.addEventListener("click", () => {
+            const log = document.getElementById("nr-audit-log");
+            if (log) log.innerHTML = "";
+            const logCard = document.getElementById("nr-log-card");
+            if (logCard) logCard.style.display = "none";
+        });
+        btnClearLog.dataset.nrBound = "1";
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TTS FILTER TAB — identična logika kao NR, ali poziva
+// /api/tts/* endpoint (ili isti /api/names/* ako backend isti)
+// ═══════════════════════════════════════════════════════════
+
+async function loadTTSBooks() {
+    const sel = document.getElementById("tts-book-select");
+    if (!sel) return;
+    try {
+        const r = await fetch("/api/books");
+        const d = await r.json();
+        const files = d.books ? d.books.map(b => b.name || b) : (d.files || []);
+        sel.innerHTML = '<option value="">— odaberi knjigu —</option>';
+        files.forEach(f => {
+            const name = typeof f === "string" ? f : f.name || f;
+            const path = typeof f === "string" ? f : f.path || f.name || f;
+            sel.appendChild(new Option(name, path));
+        });
+        const active = STATE.book || localStorage.getItem("bf_last_book");
+        if (active && Array.from(sel.options).some(o => o.value === active)) {
+            sel.value = active;
+            await _ttsCheckReplacementFile(active);
+        }
+    } catch (e) {
+        console.warn("loadTTSBooks:", e.message);
+    }
+}
+
+async function _ttsCheckReplacementFile(book) {
+    if (!book) return;
+    const infoRow = document.getElementById("tts-replacement-info");
+    const statusBadge = document.getElementById("tts-replacement-status");
+    const btnPreview = document.getElementById("tts-btn-preview");
+    const btnScan = document.getElementById("tts-btn-scan");
+    const btnApply = document.getElementById("tts-btn-apply-file");
+    if (!infoRow) return;
+    try {
+        // TTS koristi isti .replacement fajl kao NR — endpoint može biti isti ili /api/tts/status
+        const r = await fetch(`/api/names/status?book=${encodeURIComponent(book)}`);
+        const d = await r.json();
+        infoRow.style.display = "";
+        if (d.has_replacement) {
+            if (statusBadge) {
+                statusBadge.textContent = `✅ .replacement: ${d.pairs_count || 0} parova`;
+                statusBadge.className = "nr-badge nr-badge-ok";
+            }
+            if (btnPreview) btnPreview.style.display = "";
+            if (btnApply) { btnApply.disabled = false; btnApply.style.display = ""; }
+        } else {
+            if (statusBadge) {
+                statusBadge.textContent = "ℹ Nema .replacement fajla — generiraj TTS filter";
+                statusBadge.className = "nr-badge nr-badge-info";
+            }
+            if (btnPreview) btnPreview.style.display = "none";
+            if (btnApply) { btnApply.disabled = true; btnApply.style.display = "none"; }
+        }
+        if (btnScan) btnScan.disabled = false;
+    } catch (_) {
+        if (btnScan) btnScan.disabled = false;
+    }
+}
+
+async function _ttsRunScan() {
+    const sel = document.getElementById("tts-book-select");
+    const book = sel?.value;
+    if (!book) { showToast("Odaberi knjigu!", "warning"); return; }
+
+    const btnScan = document.getElementById("tts-btn-scan");
+    const statusRow = document.getElementById("tts-status-row");
+    const statusTxt = document.getElementById("tts-status-text");
+    const resultsCard = document.getElementById("tts-results-card");
+    const logCard = document.getElementById("tts-log-card");
+    const auditLog = document.getElementById("tts-audit-log");
+
+    if (btnScan) { btnScan.disabled = true; btnScan.querySelector(".btn-label").textContent = "Generira..."; }
+    if (statusRow) statusRow.style.display = "";
+    if (statusTxt) statusTxt.textContent = "Generiram TTS filter...";
+    if (logCard) logCard.style.display = "";
+    if (auditLog) auditLog.innerHTML = "";
+
+    function ttsLog(msg, cls = "log-info") {
+        if (!auditLog) return;
+        const d = document.createElement("div");
+        d.className = "log-entry " + cls;
+        d.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString("bs-BA",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span><span class="log-msg">${msg}</span>`;
+        auditLog.appendChild(d);
+        auditLog.scrollTop = auditLog.scrollHeight;
+    }
+
+    try {
+        ttsLog("🔊 Pokrenuto generiranje TTS filtera...", "log-system");
+        // Probaj /api/tts/scan, fallback na /api/names/scan
+        let r;
+        try {
+            r = await fetch("/api/tts/scan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ book })
+            });
+            if (!r.ok) throw new Error("TTS endpoint nije dostupan");
+        } catch (_) {
+            r = await fetch("/api/names/scan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ book, mode: "tts" })
+            });
+        }
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+
+        if (resultsCard) resultsCard.style.display = "";
+        const setTTS = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setTTS("tts-stat-entities", d.entities ?? d.names_found ?? "—");
+        setTTS("tts-stat-found", d.variants ?? d.variants_found ?? "—");
+        setTTS("tts-stat-applied", d.applied ?? d.replacements_made ?? "—");
+
+        if (statusRow) statusRow.style.display = "none";
+        ttsLog(`✅ TTS filter generiran — ${d.applied ?? 0} zamjena`, "log-success");
+        showToast(`TTS Filter generiran: ${d.applied ?? 0} zamjena`, "success");
+        await _ttsCheckReplacementFile(book);
+
+    } catch (e) {
+        ttsLog(`❌ Greška: ${e.message}`, "log-critical");
+        showToast("TTS greška: " + e.message, "error");
+        if (statusRow) statusRow.style.display = "none";
+    } finally {
+        if (btnScan) { btnScan.disabled = false; btnScan.querySelector(".btn-label").textContent = "Generiraj TTS filter"; }
+    }
+}
+
+async function _ttsPreviewFile() {
+    const sel = document.getElementById("tts-book-select");
+    const book = sel?.value;
+    if (!book) return;
+    const previewCard = document.getElementById("tts-preview-card");
+    const textarea = document.getElementById("tts-replacement-textarea");
+    const countEl = document.getElementById("tts-pairs-count");
+    if (!previewCard || !textarea) return;
+    try {
+        const r = await fetch(`/api/names/replacement?book=${encodeURIComponent(book)}`);
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        textarea.value = d.content || "";
+        const pairs = (d.content || "").split("\n").filter(l => l.includes("#->#") && !l.startsWith("#!")).length;
+        if (countEl) countEl.textContent = pairs + " parova";
+        previewCard.style.display = "";
+    } catch (e) {
+        showToast("Greška pri učitavanju: " + e.message, "error");
+    }
+}
+
+async function _ttsApplyEdited() {
+    const sel = document.getElementById("tts-book-select");
+    const book = sel?.value;
+    if (!book) return;
+    const textarea = document.getElementById("tts-replacement-textarea");
+    const content = textarea?.value || "";
+    try {
+        const r = await fetch("/api/names/replacement", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ book, content })
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        showToast("✅ TTS zamjene sačuvane!", "success");
+        const previewCard = document.getElementById("tts-preview-card");
+        if (previewCard) previewCard.style.display = "none";
+        await _ttsCheckReplacementFile(book);
+    } catch (e) {
+        showToast("Greška pri snimanju: " + e.message, "error");
+    }
+}
+
+function initTTSFilter() {
+    const sel = document.getElementById("tts-book-select");
+    if (sel && !sel.dataset.ttsBound) {
+        sel.addEventListener("change", () => _ttsCheckReplacementFile(sel.value));
+        sel.dataset.ttsBound = "1";
+    }
+    const btnRefresh = document.getElementById("tts-refresh-books");
+    if (btnRefresh && !btnRefresh.dataset.ttsBound) {
+        btnRefresh.addEventListener("click", loadTTSBooks);
+        btnRefresh.dataset.ttsBound = "1";
+    }
+    const btnScan = document.getElementById("tts-btn-scan");
+    if (btnScan && !btnScan.dataset.ttsBound) {
+        btnScan.addEventListener("click", _ttsRunScan);
+        btnScan.dataset.ttsBound = "1";
+    }
+    const btnPreview = document.getElementById("tts-btn-preview");
+    if (btnPreview && !btnPreview.dataset.ttsBound) {
+        btnPreview.addEventListener("click", _ttsPreviewFile);
+        btnPreview.dataset.ttsBound = "1";
+    }
+    const btnApplyEdited = document.getElementById("tts-btn-apply-edited");
+    if (btnApplyEdited && !btnApplyEdited.dataset.ttsBound) {
+        btnApplyEdited.addEventListener("click", _ttsApplyEdited);
+        btnApplyEdited.dataset.ttsBound = "1";
+    }
+    const btnClosePreview = document.getElementById("tts-btn-close-preview");
+    if (btnClosePreview && !btnClosePreview.dataset.ttsBound) {
+        btnClosePreview.addEventListener("click", () => {
+            const card = document.getElementById("tts-preview-card");
+            if (card) card.style.display = "none";
+        });
+        btnClosePreview.dataset.ttsBound = "1";
+    }
+    const btnApplyFile = document.getElementById("tts-btn-apply-file");
+    if (btnApplyFile && !btnApplyFile.dataset.ttsBound) {
+        btnApplyFile.addEventListener("click", async () => {
+            const book = document.getElementById("tts-book-select")?.value;
+            if (!book) return;
+            try {
+                const r = await fetch("/api/names/apply", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ book, mode: "tts" })
+                });
+                const d = await r.json();
+                if (d.error) throw new Error(d.error);
+                showToast(`✅ TTS: ${d.applied ?? 0} zamjena primijenjeno`, "success");
+            } catch (e) {
+                showToast("Greška: " + e.message, "error");
+            }
+        });
+        btnApplyFile.dataset.ttsBound = "1";
+    }
+    const btnClearLog = document.getElementById("tts-btn-clear-log");
+    if (btnClearLog && !btnClearLog.dataset.ttsBound) {
+        btnClearLog.addEventListener("click", () => {
+            const log = document.getElementById("tts-audit-log");
+            if (log) log.innerHTML = "";
+            const logCard = document.getElementById("tts-log-card");
+            if (logCard) logCard.style.display = "none";
+        });
+        btnClearLog.dataset.ttsBound = "1";
+    }
+}
+
+// ── Auto-init NR + TTS kad DOM bude spreman ────────────────
+document.addEventListener("DOMContentLoaded", function() {
+    initNR();
+    initTTSFilter();
+});
