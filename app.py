@@ -1611,3 +1611,169 @@ def create_app() -> Flask:
     return app
 
 app = create_app()
+
+
+# ═══════════════════════════════════════════════════════════
+# NAME REPLACER rute — ubačene fix_zamjene_tab_02_06_2026.sh
+# ═══════════════════════════════════════════════════════════
+
+@app.route('/api/name_replacer/scan', methods=['POST'])
+def name_replacer_scan():
+    """Skenira checkpoint fajlove i kreira .replacement fajl s prijedlozima zamjena."""
+    import json as _json
+    from pathlib import Path as _Path
+
+    data = request.get_json(silent=True) or {}
+    book = data.get('book', '')
+    if not book:
+        return jsonify({'error': 'book je obavezan'}), 400
+
+    # Nađi checkpoint dir za ovu knjigu
+    book_stem = _Path(book).stem
+    chk_base  = _Path(CHECKPOINT_BASE_DIR)
+    chk_dir   = chk_base / book_stem
+    if not chk_dir.exists():
+        # Pokušaj pronađi fuzzy
+        candidates = list(chk_base.glob(f'*{book_stem[:8]}*'))
+        if candidates:
+            chk_dir = candidates[0]
+        else:
+            return jsonify({'error': f'Checkpoint dir ne postoji: {chk_dir}', 'count': 0}), 404
+
+    # Sakupljamo prijevod iz .chk fajlova
+    replacements = {}
+    log_entries  = []
+    count        = 0
+
+    try:
+        import re as _re
+        chk_files = sorted(chk_dir.glob('*.chk'))
+        log_entries.append(f'Pronađeno {len(chk_files)} checkpoint fajlova u {chk_dir.name}')
+
+        for chk_file in chk_files:
+            try:
+                txt = chk_file.read_text(encoding='utf-8', errors='ignore')
+                # Tražimo vlastita imena koja su u originalu (EN) a prijevod može biti različit
+                # Jednostavan heuristik: riječi s velikim slovom koje se pojavljuju >= 2×
+                words = _re.findall(r'\b[A-Z][a-zA-Z]{2,}\b', txt)
+                for w in words:
+                    if w not in replacements:
+                        replacements[w] = w  # default: ostavi isto
+            except Exception as e:
+                log_entries.append(f'⚠️  {chk_file.name}: {e}')
+
+        # Kreira .replacement fajl
+        repl_path = chk_dir / f'{book_stem}.replacement'
+        lines = [f'{orig}→{repl}' for orig, repl in sorted(replacements.items())]
+        repl_path.write_text('\n'.join(lines), encoding='utf-8')
+        count = len(replacements)
+        log_entries.append(f'Kreirano: {repl_path.name} ({count} unosa)')
+
+        return jsonify({
+            'ok': True,
+            'count': count,
+            'replacement_file': str(repl_path),
+            'log': log_entries,
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e), 'count': 0}), 500
+
+
+@app.route('/api/name_replacer/read', methods=['POST'])
+def name_replacer_read():
+    """Čita sadržaj .replacement fajla."""
+    from pathlib import Path as _Path
+    data = request.get_json(silent=True) or {}
+    path = data.get('path', '')
+    if not path:
+        return jsonify({'error': 'path je obavezan'}), 400
+    try:
+        content = _Path(path).read_text(encoding='utf-8', errors='ignore')
+        return jsonify({'ok': True, 'content': content})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/name_replacer/write', methods=['POST'])
+def name_replacer_write():
+    """Snima izmijenjeni sadržaj .replacement fajla."""
+    from pathlib import Path as _Path
+    data = request.get_json(silent=True) or {}
+    path    = data.get('path', '')
+    content = data.get('content', '')
+    if not path:
+        return jsonify({'error': 'path je obavezan'}), 400
+    try:
+        _Path(path).write_text(content, encoding='utf-8')
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/name_replacer/apply', methods=['POST'])
+def name_replacer_apply():
+    """Primjenjuje zamjene iz .replacement fajla na sve .chk fajlove."""
+    import re as _re
+    from pathlib import Path as _Path
+    data = request.get_json(silent=True) or {}
+    book = data.get('book', '')
+    path = data.get('path', '')
+    if not book or not path:
+        return jsonify({'error': 'book i path su obavezni'}), 400
+
+    try:
+        repl_content = _Path(path).read_text(encoding='utf-8', errors='ignore')
+        # Parsiraj zamjene: "Original→Zamjena" ili "Original->Zamjena"
+        zamjene = {}
+        for line in repl_content.splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            sep = '→' if '→' in line else ('->' if '->' in line else None)
+            if sep:
+                parts = line.split(sep, 1)
+                if len(parts) == 2:
+                    orig, repl = parts[0].strip(), parts[1].strip()
+                    if orig and repl and orig != repl:
+                        zamjene[orig] = repl
+
+        if not zamjene:
+            return jsonify({'ok': True, 'applied': 0, 'files': 0, 'message': 'Nema zamjena za primjenu'})
+
+        # Nađi checkpoint dir
+        book_stem = _Path(book).stem
+        chk_base  = _Path(CHECKPOINT_BASE_DIR)
+        chk_dir   = chk_base / book_stem
+        if not chk_dir.exists():
+            candidates = list(chk_base.glob(f'*{book_stem[:8]}*'))
+            if candidates:
+                chk_dir = candidates[0]
+            else:
+                return jsonify({'error': f'Checkpoint dir ne postoji'}), 404
+
+        applied = 0
+        files_changed = 0
+        for chk_file in chk_dir.glob('*.chk'):
+            try:
+                txt = chk_file.read_text(encoding='utf-8', errors='ignore')
+                original = txt
+                for orig, repl in zamjene.items():
+                    new_txt = txt.replace(orig, repl)
+                    if new_txt != txt:
+                        applied += txt.count(orig)
+                        txt = new_txt
+                if txt != original:
+                    chk_file.write_text(txt, encoding='utf-8')
+                    files_changed += 1
+            except Exception:
+                pass
+
+        return jsonify({'ok': True, 'applied': applied, 'files': files_changed})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ═══════════════════════════════════════════════════════════
+# /NAME REPLACER rute
+# ═══════════════════════════════════════════════════════════
