@@ -2606,3 +2606,399 @@ function applyHighlights(container, patterns) {
 
     walkAndHighlight(container);
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   SMART NAME REPLACER UI — Skriptorij 02.06.2026
+   ═══════════════════════════════════════════════════════════ */
+
+const NameReplacer = (() => {
+    // ── State ────────────────────────────────────────────────
+    let _busy       = false;
+    let _selBook    = '';
+    let _hasRepFile = false;
+
+    // ── DOM refs (lazy, set on init) ────────────────────────
+    let $bookSelect, $btnScan, $btnApplyFile, $btnPreview,
+        $statusRow, $statusDot, $statusText,
+        $resultsCard, $statEntities, $statFound, $statApplied,
+        $logCard, $auditLog, $btnClearLog,
+        $repInfo, $repStatus,
+        $previewCard, $textarea, $pairsCount,
+        $btnApplyEdited, $btnClosePreview,
+        $btnRefreshBooks;
+
+    // ── Helpers ──────────────────────────────────────────────
+    function _el(id) { return document.getElementById(id); }
+
+    function _log(msg, type = 'info') {
+        if (!$logCard || !$auditLog) return;
+        $logCard.style.display = 'block';
+        const icons = {
+            system: '🔷', success: '✅', error: '❌',
+            warning: '⚠️', tech: '·', info: 'ℹ️',
+        };
+        const clsMap = {
+            system: 'log-system', success: 'log-success', error: 'log-critical',
+            warning: 'log-warning', tech: 'log-info', info: 'log-info',
+        };
+        const ts   = new Date().toLocaleTimeString('hr', { hour12: false });
+        const icon = icons[type] || 'ℹ️';
+        const cls  = clsMap[type] || 'log-info';
+        const div  = document.createElement('div');
+        div.className = `log-entry ${cls}`;
+        div.innerHTML =
+            `<span class="log-ts">${ts}</span>` +
+            `<span class="log-label">${icon}</span>` +
+            `<span class="log-msg">${_esc(msg)}</span>`;
+        $auditLog.appendChild(div);
+        $auditLog.scrollTop = $auditLog.scrollHeight;
+
+        // Limit na 120 poruka
+        while ($auditLog.childElementCount > 120) {
+            $auditLog.removeChild($auditLog.firstChild);
+        }
+    }
+
+    function _esc(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function _setStatus(visible, text = '') {
+        if (!$statusRow) return;
+        $statusRow.style.display = visible ? 'flex' : 'none';
+        if ($statusText) $statusText.textContent = text;
+    }
+
+    function _setBusy(busy) {
+        _busy = busy;
+        if ($btnScan)      $btnScan.disabled      = busy || !_selBook;
+        if ($btnApplyFile) $btnApplyFile.disabled  = busy || !_hasRepFile;
+        if ($bookSelect)   $bookSelect.disabled    = busy;
+        if ($statusDot) {
+            $statusDot.className = busy ? 'dot dot-active' : 'dot dot-idle';
+        }
+    }
+
+    function _updateRepBadge(hasFile, pairsCount) {
+        _hasRepFile = hasFile;
+        if (!$repInfo) return;
+        if (hasFile) {
+            $repInfo.style.display = 'flex';
+            if ($repStatus) {
+                $repStatus.className = 'nr-badge nr-badge-ok';
+                $repStatus.textContent = `📄 .replacement: ${pairsCount ?? '?'} zamjena`;
+            }
+            if ($btnPreview) $btnPreview.style.display = 'inline-flex';
+            if ($btnApplyFile) $btnApplyFile.style.display = 'inline-flex';
+        } else {
+            $repInfo.style.display = 'none';
+            if ($btnPreview)   $btnPreview.style.display   = 'none';
+            if ($btnApplyFile) $btnApplyFile.style.display = 'none';
+        }
+        if ($btnApplyFile) $btnApplyFile.disabled = _busy || !hasFile;
+    }
+
+    function _showResults(data) {
+        if (!$resultsCard) return;
+        $resultsCard.style.display = 'block';
+        if ($statEntities) $statEntities.textContent = data.entities_found ?? '—';
+        if ($statFound)    $statFound.textContent    = (data.pairs?.length) ?? '—';
+        if ($statApplied)  $statApplied.textContent  = data.replacements_applied ?? '—';
+    }
+
+    // ── API pozivi ────────────────────────────────────────────
+    async function _apiPost(url, body) {
+        const resp = await fetch(url, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(body),
+        });
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({ error: resp.statusText }));
+            throw new Error(err.error || `HTTP ${resp.status}`);
+        }
+        return resp.json();
+    }
+
+    async function _loadBooks() {
+        if (!$bookSelect) return;
+        try {
+            const data = await fetch('/api/books').then(r => r.json());
+            const books = data.books || data.files || [];
+            const prev = $bookSelect.value;
+            $bookSelect.innerHTML = '<option value="">— odaberi knjigu —</option>';
+            books.forEach(b => {
+                const name = typeof b === 'string' ? b : b.name;
+                const opt  = document.createElement('option');
+                opt.value       = name;
+                opt.textContent = name;
+                $bookSelect.appendChild(opt);
+            });
+            if (prev && [...$bookSelect.options].some(o => o.value === prev)) {
+                $bookSelect.value = prev;
+            }
+        } catch (e) {
+            _log(`Greška pri dohvatu knjiga: ${e.message}`, 'error');
+        }
+    }
+
+    async function _checkRepFile(bookName) {
+        if (!bookName) { _updateRepBadge(false); return; }
+        try {
+            const data = await _apiPost('/api/name_replace/preview', { file: bookName });
+            if (data.ok) {
+                _updateRepBadge(true, data.pairs?.length ?? 0);
+            } else {
+                _updateRepBadge(false);
+            }
+        } catch (_) {
+            _updateRepBadge(false);
+        }
+    }
+
+    async function _doScan() {
+        if (_busy || !_selBook) return;
+        _setBusy(true);
+        _setStatus(true, 'Skeniranje u toku...');
+        _log(`Pokretanje skeniranja za: ${_selBook}`, 'system');
+        $auditLog && ($auditLog.innerHTML = '');
+        if ($logCard)      $logCard.style.display      = 'block';
+        if ($resultsCard)  $resultsCard.style.display  = 'none';
+        if ($previewCard)  $previewCard.style.display  = 'none';
+
+        try {
+            const data = await _apiPost('/api/name_replace', { file: _selBook });
+
+            // Logiraj poruke iz backendia
+            if (data.audit) {
+                data.audit.forEach(a => _log(a.msg, a.type || 'info'));
+            }
+
+            if (data.ok) {
+                _log(`✅ Završeno — ${data.replacements_applied} zamjena primijenjeno`, 'success');
+                _showResults(data);
+                _setStatus(false);
+                await _checkRepFile(_selBook);
+            } else {
+                _log(`Greška: ${data.error}`, 'error');
+                _setStatus(false);
+            }
+        } catch (e) {
+            _log(`Mrežna greška: ${e.message}`, 'error');
+            _setStatus(false);
+        } finally {
+            _setBusy(false);
+        }
+    }
+
+    async function _doApplyFile() {
+        if (_busy || !_selBook || !_hasRepFile) return;
+        _setBusy(true);
+        _setStatus(true, 'Primjena zamjena...');
+        _log(`Primjenjujem .replacement fajl na: ${_selBook}`, 'system');
+        try {
+            const data = await _apiPost('/api/name_replace/apply_file', { file: _selBook });
+            if (data.ok) {
+                _log(`✅ ${data.replacements_applied} zamjena primijenjeno u ${data.files_modified} fajlova`, 'success');
+                if ($statApplied) $statApplied.textContent = data.replacements_applied;
+                if ($resultsCard) $resultsCard.style.display = 'block';
+            } else {
+                _log(`Greška: ${data.error}`, 'error');
+            }
+        } catch (e) {
+            _log(`Greška: ${e.message}`, 'error');
+        } finally {
+            _setBusy(false);
+            _setStatus(false);
+        }
+    }
+
+    async function _openPreview() {
+        if (!_selBook) return;
+        try {
+            const data = await _apiPost('/api/name_replace/preview', { file: _selBook });
+            if (!data.ok) { _log(`Preview greška: ${data.error}`, 'error'); return; }
+
+            if ($textarea) $textarea.value = data.raw || '';
+            _countPairs();
+            if ($previewCard) $previewCard.style.display = 'block';
+            if ($textarea) $textarea.focus();
+        } catch (e) {
+            _log(`Preview greška: ${e.message}`, 'error');
+        }
+    }
+
+    function _countPairs() {
+        if (!$textarea || !$pairsCount) return;
+        const n = $textarea.value
+            .split('\n')
+            .filter(l => l.includes('#->#') && !l.startsWith('#!'))
+            .length;
+        $pairsCount.textContent = `${n} zamjena`;
+    }
+
+    async function _applyEdited() {
+        if (!_selBook || !$textarea) return;
+        const raw = $textarea.value;
+        // Parsiraj textarea, napravi privremeni payload
+        // (šaljemo raw tekst, backend ga parsira ponovo)
+        // Prvo snimimo kao preview file ─ koristimo apply_file koji čita s diska,
+        // pa moramo uploadati izmjene ili dodati novi endpoint.
+        // Jednostavniji pristup: salji zamjene direktno u tijelu
+        const pairs = [];
+        raw.split('\n').forEach(line => {
+            line = line.trim();
+            if (!line || line.startsWith('#!')) return;
+            const idx = line.indexOf('#->#');
+            if (idx > 0) pairs.push([line.slice(0, idx).trim(), line.slice(idx + 4).trim()]);
+        });
+
+        if (!pairs.length) { _log('Nema zamjena za primjenu', 'warning'); return; }
+
+        _setBusy(true);
+        _setStatus(true, 'Primjena editovanih zamjena...');
+        _log(`Primjenjujem ${pairs.length} ručno editovanih zamjena...`, 'system');
+
+        try {
+            // Koristimo apply_file endpoint s inline parovima (ako backend podržava)
+            // ili fallback na standardni apply
+            const data = await _apiPost('/api/name_replace/apply_file', {
+                file:  _selBook,
+                pairs: pairs,   // novi optional param — backend ignorira ako ne poznaje
+            });
+            if (data.ok) {
+                _log(`✅ ${data.replacements_applied} zamjena primijenjeno`, 'success');
+                if ($previewCard) $previewCard.style.display = 'none';
+                if ($statApplied) $statApplied.textContent = data.replacements_applied;
+                if ($resultsCard) $resultsCard.style.display = 'block';
+            } else {
+                _log(`Greška: ${data.error}`, 'error');
+            }
+        } catch (e) {
+            _log(`Greška: ${e.message}`, 'error');
+        } finally {
+            _setBusy(false);
+            _setStatus(false);
+        }
+    }
+
+    // ── Tab vidljivost (integracija s postojećim tab sistemom) ──
+    function _onTabChange(tabId) {
+        if (tabId !== 'zamjene') return;
+        _loadBooks();
+        if (_selBook) _checkRepFile(_selBook);
+    }
+
+    // ── Init ─────────────────────────────────────────────────
+    function init() {
+        $bookSelect      = _el('nr-book-select');
+        $btnScan         = _el('nr-btn-scan');
+        $btnApplyFile    = _el('nr-btn-apply-file');
+        $btnPreview      = _el('nr-btn-preview');
+        $statusRow       = _el('nr-status-row');
+        $statusDot       = _el('nr-status-dot');
+        $statusText      = _el('nr-status-text');
+        $resultsCard     = _el('nr-results-card');
+        $statEntities    = _el('nr-stat-entities');
+        $statFound       = _el('nr-stat-found');
+        $statApplied     = _el('nr-stat-applied');
+        $logCard         = _el('nr-log-card');
+        $auditLog        = _el('nr-audit-log');
+        $btnClearLog     = _el('nr-btn-clear-log');
+        $repInfo         = _el('nr-replacement-info');
+        $repStatus       = _el('nr-replacement-status');
+        $previewCard     = _el('nr-preview-card');
+        $textarea        = _el('nr-replacement-textarea');
+        $pairsCount      = _el('nr-pairs-count');
+        $btnApplyEdited  = _el('nr-btn-apply-edited');
+        $btnClosePreview = _el('nr-btn-close-preview');
+        $btnRefreshBooks = _el('nr-refresh-books');
+
+        if (!$bookSelect) return; // panel nije u DOM-u
+
+        // Odabir knjige
+        $bookSelect.addEventListener('change', () => {
+            _selBook = $bookSelect.value;
+            if ($btnScan) $btnScan.disabled = !_selBook;
+            if ($resultsCard) $resultsCard.style.display = 'none';
+            if ($previewCard) $previewCard.style.display = 'none';
+            _updateRepBadge(false);
+            if (_selBook) _checkRepFile(_selBook);
+        });
+
+        // Akcije
+        if ($btnScan)         $btnScan.addEventListener('click', _doScan);
+        if ($btnApplyFile)    $btnApplyFile.addEventListener('click', _doApplyFile);
+        if ($btnPreview)      $btnPreview.addEventListener('click', _openPreview);
+        if ($btnApplyEdited)  $btnApplyEdited.addEventListener('click', _applyEdited);
+        if ($btnClosePreview) $btnClosePreview.addEventListener('click', () => {
+            if ($previewCard) $previewCard.style.display = 'none';
+        });
+        if ($btnClearLog)     $btnClearLog.addEventListener('click', () => {
+            if ($auditLog) $auditLog.innerHTML = '';
+        });
+        if ($btnRefreshBooks) $btnRefreshBooks.addEventListener('click', _loadBooks);
+
+        // Brojač parova u textarea
+        if ($textarea) $textarea.addEventListener('input', _countPairs);
+
+        // Integracija s tab sistemom:
+        // Pokušaj hookati se na postojeći tab klik mehanizam
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('[data-tab]');
+            if (btn) _onTabChange(btn.dataset.tab);
+        });
+
+        // Ako je tab-panel sistem koji koristi show/hide klase:
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(m => {
+                if (m.target.id === 'panel-zamjene' &&
+                    m.type === 'attributes' &&
+                    m.attributeName === 'style') {
+                    const visible = m.target.style.display !== 'none';
+                    if (visible) { _loadBooks(); if (_selBook) _checkRepFile(_selBook); }
+                }
+            });
+        });
+        const panel = _el('panel-zamjene');
+        if (panel) observer.observe(panel, { attributes: true });
+
+        // Učitaj knjige pri startu ako je tab aktivan
+        if (panel && panel.style.display !== 'none') _loadBooks();
+    }
+
+    // Čekaj DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    return { init, onTabChange: _onTabChange };
+})();
+
+// ── Integracija s postojećim tab switching mehanizmom ──────────────
+// Pokušaj hookati na globalne tab funkcije ako postoje
+(function _hookTabs() {
+    // Metoda 1: Patch globalnog switchTab()
+    if (typeof window.switchTab === 'function') {
+        const _orig = window.switchTab;
+        window.switchTab = function(tabId, ...args) {
+            _orig.call(this, tabId, ...args);
+            NameReplacer.onTabChange(tabId);
+        };
+    }
+
+    // Metoda 2: Delegirani klik na [data-tab] gumbe (fallback)
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                NameReplacer.onTabChange(btn.dataset.tab);
+            });
+        });
+    });
+})();
