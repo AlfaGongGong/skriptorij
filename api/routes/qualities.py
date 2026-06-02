@@ -455,3 +455,231 @@ def patch_quality_score(stem):
         return jsonify({"status": "ok", "stem": stem, "score": score})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ============================================================================
+# SMART NAME REPLACER — Standalone endpoint
+# Dodan: 02.06.2026
+# ============================================================================
+
+@bp.route("/api/name_replace", methods=["POST"])
+def name_replace_endpoint():
+    """
+    Pokreće Smart Name Replacer na zadanom EPUB-u.
+
+    Body (JSON):
+        { "file": "naziv_knjige.epub", "output": "opcioni_izlaz.epub" }
+        ili
+        { "epub_path": "/apsolutna/putanja/knjiga.epub" }
+
+    Response:
+        {
+          "ok": bool,
+          "replacement_file": str,
+          "replacements_applied": int,
+          "entities_found": int,
+          "pairs": [[variant, canonical], ...],
+          "error": str | None
+        }
+    """
+    import traceback
+    from pathlib import Path
+    from config.settings import INPUT_DIR, OUTPUT_DIR, SHARED_STATS
+
+    data = request.get_json(silent=True) or {}
+
+    # ── Resolvi putanju EPUB-a ────────────────────────────────────────────
+    epub_path = None
+
+    if "epub_path" in data:
+        epub_path = Path(data["epub_path"])
+    elif "file" in data:
+        fname = data["file"]
+        # Traži u INPUT_DIR i OUTPUT_DIR
+        for base in [INPUT_DIR, OUTPUT_DIR]:
+            candidate = Path(base) / fname
+            if candidate.exists():
+                epub_path = candidate
+                break
+        if epub_path is None:
+            return jsonify({"ok": False, "error": f"Fajl nije pronađen: {fname}"}), 404
+    else:
+        # Pokušaj aktivni output_file
+        output_file = SHARED_STATS.get("output_file", "")
+        if output_file:
+            candidate = Path(OUTPUT_DIR) / output_file
+            if candidate.exists():
+                epub_path = candidate
+        if epub_path is None:
+            return jsonify({"ok": False, "error": "Nedostaje 'file' ili 'epub_path' parametar"}), 400
+
+    output_path = data.get("output")
+
+    # ── Audit log callback ────────────────────────────────────────────────
+    audit_msgs = []
+
+    def _log(msg, atype="info"):
+        from utils.logging import add_audit
+        audit_msgs.append({"msg": msg, "type": atype})
+        add_audit(msg, atype, shared_stats=SHARED_STATS)
+
+    # ── Pokretanje ────────────────────────────────────────────────────────
+    try:
+        from epub.name_replacer import run_name_replacer
+        from api_fleet import get_active_fleet
+
+        fleet = get_active_fleet()
+        result = run_name_replacer(
+            epub_path=epub_path,
+            fleet=fleet,
+            output_path=output_path,
+            log_callback=_log,
+        )
+        result["audit"] = audit_msgs[-20:]  # zadnjih 20 poruka
+        status = 200 if result["ok"] else 500
+        return jsonify(result), status
+
+    except ImportError as e:
+        logger.exception("[name_replace] Import greška")
+        return jsonify({
+            "ok": False,
+            "error": f"Modul nije dostupan: {e}",
+            "audit": audit_msgs,
+        }), 500
+    except Exception:
+        logger.exception("[name_replace] Neočekivana greška")
+        return jsonify({
+            "ok": False,
+            "error": "Interna greška — vidi server log",
+            "audit": audit_msgs,
+            "traceback": traceback.format_exc()[-500:],
+        }), 500
+
+
+@bp.route("/api/name_replace/preview", methods=["POST"])
+def name_replace_preview():
+    """
+    Čita postojeći .epub.replacement fajl i vraća ga za preview/edit.
+
+    Body: { "file": "naziv.epub" }  ili  { "epub_path": "/putanja/knjiga.epub" }
+
+    Response: { "ok": bool, "pairs": [{"original": str, "replacement": str}], "raw": str }
+    """
+    from pathlib import Path
+    from config.settings import INPUT_DIR, OUTPUT_DIR
+
+    data = request.get_json(silent=True) or {}
+    epub_path = None
+
+    if "epub_path" in data:
+        epub_path = Path(data["epub_path"])
+    elif "file" in data:
+        fname = data["file"]
+        for base in [INPUT_DIR, OUTPUT_DIR]:
+            candidate = Path(base) / fname
+            if candidate.exists():
+                epub_path = candidate
+                break
+
+    if epub_path is None:
+        return jsonify({"ok": False, "error": "Fajl nije pronađen"}), 404
+
+    rep_path = epub_path.with_suffix(epub_path.suffix + ".replacement")
+    if not rep_path.exists():
+        return jsonify({"ok": False, "error": f"Replacement fajl ne postoji: {rep_path.name}"}), 404
+
+    try:
+        raw = rep_path.read_text(encoding="utf-8")
+        pairs = []
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#!"):
+                continue
+            if "#->#" in line:
+                parts = line.split("#->#", 1)
+                if len(parts) == 2:
+                    pairs.append({"original": parts[0].strip(), "replacement": parts[1].strip()})
+        return jsonify({"ok": True, "pairs": pairs, "raw": raw, "file": rep_path.name})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@bp.route("/api/name_replace/apply_file", methods=["POST"])
+def name_replace_apply_file():
+    """
+    Primjenjuje zamjene iz .epub.replacement fajla na EPUB bez ponovnog AI skeniranja.
+    Korisno za ručno editovani .replacement fajl.
+
+    Body: { "file": "naziv.epub", "replacement_file": "putanja/do/fajla.epub.replacement" }
+    """
+    from pathlib import Path
+    from config.settings import INPUT_DIR, OUTPUT_DIR
+
+    data = request.get_json(silent=True) or {}
+
+    fname = data.get("file", "")
+    epub_path = None
+    for base in [INPUT_DIR, OUTPUT_DIR]:
+        candidate = Path(base) / fname
+        if candidate.exists():
+            epub_path = candidate
+            break
+    if epub_path is None:
+        return jsonify({"ok": False, "error": f"EPUB nije pronađen: {fname}"}), 404
+
+    rep_file = data.get("replacement_file")
+    if rep_file:
+        rep_path = Path(rep_file)
+    else:
+        rep_path = epub_path.with_suffix(epub_path.suffix + ".replacement")
+
+    if not rep_path.exists():
+        return jsonify({"ok": False, "error": f"Replacement fajl ne postoji: {rep_path}"}), 404
+
+    try:
+        from epub.name_replacer import (
+            _read_epub_html_files,
+            _apply_replacements_to_html,
+            _write_epub_with_replacements,
+        )
+
+        # Parsiraj replacement fajl
+        pairs = []
+        for line in rep_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#!"):
+                continue
+            if "#->#" in line:
+                parts = line.split("#->#", 1)
+                if len(parts) == 2:
+                    pairs.append((parts[0].strip(), parts[1].strip()))
+
+        if not pairs:
+            return jsonify({"ok": False, "error": "Replacement fajl je prazan ili nema validnih zamjena"}), 400
+
+        html_files = _read_epub_html_files(epub_path)
+        modified_files = {}
+        all_applied = set()
+
+        for fname_html, html in html_files.items():
+            new_html, applied = _apply_replacements_to_html(html, pairs)
+            if applied:
+                modified_files[fname_html] = new_html
+                for p in applied:
+                    all_applied.add(p)
+
+        if modified_files:
+            _write_epub_with_replacements(epub_path, modified_files)
+
+        return jsonify({
+            "ok": True,
+            "epub_path": str(epub_path),
+            "replacements_applied": len(all_applied),
+            "files_modified": len(modified_files),
+            "pairs_applied": list(all_applied),
+        })
+
+    except Exception as e:
+        logger.exception("[name_replace_apply_file] Greška")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
