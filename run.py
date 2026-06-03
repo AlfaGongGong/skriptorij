@@ -66,7 +66,45 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
             )
             return "AUTO-RETRO"
 
-    # Detektuj jezik knjige — poziva _detect_knjiga_mode() UVIJEK na početku
+    # BUG #2 FIX: Ne pozivati _detect_knjiga_mode() kad postoji dovoljan broj
+    # checkpointa koji pokrivaju sesiju. HTML je tada već preveden/lektoriran —
+    # detekcija na njemu vraća POGRIJEŠAN rezultat (EN tekst je bio prepisan
+    # ekstrakcijom, ili checkpointi pokazuju da je knjiga već u naprednoj fazi).
+    chk_count = len(list(engine.checkpoint_dir.glob("*.chk")))
+    n_html = len(html_files)
+    # Prag: ako checkpointi pokrivaju ≥ 20% blokova, jezik je već poznat iz
+    # prethodne sesije → koristimo mode koji je engine možda sačuvao, ili
+    # defaultujemo na PREVOD (konzervativnija opcija — main_loop će skipovati
+    # već obrađene blokove bez obzira na mode).
+    if chk_count > 0 and n_html > 0 and chk_count >= max(1, int(n_html * 0.20)):
+        # Pokušaj učitati sačuvani mode iz book_analysis.json
+        saved_mode = None
+        try:
+            import json as _json
+            ba_path = engine.checkpoint_dir / "book_analysis.json"
+            if ba_path.exists():
+                ba = _json.loads(ba_path.read_text("utf-8"))
+                saved_mode = ba.get("knjiga_mode") or ba.get("mode")
+        except Exception:
+            pass
+
+        if saved_mode in ("PREVOD", "LEKTURA"):
+            engine.log(
+                f"💾 Nastavak sesije: {chk_count} checkpointa pronađeno — "
+                f"koristim sačuvani mode '{saved_mode}' (preskačem detekciju).",
+                "system",
+            )
+            return saved_mode
+        else:
+            engine.log(
+                f"💾 Nastavak sesije: {chk_count} checkpointa — "
+                f"sačuvani mode nije dostupan, defaultujem na PREVOD "
+                f"(detekcija bi bila netačna na nastavku sesije).",
+                "system",
+            )
+            return "PREVOD"
+
+    # Svježa sesija (nema checkpointa) — detektuj jezik knjige
     knjiga_mode = engine._detect_knjiga_mode(html_files, n_files=5)
     return knjiga_mode  # "PREVOD" ili "LEKTURA"
 
@@ -198,6 +236,17 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
 
     engine._load_chapter_summaries()
 
+    # ── Provjeri jesu li HTML fajlovi već prisutni (nastavak sesije) ────────
+    # Čitamo PRIJE ekstrakcije da znamo je li work_dir svjež ili ne.
+    existing_html = sorted(
+        [
+            f
+            for f in engine.work_dir.rglob("*")
+            if f.suffix.lower() in [".html", ".htm", ".xhtml", ".xml"]
+        ],
+        key=lambda x: x.name,
+    )
+
     # ── MOBI ekstrakcija ──────────────────────────────────────────────────
     if engine.book_path.suffix.lower() == ".mobi":
         if not HAS_MOBI:
@@ -231,8 +280,17 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             sharedstats["status"] = "ZAUSTAVLJENO"
             return
     else:
-        with zipfile.ZipFile(engine.book_path, "r") as z:
-            z.extractall(engine.work_dir)
+        # BUG #1 FIX: Ne ekstraktovati EPUB ako work_dir već ima HTML fajlove.
+        # existing_html je već detektovan gore (prije if/else), koristimo ga.
+        if existing_html:
+            engine.log(
+                f"📂 work_dir već sadrži {len(existing_html)} HTML fajlova — "
+                f"preskačem ekstrakciju EPUB-a (nastavak sesije).",
+                "system",
+            )
+        else:
+            with zipfile.ZipFile(engine.book_path, "r") as z:
+                z.extractall(engine.work_dir)
 
     # ── Pronađi HTML fajlove ──────────────────────────────────────────────
     engine.html_files = sorted(
@@ -244,22 +302,34 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
         key=lambda x: x.name,
     )
 
-    # ── Pre-processing HTML-a ─────────────────────────────────────────────
-    _ukloni_inline_stilove(engine.html_files, engine.log)
-    _zamijeni_epub_css(engine.html_files, engine.work_dir, engine.log)
+    # ── Pre-processing HTML-a (samo za svježe ekstrakcije) ────────────────
+    # BUG #1 FIX (nastavak): pre-processing se vrši SAMO ako smo upravo ekstraktovali.
+    # Za nastavak sesije HTML je već obrađen u prethodnoj sesiji — ne smijemo
+    # ga prepisati svježim EN tekstom iz EPUB-a.
+    # Za MOBI uvijek radimo svježu ekstrakciju (nema inkrementalnog nastavka).
+    # Za EPUB/ostalo: svježe samo ako existing_html bio prazan prije ekstrakcije.
+    epub_svjeze_ekstraktovan = (
+        engine.book_path.suffix.lower() == ".mobi"
+        or not bool(existing_html)
+    )
+    if epub_svjeze_ekstraktovan:
+        _ukloni_inline_stilove(engine.html_files, engine.log)
+        _zamijeni_epub_css(engine.html_files, engine.work_dir, engine.log)
 
-    ocisceno_html = 0
-    for hf in engine.html_files:
-        try:
-            original = hf.read_text("utf-8", errors="ignore")
-            cleaned = _ocisti_epub_html(original)
-            if cleaned != original:
-                hf.write_text(cleaned, encoding="utf-8")
-                ocisceno_html += 1
-        except Exception:
-            pass
-    if ocisceno_html:
-        engine.log(f"🧹 HTML pre-processing: {ocisceno_html} fajlova.", "tech")
+        ocisceno_html = 0
+        for hf in engine.html_files:
+            try:
+                original = hf.read_text("utf-8", errors="ignore")
+                cleaned = _ocisti_epub_html(original)
+                if cleaned != original:
+                    hf.write_text(cleaned, encoding="utf-8")
+                    ocisceno_html += 1
+            except Exception:
+                pass
+        if ocisceno_html:
+            engine.log(f"🧹 HTML pre-processing: {ocisceno_html} fajlova.", "tech")
+    else:
+        engine.log("⏭️ Pre-processing preskočen — HTML iz prethodne sesije.", "tech")
 
     # ── Prebrojavanje chunkova za ETA ─────────────────────────────────────
     for f in engine.html_files:
@@ -404,6 +474,24 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
 
         engine.finalize()
         _obrada_karantene_kraj_knjige(engine)
+
+        # BUG #2 FIX (nastavak): Sačuvaj knjiga_mode u book_analysis.json na kraju
+        # sesije da bi ga sljedeća sesija mogla pročitati i preskočiti detekciju.
+        try:
+            ba_path = engine.checkpoint_dir / "book_analysis.json"
+            ba_data = {}
+            if ba_path.exists():
+                ba_data = json.loads(ba_path.read_text("utf-8"))
+            ba_data["knjiga_mode"] = getattr(engine, "knjiga_mode", None)
+            ba_path.write_text(
+                json.dumps(ba_data, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            engine.log(
+                f"💾 knjiga_mode '{ba_data['knjiga_mode']}' sačuvan u book_analysis.json",
+                "tech",
+            )
+        except Exception as e:
+            engine.log(f"⚠️ knjiga_mode snimanje palo: {e}", "warning")
 
 
 if __name__ == "__main__":
