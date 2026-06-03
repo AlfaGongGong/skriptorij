@@ -512,8 +512,11 @@ def create_app() -> Flask:
                 "est":             "--:--:--",
                 "quality_scores":  SHARED_STATS.get("quality_scores", {}) if has_checkpoints else {},
                 "glosar_problemi": {},
-                "knjiga_mode":     None,
-                "knjiga_mode_info": "",
+                # BUG #3 FIX: Ne resetovati knjiga_mode na None pri restartu kad
+                # postoje checkpointi — engine ga ionako setuje čim detektuje mode,
+                # ali frontend ga prikazuje odmah i None uzrokuje vizuelni reset.
+                "knjiga_mode":     SHARED_STATS.get("knjiga_mode") if has_checkpoints else None,
+                "knjiga_mode_info": SHARED_STATS.get("knjiga_mode_info", "") if has_checkpoints else "",
             })
 
             mode = data.get("tool", data.get("mode", "")).strip().upper()
