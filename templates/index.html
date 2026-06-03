@@ -960,18 +960,7 @@
 
         
     <!-- ═══════════════ PANEL: ZAMJENE IMENA ═══════════════ -->
-    <div id="panel-zamjene" class="tab-panel" style="display:none;">
-
-        <!-- ── Odabir knjige ──────────────────────────────── -->
-        <div class="nr-card">
-            <div class="nr-row">
-                <label class="nr-label">📚 Knjiga</label>
-                <select id="nr-book-select" class="nr-select">
-                    <option value="">— odaberi knjigu —</option>
-                </select>
-                <button class="btn btn-sm" id="nr-refresh-books" title="Osvježi listu">↺</button>
-            </div>
-            <div class="nr-row" id="nr-replacement-info" style="display:none">
+    <div class="nr-row" id="nr-replacement-info" style="display:none">
                 <span class="nr-badge nr-badge-info" id="nr-replacement-status"></span>
                 <button class="btn btn-sm" id="nr-btn-preview" style="display:none">👁 Pregledaj fajl</button>
             </div>
@@ -1136,6 +1125,73 @@
 
     </div>
     <!-- /panel-tts-filter -->
+
+
+    <!-- ═══════════════ PANEL: ZAMJENE IMENA ═══════════════ -->
+    <div id="panel-zamjene" class="tab-panel" style="display:none;">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-icon">🔤</span>
+                <span class="card-title">ZAMJENE IMENA</span>
+                <span class="badge badge-info" id="zamjene-badge" style="display:none;"></span>
+            </div>
+            <div class="card-body">
+                <!-- Odabir knjige -->
+                <div class="form-row">
+                    <label class="form-label">Knjiga</label>
+                    <select id="zamjene-book-select" class="form-select">
+                        <option value="">— odaberi knjigu —</option>
+                    </select>
+                </div>
+
+                <!-- Akcija -->
+                <div class="form-row" style="margin-top:12px;">
+                    <button id="btn-zamjene-scan" class="btn btn-sm btn-success" disabled>
+                        🔍 Skeniraj i zamijeni
+                    </button>
+                    <button id="btn-zamjene-preview" class="btn btn-sm" disabled style="display:none;">
+                        📄 Pregledaj .replacement
+                    </button>
+                    <button id="btn-zamjene-apply" class="btn btn-sm btn-success" disabled style="display:none;">
+                        ✅ Primijeni izmjene
+                    </button>
+                </div>
+
+                <!-- Audit log -->
+                <div id="zamjene-log" class="audit-log" style="display:none; margin-top:14px; max-height:240px; overflow-y:auto;">
+                </div>
+
+                <!-- Statistike -->
+                <div id="zamjene-stats" style="display:none; margin-top:12px;">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">ZAMIJENJENO</div>
+                            <div class="stat-value" id="zamjene-count">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">STATUS</div>
+                            <div class="stat-value" id="zamjene-status">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview textarea -->
+                <div id="zamjene-preview-area" style="display:none; margin-top:12px;">
+                    <textarea id="zamjene-textarea"
+                        style="width:100%; min-height:200px; background:var(--bg-2); color:var(--tx-1);
+                               border:1px solid var(--bd); border-radius:var(--r-md); padding:10px;
+                               font-family:var(--font-mono); font-size:12px; resize:vertical;"
+                        placeholder="Sadržaj .replacement fajla..."></textarea>
+                    <div style="margin-top:8px; text-align:right;">
+                        <button id="btn-zamjene-save-edit" class="btn btn-sm btn-success">
+                            💾 Sačuvaj izmjene
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ═══════════════ /PANEL: ZAMJENE IMENA ═══════════════ -->
 
 </body>
 </html>

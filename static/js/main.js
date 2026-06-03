@@ -3006,320 +3006,6 @@ const NameReplacer = (() => {
 })();
 
 
-// ═══════════════════════════════════════════════════════════
-// ZamjeneTab — Name Replacer UI modul
-// Ubačen: fix_zamjene_tab_02_06_2026.sh
-// ═══════════════════════════════════════════════════════════
-(function ZamjeneTab() {
-    'use strict';
-
-    // ── State ──────────────────────────────────────────────
-    let _selectedBook   = '';
-    let _replacementPath = '';
-    let _scanning       = false;
-
-    // ── DOM refs (lazy) ────────────────────────────────────
-    function $id(id) { return document.getElementById(id); }
-
-    function _log(msg, type) {
-        const log = $id('zamjene-log');
-        if (!log) return;
-        log.style.display = 'block';
-        const ts  = new Date().toLocaleTimeString('bs', { hour12: false });
-        const cls = type === 'ok' ? 'log-ok'
-                  : type === 'warn' ? 'log-warn'
-                  : type === 'err'  ? 'log-err'
-                  : 'log-info';
-        const lbl = type === 'ok' ? 'OK'
-                  : type === 'warn' ? 'UPOZ'
-                  : type === 'err'  ? 'GREŠKA'
-                  : 'INFO';
-        const div = document.createElement('div');
-        div.className = 'log-entry ' + cls;
-        div.innerHTML = `<span class="log-ts">${ts}</span>`
-                      + `<span class="log-label">${lbl}</span>`
-                      + `<span class="log-msg">${_esc(msg)}</span>`;
-        log.appendChild(div);
-        log.scrollTop = log.scrollHeight;
-    }
-
-    function _esc(s) {
-        return String(s)
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    function _setStat(id, val) {
-        const el = $id(id);
-        if (el) el.textContent = val;
-    }
-
-    // ── Učitaj knjige ──────────────────────────────────────
-    async function _loadBooks() {
-        const sel = $id('zamjene-book-select');
-        if (!sel) return;
-        try {
-            const endpoints = ['/api/books', '/api/files', '/api/epub_files'];
-            let books = [];
-            for (const ep of endpoints) {
-                try {
-                    const r = await fetch(ep);
-                    if (r.ok) {
-                        const d = await r.json();
-                        books = d.books || d.files || d || [];
-                        if (books.length) break;
-                    }
-                } catch (_) {}
-            }
-            sel.innerHTML = '<option value="">— odaberi knjigu —</option>';
-            books.forEach(b => {
-                const name = typeof b === 'string' ? b : (b.name || b.filename || b.file || String(b));
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = name;
-                sel.appendChild(opt);
-            });
-            if (books.length === 0) {
-                _log('Nema EPUB knjiga u input folderu', 'warn');
-            }
-        } catch (e) {
-            _log('Greška pri učitavanju knjiga: ' + e.message, 'err');
-        }
-    }
-
-    // ── Skeniranje ──────────────────────────────────────────
-    async function _scan() {
-        if (_scanning || !_selectedBook) return;
-        _scanning = true;
-
-        const scanBtn    = $id('btn-zamjene-scan');
-        const previewBtn = $id('btn-zamjene-preview');
-        const applyBtn   = $id('btn-zamjene-apply');
-        const stats      = $id('zamjene-stats');
-        const log        = $id('zamjene-log');
-
-        if (scanBtn) { scanBtn.disabled = true; scanBtn.textContent = '⏳ Skeniram...'; }
-        if (log)     { log.innerHTML = ''; log.style.display = 'block'; }
-        if (stats)   stats.style.display = 'none';
-        if (previewBtn) previewBtn.style.display = 'none';
-        if (applyBtn)   applyBtn.style.display = 'none';
-
-        _log(`Pokrećem skeniranje: ${_selectedBook}`, 'info');
-
-        try {
-            const res = await fetch('/api/name_replacer/scan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ book: _selectedBook }),
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-                _log('Greška: ' + (data.error || `HTTP ${res.status}`), 'err');
-                return;
-            }
-
-            const count = data.count || data.zamjena_count || 0;
-            _replacementPath = data.replacement_file || data.path || '';
-
-            _log(`Skeniranje završeno: ${count} zamjena`, 'ok');
-            if (data.log && Array.isArray(data.log)) {
-                data.log.forEach(entry => _log(entry, 'info'));
-            }
-
-            _setStat('zamjene-count', count);
-            _setStat('zamjene-status', count > 0 ? '✅ Gotovo' : '⚠️ Nema zamjena');
-            if (stats) stats.style.display = 'block';
-
-            const badge = $id('zamjene-badge');
-            if (badge && count > 0) {
-                badge.textContent = `${count} zamjena`;
-                badge.style.display = 'inline-block';
-            }
-
-            if (_replacementPath) {
-                if (previewBtn) { previewBtn.style.display = 'inline-block'; previewBtn.disabled = false; }
-                if (applyBtn)   { applyBtn.style.display   = 'inline-block'; applyBtn.disabled   = false; }
-            }
-
-        } catch (e) {
-            _log('Greška: ' + e.message, 'err');
-        } finally {
-            _scanning = false;
-            if (scanBtn) {
-                scanBtn.disabled = false;
-                scanBtn.textContent = '🔍 Skeniraj i zamijeni';
-            }
-        }
-    }
-
-    // ── Preview ─────────────────────────────────────────────
-    async function _preview() {
-        if (!_replacementPath) return;
-        const area = $id('zamjene-preview-area');
-        const ta   = $id('zamjene-textarea');
-        if (!area || !ta) return;
-
-        try {
-            const r = await fetch('/api/name_replacer/read', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: _replacementPath }),
-            });
-            const d = await r.json();
-            ta.value = d.content || '';
-            area.style.display = 'block';
-            _log('Učitan .replacement fajl za pregled', 'info');
-        } catch (e) {
-            _log('Greška pri čitanju fajla: ' + e.message, 'err');
-        }
-    }
-
-    // ── Apply ───────────────────────────────────────────────
-    async function _apply() {
-        if (!_selectedBook || !_replacementPath) return;
-        _log('Primjenjujem zamjene na checkpoint fajlove...', 'info');
-        const applyBtn = $id('btn-zamjene-apply');
-        if (applyBtn) applyBtn.disabled = true;
-
-        try {
-            const r = await fetch('/api/name_replacer/apply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ book: _selectedBook, path: _replacementPath }),
-            });
-            const d = await r.json();
-            if (!r.ok) {
-                _log('Greška: ' + (d.error || `HTTP ${r.status}`), 'err');
-                return;
-            }
-            _log(`Primijenjeno: ${d.applied || 0} zamjena u ${d.files || 0} fajlova`, 'ok');
-            _setStat('zamjene-status', '✅ Primijenjeno');
-        } catch (e) {
-            _log('Greška: ' + e.message, 'err');
-        } finally {
-            if (applyBtn) applyBtn.disabled = false;
-        }
-    }
-
-    // ── Sačuvaj edit ────────────────────────────────────────
-    async function _saveEdit() {
-        const ta = $id('zamjene-textarea');
-        if (!ta || !_replacementPath) return;
-        try {
-            const r = await fetch('/api/name_replacer/write', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: _replacementPath, content: ta.value }),
-            });
-            const d = await r.json();
-            if (r.ok) _log('Izmjene sačuvane', 'ok');
-            else       _log('Greška: ' + (d.error || 'Nepoznato'), 'err');
-        } catch (e) {
-            _log('Greška: ' + e.message, 'err');
-        }
-    }
-
-    // ── Hookuj se na tab sistem ─────────────────────────────
-    function _hookTabSystem() {
-        // Pristup 1: patch globalnog switchTab()
-        if (typeof window.switchTab === 'function') {
-            const orig = window.switchTab;
-            window.switchTab = function(tabName, ...rest) {
-                orig.call(this, tabName, ...rest);
-                if (tabName === 'zamjene') _onActivate();
-            };
-        }
-
-        // Pristup 2: MutationObserver na display promjenu panela
-        const panel = $id('panel-zamjene');
-        if (panel) {
-            new MutationObserver(() => {
-                if (panel.style.display !== 'none' && panel.offsetParent !== null) {
-                    _onActivate();
-                }
-            }).observe(panel, { attributes: true, attributeFilter: ['style', 'class'] });
-        }
-
-        // Pristup 3: delegirani click na data-tab="zamjene"
-        document.addEventListener('click', function(e) {
-            const btn = e.target.closest('[data-tab="zamjene"]');
-            if (!btn) return;
-
-            // Sakrij sve ostale panele
-            document.querySelectorAll('[id^="panel-"]').forEach(p => {
-                p.style.display = 'none';
-            });
-            // Aktiviraj naš panel
-            const myPanel = $id('panel-zamjene');
-            if (myPanel) myPanel.style.display = 'block';
-
-            // Deaktiviraj ostale tabove
-            document.querySelectorAll('[data-tab]').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
-
-            _onActivate();
-        }, true);
-    }
-
-    function _onActivate() {
-        // Učitaj knjige samo ako select je prazan
-        const sel = $id('zamjene-book-select');
-        if (sel && sel.options.length <= 1) _loadBooks();
-    }
-
-    // ── Bind event handlers ─────────────────────────────────
-    function _bindEvents() {
-        const sel = $id('zamjene-book-select');
-        if (sel) {
-            sel.addEventListener('change', function() {
-                _selectedBook = this.value;
-                const scanBtn = $id('btn-zamjene-scan');
-                if (scanBtn) scanBtn.disabled = !_selectedBook;
-                // Reset state
-                _replacementPath = '';
-                const pb = $id('btn-zamjene-preview');
-                const ab = $id('btn-zamjene-apply');
-                const pa = $id('zamjene-preview-area');
-                const st = $id('zamjene-stats');
-                const log = $id('zamjene-log');
-                if (pb) { pb.style.display = 'none'; pb.disabled = true; }
-                if (ab) { ab.style.display = 'none'; ab.disabled = true; }
-                if (pa) pa.style.display = 'none';
-                if (st) st.style.display = 'none';
-                if (log) { log.innerHTML = ''; log.style.display = 'none'; }
-            });
-        }
-
-        const scanBtn = $id('btn-zamjene-scan');
-        if (scanBtn) scanBtn.addEventListener('click', _scan);
-
-        const previewBtn = $id('btn-zamjene-preview');
-        if (previewBtn) previewBtn.addEventListener('click', _preview);
-
-        const applyBtn = $id('btn-zamjene-apply');
-        if (applyBtn) applyBtn.addEventListener('click', _apply);
-
-        const saveEditBtn = $id('btn-zamjene-save-edit');
-        if (saveEditBtn) saveEditBtn.addEventListener('click', _saveEdit);
-    }
-
-    // ── Init ────────────────────────────────────────────────
-    function init() {
-        _hookTabSystem();
-        _bindEvents();
-        console.log('[ZamjeneTab] Inicijaliziran');
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
-// ═══════════════════════════════════════════════════════════
-// /ZamjeneTab
-// ═══════════════════════════════════════════════════════════
 
 
 // ═══════════════════════════════════════════════════════════
@@ -3818,3 +3504,279 @@ document.addEventListener("DOMContentLoaded", function() {
     initNR();
     initTTSFilter();
 });
+
+
+
+
+// ═══════════════════════════════════════════════════════════
+// ZamjeneTab v3 — fix_zamjene_v3_03_06_2026.sh
+// Tab klasa: tab-btn, data-tab="panel-zamjene", id="panel-zamjene"
+// switchTab(id) skriva sve .tab-panel, prikazuje getElementById(id)
+// ═══════════════════════════════════════════════════════════
+(function ZamjeneTab() {
+    'use strict';
+
+    const PANEL_ID = 'panel-zamjene';
+    const TAB_ID   = '[data-tab="panel-zamjene"]';
+
+    let _book    = '';
+    let _rpath   = '';
+    let _busy    = false;
+
+    const $  = id  => document.getElementById(id);
+    const ts = () => new Date().toLocaleTimeString('bs', { hour12: false });
+
+    function _log(msg, type) {
+        const log = $('zamjene-log');
+        if (!log) return;
+        log.style.display = 'block';
+        const clsMap = { ok: 'log-success', warn: 'log-warning', err: 'log-critical', info: '' };
+        const lblMap = { ok: 'OK', warn: 'UPOZ', err: 'GREŠKA', info: 'INFO' };
+        const cls = clsMap[type] || '';
+        const lbl = lblMap[type] || 'INFO';
+        const d = document.createElement('div');
+        d.className = 'log-entry' + (cls ? ' ' + cls : '');
+        d.innerHTML =
+            `<span class="log-ts">${ts()}</span>` +
+            `<span class="log-label">${lbl}</span>` +
+            `<span class="log-msg">${_esc(msg)}</span>`;
+        log.appendChild(d);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function _esc(s) {
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Učitaj knjige ──────────────────────────────────────
+    async function _loadBooks() {
+        const sel = $('zamjene-book-select');
+        if (!sel || sel.options.length > 1) return;
+        try {
+            let books = [];
+            for (const ep of ['/api/books', '/api/files', '/api/epub_files']) {
+                try {
+                    const r = await fetch(ep);
+                    if (!r.ok) continue;
+                    const d = await r.json();
+                    books = Array.isArray(d) ? d : (d.books || d.files || []);
+                    if (books.length) break;
+                } catch (_) {}
+            }
+            sel.innerHTML = '<option value="">— odaberi knjigu —</option>';
+            books.forEach(b => {
+                const name = typeof b === 'string' ? b : (b.name || b.filename || b.file || '');
+                if (!name) return;
+                const o = document.createElement('option');
+                o.value = name; o.textContent = name;
+                sel.appendChild(o);
+            });
+            if (!books.length) _log('Nema knjiga u input folderu', 'warn');
+        } catch (e) {
+            _log('Greška pri učitavanju knjiga: ' + e.message, 'err');
+        }
+    }
+
+    // ── Skeniraj ───────────────────────────────────────────
+    async function _scan() {
+        if (_busy || !_book) return;
+        _busy = true;
+        const scanBtn = $('btn-zamjene-scan');
+        if (scanBtn) { scanBtn.disabled = true; scanBtn.textContent = '⏳ Skeniram...'; }
+        const log = $('zamjene-log');
+        if (log) log.innerHTML = '';
+        ['zamjene-stats','zamjene-preview-area'].forEach(id => {
+            const el = $(id); if (el) el.style.display = 'none';
+        });
+        ['btn-zamjene-preview','btn-zamjene-apply'].forEach(id => {
+            const el = $(id); if (el) { el.style.display = 'none'; el.disabled = true; }
+        });
+
+        _log('Pokrećem skeniranje: ' + _book, 'info');
+
+        try {
+            const res  = await fetch('/api/name_replacer/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ book: _book }),
+            });
+            const data = await res.json();
+
+            (data.log || []).forEach(e => _log(e, 'info'));
+
+            if (!res.ok) {
+                _log('Greška: ' + (data.error || `HTTP ${res.status}`), 'err');
+                return;
+            }
+
+            const count = data.count || 0;
+            _rpath = data.replacement_file || '';
+            _log(`Skeniranje završeno: ${count} pronađenih imena`, count ? 'ok' : 'warn');
+            if (count) _log('Edituj .replacement — zamijeni desnu stranu: Ime→Prijevod', 'info');
+
+            const countEl = $('zamjene-count');
+            const statEl  = $('zamjene-status');
+            if (countEl) countEl.textContent = count;
+            if (statEl)  statEl.textContent  = count ? '✅ Skenirano' : '⚠️ Nema imena';
+            const st = $('zamjene-stats');
+            if (st) st.style.display = 'block';
+
+            if (_rpath && count) {
+                ['btn-zamjene-preview','btn-zamjene-apply'].forEach(id => {
+                    const el = $(id);
+                    if (el) { el.style.display = 'inline-block'; el.disabled = false; }
+                });
+            }
+        } catch (e) {
+            _log('Mrežna greška: ' + e.message, 'err');
+        } finally {
+            _busy = false;
+            if (scanBtn) { scanBtn.disabled = false; scanBtn.textContent = '🔍 Skeniraj i zamijeni'; }
+        }
+    }
+
+    // ── Pregledaj ──────────────────────────────────────────
+    async function _preview() {
+        if (!_rpath) return;
+        try {
+            const r = await fetch('/api/name_replacer/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: _rpath }),
+            });
+            const d = await r.json();
+            const ta   = $('zamjene-textarea');
+            const area = $('zamjene-preview-area');
+            if (ta)   ta.value = d.content || '';
+            if (area) area.style.display = 'block';
+            _log('Otvoren .replacement fajl za pregled/edit', 'info');
+        } catch (e) { _log('Greška: ' + e.message, 'err'); }
+    }
+
+    // ── Primijeni ──────────────────────────────────────────
+    async function _apply() {
+        if (!_book || !_rpath) return;
+        const ab = $('btn-zamjene-apply');
+        if (ab) ab.disabled = true;
+        _log('Primjenjujem zamjene na checkpoint fajlove...', 'info');
+        try {
+            const r = await fetch('/api/name_replacer/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ book: _book, path: _rpath }),
+            });
+            const d = await r.json();
+            if (!r.ok) { _log('Greška: ' + (d.error || `HTTP ${r.status}`), 'err'); return; }
+            const msg = d.message
+                || `Primijenjeno: ${d.applied||0} zamjena u ${d.files||0} fajlova`;
+            _log(msg, d.applied > 0 ? 'ok' : 'warn');
+            const st = $('zamjene-status');
+            if (st) st.textContent = d.applied > 0 ? '✅ Primijenjeno' : '⚠️ Nema izmjena';
+        } catch (e) { _log('Greška: ' + e.message, 'err'); }
+        finally { if (ab) ab.disabled = false; }
+    }
+
+    // ── Sačuvaj edit ────────────────────────────────────────
+    async function _saveEdit() {
+        const ta = $('zamjene-textarea');
+        if (!ta || !_rpath) return;
+        try {
+            const r = await fetch('/api/name_replacer/write', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: _rpath, content: ta.value }),
+            });
+            const d = await r.json();
+            _log(r.ok ? 'Izmjene sačuvane ✅' : 'Greška: ' + (d.error||'?'), r.ok ? 'ok' : 'err');
+        } catch (e) { _log('Greška: ' + e.message, 'err'); }
+    }
+
+    // ── Tab aktivacija ──────────────────────────────────────
+    // switchTab(id) u main.js:
+    //   1. skriva sve .tab-panel (remove 'active' ili display:none)
+    //   2. prikazuje getElementById(id)
+    //   3. skida 'active' sa svih .tab-btn, dodaje na kliknuti
+    // data-tab="panel-zamjene" → getElementById("panel-zamjene") → EXISTS ✅
+    // Samo trebamo biti obaviješteni kad se aktivira da učitamo knjige.
+
+    function _onActivate() {
+        _loadBooks();
+    }
+
+    function _init() {
+        // ── Bind event handleri ─────────────────────────────
+        const sel = $('zamjene-book-select');
+        if (sel) {
+            sel.addEventListener('change', function () {
+                _book  = this.value;
+                _rpath = '';
+                const sb = $('btn-zamjene-scan');
+                if (sb) sb.disabled = !_book;
+                // Reset UI
+                const log = $('zamjene-log');
+                if (log) { log.innerHTML = ''; log.style.display = 'none'; }
+                ['zamjene-stats','zamjene-preview-area'].forEach(id => {
+                    const el = $(id); if (el) el.style.display = 'none';
+                });
+                ['btn-zamjene-preview','btn-zamjene-apply'].forEach(id => {
+                    const el = $(id); if (el) { el.style.display = 'none'; el.disabled = true; }
+                });
+            });
+        }
+
+        const scanBtn = $('btn-zamjene-scan');
+        if (scanBtn) scanBtn.addEventListener('click', _scan);
+
+        const pb = $('btn-zamjene-preview');
+        if (pb) pb.addEventListener('click', _preview);
+
+        const ab = $('btn-zamjene-apply');
+        if (ab) ab.addEventListener('click', _apply);
+
+        const se = $('btn-zamjene-save-edit');
+        if (se) se.addEventListener('click', _saveEdit);
+
+        // ── Detektiraj aktivaciju taba ──────────────────────
+        // Metoda 1: intercept click na tab-btn[data-tab="panel-zamjene"]
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-tab="' + PANEL_ID + '"]');
+            if (btn) {
+                // Čekamo jedan tick da switchTab završi
+                setTimeout(_onActivate, 50);
+            }
+        }, true);
+
+        // Metoda 2: MutationObserver na panel — kad postane vidljiv
+        const panel = $(PANEL_ID);
+        if (panel) {
+            const obs = new MutationObserver(function () {
+                const visible = panel.style.display !== 'none'
+                    && panel.classList.contains('active');
+                if (visible) _onActivate();
+            });
+            obs.observe(panel, { attributes: true, attributeFilter: ['style', 'class'] });
+        }
+
+        // Metoda 3: patch window.switchTab ako postoji
+        if (typeof window.switchTab === 'function') {
+            const _orig = window.switchTab;
+            window.switchTab = function (tabId) {
+                _orig.apply(this, arguments);
+                if (tabId === PANEL_ID) _onActivate();
+            };
+        }
+
+        console.log('[ZamjeneTab v3] init OK — panel:', PANEL_ID);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _init);
+    } else {
+        _init();
+    }
+})();
+// ═══════════════════════════════════════════════════════════
+// /ZamjeneTab v3
+// ═══════════════════════════════════════════════════════════
