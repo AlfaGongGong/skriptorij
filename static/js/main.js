@@ -3780,3 +3780,232 @@ document.addEventListener("DOMContentLoaded", function() {
 // ═══════════════════════════════════════════════════════════
 // /ZamjeneTab v3
 // ═══════════════════════════════════════════════════════════
+
+
+/* ═══════════════════════════════════════════════════════════
+   EPUB STYLER UI — Skriptorij 02.06.2026
+   ═══════════════════════════════════════════════════════════ */
+
+const EpubStyler = (() => {
+    let _busy    = false;
+    let _selBook = '';
+
+    // ── DOM refs ─────────────────────────────────────────────
+    let $bookSelect, $btnStyle, $btnRefresh,
+        $statusRow, $statusDot, $statusText,
+        $resultCard, $statChapters, $statDropcaps, $statToc,
+        $btnDlEpub, $btnDlCss,
+        $logCard, $auditLog, $btnClearLog,
+        $optDropcaps, $optOrnaments, $optToc, $optAiToc;
+
+    function _el(id) { return document.getElementById(id); }
+
+    // ── Log ─────────────────────────────────────────────────
+    function _log(msg, type = 'info') {
+        if (!$logCard || !$auditLog) return;
+        $logCard.style.display = 'block';
+        const icons = {
+            system: '🔷', success: '✅', error: '❌',
+            warning: '⚠️', tech: '·', info: 'ℹ️',
+        };
+        const clsMap = {
+            system: 'log-system', success: 'log-success', error: 'log-critical',
+            warning: 'log-warning', tech: 'log-info', info: 'log-info',
+        };
+        const ts  = new Date().toLocaleTimeString('hr', { hour12: false });
+        const div = document.createElement('div');
+        div.className = `log-entry ${clsMap[type] || 'log-info'}`;
+        div.innerHTML =
+            `<span class="log-ts">${ts}</span>` +
+            `<span class="log-label">${icons[type] || 'ℹ️'}</span>` +
+            `<span class="log-msg">${String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`;
+        $auditLog.appendChild(div);
+        $auditLog.scrollTop = $auditLog.scrollHeight;
+        while ($auditLog.childElementCount > 120)
+            $auditLog.removeChild($auditLog.firstChild);
+    }
+
+    function _setBusy(busy) {
+        _busy = busy;
+        if ($btnStyle)    $btnStyle.disabled    = busy || !_selBook;
+        if ($bookSelect)  $bookSelect.disabled  = busy;
+        if ($statusDot)   $statusDot.className  = busy ? 'dot dot-active' : 'dot dot-idle';
+        if ($statusRow)   $statusRow.style.display = busy ? 'flex' : 'none';
+    }
+
+    // ── Učitaj knjige ────────────────────────────────────────
+    async function _loadBooks() {
+        if (!$bookSelect) return;
+        try {
+            const data = await fetch('/api/books').then(r => r.json());
+            const books = data.books || data.files || [];
+            const prev  = $bookSelect.value;
+            $bookSelect.innerHTML = '<option value="">— odaberi knjigu —</option>';
+            books.forEach(b => {
+                const name = typeof b === 'string' ? b : b.name;
+                const opt  = document.createElement('option');
+                opt.value = name; opt.textContent = name;
+                $bookSelect.appendChild(opt);
+            });
+            // Preferiraj _STYLED ili output fajl
+            const preferOrder = ['_STYLED', '_PREVEDENO', ''];
+            let picked = prev;
+            if (!picked) {
+                for (const suffix of preferOrder) {
+                    const match = books.find(b => {
+                        const n = typeof b === 'string' ? b : b.name;
+                        return n.includes(suffix);
+                    });
+                    if (match) { picked = typeof match === 'string' ? match : match.name; break; }
+                }
+            }
+            if (picked && [...$bookSelect.options].some(o => o.value === picked))
+                $bookSelect.value = picked;
+            _selBook = $bookSelect.value;
+            if ($btnStyle) $btnStyle.disabled = !_selBook;
+        } catch (e) {
+            _log(`Greška pri dohvatu knjiga: ${e.message}`, 'error');
+        }
+    }
+
+    // ── Primijeni stil ───────────────────────────────────────
+    async function _doStyle() {
+        if (_busy || !_selBook) return;
+
+        const options = {
+            add_dropcaps:  $optDropcaps?.checked ?? true,
+            add_ornaments: $optOrnaments?.checked ?? true,
+            add_toc:       $optToc?.checked ?? true,
+            ai_toc_titles: $optAiToc?.checked ?? true,
+        };
+
+        _setBusy(true);
+        if ($statusText) $statusText.textContent = 'Stilizacija u toku...';
+        if ($resultCard) $resultCard.style.display = 'none';
+        if ($auditLog)   $auditLog.innerHTML = '';
+        _log(`Pokretanje stilizacije: ${_selBook}`, 'system');
+
+        try {
+            const resp = await fetch('/api/style_epub', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ file: _selBook, options }),
+            });
+            const data = await resp.json();
+
+            // Audit poruke
+            if (data.audit) data.audit.forEach(a => _log(a.msg, a.type || 'info'));
+
+            if (data.ok) {
+                _log('✅ Stilizacija završena!', 'success');
+
+                // Statistike
+                if ($resultCard)   $resultCard.style.display   = 'block';
+                if ($statChapters) $statChapters.textContent   = data.chapters ?? '—';
+                if ($statDropcaps) $statDropcaps.textContent   = data.dropcaps_added ?? '—';
+                if ($statToc)      $statToc.textContent        = data.toc_created ? 'Kreiran ✓' : 'Postojeći';
+
+                // Download linkovi
+                if (data.epub_path && $btnDlEpub) {
+                    const epubName = data.epub_path.split('/').pop();
+                    $btnDlEpub.href = `/api/download/${encodeURIComponent(epubName)}`;
+                    $btnDlEpub.download = epubName;
+                    $btnDlEpub.style.display = 'inline-flex';
+                }
+                if (data.moonreader_css && $btnDlCss) {
+                    const cssName = data.moonreader_css.split('/').pop();
+                    $btnDlCss.href = `/api/style_epub/preview_css?file=${encodeURIComponent(cssName)}`;
+                    $btnDlCss.download = cssName;
+                    $btnDlCss.style.display = 'inline-flex';
+                }
+
+                // Osvježi dropdown
+                await _loadBooks();
+            } else {
+                _log(`Greška: ${data.error || 'Nepoznata greška'}`, 'error');
+                if (data.traceback) _log(data.traceback.slice(-300), 'error');
+            }
+        } catch (e) {
+            _log(`Mrežna greška: ${e.message}`, 'error');
+        } finally {
+            _setBusy(false);
+        }
+    }
+
+    // ── Init ─────────────────────────────────────────────────
+    function init() {
+        $bookSelect    = _el('st-book-select');
+        $btnStyle      = _el('st-btn-style');
+        $btnRefresh    = _el('st-refresh-books');
+        $statusRow     = _el('st-status-row');
+        $statusDot     = _el('st-status-dot');
+        $statusText    = _el('st-status-text');
+        $resultCard    = _el('st-result-card');
+        $statChapters  = _el('st-stat-chapters');
+        $statDropcaps  = _el('st-stat-dropcaps');
+        $statToc       = _el('st-stat-toc');
+        $btnDlEpub     = _el('st-btn-download-epub');
+        $btnDlCss      = _el('st-btn-download-css');
+        $logCard       = _el('st-log-card');
+        $auditLog      = _el('st-audit-log');
+        $btnClearLog   = _el('st-btn-clear-log');
+        $optDropcaps   = _el('st-opt-dropcaps');
+        $optOrnaments  = _el('st-opt-ornaments');
+        $optToc        = _el('st-opt-toc');
+        $optAiToc      = _el('st-opt-ai-toc');
+
+        if (!$bookSelect) return;
+
+        $bookSelect.addEventListener('change', () => {
+            _selBook = $bookSelect.value;
+            if ($btnStyle) $btnStyle.disabled = !_selBook;
+        });
+
+        if ($btnStyle)   $btnStyle.addEventListener('click', _doStyle);
+        if ($btnRefresh) $btnRefresh.addEventListener('click', _loadBooks);
+        if ($btnClearLog) $btnClearLog.addEventListener('click', () => {
+            if ($auditLog) $auditLog.innerHTML = '';
+        });
+
+        // Tab integracija — MutationObserver
+        const panel = _el('panel-stil');
+        if (panel) {
+            const obs = new MutationObserver(muts => {
+                muts.forEach(m => {
+                    if (m.attributeName === 'style' && panel.style.display !== 'none')
+                        _loadBooks();
+                });
+            });
+            obs.observe(panel, { attributes: true });
+            if (panel.style.display !== 'none') _loadBooks();
+        }
+    }
+
+    function onTabChange(tabId) {
+        if (tabId !== 'stil') return;
+        _loadBooks();
+    }
+
+    if (document.readyState === 'loading')
+        document.addEventListener('DOMContentLoaded', init);
+    else
+        init();
+
+    return { init, onTabChange };
+})();
+
+// Hook u postojeći tab sistem
+(function _hookStylerTab() {
+    if (typeof window.switchTab === 'function') {
+        const _orig = window.switchTab;
+        window.switchTab = function(tabId, ...args) {
+            _orig.call(this, tabId, ...args);
+            EpubStyler.onTabChange(tabId);
+        };
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.addEventListener('click', () => EpubStyler.onTabChange(btn.dataset.tab));
+        });
+    });
+})();

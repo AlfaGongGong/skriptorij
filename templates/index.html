@@ -511,7 +511,8 @@
                     <button class="tab-btn" data-tab="panel-tts-filter">
                         🔊 TTS Filter
                     </button>
-                </nav>
+                <button class="tab-btn" data-tab="stil" id="tab-btn-stil">✨ Stil</button>
+        </nav>
 
                 <!-- Quality tab -->
                 <div class="tab-panel active" id="tab-quality">
@@ -1032,6 +1033,122 @@
 
     </div>
     <!-- /panel-zamjene -->
+
+        <!-- ════════════════════════════════════════════════════
+             EPUB STYLER TAB — Skriptorij 02.06.2026
+             ════════════════════════════════════════════════════ -->
+        <div class="tab-panel" id="panel-stil" style="display:none">
+            <div class="section-header">
+                <h2 class="section-title">✨ Premium Stil — Stara knjižara</h2>
+                <span class="section-subtitle">Primjeni vydavački potpis na prevedenu knjigu</span>
+            </div>
+
+            <!-- ── Preview estetike ───────────────────────────────── -->
+            <div class="st-preview-card">
+                <div class="st-preview-title">📖 Pregled estetike</div>
+                <div class="st-book-preview">
+                    <div class="st-dropcap-demo">T</div>
+                    <div class="st-lorem-lines">
+                        <div class="st-lorem-line"></div>
+                        <div class="st-lorem-line"></div>
+                        <div class="st-lorem-line"></div>
+                        <div class="st-lorem-line"></div>
+                    </div>
+                    <div class="st-ornament-demo">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 28" width="200" height="28">
+                            <g fill="none" stroke="#8B6914" stroke-width="1">
+                                <line x1="0" y1="14" x2="80" y2="14" opacity="0.6"/>
+                                <line x1="120" y1="14" x2="200" y2="14" opacity="0.6"/>
+                                <path d="M 85 14 Q 90 6 100 14 Q 110 22 115 14" stroke-width="1.5"/>
+                                <circle cx="100" cy="14" r="2.5" fill="#8B6914" opacity="0.7"/>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Odabir knjige ──────────────────────────────────── -->
+            <div class="nr-card">
+                <div class="nr-row">
+                    <label class="nr-label">Knjiga</label>
+                    <select id="st-book-select" class="nr-select">
+                        <option value="">— odaberi knjigu —</option>
+                    </select>
+                    <button class="btn btn-sm" id="st-refresh-books" title="Osvježi">↺</button>
+                </div>
+            </div>
+
+            <!-- ── Opcije stilizacije ─────────────────────────────── -->
+            <div class="nr-card">
+                <div class="nr-label" style="margin-bottom:.6rem">Opcije</div>
+                <div class="st-options-grid">
+                    <label class="st-option">
+                        <input type="checkbox" id="st-opt-dropcaps" checked>
+                        <span class="st-option-icon">🔤</span>
+                        <span class="st-option-label">Dropcap inicijali</span>
+                    </label>
+                    <label class="st-option">
+                        <input type="checkbox" id="st-opt-ornaments" checked>
+                        <span class="st-option-icon">🌿</span>
+                        <span class="st-option-label">Ornamenti</span>
+                    </label>
+                    <label class="st-option">
+                        <input type="checkbox" id="st-opt-toc" checked>
+                        <span class="st-option-icon">📋</span>
+                        <span class="st-option-label">Sadržaj (TOC)</span>
+                    </label>
+                    <label class="st-option">
+                        <input type="checkbox" id="st-opt-ai-toc" checked>
+                        <span class="st-option-icon">🤖</span>
+                        <span class="st-option-label">AI naslovi pogl.</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- ── Akcija ─────────────────────────────────────────── -->
+            <div class="nr-card nr-actions-card">
+                <div class="nr-actions-row">
+                    <button class="btn-gold" id="st-btn-style" disabled>
+                        <span>✨</span>
+                        <span>Primijeni stil</span>
+                    </button>
+                </div>
+                <div class="nr-status-row" id="st-status-row" style="display:none">
+                    <span class="dot dot-active" id="st-status-dot"></span>
+                    <span id="st-status-text" class="nr-status-text">Stilizacija u toku...</span>
+                </div>
+            </div>
+
+            <!-- ── Rezultati ──────────────────────────────────────── -->
+            <div class="st-result-card" id="st-result-card" style="display:none">
+                <div class="st-result-row">
+                    <div class="st-result-info">
+                        <div>📚 Poglavlja: <strong id="st-stat-chapters">—</strong></div>
+                        <div>🔤 Dropcaps: <strong id="st-stat-dropcaps">—</strong></div>
+                        <div>📋 TOC: <strong id="st-stat-toc">—</strong></div>
+                    </div>
+                </div>
+                <div class="st-download-row">
+                    <a class="btn-gold" id="st-btn-download-epub" href="#" download style="display:none">
+                        ⬇ Preuzmi EPUB
+                    </a>
+                    <a class="btn-gold" id="st-btn-download-css" href="#" download style="display:none">
+                        📱 Moon+ CSS
+                    </a>
+                </div>
+            </div>
+
+            <!-- ── Log ────────────────────────────────────────────── -->
+            <div class="nr-card nr-log-card" id="st-log-card" style="display:none">
+                <div class="nr-log-header">
+                    <span class="nr-log-title">Log</span>
+                    <button class="btn btn-sm nr-log-clear" id="st-btn-clear-log">× Očisti</button>
+                </div>
+                <div class="audit-log" id="st-audit-log"></div>
+            </div>
+        </div>
+        <!-- /panel-stil -->
+
     <!-- ═══════════════ PANEL: TTS FILTER ═══════════════ -->
     <div id="panel-tts-filter" class="tab-panel" style="display:none;">
 

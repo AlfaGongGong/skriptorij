@@ -5128,3 +5128,289 @@ a.fq-prov-name:hover {
     .nr-stats-row { gap: 1rem; }
     .nr-stat-num { font-size: 1.25rem; }
 }
+
+
+/* ── Zamjene panel ──────────────────────────────────────── */
+#panel-zamjene .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+#panel-zamjene .form-label {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--tx-2);
+}
+#panel-zamjene .form-select {
+    background: var(--bg-2);
+    color: var(--tx-1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+    transition: border-color var(--t-fast) var(--ease);
+}
+#panel-zamjene .form-select:focus {
+    border-color: var(--sky);
+}
+#panel-zamjene .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+#panel-zamjene .stat-item {
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    padding: 10px 12px;
+    text-align: center;
+}
+#panel-zamjene .stat-label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--tx-3);
+    margin-bottom: 4px;
+}
+#panel-zamjene .stat-value {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--sky);
+}
+#zamjene-log .log-entry {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--bd);
+    font-size: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+}
+#zamjene-log .log-ts {
+    color: var(--tx-3);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    flex-shrink: 0;
+}
+#zamjene-log .log-label {
+    font-weight: 700;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+#zamjene-log .log-msg {
+    color: var(--tx-1);
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+#zamjene-log .log-ok { background: rgba(16,185,129,0.06); }
+#zamjene-log .log-ok .log-label { color: var(--emerald); }
+#zamjene-log .log-warn { background: rgba(245,158,11,0.06); }
+#zamjene-log .log-warn .log-label { color: var(--amber); }
+#zamjene-log .log-err { background: rgba(244,63,94,0.08); }
+#zamjene-log .log-err .log-label { color: var(--rose); }
+#zamjene-log .log-info .log-label { color: var(--tx-3); }
+/* ── /Zamjene panel ─────────────────────────────────────── */
+
+
+/* ═══════════════════════════════════════════════════════════
+   EPUB STYLER TAB — stilovi (Skriptorij 02.06.2026)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Stil kartica preview ────────────────────────────────── */
+.st-preview-card {
+    background: linear-gradient(135deg, #F5F0E8 0%, #EDE8DC 100%);
+    border: 1px solid rgba(139,105,20,.35);
+    border-radius: 10px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: .75rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.st-preview-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 22px,
+        rgba(139,105,20,.06) 22px,
+        rgba(139,105,20,.06) 23px
+    );
+    pointer-events: none;
+}
+
+.st-preview-title {
+    font-family: 'Syne', sans-serif;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #8B6914;
+    margin-bottom: .8rem;
+}
+
+/* Simulacija teksta knjige */
+.st-book-preview {
+    position: relative;
+    z-index: 1;
+}
+
+.st-dropcap-demo {
+    float: left;
+    width: 52px;
+    height: 58px;
+    background: linear-gradient(135deg, #8B0000, #5C3A1E);
+    border: 1.5px solid #8B6914;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 .6rem .2rem 0;
+    font-size: 2.2rem;
+    font-family: Georgia, serif;
+    color: #F5F0E8;
+    font-weight: bold;
+    box-shadow: 1px 1px 4px rgba(92,58,30,.4);
+}
+
+.st-lorem-lines {
+    overflow: hidden;
+}
+
+.st-lorem-line {
+    height: 8px;
+    background: linear-gradient(90deg, #2C1810 0%, rgba(44,24,16,.15) 100%);
+    border-radius: 2px;
+    margin-bottom: 6px;
+    opacity: .55;
+}
+
+.st-lorem-line:nth-child(1) { width: 100%; }
+.st-lorem-line:nth-child(2) { width: 95%; }
+.st-lorem-line:nth-child(3) { width: 88%; }
+.st-lorem-line:nth-child(4) { width: 92%; }
+
+.st-ornament-demo {
+    clear: both;
+    text-align: center;
+    margin-top: .8rem;
+    opacity: .7;
+}
+
+/* ── Opcije kartice ──────────────────────────────────────── */
+.st-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .55rem;
+    margin-top: .3rem;
+}
+
+.st-option {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    cursor: pointer;
+    padding: .4rem .6rem;
+    border: 1px solid var(--clr-border, rgba(96,165,250,.15));
+    border-radius: 6px;
+    transition: background .18s, border-color .18s;
+    background: var(--clr-bg, #030711);
+}
+
+.st-option:hover {
+    background: rgba(139,105,20,.08);
+    border-color: rgba(139,105,20,.3);
+}
+
+.st-option input[type="checkbox"] {
+    accent-color: #8B6914;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.st-option-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    color: var(--clr-text, #e2e8f0);
+    user-select: none;
+}
+
+.st-option-icon {
+    font-size: .9rem;
+    opacity: .8;
+}
+
+/* ── Rezultati ───────────────────────────────────────────── */
+.st-result-card {
+    background: rgba(139,105,20,.06);
+    border: 1px solid rgba(139,105,20,.25);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    margin-bottom: .75rem;
+}
+
+.st-result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.st-result-info {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem;
+    color: var(--clr-muted, #94a3b8);
+    line-height: 1.6;
+}
+
+.st-result-info strong {
+    color: #8B6914;
+    font-weight: 600;
+}
+
+.st-download-row {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: .75rem;
+    padding-top: .65rem;
+    border-top: 1px solid rgba(139,105,20,.15);
+}
+
+.btn-gold {
+    background: linear-gradient(135deg, #8B6914, #6B4F10);
+    color: #F5F0E8;
+    border: none;
+    border-radius: 7px;
+    padding: .5rem 1rem;
+    font-family: 'Syne', sans-serif;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    transition: opacity .18s, transform .12s;
+    text-decoration: none;
+}
+
+.btn-gold:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+.btn-gold:disabled { opacity: .38; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+    .st-options-grid { grid-template-columns: 1fr; }
+    .st-download-row { flex-direction: column; }
+    .btn-gold { width: 100%; justify-content: center; }
+}
