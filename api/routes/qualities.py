@@ -683,3 +683,120 @@ def name_replace_apply_file():
         logger.exception("[name_replace_apply_file] Greška")
         return jsonify({"ok": False, "error": str(e)}), 500
 
+
+# ══════════════════════════════════════════════════════════
+# PREMIUM EPUB STYLER endpoint  — Skriptorij 02.06.2026
+# ══════════════════════════════════════════════════════════
+
+@bp.route("/api/style_epub", methods=["POST"])
+def style_epub_endpoint():
+    """
+    Primjenjuje "Stara knjižara" premium stil na EPUB.
+
+    Body (JSON):
+        {
+          "file": "naziv.epub",          # ili epub_path za apsolutnu putanju
+          "output": "naziv_STYLED.epub", # opciono
+          "options": {                   # opciono
+            "add_dropcaps":  true,
+            "add_ornaments": true,
+            "add_toc":       true,
+            "ai_toc_titles": true
+          }
+        }
+    """
+    import traceback
+    from pathlib import Path
+    from config.settings import INPUT_DIR, OUTPUT_DIR, SHARED_STATS
+
+    data = request.get_json(silent=True) or {}
+    audit_msgs = []
+
+    def _log(msg, atype="info"):
+        from utils.logging import add_audit
+        audit_msgs.append({"msg": msg, "type": atype})
+        add_audit(msg, atype, shared_stats=SHARED_STATS)
+
+    # Resolvi epub_path
+    epub_path = None
+    if "epub_path" in data:
+        epub_path = Path(data["epub_path"])
+    elif "file" in data:
+        fname = data["file"]
+        for base in [OUTPUT_DIR, INPUT_DIR]:
+            c = Path(base) / fname
+            if c.exists():
+                epub_path = c
+                break
+        if epub_path is None:
+            # Pokušaj s _PREVEDENO sufiksom
+            for base in [OUTPUT_DIR, INPUT_DIR]:
+                for ext in ["", "_PREVEDENO"]:
+                    c = Path(base) / (Path(fname).stem + ext + Path(fname).suffix)
+                    if c.exists():
+                        epub_path = c
+                        break
+    else:
+        out_file = SHARED_STATS.get("output_file", "")
+        if out_file:
+            c = Path(OUTPUT_DIR) / out_file
+            if c.exists():
+                epub_path = c
+
+    if epub_path is None:
+        return jsonify({"ok": False, "error": "EPUB fajl nije pronađen"}), 404
+
+    output = data.get("output")
+    if output:
+        output = Path(OUTPUT_DIR) / output
+
+    options = data.get("options", {})
+
+    try:
+        from epub.styler import run_epub_styler
+        from api_fleet import get_active_fleet
+        fleet = get_active_fleet()
+
+        result = run_epub_styler(
+            epub_path=epub_path,
+            fleet=fleet,
+            output_path=output,
+            log_callback=_log,
+            options=options,
+        )
+        result["audit"] = audit_msgs[-30:]
+        return jsonify(result), 200 if result["ok"] else 500
+
+    except ImportError as e:
+        logger.exception("[style_epub] Import greška")
+        return jsonify({"ok": False, "error": f"Modul nije dostupan: {e}"}), 500
+    except Exception:
+        logger.exception("[style_epub] Neočekivana greška")
+        return jsonify({
+            "ok": False,
+            "error": "Interna greška — vidi server log",
+            "traceback": traceback.format_exc()[-600:],
+            "audit": audit_msgs,
+        }), 500
+
+
+@bp.route("/api/style_epub/preview_css", methods=["GET"])
+def style_epub_preview_css():
+    """Vraća Moon+ Reader CSS profil za pregled/download."""
+    from pathlib import Path
+    from config.settings import OUTPUT_DIR
+
+    fname = request.args.get("file", "")
+    if not fname:
+        return "Nedostaje ?file= parametar", 400
+
+    css_path = Path(OUTPUT_DIR) / fname
+    if not css_path.exists() or css_path.suffix != ".css":
+        return "CSS fajl nije pronađen", 404
+
+    content_css = css_path.read_text(encoding="utf-8")
+    return content_css, 200, {
+        "Content-Type": "text/css; charset=utf-8",
+        "Content-Disposition": f'attachment; filename="{css_path.name}"',
+    }
+
