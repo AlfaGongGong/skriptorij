@@ -20,46 +20,73 @@ logger = logging.getLogger(__name__)
 _CACHE_TTL = 3600.0
 
 _MODELS_ENDPOINTS: dict[str, str] = {
-    "GROQ":        "https://api.groq.com/openai/v1/models",
-    "CEREBRAS":    "https://api.cerebras.ai/v1/models",
-    "MISTRAL":     "https://api.mistral.ai/v1/models",
-    "SAMBANOVA":   "https://api.sambanova.ai/v1/models",
-    "TOGETHER":    "https://api.together.xyz/v1/models",
-    "OPENROUTER":  "https://openrouter.ai/api/v1/models",
-    "FIREWORKS":   "https://api.fireworks.ai/inference/v1/models",
-    "KLUSTER":     "https://api.kluster.ai/v1/models",
-    "CHUTES":      "https://llm.chutes.ai/v1/models",
+    "GROQ": "https://api.groq.com/openai/v1/models",
+    "CEREBRAS": "https://api.cerebras.ai/v1/models",
+    "MISTRAL": "https://api.mistral.ai/v1/models",
+    "SAMBANOVA": "https://api.sambanova.ai/v1/models",
+    "TOGETHER": "https://api.together.xyz/v1/models",
+    "OPENROUTER": "https://openrouter.ai/api/v1/models",
+    "FIREWORKS": "https://api.fireworks.ai/inference/v1/models",
+    "KLUSTER": "https://api.kluster.ai/v1/models",
+    "CHUTES": "https://llm.chutes.ai/v1/models",
     "HUGGINGFACE": "https://router.huggingface.co/v1/models",
-    "COHERE":      "https://api.cohere.com/v1/models",
-    "GEMINI":      "https://generativelanguage.googleapis.com/v1beta/models",
-    "GITHUB":      "https://models.inference.ai.azure.com/models",
+    "COHERE": "https://api.cohere.com/v1/models",
+    "GEMINI": "https://generativelanguage.googleapis.com/v1beta/models",
+    "GITHUB": "https://models.inference.ai.azure.com/models",
 }
 
+# FIX 08.07.2026: GROQ i CEREBRAS ažurirani — oba stara fallbacka su mrtva/na izdisaju:
+#   • GROQ "llama-3.3-70b-versatile" — Groq je 17.06.2026 najavio deprecation,
+#     gašenje 16.08.2026 (izvor: console.groq.com/docs/deprecations). Zamijenjeno
+#     zvaničnom preporukom "openai/gpt-oss-120b".
+#   • CEREBRAS "llama-4-scout-17b-16e-instruct" — live provjera 31.05.2026 pokazala
+#     da Cerebras-ov katalog više NE sadrži ovaj model (svega dva modela ostala:
+#     gpt-oss-120b i zai-glm-4.7). Zamijenjeno sa "gpt-oss-120b".
+#   Ostali entryji provjereni i ostavljeni: SAMBANOVA (i dalje "battle-tested"
+#   po zvaničnoj dokumentaciji), GEMINI (namjerno na 3.1-flash-lite zbog
+#   postojećeg timeout fixa, ne dirati bez novog razloga), COHERE (command-r-plus-08-2024
+#   potvrđeno dostupan i na free trial ključu). TOGETHER/CHUTES/HUGGINGFACE/KLUSTER/
+#   FIREWORKS/GEMMA/GITHUB/OPENROUTER NISU live-provjereni u ovom prolazu — diskaveri
+#   mehanizam ispod je pravi safety net za njih, ali vrijedi ih provjeriti ručno
+#   (npr. curl na _MODELS_ENDPOINTS ispod) prije nego što se u njih pouzda dugoročno.
 FALLBACK_MODELS: dict[str, str] = {
-    "CEREBRAS":    "llama-4-scout-17b-16e-instruct",
-    "SAMBANOVA":   "Meta-Llama-3.3-70B-Instruct",
-    "MISTRAL":     "mistral-small-latest",
-    "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    "GROQ":        "llama-3.3-70b-versatile",
-    "GEMINI":      "gemini-3.1-flash-lite",  # FIX: 3.5-flash timeoutuje, 3.1-flash-lite je jedini stabilan
-    "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
-    "COHERE":      "command-r-plus-08-2024",
-    "CHUTES":      "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    "CEREBRAS": "gpt-oss-120b",
+    "SAMBANOVA": "Meta-Llama-3.3-70B-Instruct",
+    "MISTRAL": "mistral-small-latest",
+    "TOGETHER": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "GROQ": "openai/gpt-oss-120b",
+    "GEMINI": "gemini-3.1-flash-lite",  # FIX: 3.5-flash timeoutuje, 3.1-flash-lite je jedini stabilan
+    "OPENROUTER": "meta-llama/llama-3.3-70b-instruct:free",
+    "COHERE": "command-r-plus-08-2024",
+    "CHUTES": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
-    "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
-    "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA":       "gemma-4-26b-a4b-it",
-    "GITHUB":      "gpt-4o",
+    "KLUSTER": "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
+    "FIREWORKS": "accounts/fireworks/models/llama-v3p3-70b-instruct",
+    "GEMMA": "gemma-4-26b-a4b-it",
+    "GITHUB": "gpt-4o",
 }
 
-_GLOBAL_EXCLUDE = frozenset([
-    "embed", "embedding", "rerank", "reranking",
-    "whisper", "tts", "speech", "transcrib",
-    "guard", "moderat",
-    "imagen", "veo", "lyria", "aqa",
-    "vision-only",
-    "retrieval", "bert",
-])
+_GLOBAL_EXCLUDE = frozenset(
+    [
+        "embed",
+        "embedding",
+        "rerank",
+        "reranking",
+        "whisper",
+        "tts",
+        "speech",
+        "transcrib",
+        "guard",
+        "moderat",
+        "imagen",
+        "veo",
+        "lyria",
+        "aqa",
+        "vision-only",
+        "retrieval",
+        "bert",
+    ]
+)
 
 _PROVIDER_FILTERS: dict[str, list] = {
     "OPENROUTER": [lambda m: m.endswith(":free")],
@@ -69,14 +96,14 @@ _PROVIDER_FILTERS: dict[str, list] = {
         lambda m: "ultra" not in m,
         lambda m: "embed" not in m,
     ],
-    "MISTRAL":    [lambda m: "embed" not in m],
-    "COHERE":     [
+    "MISTRAL": [lambda m: "embed" not in m],
+    "COHERE": [
         lambda m: "embed" not in m,
         lambda m: "rerank" not in m,
         lambda m: "command" in m,
     ],
-    "FIREWORKS":  [lambda m: "embedding" not in m],
-    "TOGETHER":   [
+    "FIREWORKS": [lambda m: "embedding" not in m],
+    "TOGETHER": [
         lambda m: "embed" not in m,
         lambda m: "rerank" not in m,
         lambda m: "moderat" not in m,
@@ -111,7 +138,7 @@ def _score_model_strength(provider: str, model_id: str) -> float:
     m = model_id.lower()
     score = 0.0
 
-    param_hits = re.findall(r'(\d+(?:\.\d+)?)\s*b\b', m)
+    param_hits = re.findall(r"(\d+(?:\.\d+)?)\s*b\b", m)
     if param_hits:
         score += min(max(float(p) for p in param_hits) ** 0.6, 18.0)
 
@@ -184,6 +211,13 @@ def _score_model_strength(provider: str, model_id: str) -> float:
     elif "command" in m:
         score += 1.0
 
+    if "gpt-oss-120b" in m:
+        score += 6.0
+    elif "gpt-oss-20b" in m:
+        score += 4.0
+    elif "gpt-oss" in m:
+        score += 3.0
+
     if "gpt-4o" in m and "mini" not in m:
         score += 6.5
     elif "gpt-4o-mini" in m:
@@ -192,11 +226,11 @@ def _score_model_strength(provider: str, model_id: str) -> float:
         score += 5.0
     elif "o3-mini" in m:
         score += 3.5
-    elif re.search(r'\bo3\b', m):
+    elif re.search(r"\bo3\b", m):
         score += 6.0
     elif "o1-mini" in m:
         score += 3.0
-    elif re.search(r'\bo1\b', m):
+    elif re.search(r"\bo1\b", m):
         score += 4.5
     elif "gpt-3.5" in m:
         score += 2.0
@@ -245,7 +279,9 @@ def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0) -> list[str
             break
 
         if resp.status_code != 200:
-            logger.warning("[ModelDiscovery] GEMINI native /models → HTTP %d", resp.status_code)
+            logger.warning(
+                "[ModelDiscovery] GEMINI native /models → HTTP %d", resp.status_code
+            )
             break
 
         try:
@@ -272,7 +308,9 @@ def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0) -> list[str
         return []
 
     model_ids.sort(key=lambda m: _score_model_strength("GEMINI", m), reverse=True)
-    logger.info("[ModelDiscovery] GEMINI: %d modela (best: %s)", len(model_ids), model_ids[0])
+    logger.info(
+        "[ModelDiscovery] GEMINI: %d modela (best: %s)", len(model_ids), model_ids[0]
+    )
     return model_ids
 
 
@@ -294,7 +332,9 @@ def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str
         return []
 
     if resp.status_code != 200:
-        logger.warning("[ModelDiscovery] %s GET /models → HTTP %d", provider, resp.status_code)
+        logger.warning(
+            "[ModelDiscovery] %s GET /models → HTTP %d", provider, resp.status_code
+        )
         return []
 
     try:
@@ -302,7 +342,11 @@ def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str
     except Exception:
         return []
 
-    raw_list = data["data"] if isinstance(data, dict) and "data" in data else (data if isinstance(data, list) else [])
+    raw_list = (
+        data["data"]
+        if isinstance(data, dict) and "data" in data
+        else (data if isinstance(data, list) else [])
+    )
 
     model_ids = []
     for item in raw_list:
@@ -341,7 +385,7 @@ def get_dead_models(provider: str) -> frozenset:
         return frozenset(_dead_models.get(prov, set()))
 
 
-def clear_dead_models(provider: str = None) -> None:
+def clear_dead_models(provider: str = None) -> None:  # type: ignore
     with _dead_lock:
         if provider is None:
             _dead_models.clear()
@@ -349,7 +393,7 @@ def clear_dead_models(provider: str = None) -> None:
             _dead_models.pop(provider.upper(), None)
 
 
-def clear_model_list_cache(provider: str = None) -> None:
+def clear_model_list_cache(provider: str = None) -> None:  # type: ignore
     with _cache_lock:
         if provider is None:
             _model_list_cache.clear()
@@ -399,7 +443,9 @@ def _set_cached_model_list(provider: str, model_list: list[str]) -> None:
             if dead:
                 revived = dead & set(model_list)
                 if revived:
-                    logger.info("[ModelDiscovery] %s: oživljeni modeli: %s", prov, revived)
+                    logger.info(
+                        "[ModelDiscovery] %s: oživljeni modeli: %s", prov, revived
+                    )
                     _dead_models[prov] = dead - revived
     with _cache_lock:
         _model_list_cache[prov] = (model_list, now)
@@ -428,9 +474,15 @@ def trigger_rediscover_background(provider: str, key: str) -> None:
             models = fetch_models(provider, key)
             if models:
                 _set_cached_model_list(provider.upper(), models)
-                logger.info("[ModelDiscovery] %s: re-discovery završen, %d modela", provider, len(models))
+                logger.info(
+                    "[ModelDiscovery] %s: re-discovery završen, %d modela",
+                    provider,
+                    len(models),
+                )
         except Exception as exc:
-            logger.warning("[ModelDiscovery] %s: re-discovery greška: %s", provider, exc)
+            logger.warning(
+                "[ModelDiscovery] %s: re-discovery greška: %s", provider, exc
+            )
 
     t = threading.Thread(target=_run, daemon=True)
     t.start()
@@ -438,18 +490,25 @@ def trigger_rediscover_background(provider: str, key: str) -> None:
 
 def start_background_discovery(fleet: dict) -> None:
     """Pokretanje periodičnog osvježavanja cache-a za sve provajdere u floti."""
+
     def _worker():
         while True:
             for provider, key_states in fleet.items():
                 if not key_states:
                     continue
-                key = key_states[0].key if hasattr(key_states[0], "key") else str(key_states[0])
+                key = (
+                    key_states[0].key
+                    if hasattr(key_states[0], "key")
+                    else str(key_states[0])
+                )
                 try:
                     models = fetch_models(provider, key)
                     if models:
                         _set_cached_model_list(provider.upper(), models)
                 except Exception as exc:
-                    logger.debug("[ModelDiscovery] %s: discovery greška: %s", provider, exc)
+                    logger.debug(
+                        "[ModelDiscovery] %s: discovery greška: %s", provider, exc
+                    )
             time.sleep(_CACHE_TTL)
 
     t = threading.Thread(target=_worker, daemon=True)

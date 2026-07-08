@@ -1,0 +1,8 @@
+# Ignoriraj Python cache datoteke
+__pycache__/
+
+# Ignoriraj virtualno okruženje
+venv/
+
+# Ignoriraj log datoteke
+.log
