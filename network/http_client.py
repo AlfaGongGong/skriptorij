@@ -220,7 +220,14 @@ async def _async_http_post(
     await acquire_key(key, prov)
     try:
         try:
-            self.fleet.record_request(prov_upper, key)
+            # FIX: record_request pod pravim provajderom (prov), ne prov_upper.
+            # Kad se GEMMA poziva, prov="GEMMA" i prov_upper="GEMINI".
+            # Stari kod je uvijek koristio prov_upper → GEMMA.total_requests ostajalo 0.
+            self.fleet.record_request(prov, key)
+            # Ako su različiti (GEMMA/GEMINI split), snimamo i pod prov_upper
+            # kako bi GEMINI brojač i dalje reflektovao fizičke pozive.
+            if prov != prov_upper:
+                self.fleet.record_request(prov_upper, key)
         except Exception:
             pass
 
@@ -490,8 +497,11 @@ async def _call_gemma_with_rotation(
     from network.provider_urls import get_gemini_url
     from network.quota_tracker import quota_tracker
 
-    # Koristi GEMINI ključeve (Gemma 4 je na Google API-u)
-    _all_ks = self.fleet.fleet.get("GEMINI", [])
+    # FIX: koristi fleet["GEMMA"] — zahvaljujući api_fleet._load_config()
+    # to je UVIJEK GEMINI ∪ GEMMA-only ključevi. Prije je ovo bilo hardkodirano
+    # na "GEMINI" pa GEMMA-only ključevi dodani kroz UI nikad nisu stvarno
+    # korišteni za generisanje — samo su se prikazivali u floti.
+    _all_ks = self.fleet.fleet.get("GEMMA", [])
     keys_list = []
     for ks in _all_ks:
         ok, _reason = quota_tracker.is_key_available("GEMMA", ks.key)
@@ -521,7 +531,7 @@ async def _call_gemma_with_rotation(
                 if ok:
                     keys_list.append(ks)
     if not keys_list:
-        self.log("[GEMMA] Nema dostupnih GEMINI ključeva", "warning")
+        self.log("[GEMMA] Nema dostupnih ključeva (GEMINI+GEMMA pool)", "warning")
         return None, None
 
     keys_list.sort(key=lambda ks: ks.success_rate, reverse=True)
@@ -570,7 +580,13 @@ async def _call_gemma_with_rotation(
                 )
                 break
 
-            # BUG #3 fix: dupli is_key_available(GEMMA) blok uklonjen
+            key_ok, _reason = quota_tracker.is_key_available("GEMMA", key)
+            if not key_ok:
+                self.log(
+                    f"[GEMMA] Ključ ...{key[-4:]} u cooldownu — preskačem na sljedeći ključ",
+                    "warning",
+                )
+                break
 
             # Model rotation pri 429 (bug #9 fix)
             next_idx = None

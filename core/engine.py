@@ -28,7 +28,11 @@ class SkriptorijAllInOne:
         self.model_name = model_name
         self.shared_stats = shared_stats
         self.shared_controls = shared_controls
-        self.fleet = FleetManager(config_path="dev_api.json")
+        try:
+            from config.settings import CONFIG_PATH as _cfg
+        except ImportError:
+            _cfg = "dev_api.json"
+        self.fleet = FleetManager(config_path=_cfg)
         try:
             from api_fleet import register_active_fleet
             register_active_fleet(self.fleet)
@@ -91,6 +95,23 @@ class SkriptorijAllInOne:
         self.knjiga_mode: str | None = None
 
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+        # ── FIX: učitaj quality_scores odmah u shared_stats ──────────────────
+        # Bez ovoga, shared_stats["quality_scores"] je {} na startu pa svaki
+        # cached blok bez prethodno učitane ocjene prolazi kroz AI scorer
+        # (_quality_scoring s "DATABASE") trošeći API kvotu na svakom restartu.
+        qs_path = self.checkpoint_dir / "quality_scores.json"
+        if qs_path.exists():
+            try:
+                loaded_qs = json.loads(qs_path.read_text("utf-8"))
+                if isinstance(loaded_qs, dict):
+                    self.shared_stats.setdefault("quality_scores", {}).update(loaded_qs)
+                    self.log(
+                        f"📊 Učitani quality scores: {len(loaded_qs)} blokova iz prethodne sesije",
+                        "info",
+                    )
+            except Exception as _e:
+                self.log(f"⚠️ Greška pri učitavanju quality_scores.json: {_e}", "warning")
         self.log(
             f"V10.2 Engine inicijaliziran: {self.book_path.name} [STANDARD mod] "
             f"| checkpoint: {self.checkpoint_dir}",

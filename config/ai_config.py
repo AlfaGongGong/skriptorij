@@ -13,10 +13,9 @@ from typing import List
 #   gemini-2.5-flash-lite: 15 RPM / 20 RPD
 #   gemini-2.5-flash:      10 RPM / 20 RPD
 GOOGLE_MODEL_POOL = [
-    {"model": "gemini-3.5-flash",     "rpm": 10, "rpd": 20},
+    # JEDINI model s dovoljnim RPD za bulk — 500/ključ, 15 RPM, STABLE
+    # Ostali (3.5-flash, 2.5-flash, 2.5-flash-lite) imaju RPD=7-20 i timeoutuju
     {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
-    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 20},
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 20},
 ]
 
 GEMMA_MODEL_POOL = [
@@ -28,36 +27,36 @@ GEMMA_MODEL_POOL = [
 # GEMINI je fallback (#2).
 PROVIDER_PRIORITY = {
     "PREVODILAC": [
-        "CEREBRAS",
         "SAMBANOVA",
         "GROQ",
-        "TOGETHER",
-        "FIREWORKS",
-        "GEMMA",
-        "GEMINI",
         "MISTRAL",
+        "GEMINI",
+        "GEMMA",
         "OPENROUTER",
         "GITHUB",
+        "CEREBRAS",
+        "TOGETHER",
+        "FIREWORKS",
     ],
     "LEKTOR": [
-        "GEMMA",
         "GEMINI",
+        "GEMMA",
         "MISTRAL",
-        "CEREBRAS",
+        "SAMBANOVA",
         "GROQ",
+        "GITHUB",
+        "CEREBRAS",
         "COHERE",
         "TOGETHER",
-        "SAMBANOVA",
-        "GITHUB",
     ],
     "KOREKTOR": [
-        "CEREBRAS",
         "GROQ",
-        "GEMMA",
-        "GEMINI",
-        "MISTRAL",
         "SAMBANOVA",
+        "MISTRAL",
+        "GEMINI",
+        "GEMMA",
         "GITHUB",
+        "CEREBRAS",
     ],
     "VALIDATOR": ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
     "GUARDIAN": ["GEMMA", "GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
@@ -227,7 +226,8 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         rpd_safe=850,
         tpm_hard=131_072,
         min_gap_s=2.5,  # 60/24 = 2.5s
-        cooldown_429_s=65.0,
+        cooldown_429_s=10.0,  # FIX: Groq šalje Retry-After (2-10s) pa se profil rijetko koristi.
+                               # 65s je bilo predugo — drži ključ zaključan kad Groq nema header.
         supports_system_role=True,
         preferred_roles=["PREVODILAC", "KOREKTOR"],
         avoid_roles=["SCORER"],  # RPD previše vrijedan za scorer
@@ -236,23 +236,26 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
     ),
     # ── SAMBANOVA ───────────────────────────────────────────────────────────
     # Free tier: Meta-Llama-3.3-70B = 10 RPM / 10000 RPD / 4096 TPM
-    # TPM je JAKO nizak (4096) — dugi promptovi momentalno gaze limit
-    # Ključevi: 6 komada → 60 RPM / 60000 RPD (odlično)
-    # Pažnja: skratiti system prompt na maksimum 1500 tokena za Sambanova
+    # TPM je JAKO nizak (4096) — dugi promptovi momentalno gaze limit.
+    # Pravo usko grlo je TPM, ne RPD (RPD=10000 se nikad ne dostiže).
+    # 429 u praksi = TPM prekoračenje (~65-70% rejection rate bez throttle).
+    # Realni kapacitet: ~133-200 uspješnih poziva/dan po ključu (TPM limiti).
+    # Ključevi: 3 aktivna (402 su blacklistirani) → ~600 korisnih poziva/dan ukupno
+    # Pažnja: skratiti promptove na max ~800 tokena za SambaNova
     "SAMBANOVA": ProviderProfile(
         name="SAMBANOVA",
         rpm_hard=10,
         rpm_safe=8,
         rpd_hard=10_000,
-        rpd_safe=8_500,
-        tpm_hard=4_096,  # KRITIČNO nizak!
+        rpd_safe=400,   # Realno po ključu — TPM limit čini RPD irrelevantnim
+        tpm_hard=4_096,  # KRITIČNO nizak! Ovo je pravo usko grlo.
         min_gap_s=7.5,  # 60/8 = 7.5s
-        cooldown_429_s=70.0,
+        cooldown_429_s=75.0,  # TPM 429 treba čekati cijeli 60s prozor + buffer
         supports_system_role=True,
         preferred_roles=["PREVODILAC", "KOREKTOR"],
         avoid_roles=["ANALIZA", "SCORER"],  # dugi outputi + TPM problem
         quality_tier=2,
-        notes="Visok RPD ali KRITIČNO nizak TPM (4096). Koristiti kratke promptove!",
+        notes="TPM=4096 je pravo usko grlo (ne RPD). Max ~800 tokena po promptu. 3 aktivna ključa.",
     ),
     # ── COHERE ──────────────────────────────────────────────────────────────
     # Free tier: command-r-plus = 20 RPM / 1000 RPD (trial key)

@@ -60,6 +60,27 @@ _RPM_THROTTLE_MULTIPLIER = 1.8
 _JITTER_MIN = 1.0
 _JITTER_MAX = 3.0
 
+# Provajderi čiji rate limit je globalan na nivou accounta (ne per-key).
+# Kod njih N ključeva ne znači N × RPM kapaciteta — svi ključevi dijele isti bazen.
+# Za ove provajdere primjenjujemo dvostruki throttle:
+#   1) per-key gap (kao i inače)
+#   2) provider-level gap = 60s / rpm_safe (sprječava burst kad više ključeva krene odjednom)
+_PROVIDERS_WITH_GLOBAL_RPM: frozenset[str] = frozenset({"GROQ", "CEREBRAS"})
+_PROVIDER_GLOBAL_LAST_CALL: dict[str, float] = {}
+_PROVIDER_GLOBAL_LAST_CALL_LOCK = threading.Lock()
+
+
+def _provider_global_rpm_gap(prov: str) -> float:
+    """Razmak između bilo koja dva poziva na globalno-limitiran provajder (sekunde)."""
+    try:
+        from config.ai_config import get_rpm_safe
+        rpm = get_rpm_safe(prov)
+        if rpm > 0:
+            return 60.0 / rpm
+    except Exception:
+        pass
+    return 2.5
+
 
 async def _ensure_provider_lock(prov: str) -> asyncio.Lock:
     current_loop_id = id(asyncio.get_running_loop())
@@ -229,7 +250,14 @@ MAX_CONCURRENT_PER_KEY = 1
 
 _PROVIDER_SEMAPHORES: dict[str, _threading.Semaphore] = {}
 _PROVIDER_SEMAPHORES_LOCK = _threading.Lock()
-MAX_CONCURRENT_PER_PROVIDER = 2
+MAX_CONCURRENT_PER_PROVIDER = 2  # default
+_PROVIDER_MAX_CONCURRENT = {
+    "GEMMA":     6,
+    "GEMINI":    5,
+    "GROQ":      6,
+    "MISTRAL":   4,
+    "SAMBANOVA": 4,
+}
 
 
 def get_key_semaphore(key: str) -> _threading.Semaphore:
@@ -243,9 +271,8 @@ def get_provider_semaphore(provider: str) -> _threading.Semaphore:
     prov = provider.upper()
     with _PROVIDER_SEMAPHORES_LOCK:
         if prov not in _PROVIDER_SEMAPHORES:
-            _PROVIDER_SEMAPHORES[prov] = _threading.Semaphore(
-                MAX_CONCURRENT_PER_PROVIDER
-            )
+            limit = _PROVIDER_MAX_CONCURRENT.get(prov, MAX_CONCURRENT_PER_PROVIDER)
+            _PROVIDER_SEMAPHORES[prov] = _threading.Semaphore(limit)
         return _PROVIDER_SEMAPHORES[prov]
 
 
@@ -268,8 +295,9 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
     base_gap = max(base_gap, dynamic_gap)
 
     if key:
+        composite = f"{prov}:{key}"
         with _LAST_CALLS_KEY_LOCK:
-            last_sent = _LAST_CALLS_KEY.get(key, 0.0)
+            last_sent = _LAST_CALLS_KEY.get(composite, 0.0)
     else:
         last_sent = _LAST_CALLS.get(prov, 0.0)
 
@@ -286,10 +314,31 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
         )
         await asyncio.sleep(wait)
 
+    # FIX #2: Provajderi s globalnim account-level RPM limitom (Groq, Cerebras).
+    # Per-key throttle nije dovoljan — N ključeva može krenuti paralelno i svi
+    # pogoditi isti globalni limit. Ovdje dodajemo provider-level serijalizaciju:
+    # čekamo dok od zadnjeg BILO KOJEG poziva na taj provajder ne prođe globalni gap.
+    if prov in _PROVIDERS_WITH_GLOBAL_RPM:
+        global_gap = _provider_global_rpm_gap(prov)
+        with _PROVIDER_GLOBAL_LAST_CALL_LOCK:
+            global_last = _PROVIDER_GLOBAL_LAST_CALL.get(prov, 0.0)
+            global_wait = (global_last + global_gap) - time.time()
+        if global_wait > 0:
+            logger.debug(
+                "[rate_limiter] %s global RPM throttle %.2fs (gap=%.1fs)",
+                prov,
+                global_wait,
+                global_gap,
+            )
+            await asyncio.sleep(global_wait)
+        with _PROVIDER_GLOBAL_LAST_CALL_LOCK:
+            _PROVIDER_GLOBAL_LAST_CALL[prov] = time.time()
+
     now_sending = time.time()
     if key:
+        composite = f"{prov}:{key}"
         with _LAST_CALLS_KEY_LOCK:
-            _LAST_CALLS_KEY[key] = now_sending
+            _LAST_CALLS_KEY[composite] = now_sending
     else:
         _LAST_CALLS[prov] = now_sending
 
@@ -310,6 +359,22 @@ async def acquire_key(key: str, provider: str | None = None):
                     wait_s = min(float(match.group(1)) if match else 5.0, 15.0)
                     syslog.debug(
                         "[rate_limiter] %s ...%s čekam %.1fs — %s",
+                        provider.upper(),
+                        key[-4:],
+                        wait_s,
+                        reason,
+                    )
+                    await asyncio.sleep(wait_s)
+                elif "cooldown" in reason:
+                    # timeout/429 cooldown — čekamo stvarni ostatak, ne max 15s
+                    # kako bismo izbjegli feedback loop (worker proba, opet timeout,
+                    # opet cooldown, ukupno > 90s → novi timeout → novi cooldown)
+                    import re as _re
+
+                    match = _re.search(r"([\d.]+)s", reason)
+                    wait_s = min(float(match.group(1)) if match else 30.0, 60.0)
+                    syslog.debug(
+                        "[rate_limiter] %s ...%s cooldown čekam %.1fs — %s",
                         provider.upper(),
                         key[-4:],
                         wait_s,

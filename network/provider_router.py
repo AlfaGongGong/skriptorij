@@ -204,7 +204,9 @@ async def _call_ai_engine(
             # GEMINI i GEMMA dijele iste ključeve, ali imaju zasebne cooldown namespace-ove
             # u quota_trackeru — Gemini 429 ne blokira Gemmu automatski.
             if prov_upper in ("GEMINI", "GEMMA"):
-                gemini_keys = self.fleet.fleet.get("GEMINI", [])
+                # FIX: GEMMA čita fleet["GEMMA"] (GEMINI ∪ GEMMA-only, uvijek
+                # spojeno u api_fleet._load_config) — ne uvijek fleet["GEMINI"].
+                gemini_keys = self.fleet.fleet.get(prov_upper, [])
                 if not gemini_keys:
                     continue
                 from network.quota_tracker import quota_tracker

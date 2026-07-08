@@ -41,14 +41,14 @@ FALLBACK_MODELS: dict[str, str] = {
     "MISTRAL":     "mistral-small-latest",
     "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
     "GROQ":        "llama-3.3-70b-versatile",
-    "GEMINI":      "gemini-3.5-flash",
+    "GEMINI":      "gemini-3.1-flash-lite",  # FIX: 3.5-flash timeoutuje, 3.1-flash-lite je jedini stabilan
     "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
     "COHERE":      "command-r-plus-08-2024",
     "CHUTES":      "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA":       "gemma-4-26b-it",
+    "GEMMA":       "gemma-4-26b-a4b-it",
     "GITHUB":      "gpt-4o",
 }
 

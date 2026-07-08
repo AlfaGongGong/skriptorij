@@ -79,3 +79,77 @@ node_modules/
 
 # ========== OSTALO ==========
 TrashRecover/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Flask / runtime state
+instance/
+*.log
+logs/
+
+# Projektni state/cache fajlovi (vidio sam ih u tvojoj strukturi)
+api_state.json
+dev_api.json
+quota_cooldowns.json
+tests/integration/quota_cooldowns.json
+analysis/cache/
+data/kalkovi_karantena.db
+data/rod_registri/*.json
+!data/rod_registri/.gitkeep
+
+# Backup fajlovi
+*.bak_*
+*.bak
+
+# Node / frontend
+node_modules/
+package-lock.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Termux/proot specifično
+*.pyc
+.cache/
+
+# Snapshot izlazi
+snapshot.txt
+
+# Env / secrets
+.env
+*.env
+.continue/mcpServers/new-mcp-server.yaml
+new-prompt.md
+config.yaml
+few_shot_global.json
+checkpoints_context.json
+*.json
+Chronicles_of_the_Black_Company_-_Glen_Cook.json

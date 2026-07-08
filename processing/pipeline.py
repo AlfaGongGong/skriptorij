@@ -359,7 +359,7 @@ def _init_book_context(self, knjiga_id: str):
             fleet = getattr(self, "fleet", None)
             api_key = None
             if fleet:
-                key_state = fleet.get_best_key("GEMINI", "VALIDATOR")
+                key_state = fleet.get_best_key("GEMINI")
                 if key_state:
                     api_key = key_state.key if hasattr(key_state, "key") else None
             # Fallback na direktni atribut

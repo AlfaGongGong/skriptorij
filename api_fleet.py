@@ -173,8 +173,36 @@ class FleetManager:
         except Exception:
             saved = {}
 
-        if "GEMINI" in raw and "GEMMA" not in raw:
-            raw["GEMMA"] = raw["GEMINI"]
+        # FIX: GEMMA mora UVIJEK dijeliti GEMINI ključeve (isti Google API
+        # ključ radi za oba modela) — čak i kad korisnik kroz UI eksplicitno
+        # dodaje posebne GEMMA-only ključeve. Stari kod je mirror radio SAMO
+        # ako "GEMMA" nije postojao u configu — čim bi korisnik dodao ijedan
+        # GEMMA ključ, mirror je stao i naslijeđeni GEMINI ključevi su tiho
+        # ispali iz GEMMA rotacije. Sada se uvijek spaja i deduplicira:
+        # GEMMA_efektivno = GEMINI ∪ GEMMA (GEMINI prvi u redoslijedu).
+        if "GEMINI" in raw:
+            def _as_key_list(v):
+                if isinstance(v, list):
+                    return [k for k in v if isinstance(k, str) and k.strip()]
+                if isinstance(v, dict):
+                    out = []
+                    for kk, vv in v.items():
+                        if isinstance(vv, dict) and "key" in vv:
+                            out.append(vv["key"])
+                        elif isinstance(vv, str):
+                            out.append(vv)
+                        else:
+                            out.append(kk)
+                    return [k for k in out if isinstance(k, str) and k.strip()]
+                return []
+
+            _gemini_list = _as_key_list(raw["GEMINI"])
+            _gemma_list  = _as_key_list(raw.get("GEMMA"))
+            _merged = list(_gemini_list)
+            for _k in _gemma_list:
+                if _k not in _merged:
+                    _merged.append(_k)
+            raw["GEMMA"] = _merged
 
         self.fleet = {}
         self._rr_index = {}
