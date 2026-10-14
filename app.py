@@ -37,6 +37,9 @@ _fleet_fallback = FleetManager(config_path=_CONFIG_PATH)
 # FIX: Registruj fleet kao aktivan — bez ovoga _reload_active_fleet() ne radi,
 # pa dodavanje/brisanje ključeva kroz UI ne osvježava prikaz flote.
 from api_fleet import register_active_fleet
+
+import logging
+logger = logging.getLogger("booklyfi.app")
 register_active_fleet(_fleet_fallback)
 
 
@@ -587,7 +590,20 @@ def create_app() -> Flask:
                         engine.work_dir.mkdir(parents=True, exist_ok=True)
                         engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
                         SHARED_STATS["status"] = "RETRO RE-LEKTURA"
-                        SHARED_STATS["pct"] = 0
+                        # FIX: pct iz broja ocjena / ukupno blokova
+                        try:
+                            import json as _json
+                            from pathlib import Path as _P
+                            _qs = _P(engine.checkpoint_dir) / "quality_scores.json"
+                            if _qs.exists():
+                                _scores = _json.loads(_qs.read_text("utf-8"))
+                                _total = len(list(_P(engine.checkpoint_dir).glob("*.chk")))
+                                _done = len(_scores)
+                                SHARED_STATS["pct"] = min(99, int(_done / max(_total, 1) * 100))
+                            else:
+                                SHARED_STATS["pct"] = 0
+                        except Exception:
+                            SHARED_STATS["pct"] = 0
                         asyncio.run(retroaktivna_relektura_v10(
                             engine,
                             force=False,
@@ -1298,6 +1314,7 @@ def create_app() -> Flask:
     def api_review_chunk_post(stem):
         """
         Upisuje izmijenjeni tekst prevoda u .chk fajl.
+        Ručna izmjena dobija automatsku ocjenu 10.0 (human_edit=True).
         Body: {"text": "novi tekst prevoda"}
         """
         try:
@@ -1332,7 +1349,66 @@ def create_app() -> Flask:
                 # Plain tekst fajl
                 chk_path.write_text(new_text, "utf-8")
 
-            return jsonify({"ok": True, "stem": stem, "path": str(chk_path)})
+            # ── Automatska ocjena 10.0 za ručnu izmjenu ──
+            try:
+                import json as _json
+                from datetime import datetime as _dt
+                book = SHARED_STATS.get("current_file", "") or SHARED_STATS.get("output_file", "")
+                if book:
+                    import re as _re
+                    clean = _re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
+                    # Koristi isti direktorij gdje je .chk fajl
+                    qs_dir = chk_path.parent
+                    qs_path = qs_dir / "quality_scores.json"
+
+                    scores = {}
+                    if qs_path.exists():
+                        try:
+                            scores = _json.loads(qs_path.read_text("utf-8"))
+                        except Exception:
+                            scores = {}
+
+                    # Ako scores nije dict, preskoči
+                    if isinstance(scores, dict):
+                        # FIX: upiši kao float da bude kompatibilno sa run.py
+                        # VAŽNO: NE prepisuj cijeli fajl — samo dodaj/izmijeni
+                        scores[stem] = 10.0
+                        # Metadata ide u zaseban fajl
+                        meta_path = qs_dir / "human_edits.json"
+                        meta = {}
+                        if meta_path.exists():
+                            try:
+                                meta = json.loads(meta_path.read_text("utf-8"))
+                            except Exception:
+                                meta = {}
+                        meta[stem] = {
+                            "source": "human",
+                            "edited_at": _dt.now().isoformat(timespec="seconds"),
+                            "note": "Ručna izmjena — automatska ocjena 10.0",
+                        }
+                        meta_path.write_text(
+                            json.dumps(meta, indent=2, ensure_ascii=False),
+                            encoding="utf-8"
+                        )
+                        qs_path.write_text(
+                            _json.dumps(scores, indent=2, ensure_ascii=False),
+                            encoding="utf-8"
+                        )
+                        print(f"[review] Ručna izmjena {stem} — ocjena 10.0 upisana")
+            except Exception as _e:
+                print(f"[review] Ne mogu upisati ocjenu: {_e}")
+
+            # FIX: osvježi SHARED_STATS quality_scores da UI odmah vidi
+            try:
+                if "quality_scores" not in SHARED_STATS:
+                    SHARED_STATS["quality_scores"] = {}
+                SHARED_STATS["quality_scores"][stem] = 10.0
+                # FIX: ne diraj pct ovdje — pusti glavni proces da ga računa
+                print(f"[review] SHARED_STATS ažuriran: {stem} = 10.0, pct = {SHARED_STATS['pct']}%")
+            except Exception as _e:
+                print(f"[review] Ne mogu ažurirati SHARED_STATS: {_e}")
+
+            return jsonify({"ok": True, "stem": stem, "path": str(chk_path), "score": 10.0, "source": "human"})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -1611,189 +1687,16 @@ def create_app() -> Flask:
         threading.Thread(target=_run, daemon=True).start()
         return jsonify({"status": "started", "book": book, "threshold": threshold})
 
+    from api.routes.qualities import style_epub_endpoint, style_epub_preview_css
+    app.add_url_rule("/api/style_epub", view_func=style_epub_endpoint, methods=["POST"])
+    app.add_url_rule("/api/style_epub/preview_css", view_func=style_epub_preview_css, methods=["GET"])
+
+    from api.file_browser import api_browse_files, api_upload_from_path
+    app.add_url_rule("/api/browse_files", view_func=api_browse_files, methods=["POST"])
+    app.add_url_rule("/api/upload_from_path", view_func=api_upload_from_path, methods=["POST"])
+    from api.routes.monitor import bp as monitor_bp
+    app.register_blueprint(monitor_bp)
+
     return app
 
 app = create_app()
-
-
-
-
-# ═══════════════════════════════════════════════════════════
-# NAME REPLACER rute — fix_zamjene_v2_02_06_2026.sh
-# Checkpoint struktura: CHECKPOINT_BASE_DIR/_skr_{stem}/checkpoints/
-# ═══════════════════════════════════════════════════════════
-
-def _nr_find_work_dir(book: str):
-    """
-    Vrati (work_dir, chk_dir) za datu knjigu.
-    work_dir  = CHECKPOINT_BASE_DIR / _skr_{clean_stem}
-    chk_dir   = work_dir / checkpoints
-    """
-    import re as _re
-    from pathlib import Path as _Path
-    stem      = _Path(book).stem
-    clean     = _re.sub(r"[^a-zA-Z0-9_\-]", "", stem)
-    chk_base  = _Path(CHECKPOINT_BASE_DIR)
-    work_dir  = chk_base / f"_skr_{clean}"
-    if not work_dir.exists():
-        candidates = sorted(chk_base.glob(f"_skr_{clean[:10]}*"))
-        if candidates:
-            work_dir = candidates[0]
-    chk_dir = work_dir / "checkpoints"
-    return work_dir, chk_dir
-
-
-@app.route('/api/name_replacer/scan', methods=['POST'])
-def name_replacer_scan():
-    """Skenira checkpoint fajlove i kreira .replacement fajl."""
-    import re as _re
-    from pathlib import Path as _Path
-
-    data = request.get_json(silent=True) or {}
-    book = data.get('book', '')
-    if not book:
-        return jsonify({'error': 'book je obavezan'}), 400
-
-    work_dir, chk_dir = _nr_find_work_dir(book)
-    log_entries = []
-
-    if not chk_dir.exists():
-        # Možda su .chk direktno u work_dir (starija struktura)
-        chk_dir_alt = work_dir
-        chk_files = list(chk_dir_alt.glob('*.chk')) if chk_dir_alt.exists() else []
-        if chk_files:
-            chk_dir = chk_dir_alt
-            log_entries.append(f'ℹ️ Koristim work_dir (nema /checkpoints subdir)')
-        else:
-            return jsonify({
-                'error': f'Checkpoint dir ne postoji: {chk_dir}',
-                'count': 0,
-                'log': [f'Traženo: {chk_dir}', f'Work dir: {work_dir}'],
-            }), 404
-    else:
-        chk_files = sorted(chk_dir.glob('*.chk'))
-
-    log_entries.append(f'Pronađeno {len(chk_files)} checkpoint fajlova u {chk_dir.parent.name}/{chk_dir.name}')
-
-    # Sakupi vlastita imena iz checkpoint teksta
-    replacements = {}
-    for chk_file in chk_files:
-        try:
-            txt = chk_file.read_text(encoding='utf-8', errors='ignore')
-            # Vlastita imena: riječi s velikim slovom, min 3 slova
-            words = _re.findall(r'\b[A-ZČĆŠŽĐ][a-zA-ZčćšžđČĆŠŽĐ]{2,}\b', txt)
-            for w in words:
-                if w not in replacements:
-                    replacements[w] = w
-        except Exception as e:
-            log_entries.append(f'⚠️ {chk_file.name}: {e}')
-
-    # .replacement ide u work_dir (ne u checkpoints/)
-    stem = _Path(book).stem
-    clean = _re.sub(r"[^a-zA-Z0-9_\-]", "", stem)
-    repl_path = work_dir / f'{clean}.replacement'
-    lines = [f'{orig}→{orig}' for orig in sorted(replacements)]
-    repl_path.write_text('\n'.join(lines), encoding='utf-8')
-    count = len(replacements)
-    log_entries.append(f'Kreirano: {repl_path.name} ({count} unosa)')
-    log_entries.append(f'Lokacija: {repl_path}')
-
-    return jsonify({
-        'ok': True,
-        'count': count,
-        'replacement_file': str(repl_path),
-        'log': log_entries,
-    })
-
-
-@app.route('/api/name_replacer/read', methods=['POST'])
-def name_replacer_read():
-    """Čita sadržaj .replacement fajla."""
-    from pathlib import Path as _Path
-    data = request.get_json(silent=True) or {}
-    p = data.get('path', '')
-    if not p:
-        return jsonify({'error': 'path je obavezan'}), 400
-    try:
-        content = _Path(p).read_text(encoding='utf-8', errors='ignore')
-        return jsonify({'ok': True, 'content': content})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/name_replacer/write', methods=['POST'])
-def name_replacer_write():
-    """Snima izmijenjeni .replacement fajl."""
-    from pathlib import Path as _Path
-    data = request.get_json(silent=True) or {}
-    p       = data.get('path', '')
-    content = data.get('content', '')
-    if not p:
-        return jsonify({'error': 'path je obavezan'}), 400
-    try:
-        _Path(p).write_text(content, encoding='utf-8')
-        return jsonify({'ok': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/name_replacer/apply', methods=['POST'])
-def name_replacer_apply():
-    """Primjenjuje zamjene iz .replacement fajla na .chk fajlove."""
-    import re as _re
-    from pathlib import Path as _Path
-
-    data = request.get_json(silent=True) or {}
-    book = data.get('book', '')
-    p    = data.get('path', '')
-    if not book or not p:
-        return jsonify({'error': 'book i path su obavezni'}), 400
-
-    try:
-        repl_content = _Path(p).read_text(encoding='utf-8', errors='ignore')
-        zamjene = {}
-        for line in repl_content.splitlines():
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            sep = '→' if '→' in line else ('->' if '->' in line else None)
-            if sep:
-                parts = line.split(sep, 1)
-                if len(parts) == 2:
-                    orig, repl = parts[0].strip(), parts[1].strip()
-                    if orig and repl and orig != repl:
-                        zamjene[orig] = repl
-
-        if not zamjene:
-            return jsonify({'ok': True, 'applied': 0, 'files': 0,
-                            'message': 'Nema zamjena (orig != repl) — edituj .replacement fajl'})
-
-        work_dir, chk_dir = _nr_find_work_dir(book)
-        if not chk_dir.exists():
-            chk_dir = work_dir  # fallback na work_dir
-
-        applied = 0
-        files_changed = 0
-        for chk_file in chk_dir.glob('*.chk'):
-            try:
-                txt = chk_file.read_text(encoding='utf-8', errors='ignore')
-                original = txt
-                for orig, repl in zamjene.items():
-                    cnt = txt.count(orig)
-                    if cnt:
-                        txt = txt.replace(orig, repl)
-                        applied += cnt
-                if txt != original:
-                    chk_file.write_text(txt, encoding='utf-8')
-                    files_changed += 1
-            except Exception:
-                pass
-
-        return jsonify({'ok': True, 'applied': applied, 'files': files_changed})
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# ═══════════════════════════════════════════════════════════
-# /NAME REPLACER rute
-# ═══════════════════════════════════════════════════════════

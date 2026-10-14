@@ -1,0 +1,2150 @@
+{
+  "knjiga": "Sharp_ends_stories_from_the_world_of_the_first_law_--_Abercrombie_Joe_--_London_2016_--_Orion_Publishing_Group_Limited_--_isbn13_9780575104709_--_39625782faa848d14eaa6d422a57cada_--_Anna_s_Archive",
+  "jezik": "EN",
+  "termini": {
+    "Sharp": {
+      "hr": "Sharp",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 34,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ends": {
+      "hr": "Ends",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 34,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Westport": {
+      "hr": "Westport",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "East": {
+      "hr": "East",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Crinna": {
+      "hr": "Crinna",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Town": {
+      "hr": "Town",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Country": {
+      "hr": "Country",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Dagoska": {
+      "hr": "Dagoska",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "North": {
+      "hr": "North",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 28,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Styria": {
+      "hr": "Styria",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Village": {
+      "hr": "Village",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Barden": {
+      "hr": "Barden",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Talins": {
+      "hr": "Talins",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Averstock": {
+      "hr": "Averstock",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Tough": {
+      "hr": "Tough",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Times": {
+      "hr": "Times",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Sipani": {
+      "hr": "Sipani",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Made": {
+      "hr": "Made",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Carleon": {
+      "hr": "Carleon",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Abercrombie": {
+      "hr": "Abercrombie",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Rews": {
+      "hr": "Rews",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 49,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "August": {
+      "hr": "August",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Majesty": {
+      "hr": "Majesty",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Give": {
+      "hr": "Give",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Glokta": {
+      "hr": "Glokta",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 75,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Union": {
+      "hr": "Union",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 55,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Varuz": {
+      "hr": "Varuz",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kroy": {
+      "hr": "Kroy",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Poulder": {
+      "hr": "Poulder",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Gurkish": {
+      "hr": "Gurkish",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 30,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Adua": {
+      "hr": "Adua",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ladies": {
+      "hr": "Ladies",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "West": {
+      "hr": "West",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 45,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Wetterlant": {
+      "hr": "Wetterlant",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Come": {
+      "hr": "Come",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Tunny": {
+      "hr": "Tunny",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Fighting": {
+      "hr": "Fighting",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Wait": {
+      "hr": "Wait",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Silence": {
+      "hr": "Silence",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mine": {
+      "hr": "Mine",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Besides": {
+      "hr": "Besides",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Shev": {
+      "hr": "Shev",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 461,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Smoke": {
+      "hr": "Smoke",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 20,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Severard": {
+      "hr": "Severard",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 26,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Amazing": {
+      "hr": "Amazing",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Zaraquon": {
+      "hr": "Zaraquon",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Used": {
+      "hr": "Used",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Sweet": {
+      "hr": "Sweet",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Folk": {
+      "hr": "Folk",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Prayer": {
+      "hr": "Prayer",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bells": {
+      "hr": "Bells",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Carcolf": {
+      "hr": "Carcolf",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 150,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Shevedieh": {
+      "hr": "Shevedieh",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 40,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Guess": {
+      "hr": "Guess",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Except": {
+      "hr": "Except",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Crandall": {
+      "hr": "Crandall",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 46,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Horald": {
+      "hr": "Horald",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 50,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Finger": {
+      "hr": "Finger",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mason": {
+      "hr": "Mason",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Thond": {
+      "hr": "Thond",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Course": {
+      "hr": "Course",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Seemed": {
+      "hr": "Seemed",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nice": {
+      "hr": "Nice",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Whether": {
+      "hr": "Whether",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Wanted": {
+      "hr": "Wanted",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Tried": {
+      "hr": "Tried",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Looked": {
+      "hr": "Looked",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Varini": {
+      "hr": "Varini",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Berrick": {
+      "hr": "Berrick",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Coat": {
+      "hr": "Coat",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Hands": {
+      "hr": "Hands",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pockets": {
+      "hr": "Pockets",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pock": {
+      "hr": "Pock",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Face": {
+      "hr": "Face",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Black": {
+      "hr": "Black",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Thought": {
+      "hr": "Thought",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Take": {
+      "hr": "Take",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Think": {
+      "hr": "Think",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Look": {
+      "hr": "Look",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Hold": {
+      "hr": "Hold",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Javre": {
+      "hr": "Javre",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 269,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Lioness": {
+      "hr": "Lioness",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Hoskopp": {
+      "hr": "Hoskopp",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Felt": {
+      "hr": "Felt",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Craw": {
+      "hr": "Craw",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 121,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Half": {
+      "hr": "Half",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Wonderful": {
+      "hr": "Wonderful",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 30,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Raubin": {
+      "hr": "Raubin",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Clan": {
+      "hr": "Clan",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Scorry": {
+      "hr": "Scorry",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Brack": {
+      "hr": "Brack",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Dayn": {
+      "hr": "Dayn",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Jolly": {
+      "hr": "Jolly",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Whirrun": {
+      "hr": "Whirrun",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 96,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bligh": {
+      "hr": "Bligh",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "White": {
+      "hr": "White",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Tell": {
+      "hr": "Tell",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Threetrees": {
+      "hr": "Threetrees",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Houses": {
+      "hr": "Houses",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Shoot": {
+      "hr": "Shoot",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Quiet": {
+      "hr": "Quiet",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Stay": {
+      "hr": "Stay",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Swords": {
+      "hr": "Swords",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Razor": {
+      "hr": "Razor",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Grave": {
+      "hr": "Grave",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Maker": {
+      "hr": "Maker",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Blood": {
+      "hr": "Blood",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Harvest": {
+      "hr": "Harvest",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Highest": {
+      "hr": "Highest",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Lowest": {
+      "hr": "Lowest",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Scac": {
+      "hr": "Scac",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Gaioc": {
+      "hr": "Gaioc",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Splitting": {
+      "hr": "Splitting",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Great": {
+      "hr": "Great",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Things": {
+      "hr": "Things",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pale": {
+      "hr": "Pale",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 29,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Uffrith": {
+      "hr": "Uffrith",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Curnden": {
+      "hr": "Curnden",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Eight": {
+      "hr": "Eight",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Northern": {
+      "hr": "Northern",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nine": {
+      "hr": "Nine",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Behind": {
+      "hr": "Behind",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Tumnor": {
+      "hr": "Tumnor",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Straight": {
+      "hr": "Straight",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Weylen": {
+      "hr": "Weylen",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Fifteen": {
+      "hr": "Fifteen",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Hanama": {
+      "hr": "Hanama",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Birke": {
+      "hr": "Birke",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Templar": {
+      "hr": "Templar",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Golden": {
+      "hr": "Golden",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kill": {
+      "hr": "Kill",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Temple": {
+      "hr": "Temple",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 57,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Upper": {
+      "hr": "Upper",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "City": {
+      "hr": "City",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Older": {
+      "hr": "Older",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Help": {
+      "hr": "Help",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kahdia": {
+      "hr": "Kahdia",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 33,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Vissbruck": {
+      "hr": "Vissbruck",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nicomo": {
+      "hr": "Nicomo",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Cosca": {
+      "hr": "Cosca",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 30,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Haddish": {
+      "hr": "Haddish",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Superior": {
+      "hr": "Superior",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Eaters": {
+      "hr": "Eaters",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Khalul": {
+      "hr": "Khalul",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Believe": {
+      "hr": "Believe",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Eater": {
+      "hr": "Eater",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mamun": {
+      "hr": "Mamun",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Northmen": {
+      "hr": "Northmen",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 28,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bethod": {
+      "hr": "Bethod",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 126,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Forget": {
+      "hr": "Forget",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Flood": {
+      "hr": "Flood",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Seven": {
+      "hr": "Seven",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Partner": {
+      "hr": "Partner",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Templars": {
+      "hr": "Templars",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Golyin": {
+      "hr": "Golyin",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ahum": {
+      "hr": "Ahum",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Sarabin": {
+      "hr": "Sarabin",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Shin": {
+      "hr": "Shin",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Northman": {
+      "hr": "Northman",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Shall": {
+      "hr": "Shall",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Silvine": {
+      "hr": "Silvine",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mauthis": {
+      "hr": "Mauthis",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Canto": {
+      "hr": "Canto",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mimi": {
+      "hr": "Mimi",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Onna": {
+      "hr": "Onna",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 23,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Cardotti": {
+      "hr": "Cardotti",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Merilee": {
+      "hr": "Merilee",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Jirry": {
+      "hr": "Jirry",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bellit": {
+      "hr": "Bellit",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ospria": {
+      "hr": "Ospria",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Predo": {
+      "hr": "Predo",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 32,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Grand": {
+      "hr": "Grand",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Orso": {
+      "hr": "Orso",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Franchi": {
+      "hr": "Franchi",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Sculia": {
+      "hr": "Sculia",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mazarine": {
+      "hr": "Mazarine",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Rogont": {
+      "hr": "Rogont",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Murcatto": {
+      "hr": "Murcatto",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Butcher": {
+      "hr": "Butcher",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Caprile": {
+      "hr": "Caprile",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bless": {
+      "hr": "Bless",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Fates": {
+      "hr": "Fates",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Riders": {
+      "hr": "Riders",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Victory": {
+      "hr": "Victory",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Neary": {
+      "hr": "Neary",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Lamb": {
+      "hr": "Lamb",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Dodd": {
+      "hr": "Dodd",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Seems": {
+      "hr": "Seems",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ghost": {
+      "hr": "Ghost",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Shut": {
+      "hr": "Shut",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Stop": {
+      "hr": "Stop",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Tinder": {
+      "hr": "Tinder",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 46,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Named": {
+      "hr": "Named",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Riam": {
+      "hr": "Riam",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Cowan": {
+      "hr": "Cowan",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Gorst": {
+      "hr": "Gorst",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 44,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kerns": {
+      "hr": "Kerns",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Styrian": {
+      "hr": "Styrian",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pendel": {
+      "hr": "Pendel",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ripjack": {
+      "hr": "Ripjack",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Scale": {
+      "hr": "Scale",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 20,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Thralls": {
+      "hr": "Thralls",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Southerner": {
+      "hr": "Southerner",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Wrongside": {
+      "hr": "Wrongside",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Hard": {
+      "hr": "Hard",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Vitari": {
+      "hr": "Vitari",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Monzcarro": {
+      "hr": "Monzcarro",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nicante": {
+      "hr": "Nicante",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Affoia": {
+      "hr": "Affoia",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Visserine": {
+      "hr": "Visserine",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Jappo": {
+      "hr": "Jappo",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Thief": {
+      "hr": "Thief",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Burroia": {
+      "hr": "Burroia",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Carp": {
+      "hr": "Carp",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bayaz": {
+      "hr": "Bayaz",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Yolk": {
+      "hr": "Yolk",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mummy": {
+      "hr": "Mummy",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Talk": {
+      "hr": "Talk",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Daddy": {
+      "hr": "Daddy",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Happy": {
+      "hr": "Happy",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Fourteen": {
+      "hr": "Fourteen",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bent": {
+      "hr": "Bent",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nose": {
+      "hr": "Nose",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Osprian": {
+      "hr": "Osprian",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Leanda": {
+      "hr": "Leanda",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Isles": {
+      "hr": "Isles",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Sworbreck": {
+      "hr": "Sworbreck",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Hand": {
+      "hr": "Hand",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pike": {
+      "hr": "Pike",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Inquisitor": {
+      "hr": "Inquisitor",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Lorsen": {
+      "hr": "Lorsen",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Sufeen": {
+      "hr": "Sufeen",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Friendly": {
+      "hr": "Friendly",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 27,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Quarryman": {
+      "hr": "Quarryman",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pombrine": {
+      "hr": "Pombrine",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 20,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kurrikan": {
+      "hr": "Kurrikan",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kurtis": {
+      "hr": "Kurtis",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Broya": {
+      "hr": "Broya",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mistress": {
+      "hr": "Mistress",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Borfero": {
+      "hr": "Borfero",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kiam": {
+      "hr": "Kiam",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Green": {
+      "hr": "Green",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Hove": {
+      "hr": "Hove",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Verscetti": {
+      "hr": "Verscetti",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Jervi": {
+      "hr": "Jervi",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Sifkiss": {
+      "hr": "Sifkiss",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Fallow": {
+      "hr": "Fallow",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 24,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Grenti": {
+      "hr": "Grenti",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Breaker": {
+      "hr": "Breaker",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Master": {
+      "hr": "Master",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ishri": {
+      "hr": "Ishri",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Calder": {
+      "hr": "Calder",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Rattleneck": {
+      "hr": "Rattleneck",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 41,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ursi": {
+      "hr": "Ursi",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ninefingers": {
+      "hr": "Ninefingers",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 45,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Chieftain": {
+      "hr": "Chieftain",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Logen": {
+      "hr": "Logen",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Dogman": {
+      "hr": "Dogman",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Shama": {
+      "hr": "Shama",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Heartless": {
+      "hr": "Heartless",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Sulfur": {
+      "hr": "Sulfur",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Blacktoe": {
+      "hr": "Blacktoe",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Cold": {
+      "hr": "Cold",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "George": {
+      "hr": "George",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Martin": {
+      "hr": "Martin",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Gardner": {
+      "hr": "Gardner",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Dozois": {
+      "hr": "Dozois",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Gollancz": {
+      "hr": "Gollancz",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    }
+  }
+}

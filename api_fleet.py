@@ -42,23 +42,91 @@ def get_active_fleet():
     return _active_fleet
 
 
-# ── Smart routing po ulozi
-ROLE_PREFERRED_PROVIDERS = {
-    "LEKTOR":    ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "TOGETHER", "CHUTES", "GITHUB"],
-    "KOREKTOR":  ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "GITHUB"],
-    "PREVODILAC":["GROQ", "CEREBRAS", "SAMBANOVA", "GEMINI", "MISTRAL", "GITHUB"],
-    "VALIDATOR": ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "GITHUB"],
-    "ANALIZA":   ["GEMINI", "GROQ", "CEREBRAS", "TOGETHER", "GITHUB"],
-    "GUARDIAN":  ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GITHUB"],
-    "POLISH":    ["GEMINI", "MISTRAL", "COHERE", "TOGETHER", "GITHUB"],
-    "SCORER":    ["GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
-}
+# FIX #11: unificirano s config.ai_config.PROVIDER_PRIORITY.
+# Bilo je duplo definirano — sada samo alias.
+try:
+    from config.ai_config import PROVIDER_PRIORITY as ROLE_PREFERRED_PROVIDERS
+except ImportError:
+    # Fallback ako ai_config ne radi
+    ROLE_PREFERRED_PROVIDERS = {
+        "LEKTOR":    ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "TOGETHER", "CHUTES", "GITHUB"],
+        "KOREKTOR":  ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "GITHUB"],
+        "PREVODILAC":["GROQ", "CEREBRAS", "SAMBANOVA", "GEMINI", "MISTRAL", "GITHUB"],
+        "VALIDATOR": ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "GITHUB"],
+        "ANALIZA":   ["GEMINI", "GROQ", "CEREBRAS", "TOGETHER", "GITHUB"],
+        "GUARDIAN":  ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GITHUB"],
+        "POLISH":    ["GEMINI", "MISTRAL", "COHERE", "TOGETHER", "GITHUB"],
+        "SCORER":    ["GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
+    }
 
 PROVIDER_ORDER = [
     "GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "TOGETHER",
     "FIREWORKS", "CHUTES", "GROQ", "CEREBRAS",
     "HUGGINGFACE", "KLUSTER", "OPENROUTER", "GITHUB", "GEMMA",
 ]
+
+
+
+def _check_body_content(provider: str, body) -> tuple:
+    """
+    FIX: Provjeri je li 200 OK odgovor STVARNO koristan.
+    Vraća (is_valid: bool, reason: str).
+    
+    GEMMA/GEMINI vraćaju 200 s:
+      - prazan content (content=null, reasoning_content popunjen) — reasoning model
+      - finishReason=PROHIBITED_CONTENT — safety filter
+      - finishReason=MAX_TOKENS/LENGTH — odrezan odgovor
+    """
+    if not isinstance(body, dict):
+        return True, ""  # ne možemo provjeriti, tretiraj kao OK
+    
+    prov_u = provider.upper()
+    
+    # Gemini/GEMMA native format
+    if prov_u in ("GEMINI", "GEMMA"):
+        candidates = body.get("candidates", [])
+        if not candidates:
+            return False, "nema candidates"
+        cand = candidates[0]
+        finish = (cand.get("finishReason") or "").upper()
+        if finish == "PROHIBITED_CONTENT":
+            return False, "PROHIBITED_CONTENT"
+        if finish == "SAFETY":
+            return False, "SAFETY"
+        if finish == "RECITATION":
+            return False, "RECITATION"
+        # Provjeri ima li content.parts s tekstom
+        content = cand.get("content", {})
+        parts = content.get("parts", []) if isinstance(content, dict) else []
+        has_text = any(isinstance(p, dict) and p.get("text") for p in parts)
+        if not has_text:
+            return False, f"prazan content (finish={finish or '?'})"
+        if finish == "MAX_TOKENS":
+            return False, "MAX_TOKENS (odrezano)"
+        return True, ""
+    
+    # OpenAI-compat format (GROQ, NVIDIA, CLOUDFLARE, MISTRAL, ...)
+    choices = body.get("choices", [])
+    if not choices:
+        return False, "nema choices"
+    choice = choices[0]
+    finish = (choice.get("finish_reason") or "").lower()
+    if finish == "content_filter":
+        return False, "content_filter"
+    msg = choice.get("message", {})
+    content = msg.get("content") if isinstance(msg, dict) else None
+    
+    # Reasoning modeli (muse-glimmer, nemotron): content=null, reasoning_content popunjen
+    if not content or not str(content).strip():
+        reasoning = msg.get("reasoning_content") if isinstance(msg, dict) else None
+        if reasoning:
+            return False, "reasoning-only (content=null)"
+        return False, "prazan content"
+    
+    if finish == "length":
+        return False, "length (odrezano)"
+    
+    return True, ""
 
 
 class KeyState:
@@ -69,10 +137,11 @@ class KeyState:
         self.provider = provider.upper()
         s = saved or {}
 
-        self.total_requests: int   = s.get("total_requests", 0)
+        self.total_requests: int   = 0  # FIX: pozivi se ne cuvaju izmedju sesija, uvijek 0 na startu
         self.last_used:      float = s.get("last_used", 0.0)
 
         self.calls_ok:       int  = s.get("calls_ok", 0)
+        self._last_503_time: float = 0.0  # FIX sve_fix: zadnji 503 timestamp
         self.calls_failed:   int  = s.get("calls_failed", 0)
         self.calls_rejected: dict = {
             int(k): int(v)
@@ -173,8 +242,36 @@ class FleetManager:
         except Exception:
             saved = {}
 
-        if "GEMINI" in raw and "GEMMA" not in raw:
-            raw["GEMMA"] = raw["GEMINI"]
+        # FIX: GEMMA mora UVIJEK dijeliti GEMINI ključeve (isti Google API
+        # ključ radi za oba modela) — čak i kad korisnik kroz UI eksplicitno
+        # dodaje posebne GEMMA-only ključeve. Stari kod je mirror radio SAMO
+        # ako "GEMMA" nije postojao u configu — čim bi korisnik dodao ijedan
+        # GEMMA ključ, mirror je stao i naslijeđeni GEMINI ključevi su tiho
+        # ispali iz GEMMA rotacije. Sada se uvijek spaja i deduplicira:
+        # GEMMA_efektivno = GEMINI ∪ GEMMA (GEMINI prvi u redoslijedu).
+        if "GEMINI" in raw:
+            def _as_key_list(v):
+                if isinstance(v, list):
+                    return [k for k in v if isinstance(k, str) and k.strip()]
+                if isinstance(v, dict):
+                    out = []
+                    for kk, vv in v.items():
+                        if isinstance(vv, dict) and "key" in vv:
+                            out.append(vv["key"])
+                        elif isinstance(vv, str):
+                            out.append(vv)
+                        else:
+                            out.append(kk)
+                    return [k for k in out if isinstance(k, str) and k.strip()]
+                return []
+
+            _gemini_list = _as_key_list(raw["GEMINI"])
+            _gemma_list  = _as_key_list(raw.get("GEMMA"))
+            _merged = list(_gemini_list)
+            for _k in _gemma_list:
+                if _k not in _merged:
+                    _merged.append(_k)
+            raw["GEMMA"] = _merged
 
         self.fleet = {}
         self._rr_index = {}
@@ -260,21 +357,62 @@ class FleetManager:
             self._load_config()
             self._resolve_models()
 
-    def get_active_model(self, provider_upper: str) -> str:
-        from network.model_discovery import get_cached_model
+    def get_active_model(self, provider_upper: str, static_fallback: str = "") -> str:
+        from network.model_discovery import (
+            get_cached_model,
+            get_dead_models,
+            get_cached_model_list,
+            trigger_rediscover_background,
+        )
+
         prov = provider_upper.upper()
+        dead = get_dead_models(prov)
+
         discovered = get_cached_model(prov)
-        if discovered:
+        if discovered and discovered not in dead:
             return discovered
-        return self.resolved_models.get(prov, "")
+
+        # Cached "best" model je mrtav (ili nema ga) -- probaj ostale
+        # kandidate iz otkrivene liste prije pada na staticki fallback.
+        for candidate in get_cached_model_list(prov):
+            if candidate not in dead:
+                return candidate
+
+        fallback = self.resolved_models.get(prov, "") or static_fallback
+        if fallback and fallback not in dead:
+            return fallback
+
+        # Sve sto znamo o ovom provajderu je mrtvo -- okini pozadinski
+        # rediscover umjesto da tiho vracamo isti mrtvi ID zauvijek.
+        try:
+            key = self.get_best_key(prov)
+            if key:
+                trigger_rediscover_background(prov, key)
+        except Exception:
+            pass
+        return fallback
 
     def get_best_key(self, provider: str):
+        # FIX #6: uklonjen mrtav kod (503 filter koji se odmah preglašavao).
+        # Filter 503-hladnih ključeva je integriran unutar lock bloka.
         prov_u = provider.upper()
+        now = time.time()
         with self.lock:
             keys = self.fleet.get(prov_u, [])
             if not keys:
-                logger.warning("[FleetManager] get_best_key(%s): nema ključeva u floti", prov_u)
-                syslog.warning("[FleetManager] get_best_key(%s): nema ključeva u floti", prov_u)
+                # FIX 2026-09-26: DEBUG umjesto WARNING
+                logger.debug("[FleetManager] get_best_key(%s): nema ključeva u floti", prov_u)
+                return None
+
+            # FIX #6: 503 filter unutar lock-a
+            keys = [
+                k for k in keys
+                if (now - getattr(k, "_last_503_time", 0)) >= 60.0
+            ]
+            if not keys:
+                logger.warning(
+                    "[FleetManager] %s: svi ključevi 503-hladni (<60s)", prov_u
+                )
                 return None
 
             available = [ks for ks in keys if ks.available]
@@ -313,21 +451,35 @@ class FleetManager:
             return chosen.key
 
     def get_best_key_for_role(self, role: str):
+        # FIX: preskoči providere bez ključeva BEZ log warningа (bilo je 40+ upozorenja
+        # u 90 min za SAMBANOVA/MISTRAL koji uopće nemaju ključeve u dev_api.json).
         preferred = ROLE_PREFERRED_PROVIDERS.get(role.upper(), PROVIDER_ORDER)
+        with self.lock:
+            available_provs = {
+                p.upper() for p, keys in self.fleet.items() if keys
+            }
+        # Filtriraj na providere koji imaju ključeve
         for prov in preferred:
+            if prov.upper() not in available_provs:
+                continue
             key = self.get_best_key(prov)
             if key:
                 logger.debug("[FleetManager] get_best_key_for_role(%s): odabran %s ...%s",
                              role, prov, key[-4:])
                 return prov, key
         for prov in PROVIDER_ORDER:
+            if prov.upper() not in available_provs:
+                continue
             if prov not in preferred:
                 key = self.get_best_key(prov)
                 if key:
                     logger.debug("[FleetManager] get_best_key_for_role(%s) fallback: %s ...%s",
                                  role, prov, key[-4:])
                     return prov, key
-        logger.warning("[FleetManager] get_best_key_for_role(%s): nema dostupnih ključeva ni za jedan provajder", role)
+        logger.warning(
+            "[FleetManager] get_best_key_for_role(%s): nema dostupnih ključeva",
+            role,
+        )
         return None, None
 
     def record_request(self, provider: str, key: str):
@@ -472,15 +624,44 @@ class FleetManager:
                 return
 
             if status_code == 200:
-                ks.calls_ok += 1
-                logger.debug(
-                    "[FleetManager] %s ...%s → 200 OK (ok=%d, tokeni=%d)",
-                    prov_u, key[-4:], ks.calls_ok, tokens,
-                )
-                syslog.debug(
-                    "[FleetManager] %s ...%s → 200 OK (ok=%d, tokeni=%d)",
-                    prov_u, key[-4:], ks.calls_ok, tokens,
-                )
+                # FIX: provjeri je li odgovor STVARNO koristan.
+                # Reasoning modeli (muse-glimmer) vraćaju content=null.
+                # Gemini vraća finishReason=PROHIBITED_CONTENT.
+                _valid, _reason = _check_body_content(prov_u, body)
+                if not _valid:
+                    ks.calls_failed += 1
+                    ks.last_used = time.time()
+                    logger.warning(
+                        "[FleetManager] %s ...%s → 200 ali nevalidan: %s (failed=%d)",
+                        prov_u, key[-4:], _reason, ks.calls_failed,
+                    )
+                    syslog.warning(
+                        "[FleetManager] %s ...%s → 200 ali nevalidan: %s",
+                        prov_u, key[-4:], _reason,
+                    )
+                    try:
+                        from network.quota_tracker import quota_tracker
+                        # FIX #8: ispravni pozivi — set_key_cooldown postoji,
+                        # record_error na QuotaTracker ne postoji.
+                        quota_tracker.set_key_cooldown(prov_u, key, 90.0, _reason)
+                        logger.debug(
+                            "[FleetManager] %s ...%s nevalidan 200 — cooldown 90s (%s)",
+                            prov_u, key[-4:], _reason,
+                        )
+                    except Exception as e:
+                        logger.debug(
+                            "[FleetManager] neuspjelo postavljanje cooldowna: %s", e
+                        )
+                else:
+                    ks.calls_ok += 1
+                    logger.debug(
+                        "[FleetManager] %s ...%s → 200 OK (ok=%d, tokeni=%d)",
+                        prov_u, key[-4:], ks.calls_ok, tokens,
+                    )
+                    syslog.debug(
+                        "[FleetManager] %s ...%s → 200 OK (ok=%d, tokeni=%d)",
+                        prov_u, key[-4:], ks.calls_ok, tokens,
+                    )
             elif status_code >= 500:
                 ks.calls_failed += 1
                 logger.warning(

@@ -13,6 +13,7 @@ const STATE = {
     model: "V10_TURBO",
     mode: "FUSION",
     ttsMode: false,
+    ttsBook: null,
     processing: false,
     paused: false,
     startTime: null,
@@ -275,8 +276,6 @@ function renderHistory() {
 function loadFromHistory(book, model) {
     STATE.book = book;
     STATE.model = model;
-    const sel = document.getElementById("book-select");
-    if (sel) sel.value = book;
     const msel = document.getElementById("model-select");
     if (msel && Array.from(msel.options).some(o => o.value === model))
         msel.value = model;
@@ -336,7 +335,7 @@ function setWizardStep(n) {
 }
 
 function wizardNext() {
-    const book = document.getElementById("book-select")?.value;
+    const book = STATE.book;
     if (!book) {
         showToast("Odaberi ili učitaj knjigu!", "warning");
         return;
@@ -470,6 +469,18 @@ function triggerUpload() {
     input.addEventListener("change", () => {
         if (input.files[0]) doUpload(input.files[0]);
     });
+    // Klik na zonu otvara file picker
+
+    zone.addEventListener("click", (e) => {
+
+        if (e.target === input) return;
+
+        input.click();
+
+    });
+
+    
+
     zone.addEventListener("dragover", e => {
         e.preventDefault();
         zone.classList.add("drag-over");
@@ -505,12 +516,8 @@ function triggerUpload() {
             document
                 .getElementById("guide-after-upload")
                 ?.classList.remove("hidden");
-            await loadBooks();
-            const sel = document.getElementById("book-select");
-            if (sel) {
-                sel.value = d.name || file.name;
-                STATE.book = sel.value;
-            }
+            onBookChange(d.name || file.name);
+            updateSelectedBookDisplay(d.name || file.name);
         } catch (e) {
             status.textContent = `❌ ${e.message}`;
             status.style.color = "var(--rose)";
@@ -518,34 +525,6 @@ function triggerUpload() {
         }
     }
 })();
-
-async function loadBooks() {
-    const sel = document.getElementById("book-select");
-    if (!sel) return;
-    try {
-        let files = [];
-        try {
-            const r = await fetch("/api/books");
-            const d = await r.json();
-            files = d.books ? d.books.map(b => b.name || b) : d.files || [];
-        } catch (_) {
-            const r2 = await fetch("/api/files");
-            const d2 = await r2.json();
-            files = d2.files || [];
-        }
-        const last = localStorage.getItem("bf_last_book");
-        sel.innerHTML = '<option value="">— Odaberi knjigu —</option>';
-        files.forEach(f => {
-            const name = typeof f === "string" ? f : f.name || f.path || f;
-            const path = typeof f === "string" ? f : f.path || f.name || f;
-            sel.appendChild(new Option(name, path));
-        });
-        if (last && Array.from(sel.options).some(o => o.value === last)) {
-            sel.value = last;
-            STATE.book = last;
-        }
-    } catch (_) {}
-}
 
 async function loadModels() {
     const sel = document.getElementById("model-select");
@@ -568,7 +547,7 @@ async function loadModels() {
 
 // ═══════════════ POKRETANJE ═════════════════════════════
 async function startProcessing() {
-    const book = STATE.book || document.getElementById("book-select")?.value;
+    const book = STATE.book;
     const model = document.getElementById("model-select")?.value || STATE.model;
     const mode = STATE.ttsMode ? "TTS" : "FUSION";
 
@@ -620,8 +599,7 @@ async function startProcessing() {
 
 async function sendControl(action) {
     if (action === "reset") {
-        const book =
-            STATE.book || document.getElementById("book-select")?.value || "";
+        const book = STATE.book || "";
         const btn = document.getElementById("btn-reset");
         if (btn) {
             btn.disabled = true;
@@ -644,6 +622,7 @@ async function sendControl(action) {
                     STATE.startTime = null;
                     clearSession();
                     showSetup();
+                    setWizardStep(1);
                     showToast(
                         d.reset?.obrisano_dir
                             ? "🗑️ Reset završen — checkpointi obrisani."
@@ -749,8 +728,144 @@ function setVal(id, val) {
     if (el && el.textContent !== String(val)) el.textContent = val;
 }
 
+// Flag za auto-stilizaciju (da se ne pozove više puta)
+let _autoStilTriggered = false;
+let _lastPct = 0;
+
+
+
+// ═══════════════════════════════════════════════════════════
+// KNJIGA KONTEKST PANEL
+// ═══════════════════════════════════════════════════════════
+function azuriraj_kontekst(s) {
+    const set = (id, txt) => {
+        const el = document.getElementById(id);
+        if (el && el.textContent !== txt) el.textContent = txt;
+    };
+
+    // ── Ime knjige ──
+    let knjiga = s.book_name || "";
+    
+    // Fallback 1: iz live_audit
+    if (!knjiga) {
+        const la = (s.live_audit || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+        // Pattern: "Engine inicijaliziran: NAZIV.epub"
+        let m = la.match(/Engine inicijaliziran:\s*([^\s]+\.epub)/i);
+        if (!m) {
+            // Pattern: "V10.2 Engine inicijaliziran: NAZIV"
+            m = la.match(/V10\.\d+ Engine inicijaliziran:\s*([^\s]+)/i);
+        }
+        if (!m) {
+            // Pattern: "checkpoint: .../_skr_NAZIV/checkpoints"
+            m = la.match(/checkpoint:\s*[^\s]*?\/_skr_([^\s\/]+)\/checkpoints/);
+        }
+        if (m) knjiga = m[1];
+    }
+    
+    // Fallback 2: iz current_file ako nije HTML
+    if (!knjiga) {
+        const cf = s.current_file || "";
+        if (cf && !cf.endsWith(".html") && !cf.endsWith(".xhtml")) {
+            knjiga = cf;
+        }
+    }
+    if (knjiga) {
+        knjiga = knjiga.replace(/\.epub$/i, "");
+        if (knjiga.includes("--")) {
+            knjiga = knjiga.split("--")[0].trim();
+        }
+        if (knjiga.length > 50) {
+            knjiga = knjiga.slice(0, 47) + "…";
+        }
+    }
+    set("kk-knjiga", knjiga || "—");
+
+    // ── Fajl ──
+    let fajl = "";
+    const cf = s.current_file || "";
+    if (cf && (cf.endsWith(".html") || cf.endsWith(".xhtml"))) {
+        fajl = cf;
+    } else if (s.current_chunk_idx > 0 && s.total_file_chunks > 0) {
+        fajl = `Blok ${s.current_chunk_idx} / ${s.total_file_chunks}`;
+    } else if (s.current_file_idx > 0 && s.total_files > 0) {
+        fajl = `Fajl ${s.current_file_idx} / ${s.total_files}`;
+    } else if (s.ok && s.ok !== "0 / 0") {
+        fajl = s.ok;
+    }
+    set("kk-fajl", fajl || "—");
+
+    // ── Faza ──
+    let faza = "—";
+    let detalj = "";
+    const status = (s.status || "").toUpperCase();
+
+    if (status.includes("ZAVRŠ") || s.pct >= 100) {
+        faza = "ZAVRŠENO";
+        detalj = "";
+    } else if (status.includes("RETRO")) {
+        faza = "RETRO";
+        detalj = "";
+    } else if (status.includes("ANALIZ")) {
+        faza = "ANALIZA";
+        detalj = "priprema knjige";
+    } else if (s.knjiga_mode === "PREVOD" && status.includes("TOKU")) {
+        faza = "PREVOD";
+        detalj = s.knjiga_mode_info || "";
+    } else if (s.knjiga_mode === "LEKTURA" && status.includes("TOKU")) {
+        faza = "LEKTURA";
+        detalj = s.knjiga_mode_info || "";
+    } else if (status.includes("TOKU")) {
+        faza = "OBRADA";
+        detalj = "";
+    } else if (status.includes("SPREMAN") || status.includes("IDLE")) {
+        faza = "SPREMAN";
+        detalj = "";
+    } else if (s.knjiga_mode) {
+        faza = s.knjiga_mode;
+        detalj = s.knjiga_mode_info || "";
+    }
+
+    if (detalj && detalj.length > 40) {
+        detalj = detalj.slice(0, 37) + "…";
+    }
+    set("kk-faza", faza);
+    set("kk-faza-detalj", detalj);
+
+    // ── Vrijeme ──
+    set("kk-eta", `ETA: ${s.est || "--:--:--"}`);
+
+    const startTs = window._booklyfi_start_ts;
+    if (startTs && s.pct > 0 && s.pct < 100) {
+        const elapsed = Math.floor((Date.now() - startTs) / 1000);
+        set("kk-protece", `Proteče: ${fmtTime(elapsed)}`);
+    } else if (s.pct >= 100) {
+        set("kk-protece", "Završeno");
+    } else {
+        set("kk-protece", "Proteče: 00:00");
+    }
+}
+
 function updateStatus(s) {
     if (!s) return;
+    
+    // ── AUTO-STILIZACIJA na kraju obrade ──
+    const _pctLocal = s.pct || 0;
+    if (false && !_autoStilTriggered && _lastPct < 100 && _pctLocal >= 100) {
+        _autoStilTriggered = true;
+        const cb = document.getElementById("auto-stil");
+        if (cb && cb.checked) {
+            const book = s.book || s.output_file || s.file || STATE.book || "";
+            if (book) {
+                console.log("[AUTO-STIL] Obrada gotova, pokrećem stilizaciju:", book);
+                if (typeof _log === "function") _log("✨ Auto-stilizacija u toku...", "system");
+                setTimeout(() => {
+                    if (typeof auto_stiliziraj === "function") auto_stiliziraj(book);
+                }, 1500);
+            }
+        }
+    }
+    if (_pctLocal < 100) _autoStilTriggered = false;
+    _lastPct = _pctLocal;
     const st = (s.status || "IDLE").toUpperCase();
     const dot = document.getElementById("status-dot");
     const txt = document.getElementById("status-text");
@@ -1009,6 +1124,31 @@ function _parseAuditTime(div) {
     return m ? m[1] : "";
 }
 
+
+// ── Skrati dugačke error/log poruke (JSON 429 i sl.) ────────
+function _trimLogMessage(text) {
+    if (!text) return text;
+    let t = String(text);
+
+    // Skini HTML tagove za analizu
+    const plain = t.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+    // Ako sadrži JSON sa code: 429 ili quota — skrati
+    if (/\{['"]code['"]\s*:\s*429|quota exceeded|rate.?limit/i.test(plain)) {
+        // Nađi početak JSON-a
+        const jsonIdx = t.indexOf("{");
+        if (jsonIdx > 0) {
+            t = t.slice(0, jsonIdx) + " <em style='opacity:0.6'>[429 quota — detalji u logu]</em>";
+        }
+    }
+
+    // Skrati ako je preko 250 znakova
+    if (t.length > 250) {
+        t = t.slice(0, 250) + "…";
+    }
+    return t;
+}
+
 function updateAuditLog(html) {
     const log = document.getElementById("audit-log");
     if (!log) return;
@@ -1024,26 +1164,90 @@ function updateAuditLog(html) {
         return;
     }
 
-    let output = "";
-    entries.forEach(el => {
+    // ── AGREGACIJA: grupiši istovjetne AI pozive ──
+    // Pattern: [ULOGA] Šaljem blok N na AI (PROVIDER)
+    const parseEntry = (el) => {
         const raw = el.innerHTML || "";
         const text = el.textContent || "";
         const { cls, badge } = _auditClass(text);
         const time = _parseAuditTime(text.trim());
-        // Ukloni timestamp i kategorijski prefiks iz poruke
-        const _prefixes = ["GREŠKA", "UPOZ", "SYS", "NET", "INF", "ERR", "UPZ", "OK", "SCR"];
-        let msgHtml = time ? raw.replace(time, "") : raw;
-        // Ukloni poznate tekstualne prefikse na početku
-        msgHtml = msgHtml.replace(
-            /^\s*(GREŠKA|UPOZ|SYS|NET|GREŠKAGREŠKA|UPOZUPOZ|SYSSYS|NETNET)\s*/,
-            ""
-        ).trim();
-        output += `<div class='log-entry ${cls}'>` +
-            `<span class='log-time'>${time}</span>` +
-            `<span class='log-badge'>${badge}</span>` +
-            `<span class='log-msg'>${msgHtml}</span>` +
-            `</div>`;
-    });
+        const clean = text.replace(time, "").trim();
+
+        // Provjeri AI pattern
+        const m = clean.match(/\[(\w+)\]\s+Šaljem blok\s+(\d+)\s+na AI\s+\((\w+)\)/);
+        if (m) {
+            return {
+                type: "ai",
+                uloga: m[1],
+                blok: parseInt(m[2]),
+                provider: m[3],
+                time: time,
+                cls, badge,
+            };
+        }
+        return { type: "raw", html: raw, text, time, cls, badge };
+    };
+
+    const parsed = Array.from(entries).map(parseEntry);
+
+    // Grupiši uzastopne AI pozive sa istom ulogom i providerom
+    const grouped = [];
+    let ai_group = null;
+    for (const p of parsed) {
+        if (p.type === "ai") {
+            if (ai_group && ai_group.uloga === p.uloga && ai_group.provider === p.provider) {
+                ai_group.blokovi.push(p.blok);
+                ai_group.time_end = p.time;
+                continue;
+            }
+            if (ai_group) grouped.push(ai_group);
+            ai_group = {
+                type: "ai",
+                uloga: p.uloga,
+                provider: p.provider,
+                blokovi: [p.blok],
+                time_start: p.time,
+                time_end: p.time,
+                cls: p.cls,
+                badge: p.badge,
+            };
+        } else {
+            if (ai_group) {
+                grouped.push(ai_group);
+                ai_group = null;
+            }
+            grouped.push(p);
+        }
+    }
+    if (ai_group) grouped.push(ai_group);
+
+    // Render
+    let output = "";
+    for (const g of grouped) {
+        if (g.type === "ai") {
+            const n = g.blokovi.length;
+            const blokovi_str = n === 1 ? `blok ${g.blokovi[0]}` : `${n} bloka`;
+            const vremenski = g.time_start === g.time_end ? g.time_start : `${g.time_start}-${g.time_end}`;
+            const msg = `[${g.uloga}] ${blokovi_str} → AI (${g.provider})`;
+            output += `<div class='log-entry ${g.cls}'>` +
+                `<span class='log-time'>${vremenski}</span>` +
+                `<span class='log-badge'>${g.badge}</span>` +
+                `<span class='log-msg'>${msg}</span>` +
+                `</div>`;
+        } else {
+            // Raw entry — očisti prefikse
+            let msgHtml = g.time ? g.html.replace(g.time, "") : g.html;
+            msgHtml = msgHtml.replace(
+                /^\s*(GREŠKA|UPOZ|SYS|NET|GREŠKAGREŠKA|UPOZUPOZ|SYSSYS|NETNET)\s*/,
+                ""
+            ).trim();
+            output += `<div class='log-entry ${g.cls}'>` +
+                `<span class='log-time'>${g.time}</span>` +
+                `<span class='log-badge'>${g.badge}</span>` +
+                `<span class='log-msg'>${msgHtml}</span>` +
+                `</div>`;
+        }
+    }
 
     log.innerHTML = output;
     if (_auditAutoScroll) log.scrollTop = log.scrollHeight;
@@ -1190,7 +1394,7 @@ function updatePipeline(status, pct) {
 function saveAppState() {
     try {
         const s = {
-            book: document.getElementById("book-select")?.value || "",
+            book: STATE.book || "",
             model: document.getElementById("model-select")?.value || "",
             mode:
                 document.querySelector('input[name="mode"]:checked')?.value ||
@@ -1217,29 +1421,31 @@ function restoreAppState() {
         if (!raw) return;
         const s = JSON.parse(raw);
         if (s.theme === "light") document.body.classList.add("light");
+
+        // FIX: knjiga se vise ne bira iz liste - vraca se odmah iz STATE,
+        // bez cekanja na populaciju bilo kog select-a.
+        if (s.book) {
+            onBookChange(s.book);
+            updateSelectedBookDisplay(s.book);
+        }
+        if (s.mode) {
+            const r = document.querySelector(
+                `input[name="mode"][value="${s.mode}"]`
+            );
+            if (r) r.checked = true;
+        }
+        if (s.step2) {
+            setWizardStep(2);
+        }
+
         const check = setInterval(function () {
-            const bs = document.getElementById("book-select");
             const ms = document.getElementById("model-select");
-            if (bs && bs.options.length > 1 && ms && ms.options.length > 0) {
-                if (
-                    s.book &&
-                    Array.from(bs.options).some(o => o.value === s.book)
-                )
-                    bs.value = s.book;
+            if (ms && ms.options.length > 0) {
                 if (
                     s.model &&
                     Array.from(ms.options).some(o => o.value === s.model)
                 )
                     ms.value = s.model;
-                if (s.mode) {
-                    const r = document.querySelector(
-                        `input[name="mode"][value="${s.mode}"]`
-                    );
-                    if (r) r.checked = true;
-                }
-                if (s.step2) {
-                    setWizardStep(2);
-                }
                 clearInterval(check);
             }
         }, 200);
@@ -1445,6 +1651,249 @@ async function pingKey(provider, index, btn) {
 }
 
 // ═══════════════ TABS ═══════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════
+// REVIEW — otvori blok u Revizija tabu
+// ═══════════════════════════════════════════════════════════
+async function otvoriReviziju(stem) {
+    if (!stem) return;
+    console.log("[review] Otvaram:", stem);
+
+    // 1. Postavi fajl ime
+    const fnEl = document.getElementById("review-filename");
+    if (fnEl) fnEl.textContent = stem;
+
+    // 1b. Zapamti trenutni stem + omogući dugmiće
+    window._currentReviewStem = stem;
+    const saveBtn = document.getElementById("review-save-btn");
+    const delBtn = document.getElementById("review-delete-btn");
+    if (saveBtn) saveBtn.disabled = false;
+    if (delBtn) delBtn.disabled = false;
+
+    // 2. Sakrij empty banner, prikaži legend
+    const empty = document.getElementById("review-empty-banner");
+    const legend = document.getElementById("review-legend");
+    if (empty) empty.style.display = "none";
+    if (legend) legend.classList.remove("hidden");
+
+    // 3. Prebaci na Revizija tab
+    if (typeof switchTab === "function") switchTab("tab-review");
+
+    // 4. Učitaj tekst bloka
+    try {
+        const book = STATE.book || window._currentBook || "";
+        if (!book) {
+            console.warn("[review] Nema aktivne knjige");
+            if (fnEl) fnEl.textContent = stem + " — nema aktivne knjige";
+            return;
+        }
+
+        const r = await fetch(`/api/review/chunk/${encodeURIComponent(stem)}`);
+        console.log("[review] HTTP", r.status);
+        
+        if (!r.ok) {
+            if (fnEl) fnEl.textContent = stem + " — greška " + r.status;
+            return;
+        }
+        const d = await r.json();
+        const tekst = d.text || d.tekst || "";
+
+        if (!tekst) {
+            console.warn("[review] Prazan tekst");
+            if (fnEl) fnEl.textContent = stem + " — prazan blok";
+            return;
+        }
+
+        // 5. Primeni tekst
+        if (window._hlEditor && typeof window._hlEditor.applyText === "function") {
+            window._hlEditor.applyText(tekst);
+        } else {
+            const ta = document.getElementById("review-text");
+            if (ta) ta.value = tekst;
+        }
+
+        // 6. Reset multi-count
+        const mc = document.getElementById("review-multi-count");
+        const mc2 = document.getElementById("review-multi-count2");
+        if (mc) mc.textContent = "0 označeno";
+        if (mc2) mc2.textContent = "0";
+
+    } catch (e) {
+        console.error("[review] Greška:", e);
+        if (fnEl) fnEl.textContent = stem + " — " + e.message;
+    }
+}
+
+
+// FIX: osvježi samo jedan blok-pill bez reload-a cijelog taba
+function refreshBlockScore(stem, newScore) {
+    const pill = document.querySelector(`.qs-block-pill[data-stem="${CSS.escape(stem)}"]`);
+    if (!pill) return;
+    pill.textContent = `B${pill.dataset.blockIdx || "?"} ${newScore.toFixed(1)}`;
+    pill.className = "qs-block-pill excellent";
+    pill.title = `${stem}: ${newScore}/10 — klikni za reviziju`;
+    pill.style.background = "#10b981";
+    pill.style.color = "#fff";
+}
+window.refreshBlockScore = refreshBlockScore;
+
+// FIX: osvježi summary brojače
+function refreshQualitySummary(summary) {
+    if (!summary) return;
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setVal("qs-excellent", summary.excellent || 0);
+    setVal("qs-good", summary.good || 0);
+    setVal("qs-poor", summary.poor || 0);
+    setVal("qs-critical", summary.critical || 0);
+    setVal("qs-pct", (summary.pct_print_ready || 0) + "%");
+}
+window.refreshQualitySummary = refreshQualitySummary;
+
+window.otvoriReviziju = otvoriReviziju;
+
+// ── Praćenje trenutnog chunka u Revizija tabu ──
+window._currentReviewStem = null;
+
+async function sacuvajTrenutniChunk() {
+    const stem = window._currentReviewStem;
+    if (!stem) {
+        alert("Nema odabranog chunka");
+        return;
+    }
+    const ta = document.getElementById("review-text");
+    if (!ta) return;
+    const newText = ta.value;
+    if (!newText.trim()) {
+        alert("Tekst je prazan!");
+        return;
+    }
+    try {
+        const r = await fetch(`/api/review/chunk/${encodeURIComponent(stem)}`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({text: newText}),
+        });
+        const d = await r.json();
+        if (r.ok) {
+            const badge = document.getElementById("review-score-badge");
+            if (badge) {
+                badge.textContent = "✅ Sačuvano — ocjena 10.0 (human)";
+                badge.style.color = "#10b981";
+            }
+            if (typeof _log === "function") {
+                _log(`✅ Sačuvano: ${stem} — ocjena 10.0 (human)`, "success");
+            }
+            // FIX: odmah osvježi Kvalitet tab
+            if (typeof loadQualityScores === "function") {
+                setTimeout(loadQualityScores, 200);
+            }
+            // FIX: osvježi i SHARED_STATS kroz /api/status
+            setTimeout(async () => {
+                try {
+                    const sr = await fetch("/api/status");
+                    const st = await sr.json();
+                    if (st.quality_scores && typeof updateStatus === "function") {
+                        updateStatus(st);
+                    }
+                } catch (_) {}
+            }, 300);
+        } else {
+            alert("Greška: " + (d.error || "Nepoznata"));
+        }
+    } catch (e) {
+        alert("Mrežna greška: " + e.message);
+    }
+}
+window.sacuvajTrenutniChunk = sacuvajTrenutniChunk;
+
+async function obrisiTrenutniChunk() {
+    const stem = window._currentReviewStem;
+    if (!stem) {
+        alert("Nema odabranog chunka");
+        return;
+    }
+    if (!confirm(`Obrisati chunk "${stem}"? AI će ga ponovo obraditi.`)) return;
+    try {
+        const r = await fetch(`/api/review/chunk/${encodeURIComponent(stem)}`, {
+            method: "DELETE",
+        });
+        const d = await r.json();
+        if (r.ok) {
+            if (typeof _log === "function") {
+                _log(`🗑️ Obrisano: ${stem}`, "info");
+            }
+            // Reset editora
+            const ta = document.getElementById("review-text");
+            if (ta) ta.value = "";
+        }
+    } catch (e) {
+        alert("Mrežna greška: " + e.message);
+    }
+}
+window.obrisiTrenutniChunk = obrisiTrenutniChunk;
+
+
+// ── Sačuvaj ručno izmijenjeni chunk ──
+async function sacuvajReviziju(stem) {
+    const textarea = document.querySelector(`[data-chunk-stem="${stem}"] textarea, #revizija-textarea[data-stem="${stem}"]`);
+    if (!textarea) {
+        console.warn("[review] Nema textarea za stem:", stem);
+        return;
+    }
+    const newText = textarea.value;
+    if (!newText.trim()) {
+        alert("Tekst je prazan!");
+        return;
+    }
+
+    try {
+        const r = await fetch(`/api/review/chunk/${encodeURIComponent(stem)}`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({text: newText}),
+        });
+        const d = await r.json();
+        if (r.ok) {
+            if (typeof _log === "function") {
+                _log(`✅ Sačuvano: ${stem} — automatska ocjena 10.0 (human)`, "success");
+            }
+            // Osvježi prikaz ako ima skor
+            const scoreEl = document.querySelector(`[data-chunk-stem="${stem}"] .review-score`);
+            if (scoreEl) {
+                scoreEl.textContent = "10.0 (human)";
+                scoreEl.classList.add("score-human");
+            }
+        } else {
+            alert("Greška: " + (d.error || "Nepoznata"));
+        }
+    } catch (e) {
+        alert("Mrežna greška: " + e.message);
+    }
+}
+window.sacuvajReviziju = sacuvajReviziju;
+
+// ── Obriši chunk (za AI re-obradu) ──
+async function obrisiReviziju(stem) {
+    if (!confirm(`Obrisati chunk "${stem}"? AI će ga ponovo obraditi.`)) return;
+    try {
+        const r = await fetch(`/api/review/chunk/${encodeURIComponent(stem)}`, {
+            method: "DELETE",
+        });
+        const d = await r.json();
+        if (r.ok) {
+            if (typeof _log === "function") {
+                _log(`🗑️ Obrisano: ${stem}`, "info");
+            }
+            const el = document.querySelector(`[data-chunk-stem="${stem}"]`);
+            if (el) el.remove();
+        }
+    } catch (e) {
+        alert("Mrežna greška: " + e.message);
+    }
+}
+window.obrisiReviziju = obrisiReviziju;
+
 function switchTab(tabId) {
     document.querySelectorAll(".tab-btn").forEach(b => {
         b.classList.toggle("active", b.dataset.tab === tabId);
@@ -1459,8 +1908,7 @@ function switchTab(tabId) {
     if (tabId === "tab-quality") loadQualityScores();
     if (tabId === "tab-history") renderHistory();
     if (tabId === "tab-epub") loadEpubPreview();
-    if (tabId === "panel-zamjene") loadNRBooks();
-    if (tabId === "panel-tts-filter") loadTTSBooks();
+    // TTS Filter vise nema listu za osvjezavanje pri prelasku na tab
 }
 
 // ═══════════════ QUALITY SCORES ═════════════════════
@@ -1654,10 +2102,9 @@ async function loadQualityScores() {
             })
             .join("");
         const fc = document.getElementById("qs-files-container");
-        if (fc)
-            fc.innerHTML =
-                filesHtml ||
-                '<div style="color:var(--tx-3);padding:12px">Nema podataka.</div>';
+        if (fc && typeof window.renderiraj_heatmap === "function") {
+            window.renderiraj_heatmap(fc, byFile, scores);
+        }
 
         loadingEl?.classList.add("hidden");
         contentEl?.classList.remove("hidden");
@@ -1780,7 +2227,7 @@ async function sendMarkedForRefix() {
         showToast("Nisi označio nijedan blok.", "warning");
         return;
     }
-    const book = STATE.book || document.getElementById("book-select")?.value;
+    const book = STATE.book;
     const model =
         STATE.model ||
         document.getElementById("model-select")?.value ||
@@ -2038,8 +2485,7 @@ async function confirmDownloadLive() {
 
 // ═══════════════ INIT ═══════════════════════════
 document.addEventListener("DOMContentLoaded", async function () {
-    // [v2.0.1] Pokrećemo load knjiga i modela paralelno
-    await Promise.allSettled([loadBooks(), loadModels()]);
+    await loadModels();
     renderHistory();
     restoreAppState();
 
@@ -2098,10 +2544,16 @@ document.addEventListener("DOMContentLoaded", async function () {
         ?.addEventListener("click", toggleTheme);
     document
         .getElementById("btn-show-setup")
-        ?.addEventListener("click", showSetup);
+        ?.addEventListener("click", () => {
+            showSetup();
+            setWizardStep(1);
+        });
     document
         .getElementById("btn-show-setup-dashboard")
-        ?.addEventListener("click", showSetup);
+        ?.addEventListener("click", () => {
+            showSetup();
+            setWizardStep(1);
+        });
 
     // Wizard dugmad
     document
@@ -2189,13 +2641,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     document
         .querySelector(".guide-action")
         ?.addEventListener("click", wizardNext);
-
-    // Book select change
-    document
-        .getElementById("book-select")
-        ?.addEventListener("change", function () {
-            onBookChange(this.value);
-        });
 
     // API ključevi — dodavanje i odabir provajdera
     document
@@ -2610,682 +3055,12 @@ function applyHighlights(container, patterns) {
 }
 
 
-/* ═══════════════════════════════════════════════════════════
-   SMART NAME REPLACER UI — Skriptorij 02.06.2026
-   ═══════════════════════════════════════════════════════════ */
 
-const NameReplacer = (() => {
-    // ── State ────────────────────────────────────────────────
-    let _busy       = false;
-    let _selBook    = '';
-    let _hasRepFile = false;
-
-    // ── DOM refs (lazy, set on init) ────────────────────────
-    let $bookSelect, $btnScan, $btnApplyFile, $btnPreview,
-        $statusRow, $statusDot, $statusText,
-        $resultsCard, $statEntities, $statFound, $statApplied,
-        $logCard, $auditLog, $btnClearLog,
-        $repInfo, $repStatus,
-        $previewCard, $textarea, $pairsCount,
-        $btnApplyEdited, $btnClosePreview,
-        $btnRefreshBooks;
-
-    // ── Helpers ──────────────────────────────────────────────
-    function _el(id) { return document.getElementById(id); }
-
-    function _log(msg, type = 'info') {
-        if (!$logCard || !$auditLog) return;
-        $logCard.style.display = 'block';
-        const icons = {
-            system: '🔷', success: '✅', error: '❌',
-            warning: '⚠️', tech: '·', info: 'ℹ️',
-        };
-        const clsMap = {
-            system: 'log-system', success: 'log-success', error: 'log-critical',
-            warning: 'log-warning', tech: 'log-info', info: 'log-info',
-        };
-        const ts   = new Date().toLocaleTimeString('hr', { hour12: false });
-        const icon = icons[type] || 'ℹ️';
-        const cls  = clsMap[type] || 'log-info';
-        const div  = document.createElement('div');
-        div.className = `log-entry ${cls}`;
-        div.innerHTML =
-            `<span class="log-ts">${ts}</span>` +
-            `<span class="log-label">${icon}</span>` +
-            `<span class="log-msg">${_esc(msg)}</span>`;
-        $auditLog.appendChild(div);
-        $auditLog.scrollTop = $auditLog.scrollHeight;
-
-        // Limit na 120 poruka
-        while ($auditLog.childElementCount > 120) {
-            $auditLog.removeChild($auditLog.firstChild);
-        }
-    }
-
-    function _esc(s) {
-        return String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-    }
-
-    function _setStatus(visible, text = '') {
-        if (!$statusRow) return;
-        $statusRow.style.display = visible ? 'flex' : 'none';
-        if ($statusText) $statusText.textContent = text;
-    }
-
-    function _setBusy(busy) {
-        _busy = busy;
-        if ($btnScan)      $btnScan.disabled      = busy || !_selBook;
-        if ($btnApplyFile) $btnApplyFile.disabled  = busy || !_hasRepFile;
-        if ($bookSelect)   $bookSelect.disabled    = busy;
-        if ($statusDot) {
-            $statusDot.className = busy ? 'dot dot-active' : 'dot dot-idle';
-        }
-    }
-
-    function _updateRepBadge(hasFile, pairsCount) {
-        _hasRepFile = hasFile;
-        if (!$repInfo) return;
-        if (hasFile) {
-            $repInfo.style.display = 'flex';
-            if ($repStatus) {
-                $repStatus.className = 'nr-badge nr-badge-ok';
-                $repStatus.textContent = `📄 .replacement: ${pairsCount ?? '?'} zamjena`;
-            }
-            if ($btnPreview) $btnPreview.style.display = 'inline-flex';
-            if ($btnApplyFile) $btnApplyFile.style.display = 'inline-flex';
-        } else {
-            $repInfo.style.display = 'none';
-            if ($btnPreview)   $btnPreview.style.display   = 'none';
-            if ($btnApplyFile) $btnApplyFile.style.display = 'none';
-        }
-        if ($btnApplyFile) $btnApplyFile.disabled = _busy || !hasFile;
-    }
-
-    function _showResults(data) {
-        if (!$resultsCard) return;
-        $resultsCard.style.display = 'block';
-        if ($statEntities) $statEntities.textContent = data.entities_found ?? '—';
-        if ($statFound)    $statFound.textContent    = (data.pairs?.length) ?? '—';
-        if ($statApplied)  $statApplied.textContent  = data.replacements_applied ?? '—';
-    }
-
-    // ── API pozivi ────────────────────────────────────────────
-    async function _apiPost(url, body) {
-        const resp = await fetch(url, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(body),
-        });
-        if (!resp.ok) {
-            const err = await resp.json().catch(() => ({ error: resp.statusText }));
-            throw new Error(err.error || `HTTP ${resp.status}`);
-        }
-        return resp.json();
-    }
-
-    async function _loadBooks() {
-        if (!$bookSelect) return;
-        try {
-            const data = await fetch('/api/books').then(r => r.json());
-            const books = data.books || data.files || [];
-            const prev = $bookSelect.value;
-            $bookSelect.innerHTML = '<option value="">— odaberi knjigu —</option>';
-            books.forEach(b => {
-                const name = typeof b === 'string' ? b : b.name;
-                const opt  = document.createElement('option');
-                opt.value       = name;
-                opt.textContent = name;
-                $bookSelect.appendChild(opt);
-            });
-            if (prev && [...$bookSelect.options].some(o => o.value === prev)) {
-                $bookSelect.value = prev;
-            }
-        } catch (e) {
-            _log(`Greška pri dohvatu knjiga: ${e.message}`, 'error');
-        }
-    }
-
-    async function _checkRepFile(bookName) {
-        if (!bookName) { _updateRepBadge(false); return; }
-        try {
-            const data = await _apiPost('/api/name_replace/preview', { file: bookName });
-            if (data.ok) {
-                _updateRepBadge(true, data.pairs?.length ?? 0);
-            } else {
-                _updateRepBadge(false);
-            }
-        } catch (_) {
-            _updateRepBadge(false);
-        }
-    }
-
-    async function _doScan() {
-        if (_busy || !_selBook) return;
-        _setBusy(true);
-        _setStatus(true, 'Skeniranje u toku...');
-        _log(`Pokretanje skeniranja za: ${_selBook}`, 'system');
-        $auditLog && ($auditLog.innerHTML = '');
-        if ($logCard)      $logCard.style.display      = 'block';
-        if ($resultsCard)  $resultsCard.style.display  = 'none';
-        if ($previewCard)  $previewCard.style.display  = 'none';
-
-        try {
-            const data = await _apiPost('/api/name_replace', { file: _selBook });
-
-            // Logiraj poruke iz backendia
-            if (data.audit) {
-                data.audit.forEach(a => _log(a.msg, a.type || 'info'));
-            }
-
-            if (data.ok) {
-                _log(`✅ Završeno — ${data.replacements_applied} zamjena primijenjeno`, 'success');
-                _showResults(data);
-                _setStatus(false);
-                await _checkRepFile(_selBook);
-            } else {
-                _log(`Greška: ${data.error}`, 'error');
-                _setStatus(false);
-            }
-        } catch (e) {
-            _log(`Mrežna greška: ${e.message}`, 'error');
-            _setStatus(false);
-        } finally {
-            _setBusy(false);
-        }
-    }
-
-    async function _doApplyFile() {
-        if (_busy || !_selBook || !_hasRepFile) return;
-        _setBusy(true);
-        _setStatus(true, 'Primjena zamjena...');
-        _log(`Primjenjujem .replacement fajl na: ${_selBook}`, 'system');
-        try {
-            const data = await _apiPost('/api/name_replace/apply_file', { file: _selBook });
-            if (data.ok) {
-                _log(`✅ ${data.replacements_applied} zamjena primijenjeno u ${data.files_modified} fajlova`, 'success');
-                if ($statApplied) $statApplied.textContent = data.replacements_applied;
-                if ($resultsCard) $resultsCard.style.display = 'block';
-            } else {
-                _log(`Greška: ${data.error}`, 'error');
-            }
-        } catch (e) {
-            _log(`Greška: ${e.message}`, 'error');
-        } finally {
-            _setBusy(false);
-            _setStatus(false);
-        }
-    }
-
-    async function _openPreview() {
-        if (!_selBook) return;
-        try {
-            const data = await _apiPost('/api/name_replace/preview', { file: _selBook });
-            if (!data.ok) { _log(`Preview greška: ${data.error}`, 'error'); return; }
-
-            if ($textarea) $textarea.value = data.raw || '';
-            _countPairs();
-            if ($previewCard) $previewCard.style.display = 'block';
-            if ($textarea) $textarea.focus();
-        } catch (e) {
-            _log(`Preview greška: ${e.message}`, 'error');
-        }
-    }
-
-    function _countPairs() {
-        if (!$textarea || !$pairsCount) return;
-        const n = $textarea.value
-            .split('\n')
-            .filter(l => l.includes('#->#') && !l.startsWith('#!'))
-            .length;
-        $pairsCount.textContent = `${n} zamjena`;
-    }
-
-    async function _applyEdited() {
-        if (!_selBook || !$textarea) return;
-        const raw = $textarea.value;
-        // Parsiraj textarea, napravi privremeni payload
-        // (šaljemo raw tekst, backend ga parsira ponovo)
-        // Prvo snimimo kao preview file ─ koristimo apply_file koji čita s diska,
-        // pa moramo uploadati izmjene ili dodati novi endpoint.
-        // Jednostavniji pristup: salji zamjene direktno u tijelu
-        const pairs = [];
-        raw.split('\n').forEach(line => {
-            line = line.trim();
-            if (!line || line.startsWith('#!')) return;
-            const idx = line.indexOf('#->#');
-            if (idx > 0) pairs.push([line.slice(0, idx).trim(), line.slice(idx + 4).trim()]);
-        });
-
-        if (!pairs.length) { _log('Nema zamjena za primjenu', 'warning'); return; }
-
-        _setBusy(true);
-        _setStatus(true, 'Primjena editovanih zamjena...');
-        _log(`Primjenjujem ${pairs.length} ručno editovanih zamjena...`, 'system');
-
-        try {
-            // Koristimo apply_file endpoint s inline parovima (ako backend podržava)
-            // ili fallback na standardni apply
-            const data = await _apiPost('/api/name_replace/apply_file', {
-                file:  _selBook,
-                pairs: pairs,   // novi optional param — backend ignorira ako ne poznaje
-            });
-            if (data.ok) {
-                _log(`✅ ${data.replacements_applied} zamjena primijenjeno`, 'success');
-                if ($previewCard) $previewCard.style.display = 'none';
-                if ($statApplied) $statApplied.textContent = data.replacements_applied;
-                if ($resultsCard) $resultsCard.style.display = 'block';
-            } else {
-                _log(`Greška: ${data.error}`, 'error');
-            }
-        } catch (e) {
-            _log(`Greška: ${e.message}`, 'error');
-        } finally {
-            _setBusy(false);
-            _setStatus(false);
-        }
-    }
-
-    // ── Tab vidljivost (integracija s postojećim tab sistemom) ──
-    function _onTabChange(tabId) {
-        if (tabId !== 'zamjene') return;
-        _loadBooks();
-        if (_selBook) _checkRepFile(_selBook);
-    }
-
-    // ── Init ─────────────────────────────────────────────────
-    function init() {
-        $bookSelect      = _el('nr-book-select');
-        $btnScan         = _el('nr-btn-scan');
-        $btnApplyFile    = _el('nr-btn-apply-file');
-        $btnPreview      = _el('nr-btn-preview');
-        $statusRow       = _el('nr-status-row');
-        $statusDot       = _el('nr-status-dot');
-        $statusText      = _el('nr-status-text');
-        $resultsCard     = _el('nr-results-card');
-        $statEntities    = _el('nr-stat-entities');
-        $statFound       = _el('nr-stat-found');
-        $statApplied     = _el('nr-stat-applied');
-        $logCard         = _el('nr-log-card');
-        $auditLog        = _el('nr-audit-log');
-        $btnClearLog     = _el('nr-btn-clear-log');
-        $repInfo         = _el('nr-replacement-info');
-        $repStatus       = _el('nr-replacement-status');
-        $previewCard     = _el('nr-preview-card');
-        $textarea        = _el('nr-replacement-textarea');
-        $pairsCount      = _el('nr-pairs-count');
-        $btnApplyEdited  = _el('nr-btn-apply-edited');
-        $btnClosePreview = _el('nr-btn-close-preview');
-        $btnRefreshBooks = _el('nr-refresh-books');
-
-        if (!$bookSelect) return; // panel nije u DOM-u
-
-        // Odabir knjige
-        $bookSelect.addEventListener('change', () => {
-            _selBook = $bookSelect.value;
-            if ($btnScan) $btnScan.disabled = !_selBook;
-            if ($resultsCard) $resultsCard.style.display = 'none';
-            if ($previewCard) $previewCard.style.display = 'none';
-            _updateRepBadge(false);
-            if (_selBook) _checkRepFile(_selBook);
-        });
-
-        // Akcije
-        if ($btnScan)         $btnScan.addEventListener('click', _doScan);
-        if ($btnApplyFile)    $btnApplyFile.addEventListener('click', _doApplyFile);
-        if ($btnPreview)      $btnPreview.addEventListener('click', _openPreview);
-        if ($btnApplyEdited)  $btnApplyEdited.addEventListener('click', _applyEdited);
-        if ($btnClosePreview) $btnClosePreview.addEventListener('click', () => {
-            if ($previewCard) $previewCard.style.display = 'none';
-        });
-        if ($btnClearLog)     $btnClearLog.addEventListener('click', () => {
-            if ($auditLog) $auditLog.innerHTML = '';
-        });
-        if ($btnRefreshBooks) $btnRefreshBooks.addEventListener('click', _loadBooks);
-
-        // Brojač parova u textarea
-        if ($textarea) $textarea.addEventListener('input', _countPairs);
-
-        // Integracija s tab sistemom:
-        // Pokušaj hookati se na postojeći tab klik mehanizam
-        document.addEventListener('click', e => {
-            const btn = e.target.closest('[data-tab]');
-            if (btn) _onTabChange(btn.dataset.tab);
-        });
-
-        // Ako je tab-panel sistem koji koristi show/hide klase:
-        const observer = new MutationObserver(mutations => {
-            mutations.forEach(m => {
-                if (m.target.id === 'panel-zamjene' &&
-                    m.type === 'attributes' &&
-                    m.attributeName === 'style') {
-                    const visible = m.target.style.display !== 'none';
-                    if (visible) { _loadBooks(); if (_selBook) _checkRepFile(_selBook); }
-                }
-            });
-        });
-        const panel = _el('panel-zamjene');
-        if (panel) observer.observe(panel, { attributes: true });
-
-        // Učitaj knjige pri startu ako je tab aktivan
-        if (panel && panel.style.display !== 'none') _loadBooks();
-    }
-
-    // Čekaj DOM
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-
-    return { init, onTabChange: _onTabChange };
-})();
-
-// ── Integracija s postojećim tab switching mehanizmom ──────────────
-// Pokušaj hookati na globalne tab funkcije ako postoje
-(function _hookTabs() {
-    // Metoda 1: Patch globalnog switchTab()
-    if (typeof window.switchTab === 'function') {
-        const _orig = window.switchTab;
-        window.switchTab = function(tabId, ...args) {
-            _orig.call(this, tabId, ...args);
-            NameReplacer.onTabChange(tabId);
-        };
-    }
-
-    // Metoda 2: Delegirani klik na [data-tab] gumbe (fallback)
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('[data-tab]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                NameReplacer.onTabChange(btn.dataset.tab);
-            });
-        });
-    });
-})();
-
-
-
-
-// ═══════════════════════════════════════════════════════════
-// NAMES REPLACEMENT (NR) — Zamjene Imena Tab
-// Shared logic: loadNRBooks, scanNR, previewNR, applyNR
-// ═══════════════════════════════════════════════════════════
-
-async function loadNRBooks() {
-    const sel = document.getElementById("nr-book-select");
-    if (!sel) return;
-    try {
-        const r = await fetch("/api/books");
-        const d = await r.json();
-        const files = d.books ? d.books.map(b => b.name || b) : (d.files || []);
-        sel.innerHTML = '<option value="">— odaberi knjigu —</option>';
-        files.forEach(f => {
-            const name = typeof f === "string" ? f : f.name || f;
-            const path = typeof f === "string" ? f : f.path || f.name || f;
-            sel.appendChild(new Option(name, path));
-        });
-        // Ako postoji aktivna knjiga, predaberi je
-        const active = STATE.book || localStorage.getItem("bf_last_book");
-        if (active && Array.from(sel.options).some(o => o.value === active)) {
-            sel.value = active;
-            await _nrCheckReplacementFile(active);
-        }
-    } catch (e) {
-        console.warn("loadNRBooks:", e.message);
-    }
-}
-
-async function _nrCheckReplacementFile(book) {
-    if (!book) return;
-    const infoRow = document.getElementById("nr-replacement-info");
-    const statusBadge = document.getElementById("nr-replacement-status");
-    const btnPreview = document.getElementById("nr-btn-preview");
-    const btnScan = document.getElementById("nr-btn-scan");
-    const btnApply = document.getElementById("nr-btn-apply-file");
-    if (!infoRow) return;
-    try {
-        const r = await fetch(`/api/names/status?book=${encodeURIComponent(book)}`);
-        const d = await r.json();
-        infoRow.style.display = "";
-        if (d.has_replacement) {
-            if (statusBadge) {
-                statusBadge.textContent = `✅ .replacement: ${d.pairs_count || 0} parova`;
-                statusBadge.className = "nr-badge nr-badge-ok";
-            }
-            if (btnPreview) btnPreview.style.display = "";
-            if (btnApply) { btnApply.disabled = false; btnApply.style.display = ""; }
-        } else {
-            if (statusBadge) {
-                statusBadge.textContent = "ℹ Nema .replacement fajla — skeniraj da ga kreiraš";
-                statusBadge.className = "nr-badge nr-badge-info";
-            }
-            if (btnPreview) btnPreview.style.display = "none";
-            if (btnApply) { btnApply.disabled = true; btnApply.style.display = "none"; }
-        }
-        if (btnScan) btnScan.disabled = false;
-    } catch (_) {
-        if (btnScan) btnScan.disabled = false;
-    }
-}
-
-async function _nrRunScan() {
-    const sel = document.getElementById("nr-book-select");
-    const book = sel?.value;
-    if (!book) { showToast("Odaberi knjigu!", "warning"); return; }
-
-    const btnScan = document.getElementById("nr-btn-scan");
-    const statusRow = document.getElementById("nr-status-row");
-    const statusTxt = document.getElementById("nr-status-text");
-    const resultsCard = document.getElementById("nr-results-card");
-    const logCard = document.getElementById("nr-log-card");
-    const auditLog = document.getElementById("nr-audit-log");
-
-    if (btnScan) { btnScan.disabled = true; btnScan.querySelector(".btn-label").textContent = "Skenira..."; }
-    if (statusRow) statusRow.style.display = "";
-    if (statusTxt) statusTxt.textContent = "Skeniram nazive...";
-    if (logCard) logCard.style.display = "";
-    if (auditLog) auditLog.innerHTML = "";
-
-    function nrLog(msg, cls = "log-info") {
-        if (!auditLog) return;
-        const d = document.createElement("div");
-        d.className = "log-entry " + cls;
-        d.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString("bs-BA",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span><span class="log-msg">${msg}</span>`;
-        auditLog.appendChild(d);
-        auditLog.scrollTop = auditLog.scrollHeight;
-    }
-
-    try {
-        nrLog("🔍 Pokrenuto skeniranje zamjena...", "log-system");
-        const r = await fetch("/api/names/scan", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ book })
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-
-        // Ažuriraj statistike
-        if (resultsCard) resultsCard.style.display = "";
-        const setNR = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        setNR("nr-stat-entities", d.entities ?? d.names_found ?? "—");
-        setNR("nr-stat-found", d.variants ?? d.variants_found ?? "—");
-        setNR("nr-stat-applied", d.applied ?? d.replacements_made ?? "—");
-
-        if (statusRow) statusRow.style.display = "none";
-        nrLog(`✅ Gotovo — ${d.applied ?? d.replacements_made ?? 0} zamjena primijenjeno`, "log-success");
-        showToast(`Zamjene završene: ${d.applied ?? 0} zamjena`, "success");
-
-        // Osvježi status fajla
-        await _nrCheckReplacementFile(book);
-
-    } catch (e) {
-        nrLog(`❌ Greška: ${e.message}`, "log-critical");
-        showToast("NR greška: " + e.message, "error");
-        if (statusRow) statusRow.style.display = "none";
-    } finally {
-        if (btnScan) { btnScan.disabled = false; btnScan.querySelector(".btn-label").textContent = "Skeniraj i zamijeni"; }
-    }
-}
-
-async function _nrPreviewFile() {
-    const sel = document.getElementById("nr-book-select");
-    const book = sel?.value;
-    if (!book) return;
-    const previewCard = document.getElementById("nr-preview-card");
-    const textarea = document.getElementById("nr-replacement-textarea");
-    const countEl = document.getElementById("nr-pairs-count");
-    if (!previewCard || !textarea) return;
-    try {
-        const r = await fetch(`/api/names/replacement?book=${encodeURIComponent(book)}`);
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-        if (window._hlEditor && document.getElementById("nr-replacement-textarea") === window._hlEditor._ta) {
-            window._hlEditor.applyText(d.content || "");
-        } else {
-            textarea.value = d.content || "";
-        }
-        const pairs = (d.content || "").split("\n").filter(l => l.includes("#->#") && !l.startsWith("#!")).length;
-        if (countEl) countEl.textContent = pairs + " parova";
-        previewCard.style.display = "";
-    } catch (e) {
-        showToast("Greška pri učitavanju: " + e.message, "error");
-    }
-}
-
-async function _nrApplyEdited() {
-    const sel = document.getElementById("nr-book-select");
-    const book = sel?.value;
-    if (!book) return;
-    const textarea = document.getElementById("nr-replacement-textarea");
-    const content = textarea?.value || "";
-    try {
-        const r = await fetch("/api/names/replacement", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ book, content })
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-        showToast("✅ Zamjene sačuvane!", "success");
-        const previewCard = document.getElementById("nr-preview-card");
-        if (previewCard) previewCard.style.display = "none";
-        await _nrCheckReplacementFile(book);
-    } catch (e) {
-        showToast("Greška pri snimanju: " + e.message, "error");
-    }
-}
-
-async function _nrApplyFile() {
-    const sel = document.getElementById("nr-book-select");
-    const book = sel?.value;
-    if (!book) return;
-    try {
-        const r = await fetch("/api/names/apply", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ book })
-        });
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
-        showToast(`✅ Primijenjeno: ${d.applied ?? 0} zamjena`, "success");
-        const setNR = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        setNR("nr-stat-applied", d.applied ?? "—");
-        const resultsCard = document.getElementById("nr-results-card");
-        if (resultsCard) resultsCard.style.display = "";
-    } catch (e) {
-        showToast("Greška: " + e.message, "error");
-    }
-}
-
-function initNR() {
-    // Book select
-    const sel = document.getElementById("nr-book-select");
-    if (sel && !sel.dataset.nrBound) {
-        sel.addEventListener("change", () => _nrCheckReplacementFile(sel.value));
-        sel.dataset.nrBound = "1";
-    }
-    // Refresh books
-    const btnRefresh = document.getElementById("nr-refresh-books");
-    if (btnRefresh && !btnRefresh.dataset.nrBound) {
-        btnRefresh.addEventListener("click", loadNRBooks);
-        btnRefresh.dataset.nrBound = "1";
-    }
-    // Scan
-    const btnScan = document.getElementById("nr-btn-scan");
-    if (btnScan && !btnScan.dataset.nrBound) {
-        btnScan.addEventListener("click", _nrRunScan);
-        btnScan.dataset.nrBound = "1";
-    }
-    // Preview
-    const btnPreview = document.getElementById("nr-btn-preview");
-    if (btnPreview && !btnPreview.dataset.nrBound) {
-        btnPreview.addEventListener("click", _nrPreviewFile);
-        btnPreview.dataset.nrBound = "1";
-    }
-    // Apply edited
-    const btnApplyEdited = document.getElementById("nr-btn-apply-edited");
-    if (btnApplyEdited && !btnApplyEdited.dataset.nrBound) {
-        btnApplyEdited.addEventListener("click", _nrApplyEdited);
-        btnApplyEdited.dataset.nrBound = "1";
-    }
-    // Close preview
-    const btnClosePreview = document.getElementById("nr-btn-close-preview");
-    if (btnClosePreview && !btnClosePreview.dataset.nrBound) {
-        btnClosePreview.addEventListener("click", () => {
-            const card = document.getElementById("nr-preview-card");
-            if (card) card.style.display = "none";
-        });
-        btnClosePreview.dataset.nrBound = "1";
-    }
-    // Apply file
-    const btnApplyFile = document.getElementById("nr-btn-apply-file");
-    if (btnApplyFile && !btnApplyFile.dataset.nrBound) {
-        btnApplyFile.addEventListener("click", _nrApplyFile);
-        btnApplyFile.dataset.nrBound = "1";
-    }
-    // Clear log
-    const btnClearLog = document.getElementById("nr-btn-clear-log");
-    if (btnClearLog && !btnClearLog.dataset.nrBound) {
-        btnClearLog.addEventListener("click", () => {
-            const log = document.getElementById("nr-audit-log");
-            if (log) log.innerHTML = "";
-            const logCard = document.getElementById("nr-log-card");
-            if (logCard) logCard.style.display = "none";
-        });
-        btnClearLog.dataset.nrBound = "1";
-    }
-}
 
 // ═══════════════════════════════════════════════════════════
 // TTS FILTER TAB — identična logika kao NR, ali poziva
 // /api/tts/* endpoint (ili isti /api/names/* ako backend isti)
 // ═══════════════════════════════════════════════════════════
-
-async function loadTTSBooks() {
-    const sel = document.getElementById("tts-book-select");
-    if (!sel) return;
-    try {
-        const r = await fetch("/api/books");
-        const d = await r.json();
-        const files = d.books ? d.books.map(b => b.name || b) : (d.files || []);
-        sel.innerHTML = '<option value="">— odaberi knjigu —</option>';
-        files.forEach(f => {
-            const name = typeof f === "string" ? f : f.name || f;
-            const path = typeof f === "string" ? f : f.path || f.name || f;
-            sel.appendChild(new Option(name, path));
-        });
-        const active = STATE.book || localStorage.getItem("bf_last_book");
-        if (active && Array.from(sel.options).some(o => o.value === active)) {
-            sel.value = active;
-            await _ttsCheckReplacementFile(active);
-        }
-    } catch (e) {
-        console.warn("loadTTSBooks:", e.message);
-    }
-}
 
 async function _ttsCheckReplacementFile(book) {
     if (!book) return;
@@ -3322,9 +3097,11 @@ async function _ttsCheckReplacementFile(book) {
 }
 
 async function _ttsRunScan() {
-    const sel = document.getElementById("tts-book-select");
-    const book = sel?.value;
+    const book = STATE.ttsBook;
     if (!book) { showToast("Odaberi knjigu!", "warning"); return; }
+
+    const model = document.getElementById("model-select")?.value || STATE.model;
+    if (!model) { showToast("Odaberi model na glavnom tabu!", "warning"); return; }
 
     const btnScan = document.getElementById("tts-btn-scan");
     const statusRow = document.getElementById("tts-status-row");
@@ -3335,7 +3112,7 @@ async function _ttsRunScan() {
 
     if (btnScan) { btnScan.disabled = true; btnScan.querySelector(".btn-label").textContent = "Generira..."; }
     if (statusRow) statusRow.style.display = "";
-    if (statusTxt) statusTxt.textContent = "Generiram TTS filter...";
+    if (statusTxt) statusTxt.textContent = "Pokrećem TTS filter...";
     if (logCard) logCard.style.display = "";
     if (auditLog) auditLog.innerHTML = "";
 
@@ -3350,35 +3127,52 @@ async function _ttsRunScan() {
 
     try {
         ttsLog("🔊 Pokrenuto generiranje TTS filtera...", "log-system");
-        // Probaj /api/tts/scan, fallback na /api/names/scan
-        let r;
-        try {
-            r = await fetch("/api/tts/scan", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ book })
-            });
-            if (!r.ok) throw new Error("TTS endpoint nije dostupan");
-        } catch (_) {
-            r = await fetch("/api/names/scan", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ book, mode: "tts" })
-            });
-        }
-        const d = await r.json();
-        if (d.error) throw new Error(d.error);
+        // ISPRAVKA: /api/tts/scan i /api/names/scan nikad nisu postojali.
+        // Prava logika (tts.py / start_from_master) vec se pokrece
+        // preko /api/start sa mode:"TTS", isto kao glavna obrada —
+        // pa se prati preko /api/status kao i glavni dashboard.
+        const startResp = await fetch("/api/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ book, model, mode: "TTS" })
+        });
+        const startData = await startResp.json();
+        if (startData.error) throw new Error(startData.error);
+
+        const finalStats = await new Promise((resolve, reject) => {
+            const timer = setInterval(async () => {
+                try {
+                    const sr = await fetch("/api/status");
+                    const sd = await sr.json();
+                    const st = (sd.status || "").toUpperCase();
+                    if (statusTxt) statusTxt.textContent = sd.status || "...";
+                    if (st.includes("ZAVRŠEN")) {
+                        clearInterval(timer);
+                        resolve(sd);
+                    } else if (st.includes("GREŠKA")) {
+                        clearInterval(timer);
+                        reject(new Error(sd.status || "Nepoznata greška"));
+                    }
+                } catch (e) {
+                    clearInterval(timer);
+                    reject(e);
+                }
+            }, 2000);
+        });
 
         if (resultsCard) resultsCard.style.display = "";
         const setTTS = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        setTTS("tts-stat-entities", d.entities ?? d.names_found ?? "—");
-        setTTS("tts-stat-found", d.variants ?? d.variants_found ?? "—");
-        setTTS("tts-stat-applied", d.applied ?? d.replacements_made ?? "—");
+        const zamjenaMatch = /\(([\d]+)\s*zamjena\)/.exec(finalStats.live_audit || "");
+        setTTS("tts-stat-applied", zamjenaMatch ? zamjenaMatch[1] : "—");
+        setTTS("tts-stat-entities", "—");
+        setTTS("tts-stat-found", "—");
 
         if (statusRow) statusRow.style.display = "none";
-        ttsLog(`✅ TTS filter generiran — ${d.applied ?? 0} zamjena`, "log-success");
-        showToast(`TTS Filter generiran: ${d.applied ?? 0} zamjena`, "success");
-        await _ttsCheckReplacementFile(book);
+        ttsLog(`✅ TTS filter generisan!`, "log-success");
+        showToast("TTS Filter generisan!", "success");
+        if (finalStats.output_file) {
+            ttsLog(`📄 Fajl: ${finalStats.output_file.split("/").pop()}`, "log-info");
+        }
 
     } catch (e) {
         ttsLog(`❌ Greška: ${e.message}`, "log-critical");
@@ -3390,8 +3184,7 @@ async function _ttsRunScan() {
 }
 
 async function _ttsPreviewFile() {
-    const sel = document.getElementById("tts-book-select");
-    const book = sel?.value;
+    const book = STATE.ttsBook;
     if (!book) return;
     const previewCard = document.getElementById("tts-preview-card");
     const textarea = document.getElementById("tts-replacement-textarea");
@@ -3411,8 +3204,7 @@ async function _ttsPreviewFile() {
 }
 
 async function _ttsApplyEdited() {
-    const sel = document.getElementById("tts-book-select");
-    const book = sel?.value;
+    const book = STATE.ttsBook;
     if (!book) return;
     const textarea = document.getElementById("tts-replacement-textarea");
     const content = textarea?.value || "";
@@ -3434,16 +3226,6 @@ async function _ttsApplyEdited() {
 }
 
 function initTTSFilter() {
-    const sel = document.getElementById("tts-book-select");
-    if (sel && !sel.dataset.ttsBound) {
-        sel.addEventListener("change", () => _ttsCheckReplacementFile(sel.value));
-        sel.dataset.ttsBound = "1";
-    }
-    const btnRefresh = document.getElementById("tts-refresh-books");
-    if (btnRefresh && !btnRefresh.dataset.ttsBound) {
-        btnRefresh.addEventListener("click", loadTTSBooks);
-        btnRefresh.dataset.ttsBound = "1";
-    }
     const btnScan = document.getElementById("tts-btn-scan");
     if (btnScan && !btnScan.dataset.ttsBound) {
         btnScan.addEventListener("click", _ttsRunScan);
@@ -3470,7 +3252,7 @@ function initTTSFilter() {
     const btnApplyFile = document.getElementById("tts-btn-apply-file");
     if (btnApplyFile && !btnApplyFile.dataset.ttsBound) {
         btnApplyFile.addEventListener("click", async () => {
-            const book = document.getElementById("tts-book-select")?.value;
+            const book = STATE.ttsBook;
             if (!book) return;
             try {
                 const r = await fetch("/api/names/apply", {
@@ -3501,285 +3283,10 @@ function initTTSFilter() {
 
 // ── Auto-init NR + TTS kad DOM bude spreman ────────────────
 document.addEventListener("DOMContentLoaded", function() {
-    initNR();
     initTTSFilter();
 });
 
 
-
-
-// ═══════════════════════════════════════════════════════════
-// ZamjeneTab v3 — fix_zamjene_v3_03_06_2026.sh
-// Tab klasa: tab-btn, data-tab="panel-zamjene", id="panel-zamjene"
-// switchTab(id) skriva sve .tab-panel, prikazuje getElementById(id)
-// ═══════════════════════════════════════════════════════════
-(function ZamjeneTab() {
-    'use strict';
-
-    const PANEL_ID = 'panel-zamjene';
-    const TAB_ID   = '[data-tab="panel-zamjene"]';
-
-    let _book    = '';
-    let _rpath   = '';
-    let _busy    = false;
-
-    const $  = id  => document.getElementById(id);
-    const ts = () => new Date().toLocaleTimeString('bs', { hour12: false });
-
-    function _log(msg, type) {
-        const log = $('zamjene-log');
-        if (!log) return;
-        log.style.display = 'block';
-        const clsMap = { ok: 'log-success', warn: 'log-warning', err: 'log-critical', info: '' };
-        const lblMap = { ok: 'OK', warn: 'UPOZ', err: 'GREŠKA', info: 'INFO' };
-        const cls = clsMap[type] || '';
-        const lbl = lblMap[type] || 'INFO';
-        const d = document.createElement('div');
-        d.className = 'log-entry' + (cls ? ' ' + cls : '');
-        d.innerHTML =
-            `<span class="log-ts">${ts()}</span>` +
-            `<span class="log-label">${lbl}</span>` +
-            `<span class="log-msg">${_esc(msg)}</span>`;
-        log.appendChild(d);
-        log.scrollTop = log.scrollHeight;
-    }
-
-    function _esc(s) {
-        return String(s)
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    // ── Učitaj knjige ──────────────────────────────────────
-    async function _loadBooks() {
-        const sel = $('zamjene-book-select');
-        if (!sel || sel.options.length > 1) return;
-        try {
-            let books = [];
-            for (const ep of ['/api/books', '/api/files', '/api/epub_files']) {
-                try {
-                    const r = await fetch(ep);
-                    if (!r.ok) continue;
-                    const d = await r.json();
-                    books = Array.isArray(d) ? d : (d.books || d.files || []);
-                    if (books.length) break;
-                } catch (_) {}
-            }
-            sel.innerHTML = '<option value="">— odaberi knjigu —</option>';
-            books.forEach(b => {
-                const name = typeof b === 'string' ? b : (b.name || b.filename || b.file || '');
-                if (!name) return;
-                const o = document.createElement('option');
-                o.value = name; o.textContent = name;
-                sel.appendChild(o);
-            });
-            if (!books.length) _log('Nema knjiga u input folderu', 'warn');
-        } catch (e) {
-            _log('Greška pri učitavanju knjiga: ' + e.message, 'err');
-        }
-    }
-
-    // ── Skeniraj ───────────────────────────────────────────
-    async function _scan() {
-        if (_busy || !_book) return;
-        _busy = true;
-        const scanBtn = $('btn-zamjene-scan');
-        if (scanBtn) { scanBtn.disabled = true; scanBtn.textContent = '⏳ Skeniram...'; }
-        const log = $('zamjene-log');
-        if (log) log.innerHTML = '';
-        ['zamjene-stats','zamjene-preview-area'].forEach(id => {
-            const el = $(id); if (el) el.style.display = 'none';
-        });
-        ['btn-zamjene-preview','btn-zamjene-apply'].forEach(id => {
-            const el = $(id); if (el) { el.style.display = 'none'; el.disabled = true; }
-        });
-
-        _log('Pokrećem skeniranje: ' + _book, 'info');
-
-        try {
-            const res  = await fetch('/api/name_replacer/scan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ book: _book }),
-            });
-            const data = await res.json();
-
-            (data.log || []).forEach(e => _log(e, 'info'));
-
-            if (!res.ok) {
-                _log('Greška: ' + (data.error || `HTTP ${res.status}`), 'err');
-                return;
-            }
-
-            const count = data.count || 0;
-            _rpath = data.replacement_file || '';
-            _log(`Skeniranje završeno: ${count} pronađenih imena`, count ? 'ok' : 'warn');
-            if (count) _log('Edituj .replacement — zamijeni desnu stranu: Ime→Prijevod', 'info');
-
-            const countEl = $('zamjene-count');
-            const statEl  = $('zamjene-status');
-            if (countEl) countEl.textContent = count;
-            if (statEl)  statEl.textContent  = count ? '✅ Skenirano' : '⚠️ Nema imena';
-            const st = $('zamjene-stats');
-            if (st) st.style.display = 'block';
-
-            if (_rpath && count) {
-                ['btn-zamjene-preview','btn-zamjene-apply'].forEach(id => {
-                    const el = $(id);
-                    if (el) { el.style.display = 'inline-block'; el.disabled = false; }
-                });
-            }
-        } catch (e) {
-            _log('Mrežna greška: ' + e.message, 'err');
-        } finally {
-            _busy = false;
-            if (scanBtn) { scanBtn.disabled = false; scanBtn.textContent = '🔍 Skeniraj i zamijeni'; }
-        }
-    }
-
-    // ── Pregledaj ──────────────────────────────────────────
-    async function _preview() {
-        if (!_rpath) return;
-        try {
-            const r = await fetch('/api/name_replacer/read', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: _rpath }),
-            });
-            const d = await r.json();
-            const ta   = $('zamjene-textarea');
-            const area = $('zamjene-preview-area');
-            if (ta)   ta.value = d.content || '';
-            if (area) area.style.display = 'block';
-            _log('Otvoren .replacement fajl za pregled/edit', 'info');
-        } catch (e) { _log('Greška: ' + e.message, 'err'); }
-    }
-
-    // ── Primijeni ──────────────────────────────────────────
-    async function _apply() {
-        if (!_book || !_rpath) return;
-        const ab = $('btn-zamjene-apply');
-        if (ab) ab.disabled = true;
-        _log('Primjenjujem zamjene na checkpoint fajlove...', 'info');
-        try {
-            const r = await fetch('/api/name_replacer/apply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ book: _book, path: _rpath }),
-            });
-            const d = await r.json();
-            if (!r.ok) { _log('Greška: ' + (d.error || `HTTP ${r.status}`), 'err'); return; }
-            const msg = d.message
-                || `Primijenjeno: ${d.applied||0} zamjena u ${d.files||0} fajlova`;
-            _log(msg, d.applied > 0 ? 'ok' : 'warn');
-            const st = $('zamjene-status');
-            if (st) st.textContent = d.applied > 0 ? '✅ Primijenjeno' : '⚠️ Nema izmjena';
-        } catch (e) { _log('Greška: ' + e.message, 'err'); }
-        finally { if (ab) ab.disabled = false; }
-    }
-
-    // ── Sačuvaj edit ────────────────────────────────────────
-    async function _saveEdit() {
-        const ta = $('zamjene-textarea');
-        if (!ta || !_rpath) return;
-        try {
-            const r = await fetch('/api/name_replacer/write', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: _rpath, content: ta.value }),
-            });
-            const d = await r.json();
-            _log(r.ok ? 'Izmjene sačuvane ✅' : 'Greška: ' + (d.error||'?'), r.ok ? 'ok' : 'err');
-        } catch (e) { _log('Greška: ' + e.message, 'err'); }
-    }
-
-    // ── Tab aktivacija ──────────────────────────────────────
-    // switchTab(id) u main.js:
-    //   1. skriva sve .tab-panel (remove 'active' ili display:none)
-    //   2. prikazuje getElementById(id)
-    //   3. skida 'active' sa svih .tab-btn, dodaje na kliknuti
-    // data-tab="panel-zamjene" → getElementById("panel-zamjene") → EXISTS ✅
-    // Samo trebamo biti obaviješteni kad se aktivira da učitamo knjige.
-
-    function _onActivate() {
-        _loadBooks();
-    }
-
-    function _init() {
-        // ── Bind event handleri ─────────────────────────────
-        const sel = $('zamjene-book-select');
-        if (sel) {
-            sel.addEventListener('change', function () {
-                _book  = this.value;
-                _rpath = '';
-                const sb = $('btn-zamjene-scan');
-                if (sb) sb.disabled = !_book;
-                // Reset UI
-                const log = $('zamjene-log');
-                if (log) { log.innerHTML = ''; log.style.display = 'none'; }
-                ['zamjene-stats','zamjene-preview-area'].forEach(id => {
-                    const el = $(id); if (el) el.style.display = 'none';
-                });
-                ['btn-zamjene-preview','btn-zamjene-apply'].forEach(id => {
-                    const el = $(id); if (el) { el.style.display = 'none'; el.disabled = true; }
-                });
-            });
-        }
-
-        const scanBtn = $('btn-zamjene-scan');
-        if (scanBtn) scanBtn.addEventListener('click', _scan);
-
-        const pb = $('btn-zamjene-preview');
-        if (pb) pb.addEventListener('click', _preview);
-
-        const ab = $('btn-zamjene-apply');
-        if (ab) ab.addEventListener('click', _apply);
-
-        const se = $('btn-zamjene-save-edit');
-        if (se) se.addEventListener('click', _saveEdit);
-
-        // ── Detektiraj aktivaciju taba ──────────────────────
-        // Metoda 1: intercept click na tab-btn[data-tab="panel-zamjene"]
-        document.addEventListener('click', function (e) {
-            const btn = e.target.closest('[data-tab="' + PANEL_ID + '"]');
-            if (btn) {
-                // Čekamo jedan tick da switchTab završi
-                setTimeout(_onActivate, 50);
-            }
-        }, true);
-
-        // Metoda 2: MutationObserver na panel — kad postane vidljiv
-        const panel = $(PANEL_ID);
-        if (panel) {
-            const obs = new MutationObserver(function () {
-                const visible = panel.style.display !== 'none'
-                    && panel.classList.contains('active');
-                if (visible) _onActivate();
-            });
-            obs.observe(panel, { attributes: true, attributeFilter: ['style', 'class'] });
-        }
-
-        // Metoda 3: patch window.switchTab ako postoji
-        if (typeof window.switchTab === 'function') {
-            const _orig = window.switchTab;
-            window.switchTab = function (tabId) {
-                _orig.apply(this, arguments);
-                if (tabId === PANEL_ID) _onActivate();
-            };
-        }
-
-        console.log('[ZamjeneTab v3] init OK — panel:', PANEL_ID);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', _init);
-    } else {
-        _init();
-    }
-})();
-// ═══════════════════════════════════════════════════════════
-// /ZamjeneTab v3
-// ═══════════════════════════════════════════════════════════
 
 
 /* ═══════════════════════════════════════════════════════════
@@ -3791,7 +3298,7 @@ const EpubStyler = (() => {
     let _selBook = '';
 
     // ── DOM refs ─────────────────────────────────────────────
-    let $bookSelect, $btnStyle, $btnRefresh,
+    let $selectedBookEl, $selectedRow, $fileInput, $btnStyle,
         $statusRow, $statusDot, $statusText,
         $resultCard, $statChapters, $statDropcaps, $statToc,
         $btnDlEpub, $btnDlCss,
@@ -3827,45 +3334,18 @@ const EpubStyler = (() => {
 
     function _setBusy(busy) {
         _busy = busy;
-        if ($btnStyle)    $btnStyle.disabled    = busy || !_selBook;
-        if ($bookSelect)  $bookSelect.disabled  = busy;
-        if ($statusDot)   $statusDot.className  = busy ? 'dot dot-active' : 'dot dot-idle';
-        if ($statusRow)   $statusRow.style.display = busy ? 'flex' : 'none';
+        if ($btnStyle)   $btnStyle.disabled   = busy || !_selBook;
+        if ($fileInput)  $fileInput.disabled  = busy;
+        if ($statusDot)  $statusDot.className = busy ? 'dot dot-active' : 'dot dot-idle';
+        if ($statusRow)  $statusRow.style.display = busy ? 'flex' : 'none';
     }
 
-    // ── Učitaj knjige ────────────────────────────────────────
-    async function _loadBooks() {
-        if (!$bookSelect) return;
-        try {
-            const data = await fetch('/api/books').then(r => r.json());
-            const books = data.books || data.files || [];
-            const prev  = $bookSelect.value;
-            $bookSelect.innerHTML = '<option value="">— odaberi knjigu —</option>';
-            books.forEach(b => {
-                const name = typeof b === 'string' ? b : b.name;
-                const opt  = document.createElement('option');
-                opt.value = name; opt.textContent = name;
-                $bookSelect.appendChild(opt);
-            });
-            // Preferiraj _STYLED ili output fajl
-            const preferOrder = ['_STYLED', '_PREVEDENO', ''];
-            let picked = prev;
-            if (!picked) {
-                for (const suffix of preferOrder) {
-                    const match = books.find(b => {
-                        const n = typeof b === 'string' ? b : b.name;
-                        return n.includes(suffix);
-                    });
-                    if (match) { picked = typeof match === 'string' ? match : match.name; break; }
-                }
-            }
-            if (picked && [...$bookSelect.options].some(o => o.value === picked))
-                $bookSelect.value = picked;
-            _selBook = $bookSelect.value;
-            if ($btnStyle) $btnStyle.disabled = !_selBook;
-        } catch (e) {
-            _log(`Greška pri dohvatu knjiga: ${e.message}`, 'error');
-        }
+    // ── Postavi knjigu (poziva upload zone nakon uspjesnog uploada) ──
+    function setBook(name) {
+        _selBook = name || '';
+        if ($selectedBookEl) $selectedBookEl.textContent = _selBook;
+        if ($selectedRow) $selectedRow.style.display = _selBook ? 'flex' : 'none';
+        if ($btnStyle) $btnStyle.disabled = !_selBook;
     }
 
     // ── Primijeni stil ───────────────────────────────────────
@@ -3877,19 +3357,37 @@ const EpubStyler = (() => {
             add_ornaments: $optOrnaments?.checked ?? true,
             add_toc:       $optToc?.checked ?? true,
             ai_toc_titles: $optAiToc?.checked ?? true,
+            bez_ai:        false,
         };
 
         _setBusy(true);
-        if ($statusText) $statusText.textContent = 'Stilizacija u toku...';
+        if ($statusText) $statusText.textContent = 'AI stilizacija u toku...';
         if ($resultCard) $resultCard.style.display = 'none';
         if ($auditLog)   $auditLog.innerHTML = '';
-        _log(`Pokretanje stilizacije: ${_selBook}`, 'system');
+        _log(`Pokretanje AI stilizacije: ${_selBook}`, 'system');
+
+        // ── LIVE POLLING: prati /api/status svake 2s dok stilizacija traje ──
+        let _stylePollTimer = setInterval(async () => {
+            try {
+                const sr = await fetch('/api/status');
+                if (!sr.ok) return;
+                const st = await sr.json();
+                if (st.live_audit && $auditLog) {
+                    // Renderuj live_audit direktno u st-audit-log
+                    $auditLog.innerHTML = st.live_audit;
+                    $auditLog.scrollTop = $auditLog.scrollHeight;
+                }
+                if (st.status && $statusText) {
+                    $statusText.textContent = st.status;
+                }
+            } catch (_) {}
+        }, 2000);
 
         try {
             const resp = await fetch('/api/style_epub', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ file: _selBook, options }),
+                body:    JSON.stringify({ file: _selBook, options, mode: 'booklyfi' }),
             });
             const data = await resp.json();
 
@@ -3919,8 +3417,6 @@ const EpubStyler = (() => {
                     $btnDlCss.style.display = 'inline-flex';
                 }
 
-                // Osvježi dropdown
-                await _loadBooks();
             } else {
                 _log(`Greška: ${data.error || 'Nepoznata greška'}`, 'error');
                 if (data.traceback) _log(data.traceback.slice(-300), 'error');
@@ -3928,15 +3424,17 @@ const EpubStyler = (() => {
         } catch (e) {
             _log(`Mrežna greška: ${e.message}`, 'error');
         } finally {
+            if (typeof _stylePollTimer !== 'undefined') clearInterval(_stylePollTimer);
             _setBusy(false);
         }
     }
 
     // ── Init ─────────────────────────────────────────────────
     function init() {
-        $bookSelect    = _el('st-book-select');
-        $btnStyle      = _el('st-btn-style');
-        $btnRefresh    = _el('st-refresh-books');
+        $selectedBookEl = _el('st-selected-book');
+        $selectedRow    = _el('st-selected-row');
+        $fileInput      = _el('st-file-input');
+        $btnStyle       = _el('st-btn-style');
         $statusRow     = _el('st-status-row');
         $statusDot     = _el('st-status-dot');
         $statusText    = _el('st-status-text');
@@ -3954,36 +3452,17 @@ const EpubStyler = (() => {
         $optToc        = _el('st-opt-toc');
         $optAiToc      = _el('st-opt-ai-toc');
 
-        if (!$bookSelect) return;
+        if (!$btnStyle) return;
 
-        $bookSelect.addEventListener('change', () => {
-            _selBook = $bookSelect.value;
-            if ($btnStyle) $btnStyle.disabled = !_selBook;
-        });
-
-        if ($btnStyle)   $btnStyle.addEventListener('click', _doStyle);
-        if ($btnRefresh) $btnRefresh.addEventListener('click', _loadBooks);
+        $btnStyle.addEventListener('click', _doStyle);
         if ($btnClearLog) $btnClearLog.addEventListener('click', () => {
             if ($auditLog) $auditLog.innerHTML = '';
         });
-
-        // Tab integracija — MutationObserver
-        const panel = _el('panel-stil');
-        if (panel) {
-            const obs = new MutationObserver(muts => {
-                muts.forEach(m => {
-                    if (m.attributeName === 'style' && panel.style.display !== 'none')
-                        _loadBooks();
-                });
-            });
-            obs.observe(panel, { attributes: true });
-            if (panel.style.display !== 'none') _loadBooks();
-        }
     }
 
-    function onTabChange(tabId) {
-        if (tabId !== 'stil') return;
-        _loadBooks();
+    function onTabChange(_tabId) {
+        // Nema vise liste za osvjezavanje - knjiga dolazi iskljucivo
+        // preko upload zone (setupPanelUploads -> EpubStyler.setBook).
     }
 
     if (document.readyState === 'loading')
@@ -3991,7 +3470,7 @@ const EpubStyler = (() => {
     else
         init();
 
-    return { init, onTabChange };
+    return { init, onTabChange, setBook };
 })();
 
 // Hook u postojeći tab sistem
@@ -4009,3 +3488,225 @@ const EpubStyler = (() => {
         });
     });
 })();
+
+
+// ═══════════════════════ UPLOAD ZONE: Stil + TTS Filter paneli ═════════════
+// Isti mehanizam kao glavni "upload-zone" (POST /api/upload_book).
+// Ovo je JEDINI nacin odabira knjige u ovim panelima - nema liste
+// postojecih fajlova, iskljucivo native file picker / drag&drop.
+function setupPanelUploads() {
+    function wire(zoneId, inputId, statusId, afterUpload) {
+        const zone = document.getElementById(zoneId);
+        const input = document.getElementById(inputId);
+        const status = document.getElementById(statusId);
+        if (!zone || !input) return;
+        input.addEventListener("change", () => {
+            if (input.files[0]) doUpload(input.files[0]);
+        });
+
+        // Klik na zonu otvara file picker
+        zone.addEventListener("click", (e) => {
+            if (e.target === input) return;
+            input.click();
+        });
+        zone.addEventListener("dragover", e => {
+            e.preventDefault();
+            zone.classList.add("drag-over");
+        });
+        zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+        zone.addEventListener("drop", e => {
+            e.preventDefault();
+            zone.classList.remove("drag-over");
+            if (e.dataTransfer.files[0]) doUpload(e.dataTransfer.files[0]);
+        });
+
+        async function doUpload(file) {
+            const ext = file.name.split(".").pop().toLowerCase();
+            if (!["epub", "mobi"].includes(ext)) {
+                showToast("Podržani formati: EPUB, MOBI", "error");
+                return;
+            }
+            if (status) {
+                status.textContent = `⏳ Učitavam: ${file.name}…`;
+                status.style.color = "var(--tx-2)";
+            }
+            const fd = new FormData();
+            fd.append("file", file);
+            try {
+                const r = await fetch("/api/upload_book", { method: "POST", body: fd });
+                const d = await r.json();
+                if (d.error) throw new Error(d.error);
+                if (status) {
+                    status.textContent = `✅ ${d.name || file.name}`;
+                    status.style.color = "var(--emerald)";
+                }
+                showToast(`"${d.name || file.name}" uspješno učitana!`, "success");
+                afterUpload(d.name || file.name);
+            } catch (e) {
+                if (status) {
+                    status.textContent = `❌ ${e.message}`;
+                    status.style.color = "var(--rose)";
+                }
+                showToast("Upload nije uspio: " + e.message, "error");
+            }
+        }
+    }
+
+    // Stil panel: knjiga dolazi iskljucivo iz upload callback-a.
+    wire("st-upload-zone", "st-file-input", "st-upload-status", (name) => {
+        EpubStyler.setBook(name);
+    });
+
+    // TTS Filter panel: isto - direktno iz upload callback-a, bez liste.
+    wire("tts-upload-zone", "tts-file-input", "tts-upload-status", async (name) => {
+        STATE.ttsBook = name;
+        const el  = document.getElementById("tts-selected-book");
+        const row = document.getElementById("tts-selected-row");
+        if (el) el.textContent = name;
+        if (row) row.style.display = "flex";
+        await _ttsCheckReplacementFile(name);
+    });
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupPanelUploads);
+} else {
+    setupPanelUploads();
+}
+
+
+// ═══════════════════════ MONITOR TAB ═══════════════════════
+document.addEventListener("DOMContentLoaded", function() {
+(function() {
+    const $utc = document.getElementById("mon-utc");
+    const $reset = document.getElementById("mon-reset");
+    const $body = document.getElementById("mon-body");
+    const $refresh = document.getElementById("mon-refresh");
+    const $auto = document.getElementById("mon-auto");
+    if (!$body) return;
+
+    let intervalId = null;
+
+    function fmt(s) {
+        if (s == null) return "—";
+        if (s < 60) return s.toFixed(0) + "s";
+        if (s < 3600) return (s/60).toFixed(1) + "m";
+        return (s/3600).toFixed(1) + "h";
+    }
+
+    function render(d) {
+        if ($utc) $utc.textContent = d.utc || "--";
+        if ($reset) $reset.textContent = fmt(d.reset_in_s);
+
+        const provs = Object.entries(d.providers || {})
+            .sort((a,b) => (b[1].n_available||0) - (a[1].n_available||0));
+
+        let h = "";
+        for (const [prov, p] of provs) {
+            const ok = p.n_available||0, tot = p.n_total||0;
+            const color = ok === tot ? "#3d3" : (ok > 0 ? "#fc3" : "#f33");
+            const lim = (p.rpm ? `RPM ${p.rpm}` : "") + (p.rpd ? ` / RPD ${p.rpd}` : "");
+            h += `<div class="card" style="padding:10px;margin-bottom:8px">`;
+            h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">`;
+            h += `<span style="color:${color};font-weight:bold">${prov}</span>`;
+            h += `<span style="color:var(--tx-3);font-size:.7rem">${p.model||""}</span>`;
+            h += `<span style="font-size:.75rem">${ok}/${tot} <span style="color:var(--tx-3)">${lim}</span></span>`;
+            h += `</div>`;
+            h += `<table style="width:100%;font-size:.72rem;font-family:monospace;border-collapse:collapse">`;
+            h += `<tr style="color:var(--tx-3);text-align:left"><th></th><th>ključ</th><th>usr</th><th>ok/fail</th><th>zadnji</th><th>CD</th><th></th></tr>`;
+            for (const k of (p.keys||[])) {
+                const av = k.available ? "🟢" : "🔴";
+                const rate = ((k.success_rate||0)*100).toFixed(0)+"%";
+                const n = `${k.calls_ok||0}/${k.calls_failed||0}`;
+                const ago = fmt(k.last_used_ago);
+                const cd = k.cooldown_left > 0
+                    ? `<span style="color:#f33">${fmt(k.cooldown_left)}</span>` : "";
+                const rs = k.cooldown_reason ? ` title="${k.cooldown_reason}"` : "";
+                h += `<tr>`;
+                h += `<td>${av}</td>`;
+                h += `<td style="color:var(--tx-2)">${k.key}</td>`;
+                h += `<td style="text-align:right">${rate}</td>`;
+                h += `<td style="text-align:right">${n}</td>`;
+                h += `<td style="text-align:right;color:var(--tx-3)">${ago}</td>`;
+                h += `<td style="text-align:right"${rs}>${cd}</td>`;
+                h += `<td style="text-align:right"><button class="btn btn-sm" style="padding:1px 5px;font-size:.65rem" onclick="window._monReset('${prov}','${k.key.split("…")[0]}')">↻</button></td>`;
+                h += `</tr>`;
+            }
+            h += `</table></div>`;
+        }
+        $body.innerHTML = h || '<div style="color:var(--tx-3);padding:20px;text-align:center">Nema podataka</div>';
+    }
+
+    async function load() {
+        console.log("[MONITOR] load() pozvan");
+        try {
+            const r = await fetch("/api/monitor/status");
+            console.log("[MONITOR] fetch status:", r.status);
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            const data = await r.json();
+            console.log("[MONITOR] data:", Object.keys(data.providers || {}).length, "providera");
+            render(data);
+        } catch(e) {
+            console.error("[MONITOR] greška:", e);
+            $body.innerHTML = '<div style="color:#f33;padding:20px">Greška: '+e.message+'</div>';
+        }
+    }
+
+    window._monReset = async (prov, prefix) => {
+        if (!confirm(`Resetiraj cooldown za ${prov} ključ ${prefix}…?`)) return;
+        try {
+            await fetch("/api/monitor/reset_key", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({provider: prov, key_prefix: prefix})
+            });
+            load();
+        } catch(e) { alert(e.message); }
+    };
+
+    function tick() {
+        if ($auto && $auto.checked) load();
+    }
+
+    // Auto-load kad se klikne Monitor tab button
+    const $btnMon = document.getElementById("tab-btn-monitor");
+    if ($btnMon) {
+        $btnMon.addEventListener("click", () => {
+            load();
+            if (!intervalId) intervalId = setInterval(tick, 5000);
+        });
+    }
+    // Prekini interval kad se prebaci na drugi tab
+    document.querySelectorAll(".tab-btn").forEach(b => {
+        if (b.id !== "tab-btn-monitor") {
+            b.addEventListener("click", () => {
+                if (intervalId) { clearInterval(intervalId); intervalId = null; }
+            });
+        }
+    });
+
+    if ($refresh) $refresh.addEventListener("click", load);
+})();
+});
+
+
+async function auto_stiliziraj(bookName) {
+    const $cb = document.getElementById("auto-stil");
+    if (!$cb || !$cb.checked) return;
+    console.log("[AUTO-STIL] Pokrećem stilizaciju za:", bookName);
+    try {
+        const r = await fetch("/api/style_epub", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({file: bookName, mode: "booklyfi"}),
+        });
+        const d = await r.json();
+        if (d.ok) {
+            if (typeof _log === "function") _log("✨ Auto-stilizacija završena", "success");
+        } else {
+            if (typeof _log === "function") _log("⚠️ Auto-stilizacija: " + d.error, "warn");
+        }
+    } catch(e) {
+        console.error("[AUTO-STIL]", e);
+    }
+}
+window.auto_stiliziraj = auto_stiliziraj;

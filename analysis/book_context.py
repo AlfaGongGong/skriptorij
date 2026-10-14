@@ -643,17 +643,43 @@ class BookContextManager:
                 pass
     
     def build_glosar_tekst(self):
-        """Vraća glosar kao tekst za prompt injection."""
-        if not self._glosar:
-            return ""
-        linije = []
-        for ime, varijante in sorted(self._glosar.items()):
-            if varijante:
-                linije.append(f"{ime}: {', '.join(varijante)}")
-            else:
-                linije.append(ime)
-        return "\n".join(linije)
-    
+        """Vraća glosar kao tekst za prompt injection.
+
+        Prioritet:
+        1. Ako postoji kanon za knjigu u /root/skriptorij/data/kanon/knjige/ — koristi njega
+        2. Inače vrati SAMO potvrđene termine (s kategorijom)
+        3. Ako nema kanona — vrati prazno (bolje nego smeće iz self._glosar)
+        """
+        # 1. Pokušaj kanon
+        try:
+            import json as _json
+            from pathlib import Path as _P
+            # Pokusaj iz knjiga_id
+            kid = getattr(self, "knjiga_id", None)
+            if not kid:
+                kid = getattr(self.book_context, "knjiga_id", None) if hasattr(self, "book_context") else None
+            if kid:
+                kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (kid + ".json")
+                if kanon_path.exists():
+                    data = _json.loads(kanon_path.read_text(encoding="utf-8"))
+                    linije = []
+                    for en, info in sorted(data.get("termini", {}).items()):
+                        if not info.get("potvrdjeno"):
+                            continue
+                        hr = info.get("hr", en)
+                        kat = info.get("kategorija", "?")
+                        if hr and hr != en:
+                            linije.append("- " + en + " -> " + hr + " [" + kat + "]")
+                        else:
+                            linije.append("- " + en + " (OSTAVI KAKO JEST) [" + kat + "]")
+                    if linije:
+                        return "\n".join(linije)
+        except Exception:
+            pass
+
+        # 2. Ako nema kanona — vrati prazno (NE smeće)
+        return ""
+
     def extract_relevant_glossary(self, chunk_text, glosar_tekst):
         """Izdvaja relevantne glosar unose za dati chunk — s punim formatom (ime: varijante)."""
         if not self._glosar:
@@ -695,10 +721,52 @@ class BookContextManager:
 
 # Standalone funkcije koje engine.py importuje
 async def analiziraj_knjigu(engine, book_path):
-    """Analizira knjigu i popunjava glosar."""
+    """
+    Analizira knjigu:
+    1. Analiza autorovog stila pisanja (autor_analiza.py)
+    2. (Rezervirano) Popuna glosara
+    """
     import logging
+    import asyncio
     logging.info(f"[book_context] Analiza knjige: {book_path}")
-    # Placeholder - glavna analiza se desava u engine.py
+
+    # ─── ANALIZA AUTOROVOG STILA ───
+    # Uzima self.book_path iz engine-a, analizira prvih 30K znakova
+    # i sprema profil u book_context._autor_stil_profil.
+    # Profil se automatski ubacuje u PREVODILAC prompt.
+    try:
+        from core.autor_analiza import analiziraj_knjigu as _analiziraj_stil
+
+        _epub_path = getattr(engine, "book_path", None)
+        if _epub_path and Path(_epub_path).exists():
+            # Analiza je CPU-bound (regex) — pokreni u thread poolu
+            _profil = await asyncio.to_thread(_analiziraj_stil, str(_epub_path))
+
+            if _profil and not _profil.get("greska"):
+                # Spremi u book_context
+                bc = getattr(engine, "book_context", None)
+                if bc is not None:
+                    if hasattr(bc, "postavi_autor_stil_profil"):
+                        bc.postavi_autor_stil_profil(_profil)
+                    else:
+                        bc._autor_stil_profil = _profil
+                        if hasattr(bc, "_spremi_cache"):
+                            bc._spremi_cache()
+
+                logging.info(
+                    f"[autor-analiza] ✅ Stil: {_profil.get('stil', '?')} | "
+                    f"Ton: {_profil.get('ton', '?')} | "
+                    f"Tempo: {'brz' if _profil.get('brz_tempo') else 'spor'} | "
+                    f"Dijalog: {int(_profil.get('omjer_dijaloga', 0) * 100)}%"
+                )
+            else:
+                logging.warning(f"[autor-analiza] Analiza neuspješna: {_profil}")
+        else:
+            logging.warning(f"[autor-analiza] book_path ne postoji: {_epub_path}")
+    except Exception as e:
+        logging.warning(f"[autor-analiza] Greška: {e}")
+        import traceback
+        logging.debug(traceback.format_exc())
 
 
 async def _inkrementalna_analiza_glosara(engine, poglavlje_tekst, poglavlje_ime):

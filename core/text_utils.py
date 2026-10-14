@@ -91,6 +91,19 @@ def _strip_html_wrapper(tekst: str) -> str:
     return tekst
 
 
+def _unescape_json_fallback(s: str) -> str:
+    """FIX: regex fallback ispod hvata sirovi sadrzaj JSON stringa BEZ
+    json unescape-ovanja (namjerno - originalni tekst cesto ima
+    neescape-ovane navodnike koji bi inace srusili json.loads). Zato
+    ostaju sirovi "\\n" umjesto pravih prijeloma reda - rucno ih ispravljamo.
+    """
+    s = s.replace('\\n', '\n')
+    s = s.replace('\\t', '\t')
+    s = s.replace('\\r', '\r')
+    s = s.replace('\\"', '"')
+    return s
+
+
 def _smart_extract(raw: str) -> str:
     if not raw:
         return ""
@@ -120,14 +133,18 @@ def _smart_extract(raw: str) -> str:
     # s neescape-danim ASCII navodnicima unutar HTML-a (npr. dijalog sekcije).
     # Ispravno-escapirani JSON je već uhvaćen json.loads iznad.
     # Pohlepni backtracking je O(n) — nema eksponencijalnog rizika za ovaj obrazac.
-    m = re.search(r'"finalno_polirano"\s*:\s*"(.+)"\s*\}?\s*$', raw, re.DOTALL)
-    if m:
-        return m.group(1)
+    # FIX 2026-09-25: normaliziraj tipografske navodnike u raw PRIJE regex fallbacka.
+    # AI vraća „korektura" (tipografski otvarajući + ASCII zatvarajući) ili „finalno_polirano".
+    # Stari regex je tražio samo ASCII → propuštao JSON artefakte u .chk.
+    raw_norm = _TYPO_Q.sub('"', raw)
 
-    # Regex fallback za korektura (KOREKTOR prolaz) — pohlepni, isti princip.
-    m = re.search(r'"korektura"\s*:\s*"(.+)"\s*\}?\s*$', raw, re.DOTALL)
+    m = re.search(r'"finalno_polirano"\s*:\s*"(.+)"\s*\}?\s*$', raw_norm, re.DOTALL)
     if m:
-        return m.group(1)
+        return _unescape_json_fallback(m.group(1))
+
+    m = re.search(r'"korektura"\s*:\s*"(.+)"\s*\}?\s*$', raw_norm, re.DOTALL)
+    if m:
+        return _unescape_json_fallback(m.group(1))
 
     cist = _agresivno_cisti(raw)
     # Odbaci ako je AI vratio anotacijski odgovor umjesto čistog teksta
@@ -326,7 +343,7 @@ def _adaptive_temp(uloga: str, tip_bloka: str, bazna_temp: float) -> float:
 
 def _post_process_tipografija(tekst: str) -> str:
     """
-    Post-processing tipografskih konvencija za BS/HR standard.
+    Post-processing tipografskih konvencija za HR standard.
     """
     # Tri tačke
     tekst = re.sub(r"(?<!\.)\.\.\.(?!\.)", "…", tekst)
@@ -349,7 +366,7 @@ def _post_process_tipografija(tekst: str) -> str:
     # Em-crtica bez razmaka → s razmacima (ne na početku linije)
     tekst = re.sub(r"(?<=[^\s\n\u2014])—(?=[^\s\n\u2014])", " — ", tekst)
 
-    # Navodnici: ASCII "..." → BS/HR standard „..." u tekstualnom sadržaju
+    # Navodnici: ASCII "..." → HR standard „..." u tekstualnom sadržaju
     # Isključuje HTML atribute (ne smije biti < > unutar navodnika).
     # Limit od 400 znakova: štiti od premoći na HTML atribute s dugačkim vrijednostima;
     # književni citat gotovo nikad ne prelazi 400 znakova unutar jednog para navodnika.

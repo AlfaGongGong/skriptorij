@@ -5,7 +5,8 @@ import re
 import time
 from bs4 import BeautifulSoup
 from processing.parallel import AdaptiveParallelism
-from core.text_utils import _HTML_TAG_RE
+from core.text_utils import _HTML_TAG_RE, _detektuj_en_ostatke
+from core.quality import _scoruj_kvalitetu, _QUALITY_RESCUE_THRESHOLD
 
 
 # ============================================================================
@@ -267,6 +268,346 @@ async def _validiraj_glosar_poglavlja(engine, poglavlje_tekst: str, file_name: s
 # ============================================================================
 
 
+
+
+def _ocisti_html_atribute(html: str) -> str:
+    """
+    Očisti „ i " iz HTML atributa.
+
+    AI ponekad (uprkos pravilu u promptu) stavi tipografske navodnike u HTML atribute:
+      <p class=„booklyfi-dijalog"> — POGREŠNO
+      <p class="booklyfi-dijalog"> — ISPRAVNO
+
+    Ova funkcija čisti atribute, ali NE dira tekst (sadržaj između tagova).
+    """
+    if not html or "<" not in html:
+        return html
+
+    import re as _re
+
+    def _clean_tag(match):
+        tag = match.group(0)
+        # Ako nema „ u tagu, ništa ne mijenjaj
+        if "„" not in tag and "“" not in tag and "”" not in tag:
+            return tag
+        # Očisti tipografske navodnike IZ TAG-a (atributi)
+        tag = tag.replace("„", '"').replace("“", '"').replace("”", '"')
+        # Ako ima neparan broj ", pokušaj popraviti (dodaj na kraj ako je atribut bez zatvaranja)
+        # Prebroj '
+        broj_single = tag.count("'")
+        if broj_single % 2 == 1:
+            # Dodaj ' na kraj ako ima otvoren
+            tag = tag + "'"
+        return tag
+
+    try:
+        return _re.sub(r'<[^>]+>', _clean_tag, html)
+    except Exception:
+        return html
+
+
+
+import json as _json_pw
+import re as _re_pw
+
+_GLOGAR_PATH = "/root/skriptorij/data/kanon/knjige"
+_GLOSAR_CACHE = {}
+
+
+def _ucitaj_glosar(knjiga_id):
+    if knjiga_id in _GLOSAR_CACHE:
+        return _GLOSAR_CACHE[knjiga_id]
+    from pathlib import Path as _P
+    putanja = _P(_GLOGAR_PATH) / (knjiga_id + ".json")
+    if not putanja.exists():
+        _GLOSAR_CACHE[knjiga_id] = {}
+        return {}
+    try:
+        data = _json_pw.loads(putanja.read_text(encoding="utf-8"))
+        glosar = data.get("termini", {})
+        _GLOSAR_CACHE[knjiga_id] = glosar
+        return glosar
+    except Exception:
+        _GLOSAR_CACHE[knjiga_id] = {}
+        return {}
+
+
+def _glosar_u_prompt(glosar):
+    if not glosar:
+        return ""
+    linije = ["## GLOSAR (OBAVEZNO koristi ove oblike):"]
+    for en, info in sorted(glosar.items()):
+        if info.get("potvrdjeno") or info.get("kategorija") in ("lik", "mjesto"):
+            hr = info.get("hr", en)
+            if hr and hr != en:
+                linije.append("- " + en + " -> " + hr)
+            else:
+                linije.append("- " + en)
+    return "\n".join(linije) if len(linije) > 1 else ""
+
+
+
+
+# ─── AI QA SCORER ────────────────────────────────────────────────────────
+_QA_SYSTEM = """Ti si sudac kvalitete knjizevnog teksta na hrvatskom.
+
+Ocjeni tekst na skali 1-10 po kriterijima:
+  - vjernost: prenosi li smisao tocno (za prijevod) / cuva li smisao
+  - stil: tecan, knjizevni hrvatski
+  - gramatika: bez greski (padezi, slaganje, interpunkcija)
+  - konzistentnost: imena likova, termini
+  - tipografija: em-crtice u dijalogu, tipografski navodnici, tri tacke
+
+Vrati ISKLJUCIVO JSON:
+{"vjernost": 9.0, "stil": 9.0, "gramatika": 10, "konzistentnost": 10, "tipografija": 10, "ukupno": 9.6, "razlog": "kratko"}
+"""
+
+
+def _qa_ai_ocjena(tekst, fleet):
+    """
+    AI QA ocjena chunka. Vraca dict {vjernost, stil, gramatika, konzistentnost, tipografija, ukupno, razlog}.
+    Ako AI ne radi — vrati heuristiku.
+    """
+    if not fleet:
+        return _qa_ocjena(tekst)
+
+    # Ogranici tekst na 2000 znakova
+    tekst_skracen = tekst[:2000]
+
+    for provider in ["GEMINI", "GROQ", "MISTRAL", "NVIDIA", "CLOUDFLARE"]:
+        try:
+            key = fleet.get_best_key(provider)
+            if not key:
+                continue
+            api_key = key.key if hasattr(key, "key") else str(key)
+            model = fleet.get_active_model(provider)
+            if not model:
+                continue
+
+            from network.http_client import api_call
+            res = api_call(
+                provider=provider, model=model, api_key=api_key,
+                system=_QA_SYSTEM, user="Ocjeni:\n\n" + tekst_skracen,
+                temperature=0.1, max_tokens=500, timeout=60,
+            )
+            if not res:
+                continue
+
+            import json as _json_qa
+            import re as _re_qa
+            clean = _re_qa.sub(r"```(?:json)?\s*", "", res).replace("```", "").strip()
+            start = clean.find("{")
+            end = clean.rfind("}") + 1
+            if start < 0 or end <= start:
+                continue
+            data = _json_qa.loads(clean[start:end])
+
+            # Validacija
+            kriteriji = ["vjernost", "stil", "gramatika", "konzistentnost", "tipografija"]
+            ocjene = {}
+            for k in kriteriji:
+                try:
+                    ocjene[k] = float(data.get(k, 8.0))
+                except (TypeError, ValueError):
+                    ocjene[k] = 8.0
+            ocjene["ukupno"] = round(sum(ocjene.values()) / len(kriteriji), 2)
+            ocjene["razlog"] = data.get("razlog", "")
+            return ocjene
+        except Exception:
+            continue
+
+    # Fallback na heuristiku
+    return _qa_ocjena(tekst)
+
+
+
+
+# ─── Retry s QA feedbackom ───────────────────────────────────────────────
+_RETRY_FEEDBACK_SYSTEM = """Ti si vrhunski knjizevni prevodilac/lektor.
+
+Prethodni prijevod ovog teksta dobio je nizu ocjenu kvalitete.
+Tvoj zadatak je DA POPRAVIS na osnovu razloga koji su navedeni.
+
+PRAVILA:
+- IJEKAVICA obavezna
+- Em-crtica (—) za dijalog
+- Tipografski navodnici („")
+- Tri tacke kao jedan znak (…), NIKAD "..."
+- Zadrzi sadrzaj, ne dodavaj ni ne brisi
+- Vrati SAMO popravljeni tekst
+"""
+
+
+def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
+    """
+    Ponovno obradi chunk s feedbackom iz QA.
+    Vraca (novi_tekst, nova_qa, uspjeh).
+    """
+    if not fleet:
+        return tekst, qa, False
+
+    razlog = qa.get("razlog", "")
+    ocjena = qa.get("ukupno", 0)
+
+    # Pripremi feedback prompt
+    feedback = (
+        "PRETHODNI PRIJEVOD (ocjena " + str(ocjena) + "/10):\n"
+        + tekst[:1500]
+        + "\n\n"
+        + "RAZLOG NISKE OCJENE:\n" + razlog
+        + "\n\n"
+        + "ORIGINAL (za kontekst):\n" + original_tekst[:1000]
+        + "\n\n"
+        + "Prevedi PONOVNO, ispravljajuci navedene probleme. Vrati SAMO tekst."
+    )
+
+    # Pozovi AI
+    for provider in ["GEMINI", "GROQ", "MISTRAL", "NVIDIA", "CLOUDFLARE"]:
+        try:
+            key = fleet.get_best_key(provider)
+            if not key:
+                continue
+            api_key = key.key if hasattr(key, "key") else str(key)
+            model = fleet.get_active_model(provider)
+            if not model:
+                continue
+
+            from network.http_client import api_call
+            res = api_call(
+                provider=provider, model=model, api_key=api_key,
+                system=_RETRY_FEEDBACK_SYSTEM,
+                user=feedback,
+                temperature=0.3, max_tokens=4000, timeout=120,
+            )
+            if not res or len(res.strip()) < 50:
+                continue
+
+            # Normalizuj dijalog i ocisti atribute
+            res, _, _ = _normalizuj_dijalog_pipeline(res)
+            res = _ocisti_html_atribute(res)
+
+            # Nova QA
+            novi_qa = _qa_ai_ocjena(res, fleet)
+            novi_ocjena = novi_qa.get("ukupno", 0)
+
+            if novi_ocjena >= 9.5:
+                self.log("  Retry QA uspio: " + str(ocjena) + " -> " + str(novi_ocjena), "tech")
+                return res, novi_qa, True
+            elif novi_ocjena > ocjena:
+                self.log("  Retry QA poboljsan: " + str(ocjena) + " -> " + str(novi_ocjena), "tech")
+                return res, novi_qa, False
+            else:
+                self.log("  Retry QA bez poboljsanja: " + str(novi_ocjena), "warning")
+                continue
+        except Exception as e:
+            self.log("  Retry greska (" + str(provider) + "): " + str(e), "warning")
+            continue
+
+    return tekst, qa, False
+
+
+
+def _normalizuj_dijalog_pipeline(html):
+    """
+    Pretvori "dijalog" u — dijalog.
+    Strog regex: hvata otvarajuce navodnike na pocetku i zatvarajuce u sredini/kraju.
+    Vraca (novi_html, broj_promjena, broj_navodnika_ostalo).
+    """
+    from bs4 import BeautifulSoup as _BS
+    from bs4 import NavigableString as _NS
+
+    soup = _BS(html, "html.parser")
+    promjena = 0
+
+    OTV = '"\u201e\u00bb\u00ab\''
+    ZAT = '"\u201c\u00ab\u00bb\''
+
+    for p in soup.find_all("p"):
+        for child in list(p.children):
+            if not isinstance(child, _NS):
+                continue
+            original = str(child)
+            tekst = original
+
+            # 1. Na pocetku: navodnik + opc. razmak -> em-crtica
+            tekst = re.sub(
+                r'^(\s*)[' + OTV + r']\s*',
+                r'\1— ',
+                tekst,
+            )
+            # 2. Zatvarajuci navodnik NAKON interpunkcije unutar teksta:
+            #    ". "Sljedeca rijec" -> ". — Sljedeca rijec"
+            tekst = re.sub(
+                r'([.!?\u2026])[' + ZAT + r']\s+',
+                r'\1 — ',
+                tekst,
+            )
+            # 3. Zatvarajuci navodnik na kraju -> ukloni
+            tekst = re.sub(
+                r'\s*[' + ZAT + r']\s*$',
+                '',
+                tekst,
+            )
+            # 4. Zatvarajuci navodnik prije interpunkcije: 'Da!"' -> 'Da!'
+            tekst = re.sub(
+                r'[' + ZAT + r']([.!?\u2026])',
+                r'\1',
+                tekst,
+            )
+            # 5. Preostali navodnik prije razmaka i rijeci -> crtica
+            tekst = re.sub(
+                r'[' + ZAT + r']\s+(?=[A-ZČĆŠĐŽa-zčćšđž])',
+                r' — ',
+                tekst,
+            )
+
+            # 6. Otvarajuci navodnik NAKON interpunkcije u sredini:
+            #    ". \"Sljedeca rijec\" -> ". — Sljedeca rijec"
+            tekst = re.sub(
+                r'([.!?\u2026])\s+[' + OTV + r']',
+                r'\1 — ',
+                tekst,
+            )
+            if tekst != original:
+                child.replace_with(_NS(tekst))
+                promjena += 1
+
+    navodnika_ostalo = 0
+    for p in soup.find_all("p"):
+        t = p.get_text(strip=True)
+        if t and t[0] in '"\u201e\u00bb\u00ab\'':
+            navodnika_ostalo += 1
+
+    return str(soup), promjena, navodnika_ostalo
+
+
+
+def _qa_ocjena(html):
+    from bs4 import BeautifulSoup as _BS
+    soup = _BS(html, "html.parser")
+    tekst = soup.get_text(" ", strip=True)
+    rijeci = tekst.split()
+    if not rijeci:
+        return {"ukupno": 0, "razlog": "prazan"}
+    ocjene = {}
+    losi = len(_re_pw.findall(r"\b(\w+) \1\b", tekst))
+    ocjene["gramatika"] = max(0, 10 - losi * 2)
+    navodnici = tekst.count('"') + tekst.count('\u201e') + tekst.count('\u00bb')
+    crtice = tekst.count('\u2014')
+    if navodnici > 0 and crtice == 0:
+        ocjene["konzistentnost"] = 5
+    elif navodnici > crtice * 0.2:
+        ocjene["konzistentnost"] = 7
+    else:
+        ocjene["konzistentnost"] = 10
+    ocjene["tipografija"] = 10 if "..." not in tekst else 7
+    ocjene["vjernost"] = 8
+    ocjene["stil"] = 8
+    ocjene["ukupno"] = round(sum(ocjene.values()) / len(ocjene), 2)
+    return ocjene
+
+
+
 async def process_single_file_worker(self, file_path):
     file_name = file_path.name
     try:
@@ -274,7 +615,7 @@ async def process_single_file_worker(self, file_path):
     except Exception:
         return
 
-    chunks = self.chunk_html(raw_html, max_words=800)
+    chunks = self.chunk_html(raw_html, max_words=500)
     if not chunks:
         return
 
@@ -303,11 +644,112 @@ async def process_single_file_worker(self, file_path):
             self.log(f"⚠️ Blok {i} nije obrađen, koristim original", "warning")
             final_parts.append(chunks[i])
         else:
+            # VALIDACIJA 1: prekratak output (AI vratio samo dio)
+            if len(res.strip()) < 50:
+                self.log(
+                    f"⚠️ Blok {i}: sumnjivo kratak output ({len(res)} znakova), koristim original",
+                    "warning",
+                )
+                final_parts.append(chunks[i])
+                continue
+
+            # VALIDACIJA 2: gubitak teksta (output < 60% originala)
+            orig_len = len(chunks[i].strip())
+            new_len = len(res.strip())
+            if orig_len > 200 and new_len < orig_len * 0.6:
+                self.log(
+                    f"⚠️ Blok {i}: izgubljeno {100 - int(new_len/orig_len*100)}% teksta "
+                    f"({orig_len} -> {new_len})",
+                    "warning",
+                )
             # Ako original ima HTML tagove ali AI vratio plain text,
             # restauriraj paragrafsku strukturu da se ne izgubi formatiranje.
             if _HTML_TAG_RE.search(chunks[i]) and not _HTML_TAG_RE.search(res):
                 paras = [p.strip() for p in re.split(r"\n{2,}", res) if p.strip()]
                 res = "\n".join(f"<p>{p}</p>" for p in paras) if paras else f"<p>{res}</p>"
+            # Očisti HTML atribute od tipografskih navodnika (Bug 1 fallback)
+            res = _ocisti_html_atribute(res)
+            # Normalizuj dijalog: "... -> - ...
+            res, n_dijalog, n_navodnika = _normalizuj_dijalog_pipeline(res)
+            if n_dijalog:
+                self.log("  Dijalog normalizovan: " + str(n_dijalog) + " promjena, " + str(n_navodnika) + " navodnika ostalo", "tech")
+            # QA ocjena (postojeci scorer)
+            try:
+                fleet = getattr(self, "fleet", None)
+                engine_fn = getattr(self, "_get_prevodilac_prompt", None)
+                try:
+                    # _scoruj_kvalitetu je async — await direktno
+                    qa_raw = await _scoruj_kvalitetu(
+                        res, engine_fn, i, file_name,
+                        tip_ocjenjivanja="prevod",
+                    )
+                    if isinstance(qa_raw, dict):
+                        qa = qa_raw
+                        ukupno = qa.get("ukupno", qa.get("score", 0))
+                    else:
+                        qa = {"ukupno": float(qa_raw)}
+                        ukupno = float(qa_raw)
+                except Exception as e:
+                    self.log("  Scorer greska: " + str(e), "warning")
+                    qa = _qa_ai_ocjena(res, fleet)
+                    ukupno = qa.get("ukupno", 0)
+
+                if ukupno < 9.5:
+                    self.log("  QA: " + str(ukupno) + " < 9.5", "warning")
+
+                    # Retry 1 — s feedbackom
+                    for retry_broj in range(1, 3):  # max 2 retry-a
+                        self.log("  Retry " + str(retry_broj) + "/2 s QA feedbackom...", "warning")
+                        res_novi, qa_novi, uspjeh = _retry_s_feedbackom(
+                            self, res, chunks[i], qa, fleet, i
+                        )
+                        ukupno_novi = qa_novi.get("ukupno", 0)
+                        if uspjeh:
+                            res = res_novi
+                            qa = qa_novi
+                            ukupno = ukupno_novi
+                            break
+                        # Prihvati ako je bolje, ali probaj još jednom
+                        if ukupno_novi > ukupno:
+                            res = res_novi
+                            qa = qa_novi
+                            ukupno = ukupno_novi
+                            # Ako je i dalje < 9.5, probaj ponovno s novim feedbackom
+                        else:
+                            break
+
+                    # Ako i dalje < 9.5 — ostavi u EPUB s markerom
+                    if ukupno < 9.5:
+                        self.log("  QA-FLAG chunk " + str(i) + " (QA=" + str(ukupno) + ")", "warning")
+                        # Ubaci HTML komentar s QA podacima na početak chunka
+                        try:
+                            razlog_esc = str(qa.get("razlog", "")).replace("--", "")
+                            marker = "<!-- QA-FLAG: ocjena=" + str(ukupno) + " razlog=" + razlog_esc[:200] + " -->\n"
+                            res = marker + res
+                        except Exception:
+                            pass
+                    else:
+                        self.log("  QA: " + str(ukupno) + " OK nakon retry-a", "tech")
+                else:
+                    self.log("  QA: " + str(ukupno) + " OK", "tech")
+            except Exception as e:
+                self.log("  QA greska: " + str(e), "warning")
+            # Detekcija EN ostataka
+            try:
+                en_ratio = _detektuj_en_ostatke(res)
+                if en_ratio > 0.20:
+                    self.log("  ⚠ EN ostaci: " + str(round(en_ratio*100, 1)) + "% — pokusavam rescue", "warning")
+                    # Probaj rescue iz originala
+                    try:
+                        from processing.rescue import _spasi_od_sirovog
+                        spasen = _spasi_od_sirovog(res)
+                        if spasen and len(spasen) > 10:
+                            res = spasen
+                            self.log("  Rescue uspio", "tech")
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             final_parts.append(res)
 
         # Ažuriraj UI povremeno
@@ -428,9 +870,11 @@ except Exception:
     _detektor = None
 
 # Korak 11b — Rod detektor (aktivni mod: korigira miješanje roda)
+# NAPOMENA (popravka): koristi se DIJELJENI singleton (isti objekt kao u
+# processing/pipeline.py::_get_rod_detektor), ne nova instanca — ranije
+# su dvije odvojene instance gubile naucene rod-clue-ove jedna drugoj.
 try:
-    from core.kalkovi.rod_detektor import RodDetektor as _RodDetektor
-    _rod_detektor = _RodDetektor()
+    from core.kalkovi.rod_detektor import rod_detektor as _rod_detektor
     _ROD_DETEKTOR_AKTIVAN = True
 except Exception:
     _ROD_DETEKTOR_AKTIVAN = False
@@ -540,7 +984,7 @@ class WorkerV2:
 
         # Minimal fallback
         return (
-            "Ti si književni prevodilac. Pišeš bosanski/hrvatski, ijekavica. "
+            "Ti si književni prevodilac. Pišeš hrvatski, ijekavica. "
             "Vraćaš samo prevedeni tekst, bez komentara."
         )
 
@@ -623,9 +1067,9 @@ class WorkerV2:
                 if self.book_context:
                     raw_glosar = getattr(self.book_context, "_glosar", {})
                     glosar_rod = {
-                        ime: entry.get("rod", "auto")
+                        ime: entry.get("rod")
                         for ime, entry in raw_glosar.items()
-                        if isinstance(entry, dict)
+                        if isinstance(entry, dict) and entry.get("rod") in ("M", "Ž")
                     }
                 tekst, n_rod = _rod_detektor.primijeni(
                     tekst, knjiga_id=knjiga_id, glosar_rod=glosar_rod

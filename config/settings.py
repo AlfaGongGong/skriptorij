@@ -98,3 +98,10 @@ SHARED_CONTROLS: dict = {
     "stop": False,
     "reset": False,
 }
+
+
+# FIX: Cloudflare Workers AI account ID (nije tajna, kao username)
+import os as _os
+CLOUDFLARE_ACCOUNT_ID = _os.environ.get(
+    "CLOUDFLARE_ACCOUNT_ID", "60937b61622ebe7bf0d85c1a9dcfc85a"
+)

@@ -1,0 +1,47 @@
+{
+  "Nespretno": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Smith": {
+    "rod": "M",
+    "clue_m": 9,
+    "clue_z": 8
+  },
+  "Ravnica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Festival": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Smithov": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Lord": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nje": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Willowspear": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Svnae": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 6
+  }
+}

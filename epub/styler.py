@@ -1,1208 +1,881 @@
-"""epub/styler.py
+"""epub/styler.py — BOOKLYFI STYLER v2 (konačna verzija)
 ===========================================================================
-PREMIUM EPUB STYLER — "Stara knjižara" estetika
-Booklyfi izdavački potpis
+JEDINSTVENI FORMAT ZA SVE KNJIGE.
 
-Primjenjuje konzistentni vizualni identitet na svaki EPUB koji prođe
-kroz Booklyfi pipeline:
-
-  • Hartija tekstura      — SVG pattern koji imitira staru kremasti papir
-  • Header ornamenti      — SVG dekorativni dividers između poglavlja
-  • Dropcap initiali      — AI-generisani SVG po prvom slovu svakog poglavlja
-  • Premium tipografija   — EB Garamond / Libre Baskerville serif fontovi
-  • Sadržaj (TOC)         — AI formira ako ne postoji u knjizi
-  • Moon+ Reader profil   — .css fajl za direktan import u čitač
-
-Izlaz:
-  knjiga_STYLED.epub           — stilizovani EPUB
-  knjiga_STYLED.css            — Moon+ Reader CSS profil
-
-STANDALONE: radi s bilo kojim EPUB-om, ne ovisi o main pipeline-u.
+PRAVILA:
+  1. Obriši SVE staro (css, klase, dropcap, ornament, sadržaj, toc, ncx)
+  2. Normalizuj HTML (div→p, h4-h6→h3, font→unwrap, deduplikacija AA→A)
+  3. Detektuj STVARNA poglavlja (isključi uvod/o autoru/impresum/sadržaj)
+  4. Za svako poglavlje: vijenac → POGLAVLJE N → dropcap
+  5. Dropcap: 4em, pokriva 3+ reda, prvo slovo nevidljivo ali u tekstu
+  6. Novi toc.ncx i toc.xhtml — SAMO stvarna poglavlja
+  7. Svi TOC-ovi i ncx-ovi iz EPUB-a se brišu, pravi se jedan
 ===========================================================================
 """
-
 from __future__ import annotations
 
 import base64
-import json
+import copy
 import logging
 import os
 import re
 import shutil
 import tempfile
-import time
 import zipfile
 from pathlib import Path
-from typing import Optional
 
 from bs4 import BeautifulSoup, NavigableString
 
 logger = logging.getLogger(__name__)
 
-# ── Konfiguracija stila ────────────────────────────────────────────────────────
-
-STYLE_CONFIG = {
-    # Boje — kremasta hartija stare knjige
-    "paper_bg":        "#F5F0E8",   # kremasta podloga
-    "paper_bg_dark":   "#EDE8DC",   # malo tamnija za alternativne stranice
-    "ink_primary":     "#2C1810",   # tamno smeđa tinta
-    "ink_secondary":   "#5C3A1E",   # srednje smeđa
-    "ink_muted":       "#8B6914",   # zlatno-smeđa za naslove/ornamente
-    "ornament_gold":   "#8B6914",   # zlatna za SVG ornamente
-    "ornament_brown":  "#5C3A1E",   # smeđa za sekundarne ornamente
-    "dropcap_color":   "#8B0000",   # tamno crvena za inicijale
-    "dropcap_shadow":  "#5C3A1E",   # sjena inicijala
-    "chapter_rule":    "#8B6914",   # zlatna linija između poglavlja
-
-    # Tipografija
-    "font_body":       "'EB Garamond', 'Libre Baskerville', 'Georgia', serif",
-    "font_heading":    "'EB Garamond', 'Cinzel', 'Georgia', serif",
-    "font_dropcap":    "'UnifrakturMaguntia', 'IM Fell English', serif",
-    "font_size_body":  "1.05em",
-    "line_height":     "1.72",
-    "paragraph_indent": "1.8em",
-
-    # Margine
-    "margin_page":     "6%",
-    "margin_chapter":  "2.5em",
-}
-
-# ── SVG generatori ─────────────────────────────────────────────────────────────
-
-def _svg_paper_texture() -> str:
-    """
-    SVG pattern koji imitira teksturu stare kremaste hartije.
-    Sadrži: fibre, mrlje, neravnine — sve inline, bez external zavisnosti.
-    """
-    return """<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'>
-  <defs>
-    <filter id='noise'>
-      <feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'
-                    stitchTiles='stitch' result='noiseOut'/>
-      <feColorMatrix type='saturate' values='0' in='noiseOut' result='grey'/>
-      <feBlend in='SourceGraphic' in2='grey' mode='multiply' result='blend'/>
-      <feComposite in='blend' in2='SourceGraphic' operator='in'/>
-    </filter>
-    <filter id='grain'>
-      <feTurbulence type='turbulence' baseFrequency='0.9 0.9' numOctaves='4'
-                    seed='2' stitchTiles='stitch' result='turbOut'/>
-      <feDisplacementMap in='SourceGraphic' in2='turbOut'
-                         scale='1.5' xChannelSelector='R' yChannelSelector='G'/>
-    </filter>
-  </defs>
-  <!-- Base kremasta boja -->
-  <rect width='400' height='400' fill='#F5F0E8'/>
-  <!-- Fini grain -->
-  <rect width='400' height='400' fill='#E8DFC8' opacity='0.28' filter='url(#noise)'/>
-  <!-- Horizontalne fibre papira -->
-  <g opacity='0.06' stroke='#8B6914' stroke-width='0.3'>
-    <line x1='0' y1='23'  x2='400' y2='23'/>  <line x1='0' y1='47'  x2='400' y2='47'/>
-    <line x1='0' y1='71'  x2='400' y2='71'/>  <line x1='0' y1='95'  x2='400' y2='95'/>
-    <line x1='0' y1='119' x2='400' y2='119'/> <line x1='0' y1='143' x2='400' y2='143'/>
-    <line x1='0' y1='167' x2='400' y2='167'/> <line x1='0' y1='191' x2='400' y2='191'/>
-    <line x1='0' y1='215' x2='400' y2='215'/> <line x1='0' y1='239' x2='400' y2='239'/>
-    <line x1='0' y1='263' x2='400' y2='263'/> <line x1='0' y1='287' x2='400' y2='287'/>
-    <line x1='0' y1='311' x2='400' y2='311'/> <line x1='0' y1='335' x2='400' y2='335'/>
-    <line x1='0' y1='359' x2='400' y2='359'/> <line x1='0' y1='383' x2='400' y2='383'/>
-  </g>
-  <!-- Vertikalne fibre (rjeđe) -->
-  <g opacity='0.03' stroke='#5C3A1E' stroke-width='0.4'>
-    <line x1='80'  y1='0' x2='80'  y2='400'/>
-    <line x1='160' y1='0' x2='160' y2='400'/>
-    <line x1='240' y1='0' x2='240' y2='400'/>
-    <line x1='320' y1='0' x2='320' y2='400'/>
-  </g>
-  <!-- Starosne mrlje (blage) -->
-  <ellipse cx='320' cy='80'  rx='18' ry='12' fill='#C8A96E' opacity='0.08' filter='url(#grain)'/>
-  <ellipse cx='60'  cy='250' rx='22' ry='8'  fill='#A08040' opacity='0.06'/>
-  <ellipse cx='200' cy='350' rx='12' ry='16' fill='#B89050' opacity='0.07'/>
-  <ellipse cx='350' cy='300' rx='8'  ry='20' fill='#C8A96E' opacity='0.05'/>
-</svg>"""
+STYLED_OUTPUT_DIR = "/storage/emulated/0/Books/MoonReader/STYLED"
+ORNAMENTS_DIR = "/storage/emulated/0/Books/MoonReader/ornaments_small_size"
+CENTER_ORNAMENT_PNG = "center_ornament.png"
 
 
-def _svg_chapter_ornament(variant: int = 0) -> str:
-    """
-    SVG ornament koji se stavlja ispod naslova poglavlja.
-    Više varijanti za raznolikost — rotira po poglavljima.
-    """
-    variants = [
-        # 0 — klasični florentinski fleuron
-        """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 40' width='300' height='40'>
-  <g fill='none' stroke='#8B6914' stroke-width='1.2'>
-    <!-- Centralna linija -->
-    <line x1='0' y1='20' x2='120' y2='20'/>
-    <line x1='180' y1='20' x2='300' y2='20'/>
-    <!-- Centralni ornament -->
-    <path d='M 130 20 Q 140 8 150 20 Q 160 32 170 20' fill='none' stroke='#8B6914' stroke-width='1.5'/>
-    <circle cx='150' cy='20' r='3' fill='#8B6914' opacity='0.7'/>
-    <circle cx='130' cy='20' r='2' fill='#8B6914' opacity='0.5'/>
-    <circle cx='170' cy='20' r='2' fill='#8B6914' opacity='0.5'/>
-    <!-- Mali ukrasi na linijama -->
-    <circle cx='60'  cy='20' r='1.5' fill='#8B6914' opacity='0.4'/>
-    <circle cx='240' cy='20' r='1.5' fill='#8B6914' opacity='0.4'/>
-    <path d='M 55 16 L 65 24 M 55 24 L 65 16' stroke='#8B6914' stroke-width='0.8' opacity='0.3'/>
-    <path d='M 235 16 L 245 24 M 235 24 L 245 16' stroke='#8B6914' stroke-width='0.8' opacity='0.3'/>
-  </g>
-</svg>""",
-        # 1 — vijenac s listovima
-        """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 40' width='300' height='40'>
-  <g fill='#8B6914' opacity='0.75'>
-    <line x1='0' y1='20' x2='110' y2='20' stroke='#8B6914' stroke-width='1' fill='none'/>
-    <line x1='190' y1='20' x2='300' y2='20' stroke='#8B6914' stroke-width='1' fill='none'/>
-    <!-- List lijevo -->
-    <path d='M 115 20 Q 118 12 125 15 Q 120 20 125 25 Q 118 28 115 20 Z' opacity='0.8'/>
-    <path d='M 122 20 Q 127 11 135 14 Q 129 20 135 26 Q 127 29 122 20 Z' opacity='0.7'/>
-    <!-- Centralna rozeta -->
-    <circle cx='150' cy='20' r='6' fill='none' stroke='#8B6914' stroke-width='1.2'/>
-    <circle cx='150' cy='20' r='3' fill='#8B6914' opacity='0.6'/>
-    <circle cx='150' cy='20' r='1' fill='#8B6914'/>
-    <!-- List desno (zrcalo) -->
-    <path d='M 185 20 Q 182 12 175 15 Q 180 20 175 25 Q 182 28 185 20 Z' opacity='0.8'/>
-    <path d='M 178 20 Q 173 11 165 14 Q 171 20 165 26 Q 173 29 178 20 Z' opacity='0.7'/>
-    <!-- Tačkice na linijama -->
-    <circle cx='40'  cy='20' r='1.2' opacity='0.4'/>
-    <circle cx='80'  cy='20' r='1.2' opacity='0.4'/>
-    <circle cx='220' cy='20' r='1.2' opacity='0.4'/>
-    <circle cx='260' cy='20' r='1.2' opacity='0.4'/>
-  </g>
-</svg>""",
-        # 2 — arabeskni motiv
-        """<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 44' width='300' height='44'>
-  <g stroke='#8B6914' fill='none'>
-    <line x1='0' y1='22' x2='105' y2='22' stroke-width='0.8' opacity='0.6'/>
-    <line x1='195' y1='22' x2='300' y2='22' stroke-width='0.8' opacity='0.6'/>
-    <!-- Spiralni motiv lijevo -->
-    <path d='M 108 22 Q 112 14 118 18 Q 122 22 118 26 Q 112 30 108 22' stroke-width='1.2' opacity='0.8'/>
-    <path d='M 120 22 Q 124 13 131 17 Q 136 22 131 27 Q 124 31 120 22' stroke-width='1.1' opacity='0.7'/>
-    <!-- Centralni motiv — stilizirani cvijet -->
-    <circle cx='150' cy='22' r='7' stroke-width='1' opacity='0.9'/>
-    <path d='M 143 22 Q 147 15 150 22 Q 153 29 150 22' stroke-width='0.9' opacity='0.6'/>
-    <path d='M 150 15 Q 157 19 150 22 Q 143 25 150 22' stroke-width='0.9' opacity='0.6'/>
-    <path d='M 157 22 Q 153 29 150 22 Q 147 15 150 22' stroke-width='0.9' opacity='0.6'/>
-    <path d='M 150 29 Q 143 25 150 22 Q 157 19 150 22' stroke-width='0.9' opacity='0.6'/>
-    <circle cx='150' cy='22' r='2.5' fill='#8B6914' opacity='0.7'/>
-    <!-- Spiralni motiv desno (zrcalo) -->
-    <path d='M 192 22 Q 188 14 182 18 Q 178 22 182 26 Q 188 30 192 22' stroke-width='1.2' opacity='0.8'/>
-    <path d='M 180 22 Q 176 13 169 17 Q 164 22 169 27 Q 176 31 180 22' stroke-width='1.1' opacity='0.7'/>
-    <!-- Točkice -->
-    <circle cx='50'  cy='22' r='1.5' fill='#8B6914' opacity='0.35'/>
-    <circle cx='250' cy='22' r='1.5' fill='#8B6914' opacity='0.35'/>
-  </g>
-</svg>""",
-    ]
-    return variants[variant % len(variants)]
+# ═══════════════════════════════════════════════════════════════════════════
+# 1. PNG SISTEM
+# ═══════════════════════════════════════════════════════════════════════════
+
+_PNG_CACHE: dict[str, str] = {}
 
 
-def _svg_dropcap(letter: str, color: str = "#8B0000") -> str:
-    """
-    Generiše SVG inicijal (dropcap) za dato slovo.
-    Bogati manuskript-stil s ornamentnim okvirom.
-    Koristi se kao inline SVG direktno u HTML poglavlja.
-    """
-    letter = (letter or "A").upper()
-    c = color
-    shadow = STYLE_CONFIG["dropcap_shadow"]
-
-    return f"""<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 90' width='80' height='90'
-     class='booklyfi-dropcap' style='float:left;margin:0 0.3em 0.1em 0;shape-outside:square()'>
-  <defs>
-    <linearGradient id='dcGrad_{letter}' x1='0' y1='0' x2='1' y2='1'>
-      <stop offset='0%'   stop-color='{c}'      stop-opacity='0.95'/>
-      <stop offset='100%' stop-color='{shadow}'  stop-opacity='0.85'/>
-    </linearGradient>
-    <filter id='dcShadow_{letter}'>
-      <feDropShadow dx='1.5' dy='1.5' stdDeviation='1.5' flood-color='{shadow}' flood-opacity='0.35'/>
-    </filter>
-  </defs>
-  <!-- Vanjski ornamentni okvir -->
-  <rect x='2' y='2' width='76' height='86' rx='4'
-        fill='none' stroke='#8B6914' stroke-width='1.2' opacity='0.5'/>
-  <!-- Kutni ukrasi -->
-  <path d='M 2 12 Q 2 2 12 2'   fill='none' stroke='#8B6914' stroke-width='1.5' opacity='0.7'/>
-  <path d='M 68 2 Q 78 2 78 12' fill='none' stroke='#8B6914' stroke-width='1.5' opacity='0.7'/>
-  <path d='M 2 76 Q 2 88 12 88' fill='none' stroke='#8B6914' stroke-width='1.5' opacity='0.7'/>
-  <path d='M 68 88 Q 78 88 78 76' fill='none' stroke='#8B6914' stroke-width='1.5' opacity='0.7'/>
-  <!-- Kutne tačkice -->
-  <circle cx='6'  cy='6'  r='1.5' fill='#8B6914' opacity='0.5'/>
-  <circle cx='74' cy='6'  r='1.5' fill='#8B6914' opacity='0.5'/>
-  <circle cx='6'  cy='84' r='1.5' fill='#8B6914' opacity='0.5'/>
-  <circle cx='74' cy='84' r='1.5' fill='#8B6914' opacity='0.5'/>
-  <!-- Slovo -->
-  <text x='40' y='68'
-        font-family="'IM Fell English', 'Georgia', serif"
-        font-size='68'
-        font-weight='bold'
-        text-anchor='middle'
-        fill='url(#dcGrad_{letter})'
-        filter='url(#dcShadow_{letter})'
-        letter-spacing='-2'>{letter}</text>
-  <!-- Dekorativna linija ispod slova -->
-  <line x1='15' y1='78' x2='65' y2='78' stroke='#8B6914' stroke-width='0.8' opacity='0.4'/>
-</svg>"""
+def _png_b64(fname: str) -> str:
+    if fname in _PNG_CACHE:
+        return _PNG_CACHE[fname]
+    path = os.path.join(ORNAMENTS_DIR, fname)
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode("utf-8")
+            _PNG_CACHE[fname] = b64
+            return b64
+    return ""
 
 
-# ── CSS za EPUB inline styling ──────────────────────────────────────────────────
+def _scan_dropcaps() -> dict[str, str]:
+    m = {}
+    if not os.path.isdir(ORNAMENTS_DIR):
+        return m
+    for fname in sorted(os.listdir(ORNAMENTS_DIR)):
+        if not fname.lower().endswith(".png"):
+            continue
+        stem = fname[:-4]
+        if len(stem) in (1, 2) and stem.isalpha():
+            m.setdefault(stem.upper(), fname)
+    return m
 
-def _build_epub_css() -> str:
-    """
-    Generiše kompletan CSS za EPUB content dokumenti.
-    Ugradit će se kao <style> blok u svaki HTML fajl i kao poseban .css fajl.
-    """
-    c = STYLE_CONFIG
-    paper_b64 = base64.b64encode(_svg_paper_texture().encode()).decode()
 
-    return f"""/* ═══════════════════════════════════════════════════════════
-   BOOKLYFI — Premium "Stara knjižara" stilovi
-   Generirano automatski — ne mijenjati ručno
-   ═══════════════════════════════════════════════════════════ */
+DROPCAP_MAP = _scan_dropcaps()
 
-/* ── Google Fonts import (serif premium fontovi) ─────────── */
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap');
 
-/* ── Hartija tekstura — podloga stranice ─────────────────── */
-body, html {{
-    background-color: {c['paper_bg']} !important;
-    background-image: url("data:image/svg+xml;base64,{paper_b64}") !important;
-    background-size: 400px 400px !important;
-    background-repeat: repeat !important;
-    color: {c['ink_primary']} !important;
-    font-family: {c['font_body']} !important;
-    font-size: {c['font_size_body']} !important;
-    line-height: {c['line_height']} !important;
-    margin: 0 {c['margin_page']} !important;
-    text-rendering: optimizeLegibility !important;
-    -webkit-font-smoothing: antialiased !important;
-    hyphens: auto !important;
-    orphans: 3 !important;
-    widows: 3 !important;
-}}
+# ═══════════════════════════════════════════════════════════════════════════
+# 2. CSS — JEDAN STIL
+# ═══════════════════════════════════════════════════════════════════════════
 
-/* ── Tekst i paragrafi ───────────────────────────────────── */
-p {{
-    margin: 0 !important;
-    padding: 0 !important;
-    text-align: justify !important;
-    text-indent: {c['paragraph_indent']} !important;
-    font-family: {c['font_body']} !important;
-    color: {c['ink_primary']} !important;
-    font-feature-settings: "liga" 1, "kern" 1, "onum" 1 !important;
-}}
-
-/* Bez uvlake za prvi paragraf iza naslova i iza dropcap-a */
-h1 + p, h2 + p, h3 + p,
-.chapter-heading + p,
-p.first-para,
-p:first-of-type {{
-    text-indent: 0 !important;
-}}
-
-p.has-dropcap,
-p.has-dropcap::first-letter {{
-    text-indent: 0 !important;
-}}
-
-/* ── Naslovi poglavlja ───────────────────────────────────── */
-h1, h2 {{
-    font-family: {c['font_heading']} !important;
-    color: {c['ink_secondary']} !important;
-    text-align: center !important;
-    letter-spacing: 0.08em !important;
-    font-weight: 600 !important;
-    margin-top: {c['margin_chapter']} !important;
-    margin-bottom: 0.3em !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-}}
-
-h1 {{
-    font-size: 1.6em !important;
-    border-bottom: none !important;
-}}
-
-h2 {{
-    font-size: 1.25em !important;
-}}
-
-h3, h4 {{
-    font-family: {c['font_heading']} !important;
-    color: {c['ink_muted']} !important;
-    font-size: 1.05em !important;
-    font-style: italic !important;
-    text-align: center !important;
-    margin-top: 1.5em !important;
-    margin-bottom: 0.4em !important;
-}}
-
-/* ── Ornament ispod naslova poglavlja ────────────────────── */
-.chapter-ornament {{
-    display: block !important;
-    text-align: center !important;
-    margin: 0.4em auto 1.8em auto !important;
-    opacity: 0.85 !important;
-}}
-
-/* ── Dropcap SVG inicijal ────────────────────────────────── */
-.booklyfi-dropcap {{
-    float: left !important;
-    margin: 0 0.25em 0 0 !important;
-    line-height: 1 !important;
-    shape-outside: square() !important;
-}}
-
-.dropcap-wrap {{
-    display: block !important;
-    overflow: hidden !important;
-}}
-
-/* ── Citati ──────────────────────────────────────────────── */
-blockquote {{
-    margin: 1.5em 2em !important;
-    padding: 0.5em 1em !important;
-    border-left: 3px solid {c['ornament_gold']} !important;
-    color: {c['ink_secondary']} !important;
-    font-style: italic !important;
-    background: rgba(139, 105, 20, 0.05) !important;
-}}
-
-/* ── Naglašeni tekst ─────────────────────────────────────── */
-em, i {{
-    font-style: italic !important;
-    color: {c['ink_secondary']} !important;
-}}
-
-strong, b {{
-    font-weight: 700 !important;
-    color: {c['ink_primary']} !important;
-}}
-
-/* ── Horizontalne linije ─────────────────────────────────── */
-hr {{
-    border: none !important;
-    border-top: 1px solid {c['chapter_rule']} !important;
-    margin: 2em auto !important;
-    width: 60% !important;
-    opacity: 0.5 !important;
-}}
-
-/* ── Linkovi u TOC-u ─────────────────────────────────────── */
-a {{
-    color: {c['ink_secondary']} !important;
-    text-decoration: none !important;
-}}
-
-a:hover {{
-    text-decoration: underline !important;
-    color: {c['ink_primary']} !important;
-}}
-
-/* ── Sadržaj (TOC) ───────────────────────────────────────── */
-nav#toc, .toc-page, .table-of-contents {{
-    background: rgba(139, 105, 20, 0.04) !important;
-    padding: 1.5em !important;
-    border: 1px solid rgba(139, 105, 20, 0.2) !important;
-    border-radius: 4px !important;
-}}
-
-nav#toc ol, nav#toc ul,
-.toc-page ol, .toc-page ul {{
-    list-style: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}}
-
-nav#toc li, .toc-page li {{
-    padding: 0.3em 0 !important;
-    border-bottom: 1px dotted rgba(139, 105, 20, 0.25) !important;
-    font-family: {c['font_heading']} !important;
-    font-size: 0.95em !important;
-}}
-
-/* ── Straničenje ─────────────────────────────────────────── */
-@page {{
-    margin: 1.5cm 2cm !important;
-}}
-
-/* ── Print poboljšanja ───────────────────────────────────── */
-@media print {{
-    body {{ background-image: none !important; background-color: white !important; }}
-    .booklyfi-dropcap {{ print-color-adjust: exact !important; }}
-}}
-
-/* ── Moon+ Reader specifični overrides ───────────────────── */
-/* (Moon+ čita inline CSS, ignorira neke background-image) */
-.moon-reader body {{
-    background-color: {c['paper_bg']} !important;
-}}
+CSS = """
+body { background:#F5F0E8; color:#2C1810; font-family:Georgia,serif;
+       font-size:1em; line-height:1.6; margin:0 5%; padding:0; }
+p { margin:0; padding:0; text-indent:1.8em; font-size:1em; line-height:1.6; }
+p.booklyfi-prvi { text-indent:0; margin-top:0.5em; margin-bottom:0.3em; }
+p.booklyfi-dijalog { margin:0.3em 0; padding-left:1.5em; text-indent:-1em; }
+h1.booklyfi-naslov { color:#8B0000; text-align:center;
+    font-size:1.8em; font-weight:600; letter-spacing:0.05em;
+    margin:0.5em 0 0.8em 0; line-height:1.3; text-indent:0; }
+img.booklyfi-vijenac { display:block; width:70%; height:auto;
+    margin:0.5em auto 0.8em auto; }
+img.booklyfi-dropcap { float:left; display:inline;
+    width:4em; height:auto; max-width:none;
+    margin:0.1em 0.15em 0 0; padding:0; vertical-align:top; }
+em, i { font-style:italic; }
+strong, b { font-weight:700; }
 """
 
 
-# ── Moon+ Reader CSS profil ─────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+# 3. BRISANJE SVE STARE STILIZACIJE
+# ═══════════════════════════════════════════════════════════════════════════
 
-def _build_moonreader_css() -> str:
-    """
-    CSS profil specifično optimiziran za Moon+ Reader.
-    Snima se kao zasebni .css fajl koji korisnik importuje u čitač.
-    """
-    c = STYLE_CONFIG
-    return f"""/* ═══════════════════════════════════════════════════════════
-   BOOKLYFI — Moon+ Reader profil
-   "Stara knjižara" estetika
-   Import: Moon+ Reader → Postavke → Stil teksta → Vlastiti CSS
-   ═══════════════════════════════════════════════════════════ */
+def _ukloni_sve(soup: BeautifulSoup) -> None:
+    # Style/link
+    for style in soup.find_all("style"):
+        style.decompose()
+    for link in soup.find_all("link"):
+        rel = link.get("rel") or []
+        if isinstance(rel, str):
+            rel = [rel]
+        if "stylesheet" in [r.lower() for r in rel]:
+            link.decompose()
 
-body {{
-    background-color: {c['paper_bg']} !important;
-    color: {c['ink_primary']} !important;
-    font-family: 'Georgia', serif !important;
-    font-size: 100% !important;
-    line-height: 1.7 !important;
-    text-align: justify !important;
-    margin: 0 3% !important;
-}}
+    # Ornamenti
+    for tag in soup.find_all("img", class_="booklyfi-vijenac"):
+        tag.decompose()
+    for tag in soup.find_all("img", class_="booklyfi-ornament"):
+        tag.decompose()
+    for tag in soup.find_all("div", class_="booklyfi-ornament"):
+        tag.decompose()
+    for tag in soup.find_all("p", class_="booklyfi-vijenac"):
+        tag.decompose()
 
-p {{
-    text-indent: 1.5em !important;
-    margin: 0 !important;
-    orphans: 3 !important;
-    widows: 3 !important;
-}}
+    # Dropcapi
+    for tag in soup.find_all("img", class_="booklyfi-dropcap"):
+        tag.decompose()
+    for tag in soup.find_all("span", class_="booklyfi-dropcap"):
+        tag.decompose()
 
-h1, h2, h3 {{
-    color: {c['ink_secondary']} !important;
-    text-align: center !important;
-    font-family: 'Georgia', serif !important;
-    letter-spacing: 0.06em !important;
-    margin-top: 2em !important;
-    margin-bottom: 0.5em !important;
-}}
+    # Skrivena slova — VRATI SLOVO U TEKST
+    for span in soup.find_all("span", style=True):
+        s = span.get("style") or ""
+        if "font-size:1px" in s or "font-size: 1px" in s or "font-size:0" in s:
+            slovo = span.get_text(strip=True)
+            span.replace_with(slovo)
 
-h1 {{ font-size: 1.5em !important; }}
-h2 {{ font-size: 1.2em !important; }}
-
-blockquote {{
-    margin: 1.2em 1.5em !important;
-    padding-left: 0.8em !important;
-    border-left: 2px solid {c['ornament_gold']} !important;
-    color: {c['ink_secondary']} !important;
-    font-style: italic !important;
-}}
-
-.chapter-ornament svg {{
-    display: block !important;
-    margin: 0 auto !important;
-}}
-
-a {{ color: {c['ink_secondary']} !important; text-decoration: none !important; }}
-em {{ font-style: italic !important; color: {c['ink_secondary']} !important; }}
-strong {{ font-weight: bold !important; }}
-
-/* Dropcap fallback (Moon+ možda ne prikaže SVG) */
-p.has-dropcap::first-letter {{
-    float: left !important;
-    font-size: 3.2em !important;
-    line-height: 0.85 !important;
-    margin: 0.05em 0.1em 0 0 !important;
-    color: {c['dropcap_color']} !important;
-    font-family: 'Georgia', serif !important;
-    font-weight: bold !important;
-}}
-"""
+    # Klase booklyfi-*
+    for el in soup.find_all(class_=True):
+        classes = el.get("class") or []
+        if isinstance(classes, str):
+            classes = classes.split()
+        new_c = [c for c in classes if not c.startswith("booklyfi-")]
+        if new_c:
+            el["class"] = new_c
+        elif el.get("class") is not None:
+            del el["class"]
 
 
-# ── EPUB obrada ─────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+# 4. NORMALIZACIJA HTML-a
+# ═══════════════════════════════════════════════════════════════════════════
 
-def _read_epub(epub_path: Path) -> dict[str, bytes]:
-    """Čita sve fajlove iz EPUB-a kao {path: bytes}."""
-    files = {}
-    with zipfile.ZipFile(epub_path, "r") as z:
-        for name in z.namelist():
-            files[name] = z.read(name)
-    return files
+def _normalizuj(soup: BeautifulSoup) -> None:
+    # div → p
+    for div in soup.find_all("div"):
+        if div.find(["div", "p", "ul", "ol", "table"]):
+            continue
+        if not div.get_text(strip=True):
+            continue
+        div.name = "p"
+
+    # h4-h6 → h3
+    for h in soup.find_all(["h4", "h5", "h6"]):
+        h.name = "h3"
+
+    # font → unwrap
+    for font in soup.find_all("font"):
+        font.unwrap()
+
+    # center → p
+    for c in soup.find_all("center"):
+        p_new = soup.new_tag("p")
+        for child in list(c.children):
+            p_new.append(child)
+        c.replace_with(p_new)
+
+    # table layout → p
+    for table in soup.find_all("table"):
+        if len(table.find_all("tr")) <= 1:
+            p_new = soup.new_tag("p")
+            p_new.string = table.get_text(" ", strip=True)
+            table.replace_with(p_new)
+
+    # span bez stila → unwrap
+    for span in soup.find_all("span"):
+        if not span.get("style"):
+            span.unwrap()
+
+    # b→strong, i→em
+    for b in soup.find_all("b"):
+        b.name = "strong"
+    for i in soup.find_all("i"):
+        i.name = "em"
+
+    # u,s,strike → unwrap
+    for tag in soup.find_all(["u", "s", "strike", "del", "ins"]):
+        tag.unwrap()
+
+    # Deduplikacija: AAutorska → Autorska
+    for text_node in soup.find_all(string=True):
+        if text_node.parent and text_node.parent.name in ("script", "style"):
+            continue
+        orig = str(text_node)
+        new = re.sub(r'\b([A-ZŠĐČĆŽ])\1+([a-zšđčćž])', r'\1\2', orig)
+        if new != orig:
+            text_node.replace_with(new)
 
 
-def _write_epub(epub_path: Path, files: dict[str, bytes]) -> None:
-    """Piše EPUB fajl iz rječnika {path: bytes}."""
-    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".epub.tmp", dir=epub_path.parent)
+# ═══════════════════════════════════════════════════════════════════════════
+# 5. DIJALOG
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _dijalog(soup: BeautifulSoup) -> int:
     try:
-        # mimetype mora biti prvi, nestisnuti
-        with zipfile.ZipFile(tmp_path, "w") as z:
+        from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA
+    except Exception:
+        return 0
+    n = 0
+    for node in soup.find_all(string=True):
+        if node.parent and node.parent.name in ("script", "style"):
+            continue
+        orig = str(node)
+        new = orig
+        for pattern, repl in DIJALOG_TIPOGRAFIJA:
+            new = re.sub(pattern, repl, new)
+        if new != orig:
+            node.replace_with(new)
+            n += 1
+    return n
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 6. VIJENAC
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _dodaj_vijenac(soup: BeautifulSoup) -> None:
+    b64 = _png_b64(CENTER_ORNAMENT_PNG)
+    body = soup.find("body")
+    if not body:
+        return
+    if b64:
+        html = (f'<img class="booklyfi-vijenac" '
+                f'src="data:image/png;base64,{b64}" '
+                f'style="display:block;width:70%;height:auto;'
+                f'margin:0.5em auto 0.8em auto;" />')
+    else:
+        html = '<p class="booklyfi-vijenac" style="text-align:center;">— ✠ —</p>'
+    orn = BeautifulSoup(html, "html.parser").find(["img", "p"])
+    body.insert(0, copy.deepcopy(orn))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 7. NASLOV
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _dodaj_naslov(soup: BeautifulSoup, broj: int) -> None:
+    body = soup.find("body")
+    if not body:
+        return
+    # Obriši sve h1-h3 (stari naslovi)
+    for h in soup.find_all(["h1", "h2", "h3"]):
+        h.decompose()
+    h1 = soup.new_tag("h1")
+    h1["class"] = "booklyfi-naslov"
+    h1.string = f"POGLAVLJE {broj}"
+    # Ubaci poslije vijenca (ako postoji), inače na početak
+    insert_pos = 0
+    for i, child in enumerate(body.children):
+        classes = child.get("class") if hasattr(child, "get") else None
+        if classes:
+            if isinstance(classes, str):
+                classes = classes.split()
+            if "booklyfi-vijenac" in classes:
+                insert_pos = i + 1
+                continue
+        break
+    body.insert(insert_pos, h1)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 8. DROPCAP — 4em, 3+ reda, prvo slovo nevidljivo u tekstu
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _dodaj_dropcap(soup: BeautifulSoup) -> bool:
+    for p in soup.find_all("p"):
+        # Preskoči naslove
+        classes = p.get("class") or []
+        if isinstance(classes, str):
+            classes = classes.split()
+        if "booklyfi-naslov" in classes:
+            continue
+
+        text = p.get_text(strip=True)
+        if len(text) < 60:
+            continue
+        if text.isdigit():
+            continue
+        if text[0] in ("—", "–", "-", "‒", "―"):
+            continue
+        if text[0] in ('"', '„', '“', '«', "'"):
+            continue
+
+        # Prvo slovo
+        first_char = None
+        for content in p.contents:
+            if isinstance(content, NavigableString):
+                s = str(content).strip()
+                if s:
+                    first_char = s[0].upper()
+                break
+            elif hasattr(content, "get_text"):
+                t = content.get_text(strip=True)
+                if t:
+                    first_char = t[0].upper()
+                break
+
+        if not first_char or not first_char.isalpha():
+            continue
+
+        fname = DROPCAP_MAP.get(first_char)
+        if not fname:
+            continue
+        b64 = _png_b64(fname)
+        if not b64:
+            continue
+
+        img_html = (
+            f'<img class="booklyfi-dropcap" '
+            f'src="data:image/png;base64,{b64}" '
+            f'style="float:left;display:inline;'
+            f'width:4em;height:auto;max-width:none;'
+            f'margin:0.1em 0.15em 0 0;padding:0;'
+            f'vertical-align:top;" />'
+        )
+
+        novi_html = f'<p class="booklyfi-prvi">{img_html}'
+        novi_html += f'<span style="font-size:1px;color:transparent;line-height:0;">{first_char}</span>'
+
+        skip = True
+        for content in list(p.contents):
+            if isinstance(content, NavigableString):
+                s = str(content)
+                if skip:
+                    stripped = s.lstrip()
+                    lead = len(s) - len(stripped)
+                    s = s[:lead] + stripped[1:]
+                    skip = False
+                novi_html += s
+            else:
+                novi_html += str(content)
+
+        novi_html += "</p>"
+        novi_p = BeautifulSoup(novi_html, "html.parser").find("p")
+        if novi_p:
+            p.replace_with(novi_p)
+            return True
+
+    return False
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 9. DETEKCIJA STVARNIH POGLAVLJA
+# ═══════════════════════════════════════════════════════════════════════════
+
+SKIP_FNAME = (
+    "cover", "titlepage", "title_page", "copyright",
+    "colophon", "toc", "contents", "nav",
+    "impressum", "about", "acknowledg", "dedication",
+    "epigraph", "foreword", "preface", "introduction",
+)
+
+SKIP_TITLES = (
+    "sadržaj", "sadrzaj", "table of contents", "contents", "toc",
+    "impresum", "copyright", "autorska prava", "sva prava",
+    "naslovna", "title page", "cover", "korice",
+    "uvod", "uvodne informacije", "uvodna", "predgovor",
+    "prolog", "foreword", "preface", "introduction",
+    "epilog", "pogovor", "afterword", "epilogue",
+    "o autoru", "o piscu", "o knjizi", "o izdanju", "about",
+    "bilješka", "biljeska", "napomena", "note",
+    "posveta", "dedication", "zahvala", "zahvale",
+    "izjave zahvalnosti", "acknowledgments",
+    "kazalo", "dodatak", "appendix", "index", "glossary",
+    "prolaznost života", "prolaznost zivota",
+)
+
+SKIP_FIRST_P = (
+    "naslov izvornika", "autorska prava", "copyright",
+    "sadržaj", "uvod", "predgovor", "posveta",
+    "zahvala", "bilješka", "napomena", "izvorni naslov",
+    "izvorno izdanje", "originalno izdanje",
+)
+
+
+def _je_poglavlje(html_bytes: bytes, full_path: str) -> bool:
+    # Veličina
+    if len(html_bytes) < 8000:
+        return False
+
+    # Ime fajla
+    fname_low = full_path.lower()
+    if any(s in fname_low for s in SKIP_FNAME):
+        return False
+
+    # Sadržaj
+    try:
+        soup = BeautifulSoup(html_bytes.decode("utf-8", errors="replace"), "html.parser")
+    except Exception:
+        return False
+
+    text = soup.get_text(strip=True)
+    if len(text) < 5000:
+        return False
+
+    # Naslov
+    title = ""
+    for tag in ["h1", "h2", "h3", "title"]:
+        t = soup.find(tag)
+        if t:
+            txt = t.get_text(strip=True)
+            if txt:
+                title = txt
+                break
+
+    title_low = title.lower().strip()
+    for skip in SKIP_TITLES:
+        if title_low == skip or title_low.startswith(skip + " ") or title_low.startswith(skip + ":"):
+            return False
+
+    # Prvi <p>
+    first_p = soup.find("p")
+    if first_p:
+        fp_low = first_p.get_text(strip=True).lower()[:100]
+        for skip in SKIP_FIRST_P:
+            if fp_low.startswith(skip):
+                return False
+
+    return True
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 10. EPUB I/O
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _read(path: Path) -> dict[str, bytes]:
+    with zipfile.ZipFile(path) as z:
+        return {n: z.read(n) for n in z.namelist()}
+
+
+def _write(path: Path, files: dict[str, bytes]) -> None:
+    tmp_fd, tmp = tempfile.mkstemp(suffix=".epub.tmp", dir=path.parent)
+    try:
+        with zipfile.ZipFile(tmp, "w") as z:
             if "mimetype" in files:
-                z.writestr(
-                    zipfile.ZipInfo("mimetype"),
-                    files["mimetype"],
-                    compress_type=zipfile.ZIP_STORED,
-                )
-        with zipfile.ZipFile(tmp_path, "a", zipfile.ZIP_DEFLATED) as z:
-            for name, data in files.items():
-                if name == "mimetype":
+                z.writestr(zipfile.ZipInfo("mimetype"), files["mimetype"],
+                           compress_type=zipfile.ZIP_STORED)
+        with zipfile.ZipFile(tmp, "a", zipfile.ZIP_DEFLATED) as z:
+            for n, d in files.items():
+                if n == "mimetype":
                     continue
-                z.writestr(name, data)
+                z.writestr(n, d)
         os.close(tmp_fd)
-        shutil.move(tmp_path, str(epub_path))
+        shutil.move(tmp, str(path))
     except Exception:
         try:
             os.close(tmp_fd)
-            os.unlink(tmp_path)
+            os.unlink(tmp)
         except Exception:
             pass
         raise
 
 
-def _get_html_files(files: dict[str, bytes]) -> list[str]:
-    """Vraća listu putanja HTML/XHTML content fajlova."""
-    return [
-        n for n in files
-        if n.lower().endswith((".html", ".xhtml", ".htm"))
-        and "toc" not in n.lower().replace("-", "").replace("_", "")[:10]
-    ]
-
-
-def _is_chapter_html(name: str, html: str) -> bool:
-    """Da li je ovo content fajl (ne metadata, ne TOC, ne cover)."""
-    lower = name.lower()
-    if any(x in lower for x in ("cover", "titlepage", "copyright", "colophon")):
-        return False
-    soup = BeautifulSoup(html, "html.parser")
-    text = soup.get_text(strip=True)
-    return len(text) > 200
-
-
-def _inject_css_into_html(html: str, css: str) -> str:
-    """Ubacuje <style> blok u <head> HTML dokumenta."""
-    soup = BeautifulSoup(html, "html.parser")
-    head = soup.find("head")
-    if not head:
-        head = soup.new_tag("head")
-        if soup.html:
-            soup.html.insert(0, head)
-        else:
-            soup.insert(0, head)
-
-    # Ukloni stare booklyfi stilove ako postoje
-    for old in soup.find_all("style", attrs={"data-booklyfi": True}):
-        old.decompose()
-
-    style_tag = soup.new_tag("style", type="text/css")
-    style_tag["data-booklyfi"] = "1"
-    style_tag.string = css
-    head.append(style_tag)
-
-    # Dodaj Google Fonts link za EPUB online renderere
-    existing_links = [l.get("href", "") for l in soup.find_all("link", rel="stylesheet")]
-    if not any("googleapis" in l for l in existing_links):
-        gf_link = soup.new_tag("link", rel="stylesheet")
-        gf_link["href"] = (
-            "https://fonts.googleapis.com/css2?"
-            "family=EB+Garamond:ital,wght@0,400;0,500;1,400"
-            "&family=IM+Fell+English:ital@0;1"
-            "&display=swap"
-        )
-        head.append(gf_link)
-
-    return str(soup)
-
-
-def _add_chapter_ornament(soup: BeautifulSoup, ornament_idx: int) -> None:
-    """Dodaje SVG ornament ispod prvog h1/h2 u dokumentu."""
-    heading = soup.find(["h1", "h2"])
-    if not heading:
-        return
-
-    orn_svg = _svg_chapter_ornament(ornament_idx)
-    orn_tag = BeautifulSoup(
-        f'<div class="chapter-ornament">{orn_svg}</div>', "html.parser"
-    ).find("div")
-
-    if orn_tag:
-        heading.insert_after(orn_tag)
-
-
-def _add_dropcap(soup: BeautifulSoup) -> bool:
-    """
-    Dodaje SVG dropcap na prvi paragraf poglavlja.
-    Vraća True ako je dropcap dodan.
-    """
-    # Nađi prvi "pravi" paragraf (dovoljno teksta, nije samo whitespace)
-    for p in soup.find_all("p"):
-        text = p.get_text(strip=True)
-        if len(text) < 20:
-            continue
-
-        # Izvuci prvo slovo
-        first_char = None
-        for content in p.contents:
-            if isinstance(content, NavigableString):
-                stripped = content.strip()
-                if stripped:
-                    first_char = stripped[0].upper()
-                    rest_of_first_node = stripped[1:]
-                    break
-            elif hasattr(content, "get_text"):
-                t = content.get_text(strip=True)
-                if t:
-                    first_char = t[0].upper()
-                    break
-
-        if not first_char or not first_char.isalpha():
-            continue
-
-        # Generiši SVG dropcap
-        dropcap_svg = _svg_dropcap(first_char, STYLE_CONFIG["dropcap_color"])
-
-        # Rekonstruiši paragraf s dropcap-om
-        p["class"] = p.get("class", []) + ["has-dropcap"]
-
-        new_p_html = f'<p class="has-dropcap dropcap-wrap">{dropcap_svg}'
-
-        # Dodaj ostatak teksta
-        for i, content in enumerate(list(p.contents)):
-            if isinstance(content, NavigableString):
-                txt = str(content)
-                if i == 0 and txt.strip():
-                    new_p_html += txt[1:]  # preskoči prvo slovo
-                else:
-                    new_p_html += txt
-            else:
-                new_p_html += str(content)
-
-        new_p_html += "</p>"
-
-        new_p = BeautifulSoup(new_p_html, "html.parser").find("p")
-        if new_p:
-            p.replace_with(new_p)
-        return True
-
-    return False
-
-
-# ── TOC generacija ─────────────────────────────────────────────────────────────
-
-def _extract_chapters_from_epub(files: dict[str, bytes]) -> list[dict]:
-    """
-    Izvlači listu poglavlja iz EPUB-a: {title, href, order}.
-    Čita OPF spine za redosljed, naslove iz HTML headinga.
-    """
-    chapters = []
-
-    # Nađi OPF fajl
-    opf_content = None
-    opf_path = ""
-    container_xml = files.get("META-INF/container.xml", b"")
-    if container_xml:
-        m = re.search(rb'full-path="([^"]+\.opf)"', container_xml)
-        if m:
-            opf_path = m.group(1).decode("utf-8", errors="replace")
-            opf_content = files.get(opf_path, b"")
-
-    if not opf_content:
-        for name, data in files.items():
-            if name.endswith(".opf"):
-                opf_content = data
-                opf_path = name
-                break
-
-    if not opf_content:
-        return chapters
-
-    try:
-        opf_soup = BeautifulSoup(opf_content, "xml")
-    except Exception:
-        opf_soup = BeautifulSoup(opf_content, "lxml")
-
-    # Čitaj spine redosljed
-    spine = opf_soup.find("spine")
-    manifest = opf_soup.find("manifest")
-    if not spine or not manifest:
-        return chapters
-
-    id_to_href = {}
-    for item in manifest.find_all("item"):
-        item_id = item.get("id", "")
-        href = item.get("href", "")
-        if href.lower().endswith((".html", ".xhtml", ".htm")):
-            id_to_href[item_id] = href
-
-    opf_dir = str(Path(opf_path).parent)
-
-    order = 0
-    for itemref in spine.find_all("itemref"):
-        idref = itemref.get("idref", "")
-        href = id_to_href.get(idref, "")
-        if not href:
-            continue
-
-        # Resolvi punu putanju unutar EPUB-a
-        if opf_dir and opf_dir != ".":
-            full_path = f"{opf_dir}/{href}"
-        else:
-            full_path = href
-
-        html_bytes = files.get(full_path, files.get(href, b""))
-        if not html_bytes:
-            continue
-
-        html_str = html_bytes.decode("utf-8", errors="replace")
-        soup = BeautifulSoup(html_str, "html.parser")
-
-        # Izvuci naslov
-        title = ""
-        for tag in ["h1", "h2", "h3", "title"]:
-            t = soup.find(tag)
-            if t and t.get_text(strip=True):
-                title = t.get_text(strip=True)
-                break
-
-        text = soup.get_text(strip=True)
-        if len(text) < 50:
-            continue  # preskoči prazne fajlove
-
-        order += 1
-        chapters.append({
-            "title": title or f"Poglavlje {order}",
-            "href": href,
-            "full_path": full_path,
-            "order": order,
-        })
-
-    return chapters
-
-
-def _toc_exists_in_epub(files: dict[str, bytes]) -> bool:
-    """Provjerava da li EPUB već ima funkcionalni TOC s poglavijima."""
-    for name, data in files.items():
-        lower = name.lower()
-        if "toc" in lower or "contents" in lower or "sadrzaj" in lower:
+def _meta(files: dict) -> tuple[str, str]:
+    for n, d in files.items():
+        if n.endswith(".opf"):
             try:
-                text = data.decode("utf-8", errors="replace")
-                soup = BeautifulSoup(text, "html.parser")
-                links = soup.find_all("a", href=True)
-                if len(links) >= 3:
-                    return True
+                s = BeautifulSoup(d, "xml")
+                t = s.find("dc:title")
+                c = s.find("dc:creator")
+                return (
+                    c.get_text(strip=True) if c else "Nepoznat_autor",
+                    t.get_text(strip=True) if t else "Nepoznat_naslov",
+                )
             except Exception:
                 pass
-    return False
+    return "Nepoznat_autor", "Nepoznat_naslov"
 
 
-def _build_toc_html(chapters: list[dict], book_title: str = "") -> str:
-    """Generiše HTML TOC stranicu."""
-    c = STYLE_CONFIG
-    paper_b64 = base64.b64encode(_svg_paper_texture().encode()).decode()
-
-    items = ""
-    for ch in chapters:
-        title = ch["title"].strip()
-        href = ch["href"]
-        order = ch["order"]
-        items += (
-            f'<li class="toc-item">'
-            f'<span class="toc-num">{order}</span>'
-            f'<a href="{href}" class="toc-link">{title}</a>'
-            f'<span class="toc-dots"></span>'
-            f'</li>\n'
-        )
-
-    return f"""<?xml version='1.0' encoding='utf-8'?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="bs">
-<head>
-<meta charset="utf-8"/>
-<title>Sadržaj</title>
-<style>
-body {{
-    background-color: {c['paper_bg']};
-    background-image: url("data:image/svg+xml;base64,{paper_b64}");
-    background-size: 400px 400px;
-    color: {c['ink_primary']};
-    font-family: {c['font_body']};
-    margin: 0 8%;
-    padding: 2em 0;
-}}
-.toc-title {{
-    font-family: {c['font_heading']};
-    font-size: 1.8em;
-    color: {c['ink_secondary']};
-    text-align: center;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.3em;
-}}
-.toc-book-title {{
-    font-family: {c['font_heading']};
-    font-size: 1.1em;
-    color: {c['ink_muted']};
-    text-align: center;
-    font-style: italic;
-    margin-bottom: 1.5em;
-}}
-.toc-ornament {{ text-align: center; margin: 0.5em 0 2em 0; }}
-.toc-list {{
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}}
-.toc-item {{
-    display: flex;
-    align-items: baseline;
-    padding: 0.4em 0;
-    border-bottom: 1px dotted rgba(139,105,20,0.3);
-    gap: 0.5em;
-}}
-.toc-num {{
-    font-family: {c['font_heading']};
-    font-size: 0.75em;
-    color: {c['ornament_gold']};
-    min-width: 1.8em;
-    font-style: italic;
-}}
-.toc-link {{
-    color: {c['ink_primary']};
-    text-decoration: none;
-    font-family: {c['font_heading']};
-    font-size: 0.95em;
-    flex: 1;
-}}
-.toc-link:hover {{ color: {c['ink_secondary']}; text-decoration: underline; }}
-</style>
-</head>
-<body>
-<p class="toc-title">Sadržaj</p>
-{"<p class='toc-book-title'>" + book_title + "</p>" if book_title else ""}
-<div class="toc-ornament">{_svg_chapter_ornament(1)}</div>
-<ol class="toc-list">
-{items}
-</ol>
-</body>
-</html>"""
+def _san(s: str) -> str:
+    s = re.sub(r'[\\/:*?"<>|]', "", s.strip())
+    return re.sub(r"\s+", "_", s)
 
 
-def _ai_generate_toc_titles(
-    chapters: list[dict],
-    fleet,
-    log_callback=None,
-) -> list[dict]:
-    """
-    Ako poglavlja nemaju naslove (samo 'Poglavlje N'),
-    traži AI da ih imenuje na osnovu sadržaja.
-    """
-    unnamed = [ch for ch in chapters if ch["title"].startswith("Poglavlje ")]
-    if not unnamed or fleet is None:
-        return chapters
-
-    def _log(msg):
-        if log_callback:
-            log_callback(msg, "tech")
-        logger.info("[styler/toc] %s", msg)
-
-    _log(f"AI generira {len(unnamed)} naslova poglavlja...")
-
-    # Skupi uzorke teksta
-    samples_txt = ""
-    for ch in unnamed[:12]:
-        sample = ch.get("_text_sample", "")[:300]
-        if sample:
-            samples_txt += f"\nPoglavlje {ch['order']}:\n{sample}\n"
-
-    if not samples_txt:
-        return chapters
-
-    prompt = f"""Na osnovu ovih odlomaka iz knjige, predloži kratke naslove poglavlja na bosanskom/hrvatskom.
-
-{samples_txt}
-
-Vrati ISKLJUČIVO JSON:
-{{"naslovi": [{{"order": 1, "naslov": "..."}}]}}"""
-
-    try:
-        import asyncio
-        from network.provider_router import call_provider
-
-        async def _call():
-            return await call_provider(
-                prompt=prompt,
-                uloga="ANALIZA",
-                fleet=fleet,
-                max_tokens=800,
-                temperature=0.3,
-            )
-
-        loop = asyncio.new_event_loop()
-        try:
-            result = loop.run_until_complete(_call())
-        finally:
-            loop.close()
-
-        if result:
-            clean = re.sub(r"```(?:json)?\s*", "", result).replace("```", "").strip()
-            data = json.loads(clean)
-            order_to_title = {
-                item["order"]: item["naslov"]
-                for item in data.get("naslovi", [])
-            }
-            for ch in chapters:
-                if ch["order"] in order_to_title:
-                    ch["title"] = order_to_title[ch["order"]]
-    except Exception as e:
-        _log(f"AI TOC generacija pala: {e}")
-
-    return chapters
+def _ime(c: str, t: str) -> str:
+    return f"{_san(c)}_-_{_san(t)}_PREVEDENO_STYLED.epub"
 
 
-# ── Glavna funkcija ─────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+# 11. GLAVNA
+# ═══════════════════════════════════════════════════════════════════════════
 
-def run_epub_styler(
-    epub_path: str | Path,
-    fleet=None,
-    output_path: str | Path | None = None,
-    log_callback=None,
-    options: dict | None = None,
-) -> dict:
-    """
-    Primjenjuje premium "Stara knjižara" stil na EPUB.
-
-    Parametri:
-        epub_path    — ulazni EPUB fajl
-        fleet        — FleetManager (za AI TOC generaciju)
-        output_path  — izlazni EPUB (None = dodaje _STYLED suffix)
-        log_callback — f(msg, atype) za log
-        options      — override opcije:
-            add_dropcaps: bool (default True)
-            add_ornaments: bool (default True)
-            add_toc: bool (default True)
-            ai_toc_titles: bool (default True)
-
-    Vraća:
-        {"ok": bool, "epub_path": str, "moonreader_css": str,
-         "chapters": int, "dropcaps_added": int, "toc_created": bool, "error": str|None}
-    """
+def run_epub_styler(epub_path, output_path=None, fleet=None,
+                    log_callback=None, options=None) -> dict:
     epub_path = Path(epub_path)
-    opts = {
-        "add_dropcaps":    True,
-        "add_ornaments":   True,
-        "add_toc":         True,
-        "ai_toc_titles":   True,
-    }
-    if options:
-        opts.update(options)
 
-    def _log(msg: str, atype: str = "info"):
+    def _log(msg, atype="info"):
         logger.info("[styler] %s", msg)
         if log_callback:
             log_callback(msg, atype)
 
-    result = {
-        "ok": False,
-        "epub_path": "",
-        "moonreader_css": "",
-        "chapters": 0,
-        "dropcaps_added": 0,
-        "toc_created": False,
-        "error": None,
-    }
+    # ── BOOKLYFI STRANICE (nested — bez NameError) ──
+    def _napravi_naslovnu(creator, title):
+        import datetime
+        year = datetime.datetime.now().year
+        css = ("body{background:#F5F0E8;color:#2C1810;font-family:Georgia,serif;"
+               "margin:0;padding:3em 5% 2em 5%;text-align:center;}"
+               ".booklyfi-label{font-size:0.85em;letter-spacing:0.3em;"
+               "color:#8B6914;text-transform:uppercase;margin-bottom:4em;}"
+               ".title{font-size:2.4em;font-weight:700;color:#8B0000;"
+               "letter-spacing:0.05em;line-height:1.2;margin:2em 0 0.5em 0;}"
+               ".author{font-size:1.3em;color:#2C1810;letter-spacing:0.08em;"
+               "margin-top:3em;}"
+               ".publisher{font-size:0.9em;color:#8B6914;letter-spacing:0.15em;"
+               "margin-top:5em;text-transform:uppercase;}"
+               ".rule{border:none;border-top:1px solid #8B6914;width:40%;"
+               "margin:2em auto;opacity:0.5;}")
+        return ('<?xml version="1.0" encoding="utf-8"?>'
+                '<!DOCTYPE html>'
+                '<html xmlns="http://www.w3.org/1999/xhtml" lang="hr">'
+                f'<head><meta charset="utf-8"/><title>Naslovna</title>'
+                f'<style>{css}</style></head>'
+                '<body>'
+                '<div class="booklyfi-label">Booklyfi izdanje</div>'
+                '<hr class="rule"/>'
+                f'<h1 class="title">{title}</h1>'
+                '<hr class="rule"/>'
+                f'<p class="author">{creator}</p>'
+                f'<div class="publisher">Booklyfi &middot; {year}</div>'
+                '</body></html>')
+
+    def _napravi_impresum(creator, title, uid=""):
+        import datetime
+        year = datetime.datetime.now().year
+        uid_line = f'<p><span class="label">ID:</span> {uid}</p>' if uid else ''
+        css = ("body{background:#F5F0E8;color:#2C1810;font-family:Georgia,serif;"
+               "margin:0 8%;padding:3em 0 2em 0;line-height:1.7;font-size:0.95em;}"
+               "h1{color:#8B0000;text-align:center;font-size:1.3em;"
+               "letter-spacing:0.15em;margin-bottom:2em;}"
+               "h2{color:#5C3A1E;font-size:1em;letter-spacing:0.1em;"
+               "margin-top:1.5em;margin-bottom:0.5em;font-style:italic;}"
+               "p{margin:0.4em 0;text-indent:0;}"
+               ".meta{margin-bottom:2em;}"
+               ".meta .label{color:#8B6914;font-size:0.85em;"
+               "letter-spacing:0.08em;text-transform:uppercase;}"
+               ".booklyfi-block{margin-top:3em;padding-top:1.5em;"
+               "border-top:1px solid #8B6914;color:#5C3A1E;font-size:0.9em;}"
+               ".center{text-align:center;color:#8B6914;letter-spacing:0.2em;"
+               "margin:2em 0;}")
+        return ('<?xml version="1.0" encoding="utf-8"?>'
+                '<!DOCTYPE html>'
+                '<html xmlns="http://www.w3.org/1999/xhtml" lang="hr">'
+                f'<head><meta charset="utf-8"/><title>Impresum</title>'
+                f'<style>{css}</style></head>'
+                '<body>'
+                '<h1>IMPRESUM</h1>'
+                '<div class="meta">'
+                f'<p><span class="label">Naslov:</span> {title}</p>'
+                f'<p><span class="label">Autor:</span> {creator}</p>'
+                f'<p><span class="label">Izdanje:</span> Booklyfi digitalno izdanje, {year}.</p>'
+                f'{uid_line}'
+                '</div>'
+                '<div class="center">- - -</div>'
+                '<h2>O ovom izdanju</h2>'
+                '<p>Ovo izdanje pripremljeno je kroz <strong>Booklyfi</strong> '
+                'pipeline za pripremu digitalnih izdanja knjizevnih djela. '
+                'Tekst je prosao kroz automatsku lekturu, korekturu i '
+                'tipografsku obradu.</p>'
+                '<h2>Autorska prava</h2>'
+                '<p>Sva prava zadrzana. Nijedan dio ove knjige ne smije se '
+                'reproducirati, pohranjivati u sustavu za pretrazivanje ili '
+                'prenositi u bilo kojem obliku bez prethodnog pisanog '
+                'dopustenja nositelja prava.</p>'
+                '<p>Digitalno izdanje pripremljeno za osobnu upotrebu.</p>'
+                '<h2>Tehnicki podaci</h2>'
+                '<p><span class="label">Format:</span> EPUB 3</p>'
+                '<p><span class="label">Pismo:</span> Latinica (ijekavica)</p>'
+                '<p><span class="label">Tipografija:</span> Georgia, EB Garamond</p>'
+                '<div class="booklyfi-block">'
+                '<p style="text-align:center;letter-spacing:0.15em;">BOOKLYFI</p>'
+                f'<p style="text-align:center;font-size:0.85em;">Digitalna izdanja &middot; {year}</p>'
+                '</div>'
+                '</body></html>')
+
+    result = {"ok": False, "epub_path": "", "chapters": 0,
+              "dropcaps_added": 0, "toc_created": False, "error": None}
 
     if not epub_path.exists():
-        result["error"] = f"EPUB nije pronađen: {epub_path}"
-        _log(f"❌ {result['error']}", "error")
+        result["error"] = f"Ne postoji: {epub_path}"
         return result
 
-    _log(f"📖 Stilizacija: {epub_path.name}", "system")
-
-    # Odabir izlazne putanje
-    if output_path:
-        out_path = Path(output_path)
-    else:
-        stem = epub_path.stem
-        out_path = epub_path.parent / f"{stem}_STYLED.epub"
-
-    # Kopiraj original
-    shutil.copy2(str(epub_path), str(out_path))
+    _log(f"📖 {epub_path.name}", "system")
 
     try:
-        files = _read_epub(out_path)
+        files = _read(epub_path)
     except Exception as e:
-        result["error"] = f"Greška pri čitanju EPUB: {e}"
-        _log(f"❌ {result['error']}", "error")
+        result["error"] = f"Čitanje: {e}"
         return result
 
-    _log(f"   → {len(files)} fajlova u EPUB-u", "tech")
+    # Izlaz
+    if output_path:
+        out = Path(output_path)
+    else:
+        c, t = _meta(files)
+        od = Path(STYLED_OUTPUT_DIR)
+        od.mkdir(parents=True, exist_ok=True)
+        out = od / _ime(c, t)
 
-    # ── Generiši CSS ─────────────────────────────────────────────────────────
-    epub_css = _build_epub_css()
-    mr_css   = _build_moonreader_css()
+    # Nađi OPF
+    opf_path = next((n for n in files if n.endswith(".opf")), None)
+    if not opf_path:
+        result["error"] = "Nema OPF"
+        return result
 
-    # ── Izvuci poglavlja ──────────────────────────────────────────────────────
-    _log("📚 Analiza strukture knjige...", "tech")
-    chapters = _extract_chapters_from_epub(files)
-    result["chapters"] = len(chapters)
-    _log(f"   → {len(chapters)} poglavlja pronađeno", "tech")
+    opf_soup = BeautifulSoup(files[opf_path], "xml")
+    spine = opf_soup.find("spine")
+    manifest = opf_soup.find("manifest")
+    if not spine or not manifest:
+        result["error"] = "Nema spine/manifest"
+        return result
 
-    # ── Provjeri/kreiraj TOC ──────────────────────────────────────────────────
-    toc_created = False
-    if opts["add_toc"] and not _toc_exists_in_epub(files) and chapters:
-        _log("📋 TOC ne postoji — kreiram...", "system")
+    id_to_href = {}
+    for it in manifest.find_all("item"):
+        iid = it.get("id", "")
+        href = it.get("href", "")
+        if href.lower().endswith((".html", ".xhtml", ".htm")):
+            id_to_href[iid] = href
 
-        # Skupi uzorke teksta za AI imenovanje
-        for ch in chapters:
-            html_b = files.get(ch["full_path"], files.get(ch["href"], b""))
-            if html_b:
-                soup_tmp = BeautifulSoup(
-                    html_b.decode("utf-8", errors="replace"), "html.parser"
-                )
-                ch["_text_sample"] = soup_tmp.get_text(separator=" ", strip=True)[:400]
+    opf_dir = str(Path(opf_path).parent)
+    if opf_dir == ".":
+        opf_dir = ""
 
-        if opts["ai_toc_titles"] and fleet:
-            _log("🤖 AI imenuje poglavlja...", "system")
-            chapters = _ai_generate_toc_titles(chapters, fleet, log_callback)
+    # Nađi poglavlja
+    poglavlja = []
+    for itemref in spine.find_all("itemref"):
+        iid = itemref.get("idref", "")
+        href = id_to_href.get(iid, "")
+        if not href:
+            continue
+        full = f"{opf_dir}/{href}" if opf_dir else href
+        hb = files.get(full) or files.get(href)
+        if not hb:
+            continue
+        if _je_poglavlje(hb, full):
+            poglavlja.append({
+                "href": href, "full_path": full,
+                "order": len(poglavlja) + 1,
+            })
 
-        # Generiši TOC HTML
-        book_title = ""
-        opf_bytes = b""
-        for name, data in files.items():
-            if name.endswith(".opf"):
-                opf_bytes = data
-                break
-        if opf_bytes:
-            opf_soup = BeautifulSoup(opf_bytes, "xml")
-            t = opf_soup.find("dc:title")
+    _log(f"   → {len(poglavlja)} stvarnih poglavlja", "tech")
+
+    # ── BOOKLYFI STRANICE (naslovna + impresum) ──
+    creator_name, book_title = _meta(files)
+    book_uid = "booklyfi"
+    for n, d in files.items():
+        if n.endswith(".opf"):
+            try:
+                s = BeautifulSoup(d, "xml")
+                u = s.find("dc:identifier")
+                if u:
+                    book_uid = u.get_text(strip=True)
+            except Exception:
+                pass
+            break
+
+    naslovna_path = f"{opf_dir}/booklyfi_001_naslovna.xhtml" if opf_dir else "booklyfi_001_naslovna.xhtml"
+    impresum_path = f"{opf_dir}/booklyfi_002_impresum.xhtml" if opf_dir else "booklyfi_002_impresum.xhtml"
+
+    files[naslovna_path] = _napravi_naslovnu(creator_name, book_title).encode("utf-8")
+    files[impresum_path] = _napravi_impresum(creator_name, book_title, book_uid).encode("utf-8")
+
+    # Dodaj u OPF manifest
+    opf_str_tmp = files[opf_path].decode("utf-8", errors="replace")
+    naslovna_href = Path(naslovna_path).name
+    impresum_href = Path(impresum_path).name
+    opf_str_tmp = opf_str_tmp.replace(
+        "</manifest>",
+        f'<item id="booklyfi-naslovna" href="{naslovna_href}" media-type="application/xhtml+xml"/>'
+        f'<item id="booklyfi-impresum" href="{impresum_href}" media-type="application/xhtml+xml"/>'
+        "</manifest>"
+    )
+    # Dodaj na početak spine-a
+    opf_str_tmp = re.sub(
+        r'(<spine[^>]*>)',
+        r'\1<itemref idref="booklyfi-naslovna"/><itemref idref="booklyfi-impresum"/>',
+        opf_str_tmp,
+        count=1,
+    )
+    files[opf_path] = opf_str_tmp.encode("utf-8")
+    _log(f"   → Booklyfi naslovna + impresum dodani", "tech")
+
+    # Obrada poglavlja
+    dropcaps = 0
+    for p in poglavlja:
+        full = p["full_path"]
+        soup = BeautifulSoup(files[full].decode("utf-8", errors="replace"), "html.parser")
+
+        _ukloni_sve(soup)
+        _normalizuj(soup)
+        _dijalog(soup)
+        _dodaj_vijenac(soup)
+        _dodaj_naslov(soup, p["order"])
+        if _dodaj_dropcap(soup):
+            dropcaps += 1
+
+        # CSS
+        head = soup.find("head")
+        if not head:
+            head = soup.new_tag("head")
+            if soup.html:
+                soup.html.insert(0, head)
+            else:
+                soup.insert(0, head)
+        st = soup.new_tag("style", type="text/css")
+        st.string = CSS
+        head.append(st)
+
+        files[full] = str(soup).encode("utf-8")
+
+    _log(f"   → {dropcaps} dropcapa", "tech")
+
+    # ── OBRIŠI SVE HTML FAJLOVE KOJI NISU POGLAVLJA ──
+    # ZADRŽI: poglavlja + booklyfi_* (naslovna, impresum, toc) + cover
+    poglavlja_paths = {p["full_path"] for p in poglavlja}
+    for n in list(files.keys()):
+        low = n.lower()
+        if not low.endswith((".html", ".xhtml", ".htm")):
+            continue
+        if n in poglavlja_paths:
+            continue
+        # Zadrži booklyfi_* (naslovna, impresum, toc)
+        if "booklyfi_" in low:
+            continue
+        # Zadrži cover
+        if "cover" in low:
+            continue
+        # Obriši front/back matter HTML
+        del files[n]
+
+    # ── OBRIŠI SVE STARE TOC/NCX
+    for n in list(files.keys()):
+        low = n.lower()
+        if low.endswith(".ncx"):
+            del files[n]
+            continue
+        if low.endswith((".html", ".xhtml", ".htm")):
+            if "toc" in low or "sadrzaj" in low or "contents" in low:
+                content = files[n].decode("utf-8", errors="replace")[:3000].lower()
+                if "<nav" in content or "toc" in low:
+                    del files[n]
+
+    # Novi NCX
+    book_title = "Knjiga"
+    book_uid = "booklyfi"
+    for n, d in files.items():
+        if n.endswith(".opf"):
+            s = BeautifulSoup(d, "xml")
+            t = s.find("dc:title")
             if t:
                 book_title = t.get_text(strip=True)
+            u = s.find("dc:identifier")
+            if u:
+                book_uid = u.get_text(strip=True)
+            break
 
-        toc_html = _build_toc_html(chapters, book_title)
+    ncx_path = f"{opf_dir}/toc.ncx" if opf_dir else "toc.ncx"
+    navpoints = "\n".join(
+        f'  <navPoint id="np-{p["order"]}" playOrder="{p["order"]}">'
+        f'<navLabel><text>POGLAVLJE {p["order"]}</text></navLabel>'
+        f'<content src="{p["href"]}"/></navPoint>'
+        for p in poglavlja
+    )
+    files[ncx_path] = f'''<?xml version="1.0" encoding="UTF-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+<head><meta name="dtb:uid" content="{book_uid}"/><meta name="dtb:depth" content="1"/></head>
+<docTitle><text>{book_title}</text></docTitle>
+<navMap>
+{navpoints}
+</navMap>
+</ncx>'''.encode("utf-8")
 
-        # Nađi gdje da smjestimo TOC u EPUB-u
-        # Pokušaj naći OPF direktorij
-        opf_dir = ""
-        container = files.get("META-INF/container.xml", b"")
-        if container:
-            m = re.search(rb'full-path="([^"]+\.opf)"', container)
-            if m:
-                opf_dir = str(Path(m.group(1).decode()).parent)
-                if opf_dir == ".":
-                    opf_dir = ""
+    # Novi TOC HTML
+    toc_path = f"{opf_dir}/booklyfi_toc.xhtml" if opf_dir else "booklyfi_toc.xhtml"
+    items = "\n".join(
+        f'<li><a href="{p["href"]}">POGLAVLJE {p["order"]}</a></li>'
+        for p in poglavlja
+    )
+    files[toc_path] = f'''<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="hr">
+<head><meta charset="utf-8"/><title>Sadržaj</title>
+<style>body{{background:#F5F0E8;color:#2C1810;font-family:Georgia,serif;margin:0 8%;padding:2em 0;}}
+h1{{text-align:center;color:#8B0000;}}ul{{list-style:none;padding:0;}}
+li{{padding:0.4em 0;border-bottom:1px dotted #8B6914;}}
+a{{color:#2C1810;text-decoration:none;}}</style></head>
+<body><h1>Sadržaj</h1><ul>
+{items}
+</ul></body></html>'''.encode("utf-8")
 
-        toc_fname = f"{opf_dir}/booklyfi_toc.xhtml" if opf_dir else "booklyfi_toc.xhtml"
-        toc_fname = toc_fname.lstrip("/")
-        files[toc_fname] = toc_html.encode("utf-8")
+    # Ažuriraj OPF
+    opf_str = files[opf_path].decode("utf-8", errors="replace")
 
-        # Dodaj u OPF manifest i spine (na početku)
-        for opf_name in list(files.keys()):
-            if opf_name.endswith(".opf"):
-                opf_str = files[opf_name].decode("utf-8", errors="replace")
-                toc_href = Path(toc_fname).name if opf_dir else toc_fname
+    # Ukloni iz manifesta sve iteme koji referenciraju obrisane fajlove
+    sve_u_epub = set(files.keys())
+    def _ukloni_item(match):
+        href = match.group(1)
+        # Ako fajl ne postoji u files, ukloni item
+        for n in files:
+            if n.endswith(href) or href.endswith(Path(n).name):
+                return match.group(0)  # zadrži
+        return ''  # ukloni
 
-                if "booklyfi_toc" not in opf_str:
-                    opf_str = opf_str.replace(
-                        "</manifest>",
-                        f'  <item id="booklyfi-toc" href="{toc_href}" '
-                        f'media-type="application/xhtml+xml"/>\n  </manifest>',
-                    )
-                    opf_str = opf_str.replace(
-                        "<spine",
-                        '<spine>\n    <itemref idref="booklyfi-toc"/>\n    <spine_placeholder',
-                    ).replace(
-                        '<spine_placeholder',
-                        "",
-                    )
-                files[opf_name] = opf_str.encode("utf-8")
-                break
+    # Jednostavnije: prođi kroz manifest i ukloni iteme čiji href ne postoji
+    manifest_soup = BeautifulSoup(opf_str, "xml")
+    manifest_el = manifest_soup.find("manifest")
+    if manifest_el:
+        for item in manifest_el.find_all("item"):
+            href = item.get("href", "")
+            # Provjeri da li postoji u files
+            if opf_dir:
+                full_href = f"{opf_dir}/{href}"
+            else:
+                full_href = href
+            if full_href not in files and href not in files:
+                item.decompose()
+        # Ukloni iz spine-a itemref koji referenciraju nepostojeće iteme
+        spine_el = manifest_soup.find("spine")
+        if spine_el:
+            valid_ids = {it.get("id") for it in manifest_el.find_all("item")}
+            for itemref in spine_el.find_all("itemref"):
+                iid = itemref.get("idref")
+                if iid and iid not in valid_ids and iid != "booklyfi-toc":
+                    itemref.decompose()
+        opf_str = str(manifest_soup)
+    # Ukloni stare (ali NE booklyfi-naslovna/impresum)
+    opf_str = re.sub(r'<item[^>]*id="(?:booklyfi-toc|ncx|toc)"[^>]*/>', '', opf_str, flags=re.I)
+    opf_str = re.sub(r'<itemref[^>]*idref="(?:booklyfi-toc|toc)"[^>]*/>', '', opf_str, flags=re.I)
+    # Dodaj nove
+    opf_str = opf_str.replace("</manifest>",
+        f'<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>'
+        f'<item id="booklyfi-toc" href="booklyfi_toc.xhtml" media-type="application/xhtml+xml"/>'
+        "</manifest>")
+    opf_str = re.sub(r'(<spine[^>]*>)', r'\1<itemref idref="booklyfi-toc"/>', opf_str, count=1)
+    if 'toc="ncx"' not in opf_str[:2000]:
+        opf_str = re.sub(r'<spine(?![^>]*\btoc=)', '<spine toc="ncx"', opf_str, count=1)
+    files[opf_path] = opf_str.encode("utf-8")
 
-        toc_created = True
-        result["toc_created"] = True
-        _log(f"✅ TOC kreiran ({len(chapters)} stavki)", "success")
-
-    # ── Primijeni stilove na HTML fajlove ─────────────────────────────────────
-    _log("🎨 Primjenjujem premium stilove...", "system")
-
-    dropcaps_added = 0
-    ornament_idx = 0
-    modified_count = 0
-
-    html_names = _get_html_files(files)
-
-    for fname in html_names:
-        html_bytes = files[fname]
-        html_str = html_bytes.decode("utf-8", errors="replace")
-
-        if not _is_chapter_html(fname, html_str):
-            continue
-
-        soup = BeautifulSoup(html_str, "html.parser")
-
-        # Ornament ispod naslova poglavlja
-        if opts["add_ornaments"]:
-            _add_chapter_ornament(soup, ornament_idx)
-            ornament_idx += 1
-
-        # Dropcap na prvom paragrafu
-        if opts["add_dropcaps"]:
-            if _add_dropcap(soup):
-                dropcaps_added += 1
-
-        # CSS inject
-        new_html = _inject_css_into_html(str(soup), epub_css)
-        files[fname] = new_html.encode("utf-8")
-        modified_count += 1
-
-    _log(f"   → {modified_count} fajlova stilizovano", "tech")
-    _log(f"   → {dropcaps_added} dropcap inicijala dodano", "tech")
-
-    result["dropcaps_added"] = dropcaps_added
-
-    # ── Snimaj EPUB ───────────────────────────────────────────────────────────
-    _log("💾 Snimam stilizovani EPUB...", "tech")
-    try:
-        _write_epub(out_path, files)
-    except Exception as e:
-        result["error"] = f"Greška pri snimanju EPUB: {e}"
-        _log(f"❌ {result['error']}", "error")
-        return result
-
-    # ── Moon+ Reader CSS profil ───────────────────────────────────────────────
-    mr_css_path = out_path.with_suffix(".css")
-    mr_css_path.write_text(mr_css, encoding="utf-8")
-    _log(f"📱 Moon+ Reader profil: {mr_css_path.name}", "success")
+    # Snimi
+    _log("💾 Snimam...", "tech")
+    _write(out, files)
 
     result.update({
-        "ok": True,
-        "epub_path": str(out_path),
-        "moonreader_css": str(mr_css_path),
-        "toc_created": toc_created,
+        "ok": True, "epub_path": str(out),
+        "chapters": len(poglavlja),
+        "dropcaps_added": dropcaps,
+        "toc_created": True,
     })
-
-    _log(
-        f"🎉 Stilizacija završena: {out_path.name} "
-        f"({dropcaps_added} dropcap, {len(chapters)} pogl.)",
-        "success",
-    )
+    _log(f"✅ {out.name} ({len(poglavlja)} pogl, {dropcaps} dropcap)", "success")
     return result
 
-
-# ── CLI ────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import sys
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-
     if len(sys.argv) < 2:
-        print("Upotreba: python -m epub.styler <knjiga.epub> [izlaz_STYLED.epub]")
+        print("Upotreba: python -m epub.styler <knjiga.epub> [izlaz.epub]")
         sys.exit(1)
-
-    def _cli_log(msg, atype="info"):
-        icons = {"system": "🔷", "success": "✅", "error": "❌",
-                 "warning": "⚠️", "tech": "  ·", "info": "ℹ️"}
-        print(f"{icons.get(atype, '')} {msg}")
-
     res = run_epub_styler(
         sys.argv[1],
         output_path=sys.argv[2] if len(sys.argv) > 2 else None,
-        log_callback=_cli_log,
+        log_callback=lambda m, t="info": print(f"  {m}"),
     )
-
+    print(f"\n{'✅ OK' if res['ok'] else '❌ ' + str(res['error'])}")
     if res["ok"]:
-        print(f"\n✅ Gotovo!")
-        print(f"   EPUB:        {res['epub_path']}")
-        print(f"   Moon+ CSS:   {res['moonreader_css']}")
-        print(f"   Poglavlja:   {res['chapters']}")
-        print(f"   Dropcaps:    {res['dropcaps_added']}")
-        print(f"   TOC kreiran: {res['toc_created']}")
-    else:
-        print(f"\n❌ Greška: {res['error']}")
-        sys.exit(1)
+        print(f"   EPUB:      {res['epub_path']}")
+        print(f"   Poglavlja: {res['chapters']}")
+        print(f"   Dropcaps:  {res['dropcaps_added']}")

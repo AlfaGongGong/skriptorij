@@ -125,6 +125,60 @@ def dev_models():
 def get_status():
     """Vraća kompletan status s ETA računanjem."""
     SHARED_STATS["est"] = _racunaj_eta()
+    # FIX: pošalji ime knjige (origin. .epub, ne HTML)
+    try:
+        _book = SHARED_STATS.get("current_file", "")
+        # Ako je HTML, izvuci iz live_audit
+        if not _book or _book.endswith(".html"):
+            import re as _re
+            _la = SHARED_STATS.get("live_audit", "")
+            # Pattern: "Engine inicijaliziran: NAZIV.epub"
+            _m = _re.search(r"Engine inicijaliziran:&#92;s*([^&#92;s&lt;]+&#92;.epub)", _la)
+            if not _m:
+                _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
+            if not _m:
+                _m = _re.search(r"checkpoint:\s*[^\s]*?/_skr_([^\s/]+)/checkpoints", _la)
+            if _m:
+                _name = _m.group(1)
+                _name = _re.sub(r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE)
+                _name = _re.sub(r"--.*$", "", _name)
+                _name = _name.replace("_", " ").strip()
+                if _name:
+                    SHARED_STATS["book_name"] = _name
+        else:
+            SHARED_STATS["book_name"] = _book
+    except Exception:
+        pass
+    # FIX: ako current_file je prazan, izvuci iz live_audit
+    if not SHARED_STATS.get("current_file"):
+        try:
+            import re as _re
+            _la = SHARED_STATS.get("live_audit", "")
+            # Pattern: "Engine inicijaliziran: NAZIV.epub"
+            _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
+            if not _m:
+                # Pattern: "checkpoint: .../_skr_NAZIV/checkpoints"
+                _m = _re.search(r"checkpoint:\s*[^\s]*?/_(?:skr_)([^\s/]+)/checkpoints", _la)
+            if _m:
+                _name = _m.group(1)
+                # Ukloni hashove i sufiksе
+                _name = _re.sub(r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE)
+                _name = _re.sub(r"--.*$", "", _name)
+                _name = _name.replace("_", " ").strip()
+                if _name:
+                    SHARED_STATS["current_file"] = _name
+        except Exception:
+            pass
+    # FIX: izvuci fazu iz live_audit ako status nije jasan
+    if SHARED_STATS.get("status") in ("ANALIZA KNJIGE...", "POKRETANJE...", None):
+        try:
+            _la = SHARED_STATS.get("live_audit", "")
+            if "Retro re-lektura" in _la:
+                _m = _re.search(r"Retro re-lektura:\s*(\d+)/(\d+)", _la)
+                if _m:
+                    SHARED_STATS["retro_info"] = f"{_m.group(1)}/{_m.group(2)} blokova"
+        except Exception:
+            pass
     return jsonify(SHARED_STATS)
 
 
@@ -852,10 +906,12 @@ def clean_annotations():
         # 2. Čišćenje HTML fajlova u work_dir (procurili JSON omotači u EPUB HTML)
         html_popravljeno = 0
         if work_dir.exists():
+            from core.natural_sort import natural_sort_key
             html_files = sorted(
-                f for f in work_dir.rglob("*")
-                if f.suffix.lower() in {".html", ".htm", ".xhtml"}
-                and not f.name.startswith(".")
+                (f for f in work_dir.rglob("*")
+                 if f.suffix.lower() in {".html", ".htm", ".xhtml"}
+                 and not f.name.startswith(".")),
+                key=natural_sort_key,
             )
             if html_files:
                 html_popravljeno = _strip_json_artifacts_from_html(html_files, log_fn=_log)

@@ -1,0 +1,107 @@
+{
+  "Cymoril": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 9
+  },
+  "Zasigurno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Elric": {
+    "rod": "M",
+    "clue_m": 15,
+    "clue_z": 0
+  },
+  "Tvar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nervozno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Yyrkoon": {
+    "rod": "M",
+    "clue_m": 7,
+    "clue_z": 0
+  },
+  "Valharik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Arioch": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Buka": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Zrak": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Glas": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zmija": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Tunel": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Rackhir": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Otvor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dvorana": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Stormbringer": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Mournblade": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Princ": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Krv": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Ulica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  }
+}

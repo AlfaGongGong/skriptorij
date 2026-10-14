@@ -1,0 +1,247 @@
+{
+  "King": {
+    "rod": "M",
+    "clue_m": 11,
+    "clue_z": 0
+  },
+  "Jingles": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Twain": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Stephen": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kubrickovo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Michael": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Louis": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Derry": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Holmes": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Borba": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Todd": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 4
+  },
+  "Chesley": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Ellison": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jessea": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Hooka": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Stegmana": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Rabbit": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Rezultat": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Satira": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Kingov": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "John": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Kingova": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Naposljetku": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zapravo": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Carvel": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sun": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Seldon": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Watson": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Leighton": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Spike": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Rita": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Mindbender": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Pulaski": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Mačak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Carrie": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Cressner": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Laurentiis": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Donatti": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Weizak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Film": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Vicky": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Michaels": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Mulder": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bierce": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Drake": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Brigham": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Tommy": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bolnica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Henry": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

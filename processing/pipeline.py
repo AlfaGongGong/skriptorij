@@ -15,6 +15,7 @@ import asyncio
 import re
 import json
 import os as _os
+from pathlib import Path
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 import warnings
 warnings.filterwarnings('ignore', category=XMLParsedAsHTMLWarning)
@@ -114,12 +115,12 @@ def _get_karantena_detektor():
 _rod_detektor_pipeline = None
 
 def _get_rod_detektor():
-    """Vraća singleton RodDetektor, inicijaliziran pri prvom pozivu."""
+    """Vraća DIJELJENI RodDetektor singleton (isti objekt kao u workers.py)."""
     global _rod_detektor_pipeline
     if _rod_detektor_pipeline is None:
         try:
-            from core.kalkovi.rod_detektor import RodDetektor
-            _rod_detektor_pipeline = RodDetektor()
+            from core.kalkovi.rod_detektor import rod_detektor as _shared_rod_detektor
+            _rod_detektor_pipeline = _shared_rod_detektor
         except Exception:
             _rod_detektor_pipeline = False
     return _rod_detektor_pipeline if _rod_detektor_pipeline is not False else None
@@ -191,11 +192,20 @@ def _je_placeholder_lokalni(tekst: str) -> bool:
         "svakako, evo",
         "kao što ste tražili",
         "kao što si tražio",
+        "u traženom json formatu",
+        "u traženom formatu",
+        "kada dobijem sadržaj",
+        "kad dobijem sadržaj",
     ]
-    if len(cist) < 150:
+    if len(cist) < 400:
         for fraza in _contains:
             if fraza in cist:
                 return True
+    # FIX: hvata formalni i neformalni registar zahtjeva za tekstom
+    # (npr. "Molim vas da pošaljete tekst..."), bez obzira na duzinu —
+    # ova fraza se prakticno nikad ne pojavljuje u stvarnom tekstu knjige.
+    if re.search(r"molim (te|vas)[^.!?\n]{0,80}pošalj\w*[^.!?\n]{0,20}tekst", cist):
+        return True
     # Odbaci anotacijski format (AI vratio listu izmjena umjesto teksta)
     if _je_ai_anotacija(tekst):
         return True
@@ -297,6 +307,21 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
         except Exception as e:
             logging.debug(f"[pipeline] Karantena detektor greška (blok {chunk_idx}): {e}")
 
+    # Korak 11a-fix: da_konjugator — "modal + da + glagol" → "modal + infinitiv"
+    # FIX 2026-09-25: Gemma/GPT-OSS vraćaju "želim da radim" umjesto "želim raditi".
+    # Konjugator pretvara SAMO kad su modal i glagol ista lica (subjekt isti).
+    try:
+        from core.kalkovi.da_konjugator import konjuguj as _da_konjuguj
+        if finalno:
+            finalno_dk, n_dk = _da_konjuguj(finalno, agresivno=False)
+            if n_dk > 0 and finalno_dk and len(finalno_dk.strip()) > 10:
+                finalno = finalno_dk
+                logging.info(
+                    f"[pipeline] da_konjugator: blok {chunk_idx} → {n_dk} konjugacija"
+                )
+    except Exception as e:
+        logging.debug(f"[pipeline] da_konjugator greška (blok {chunk_idx}): {e}")
+
     # Korak 11b: Rod detektor — aktivna korekcija miješanja roda
     rod_det = _get_rod_detektor()
     if rod_det is not None and finalno:
@@ -353,13 +378,37 @@ def _init_book_context(self, knjiga_id: str):
     else:
         self.prompt_injector = None
 
+    # ─── ANALIZA AUTOROVOG STILA ───
+    # Analizira prvih 30K znakova EPUB-a i sprema profil u book_context.
+    # Profil se automatski ubacuje u PREVODILAC prompt (core/prompts.py).
+    if self.book_context is not None:
+        try:
+            from core.autor_analiza import analiziraj_knjigu
+            _epub = getattr(self, "book_path", None)
+            if _epub and Path(_epub).exists():
+                _profil = analiziraj_knjigu(str(_epub))
+                if _profil and not _profil.get("greska"):
+                    self.book_context.postavi_autor_stil_profil(_profil)
+                    logging.info(
+                        f"[autor-analiza] Stil: {_profil.get('stil', '?')} | "
+                        f"Ton: {_profil.get('ton', '?')} | "
+                        f"Tempo: {'brz' if _profil.get('brz_tempo') else 'spor'} | "
+                        f"Dijalog: {int(_profil.get('omjer_dijaloga', 0) * 100)}%"
+                    )
+                else:
+                    logging.warning(f"[autor-analiza] Analiza neuspješna: {_profil}")
+            else:
+                logging.warning(f"[autor-analiza] Nema book_path: {_epub}")
+        except Exception as _e:
+            logging.warning(f"[autor-analiza] Greška: {_e}")
+
     # MorfoValidator — uzima ključ iz fleet managera ako je dostupan
     if _MORFO_OK and MorfoValidator is not None:
         try:
             fleet = getattr(self, "fleet", None)
             api_key = None
             if fleet:
-                key_state = fleet.get_best_key("GEMINI", "VALIDATOR")
+                key_state = fleet.get_best_key("GEMINI")
                 if key_state:
                     api_key = key_state.key if hasattr(key_state, "key") else None
             # Fallback na direktni atribut
@@ -437,12 +486,15 @@ async def _quality_scoring(
                 old_score = score_float
                 # Cap-ovi su namjerno stepenasti: što je veći pad dužine, niži
                 # maksimalni score, da nepotpuni blok ne može završiti s 9+.
-                if ratio < 0.60:
-                    score_float = min(score_float, 4.8)
-                elif ratio < 0.72:
-                    score_float = min(score_float, 6.0)
-                elif ratio < 0.82:
-                    score_float = min(score_float, 7.0)
+                # FIX: BCS koristi ~15-25% manje riječi od EN, pa su granice
+                # spuštene. Stare (0.60/0.72/0.82) rušile su dobre prijevode
+                # na 7.0 čim je ratio bio 0.78-0.82.
+                if ratio < 0.55:
+                    score_float = min(score_float, 5.0)
+                elif ratio < 0.65:
+                    score_float = min(score_float, 6.5)
+                elif ratio < 0.75:
+                    score_float = min(score_float, 7.5)
                 if score_float < old_score:
                     self.log(
                         f"[{file_name}] Blok {chunk_idx}: score cap zbog mogućeg gubitka teksta "
@@ -481,11 +533,30 @@ async def _quality_scoring(
         if done > 0 and done % 10 == 0:
             gc.collect()
             try:
+                import json as _json
                 qs_path = self.checkpoint_dir / "quality_scores.json"
+
+                # FIX: MERGE umjesto overwrite — čuvaj postojeće ocjene
+                existing = {}
+                if qs_path.exists():
+                    try:
+                        existing = _json.loads(qs_path.read_text("utf-8"))
+                    except Exception:
+                        existing = {}
+
+                # Spoji: shared_stats ima prioritet (novije ocjene)
+                merged = dict(existing)
+                for k, v in self.shared_stats.get("quality_scores", {}).items():
+                    merged[k] = v
+
+                # Upisi merged
                 qs_path.write_text(
-                    json.dumps(self.shared_stats["quality_scores"], ensure_ascii=False, indent=2),
+                    _json.dumps(merged, ensure_ascii=False, indent=2),
                     encoding="utf-8",
                 )
+
+                # Sinhronizuj shared_stats da ne raste bezveze
+                self.shared_stats["quality_scores"] = merged
             except Exception:
                 pass
 
@@ -601,7 +672,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             tip_bloka=tip_bloka,
         )
         p_lek = (
-            f"IZVORNI TEKST (već na bosanskom/hrvatskom):\n{sirovo}\n\n"
+            f"IZVORNI TEKST (već na hrvatskom):\n{sirovo}\n\n"
             f"Lektoriraj tekst: ispravi interpunkciju, em-crtice u dijalogu, "
             f"stilske greške. NE PREVODI — tekst je već na HR/BS jeziku."
         )
@@ -653,6 +724,13 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     finalno = kor_l
 
         finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
+
+        if _je_placeholder_lokalni(finalno):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ Lektor vratio meta-odgovor umjesto teksta — vraćam sigurni ulaz.",
+                "warning",
+            )
+            finalno = sirovo
 
         _chk_write(self, file_name, chunk_idx, finalno, "lektura")
         _chk_write(self, file_name, chunk_idx, finalno)
@@ -723,7 +801,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     p_lek = (
         f"IZVORNI ENGLESKI TEKST:\n{chunk}\n\n"
         f"SIROVI PRIJEVOD:\n{sirovo}\n\n"
-        f"Profesionalno lektoriraj na bosanski/hrvatski."
+        f"Profesionalno lektoriraj na hrvatski."
     )
     raw_l, prov2 = await self._call_ai_engine(
         p_lek, chunk_idx, uloga="LEKTOR",
@@ -803,6 +881,13 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     finalno = _post_process_tipografija(_agresivno_cisti(finalno))
     finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
+
+    if _je_placeholder_lokalni(finalno):
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: ⚠️ Meta-odgovor umjesto prevoda — vraćam sigurnu verziju.",
+            "warning",
+        )
+        finalno = sirovo
 
     _chk_write(self, file_name, chunk_idx, finalno)
     try:

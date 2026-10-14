@@ -1,0 +1,172 @@
+{
+  "Prekasno": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Buka": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Vjerojatno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tenways": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dow": {
+    "rod": "M",
+    "clue_m": 5,
+    "clue_z": 0
+  },
+  "Bethod": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Ironhead": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Scorry": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Iako": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Tada": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Odgovor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zatim": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Bayaz": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "maršal": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "upravitelj": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "guverner": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Gorst": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Bayazov": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Četvrti": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Calder": {
+    "rod": "M",
+    "clue_m": 8,
+    "clue_z": 0
+  },
+  "Dogman": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Shivers": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Div": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tunny": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Forest": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Onda": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "West": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Beck": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jama": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Većina": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Jednostavno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Scale": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Craw": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Oduvijek": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

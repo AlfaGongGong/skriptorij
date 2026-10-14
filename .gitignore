@@ -1,3 +1,7 @@
+# ========== ENV (NIKAD NE COMMITUJ) ==========
+.env
+.env.*
+
 # ========== API KLJUČEVI (NIKAD NE COMMITUJ) ==========
 dev_api.json
 api_state.json
@@ -79,3 +83,7 @@ node_modules/
 
 # ========== OSTALO ==========
 TrashRecover/
+
+# ========== KALKOVI KARANTENA DB ==========
+data/*.db
+data/*.db.*

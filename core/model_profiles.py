@@ -61,7 +61,7 @@ PROFILI: Dict[str, ModelProfile] = {
         rpd_limit=500,
         snage=[
             "književni stil",
-            "BS/HR morfologija",
+            "HR morfologija",
             "dugi kontekst",
             "razumijevanje idioma",
             "dijalog",
@@ -104,7 +104,7 @@ PROFILI: Dict[str, ModelProfile] = {
         snage=[
             "brz",
             "pouzdan",
-            "dobar BS/HR",
+            "dobar HR",
             "stabilan izlaz",
         ],
         slabosti=[

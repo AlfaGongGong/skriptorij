@@ -1,0 +1,67 @@
+{
+  "Prekasno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Buka": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Tenways": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bethod": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dow": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Ironhead": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Scorry": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zatim": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 2
+  },
+  "Bayaz": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "maršal": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "guverner": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Odgovor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Iako": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  }
+}

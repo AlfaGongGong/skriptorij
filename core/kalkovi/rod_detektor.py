@@ -40,8 +40,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 REGISTRI_DIR = BASE_DIR / "data" / "rod_registri"
 DB_PATH = BASE_DIR / "data" / "kalkovi_karantena.db"
 
-# Minimalni broj clue-ova iste vrijednosti da se rod registrira
-MIN_CLUE = 3
+# Minimalni broj clue-ova iste vrijednosti da se rod registrira.
+# FIX 2026-09-25: bilo 3 — previsoko. Likovi koji se pojave 2x s rodom
+# (npr. Aliz clue_z=2) ostajali su bez roda, AI ih miješao.
+MIN_CLUE = 2
+
+# FIX: minimalna razlika između clue_m i clue_z da bi se rod odabrao.
+# Ako je 1:1, ostaje neriješeno (auto).
+MIN_CLUE_DIFF = 2  # FIX 2026-09-27: bio 1, robusniji na šum
 
 # ── GPR parovi: muški oblik → ženski oblik ────────────────────────────────────
 # Format: {muški_GPR: ženski_GPR}
@@ -143,18 +149,37 @@ _TITULA_Z_RE = re.compile(
     re.IGNORECASE | re.UNICODE,
 )
 _TITULA_M_RE = re.compile(
-    rf"\b(?:gospodin|g\.|mr\.?|sir|lord|dr\.?\s+)({_IME_PAT})\b",
+    rf"\b(?:gospodin|g\.|mr\.?|sir|lord|dr\.?)\s+({_IME_PAT})\b",
     re.IGNORECASE | re.UNICODE,
 )
+# NAPOMENA (popravka): \s+ je ranije bio zalijepljen SAMO za "dr" granu, pa je
+# regex bez razmaka nakon "mr"/"sir"/"gospodin"/"lord" hvatao SREDINU riječi
+# kod svakog BCS pojma koji počinje tim slovima (npr. "mrzovoljnom" -> lažno
+# ime "zovoljnom", "mrtvac" -> "tvac", "sirotinjski" -> "otinjski"). Time je i
+# stvarna titula ("lord Fotanon") promašivala jer je tražila ime BEZ razmaka.
 
-# Zaustavne riječi — vlastita imena koja zapravo nisu (homonimi)
+# Zaustavne riječi — vlastita imena koja zapravo nisu (homonimi, čestice,
+# zamjenice i prilozi koji na početku rečenice dobiju veliko slovo i lako
+# upadnu u "Ime je GPR" / "GPR je Ime" obrazac).
 _ZAUSTAVI = frozenset({
-    "Ali", "Jer", "Dok", "Kad", "Što", "Koji", "Koja", "Koje",
-    "Ovaj", "Ova", "Ovo", "Taj", "Ta", "To", "Jedan", "Jedna",
-    "Ovdje", "Tamo", "Gdje", "Ili", "Nego", "Dakle", "Naime",
-    "Ipak", "Međutim", "Također", "Tek", "Već", "Baš", "Samo",
-    "Sve", "Svi", "Svaki", "Svaka", "Svako", "Nije", "Nema",
-    "Bio", "Bila", "Bili", "Rekao", "Rekla", "Otišao", "Otišla",
+    "Ali", "Jer", "Dok", "Kad", "Kada", "Što", "Koji", "Koja", "Koje", "Koju",
+    "Ovaj", "Ova", "Ovo", "Taj", "Ta", "To", "Onaj", "Ona", "Ono",
+    "Jedan", "Jedna", "Jedno", "Neko", "Neka", "Neki", "Neka", "Netko", "Nešto",
+    "Ovdje", "Tamo", "Ondje", "Tu", "Gdje", "Kuda", "Odakle", "Kamo",
+    "Ili", "Nego", "Dakle", "Naime", "Zato", "Stoga", "Zbog",
+    "Ipak", "Međutim", "Također", "Tek", "Već", "Baš", "Samo", "Čak",
+    "Sve", "Svi", "Svaki", "Svaka", "Svako", "Svugdje", "Nikad", "Nikada",
+    "Nije", "Nema", "Jest", "Jesu",
+    "Bio", "Bila", "Bili", "Bile", "Rekao", "Rekla", "Otišao", "Otišla",
+    "Sada", "Sad", "Nekad", "Nekada", "Odmah", "Uskoro", "Konačno", "Napokon",
+    "Doista", "Zaista", "Uistinu", "Valjda", "Možda", "Vjerovatno", "Sigurno",
+    "Tako", "Ovako", "Onako", "Otkako", "Otkad", "Dotad", "Dotle",
+    "Tko", "Ko", "Šta", "Ako", "Kako", "Zašto", "Kolika", "Koliko",
+    "Da", "Ne", "Ni", "Niti", "Pa", "A", "I", "Te",
+    "Prvi", "Prva", "Prvo", "Drugi", "Druga", "Drugo", "Treći", "Treća", "Treće",
+    "Posljednji", "Posljednja", "Posljednje", "Svaki", "Ostali", "Ostala", "Ostalo",
+    "Ništa", "Nitko", "Niko", "Svatko", "Svako", "Ponovno", "Opet", "Iznova",
+    "Naravno", "Očito", "Očigledno", "Nažalost", "Srećom",
 })
 
 
@@ -269,10 +294,13 @@ class _RodRegistar:
 
             # Registriraj rod kad ima dovoljno clue-ova i prevlada jedan
             if entry["rod"] is None:
-                if entry["clue_m"] >= MIN_CLUE and entry["clue_m"] > entry["clue_z"]:
+                # FIX 2026-09-25: zahtijevaj minimalnu razliku da bi se rod odabrao
+                _m = entry["clue_m"]
+                _z = entry["clue_z"]
+                if _m >= MIN_CLUE and (_m - _z) >= MIN_CLUE_DIFF:
                     entry["rod"] = "M"
                     log.debug(f"[rod_detektor] '{ime}' registriran kao M (clue_m={entry['clue_m']})")
-                elif entry["clue_z"] >= MIN_CLUE and entry["clue_z"] > entry["clue_m"]:
+                elif _z >= MIN_CLUE and (_z - _m) >= MIN_CLUE_DIFF:
                     entry["rod"] = "Ž"
                     log.debug(f"[rod_detektor] '{ime}' registriran kao Ž (clue_z={entry['clue_z']})")
 

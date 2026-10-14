@@ -3,6 +3,7 @@
 #   BUG#3 FIX: COHERE URL ažuriran s v1/chat na v2/chat
 #   ENDPOINT FIX (v10.7): GEMINI prebačen na native endpoint.
 #   Centralne Gemini URL konstante i helperi su u config.ai_config.
+#   FIX: dodani CLOUDFLARE (Workers AI, treba account_id) i NVIDIA (NIM)
 
 from config.ai_config import (
     GEMINI_BASE_URL,
@@ -10,6 +11,7 @@ from config.ai_config import (
     get_gemini_direct_url,
     get_gemini_url,
 )
+from config.settings import CLOUDFLARE_ACCOUNT_ID
 
 
 def get_url(prov):
@@ -25,10 +27,12 @@ def get_url(prov):
         "TOGETHER":    "https://api.together.xyz/v1/chat/completions",
         "OPENROUTER":  "https://openrouter.ai/api/v1/chat/completions",
         "COHERE":      "https://api.cohere.com/v2/chat",
-        "GITHUB":      "https://models.inference.ai.azure.com/chat/completions",
+        "GITHUB":      "https://models.github.ai/inference/chat/completions",
         "FIREWORKS":   "https://api.fireworks.ai/inference/v1/chat/completions",
         "CHUTES":      "https://llm.chutes.ai/v1/chat/completions",
         "HUGGINGFACE": "https://router.huggingface.co/v1/chat/completions",
         "KLUSTER":     "https://api.kluster.ai/v1/chat/completions",
+        "CLOUDFLARE":  f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions",
+        "NVIDIA":      "https://integrate.api.nvidia.com/v1/chat/completions",
     }
     return urls.get(prov_upper, urls["GROQ"])

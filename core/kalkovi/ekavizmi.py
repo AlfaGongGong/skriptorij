@@ -1,5 +1,5 @@
 """
-ekavizmi.py — Korekcija ekavizama u ijekavski standard (BS/HR)
+ekavizmi.py — Korekcija ekavizama u ijekavski standard (HR)
 150+ zamjena u kategorijama.
 
 Format: (pattern, zamjena, opis)

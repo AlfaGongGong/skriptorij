@@ -13,7 +13,28 @@ try:
 except Exception:
     _DINAMICKI = []
 
-SVE_LISTE = _DA + _EKAVIZMI + _DINAMICKI
+# FIX 2026-09-25: filtriraj SVE_LISTE — ukloni entry-e koji nisu tuple/list 2+
+def _filtriraj(lista):
+    out = []
+    for e in lista:
+        if isinstance(e, (tuple, list)):
+            if len(e) >= 2:
+                out.append(tuple(e))
+            elif len(e) == 1:
+                out.append((e[0], ""))
+        elif isinstance(e, str):
+            # String je pattern bez zamjene (rijetko korisno) — preskoči
+            continue
+    return out
+
+SVE_LISTE = (
+    _filtriraj(_DA)
+    + _filtriraj(_EKAVIZMI)
+    + _filtriraj(_DINAMICKI)
+    + _filtriraj(DIJALOG)
+    + _filtriraj(PLEONAZMI)
+    + _filtriraj(GLAGOLI)
+)
 
 __all__ = [
     "SVE_LISTE",
@@ -46,7 +67,7 @@ def reload_dinamicki_kalkove() -> int:
     except Exception:
         _DINAMICKI = []
 
-    SVE_LISTE = _DA + _EKAVIZMI + _DINAMICKI
+    SVE_LISTE = _DA + _EKAVIZMI + _DINAMICKI + DIJALOG + PLEONAZMI + GLAGOLI
 
     try:
         from core.kalkovi.engine import kalkovi_engine

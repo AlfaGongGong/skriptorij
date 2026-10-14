@@ -13,10 +13,12 @@ from typing import List
 #   gemini-2.5-flash-lite: 15 RPM / 20 RPD
 #   gemini-2.5-flash:      10 RPM / 20 RPD
 GOOGLE_MODEL_POOL = [
-    {"model": "gemini-3.5-flash",     "rpm": 10, "rpd": 20},
+    # Primarni: gemini-3.5-flash-lite — najnoviji free-tier model
+    # Test 2026-10-10: daje najbolji književni prijevod (aorist, bolji red riječi)
+    # 15 RPM / 500 RPD po ključu × 12 ključeva = 180 RPM / 6000 RPD
+    {"model": "gemini-3.5-flash-lite", "rpm": 15, "rpd": 500},
+    # Fallback: gemini-3.1-flash-lite — stabilan, isti limiti
     {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
-    {"model": "gemini-2.5-flash-lite", "rpm": 15, "rpd": 20},
-    {"model": "gemini-2.5-flash",      "rpm": 10, "rpd": 20},
 ]
 
 GEMMA_MODEL_POOL = [
@@ -27,81 +29,36 @@ GEMMA_MODEL_POOL = [
 # GEMMA je nositelj (#1) za sve Google uloge — 1500 RPD/ključ.
 # GEMINI je fallback (#2).
 PROVIDER_PRIORITY = {
-    "PREVODILAC": [
-        "CEREBRAS",
-        "SAMBANOVA",
-        "GROQ",
-        "TOGETHER",
-        "FIREWORKS",
-        "GEMMA",
-        "GEMINI",
-        "MISTRAL",
-        "OPENROUTER",
-        "GITHUB",
-    ],
-    "LEKTOR": [
-        "GEMMA",
-        "GEMINI",
-        "MISTRAL",
-        "CEREBRAS",
-        "GROQ",
-        "COHERE",
-        "TOGETHER",
-        "SAMBANOVA",
-        "GITHUB",
-    ],
-    "KOREKTOR": [
-        "CEREBRAS",
-        "GROQ",
-        "GEMMA",
-        "GEMINI",
-        "MISTRAL",
-        "SAMBANOVA",
-        "GITHUB",
-    ],
-    "VALIDATOR": ["CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "GUARDIAN": ["GEMMA", "GEMINI", "MISTRAL", "CEREBRAS", "COHERE", "GITHUB"],
-    "POLISH": [
-        "GEMMA",
-        "GEMINI",
-        "MISTRAL",
-        "COHERE",
-        "TOGETHER",
-        "SAMBANOVA",
-        "GITHUB",
-    ],
-    "ANALIZA": [
-        "CEREBRAS",
-        "GROQ",
-        "MISTRAL",
-        "SAMBANOVA",
-        "GEMMA",
-        "GEMINI",
-        "GITHUB",
-    ],
-    "CHAPTER_SUMMARY": ["CEREBRAS", "GROQ", "GEMMA", "GEMINI", "MISTRAL", "GITHUB"],
-    "GLOSAR_UPDATE": ["GEMMA", "GEMINI", "CEREBRAS", "GROQ", "MISTRAL", "GITHUB"],
-    "SCORER": ["GEMMA", "GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
+    "PREVODILAC":       ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "MISTRAL", "CLOUDFLARE", "NVIDIA"],
+    "LEKTOR":           ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "MISTRAL", "CLOUDFLARE", "NVIDIA"],
+    "KOREKTOR":         ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "MISTRAL", "CLOUDFLARE", "NVIDIA"],
+    "VALIDATOR":        ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "MISTRAL", "CLOUDFLARE", "NVIDIA"],
+    "GUARDIAN":         ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "CLOUDFLARE", "NVIDIA"],
+    "POLISH":           ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "MISTRAL", "CLOUDFLARE", "NVIDIA"],
+    "ANALIZA":          ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "CLOUDFLARE", "NVIDIA"],
+    "CHAPTER_SUMMARY":  ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "CLOUDFLARE"],
+    "GLOSAR_UPDATE":    ["GEMINI", "GROQ", "GEMMA", "OPENROUTER", "CLOUDFLARE"],
+    "SCORER":           ["GEMINI", "GROQ", "GEMMA", "CLOUDFLARE", "OPENROUTER"],
 }
 
 AI_MODEL_STRINGS = {
-    "gemini_25_flash": "gemini-2.5-flash",
+    "gemini_25_flash": "gemini-3.5-flash-lite",
     # Backward-compatible alias: the old gemini_20_flash profile now targets
     # the stable replacement model after gemini-2.0-flash deprecation.
-    "gemini_20_flash": "gemini-3.5-flash",
-    "gemini_3_flash": "gemini-3.5-flash",    # gemini-3.0-flash ne postoji; koristi 3.5-flash
+    "gemini_20_flash": "gemini-3.5-flash-lite",
+    "gemini_3_flash": "gemini-3.5-flash-lite",    # gemini-3.0-flash ne postoji; koristi 3.5-flash
     "gemini_31_flash_lite": "gemini-3.1-flash-lite",
     "gemini_25_flash_lite": "gemini-2.5-flash-lite",
     "gemma4_26b": "gemma-4-26b-a4b-it",
     "gemma4_31b": "gemma-4-31b-it",
     "gemma3_27b": "gemma-3-27b-it",
-    "llama33_70b_groq": "llama-3.3-70b-versatile",
+    "llama33_70b_groq": "openai/gpt-oss-120b",
     "llama31_70b_cerebras": "llama-3.1-70b",
     "mistral_large": "mistral-large-latest",
     "mistral_nemo": "open-mistral-nemo",
     "command_r_plus_cohere": "command-r-plus",
     "llama_sambanova": "Meta-Llama-3.1-70B-Instruct",
-    "deepseek_openrouter": "deepseek/deepseek-chat",
+    "deepseek_openrouter": "deepseek/deepseek-v4-flash:free",
     "qwen_chutes": "Qwen/Qwen2.5-72B-Instruct",
 }
 
@@ -110,16 +67,19 @@ MODEL_MAP = {
     "SAMBANOVA": "Meta-Llama-3.3-70B-Instruct",
     "MISTRAL": "mistral-small-latest",
     "TOGETHER": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    "GROQ": "llama-3.3-70b-versatile",
+    "GROQ": "qwen/qwen3.8-27b",
     "GEMINI": GOOGLE_MODEL_POOL[0]["model"],
-    "OPENROUTER": "meta-llama/llama-3.3-70b-instruct:free",
+    "OPENROUTER": "thinkingmachines/inkling:free",
     "COHERE": "command-r-plus-08-2024",
     "CHUTES": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER": "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS": "accounts/fireworks/models/llama-v3p3-70b-instruct",
     "GEMMA": GEMMA_MODEL_POOL[0]["model"],
-    "GITHUB": "gpt-4o",
+    "GITHUB": "openai/gpt-4.1",
+    "CLOUDFLARE": "@cf/meta/llama-3.1-8b-instruct-fp8",
+    "NVIDIA": "nvidia/nemotron-3.5-lightning",
+
 }
 
 MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"
@@ -215,19 +175,21 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         notes="Primarni: 3.5-flash (stable, nema shutdown). 8 ključeva × 500 RPD = 4000 RPD/dan. 2.5 fallback do okt 2026.",
     ),
     # ── GROQ ────────────────────────────────────────────────────────────────
-    # Free tier: llama-3.3-70b-versatile = 30 RPM / 1000 RPD / 131K TPM
+    # Free tier (STARI podaci za llama-3.3-70b-versatile — model ugašen 17.06.2026):
+    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
     # llama-3.1-8b-instant = 30 RPM / 14400 RPD (sekundarni model)
     # Pažnja: RPD je nizak na primarnom modelu (1000/dan po ključu)
     # Ključevi: 5 komada → 5000 RPD ukupno — ne rasipati na scorer/validator
     "GROQ": ProviderProfile(
         name="GROQ",
         rpm_hard=30,
-        rpm_safe=24,
+        rpm_safe=12,  # FIX #4: per-key limit (uklonjen iz global RPM)
         rpd_hard=1000,
         rpd_safe=850,
-        tpm_hard=131_072,
+        tpm_hard=6000,  # FIX: qwen3.8-27b free tier ~6k TPM (bilo 15k, previse)
         min_gap_s=2.5,  # 60/24 = 2.5s
-        cooldown_429_s=65.0,
+        cooldown_429_s=10.0,  # FIX: Groq šalje Retry-After (2-10s) pa se profil rijetko koristi.
+                               # 65s je bilo predugo — drži ključ zaključan kad Groq nema header.
         supports_system_role=True,
         preferred_roles=["PREVODILAC", "KOREKTOR"],
         avoid_roles=["SCORER"],  # RPD previše vrijedan za scorer
@@ -236,23 +198,26 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
     ),
     # ── SAMBANOVA ───────────────────────────────────────────────────────────
     # Free tier: Meta-Llama-3.3-70B = 10 RPM / 10000 RPD / 4096 TPM
-    # TPM je JAKO nizak (4096) — dugi promptovi momentalno gaze limit
-    # Ključevi: 6 komada → 60 RPM / 60000 RPD (odlično)
-    # Pažnja: skratiti system prompt na maksimum 1500 tokena za Sambanova
+    # TPM je JAKO nizak (4096) — dugi promptovi momentalno gaze limit.
+    # Pravo usko grlo je TPM, ne RPD (RPD=10000 se nikad ne dostiže).
+    # 429 u praksi = TPM prekoračenje (~65-70% rejection rate bez throttle).
+    # Realni kapacitet: ~133-200 uspješnih poziva/dan po ključu (TPM limiti).
+    # Ključevi: 3 aktivna (402 su blacklistirani) → ~600 korisnih poziva/dan ukupno
+    # Pažnja: skratiti promptove na max ~800 tokena za SambaNova
     "SAMBANOVA": ProviderProfile(
         name="SAMBANOVA",
         rpm_hard=10,
         rpm_safe=8,
         rpd_hard=10_000,
-        rpd_safe=8_500,
-        tpm_hard=4_096,  # KRITIČNO nizak!
+        rpd_safe=400,   # Realno po ključu — TPM limit čini RPD irrelevantnim
+        tpm_hard=4_096,  # KRITIČNO nizak! Ovo je pravo usko grlo.
         min_gap_s=7.5,  # 60/8 = 7.5s
-        cooldown_429_s=70.0,
+        cooldown_429_s=75.0,  # TPM 429 treba čekati cijeli 60s prozor + buffer
         supports_system_role=True,
         preferred_roles=["PREVODILAC", "KOREKTOR"],
         avoid_roles=["ANALIZA", "SCORER"],  # dugi outputi + TPM problem
         quality_tier=2,
-        notes="Visok RPD ali KRITIČNO nizak TPM (4096). Koristiti kratke promptove!",
+        notes="TPM=4096 je pravo usko grlo (ne RPD). Max ~800 tokena po promptu. 3 aktivna ključa.",
     ),
     # ── COHERE ──────────────────────────────────────────────────────────────
     # Free tier: command-r-plus = 20 RPM / 1000 RPD (trial key)
@@ -284,15 +249,15 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         rpm_hard=20,
         rpm_safe=15,
         rpd_hard=200,
-        rpd_safe=170,
-        tpm_hard=0,
+        rpd_safe=180,
+        tpm_hard=200_000,
         min_gap_s=4.0,
-        cooldown_429_s=70.0,
+        cooldown_429_s=60.0,
         supports_system_role=True,
         preferred_roles=["PREVODILAC"],
-        avoid_roles=["SCORER", "ANALIZA"],
-        quality_tier=3,
-        notes="Fallback. RPD izuzetno nizak po ključu (200). Čuvati za krajnji slučaj.",
+        avoid_roles=["SCORER", "LEKTOR", "KOREKTOR"],
+        quality_tier=2,
+        notes="Nemotron 3 Ultra preko OpenRoutera. Samo fallback za prohibited content (nasilne scene).",
     ),
     # ── GITHUB MODELS ───────────────────────────────────────────────────────
     # Free tier: gpt-4o = 10 RPM / 50 RPD (JAKO nizak!)
@@ -313,6 +278,45 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         avoid_roles=["PREVODILAC", "KOREKTOR"],  # RPD prenizak za bulk
         quality_tier=1,  # kvalitet je top ali limitiran
         notes="gpt-4o. KRITIČNO nizak RPD (50/dan po ključu). Samo za scorer/analizu.",
+    ),
+    # ── CLOUDFLARE WORKERS AI ────────────────────────────────────────────────
+    # Dodano 21.09.2026. GLM-4.7-Flash: 131K kontekst, 100+ jezika. Budžet je
+    # 10.000 "Neurons"/dan DIJELJENO preko svih modela na accountu — nije
+    # čist RPM/RPD broj kao kod drugih, pa su brojevi ispod konzervativna
+    # procjena dok se ne potvrdi stvaran trošak po zahtjevu. Podesi kad
+    # imamo stvarne podatke iz quota_trackera.
+    "CLOUDFLARE": ProviderProfile(
+        name="CLOUDFLARE",
+        rpm_hard=20,
+        rpm_safe=15,
+        rpd_hard=0,  # Neuron-based, ne RPD — vidi napomenu iznad
+        rpd_safe=0,
+        tpm_hard=0,
+        min_gap_s=3.0,
+        cooldown_429_s=60.0,
+        supports_system_role=True,
+        preferred_roles=["PREVODILAC", "LEKTOR"],
+        avoid_roles=[],
+        quality_tier=2,  # neprovjereno za BCS — pratiti quality scores
+        notes="GLM-4.7-Flash. Neuron budžet dijeljen — brojevi konzervativni dok se ne potvrde.",
+    ),
+    # ── NVIDIA NIM ────────────────────────────────────────────────────────────
+    # Dodano 21.09.2026. Nemotron 3 familija. Free tier je od 2025. čist
+    # rate limit (~40 RPM), bez kartice, bez kredita koji ističu.
+    "NVIDIA": ProviderProfile(
+        name="NVIDIA",
+        rpm_hard=40,
+        rpm_safe=32,
+        rpd_hard=0,
+        rpd_safe=0,
+        tpm_hard=0,
+        min_gap_s=1.5,
+        cooldown_429_s=60.0,
+        supports_system_role=True,
+        preferred_roles=["KOREKTOR", "VALIDATOR", "ANALIZA"],
+        avoid_roles=[],
+        quality_tier=2,  # neprovjereno za BCS — pratiti quality scores
+        notes="Nemotron 3. ~40 RPM potvrđeno (sep 2026). Model string provjeriti kroz discovery.",
     ),
     # ── KLUSTER ─────────────────────────────────────────────────────────────
     # Free tier: llama-3.3-70b = ~15 RPM / neograničen RPD (po dokumentaciji)
@@ -454,7 +458,7 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         rpm_safe=12,  # 80% od 15 RPM
         rpd_hard=1500,
         rpd_safe=1275,  # 85% od 1500
-        tpm_hard=1_000_000,
+        tpm_hard=250_000,
         min_gap_s=5.0,  # 60/12 = 5.0s
         cooldown_429_s=15.0,  # isto kao Gemini — Google API
         supports_system_role=False,  # Gemma nema system role
@@ -494,6 +498,9 @@ def get_min_gap(provider: str) -> float:
     return p.min_gap_s if p else 5.0
 
 
+
+
+# FIX #1: prva get_tpm_safe obrisana (dupla definicija)
 def get_cooldown_429(provider: str) -> float:
     """Kratki cooldown na RPM 429 (ne dnevna kvota)."""
     p = get_profile(provider)
@@ -566,3 +573,66 @@ def print_fleet_capacity(fleet_keys: dict[str, list]) -> None:
             print(f"  {'':14}   ⚠️  {p.notes}")
     print(f"\n  UKUPNO: ~{total_rpm} RPM efektivnih (svi ključevi)")
     print("=" * 60)
+
+
+# ============================================================================
+# FIX sve_fix: NVIDIA + CLOUDFLARE provideri + TPM safe mape
+# ============================================================================
+
+# TPM sigurnosne granice po provideru (tokens per minute).
+# Vrijednosti su konzervativne — discovery može vratiti niže, ali ovo je
+# donja granica koju rate_limiter NIKAD ne spušta ispod.
+PROVIDER_TPM_SAFE = {
+    "GEMINI":     250000,
+    "GEMMA":      250000,
+    "GROQ":       12000,      # FIX: bilo 6400 — output chunk ~7000 tok
+    "CEREBRAS":   15000,
+    "SAMBANOVA":  20000,
+    "MISTRAL":    500000,
+    "COHERE":     100000,
+    "OPENROUTER": 20000,
+    "GITHUB":     15000,
+    "NVIDIA":     40000,      # NVIDIA NIM free tier ~40k TPM
+    "CLOUDFLARE": 30000,      # Workers AI free tier
+    "TOGETHER":   20000,
+    "FIREWORKS":  20000,
+    "CHUTES":     20000,
+    "HUGGINGFACE":15000,
+    "KLUSTER":    20000,
+}
+
+
+def get_tpm_safe(provider: str) -> float:
+    """FIX #1: TPM sigurnosna granica (80% od tpm_hard iz profila).
+    Vraća 0.0 ako profil nema TPM limit (gate isključen).
+    Dinamički discovery iz response headera prepisuje ovo kad stigne."""
+    p = get_profile(provider)
+    if not p or getattr(p, "tpm_hard", 0) <= 0:
+        return 0.0
+    return float(p.tpm_hard * 0.8)
+
+
+# NVIDIA NIM — modeli (integrate.api.nvidia.com)
+# FINALNA LISTA nakon testova 2026-09-25 (vidjeti snapshot)
+#
+# Testovi pokazali:
+#   ✅ RADI:  riva-v2, nemotron-3-ultra-550b, gemma-4-31b, laguna-xs-2.1
+#   ❌ LOŠE:  mistral-nemotron (vraća RUSKI), riva-v1.1 (vraća ARAPSKI)
+#   ⚠️  404:   nvidia/llama-3.1-nemotron-70b (traži aktivaciju na build.nvidia.com)
+#   ⚠️  Gone:  meta/llama-3.1-70b-instruct (410 — uklonjen s NIM-a)
+NVIDIA_MODEL_POOL = []  # FIX: svi modeli 404
+
+# CLOUDFLARE Workers AI — modeli (@cf/ prefiks)
+# Cloudflare Workers AI — modeli (test 2026-09-26)
+# Pobjednik: llama-3.3-70b-instruct-fp8-fast (1.29s, odličan BS prijevod)
+# Backup: llama-4-scout-17b (1.75s, solidan)
+CLOUDFLARE_MODEL_POOL = [
+    # Primarni: Llama 3.3 70B FP8 Fast — najbrži, najkvalitetniji
+    #   EN: "The old warrior drew his sword slowly."
+    #   BS: "Stari ratnik polako je izvukao mač."  ← identično Gemini
+    {"model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast", "rpm": 30, "rpd": 10000},
+    # Backup: Llama 4 Scout 17B — noviji, malo sporiji
+    {"model": "@cf/meta/llama-4-scout-17b-16e-instruct", "rpm": 30, "rpd": 10000},
+    # Qwen 2.5 Coder 32B — jak multilingual
+    {"model": "@cf/qwen/qwen2.5-coder-32b-instruct", "rpm": 30, "rpd": 10000},
+]

@@ -27,12 +27,19 @@ DB_PATH = BASE_DIR / "data" / "kalkovi_karantena.db"
 HUNSPELL_LANG = "hr_HR"
 
 # --- Ekavizmi za detekciju ---
+# PRAVI ekavizmi (srbizmi) — samo riječi koje su stvarno ekavica
+# Uklonjeni lažni: zaista, zapravo, upravo, posebno, međutim,
+# naravno, svakako, dakle, naime, ipak — to su NORMALNE hrvatske riječi
+# PRAVI ekavizmi (srbizmi) — samo riječi koje su stvarno ekavica
+# PRAVI ekavizmi (srbizmi) — samo ekavica
 EKAVIZMI_REGEX = re.compile(
     r'\b(neverovatno|neverovatan|poseduje|posedovati|posedujem|'
-    r'odredjuje|određuje|izvrsiti|izvršiti|zaista|zapravo|'
-    r'upravo|posebno|sledeci|sledeći|prethodn[oi]|'
-    r'cinjenica|međutim|medutim|naravno|svakako|'
-    r'ustvari|u stvari|dakle|naime|ipak)\b',
+    r'odredjuje|određuje|sledeci|sledeći|cinjenica|ustvari|'
+    r'vreme|vremena|mleko|lepo|lepa|video|videla|videti|'
+    r'devojka|devojke|decu|deca|dete|'
+    r'hiljada|hiljade|opština|opštine|tačno|tačka|uopšte|'
+    r'posledica|poslednji|delovati|pretnja|sopstveni|porodica|'
+    r'saglasan|preduzeti|uveren|uverenje|saglasnost|preduzeće)\b',
     re.IGNORECASE
 )
 
@@ -179,6 +186,41 @@ class DinamickiDetektor:
                     )
             conn.commit()
 
+
+    # ─── FILTER protiv smeća ───
+    _HTML_RE = re.compile(r'[<>]|class=|style=|span|div|body|text|char|italic|href|src|img', re.I)
+    _EN_RE = re.compile(
+        r'\b(we|us|our|you|your|they|their|them|he|she|it|this|that|these|those|'
+        r'is|are|was|were|be|been|being|have|has|had|do|does|did|will|would|'
+        r'can|could|should|may|might|must|the|a|an|and|or|but|if|then|than|'
+        r'need|want|like|just|only|very|really|actually|basically|'
+        r'thinking|process|analyze|user|input|output|result)\b',
+        re.I
+    )
+    
+    def _je_smece(self, pattern: str) -> bool:
+        """Vraća True ako je pattern smeće (HTML, EN, interpunkcija)."""
+        p = pattern.strip()
+        if len(p) < 3:
+            return True
+        if len(p) > 60:
+            return True
+        # HTML
+        if self._HTML_RE.search(p):
+            return True
+        # Engleski
+        if self._EN_RE.search(p):
+            return True
+        # Interpunkcija na početku/kraju
+        if p[0] in '.,;:!?"\'()[]{}—–-':
+            return True
+        if p[-1] in '.,;:!?"\'()[]{}—–-':
+            return True
+        # Nema samoglasnika (osim kratkih)
+        if not re.search(r'[aeiouAEIOU]', p) and len(p) > 3:
+            return True
+        return False
+
     def _zapisi_kandidata(
         self,
         pattern: str,
@@ -191,6 +233,9 @@ class DinamickiDetektor:
         """Sprema ili ažurira kandidata u bazi."""
         pattern = pattern.strip().lower()[:200]
         if not pattern or len(pattern) < 3:
+            return
+        # ─── FILTER SMEĆA ───
+        if self._je_smece(pattern):
             return
         # Preskoči ako je već u poznatim kalkovima
         if pattern in POZNATI_KALKOVI:

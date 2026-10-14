@@ -28,6 +28,12 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# FIX 2026-09-26: provideri koji NE RADE — isključeni iz rotacije
+EXCLUDE_FROM_ROTATION: frozenset = frozenset({
+    # FIX 2026-09-26: samo GEMMA (thinking model)
+    "GEMMA",
+})
+
 # ── Temperatura i token mape po ulozi ────────────────────────────────────────
 
 TEMP_MAP = {
@@ -44,6 +50,8 @@ TEMP_MAP = {
 }
 
 MAX_TOKENS_MAP = {
+    # Standardne vrijednosti — Qwen 3.8 27B je pravi chat model, ne troši tokene
+    # na interno razmišljanje, pa ne treba boost
     "PREVODILAC":      2800,
     "LEKTOR":          2800,
     "KOREKTOR":        2400,
@@ -91,11 +99,21 @@ _MODEL_TUNING_BY_ID = {
         "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 700},
         "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
     },
-    "gemma-4-26b-it": {
-        "PREVODILAC": {"temp_mul": 0.82, "max_tokens": 1800},
-        "LEKTOR":     {"temp_mul": 0.85, "max_tokens": 1800},
-        "VALIDATOR":  {"temp_mul": 0.70, "max_tokens": 600},
-        "KOREKTOR":   {"temp_mul": 0.95, "max_tokens": 1400},
+    # FIX 2026-09-25: Gemma 4 je thinking model — bez obzira koliko tokena
+    # joj daš, potroši ih na interno razmišljanje. Zato je degradirana na
+    # poziciju 3 u PROVIDER_PRIORITY i ovdje su smanjeni max_tokens da
+    # ne gubimo previše vremena kad ipak dođe na red.
+    "gemma-4-26b-a4b-it": {
+        "PREVODILAC": {"temp_mul": 0.82, "max_tokens": 2400},
+        "LEKTOR":     {"temp_mul": 0.85, "max_tokens": 2400},
+        "VALIDATOR":  {"temp_mul": 0.70, "max_tokens": 800},
+        "KOREKTOR":   {"temp_mul": 0.95, "max_tokens": 2400},
+    },
+    "gemma-4-31b-it": {
+        "PREVODILAC": {"temp_mul": 0.82, "max_tokens": 2400},
+        "LEKTOR":     {"temp_mul": 0.85, "max_tokens": 2400},
+        "VALIDATOR":  {"temp_mul": 0.70, "max_tokens": 800},
+        "KOREKTOR":   {"temp_mul": 0.95, "max_tokens": 2400},
     },
     "mistral-small-latest": {
         "PREVODILAC": {"temp_mul": 0.92, "max_tokens": 2400},
@@ -119,7 +137,7 @@ _MODEL_TUNING_BY_ID = {
 
 _MODEL_FAMILY_TUNING = {
     "gemini-": {"temp_mul": 0.90, "max_tokens": 2200},
-    "gemma-":  {"temp_mul": 0.84, "max_tokens": 1800},
+    "gemma-":  {"temp_mul": 0.84, "max_tokens": 2400},  # FIX: bio 16000 — thinking model
     "mistral":     {"temp_mul": 0.95, "max_tokens": 2400},
     "command-r":   {"temp_mul": 0.92, "max_tokens": 2200},
     "gpt-4":       {"temp_mul": 0.93, "max_tokens": 2400},
@@ -138,17 +156,110 @@ def _resolve_model_generation_params(uloga: str, model: str, base_temp: float, b
     exact = _MODEL_TUNING_BY_ID.get(model_l, {}).get(role)
     if exact:
         temp *= float(exact.get("temp_mul", 1.0))
-        max_tokens = min(max_tokens, int(exact.get("max_tokens", max_tokens)))
+        # FIX 30.08.2026: bilo min(max_tokens, exact) — za modele cija je
+        # tunovana vrijednost VECA od role-bazne (npr. gemma-4-* LEKTOR=4096
+        # naspram baze 2800, kompenzacija za nekontrolisano interno
+        # "razmisljanje" koje se ne moze iskljuciti preko thinkingConfig),
+        # min() je tu namjerno vecu vrijednost tiho gasio nazad na bazu.
+        # Za sve postojece ne-gemma unose exact je vec <= baza pa je ovo
+        # bez promjene efekta; direktno koristi exact kad postoji.
+        max_tokens = int(exact.get("max_tokens", max_tokens))
     else:
         for family, cfg in _MODEL_FAMILY_TUNING.items():
             if family in model_l:
                 temp *= float(cfg.get("temp_mul", 1.0))
-                max_tokens = min(max_tokens, int(cfg.get("max_tokens", max_tokens)))
+                # FIX 30.08.2026: isti min()-cap bug kao gore, ovdje pogadja
+                # SCORER (baza 256) za gemma family fallback (4096) — otud
+                # prazan odgovor finishReason=MAX_TOKENS na svaki SCORER poziv.
+                max_tokens = int(cfg.get("max_tokens", max_tokens))
                 break
 
     temp = max(0.0, min(temp, 1.0))
     max_tokens = max(128, max_tokens)
     return temp, max_tokens
+
+
+async def call_provider(
+    prompt: str,
+    uloga: str,
+    fleet,
+    max_tokens: int = 1500,
+    temperature: float = 0.5,
+) -> str | None:
+    """
+    Lagani, samostalni AI poziv — BEZ pune _call_ai_engine/SkriptorijAllInOne
+    mašinerije (nema cross-provider retry loop, nema cooldown-svjesnu
+    rotaciju kroz više pokušaja). Za jednokratne ANALIZA pozive izvan
+    glavnog pipeline-a (TOC naslovi u epub/styler.py, name-replacer
+    prijedlozi u epub/name_replacer.py).
+
+    Rekonstruisano 11.09.2026 — call_provider je pozivan na oba gornja
+    mjesta ali je definicija bila izgubljena (vjerovatno u nekom ranijem
+    refaktoru), što je uzrokovalo "cannot import name 'call_provider'"
+    grešku. Obrazac za odabir providera/ključa/modela kopiran je iz
+    _call_ai_engine niže u ovom fajlu; sam HTTP poziv ide kroz
+    network.http_client.api_call (isti mehanizam kao
+    core/validators/morfo_validator.py._pozovi_ai — quota_tracker i
+    rate_limiter i dalje prolaze kroz api_call, samo bez fallbacka
+    preko više providera).
+
+    Ako zatreba puna otpornost (fallback kroz sve providere, cooldown
+    svjesnost), koristiti self._call_ai_engine() na pravoj
+    SkriptorijAllInOne instanci umjesto ove funkcije.
+    """
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    from config.ai_config import MODEL_MAP, PROVIDER_PRIORITY
+    from network.http_client import api_call
+
+    if uloga == "ANALIZA":
+        from core.prompts import ANALIZA_SYS
+        sys_c = ANALIZA_SYS
+    else:
+        sys_c = None
+        _logger.warning(
+            "[call_provider] Nepoznata uloga=%r — šaljem bez system prompta", uloga
+        )
+
+    if not fleet or not getattr(fleet, "fleet", None):
+        _logger.warning("[call_provider] fleet prazan/nedostupan — preskačem AI poziv")
+        return None
+
+    svi_upper = {p.upper() for p in fleet.fleet.keys()}
+    preferred = PROVIDER_PRIORITY.get(uloga, [])
+    # FIX: filtriraj na providere koji imaju ključeve (izbjegni log spam)
+    has_keys = {p.upper() for p, keys in self.fleet.fleet.items() if keys}
+    ordered = [p for p in preferred if p in svi_upper and p.upper() in has_keys]
+    for p in svi_upper:
+        if p.upper() in has_keys and p not in ordered:
+            ordered.append(p)
+
+    for prov_upper in ordered:
+        api_key = fleet.get_best_key(prov_upper)
+        if not api_key:
+            continue
+        model = fleet.get_active_model(prov_upper, MODEL_MAP.get(prov_upper))
+        if not model:
+            continue
+        try:
+            result = await asyncio.to_thread(api_call, 
+                provider=prov_upper,
+                model=model,
+                api_key=api_key,
+                system=sys_c,
+                user=prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        except Exception as e:
+            _logger.warning("[call_provider] %s pao: %s", prov_upper, e)
+            continue
+        if result:
+            return result
+
+    _logger.warning("[call_provider] Svi provideri iscrpljeni za uloga=%s", uloga)
+    return None
 
 
 async def _call_ai_engine(
@@ -194,8 +305,9 @@ async def _call_ai_engine(
         if p not in ordered:
             ordered.append(p)
 
-    for attempt in range(2):
-        skipped_due_to_cooldown = []
+    MAX_ATTEMPTS = 4
+    for attempt in range(MAX_ATTEMPTS):
+        any_activity = False
 
         for prov_upper in ordered:
             if self.shared_controls.get("stop"):
@@ -204,7 +316,9 @@ async def _call_ai_engine(
             # GEMINI i GEMMA dijele iste ključeve, ali imaju zasebne cooldown namespace-ove
             # u quota_trackeru — Gemini 429 ne blokira Gemmu automatski.
             if prov_upper in ("GEMINI", "GEMMA"):
-                gemini_keys = self.fleet.fleet.get("GEMINI", [])
+                # FIX: GEMMA čita fleet["GEMMA"] (GEMINI ∪ GEMMA-only, uvijek
+                # spojeno u api_fleet._load_config) — ne uvijek fleet["GEMINI"].
+                gemini_keys = self.fleet.fleet.get(prov_upper, [])
                 if not gemini_keys:
                     continue
                 from network.quota_tracker import quota_tracker
@@ -227,17 +341,17 @@ async def _call_ai_engine(
                         has_available_or_short_cd = True
                         break
                 if not has_available_or_short_cd:
-                    skipped_due_to_cooldown.append(prov_upper)
+                    any_activity = True
                     continue
             else:
                 key = self.fleet.get_best_key(prov_upper)
                 if not key:
                     keys = self.fleet.fleet.get(prov_upper, [])
                     if keys:
-                        skipped_due_to_cooldown.append(prov_upper)
+                        any_activity = True
                     continue
 
-            model = self.fleet.get_active_model(prov_upper) or MODEL_MAP.get(prov_upper)
+            model = self.fleet.get_active_model(prov_upper, MODEL_MAP.get(prov_upper))
             if not model:
                 continue
 
@@ -246,6 +360,8 @@ async def _call_ai_engine(
             )
 
             await asyncio.sleep(random.uniform(0.2, 0.8))
+
+            self.log(f"\U0001f4e4 [{uloga}] \u0160aljem blok {chunk_idx} na AI ({prov_upper})...", "tech")
 
             try:
                 raw, label = await _call_single_provider(
@@ -257,13 +373,14 @@ async def _call_ai_engine(
                 self.log(f"⛔ [{uloga}] {cfe} — preskačem chunk {chunk_idx}", "warning")
                 return None, "CONTENT_FILTER"
 
+            any_activity = True
             if raw:
                 return raw, label
 
-        if attempt == 0 and skipped_due_to_cooldown:
+        if attempt < MAX_ATTEMPTS - 1 and any_activity:
             from network.quota_tracker import quota_tracker
             min_wait = 60.0
-            for prov_upper in skipped_due_to_cooldown:
+            for prov_upper in ordered:
                 for ks in self.fleet.fleet.get(prov_upper, []):
                     ok, reason = quota_tracker.is_key_available(prov_upper, ks.key)
                     if not ok:
@@ -272,9 +389,9 @@ async def _call_ai_engine(
                         secs = float(m.group(1)) if m else 60.0
                         if secs < min_wait:
                             min_wait = secs
-            wait_s = min(min_wait + 1.0, 30.0)
+            wait_s = min(min_wait + 1.0, 45.0)
             self.log(
-                f"⏳ [{uloga}] Svi provajderi u kratkom cooldownu — čekam {wait_s:.1f}s (blok {chunk_idx})",
+                f"⏳ [{uloga}] Pokušaj {attempt + 1}/{MAX_ATTEMPTS} bez odgovora — čekam {wait_s:.1f}s (blok {chunk_idx})",
                 "warning"
             )
             await asyncio.sleep(wait_s)

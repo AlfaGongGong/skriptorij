@@ -1,0 +1,77 @@
+{
+  "Brady": {
+    "rod": "M",
+    "clue_m": 10,
+    "clue_z": 0
+  },
+  "Richarda": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sifkitz": {
+    "rod": "M",
+    "clue_m": 15,
+    "clue_z": 0
+  },
+  "Berkowitz": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Problem": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bradyja": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Ekonomija": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Jelen": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bradyju": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Carlos": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Još": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Cesta": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Freddy": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Cat": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "David": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

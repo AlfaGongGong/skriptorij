@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 
 # ─── Konstante ────────────────────────────────────────────────────────────────
 
-_QUALITY_RESCUE_THRESHOLD    = 6.5
+_QUALITY_RESCUE_THRESHOLD    = 9.5
 _QUALITY_EXCELLENT_THRESHOLD = 8.5
 
 # Težine za EN kontaminaciju
@@ -218,7 +218,7 @@ def _provjeri_nepromjenjenost(stari_tekst: str, novi_tekst: str) -> float:
 # ─── Glavni AI scorer ─────────────────────────────────────────────────────────
 
 _SCORING_RUBRIC = """
-Ocjeni kvalitetu prijevoda na bosanski/hrvatski koristeći OVAJ RUBRIK:
+Ocjeni kvalitetu prijevoda na hrvatski koristeći OVAJ RUBRIK:
 
 KRITERIJI (svaki od 0–10 bodova, prosječna ocjena je finalna):
 
@@ -229,8 +229,8 @@ KRITERIJI (svaki od 0–10 bodova, prosječna ocjena je finalna):
    - 3–4: Značajni propusti u prenošenju smisla
    - 1–2: Pogrešno ili neprevedeno
 
-2. JEZIČNI STANDARD BS/HR (0–10)
-   - 9–10: Idiomatski besprijekoran bosanski/hrvatski
+2. JEZIČNI STANDARD HR (0–10)
+   - 9–10: Idiomatski besprijekoran hrvatski
    - 7–8: Nekoliko blagih kalkova ili stranih fraza
    - 5–6: Više kalkova, srpskih konstrukcija ili engl. ostataka
    - 3–4: Dominiraju kalkovi i loše konstrukcije
@@ -367,9 +367,9 @@ async def _scoruj_kvalitetu(
         cist = cist[:900]
 
         tip_prefix = {
-            "prevod":    "TIP: PRIJEVOD (EN->BS/HR). Ocjeni sva 4 kriterija.\n",
-            "lektura":   "TIP: RELEKTURA (BS/HR->BS/HR). Ocjeni jezik/stil/tipografiju BEZ tacnosti.\n",
-            "relektura": "TIP: RELEKTURA (BS/HR->BS/HR). Ocjeni jezik/stil/tipografiju BEZ tacnosti.\n",
+            "prevod":    "TIP: PRIJEVOD (EN->HR). Ocjeni sva 4 kriterija.\n",
+            "lektura":   "TIP: RELEKTURA (HR->HR). Ocjeni jezik/stil/tipografiju BEZ tacnosti.\n",
+            "relektura": "TIP: RELEKTURA (HR->HR). Ocjeni jezik/stil/tipografiju BEZ tacnosti.\n",
             "opci":      "TIP: OPCI. Ocjeni sva 4 kriterija.\n",
         }.get(tip_ocjenjivanja, "TIP: OPCI.\n")
 
@@ -643,3 +643,68 @@ def get_scorer_sys_override(self_obj, prevodilac_provider, chunk_idx, file_name)
     except Exception:
         pass
     return None
+
+
+def generiraj_report(knjiga_id: str, checkpoint_dir: str = None) -> dict:
+    """
+    Generiraj report za knjigu iz checkpoint-a.
+    Vraca: {knjiga, ukupno_blokova, prosjecna_ocjena, iz_prve, retry, karantena, detalji}
+    """
+    import json as _json
+    from pathlib import Path as _P
+
+    if checkpoint_dir is None:
+        try:
+            from config.settings import CHECKPOINT_BASE_DIR
+            checkpoint_dir = _P(CHECKPOINT_BASE_DIR) / ("_skr_" + knjiga_id) / "checkpoints"
+        except Exception:
+            return {"greska": "Nema checkpoint_dir"}
+
+    cdir = _P(checkpoint_dir)
+    if not cdir.exists():
+        return {"greska": "Checkpoint ne postoji", "knjiga": knjiga_id}
+
+    # Ucitaj quality_scores
+    scores = {}
+    qs_path = cdir / "quality_scores.json"
+    if qs_path.exists():
+        try:
+            scores = _json.loads(qs_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    # Analiza
+    ukupno = len(scores)
+    if ukupno == 0:
+        return {"knjiga": knjiga_id, "ukupno": 0, "prosjek": 0}
+
+    vals = [float(v) for v in scores.values() if isinstance(v, (int, float))]
+    prosjek = sum(vals) / len(vals) if vals else 0
+
+    iz_prve = sum(1 for v in vals if v >= 9.5)
+    retry = sum(1 for v in vals if 9.0 <= v < 9.5)
+    karantena = sum(1 for v in vals if v < 9.0)
+
+    # QA-FLAG iz .chk
+    qa_flag_count = 0
+    for chk in cdir.glob("*.chk"):
+        if ".prevod.chk" in chk.name or ".lektura.chk" in chk.name:
+            continue
+        try:
+            content = chk.read_text(encoding="utf-8", errors="replace")
+            if "QA-FLAG" in content[:500]:
+                qa_flag_count += 1
+        except Exception:
+            pass
+
+    return {
+        "knjiga": knjiga_id,
+        "ukupno": ukupno,
+        "prosjek": round(prosjek, 2),
+        "iz_prve": iz_prve,
+        "retry": retry,
+        "karantena": karantena,
+        "qa_flag": qa_flag_count,
+        "proc_iz_prve": round(100 * iz_prve / ukupno, 1) if ukupno else 0,
+    }
+

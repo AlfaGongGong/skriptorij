@@ -354,13 +354,14 @@ async def retroaktivna_relektura_v10(
     # Bez popunjavanja html_files, toc_entries ostaje prazan → NCX dobija 0 poglavlja.
     # Popuni html_files iz work_dir i resetiraj toc_entries prije dropcap/toc petlje.
     if not self.html_files and self.work_dir.exists():
+        from core.natural_sort import natural_sort_key
         self.html_files = sorted(
             [
                 f for f in self.work_dir.rglob("*")
                 if f.suffix.lower() in {".html", ".htm", ".xhtml", ".xml"}
                 and "checkpoints" not in f.parts
             ],
-            key=lambda x: x.name,
+            key=natural_sort_key,
         )
     self.toc_entries = []
     html_files = getattr(self, "html_files", [])

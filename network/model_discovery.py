@@ -20,36 +20,41 @@ logger = logging.getLogger(__name__)
 _CACHE_TTL = 3600.0
 
 _MODELS_ENDPOINTS: dict[str, str] = {
-    "GROQ":        "https://api.groq.com/openai/v1/models",
+    "GROQ":        "qwen/qwen3.8-27b",
     "CEREBRAS":    "https://api.cerebras.ai/v1/models",
     "MISTRAL":     "https://api.mistral.ai/v1/models",
     "SAMBANOVA":   "https://api.sambanova.ai/v1/models",
     "TOGETHER":    "https://api.together.xyz/v1/models",
-    "OPENROUTER":  "https://openrouter.ai/api/v1/models",
+    "OPENROUTER": "nvidia/nemotron-3-ultra-550b-a55b:free",
     "FIREWORKS":   "https://api.fireworks.ai/inference/v1/models",
     "KLUSTER":     "https://api.kluster.ai/v1/models",
     "CHUTES":      "https://llm.chutes.ai/v1/models",
     "HUGGINGFACE": "https://router.huggingface.co/v1/models",
     "COHERE":      "https://api.cohere.com/v1/models",
     "GEMINI":      "https://generativelanguage.googleapis.com/v1beta/models",
-    "GITHUB":      "https://models.inference.ai.azure.com/models",
+    "GITHUB":      "https://models.github.ai/catalog/models",
+    # FIX #7: NVIDIA nema /v1/models endpoint — uklonjen, koristi FALLBACK_MODELS
+    # "NVIDIA":      "nvidia/nemotron-3-ultra-550b-a55b",  # potvrđeno radi (test 2026-09-25)
 }
 
 FALLBACK_MODELS: dict[str, str] = {
     "CEREBRAS":    "llama-4-scout-17b-16e-instruct",
     "SAMBANOVA":   "Meta-Llama-3.3-70B-Instruct",
-    "MISTRAL":     "mistral-small-latest",
+    "MISTRAL":     "ministral-14b-latest",
     "TOGETHER":    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    "GROQ":        "llama-3.3-70b-versatile",
-    "GEMINI":      "gemini-3.5-flash",
+    "GROQ":        "qwen/qwen3.8-27b",
+    "GEMINI":      "gemini-3.1-flash-lite",  # i dalje primarni fallback — potvrđeno aktivan (avgust 2026)
     "OPENROUTER":  "meta-llama/llama-3.3-70b-instruct:free",
     "COHERE":      "command-r-plus-08-2024",
     "CHUTES":      "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
     "KLUSTER":     "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
     "FIREWORKS":   "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA":       "gemma-4-26b-it",
-    "GITHUB":      "gpt-4o",
+    "GEMMA":       "gemma-4-26b-a4b-it",
+    "GITHUB":      "openai/gpt-4o",
+    "CLOUDFLARE":  "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    # FIX: NVIDIA fallback — potvrđeno na integrate.api.nvidia.com (82 modela, sep 2026)
+    "NVIDIA":      "nvidia/nemotron-3-super-120b-a12b",
 }
 
 _GLOBAL_EXCLUDE = frozenset([

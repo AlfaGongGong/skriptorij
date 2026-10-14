@@ -457,237 +457,6 @@ def patch_quality_score(stem):
         return jsonify({"error": str(e)}), 500
 
 
-# ============================================================================
-# SMART NAME REPLACER — Standalone endpoint
-# Dodan: 02.06.2026
-# ============================================================================
-
-@bp.route("/api/name_replace", methods=["POST"])
-def name_replace_endpoint():
-    """
-    Pokreće Smart Name Replacer na zadanom EPUB-u.
-
-    Body (JSON):
-        { "file": "naziv_knjige.epub", "output": "opcioni_izlaz.epub" }
-        ili
-        { "epub_path": "/apsolutna/putanja/knjiga.epub" }
-
-    Response:
-        {
-          "ok": bool,
-          "replacement_file": str,
-          "replacements_applied": int,
-          "entities_found": int,
-          "pairs": [[variant, canonical], ...],
-          "error": str | None
-        }
-    """
-    import traceback
-    from pathlib import Path
-    from config.settings import INPUT_DIR, OUTPUT_DIR, SHARED_STATS
-
-    data = request.get_json(silent=True) or {}
-
-    # ── Resolvi putanju EPUB-a ────────────────────────────────────────────
-    epub_path = None
-
-    if "epub_path" in data:
-        epub_path = Path(data["epub_path"])
-    elif "file" in data:
-        fname = data["file"]
-        # Traži u INPUT_DIR i OUTPUT_DIR
-        for base in [INPUT_DIR, OUTPUT_DIR]:
-            candidate = Path(base) / fname
-            if candidate.exists():
-                epub_path = candidate
-                break
-        if epub_path is None:
-            return jsonify({"ok": False, "error": f"Fajl nije pronađen: {fname}"}), 404
-    else:
-        # Pokušaj aktivni output_file
-        output_file = SHARED_STATS.get("output_file", "")
-        if output_file:
-            candidate = Path(OUTPUT_DIR) / output_file
-            if candidate.exists():
-                epub_path = candidate
-        if epub_path is None:
-            return jsonify({"ok": False, "error": "Nedostaje 'file' ili 'epub_path' parametar"}), 400
-
-    output_path = data.get("output")
-
-    # ── Audit log callback ────────────────────────────────────────────────
-    audit_msgs = []
-
-    def _log(msg, atype="info"):
-        from utils.logging import add_audit
-        audit_msgs.append({"msg": msg, "type": atype})
-        add_audit(msg, atype, shared_stats=SHARED_STATS)
-
-    # ── Pokretanje ────────────────────────────────────────────────────────
-    try:
-        from epub.name_replacer import run_name_replacer
-        from api_fleet import get_active_fleet
-
-        fleet = get_active_fleet()
-        result = run_name_replacer(
-            epub_path=epub_path,
-            fleet=fleet,
-            output_path=output_path,
-            log_callback=_log,
-        )
-        result["audit"] = audit_msgs[-20:]  # zadnjih 20 poruka
-        status = 200 if result["ok"] else 500
-        return jsonify(result), status
-
-    except ImportError as e:
-        logger.exception("[name_replace] Import greška")
-        return jsonify({
-            "ok": False,
-            "error": f"Modul nije dostupan: {e}",
-            "audit": audit_msgs,
-        }), 500
-    except Exception:
-        logger.exception("[name_replace] Neočekivana greška")
-        return jsonify({
-            "ok": False,
-            "error": "Interna greška — vidi server log",
-            "audit": audit_msgs,
-            "traceback": traceback.format_exc()[-500:],
-        }), 500
-
-
-@bp.route("/api/name_replace/preview", methods=["POST"])
-def name_replace_preview():
-    """
-    Čita postojeći .epub.replacement fajl i vraća ga za preview/edit.
-
-    Body: { "file": "naziv.epub" }  ili  { "epub_path": "/putanja/knjiga.epub" }
-
-    Response: { "ok": bool, "pairs": [{"original": str, "replacement": str}], "raw": str }
-    """
-    from pathlib import Path
-    from config.settings import INPUT_DIR, OUTPUT_DIR
-
-    data = request.get_json(silent=True) or {}
-    epub_path = None
-
-    if "epub_path" in data:
-        epub_path = Path(data["epub_path"])
-    elif "file" in data:
-        fname = data["file"]
-        for base in [INPUT_DIR, OUTPUT_DIR]:
-            candidate = Path(base) / fname
-            if candidate.exists():
-                epub_path = candidate
-                break
-
-    if epub_path is None:
-        return jsonify({"ok": False, "error": "Fajl nije pronađen"}), 404
-
-    rep_path = epub_path.with_suffix(epub_path.suffix + ".replacement")
-    if not rep_path.exists():
-        return jsonify({"ok": False, "error": f"Replacement fajl ne postoji: {rep_path.name}"}), 404
-
-    try:
-        raw = rep_path.read_text(encoding="utf-8")
-        pairs = []
-        for line in raw.splitlines():
-            line = line.strip()
-            if not line or line.startswith("#!"):
-                continue
-            if "#->#" in line:
-                parts = line.split("#->#", 1)
-                if len(parts) == 2:
-                    pairs.append({"original": parts[0].strip(), "replacement": parts[1].strip()})
-        return jsonify({"ok": True, "pairs": pairs, "raw": raw, "file": rep_path.name})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
-
-
-@bp.route("/api/name_replace/apply_file", methods=["POST"])
-def name_replace_apply_file():
-    """
-    Primjenjuje zamjene iz .epub.replacement fajla na EPUB bez ponovnog AI skeniranja.
-    Korisno za ručno editovani .replacement fajl.
-
-    Body: { "file": "naziv.epub", "replacement_file": "putanja/do/fajla.epub.replacement" }
-    """
-    from pathlib import Path
-    from config.settings import INPUT_DIR, OUTPUT_DIR
-
-    data = request.get_json(silent=True) or {}
-
-    fname = data.get("file", "")
-    epub_path = None
-    for base in [INPUT_DIR, OUTPUT_DIR]:
-        candidate = Path(base) / fname
-        if candidate.exists():
-            epub_path = candidate
-            break
-    if epub_path is None:
-        return jsonify({"ok": False, "error": f"EPUB nije pronađen: {fname}"}), 404
-
-    rep_file = data.get("replacement_file")
-    if rep_file:
-        rep_path = Path(rep_file)
-    else:
-        rep_path = epub_path.with_suffix(epub_path.suffix + ".replacement")
-
-    if not rep_path.exists():
-        return jsonify({"ok": False, "error": f"Replacement fajl ne postoji: {rep_path}"}), 404
-
-    try:
-        from epub.name_replacer import (
-            _read_epub_html_files,
-            _apply_replacements_to_html,
-            _write_epub_with_replacements,
-        )
-
-        # Parsiraj replacement fajl
-        pairs = []
-        for line in rep_path.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#!"):
-                continue
-            if "#->#" in line:
-                parts = line.split("#->#", 1)
-                if len(parts) == 2:
-                    pairs.append((parts[0].strip(), parts[1].strip()))
-
-        if not pairs:
-            return jsonify({"ok": False, "error": "Replacement fajl je prazan ili nema validnih zamjena"}), 400
-
-        html_files = _read_epub_html_files(epub_path)
-        modified_files = {}
-        all_applied = set()
-
-        for fname_html, html in html_files.items():
-            new_html, applied = _apply_replacements_to_html(html, pairs)
-            if applied:
-                modified_files[fname_html] = new_html
-                for p in applied:
-                    all_applied.add(p)
-
-        if modified_files:
-            _write_epub_with_replacements(epub_path, modified_files)
-
-        return jsonify({
-            "ok": True,
-            "epub_path": str(epub_path),
-            "replacements_applied": len(all_applied),
-            "files_modified": len(modified_files),
-            "pairs_applied": list(all_applied),
-        })
-
-    except Exception as e:
-        logger.exception("[name_replace_apply_file] Greška")
-        return jsonify({"ok": False, "error": str(e)}), 500
-
-
-# ══════════════════════════════════════════════════════════
-# PREMIUM EPUB STYLER endpoint  — Skriptorij 02.06.2026
-# ══════════════════════════════════════════════════════════
-
 @bp.route("/api/style_epub", methods=["POST"])
 def style_epub_endpoint():
     """
@@ -753,17 +522,38 @@ def style_epub_endpoint():
     options = data.get("options", {})
 
     try:
-        from epub.styler import run_epub_styler
-        from api_fleet import get_active_fleet
-        fleet = get_active_fleet()
+        mode = data.get("mode", "booklyfi")
+        
+        if mode == "ai":
+            from epub.styler_ai import run_epub_styler_ai
+            bez_ai = bool(options.get("bez_ai", False))
+            result = run_epub_styler_ai(
+                epub_path=epub_path,
+                output_path=output,
+                log_callback=_log,
+                bez_ai=bez_ai,
+            )
+        elif mode == "booklyfi":
+            from stil_ai import stilizuj_epub
+            result = stilizuj_epub(
+                epub_path=epub_path,
+                output_path=output,
+                log_callback=_log,
+            )
+            if not result.get("ok"):
+                result = {"ok": False, "error": result.get("greska", "?")}
 
-        result = run_epub_styler(
-            epub_path=epub_path,
-            fleet=fleet,
-            output_path=output,
-            log_callback=_log,
-            options=options,
-        )
+        else:
+            from epub.styler import run_epub_styler
+            from api_fleet import get_active_fleet
+            fleet = get_active_fleet()
+            result = run_epub_styler(
+                epub_path=epub_path,
+                fleet=fleet,
+                output_path=output,
+                log_callback=_log,
+                options=options,
+            )
         result["audit"] = audit_msgs[-30:]
         return jsonify(result), 200 if result["ok"] else 500
 
@@ -799,4 +589,171 @@ def style_epub_preview_css():
         "Content-Type": "text/css; charset=utf-8",
         "Content-Disposition": f'attachment; filename="{css_path.name}"',
     }
+
+
+@bp.route("/api/qa_flags")
+def qa_flags():
+    """
+    Vraca sve blokove s QA ocjenom < 9.5 (QA-FLAG).
+    Query parametri:
+      ?file=<knjiga_id>  (opcionalno)
+    """
+    import json as _json
+    from pathlib import Path as _P
+    from config.settings import CHECKPOINT_BASE_DIR
+
+    file_filter = request.args.get("file", "")
+
+    rezultati = []
+    try:
+        if not _P(CHECKPOINT_BASE_DIR).exists():
+            return _json.dumps({"ok": True, "flags": []}), 200, {"Content-Type": "application/json"}
+
+        # Prolaz kroz sve checkpoint foldere
+        for chk_dir in _P(CHECKPOINT_BASE_DIR).glob("_skr_*"):
+            if not chk_dir.is_dir():
+                continue
+            knjiga = chk_dir.name.replace("_skr_", "", 1)
+
+            if file_filter and file_filter not in knjiga:
+                continue
+
+            cdir = chk_dir / "checkpoints"
+            if not cdir.exists():
+                continue
+
+            for chk in sorted(cdir.glob("*.chk")):
+                # Preskoci medjukorake
+                if ".prevod.chk" in chk.name or ".lektura.chk" in chk.name:
+                    continue
+                try:
+                    content = chk.read_text(encoding="utf-8", errors="replace")
+                except Exception:
+                    continue
+
+                # Trazi QA ocjenu
+                ocjena = None
+                razlog = ""
+                if content.strip().startswith("{"):
+                    try:
+                        data = _json.loads(content)
+                        ocjena = data.get("score") or data.get("ocjena") or data.get("ukupno")
+                        razlog = data.get("razlog", "") or data.get("reason", "")
+                        if ocjena is None:
+                            # Iz JSON-a uzmi tekst
+                            for k in ("text", "content", "translated", "html", "tekst"):
+                                if k in data:
+                                    content = data[k]
+                                    break
+                    except Exception:
+                        pass
+
+                # Ako nema ocjene u JSON-u, probaj iz imena quality_scores
+                if ocjena is None:
+                    qs_path = cdir / "quality_scores.json"
+                    if qs_path.exists():
+                        try:
+                            qs = _json.loads(qs_path.read_text(encoding="utf-8"))
+                            ocjena = qs.get(chk.stem)
+                        except Exception:
+                            pass
+
+                # QA-FLAG ako < 9.5 ili ima marker
+                ima_flag = "QA-FLAG" in content[:500] or (ocjena is not None and float(ocjena) < 9.5)
+
+                if ima_flag:
+                    # Očisti tekst za prikaz
+                    tekst = content
+                    if "<!-- QA-FLAG" in tekst:
+                        # Nađi razlog iz markera
+                        import re as _re
+                        m = _re.search(r"<!-- QA-FLAG: ocjena=([0-9.]+) razlog=([^>]+) -->", tekst)
+                        if m:
+                            try:
+                                ocjena = float(m.group(1))
+                            except Exception:
+                                pass
+                            razlog = m.group(2).strip()
+                        tekst = tekst.replace(m.group(0), "").strip() if m else tekst
+
+                    from bs4 import BeautifulSoup as _BS
+                    try:
+                        soup = _BS(tekst, "html.parser")
+                        plain = soup.get_text(" ", strip=True)
+                    except Exception:
+                        plain = tekst
+
+                    rezultati.append({
+                        "knjiga": knjiga,
+                        "blok": chk.stem,
+                        "fajl": chk.name,
+                        "ocjena": float(ocjena) if ocjena is not None else None,
+                        "razlog": razlog[:500],
+                        "tekst": plain[:1000],
+                    })
+    except Exception as e:
+        return _json.dumps({"ok": False, "greska": str(e)}), 500, {"Content-Type": "application/json"}
+
+    rezultati.sort(key=lambda x: (x["ocjena"] or 0))
+    return _json.dumps({"ok": True, "flags": rezultati, "ukupno": len(rezultati)}, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+
+
+@bp.route("/api/qa_flags/save", methods=["POST"])
+def qa_flags_save():
+    """Sacuvaj rucno ispravljeni chunk i oznaci kao rijesen."""
+    import json as _json
+    from pathlib import Path as _P
+    from config.settings import CHECKPOINT_BASE_DIR
+
+    data = request.get_json() or {}
+    knjiga = data.get("knjiga", "")
+    blok = data.get("blok", "")
+    novi_tekst = data.get("tekst", "")
+
+    if not knjiga or not blok or not novi_tekst:
+        return _json.dumps({"ok": False, "greska": "Nedostaju parametri"}), 400, {"Content-Type": "application/json"}
+
+    chk_path = _P(CHECKPOINT_BASE_DIR) / ("_skr_" + knjiga) / "checkpoints" / (blok + ".chk")
+    if not chk_path.exists():
+        return _json.dumps({"ok": False, "greska": "Blok ne postoji"}), 404, {"Content-Type": "application/json"}
+
+    # Sacuvaj novi tekst (bez QA-FLAG markera — rijeseno)
+    chk_path.write_text(novi_tekst, encoding="utf-8")
+
+    return _json.dumps({"ok": True, "poruka": "Sacuvano"}), 200, {"Content-Type": "application/json"}
+
+
+@bp.route("/api/report/<knjiga_id>")
+def report_knjiga(knjiga_id):
+    """Report za knjigu."""
+    import json as _json
+    try:
+        from core.quality import generiraj_report
+        r = generiraj_report(knjiga_id)
+        return _json.dumps({"ok": True, "report": r}, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+    except Exception as e:
+        return _json.dumps({"ok": False, "greska": str(e)}), 500, {"Content-Type": "application/json"}
+
+
+@bp.route("/api/report")
+def report_sve():
+    """Report za sve knjige."""
+    import json as _json
+    from pathlib import Path as _P
+    try:
+        from core.quality import generiraj_report
+        from config.settings import CHECKPOINT_BASE_DIR
+
+        rezultati = []
+        for chk_dir in _P(CHECKPOINT_BASE_DIR).glob("_skr_*"):
+            if not chk_dir.is_dir():
+                continue
+            knjiga = chk_dir.name.replace("_skr_", "", 1)
+            r = generiraj_report(knjiga)
+            if "greska" not in r:
+                rezultati.append(r)
+
+        return _json.dumps({"ok": True, "reporti": rezultati}, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+    except Exception as e:
+        return _json.dumps({"ok": False, "greska": str(e)}), 500, {"Content-Type": "application/json"}
 

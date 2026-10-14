@@ -78,12 +78,86 @@ def _flask_audit_loop(port: int) -> None:
 
 
 # ============================================================================
+# PID FAJL — sprječava dvostruko pokretanje servera
+# ============================================================================
+# FIX: dodano da se main.py moze pokrenuti ponovo bez rucnog ubijanja
+# prethodne instance — sprjecava "Address already in use" pri restartu.
+_PID_FILE = _BASE / ".skriptorij_server.pid"
+
+
+def _pid_is_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        # Proces postoji ali nije nas (drugi user) — tretiraj kao živ.
+        return True
+    return True
+
+
+def _kill_previous_instance() -> None:
+    """Ako je stara instanca servera i dalje živa (po PID fajlu), gasi je
+    prije nego nova krene."""
+    if not _PID_FILE.exists():
+        return
+    try:
+        old_pid = int(_PID_FILE.read_text(encoding="utf-8").strip())
+    except (ValueError, OSError):
+        _PID_FILE.unlink(missing_ok=True)
+        return
+
+    if old_pid == os.getpid() or not _pid_is_alive(old_pid):
+        _PID_FILE.unlink(missing_ok=True)
+        return
+
+    print(f"{_YELLOW}[BOOKLYFI]{_RESET} Zatečena živa instanca (PID {old_pid}) — gasim je...")
+    try:
+        os.kill(old_pid, signal.SIGTERM)
+    except ProcessLookupError:
+        _PID_FILE.unlink(missing_ok=True)
+        return
+    except PermissionError:
+        print(f"{_RED}[BOOKLYFI]{_RESET} Nemam dozvolu da ugasim PID {old_pid} — nastavljam, moguć je konflikt na portu.")
+        return
+
+    for _ in range(20):  # do ~5 sekundi
+        if not _pid_is_alive(old_pid):
+            break
+        time.sleep(0.25)
+    else:
+        print(f"{_RED}[BOOKLYFI]{_RESET} PID {old_pid} se ne gasi — šaljem SIGKILL...")
+        try:
+            os.kill(old_pid, signal.SIGKILL)
+            time.sleep(0.5)
+        except ProcessLookupError:
+            pass
+
+    _PID_FILE.unlink(missing_ok=True)
+
+
+def _write_pid_file() -> None:
+    try:
+        _PID_FILE.write_text(str(os.getpid()), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _remove_pid_file() -> None:
+    try:
+        _PID_FILE.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+# ============================================================================
 # GRACEFUL SHUTDOWN
 # ============================================================================
 def _graceful_shutdown(signum, frame):
     SHARED_CONTROLS["stop"] = True
     SHARED_STATS["status"]  = "ZAUSTAVLJENO"
     print(f"\n{_YELLOW}[SHUTDOWN] Signal primljen — čekam završetak tekuće obrade...{_RESET}")
+    _remove_pid_file()
     sys.exit(0)
 
 
@@ -110,6 +184,9 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, _graceful_shutdown)
     signal.signal(signal.SIGINT,  _graceful_shutdown)
 
+    _kill_previous_instance()
+    _write_pid_file()
+
     print(f"{_GREEN}[BOOKLYFI]{_RESET} Server na http://127.0.0.1:{PORT}…")
     if _INTRO_LOADED:
         print(f"{_CYAN}[BOOKLYFI]{_RESET} Intro animacija: AKTIVAN")
@@ -117,11 +194,19 @@ if __name__ == "__main__":
 
     def _open_browser():
         time.sleep(1.5)
+        # FIX: cache-bust query param — tjera browser da povuce svjezu
+        # stranicu umjesto stare iz keša/service workera (bez rucnog
+        # hard-refresha nakon svakog restarta servera).
+        url = f"http://127.0.0.1:{PORT}/?_fresh={int(time.time())}"
         try:
-            if os.path.exists("/data/data/com.termux/files/usr/bin/termux-open-url"):
-                os.system(f"termux-open-url http://127.0.0.1:{PORT} > /dev/null 2>&1")
+            TERMUX_OPEN = "/data/data/com.termux/files/usr/bin/termux-open-url"
+            if os.path.exists(TERMUX_OPEN):
+                rc = os.system(f"{TERMUX_OPEN} {url} > /dev/null 2>&1")
+                if rc != 0:
+                    print(f"{_YELLOW}[BOOKLYFI]{_RESET} termux-open-url exit {rc} — otvori ručno: {url}")
             else:
-                webbrowser.open(f"http://127.0.0.1:{PORT}")
+                if not webbrowser.open(url):
+                    print(f"{_YELLOW}[BOOKLYFI]{_RESET} Browser se nije otvorio — otvori ručno: {url}")
         except Exception:
             pass
 
@@ -135,7 +220,7 @@ if __name__ == "__main__":
     ).start()
 
     try:
-        app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
+        app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False, threaded=True)
     except Exception as exc:
         sys.stdout.write(
             f"{_BRED}[KRITIČNA GREŠKA] Flask se nije pokrenuo: "
@@ -144,3 +229,5 @@ if __name__ == "__main__":
         sys.stdout.write(traceback.format_exc())
         sys.stdout.flush()
         sys.exit(1)
+    finally:
+        _remove_pid_file()
