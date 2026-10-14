@@ -483,13 +483,31 @@ class FleetManager:
         return None, None
 
     def record_request(self, provider: str, key: str):
+        """Zabilježi POKUŠAJ poziva (ne uspjeh)."""
         prov_u = provider.upper()
-        with self.lock:
-            ks = self._find_key(prov_u, key)
-            if ks:
+        for ks in self.fleet.get(prov_u, []):
+            if ks.key == key:
                 ks.total_requests += 1
-                ks.last_used       = time.time()
-        self._save_state()
+                ks.last_used = time.time()
+                return
+
+    def record_success(self, provider: str, key: str):
+        """Zabilježi USPJEŠAN poziv."""
+        prov_u = provider.upper()
+        for ks in self.fleet.get(prov_u, []):
+            if ks.key == key:
+                ks.calls_ok += 1
+                return
+
+    def record_failure(self, provider: str, key: str):
+        """Zabilježi neuspješan poziv."""
+        prov_u = provider.upper()
+        for ks in self.fleet.get(prov_u, []):
+            if ks.key == key:
+                ks.total_requests += 1
+                ks.calls_failed += 1
+                return
+
 
     def record_usage(self, provider: str, key: str, req_count: int = 1, success: bool = True):
         prov_u = provider.upper()

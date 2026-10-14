@@ -253,6 +253,36 @@ def create_app() -> Flask:
     @app.route("/api/status")
     def api_status():
         try:
+            # FIX: postavi book_name iz current_file
+            try:
+                _book = SHARED_STATS.get("current_file", "")
+                if _book and not _book.endswith(".html"):
+                    SHARED_STATS["book_name"] = _book
+                elif not _book:
+                    # Probaj iz live_audit
+                    import re as _re
+                    _la = SHARED_STATS.get("live_audit", "")
+                    _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
+                    if _m:
+                        _name = _m.group(1)
+                        _name = _re.sub(r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE)
+                        _name = _re.sub(r"--.*$", "", _name).replace("_", " ").strip()
+                        if _name:
+                            SHARED_STATS["book_name"] = _name
+                elif _book.endswith(".html"):
+                    # Izvuci iz live_audit
+                    import re as _re
+                    _la = SHARED_STATS.get("live_audit", "")
+                    _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
+                    if _m:
+                        _name = _m.group(1)
+                        _name = _re.sub(r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE)
+                        _name = _re.sub(r"--.*$", "", _name).replace("_", " ").strip()
+                        if _name:
+                            SHARED_STATS["book_name"] = _name
+            except Exception:
+                pass
+
             fleet = _get_fleet()
             summary = fleet.get_fleet_summary()
             total_keys = sum(v["total"] for v in summary.values())
