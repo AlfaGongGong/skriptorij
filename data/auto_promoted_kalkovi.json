@@ -1,0 +1,530 @@
+[
+  {
+    "pattern": "hiljada",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.736059"
+  },
+  {
+    "pattern": "hiljade",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.737056"
+  },
+  {
+    "pattern": "opština",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.738931"
+  },
+  {
+    "pattern": "opštine",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.740851"
+  },
+  {
+    "pattern": "uopšte",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.742284"
+  },
+  {
+    "pattern": "uopšteno",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.743132"
+  },
+  {
+    "pattern": "saglasan",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.744177"
+  },
+  {
+    "pattern": "saglasno",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.744958"
+  },
+  {
+    "pattern": "saglasnost",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.745789"
+  },
+  {
+    "pattern": "preduzeti",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.746430"
+  },
+  {
+    "pattern": "preduzimati",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.747027"
+  },
+  {
+    "pattern": "preduzeće",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.747825"
+  },
+  {
+    "pattern": "tačno",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.748461"
+  },
+  {
+    "pattern": "tačan",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.749310"
+  },
+  {
+    "pattern": "tačka",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.750712"
+  },
+  {
+    "pattern": "tačke",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.752034"
+  },
+  {
+    "pattern": "tačaka",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.753275"
+  },
+  {
+    "pattern": "uveren",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.754524"
+  },
+  {
+    "pattern": "uverenje",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.755856"
+  },
+  {
+    "pattern": "uveriti",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.757107"
+  },
+  {
+    "pattern": "uverljiv",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.758365"
+  },
+  {
+    "pattern": "sledeći",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.759562"
+  },
+  {
+    "pattern": "sledeća",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.760823"
+  },
+  {
+    "pattern": "sledeće",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.762048"
+  },
+  {
+    "pattern": "slediti",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.763573"
+  },
+  {
+    "pattern": "posledica",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.765109"
+  },
+  {
+    "pattern": "posledice",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.766476"
+  },
+  {
+    "pattern": "poslednji",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.767713"
+  },
+  {
+    "pattern": "poslednja",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.769067"
+  },
+  {
+    "pattern": "poslednje",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.770358"
+  },
+  {
+    "pattern": "delovati",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.771808"
+  },
+  {
+    "pattern": "delovanje",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.772788"
+  },
+  {
+    "pattern": "delotvoran",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.773428"
+  },
+  {
+    "pattern": "delimično",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.774046"
+  },
+  {
+    "pattern": "delimičan",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.774864"
+  },
+  {
+    "pattern": "pretnja",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.775904"
+  },
+  {
+    "pattern": "pretnje",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.777436"
+  },
+  {
+    "pattern": "pretiti",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.779091"
+  },
+  {
+    "pattern": "sopstveni",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.780345"
+  },
+  {
+    "pattern": "sopstvena",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.781807"
+  },
+  {
+    "pattern": "sopstveno",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.782660"
+  },
+  {
+    "pattern": "sopstvenim",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.783358"
+  },
+  {
+    "pattern": "porodica",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.784760"
+  },
+  {
+    "pattern": "porodice",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.785547"
+  },
+  {
+    "pattern": "porodicu",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.786194"
+  },
+  {
+    "pattern": "porodični",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.786812"
+  },
+  {
+    "pattern": "porodično",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.787672"
+  },
+  {
+    "pattern": "devojka",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.789451"
+  },
+  {
+    "pattern": "devojke",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.790862"
+  },
+  {
+    "pattern": "devojčica",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.792391"
+  },
+  {
+    "pattern": "dečaci",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.793819"
+  },
+  {
+    "pattern": "dete",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.795234"
+  },
+  {
+    "pattern": "deca",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.796739"
+  },
+  {
+    "pattern": "decu",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.798106"
+  },
+  {
+    "pattern": "deteta",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.799733"
+  },
+  {
+    "pattern": "detetu",
+    "tip": "srbizam",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.801114"
+  },
+  {
+    "pattern": "uzeti u obzir",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.802610"
+  },
+  {
+    "pattern": "dati sve od sebe",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.804035"
+  },
+  {
+    "pattern": "biti u pravu",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.805774"
+  },
+  {
+    "pattern": "na kraju dana",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.806748"
+  },
+  {
+    "pattern": "činjenica je da",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.807847"
+  },
+  {
+    "pattern": "pod uslovom da",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.808745"
+  },
+  {
+    "pattern": "mislim da da",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.810275"
+  },
+  {
+    "pattern": "mislim da je bolje da",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.811686"
+  },
+  {
+    "pattern": "rekao je da da",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.813054"
+  },
+  {
+    "pattern": "znao je da da",
+    "tip": "kalk_en",
+    "knjige": 999,
+    "pojavljivanja": 10,
+    "avg_score": 8.0,
+    "promoted_at": "2026-10-02T13:11:27.814359"
+  }
+]

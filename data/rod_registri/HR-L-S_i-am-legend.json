@@ -1,0 +1,277 @@
+{
+  "Polako": {
+    "rod": "M",
+    "clue_m": 5,
+    "clue_z": 0
+  },
+  "Danas": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Zatim": {
+    "rod": "M",
+    "clue_m": 18,
+    "clue_z": 3
+  },
+  "Još": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Neville": {
+    "rod": "M",
+    "clue_m": 37,
+    "clue_z": 1
+  },
+  "Ponekad": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Straga": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kathy": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 10
+  },
+  "Doručak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bena": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Jednoga": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Knjiga": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Svjesno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Naglo": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Trava": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Robert": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Sat": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Odjednom": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 1
+  },
+  "Neprestano": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Čovjek": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Frižider": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zamrzivač": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Danima": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Slabo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kasnije": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Odlučno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ujutro": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Takva": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Kuća": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Dugo": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Umorno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ubrzo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Trenutak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Prokletnik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Cortman": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Prošlost": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Vampir": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Svijet": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Čim": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Rana": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Osjećaj": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Pas": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Nada": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Pažljivo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Satima": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Davno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nevilleu": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Brzo": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Vjerojatno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 1
+  },
+  "Tada": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ruth": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Nesigurno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kortman": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Ulica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Bol": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  }
+}

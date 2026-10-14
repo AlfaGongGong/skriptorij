@@ -1,0 +1,847 @@
+{
+  "Curly": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ples": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kapetan": {
+    "rod": "M",
+    "clue_m": 27,
+    "clue_z": 0
+  },
+  "Mercy": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Starac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jahač": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sindik": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Grad": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Tom-Tom": {
+    "rod": "M",
+    "clue_m": 5,
+    "clue_z": 0
+  },
+  "Elmo": {
+    "rod": "M",
+    "clue_m": 14,
+    "clue_z": 0
+  },
+  "Sjevernjak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Smijeh": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Candy": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Vrisak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "One-Eye": {
+    "rod": "M",
+    "clue_m": 7,
+    "clue_z": 0
+  },
+  "Još": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sanduk": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "On": {
+    "rod": "M",
+    "clue_m": 10,
+    "clue_z": 0
+  },
+  "Match": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Opal": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Koster": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Plaća": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Aveniji": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Kolona": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Noć": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Soba": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Vjerojatno": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Forvalaka": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Kompanija": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Jednooki": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Čovjek": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Blago": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Raven": {
+    "rod": "M",
+    "clue_m": 28,
+    "clue_z": 0
+  },
+  "Limper": {
+    "rod": "M",
+    "clue_m": 11,
+    "clue_z": 0
+  },
+  "Žena": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Hrom": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Oficir": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Granica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Doughbelly": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Zouad": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Pickles": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Obično": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Flick": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Cornie": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jedno-Oko": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Popis": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Šepavac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dugo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Hromi": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Shifter": {
+    "rod": "M",
+    "clue_m": 7,
+    "clue_z": 0
+  },
+  "Pukovnik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Raker": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Pola": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Žrtva": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Molitva": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Pjesma": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Patrola": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Goblinu": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Logor": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Vjetar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Salient": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Potporučnik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Silent": {
+    "rod": "M",
+    "clue_m": 5,
+    "clue_z": 0
+  },
+  "Jedan-Oko": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Goblin": {
+    "rod": "M",
+    "clue_m": 9,
+    "clue_z": 0
+  },
+  "Prijedlog": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Soulcatcher": {
+    "rod": "M",
+    "clue_m": 8,
+    "clue_z": 0
+  },
+  "Zrak": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Otto": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Gavran": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Trag": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dušohvat": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Snijeg": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Kamen": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Rijetko": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Minuta": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Vrana": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Poručnik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Forsberg": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Darling": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 4
+  },
+  "Družina": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Ured": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Catcher": {
+    "rod": "M",
+    "clue_m": 9,
+    "clue_z": 0
+  },
+  "Šepavi": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zatim": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 1
+  },
+  "Ionako": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Prostor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dušaulovac": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Dušolovac": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Whisper": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 4
+  },
+  "Zemlja": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Tišina": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Gospa": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Zbrka": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Stvar": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Vijest": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "One-Eyeju": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Konjanik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Većina": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Mrak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Harden": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Oporavak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Vješalac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Gardist": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Svijet": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jolly": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sitničav": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Danima": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Blokada": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Družba": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Predstava": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Posada": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Sag": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tepih": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Komet": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Ulaz": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Pobunjenik": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Pokolj": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dolje": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bonegnasher": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Odgovor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Rebel": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Trava": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Nit": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Vanjska": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Gradnja": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Lady": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 6
+  },
+  "Situacija": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Strategija": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Tama": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Zvijer": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Borba": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Silueta": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Razina": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Feathera": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Tajna": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Dan": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Dječak": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Gostioničar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Shed": {
+    "rod": "M",
+    "clue_m": 15,
+    "clue_z": 0
+  },
+  "Asa": {
+    "rod": "M",
+    "clue_m": 12,
+    "clue_z": 0
+  },
+  "Djevojka": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Smireno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Prostorija": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Vani": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Stol": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tada": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Krage": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Red": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Buskin": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Latham": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ulica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Pockets": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Šed": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Uvijek": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Leš": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Džun": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Ograda": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Problem": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zapad": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tome": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Barem": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dominator": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zasjeda": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Jarak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Juniper": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Prolaz": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Gotovo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ritual": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

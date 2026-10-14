@@ -31,71 +31,85 @@ def _save_promoted(promoted):
 
 def auto_promote(dry_run=True):
     """
-    Automatski promoviše kalkove koji zadovoljavaju kriterije.
-    
+    Automatski promoviše kandidate koji zadovoljavaju kriterije.
+
     BEZ DEGRADACIJE:
     - Bar 10 pojavljivanja
-    - Bar 3 različite knjige
-    - Ne postoji u aktivnim listama (provjera duplikata)
+    - Bar 2 različite knjige ILI ručno dodan
+    - Ne postoji u aktivnim listama
     """
     conn = _get_db()
     promoted = _load_promoted()
     vec_promovisani = {p["pattern"] for p in promoted}
-    
-    # Dohvati kandidate koji zadovoljavaju pragove
+
+    # Dohvati kandidate
     try:
         rows = conn.execute("""
-            SELECT pattern, zamjena, tip, COUNT(DISTINCT knjiga) as knjige, 
-                   SUM(pojavljivanja) as ukupno
-            FROM kandidati 
-            GROUP BY pattern, zamjena
-            HAVING ukupno >= ? AND knjige >= ?
-            ORDER BY ukupno DESC
-        """, (MIN_POTVRDA, MIN_KNJIGA)).fetchall()
-    except sqlite3.OperationalError:
-        logger.warning("[auto_promoter] Tabela 'kandidati' ne postoji — preskačem")
+            SELECT pattern, tip, broj_pojavljivanja, ukupan_score,
+                   knjige_set, status
+            FROM kandidati
+            WHERE status = 'kandidat'
+              AND broj_pojavljivanja >= ?
+            ORDER BY broj_pojavljivanja DESC
+        """, (MIN_POTVRDA,)).fetchall()
+    except sqlite3.OperationalError as e:
+        logger.warning(f"[auto_promoter] SQL greška: {e}")
         return []
-    
+
     novi = []
     for row in rows:
         pattern = row["pattern"]
         if pattern in vec_promovisani:
             continue
-        
+
+        # Provjeri knjige_set (JSON lista) ili RUCNO_DODANO
+        knjige_set_str = row["knjige_set"] or "[]"
+        try:
+            knjige = json.loads(knjige_set_str)
+        except Exception:
+            knjige = []
+
+        # Ako je RUCNO_DODANO — prihvati
+        if "RUCNO_DODANO" in knjige:
+            broj_knjiga = 999  # uvijek prolazi
+        else:
+            broj_knjiga = len(set(knjige))
+
+        if broj_knjiga < MIN_KNJIGA and "RUCNO_DODANO" not in knjige:
+            continue
+
         entry = {
             "pattern": pattern,
-            "zamjena": row["zamjena"],
             "tip": row["tip"],
-            "knjige": row["knjige"],
-            "pojavljivanja": row["ukupno"],
+            "knjige": broj_knjiga,
+            "pojavljivanja": row["broj_pojavljivanja"],
+            "avg_score": row["ukupan_score"] / max(row["broj_pojavljivanja"], 1),
             "promoted_at": datetime.now().isoformat(),
         }
-        
+
         if not dry_run:
-            # Dodaj u aktivnu listu (dinamicki_lista.py)
+            # Dodaj u dinamicki_lista.py
             try:
                 lista_path = Path("core/kalkovi/dinamicki_lista.py")
                 if lista_path.exists():
-                    linija = f'    ("{pattern}", "{row["zamjena"]}"),  # auto-promoted {datetime.now():%Y-%m-%d}\n'
-                    sadrzaj = lista_path.read_text()
-                    # Nađi zadnju tuple liniju prije "]"
-                    marker = sadrzaj.rfind("    (")
+                    sadrzaj = lista_path.read_text(encoding='utf-8')
+                    # Format: ("pattern", "tip"),
+                    linija = f'    ("{pattern}", "{row["tip"]}"),  # auto-promoted {datetime.now():%Y-%m-%d}\n'
+                    # Nađi "]" (kraj liste)
+                    marker = sadrzaj.rfind("]")
                     if marker > 0:
-                        kraj_linije = sadrzaj.find("\n", marker)
-                        sadrzaj = sadrzaj[:kraj_linije+1] + linija + sadrzaj[kraj_linije+1:]
-                        lista_path.write_text(sadrzaj)
+                        # Ubaci prije "]" 
+                        sadrzaj = sadrzaj[:marker] + linija + sadrzaj[marker:]
+                        lista_path.write_text(sadrzaj, encoding='utf-8')
             except Exception as e:
-                logger.warning(f"[auto_promoter] Greška pri dodavanju u listu: {e}")
-        
+                logger.warning(f"[auto_promoter] Greška pri upisu: {e}")
+
         novi.append(entry)
-        vec_promovisani.add(pattern)
-    
-    if novi and not dry_run:
+
+    if not dry_run and novi:
         promoted.extend(novi)
         _save_promoted(promoted)
-        logger.info(f"[auto_promoter] Promovisano {len(novi)} kalkova")
-    
-    conn.close()
+
     return novi
 
 def get_stats():

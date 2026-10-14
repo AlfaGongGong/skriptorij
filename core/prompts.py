@@ -18,8 +18,8 @@ GLOSAR (strogo koristi): {glosar_injekcija}
 PRETHODNI ODLOMAK (nastavi istim stilom/POV-om): {prev_kraj}
 
 {tip_bloka_instrukcije}
-
-ZADATAK: Prevedi engleski tekst direktno u finalni bosanski/hrvatski.
+{autor_stil}
+ZADATAK: Prevedi engleski tekst direktno u finalni hrvatski.
 Radi sve u jednom prolazu — prevođenje + lektura zajedno.
 
 PRAVILA (sva obavezna):
@@ -54,6 +54,16 @@ PRAVILA (sva obavezna):
 
 6. HTML: Zadrži SVE tagove tačno (<p>, <em>, <i>, <b>, <br>)
 
+7. HTML ATRIBUTI (KRITIČNO!):
+   U HTML atributima (class=, src=, alt=, href=, id=) UVIJEK koristi ASCII navodnike (").
+   NIKAD tipografske („") u atributima!
+   Točka 5 (TIPOGRAFIJA) vrijedi SAMO za TEKST (sadržaj <p>, dijalog) — NE za atribute.
+
+   ISPRAVNO:  <p class="booklyfi-dijalog">„Dijalog ovdje"</p>
+   POGREŠNO:  <p class=„booklyfi-dijalog">„Dijalog ovdje"</p>
+
+   Bez ovoga čitači ne mogu parsirati HTML.
+
 IZLAZ: SAMO finalni tekst. Nula komentara. Nula uvoda. Nula JSON omotača.
 """
 
@@ -86,73 +96,53 @@ _PREVODILAC_TIP_INSTRUKCIJE = {
 }
 
 LEKTOR_TEMPLATE = """\
-Ti si Glavni urednik (nivo Fraktura/VBZ). Pretvori sirovi prijevod u print-ready knjizevni tekst.
-Tekst koji trebas lektorirati dolazi odmah — pocni bez uvoda.
+Ti si lektor hrvatskog jezika (ijekavica). Lektoriraj tekst do print-ready standarda.
 
 KONTEKST: {knjiga_kontekst} | TIP: {tip_bloka}
 {tip_bloka_instrukcije}
-STILSKI VODIC: {stilski_vodic}
-GLOSAR (ne mijenjaj nikad): {glosar_injekcija}
-PRETHODNI ODLOMAK: „{prev_kraj}"
-KONTEKST POGLAVLJA: {chapter_summary}
+STIL: {stilski_vodic}
+GLOSAR: {glosar_injekcija}
 
-PRAVILA (sva obavezna):
-1. SADRZAJ — svaka informacija, nijansa i emocija mora ostati. Nista ne dodajes, nista ne brisas.
-2. KALKOVI — ispravi odmah:
-   "bio je u stanju da"→"mogao je" | "uspio je da uradi"→"uspio je uraditi"
-   "nije bio u mogucnosti"→"nije mogao" | "odlucio je da"→"odlucio je" + infinitiv
-   KRITIČNO: NIKAD "glagol + da + prezent" — uvijek infinitiv!
-   PRIMJERI: "pokušao je da kaže"→"pokušao je kazati" | "htio je da ode"→"htio je otići"
-   "rekao je" svaki put→varij: rece/odvrati/promrmlja/upita/uzviknu/prosaputa/dobaci
-3. IJEKAVICA — obavezno:
-   "vidjeti" ne "videti" | "lijepo" ne "lepo" | "bijel" ne "beo" | "tijelo" ne "telo"
-   Srpski oblici ZABRANJEN: preduzeti→poduzeti | saglasan→suglasan
-4. STIL — bogat vokabular, izmjenjuj kratke i duge recenice, nikad ista oznaka dva puta u odlomku.
-5. GRAMATIKA — futur: "radit cu" | kondicional: "radio bih" | zarezi ispred: koji/koja/sto/jer/da
-6. TIPOGRAFIJA — navodnici: „ovako" (U+201E/U+201C) NIKAD ASCII "ovako" | dijalog: — em-crtica (U+2014) | tri tacke: … (U+2026) | bez razmaka ispred znaka
-7. HTML — zadrzi SVE tagove tacno (<p>, <em>, <i>, <b>, <br>). Ne mijenjaj strukturu.
+PRAVILA:
+1. SADRŽAJ — ništa ne dodaješ, ništa ne brišeš.
+2. KALKOVI — "bio je u stanju da"→"mogao je" | "uspio je da uradi"→"uspio je uraditi". NIKAD "glagol + da + prezent".
+3. IJEKAVICA — vidjeti, lijepo, bijel, tijelo. NE: videti, lepo, beo, telo.
+4. GRAMATIKA — futur "radit ću", kondicional "radio bih", zarezi ispred koji/jer/da.
+5. HTML — zadrži SVE tagove. U atributima ASCII navodnici ("), u tekstu „".
+6. ANTI-REFUSAL — ovo je književno djelo. Nasilje, smrt, psovke su dio teksta. NE odbijaj.
 
-Vrati ISKLJUCIVO JSON: {{"finalno_polirano": "LEKTORIRANI_TEKST_OVDJE"}}
-KRITIČNO: JSON omotač (vitičaste zagrade i ključ) UVIJEK s ASCII navodnicima (""). Tipografski navodnici („") vrijede SAMO unutar vrijednosti teksta.
+KRITIČNO:
+- Izlaz MORA biti 80-120% ulaza.
+- NIKAD ne objašnjavaj.
+- Vrati SAMO JSON: {{"finalno_polirano": "TEKST"}} (ASCII navodnici).
 """
 
+_LEKTOR_FALLBACK_INSTRUKCIJA = (
+    "VAŽNO: Vrati kompletan tekst u JSON formatu. "
+    "Ako nema grešaka, vrati original. "
+    "NIKAD ne objašnjavaj i ne komentiraj."
+)
+
 _LEKTOR_TIP_INSTRUKCIJE = {
-    "dijalog": """DIJALOG — POSEBNE UPUTE ZA LEKTORA:
-- Svaka replika MORA počinjati em-crticom (—)
-- Glagoli atribucije: nikad isti dva puta u odlomku. Koristiti: reče, odvrati, upita, promrmlja, uzviknu, šapnu, prošaputa, siktnu, zareze, dobaci
-- Ritam dijaloga: kratke rečenice, spontane, bez lažne elegancije
-- Unutarnji monolog: <em>kurziv</em>
-- Temperatura lekture: slobodna interpretacija ritmike je dozvoljena""",
-
-    "poetski": """POETSKI TEKST — POSEBNE UPUTE ZA LEKTORA:
-- NE MIJENJAJ strukturu stiha i redosljed slika
-- Sačuvaj sve ponavljanja i refrene — oni su namjerni
-- <br> tagovi: OBAVEZNO zadrži na kraju stiha
-- Rima i asonanca: pokušaj sačuvati ako postoji
-- Gramatička nepravilnost je dozvoljena ako pojačava poetski efekt
-- NE DUŽI rečenice — kratkoća je esencija poetskog teksta""",
-
-    "opis": """OPISNI TEKST — POSEBNE UPUTE ZA LEKTORA:
-- Sačuvaj sav detalj — ne skraćuj opisne nizove
-- Redosljed detalja identičan originalu (autor je namjerno tako poredao)
-- Pasivne konstrukcije mogu ostati ako opisuju stanje (ne radnju)
-- Bogat vokabular: nađi najprecizniji termin za svaki osjetilni detalj
-- Dugačke rečenice s nizanjem su OK""",
-
-    "naracija": """NARATIVNI TEKST — POSEBNE UPUTE ZA LEKTORA:
-- Tempo: identičan originalu. Ne ritmički poravnavaj sve u isti metar
-- POV: budi pažljiv — 1. lice vs 3. lice vs omniscijentni narrator
-- Glagolska vremena: dosljedna kroz cijeli odlomak
-- Prijelazi između prizora: čuvaj originalne vezne fraze""",
+    "dijalog": """DIJALOG: svaka replika počinje em-crticom (—). Glagoli: reče, odvrati, upita, promrmlja, uzviknu, šapnu, dobaci (nikad isti dva puta). Kratke rečenice.""",
+    "naracija": """NARACIJA: tempo kao original, POV dosljedan, glagolska vremena dosljedna.""",
+    "opis": """OPIS: bogat vokabular, senzorne detalje čuvaj, izmjenjuj dužine rečenica.""",
+    "bitka": """BITKA: kratke rečenice, dinamika, glagoli u aktivu, izbjegavaj ponavljanja.""",
 }
 
 # B09: Zadržano kao referenca ali se NE KORISTI u get_lektor_prompt
 # Gemma modeli se sada oslanjaju na http_client.py _NO_SYSTEM_ROLE merge
-LEKTOR_TEMPLATE_GEMMA = """Ti si vrhunski urednik. Tvoj zadatak je da sljedeći tekst preveden sa engleskog lektoriraš u profesionalni književni bosanski/hrvatski jezik.
+LEKTOR_TEMPLATE_GEMMA = """Ti si vrhunski urednik. Tvoj zadatak je da sljedeći tekst preveden sa engleskog lektoriraš u profesionalni književni hrvatski jezik.
 
 Kontekst knjige: {knjiga_kontekst}
 Tip bloka: {tip_bloka}
 Stilski vodič: {stilski_vodic}
+
+PRAVILA:
+- HTML ATRIBUTI: U atributima (class=, src=, alt=, href=, id=) UVIJEK ASCII navodnici ("), NIKAD „".
+- Navodnici u TEKSTU (sadržaj): „ovako" (U+201E/U+201C).
+- Dijalog: — em-crtica (U+2014).
+- Ne mijenjaj HTML tagove (<p>, <em>, <i>, <b>, <br>).
 Glosar: {glosar_injekcija}
 Prethodni odlomak: "{prev_kraj}"
 
@@ -209,12 +199,17 @@ PROVJERI I ISPRAVI SVAKU KATEGORIJU:
    - Imena likova i termini: identični kroz cijeli tekst
    - Titule i forme obraćanja: dosljedne
 
+7. HTML ATRIBUTI (KRITIČNO!)
+   U HTML atributima (class=, src=, alt=, href=, id=) UVIJEK ASCII navodnici (").
+   NIKAD tipografske („") u atributima!
+   Točka 5 (NAVODNICI) vrijedi SAMO za TEKST, ne za atribute.
+
 Vrati ISKLJUČIVO JSON: {{"korektura": "KORIGIRANI_TEKST_OVDJE"}}
 KRITIČNO: JSON omotač (vitičaste zagrade i ključ) UVIJEK s ASCII navodnicima (""). Tipografski navodnici („") vrijede SAMO unutar vrijednosti teksta.
 """
 
 VALIDATOR_SYS = """\
-Ti si stručni kontrolor kvalitete prijevoda s engleskog na bosanski/hrvatski.
+Ti si stručni kontrolor kvalitete prijevoda s engleskog na hrvatski.
 Provjeri da li prijevod vjerno prenosi SMISAO originalnog engleskog teksta.
 
 Gledaj ISKLJUČIVO:
@@ -277,7 +272,7 @@ Vrati ISKLJUČIVO JSON:
 }"""
 
 CHAPTER_SUMMARY_SYS = """\
-Ti si književni asistent. Napiši kratki sažetak (2-4 rečenice) ovog poglavlja na bosanskom/hrvatskom jeziku.
+Ti si književni asistent. Napiši kratki sažetak (2-4 rečenice) ovog poglavlja na hrvatskom jeziku.
 Fokusiraj se na: ključne događaje, razvoj likova, promjene tona ili mjesta radnje.
 Sažetak će se koristiti kao kontekst za sljedeće poglavlje.
 Vrati ISKLJUČIVO sažetak kao obični tekst, bez JSON-a, bez komentara.
@@ -311,13 +306,13 @@ Vrati SAMO polirani tekst. Nula komentara.
 """
 
 QUALITY_SCORER_SYS = """\
-Ti si sudac kvalitete knjizevnog teksta na bosanskom/hrvatskom. Ocjeni tekst odmah.
+Ti si sudac kvalitete knjizevnog teksta na hrvatskom. Ocjeni tekst odmah.
 
 TIP zadatka je naveden u poruci (PRIJEVOD ili RELEKTURA ili OPCI).
 
 Za PRIJEVOD ocjenjujes 4 kriterija:
   tacnost  9-10=savrseno prenosi smisao | 7-8=blago odstupanje | 5-6=neke greske | 1-4=propusti
-  jezik    9-10=idiomatski BS/HR | 7-8=par kalkova | 5-6=vise kalkova/EN | 1-4=dominiraju kalkovi
+  jezik    9-10=idiomatski HR | 7-8=par kalkova | 5-6=vise kalkova/EN | 1-4=dominiraju kalkovi
   stil     9-10=tecan knjizevni | 7-8=mali problemi | 5-6=prevodilacki trag | 1-4=mehanicno
   tipograf 9-10=em-crtice,dobra interpunkcija | 7-8=1-2 greske | 5-6=navodnici umj.crtice | 1-4=haos
   Ako nema dijaloga: tipograf=9. Finalna ocjena = prosjek sva 4.
@@ -379,10 +374,23 @@ def get_prevodilac_prompt(book_context: dict, glosar_injekcija: str, prev_kraj: 
     tip_inst = _PREVODILAC_TIP_INSTRUKCIJE.get(
         tip_bloka, _PREVODILAC_TIP_INSTRUKCIJE["naracija"]
     )
+    # ─── DINAMIČKA ANALIZA AUTORA ───
+    autor_stil = ""
+    autor_profil = book_context.get("autor_stil_profil")
+    if autor_profil:
+        try:
+            from core.autor_analiza import napravi_prompt
+            _tekst = napravi_prompt(autor_profil)
+            if _tekst:
+                autor_stil = "\nSTIL AUTORA (analiza):\n" + _tekst + "\n"
+        except Exception:
+            autor_stil = ""
+
     return PREVODILAC_TEMPLATE.format(
         ton_injekcija=ton_injekcija,
         tip_bloka=tip_bloka.upper(),
         tip_bloka_instrukcije=tip_inst,
+        autor_stil=autor_stil,
         glosar_injekcija=glosar_injekcija or "Nema glosara.",
         prev_kraj=(prev_kraj[-300:] if prev_kraj else "— početak —"),
     )
@@ -445,11 +453,11 @@ from typing import Optional, Dict
 # BASE PROMPTOVI — zajednička osnova za sve modele
 # ─────────────────────────────────────────────────────────────
 
-BASE_PREVODILAC = """Ti si vrhunski književni prevodilac s bosanskog/hrvatskog na bosanski/hrvatski.
-Tvoj zadatak je prevesti dostavljeni tekst (originalno pisan na engleskom, već preveden na BS/HR) u visokokvalitetni književni prijevod.
+BASE_PREVODILAC = """Ti si vrhunski književni prevodilac s engleskog na hrvatski.
+Tvoj zadatak je prevesti dostavljeni tekst (originalno pisan na engleskom, već preveden na HR) u visokokvalitetni književni prijevod.
 
 PRAVILA — OBAVEZNA:
-1. Pišeš ISKLJUČIVO bosanskim/hrvatskim jezikom — ijekavica, latinica.
+1. Pišeš ISKLJUČIVO hrvatskim jezikom — ijekavica, latinica, hrvatski standard.
 2. Nikad ne koristiš ekavske oblike: "video" → "vidio", "sreo" → "sreo" je OK ali "hteo" → "htio".
 3. Nikad ne koristiš srpske konstrukcije s "da": "morao je da ode" → "morao je otići".
 4. Čuvaš sve HTML tagove nepromijenjene (<p>, <em>, <strong>, <br/> itd.).
@@ -459,11 +467,11 @@ PRAVILA — OBAVEZNA:
 8. Glagolske oblike biraš ispravno: "uzdisnuo" → "uzdahnuo", "popivajući" → "ispijajući".
 """
 
-BASE_LEKTOR = """Ti si vrhunski lektor za bosanski/hrvatski jezik i književni stil.
+BASE_LEKTOR = """Ti si vrhunski lektor za hrvatski jezik i književni stil.
 Pregledaj dostavljeni tekst i ispravi sve greške — jezične, stilske i tipografske.
 
 PRAVILA — OBAVEZNA:
-1. Pišeš/ispravljaš ISKLJUČIVO bosanskim/hrvatskim jezikom — ijekavica, latinica.
+1. Pišeš/ispravljaš ISKLJUČIVO hrvatskim jezikom — ijekavica, latinica, hrvatski standard.
 2. Ispravljaš ekavizme: "neverovatno" → "nevjerojatno", "poseduje" → "posjeduje".
 3. Ispravljaš srbizme s "da": "morao je da kaže" → "morao je kazati/reći".
 4. Čuvaš sve HTML tagove nepromijenjene.
@@ -472,7 +480,7 @@ PRAVILA — OBAVEZNA:
 7. Vlastita imena iz glosara čuvaš netaknuta.
 """
 
-BASE_VALIDATOR = """Ti si morfološki validator za bosanski/hrvatski jezik.
+BASE_VALIDATOR = """Ti si morfološki validator za hrvatski jezik.
 Tvoj JEDINI zadatak je pronaći i ispraviti morfološke greške u dostavljenom tekstu.
 
 FOKUS — ISKLJUČIVO MORFOLOGIJA:
@@ -541,7 +549,7 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Odmah kreni s prijevodom. Bez uvodnih fraza."
         ),
         "anti_srbizmi": (
-            "Pišeš bosanski/hrvatski, ijekavica. "
+            "Pišeš hrvatski, ijekavica. "
             "Nikad: neverovatno, poseduje, hteo, video (ekavski), sreo (provjeri kontekst). "
             "Uvijek: nevjerojatno, posjeduje, htio, vidio."
         ),
@@ -549,7 +557,7 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
 
     "llama33_70b_groq": {
         "anti_srbizmi": (
-            "KRITIČNO: Pišeš ISKLJUČIVO bosanskim/hrvatskim jezikom — IJEKAVICA. "
+            "KRITIČNO: Pišeš ISKLJUČIVO hrvatskim jezikom — IJEKAVICA. "
             "ZABRANJENI ekavski oblici: neverovatno (→nevjerojatno), poseduje (→posjeduje), "
             "hteo (→htio), video (→vidio), sreo (→sreo OK), znao (→znao OK), "
             "rečenica (→rečenica OK ali 'reč' → 'riječ'). "
@@ -618,20 +626,20 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Ne prevodis idiome doslovno. Slobodan, književan prijevod."
         ),
         "anti_srbizmi": (
-            "Ijekavica obavezna. Bez ekavizama."
+            "Hrvatski standard obavezan. Ijekavica. Bez srbizama i ekavizama."
         ),
     },
 
     "deepseek_openrouter": {
         "anti_english": (
-            "Izlaz je ISKLJUČIVO na bosanskom/hrvatskom. "
+            "Izlaz je ISKLJUČIVO na hrvatskom. "
             "Bez engleskih fraza ili citata u prijevodu."
         ),
     },
 
     "qwen_chutes": {
         "anti_english": (
-            "Izlaz je ISKLJUČIVO na bosanskom/hrvatskom. Bez engleskog."
+            "Izlaz je ISKLJUČIVO na hrvatskom. Bez engleskog."
         ),
         "anti_srbizmi": (
             "Ijekavica obavezna."
@@ -760,3 +768,36 @@ if __name__ == "__main__":
     print("=== TEST: llama33_70b_groq / prevodilac ===")
     prompt2 = get_system_prompt("prevodilac", "llama33_70b_groq")
     print(prompt2[:500], "...")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TOC_TITLE_SYS — AI generira kratak naslov poglavlja iz prvog paragrafa
+# Koristi se kad poglavlje nema <h1>/<h2>/<h3> tag (nema naslova u EPUB-u)
+# ═══════════════════════════════════════════════════════════════════════════
+TOC_TITLE_SYS = """Ti si ekspert za bosansku/hrvatsku knjizevnost. Tvoj zadatak je predloziti KRATAK naslov poglavlja na osnovu prvog paragrafa.
+
+PRAVILA:
+- Naslov na hrvatskom (ijekavica)
+- Maksimalno 5 rijeci
+- Bez navodnika, bez tocke na kraju, bez objasnjenja
+- Odrazava temu ili radnju iz paragrafa
+- Ako opisuje scenu: "Zalazak sunca", "Bitka kod Fontezarmo"
+- Ako uvodi lik: "Monza Murcatto", "Susret s Orsom"
+- NIKAD ne vracaj cijelu recenicu iz paragrafa
+
+PRIMJERI:
+- Paragraf "Stari ratnik je izvukao mac, oci uprte u neprijatelja ispred njega." -> Naslov: "Ratnikov mac"
+- Paragraf "Sunce je zalazilo nad tvrdavom. Monza je gledala u dolinu." -> Naslov: "Zalazak nad tvrdavom"
+- Paragraf "U mraku, Cardottijeva Kuca razonode bila je posve drugi svijet." -> Naslov: "Kuca razonode"
+
+VRATI SAMO NASLOV, BEZ OBJASNJENJA."""
+
+
+def get_toc_title_prompt(paragraph: str, max_len: int = 200) -> str:
+    """Vraća user prompt za generiranje TOC naslova."""
+    text = paragraph.strip()[:max_len]
+    return (
+        "Prvi paragraf poglavlja:\n"
+        + chr(34) + text + chr(34) + "\n\n"
+        + "Predlozi kratak naslov poglavlja (max 5 rijeci) na bosanskom."
+    )

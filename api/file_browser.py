@@ -19,7 +19,8 @@ def api_upload_from_path():
         if source.suffix.lower() not in {".epub", ".mobi"}:
             return jsonify({"error": "Samo EPUB i MOBI"}), 400
         dest = Path(INPUT_DIR) / source.name
-        shutil.copy2(str(source), str(dest))
+        if source.resolve() != dest.resolve():
+            shutil.copy2(str(source), str(dest))
         return jsonify({"ok": True, "name": source.name, "path": str(dest)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

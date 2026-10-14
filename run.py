@@ -55,7 +55,15 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
     from core.quality import _QUALITY_RESCUE_THRESHOLD
 
     if scores:
-        losi = [v for v in scores.values() if v < _QUALITY_RESCUE_THRESHOLD]
+        # FIX: podrška za oba formata — float (AI) i dict (human edit)
+        def _get_score(v):
+            if isinstance(v, (int, float)):
+                return float(v)
+            if isinstance(v, dict):
+                return float(v.get("score", 0))
+            return 0.0
+
+        losi = [v for v in scores.values() if _get_score(v) < _QUALITY_RESCUE_THRESHOLD]
         pct_losi = len(losi) / len(scores) if scores else 0
 
         if pct_losi > 0.30:
@@ -293,13 +301,43 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 z.extractall(engine.work_dir)
 
     # ── Pronađi HTML fajlove ──────────────────────────────────────────────
+    from core.natural_sort import natural_sort_key
+
+    # Tehnicke stranice se NE obradjuju (ne prevode se, ne lektiraju)
+    TEHNICKE = (
+        "container.xml", "toc.ncx", "content.opf", "mimetype",
+        "cover", "titlepage", "copyright", "colophon",
+        "toc", "sadrzaj", "nav", "abouttheauthor", "about-author",
+        "ad-card", "adcard", "acknowledgements", "acknowledgments",
+        "appendix", "newsletter", "praise", "teaser",
+        "dedication", "posveta", "welcome", "dobrodosli",
+        "preface", "predgovor", "intro", "uvod",
+    )
+
+    def _je_tehnicka_stranica(f):
+        # XML fajlovi NISU XHTML sadrzaj
+        if f.suffix.lower() == ".xml":
+            return True
+        if f.suffix.lower() not in (".html", ".htm", ".xhtml"):
+            return True
+        # META-INF i slicno
+        rel = str(f).lower()
+        if "meta-inf" in rel or "meta_inf" in rel:
+            return True
+        # Tehnicke stranice po imenu
+        stem = f.stem.lower()
+        for t in TEHNICKE:
+            if stem == t or stem.startswith(t + "_") or stem.startswith(t + "-"):
+                return True
+        return False
+
     engine.html_files = sorted(
         [
             f
             for f in engine.work_dir.rglob("*")
-            if f.suffix.lower() in [".html", ".htm", ".xhtml", ".xml"]
+            if not _je_tehnicka_stranica(f)
         ],
-        key=lambda x: x.name,
+        key=natural_sort_key,
     )
 
     # ── Pre-processing HTML-a (samo za svježe ekstrakcije) ────────────────

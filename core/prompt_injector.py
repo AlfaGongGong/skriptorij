@@ -47,7 +47,7 @@ except ImportError:
 
 # ── Statički prompt blokovi ────────────────────────────────────────────────
 BAZNI_JEZIK_BLOK = """
-## Jezična pravila — bosanski/hrvatski standard
+## Jezična pravila — hrvatski standard
 - Ijekavica dosljedno: bio/bila, vidio/vidjela, htio/htjela, sjedio/sjedjela
 - Nikad ekavica: nevjerojatan (ne: neverovatno), posjeduje (ne: poseduje)
 - Navodnici: » « za dijalog (ili " " — dosljedno kroz cijelu knjigu)
@@ -57,9 +57,9 @@ BAZNI_JEZIK_BLOK = """
 
 BAZNI_STIL_BLOK = """
 ## Stilska pravila
-- Prirodan BS/HR tok rečenice — ne kalkirati englesku sintaksu
+- Prirodan HR tok rečenice — ne kalkirati englesku sintaksu
 - Glagolski prilog sadašnji: hodajući, gledajući (ne: dok hoda, dok gleda — osim za naglasak)
-- Vlastita imena: deklinirati prema BS/HR gramatici (v. glosar ispod)
+- Vlastita imena: deklinirati prema HR gramatici (v. glosar ispod)
 - SF terminologija: zadržati ustaljene prijevode (stack, sleeve, kortikalni)
 """.strip()
 

@@ -1,0 +1,172 @@
+{
+  "Trg": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Rike": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Makin": {
+    "rod": "M",
+    "clue_m": 8,
+    "clue_z": 0
+  },
+  "Zarobljenik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nuban": {
+    "rod": "M",
+    "clue_m": 8,
+    "clue_z": 0
+  },
+  "Gomst": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "William": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Glen": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Narednik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Lundist": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Maical": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sivac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jobe": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "On": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Renton": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Proximus": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Polako": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Klik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zatim": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nossar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Norwood": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Brzo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Vještica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Nisam": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sageous": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Will": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dvor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Oštrica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Stvar": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Gelleth": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zrak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Burlow": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Runama": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Liar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

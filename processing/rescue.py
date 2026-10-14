@@ -29,7 +29,7 @@ async def _spasi_od_sirovog(self, sirovo, chunk, chunk_idx, file_name, prev_ctx,
         f"IZVORNI ENGLESKI TEKST:\n{chunk}\n\n"
         f"TEKST ZA POPRAVAK (problem: {razlog}):\n{sirovo}\n\n"
         "ZADATAK: Agresivno lektoriraj — prevedi SVE engleske ostatke, ispravi kalkove, "
-        "vrati cist bosanski/hrvatski. Obavezno ijekavica. Navodnici: \u201eovako\u201c. "
+        "vrati cist hrvatski. Obavezno ijekavica. Navodnici: \u201eovako\u201c. "
         "Dijalog: \u2014 em-crtica. Glagol+da+prezent \u2192 infinitiv.\n"
         "Vrati ISKLJUCIVO JSON: {\"finalno_polirano\": \"TEKST\"}"
     )

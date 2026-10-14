@@ -1,0 +1,77 @@
+{
+  "Pippin": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zatim": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Svjetlost": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Eriol": {
+    "rod": "M",
+    "clue_m": 7,
+    "clue_z": 0
+  },
+  "Lindo": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Maleno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Melko": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Varda": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Warble": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Melku": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Tada": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 1
+  },
+  "Eltas": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Littleheartu": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Finarfin": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Finrod": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

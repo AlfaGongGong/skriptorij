@@ -1,1314 +1,775 @@
 <!doctype html>
 <html lang="bs">
-    <head>
-        <meta charset="UTF-8" />
-        <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-        />
-        <title>BOOKLYFI ⚡ Turbo</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap"
-            rel="stylesheet"
-        />
-        <link rel="manifest" href="/static/manifest.json" />
-        <meta name="theme-color" content="#030711" />
-        <!-- Pazi na putanju: /static/css/style.css -->
-        <link rel="stylesheet" href="/static/css/style.css" />
-    </head>
-    <body>
-        <div id="toast-container" aria-live="polite"></div>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>BOOKLYFI ⚡ Turbo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <meta name="theme-color" content="#030711" />
+    <link rel="stylesheet" href="/static/css/style.css?v=1791803042" />
+</head>
+<body>
+    <div id="toast-container" aria-live="polite"></div>
 
-        <!-- DOWNLOAD MODAL -->
-        <div
-            class="modal-overlay"
-            id="download-modal"
-            role="dialog"
-            aria-modal="true"
-        >
-            <div class="modal modal-friendly">
-                <div class="modal-icon">📥</div>
-                <div class="modal-title">Preuzmi djelimičan prijevod?</div>
-                <div class="modal-body" id="modal-body-text">
-                    Obrada još nije gotova. Preuzet ćeš ono što je do sada
-                    završeno — ostatak knjige ostaje na originalnom jeziku.
-                </div>
-                <div class="modal-pct-bar">
-                    <div
-                        class="modal-pct-fill"
-                        id="modal-pct-fill"
-                        style="width: 0%"
-                    ></div>
-                </div>
-                <div class="modal-pct-label" id="modal-pct-label">
-                    0% završeno
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-sm" id="btn-close-download-modal">
-                        ⏳ Sačekaj kraj
-                    </button>
-                    <button
-                        class="btn btn-sm btn-success"
-                        id="btn-confirm-download-live"
-                    >
-                        ⬇ Preuzmi što ima
-                    </button>
-                </div>
+    <!-- ═══════════════════ DOWNLOAD MODAL ═══════════════════ -->
+    <div class="modal-overlay" id="download-modal" role="dialog" aria-modal="true">
+        <div class="modal modal-friendly">
+            <div class="modal-icon">📥</div>
+            <div class="modal-title">Preuzmi djelimičan prijevod?</div>
+            <div class="modal-body" id="modal-body-text">
+                Obrada još nije gotova. Preuzet ćeš ono što je do sada završeno — ostatak knjige ostaje na originalnom jeziku.
+            </div>
+            <div class="modal-pct-bar">
+                <div class="modal-pct-fill" id="modal-pct-fill" style="width: 0%"></div>
+            </div>
+            <div class="modal-pct-label" id="modal-pct-label">0% završeno</div>
+            <div class="modal-actions">
+                <button class="btn btn-sm" id="btn-close-download-modal">⏳ Sačekaj kraj</button>
+                <button class="btn btn-sm btn-success" id="btn-confirm-download-live">⬇ Preuzmi što ima</button>
             </div>
         </div>
+    </div>
 
-        <div id="app">
-            <!-- HEADER -->
-            <header class="app-header">
-                <div class="brand">
-                    <img
-                        src="/static/img/V8_book_turbo.svg"
-                        alt="Booklyfi logo"
-                        class="brand-logo"
-                        id="brand-logo"
-                    />
-                    <div class="brand-text">
-                        <h1 class="brand-title" id="brand-title">BOOKLYFI</h1>
-                        <span class="brand-tag">TURBO V10</span>
+    <div id="app">
+        <!-- ═══════════════════ HEADER ═══════════════════ -->
+        <header class="app-header">
+            <div class="brand">
+                <img src="/static/img/logo.png" alt="Booklyfi logo" class="brand-logo" id="brand-logo" width="42" height="42" />
+                <div class="brand-text">
+                    <h1 class="brand-title" id="brand-title">BOOKLYFI</h1>
+                    <span class="brand-tag">TURBO V10</span>
+                </div>
+            </div>
+            <div class="header-controls">
+                <div class="status-badge">
+                    <span class="dot dot-idle" id="status-dot"></span>
+                    <span id="status-text" class="status-text">SPREMAN</span>
+                    <span id="header-live-stage" class="header-live-stage hidden"></span>
+                </div>
+                <div id="quality-live-badge" class="ql-badge">
+                    <div class="ql-ring" data-val="—" style="--ql-pct: 0%"></div>
+                    <div class="ql-text">
+                        <span class="ql-score-main">—</span>
+                        <span class="ql-score-sub">—</span>
                     </div>
                 </div>
-                <div class="header-controls">
-                    <div class="status-badge">
-                        <span class="dot dot-idle" id="status-dot"></span>
-                        <span id="status-text" class="status-text">SPREMAN</span>
-                        <span id="header-live-stage" class="header-live-stage hidden"></span>
-                    </div>
-                    <button
-                        class="btn-icon"
-                        id="theme-btn"
-                        title="Promijeni temu"
-                    >
-                        🌙
-                    </button>
-                    <!-- Live quality indikator -->
-                    <div id="quality-live-badge" class="ql-badge">
-                        <div
-                            class="ql-ring"
-                            data-val="—"
-                            style="--ql-pct: 0%"
-                        ></div>
-                        <div class="ql-text">
-                            <span class="ql-score-main">—</span>
-                            <span class="ql-score-sub">—</span>
-                        </div>
-                    </div>
-                    <button
-                        class="btn-icon"
-                        id="btn-show-setup"
-                        title="Postavke"
-                    >
-                        ⚙
-                    </button>
-                </div>
-            </header>
+                <button class="btn-icon" id="theme-btn" title="Promijeni temu">🌙</button>
+                <button class="btn-icon" id="btn-show-setup" title="Postavke">⚙</button>
+            </div>
+        </header>
 
-            <!-- SETUP PANEL -->
-            <section id="setup-panel">
-                <div class="wizard-steps">
-                    <div class="wizard-step active" id="step-1">
-                        <span class="wizard-step-num">1</span>
-                        <span>Odabir knjige</span>
-                    </div>
-                    <div class="wizard-step-connector"></div>
-                    <div class="wizard-step" id="step-2">
-                        <span class="wizard-step-num">2</span>
-                        <span>Pokretanje</span>
-                    </div>
+        <!-- ═══════════════════ SETUP ═══════════════════ -->
+        <section id="setup-panel">
+            <!-- Wizard progres -->
+            <div class="wizard-steps">
+                <div class="wizard-step active" id="step-1">
+                    <span class="wizard-step-num">1</span>
+                    <span class="wizard-step-label">Odabir knjige</span>
                 </div>
+                <div class="wizard-step-connector"></div>
+                <div class="wizard-step" id="step-2">
+                    <span class="wizard-step-num">2</span>
+                    <span class="wizard-step-label">Pokretanje</span>
+                </div>
+            </div>
 
-                <!-- KORAK 1 -->
-                <div id="wizard-page-1">
-                    <div class="card">
-                        <div class="card-title">
-                            📚 Odaberi ili učitaj knjigu
-                        </div>
-                        <div class="form-group">
-                            <label>Dostupne knjige</label>
-                            <select id="book-select">
-                                <option value="">
-                                    — Učitavam katalog... —
-                                </option>
-                            </select>
-                        </div>
-                        <div
-                            style="
-                                height: 1px;
-                                background: var(--bd);
-                                margin: 16px 0;
-                            "
-                        ></div>
-                        <label>Ili učitaj novu knjigu (EPUB / MOBI)</label>
-                        <div class="upload-zone" id="upload-zone">
-                            <div class="upload-icon">📖</div>
-                            <div class="upload-label">
-                                Klikni ili prevuci fajl ovdje
-                            </div>
-                            <div class="upload-sub">.epub ili .mobi</div>
-                            <input
-                                type="file"
-                                id="file-input"
-                                accept=".epub,.mobi"
-                            />
-                        </div>
-                        <div id="upload-status" class="upload-status"></div>
-                        <div
-                            id="guide-after-upload"
-                            class="guide-banner hidden"
-                        >
-                            <div class="guide-icon">✅</div>
-                            <div class="guide-text">
-                                <div class="guide-title">
-                                    Knjiga je učitana!
-                                </div>
-                                <div class="guide-sub">
-                                    Klikni "Dalje" da odabereš model i pokreneš
-                                    prijevod.
-                                </div>
-                            </div>
-                            <button class="btn btn-primary btn-sm guide-action">
-                                Dalje →
-                            </button>
-                        </div>
-                        <div class="wizard-nav">
-                            <div></div>
-                            <button
-                                class="btn btn-primary"
-                                id="btn-wizard-next"
-                            >
-                                Dalje →
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- KORAK 2 -->
-                <div id="wizard-page-2" class="hidden">
-                    <div class="card">
-                        <div class="card-title">⚙ Odaberi model i pokreni</div>
-                        <div
-                            id="selected-book-info"
-                            style="
-                                display: flex;
-                                align-items: center;
-                                gap: 10px;
-                                padding: 10px 14px;
-                                background: rgba(99, 102, 241, 0.08);
-                                border: 1px solid rgba(99, 102, 241, 0.2);
-                                border-radius: var(--r-md);
-                                margin-bottom: 16px;
-                            "
-                        >
-                            <span>📘</span>
-                            <span
-                                id="selected-book-name"
-                                style="
-                                    font-family: var(--font-mono);
-                                    font-size: 0.8rem;
-                                    color: var(--accent-2);
-                                    font-weight: 600;
-                                "
-                                >—</span
-                            >
-                            <button
-                                class="btn btn-sm"
-                                style="margin-left: auto; font-size: 0.68rem"
-                                id="btn-wizard-back"
-                            >
-                                Promijeni
-                            </button>
-                        </div>
-                        <div class="form-group">
-                            <label>AI model</label>
-                            <div class="tier-pills" id="tier-pills">
-                                <span class="tier-pill active" data-tier="all"
-                                    >Sve</span
-                                >
-                                <span class="tier-pill" data-tier="fast"
-                                    >⚡ Brzi</span
-                                >
-                                <span class="tier-pill" data-tier="quality"
-                                    >🏆 Kvalitet</span
-                                >
-                                <span class="tier-pill" data-tier="free"
-                                    >🆓 Besplatni</span
-                                >
-                            </div>
-                            <select id="model-select">
-                                <option value="V10_TURBO">
-                                    V10_TURBO (preporučeno)
-                                </option>
-                            </select>
-                        </div>
-                        <div class="auto-mode-box">
-                            <div
-                                class="auto-mode-display"
-                                id="auto-mode-display"
-                            >
-                                <span class="auto-mode-icon" id="auto-mode-icon"
-                                    >🤖</span
-                                >
-                                <div>
-                                    <span
-                                        class="auto-mode-label"
-                                        id="auto-mode-label"
-                                        >Automatski mod</span
-                                    >
-                                    <p
-                                        class="auto-mode-desc"
-                                        id="auto-mode-desc"
-                                    >
-                                        Sistem određuje: prevod, lektura ili
-                                        retro obrada
-                                    </p>
-                                </div>
-                            </div>
-                            <div
-                                style="
-                                    margin-top: 8px;
-                                    padding-top: 8px;
-                                    border-top: 1px solid var(--bd);
-                                "
-                            >
-                                <span
-                                    style="
-                                        font-size: 0.7rem;
-                                        color: var(--tx-3);
-                                    "
-                                >
-                                    Trebaš TTS filter za Moon+ Reader?
-                                    <button
-                                        id="btn-select-tts"
-                                        style="
-                                            background: none;
-                                            border: none;
-                                            color: var(--accent-2);
-                                            cursor: pointer;
-                                            font-size: 0.7rem;
-                                            text-decoration: underline;
-                                        "
-                                    >
-                                        Klikni ovdje
-                                    </button>
-                                </span>
-                            </div>
-                        </div>
-                        <div id="tts-panel" class="hidden">
-                            <div
-                                style="
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 8px;
-                                    margin-bottom: 6px;
-                                "
-                            >
-                                <span>🔊</span>
-                                <span
-                                    style="
-                                        font-size: 0.82rem;
-                                        font-weight: 700;
-                                        color: var(--accent-2);
-                                    "
-                                    >TTS mod aktiviran</span
-                                >
-                                <button
-                                    id="btn-cancel-tts"
-                                    style="
-                                        margin-left: auto;
-                                        background: none;
-                                        border: none;
-                                        color: var(--tx-3);
-                                        cursor: pointer;
-                                        font-size: 0.8rem;
-                                    "
-                                >
-                                    ✕ Otkaži
-                                </button>
-                            </div>
-                            <div style="font-size: 0.72rem; color: var(--tx-3)">
-                                Generisaće .ttsfilter output kompatibilan sa
-                                Moon+ Reader i drugim TTS aplikacijama.
-                            </div>
-                        </div>
-                        <button class="btn btn-launch" id="btn-start">
-                            🚀 Pokreni
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- DASHBOARD -->
-            <section id="dashboard-panel" class="hidden">
-                <div class="download-strip hidden" id="download-strip">
-                    <div class="download-strip-icon">✅</div>
-                    <div class="download-strip-info">
-                        <div
-                            class="download-strip-title"
-                            id="download-strip-title"
-                        >
-                            Prijevod završen!
-                        </div>
-                        <div
-                            class="download-strip-subtitle"
-                            id="download-strip-subtitle"
-                        >
-                            EPUB je spreman za preuzimanje
-                        </div>
-                    </div>
-                    <div class="download-strip-btns">
-                        <a
-                            class="btn btn-success btn-sm"
-                            href="/api/download"
-                            id="btn-download-final"
-                            >⬇ EPUB</a
-                        >
-                    </div>
-                </div>
-                <div class="card" style="padding: 14px">
-                    <div class="pipeline" id="pipeline">
-                        <div class="pipe-step" id="pipe-analiza">
-                            <span class="pipe-icon">🔬</span>Analiza
-                        </div>
-                        <div class="pipe-step" id="pipe-prevod">
-                            <span class="pipe-icon">🌐</span>Prevod
-                        </div>
-                        <div class="pipe-step" id="pipe-lektor">
-                            <span class="pipe-icon">✍</span>Lektor
-                        </div>
-                        <div class="pipe-step" id="pipe-korektor">
-                            <span class="pipe-icon">📐</span>Korektor
-                        </div>
-                        <div class="pipe-step" id="pipe-gotovo">
-                            <span class="pipe-icon">✅</span>Gotovo
-                        </div>
-                    </div>
-                </div>
+            <!-- KORAK 1 -->
+            <div id="wizard-page-1">
                 <div class="card">
-                    <div class="card-title">📊 Napredak obrade</div>
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <div class="stat-label">Motor</div>
-                            <div class="stat-value" id="stat-engine">---</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Fajl</div>
-                            <div class="stat-value" id="stat-file">---</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Obrađeno</div>
-                            <div class="stat-value" id="stat-ok">0 / 0</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Preskočeno</div>
-                            <div class="stat-value" id="stat-skipped">0</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Aktivni ključevi</div>
-                            <div class="stat-value" id="stat-fleet-active">
-                                0
-                            </div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Kvalitet</div>
-                            <div
-                                class="stat-value"
-                                id="stat-avg-quality"
-                                style="color: var(--accent-2)"
-                            >
-                                —
-                            </div>
-                        </div>
+                    <div class="card-title">📚 Učitaj knjigu</div>
+                    <p class="card-desc">Odaberi EPUB ili MOBI fajl s telefona</p>
+                    <div class="upload-zone" id="upload-zone">
+                        <div class="upload-icon">📖</div>
+                        <div class="upload-label">Klikni ili prevuci fajl ovdje</div>
+                        <div class="upload-sub">.epub ili .mobi</div>
+                        <input type="file" id="file-input" accept=".epub,.mobi" />
                     </div>
-                    <div class="progress-track">
-                        <div
-                            class="progress-fill"
-                            id="progress-bar"
-                            style="width: 0%"
-                        ></div>
-                    </div>
-                    <div class="progress-meta">
-                        <span id="progress-pct-text">Završeno: 0%</span>
-                        <span id="progress-eta">ETA: --:--:--</span>
-                    </div>
-                    <div
-                        style="
-                            height: 1px;
-                            background: var(--bd);
-                            margin: 14px 0;
-                        "
-                    ></div>
-                    <div
-                        class="live-preview-grid"
-                        id="live-preview-block"
-                        style="display: none"
-                    >
-                        <div class="preview-box" id="preview-en-box">
-                            <div class="preview-box-label" id="preview-en-label">🇬🇧 Original</div>
-                            <div class="preview-box-text" id="preview-en">
-                                —
-                            </div>
+                    <div id="upload-status" class="upload-status"></div>
+                    <div id="guide-after-upload" class="guide-banner hidden">
+                        <div class="guide-icon">✅</div>
+                        <div class="guide-text">
+                            <div class="guide-title">Knjiga je učitana!</div>
+                            <div class="guide-sub">Klikni "Dalje" da odabereš model i pokreneš prijevod.</div>
                         </div>
-                        <div class="preview-box">
-                            <div class="preview-box-label">🇧🇦 Prijevod</div>
-                            <div class="preview-box-text" id="preview-hr">
-                                —
-                            </div>
-                        </div>
+                        
                     </div>
-                    <div class="control-bar">
-                        <button class="btn btn-sm" id="btn-pause">
-                            ⏸ Pauziraj
-                        </button>
-                        <button class="btn btn-sm hidden" id="btn-resume">
-                            ▶ Nastavi
-                        </button>
-                        <button class="btn btn-sm" id="btn-reset">
-                            🔄 Resetuj
-                        </button>
-                        <button class="btn btn-sm btn-danger" id="btn-stop">
-                            ⏹ Zaustavi
-                        </button>
-                        <button
-                            class="btn btn-sm"
-                            id="btn-show-setup-dashboard"
-                            style="margin-left: auto"
-                        >
-                            ⚙ Postavi novo
-                        </button>
+                    <div class="wizard-nav">
+                        <div></div>
+                        <button class="btn btn-primary" id="btn-wizard-next">Dalje →</button>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- TABS -->
-            <div class="card" style="padding: 16px">
-                <nav class="tab-nav">
-                    <button class="tab-btn active" data-tab="tab-quality">
-                        🎯 Kvalitet
-                        <span
-                            class="badge badge-amber hidden"
-                            id="quality-badge"
-                            >0</span
-                        >
-                    </button>
-                    <button class="tab-btn" data-tab="tab-history">
-                        📚 Historija
-                    </button>
-                    <button class="tab-btn" data-tab="tab-epub">
-                        👁 Pregled
-                    </button>
-                    <button class="tab-btn" data-tab="tab-expert">
-                        🔬 Stručnjak
-                    </button>
-                    <button class="tab-btn" data-tab="panel-zamjene">
-                        🔤 Zamjene
-                    </button>
-                    <button class="tab-btn" data-tab="panel-tts-filter">
-                        🔊 TTS Filter
-                    </button>
-                <button class="tab-btn" data-tab="stil" id="tab-btn-stil">✨ Stil</button>
-        </nav>
+            <!-- KORAK 2 -->
+            <div id="wizard-page-2" class="hidden">
+                <div class="card">
+                    <div class="card-title">⚙ Odaberi model i pokreni</div>
 
-                <!-- Quality tab -->
-                <div class="tab-panel active" id="tab-quality">
-                    <div
-                        id="quality-loading"
-                        style="
-                            text-align: center;
-                            padding: 24px;
-                            color: var(--tx-3);
-                            font-size: 0.78rem;
-                        "
-                    >
-                        Nema podataka. Pokreni obradu da se generišu quality
-                        scores.
+                    <div id="selected-book-info" class="selected-book">
+                        <span class="sb-icon">📘</span>
+                        <span id="selected-book-name" class="sb-name">—</span>
+                        <button class="btn btn-sm sb-change" id="btn-wizard-back">Promijeni</button>
                     </div>
-                    <div id="quality-content" class="hidden">
-                        <!-- Relektura banner — vidljiv tokom i poslije REFIX-a -->
-                        <div id="qs-relektura-banner" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3);border-radius:8px;margin-bottom:12px;flex-wrap:wrap">
-                            <span id="qs-relektura-status-icon" style="font-size:1rem">🔄</span>
-                            <span style="font-size:0.75rem;font-family:var(--font-mono);color:var(--accent-2);flex:1" id="qs-relektura-label">Relektura u toku…</span>
-                            <span style="font-family:var(--font-mono);font-size:0.85rem;font-weight:700;color:var(--accent-2)" id="qs-relektura-avg">—/10</span>
-                            <span style="font-size:0.7rem;color:var(--tx-3);font-family:var(--font-mono)" id="qs-relektura-count">0 blokova završeno</span>
+
+                    <div class="form-group">
+                        <label>AI model</label>
+                        <div class="tier-pills" id="tier-pills">
+                            <span class="tier-pill active" data-tier="all">Sve</span>
+                            <span class="tier-pill" data-tier="fast">⚡ Brzi</span>
+                            <span class="tier-pill" data-tier="quality">🏆 Kvalitet</span>
+                            <span class="tier-pill" data-tier="free">🆓 Besplatni</span>
                         </div>
-                        <div
-                            id="qs-grade-display"
-                            class="qs-grade excellent"
-                            style="margin-bottom: 14px"
-                        >
-                            <span id="qs-grade-emoji">🌟</span>
-                            <span id="qs-grade-text"
-                                >Odlično — prijevod je spreman za štampu</span
-                            >
-                            <span
-                                id="qs-grade-score"
-                                style="
-                                    margin-left: auto;
-                                    font-family: var(--font-mono);
-                                    font-size: 0.78rem;
-                                    opacity: 0.7;
-                                "
-                            ></span>
-                        </div>
-                        <div
-                            style="
-                                display: flex;
-                                align-items: center;
-                                gap: 16px;
-                                margin-bottom: 16px;
-                                flex-wrap: wrap;
-                            "
-                        >
-                            <div
-                                id="qs-avg-ring"
-                                class="qs-avg-ring"
-                                data-val="—"
-                                style="--ring-pct: 0%"
-                            ></div>
-                            <div style="flex: 1; min-width: 200px">
-                                <div
-                                    style="
-                                        font-size: 0.7rem;
-                                        color: var(--tx-3);
-                                        font-family: var(--font-mono);
-                                        margin-bottom: 4px;
-                                    "
-                                >
-                                    PROSJEČNA OCJENA
-                                </div>
-                                <div
-                                    style="
-                                        font-size: 1.8rem;
-                                        font-weight: 800;
-                                        font-family: var(--font-mono);
-                                        color: var(--tx-1);
-                                    "
-                                    id="qs-avg-big"
-                                >
-                                    —
-                                </div>
-                                <div
-                                    style="
-                                        font-size: 0.7rem;
-                                        color: var(--tx-3);
-                                        margin-top: 2px;
-                                    "
-                                    id="qs-total-label"
-                                >
-                                    — blokova ocijenjeno
-                                </div>
-                            </div>
-                            <div
-                                style="
-                                    display: flex;
-                                    flex-direction: column;
-                                    gap: 6px;
-                                "
-                            >
-                                <button
-                                    class="btn btn-sm"
-                                    id="btn-refresh-quality"
-                                >
-                                    🔄 Osvježi
-                                </button>
-                                <button
-                                    id="btn-send-marked"
-                                    class="btn btn-sm hidden"
-                                    style="
-                                        border-color: var(--amber);
-                                        color: var(--amber);
-                                    "
-                                >
-                                    🔧 Relektura označenih
-                                </button>
+                        <select id="model-select">
+                            <option value="V10_TURBO">V10_TURBO (preporučeno)</option>
+                        </select>
+                    </div>
+
+                    <div class="auto-mode-box">
+                        <div class="auto-mode-display" id="auto-mode-display">
+                            <span class="auto-mode-icon" id="auto-mode-icon">🤖</span>
+                            <div class="auto-mode-text">
+                                <span class="auto-mode-label" id="auto-mode-label">Automatski mod</span>
+                                <p class="auto-mode-desc" id="auto-mode-desc">Sistem određuje: prevod, lektura ili retro obrada</p>
                             </div>
                         </div>
-                        <div class="quality-summary-grid">
-                            <div class="qs-box qs-excellent">
-                                <div class="qs-box-val" id="qs-excellent">
-                                    0
-                                </div>
-                                <div class="qs-box-label">
-                                    🌟 Odlično<br />≥ 8.5
-                                </div>
-                            </div>
-                            <div class="qs-box qs-good">
-                                <div class="qs-box-val" id="qs-good">0</div>
-                                <div class="qs-box-label">
-                                    ✅ Dobro<br />6.5–8.5
-                                </div>
-                            </div>
-                            <div class="qs-box qs-poor qs-box-clickable" id="qs-box-poor" title="Klikni da označiš sve blokove koji trebaju retro" onclick="selectBadBlocks('poor')">
-                                <div class="qs-box-val" id="qs-poor">0</div>
-                                <div class="qs-box-label">
-                                    ⚠ Treba retro<br />4.0–6.5
-                                </div>
-                                <div class="qs-box-hint">↗ Označi sve</div>
-                            </div>
-                            <div class="qs-box qs-critical qs-box-clickable" id="qs-box-critical" title="Klikni da označiš sve kritične blokove" onclick="selectBadBlocks('critical')">
-                                <div class="qs-box-val" id="qs-critical">0</div>
-                                <div class="qs-box-label">
-                                    🔴 Kritično<br />&lt; 4.0
-                                </div>
-                                <div class="qs-box-hint">↗ Označi sve</div>
-                            </div>
+                        <div class="auto-mode-tts">
+                            <span class="tts-hint">Trebaš TTS filter za Moon+ Reader?</span>
+                            <button id="btn-select-tts" class="link-btn">Klikni ovdje</button>
                         </div>
-                        <div id="qs-refix-bar" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px;margin-bottom:12px;flex-wrap:wrap">
-                            <span id="qs-refix-info" style="font-size:0.75rem;font-family:var(--font-mono);color:var(--amber);flex:1">0 blokova označeno</span>
-                            <button class="btn btn-sm" onclick="selectBadBlocks('all')" style="border-color:var(--rose);color:var(--rose)">🔴 + Kritični</button>
-                            <button class="btn btn-sm" onclick="clearMarkedBlocks()" style="border-color:var(--tx-3);color:var(--tx-3)">✕ Poništi</button>
-                            <button class="btn btn-sm" onclick="sendMarkedForRefix()" style="background:var(--amber);border-color:var(--amber);color:#000;font-weight:700">🔧 Pošalji na relekturu</button>
+                    </div>
+
+                    <div id="tts-panel" class="tts-panel hidden">
+                        <div class="tts-header">
+                            <span>🔊</span>
+                            <span class="tts-label">TTS mod aktiviran</span>
+                            <button id="btn-cancel-tts" class="link-btn tts-cancel">✕ Otkaži</button>
                         </div>
-                        <div style="margin-bottom: 16px">
-                            <div
-                                style="
-                                    display: flex;
-                                    justify-content: space-between;
-                                    font-size: 0.7rem;
-                                    color: var(--tx-3);
-                                    font-family: var(--font-mono);
-                                    margin-bottom: 4px;
-                                "
-                            >
-                                <span>Blokovi spremni za štampu</span
-                                ><span id="qs-print-ready-pct">0%</span>
-                            </div>
-                            <div class="progress-track" style="height: 8px">
-                                <div
-                                    class="progress-fill"
-                                    id="qs-print-ready-bar"
-                                    style="
-                                        width: 0%;
-                                        background: linear-gradient(
-                                            90deg,
-                                            var(--emerald),
-                                            var(--accent-2)
-                                        );
-                                    "
-                                ></div>
-                            </div>
-                        </div>
-                        <div
-                            style="
-                                font-size: 0.7rem;
-                                color: var(--tx-3);
-                                font-family: var(--font-mono);
-                                margin-bottom: 8px;
-                                letter-spacing: 0.06em;
-                                text-transform: uppercase;
-                            "
-                        >
-                            Pregled po poglavljima
-                        </div>
-                        <div id="qs-files-container"></div>
+                        <div class="tts-desc">Generisaće .ttsfilter output kompatibilan sa Moon+ Reader i drugim TTS aplikacijama.</div>
+                    </div>
+
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="auto-stil" checked>
+                        <span>✨ Automatski stiliziraj nakon prevoda</span>
+                    </label>
+
+                    <button class="btn btn-launch" id="btn-start">🚀 Pokreni</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+        <section id="dashboard-panel" class="hidden">
+            <!-- Download strip (kad je gotovo) -->
+            <div class="download-strip hidden" id="download-strip">
+                <div class="download-strip-icon">✅</div>
+                <div class="download-strip-info">
+                    <div class="download-strip-title" id="download-strip-title">Prijevod završen!</div>
+                    <div class="download-strip-subtitle" id="download-strip-subtitle">EPUB je spreman za preuzimanje</div>
+                </div>
+                <div class="download-strip-btns">
+                    <a class="btn btn-success btn-sm" href="/api/download" id="btn-download-final">⬇ EPUB</a>
+                </div>
+            </div>
+
+            <!-- Knjiga kontekst -->
+            <div class="card card-kontekst">
+                <div class="kontekst-grid">
+                    <div class="kontekst-row">
+                        <span class="k-icon">📖</span>
+                        <span class="k-value k-knjiga" id="kk-knjiga">—</span>
+                    </div>
+                    <div class="kontekst-row">
+                        <span class="k-icon">📄</span>
+                        <span class="k-value k-fajl" id="kk-fajl">—</span>
+                    </div>
+                    <div class="kontekst-row">
+                        <span class="k-icon">⚙</span>
+                        <span class="k-value k-faza" id="kk-faza">—</span>
+                        <span class="k-detalj" id="kk-faza-detalj"></span>
+                    </div>
+                    <div class="kontekst-row kontekst-vrijeme">
+                        <span class="k-icon">⏱</span>
+                        <span class="k-value" id="kk-eta">ETA: --:--</span>
+                        <span class="k-sep">·</span>
+                        <span class="k-value" id="kk-protece">Proteče: 00:00</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- History tab -->
-                <div class="tab-panel" id="tab-history">
-                    <div id="history-controls" class="history-controls hidden">
-                        <label class="history-select-all-wrap">
-                            <input type="checkbox" id="history-select-all" />
-                            <span>Označi sve</span>
-                        </label>
-                        <span id="history-selected-count" class="history-selected-count">0 zapisa</span>
-                        <button
-                            class="btn btn-sm"
-                            id="btn-history-delete-selected"
-                            type="button"
-                            disabled
-                        >
-                            🗑 Obriši označeno
-                        </button>
-                    </div>
-                    <div
-                        id="history-empty"
-                        style="
-                            text-align: center;
-                            padding: 24px;
-                            color: var(--tx-3);
-                            font-size: 0.78rem;
-                        "
-                    >
-                        Historija prijevoda će se prikazati ovdje. Svaki
-                        završeni prijevod se čuva automatski.
-                    </div>
-                    <div id="history-list"></div>
+            <!-- Pipeline -->
+            <div class="card card-pipeline">
+                <div class="pipeline" id="pipeline">
+                    <div class="pipe-step" id="pipe-analiza"><span class="pipe-icon">🔬</span><span>Analiza</span></div>
+                    <div class="pipe-step" id="pipe-prevod"><span class="pipe-icon">🌐</span><span>Prevod</span></div>
+                    <div class="pipe-step" id="pipe-lektor"><span class="pipe-icon">✍</span><span>Lektor</span></div>
+                    <div class="pipe-step" id="pipe-korektor"><span class="pipe-icon">📐</span><span>Korektor</span></div>
+                    <div class="pipe-step" id="pipe-gotovo"><span class="pipe-icon">✅</span><span>Gotovo</span></div>
                 </div>
+            </div>
 
-                <!-- EPUB preview tab -->
-                <div class="tab-panel" id="tab-epub">
-                    <div
-                        id="epub-no-content"
-                        style="
-                            text-align: center;
-                            padding: 24px;
-                            color: var(--tx-3);
-                            font-size: 0.78rem;
-                        "
-                    >
-                        <div style="font-size: 2rem; margin-bottom: 8px">
-                            📖
-                        </div>
-                        <div>
-                            Pregled prevedenog EPUB-a bit će dostupan nakon
-                            završetka obrade.
-                        </div>
-                        <div
-                            style="
-                                font-size: 0.68rem;
-                                margin-top: 6px;
-                                color: var(--tx-3);
-                                font-family: var(--font-mono);
-                            "
-                        >
-                            Možeš i preuzeti EPUB i otvoriti ga u svom readeru.
-                        </div>
+            <!-- Napredak -->
+            <div class="card">
+                <div class="card-title">📊 Napredak obrade</div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Motor</div>
+                        <div class="stat-value" id="stat-engine">---</div>
                     </div>
-                    <div id="epub-reader-wrap" class="hidden">
-                        <div class="epub-reader-toolbar">
-                            <span id="epub-chapter-label">—</span>
-                            <button class="btn btn-sm" id="btn-reload-epub" title="Osvježi poglavlje">
-                                🔄 Osvježi
-                            </button>
-                            <!-- Skriveni nav buttons za JS kompatibilnost -->
-                            <button class="btn btn-sm hidden" id="btn-prev-chapter">◀</button>
-                            <button class="btn btn-sm hidden" id="btn-next-chapter">▶</button>
-                        </div>
-                        <div id="epub-content"></div>
+                    <div class="stat-box">
+                        <div class="stat-label">Fajl</div>
+                        <div class="stat-value" id="stat-file">---</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Obrađeno</div>
+                        <div class="stat-value" id="stat-ok">0 / 0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Preskočeno</div>
+                        <div class="stat-value" id="stat-skipped">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Aktivni ključevi</div>
+                        <div class="stat-value" id="stat-fleet-active">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Kvalitet</div>
+                        <div class="stat-value" id="stat-avg-quality" style="color: var(--accent-2)">—</div>
                     </div>
                 </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
+                </div>
+                <div class="progress-meta">
+                    <span id="progress-pct-text">Završeno: 0%</span>
+                    <span id="progress-eta">ETA: --:--:--</span>
+                </div>
+                <div class="preview-separator"></div>
+                <div class="live-preview-grid" id="live-preview-block" style="display: none">
+                    <div class="preview-box" id="preview-en-box">
+                        <div class="preview-box-label" id="preview-en-label">🇬🇧 Original</div>
+                        <div class="preview-box-text" id="preview-en">—</div>
+                    </div>
+                    <div class="preview-box">
+                        <div class="preview-box-label">🇧🇦 Prijevod</div>
+                        <div class="preview-box-text" id="preview-hr">—</div>
+                    </div>
+                </div>
+                <div class="control-bar">
+                    <button class="btn btn-sm" id="btn-pause">⏸ Pauziraj</button>
+                    <button class="btn btn-sm hidden" id="btn-resume">▶ Nastavi</button>
+                    <button class="btn btn-sm" id="btn-reset">🔄 Resetuj</button>
+                    <button class="btn btn-sm btn-danger" id="btn-stop">⏹ Zaustavi</button>
+                    <button class="btn btn-sm btn-outline" id="btn-show-setup-dashboard" style="margin-left: auto">⚙ Postavi novo</button>
+                </div>
+            </div>
+        </section>
 
+        <!-- ═══════════════════ TABS ═══════════════════ -->
+        <div class="card card-tabs">
+            <nav class="tab-nav">
+                <button class="tab-btn active" data-tab="tab-quality">🎯 Kval. <span class="badge badge-amber hidden" id="quality-badge">0</span></button>
+                <button class="tab-btn" data-tab="tab-history">📚 Hist.</button>
+                <button class="tab-btn" data-tab="tab-epub">👁 Preg.</button>
+                <button class="tab-btn" data-tab="tab-review">✏️ Rev.</button>
+                <button class="tab-btn" data-tab="tab-expert">🔬 Struč.</button>
+                <button class="tab-btn" data-tab="panel-tts-filter">🔊 TTS</button>
+                <button class="tab-btn" data-tab="panel-stil" id="tab-btn-stil">✨ Stil</button>
+                <button class="tab-btn" data-tab="tab-monitor" id="tab-btn-monitor">📊 Mon.</button>
+            </nav>
 
-                <!-- Expert tab (Fleet + Audit + Keys) -->
-                <div class="tab-panel" id="tab-expert">
-                    <div
-                        style="display: flex; flex-direction: column; gap: 16px"
-                    >
-                        <details class="expert-section-details">
-                            <summary class="expert-section-summary">
-                                <span class="expert-summary-main">
-                                    <span>🛡 Fleet — detalji po provajderu</span>
-                                    <span
-                                        id="expert-fleet-health-badge"
-                                        class="ql-badge expert-fleet-health-badge"
-                                        title="Ukupno zdravlje kompletne flote"
-                                    >
-                                        <div
-                                            class="ql-ring"
-                                            data-val="—"
-                                            style="--ql-pct: 0%"
-                                        ></div>
-                                        <div class="ql-text">
-                                            <span class="ql-score-main">—</span>
-                                            <span class="ql-score-sub"
-                                                >zdravlje flote</span
-                                            >
-                                        </div>
-                                    </span>
+            <!-- ═══ TAB: QUALITY ═══ -->
+            <div class="tab-panel active" id="tab-quality">
+                <div id="quality-loading" class="tab-empty">
+                    Nema podataka. Pokreni obradu da se generišu quality scores.
+                </div>
+                <div id="quality-content" class="hidden">
+                    <div id="qs-relektura-banner" class="banner-relektura" style="display:none">
+                        <span id="qs-relektura-status-icon">🔄</span>
+                        <span id="qs-relektura-label">Relektura u toku…</span>
+                        <span id="qs-relektura-avg">—/10</span>
+                        <span id="qs-relektura-count">0 blokova završeno</span>
+                    </div>
+
+                    <div id="qs-grade-display" class="qs-grade excellent">
+                        <span id="qs-grade-emoji">🌟</span>
+                        <span id="qs-grade-text">Odlično — prijevod je spreman za štampu</span>
+                        <span id="qs-grade-score"></span>
+                    </div>
+
+                    <div class="quality-header">
+                        <div id="qs-avg-ring" class="qs-avg-ring" data-val="—" style="--ring-pct: 0%"></div>
+                        <div class="quality-avg-info">
+                            <div class="quality-avg-label">PROSJEČNA OCJENA</div>
+                            <div class="quality-avg-value" id="qs-avg-big">—</div>
+                            <div class="quality-avg-sub" id="qs-total-label">— blokova ocijenjeno</div>
+                        </div>
+                        <div class="quality-actions">
+                            <button class="btn btn-sm" id="btn-refresh-quality">🔄 Osvježi</button>
+                            <button id="btn-send-marked" class="btn btn-sm btn-warning hidden">🔧 Relektura označenih</button>
+                        </div>
+                    </div>
+
+                    <div class="quality-summary-grid">
+                        <div class="qs-box qs-excellent">
+                            <div class="qs-box-val" id="qs-excellent">0</div>
+                            <div class="qs-box-label">🌟 Odlično<br />≥ 8.5</div>
+                        </div>
+                        <div class="qs-box qs-good">
+                            <div class="qs-box-val" id="qs-good">0</div>
+                            <div class="qs-box-label">✅ Dobro<br />6.5–8.5</div>
+                        </div>
+                        <div class="qs-box qs-poor qs-box-clickable" id="qs-box-poor" title="Klikni da označiš sve blokove koji trebaju retro" onclick="selectBadBlocks('poor')">
+                            <div class="qs-box-val" id="qs-poor">0</div>
+                            <div class="qs-box-label">⚠ Treba retro<br />4.0–6.5</div>
+                            <div class="qs-box-hint">↗ Označi sve</div>
+                        </div>
+                        <div class="qs-box qs-critical qs-box-clickable" id="qs-box-critical" title="Klikni da označiš sve kritične blokove" onclick="selectBadBlocks('critical')">
+                            <div class="qs-box-val" id="qs-critical">0</div>
+                            <div class="qs-box-label">🔴 Kritično<br />&lt; 4.0</div>
+                            <div class="qs-box-hint">↗ Označi sve</div>
+                        </div>
+                    </div>
+
+                    <div id="qs-refix-bar" class="banner-refix" style="display:none">
+                        <span id="qs-refix-info">0 blokova označeno</span>
+                        <button class="btn btn-sm" onclick="selectBadBlocks('all')" style="border-color:var(--rose);color:var(--rose)">🔴 + Kritični</button>
+                        <button class="btn btn-sm" onclick="clearMarkedBlocks()">✕ Poništi</button>
+                        <button class="btn btn-sm btn-warning" onclick="sendMarkedForRefix()">🔧 Pošalji na relekturu</button>
+                    </div>
+
+                    <div class="quality-progress">
+                        <div class="quality-progress-head">
+                            <span>Blokovi spremni za štampu</span>
+                            <span id="qs-print-ready-pct">0%</span>
+                        </div>
+                        <div class="progress-track" style="height: 8px">
+                            <div class="progress-fill" id="qs-print-ready-bar" style="width: 0%; background: linear-gradient(90deg, var(--emerald), var(--accent-2));"></div>
+                        </div>
+                    </div>
+
+                    <div class="quality-section-head">Pregled po poglavljima</div>
+                    <div id="qs-files-container"></div>
+                </div>
+            </div>
+
+            <!-- ═══ TAB: HISTORY ═══ -->
+            <div class="tab-panel" id="tab-history">
+                <div id="history-controls" class="history-controls hidden">
+                    <label class="history-select-all-wrap">
+                        <input type="checkbox" id="history-select-all" />
+                        <span>Označi sve</span>
+                    </label>
+                    <span id="history-selected-count" class="history-selected-count">0 zapisa</span>
+                    <button class="btn btn-sm btn-danger" id="btn-history-delete-selected" type="button" disabled>🗑 Obriši označeno</button>
+                </div>
+                <div id="history-empty" class="tab-empty">
+                    Historija prijevoda će se prikazati ovdje. Svaki završeni prijevod se čuva automatski.
+                </div>
+                <div id="qa-flags-section" class="qa-flags-section">
+                    <div class="qa-flags-head">
+                        <h4>⚠ QA Flags (ocjena &lt; 9.5)</h4>
+                        <button class="btn btn-sm" id="btn-load-qa-flags" type="button">Osvježi</button>
+                    </div>
+                    <div id="qa-flags-empty" class="qa-flags-empty">Nema QA flagova. Klikni Osvježi.</div>
+                    <div id="qa-flags-list"></div>
+                </div>
+                <div id="history-list"></div>
+            </div>
+
+            <!-- ═══ TAB: EPUB PREVIEW ═══ -->
+            <div class="tab-panel" id="tab-epub">
+                <div id="epub-no-content" class="tab-empty">
+                    <div style="font-size: 2rem; margin-bottom: 8px">📖</div>
+                    <div>Pregled prevedenog EPUB-a bit će dostupan nakon završetka obrade.</div>
+                    <div style="font-size: 0.68rem; margin-top: 6px; color: var(--tx-3); font-family: var(--font-mono);">
+                        Možeš i preuzeti EPUB i otvoriti ga u svom readeru.
+                    </div>
+                </div>
+                <div id="epub-reader-wrap" class="hidden">
+                    <div class="epub-reader-toolbar">
+                        <span id="epub-chapter-label">—</span>
+                        <button class="btn btn-sm" id="btn-reload-epub" title="Osvježi poglavlje">🔄 Osvježi</button>
+                        <button class="btn btn-sm hidden" id="btn-prev-chapter">◀</button>
+                        <button class="btn btn-sm hidden" id="btn-next-chapter">▶</button>
+                    </div>
+                    <div id="epub-content"></div>
+                </div>
+            </div>
+
+            <!-- ═══ TAB: REVIEW (novi) ═══ -->
+            <div class="tab-panel" id="tab-review">
+                <div id="review-empty-banner" class="tab-empty">
+                    Odaberi blok iz Kvaliteta ili Historije da ga revidiraš.
+                </div>
+                <div id="review-legend" class="review-legend hidden">
+                    <span class="rl-item rl-en">EN</span>
+                    <span class="rl-item rl-kalk">Kalk</span>
+                    <span class="rl-item rl-gram">Gram.</span>
+                </div>
+                <div class="review-header">
+                    <span id="review-filename" class="review-filename">—</span>
+                    <span id="review-hint-count" class="review-hint"></span>
+                </div>
+                <div class="review-toolbar" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+                    <button id="review-save-btn" class="btn btn-primary" onclick="sacuvajTrenutniChunk()" disabled>💾 Sačuvaj izmjenu</button>
+                    <button id="review-delete-btn" class="btn btn-danger" onclick="obrisiTrenutniChunk()" disabled>🗑️ Obriši (AI re-obrada)</button>
+                    <span id="review-score-badge" class="review-score" style="margin-left:auto;font-weight:600;"></span>
+                </div>
+                <div class="review-editor-wrap">
+                    <div id="hl-highlights" class="hl-highlights"></div>
+                    <textarea id="review-text" class="review-text" spellcheck="false" placeholder="Tekst bloka..."></textarea>
+                </div>
+                <div id="hl-stats-bar" class="hl-stats-bar"></div>
+                <div class="review-multi-bar">
+                    <span id="review-multi-count">0 označeno</span>
+                    <span id="review-multi-count2" class="hidden">0</span>
+                </div>
+                <div id="review-preview-panel" class="review-preview-panel hidden"></div>
+            </div>
+
+            <!-- ═══ TAB: EXPERT ═══ -->
+            <div class="tab-panel" id="tab-expert">
+                <div class="expert-stack">
+                    <details class="expert-section-details" open>
+                        <summary class="expert-section-summary">
+                            <span class="expert-summary-main">
+                                <span>🛡 Fleet — detalji po provajderu</span>
+                                <span id="expert-fleet-health-badge" class="ql-badge expert-fleet-health-badge" title="Ukupno zdravlje kompletne flote">
+                                    <div class="ql-ring" data-val="—" style="--ql-pct: 0%"></div>
+                                    <div class="ql-text">
+                                        <span class="ql-score-main">—</span>
+                                        <span class="ql-score-sub">zdravlje flote</span>
+                                    </div>
                                 </span>
-                                <span class="expert-section-chevron">▾</span>
-                            </summary>
-                            <div id="expert-fleet-container" style="margin-top:8px">
-                                <div
-                                    style="
-                                        text-align: center;
-                                        padding: 20px;
-                                        color: var(--tx-3);
-                                    "
-                                >
-                                    Učitavam fleet...
-                                </div>
-                            </div>
-                        </details>
-                        <div>
-                            <div
-                                style="
-                                    font-size: 0.72rem;
-                                    font-weight: 700;
-                                    letter-spacing: 0.1em;
-                                    text-transform: uppercase;
-                                    color: var(--tx-3);
-                                    margin-bottom: 8px;
-                                "
-                            >
-                                📋 Sistemski dnevnik
-                            </div>
-                            <div class="audit-log" id="audit-log">
-                                <span style="color: var(--tx-3)"
-                                    >Sistem spreman.</span
-                                >
-                            </div>
-                            <div id="audit-scroll-indicator">
-                                <span>⏸ Autoscroll pauziran</span>
-                                <button
-                                    id="btn-audit-resume"
-                                    style="
-                                        background: rgba(245, 158, 11, 0.2);
-                                        border: 1px solid
-                                            rgba(245, 158, 11, 0.4);
-                                        color: var(--amber);
-                                        border-radius: 4px;
-                                        padding: 2px 8px;
-                                        cursor: pointer;
-                                        font-size: 0.65rem;
-                                    "
-                                >
-                                    ↓ Na kraj
-                                </button>
-                            </div>
+                            </span>
+                            <span class="expert-section-chevron">▾</span>
+                        </summary>
+                        <div id="expert-fleet-container" class="expert-fleet-container">
+                            <div class="tab-empty">Učitavam fleet...</div>
                         </div>
-                        <div>
-                            <div
-                                style="
-                                    font-size: 0.72rem;
-                                    font-weight: 700;
-                                    letter-spacing: 0.1em;
-                                    text-transform: uppercase;
-                                    color: var(--tx-3);
-                                    margin-bottom: 8px;
-                                "
-                            >
-                                🔑 API ključevi
-                            </div>
-                            <div class="keys-add-form">
-                                <select
-                                    id="key-provider-select"
-                                    style="flex: 1; min-width: 120px"
-                                >
-                                    <option value="">
-                                        — Odaberi provajdera —
-                                    </option>
-                                    <option value="GEMINI">♊ GEMINI</option>
-                                    <option value="GROQ">⚡ GROQ</option>
-                                    <option value="CEREBRAS">
-                                        🔬 CEREBRAS
-                                    </option>
-                                    <option value="MISTRAL">💫 MISTRAL</option>
-                                    <option value="SAMBANOVA">
-                                        🧠 SAMBANOVA
-                                    </option>
-                                    <option value="OPENROUTER">
-                                        🔀 OPENROUTER
-                                    </option>
-                                    <option value="COHERE">🌐 COHERE</option>
-                                    <option value="TOGETHER">
-                                        🤝 TOGETHER
-                                    </option>
-                                    <option value="FIREWORKS">
-                                        🎆 FIREWORKS
-                                    </option>
-                                    <option value="CHUTES">🪣 CHUTES</option>
-                                    <option value="HUGGINGFACE">
-                                        🤗 HUGGINGFACE
-                                    </option>
-                                    <option value="KLUSTER">🔗 KLUSTER</option>
-                                    <option value="GITHUB">🐙 GITHUB</option>
-                                </select>
-                                <input
-                                    type="password"
-                                    id="key-value-input"
-                                    placeholder="Upiši API ključ"
-                                    class="key-input"
-                                />
-                                <button
-                                    class="btn btn-primary btn-sm"
-                                    id="btn-add-key"
-                                >
-                                    ➕ Dodaj
-                                </button>
-                            </div>
-                            <div id="keys-list-container">
-                                <div
-                                    style="
-                                        color: var(--tx-3);
-                                        font-size: 0.75rem;
-                                    "
-                                >
-                                    Odaberi provajdera da vidiš ključeve.
-                                </div>
-                            </div>
+                    </details>
+
+                    <div class="expert-section">
+                        <div class="expert-section-title">📋 Sistemski dnevnik</div>
+                        <div class="audit-log" id="audit-log">
+                            <span style="color: var(--tx-3)">Sistem spreman.</span>
+                        </div>
+                        <div id="audit-scroll-indicator">
+                            <span>⏸ Autoscroll pauziran</span>
+                            <button id="btn-audit-resume" class="btn-audit-resume">↓ Na kraj</button>
+                        </div>
+                    </div>
+
+                    <div class="expert-section">
+                        <div class="expert-section-title">🔑 API ključevi</div>
+                        <div class="keys-add-form">
+                            <select id="key-provider-select">
+                                <option value="">— Odaberi provajdera —</option>
+                                <option value="GEMINI">♊ GEMINI</option>
+                                <option value="NVIDIA">🟩 NVIDIA NIM</option>
+                                <option value="CLOUDFLARE">🟧 Cloudflare AI</option>
+                                <option value="GEMMA">🔷 GEMMA</option>
+                                <option value="GROQ">⚡ GROQ</option>
+                                <option value="CEREBRAS">🔬 CEREBRAS</option>
+                                <option value="MISTRAL">💫 MISTRAL</option>
+                                <option value="SAMBANOVA">🧠 SAMBANOVA</option>
+                                <option value="OPENROUTER">🔀 OPENROUTER</option>
+                                <option value="COHERE">🌐 COHERE</option>
+                                <option value="TOGETHER">🤝 TOGETHER</option>
+                                <option value="FIREWORKS">🎆 FIREWORKS</option>
+                                <option value="CHUTES">🪣 CHUTES</option>
+                                <option value="HUGGINGFACE">🤗 HUGGINGFACE</option>
+                                <option value="KLUSTER">🔗 KLUSTER</option>
+                                <option value="GITHUB">🐙 GITHUB</option>
+                            </select>
+                            <input type="password" id="key-value-input" placeholder="Upiši API ključ" class="key-input" />
+                            <button class="btn btn-primary btn-sm" id="btn-add-key">➕ Dodaj</button>
+                        </div>
+                        <div id="keys-list-container" class="keys-list-container">
+                            <div class="tab-empty">Odaberi provajdera da vidiš ključeve.</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- /.card tabs -->
-        </div>
-        <!-- /#app -->
 
-        <!-- Fleet Pool renderer V2.0 — mora biti poslije main.js -->
-        <script src="/static/js/main.js?v=2"></script>
-        <script src="/static/js/ui/fleet.js?v=2"></script>
-
-
-
-
-
-
-
-        
-
-        
-        
-
-        
-        
-
-        
-    <!-- ═══════════════ PANEL: ZAMJENE IMENA ═══════════════ -->
-    <div class="nr-row" id="nr-replacement-info" style="display:none">
-                <span class="nr-badge nr-badge-info" id="nr-replacement-status"></span>
-                <button class="btn btn-sm" id="nr-btn-preview" style="display:none">👁 Pregledaj fajl</button>
-            </div>
-        </div>
-
-        <!-- ── Akcijski gumbi ──────────────────────────────── -->
-        <div class="nr-card nr-actions-card">
-            <div class="nr-actions-row">
-                <button class="btn btn-primary" id="nr-btn-scan" disabled>
-                    <span class="btn-icon">🔍</span>
-                    <span class="btn-label">Skeniraj i zamijeni</span>
-                </button>
-                <button class="btn btn-sm btn-outline" id="nr-btn-apply-file" disabled style="display:none">
-                    <span class="btn-icon">⚡</span>
-                    <span class="btn-label">Primijeni .replacement</span>
-                </button>
-            </div>
-            <div class="nr-status-row" id="nr-status-row" style="display:none">
-                <span class="dot dot-active" id="nr-status-dot"></span>
-                <span id="nr-status-text" class="nr-status-text">Obrada u toku...</span>
-            </div>
-        </div>
-
-        <!-- ── Rezultati / statistike ──────────────────────── -->
-        <div class="nr-card" id="nr-results-card" style="display:none">
-            <div class="nr-stats-row">
-                <div class="nr-stat">
-                    <span class="nr-stat-num" id="nr-stat-entities">—</span>
-                    <span class="nr-stat-label">entiteta</span>
-                </div>
-                <div class="nr-stat">
-                    <span class="nr-stat-num" id="nr-stat-found">—</span>
-                    <span class="nr-stat-label">varijanti</span>
-                </div>
-                <div class="nr-stat nr-stat-accent">
-                    <span class="nr-stat-num" id="nr-stat-applied">—</span>
-                    <span class="nr-stat-label">zamjena</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Audit log ───────────────────────────────────── -->
-        <div class="nr-card nr-log-card" id="nr-log-card" style="display:none">
-            <div class="nr-log-header">
-                <span class="nr-log-title">Log</span>
-                <button class="btn btn-sm nr-log-clear" id="nr-btn-clear-log">× Očisti</button>
-            </div>
-            <div class="audit-log" id="nr-audit-log"></div>
-        </div>
-
-        <!-- ── Preview / edit zamjena ──────────────────────── -->
-        <div class="nr-card nr-preview-card" id="nr-preview-card" style="display:none">
-            <div class="nr-preview-header">
-                <span class="nr-preview-title">📄 Zamjene</span>
-                <div class="nr-preview-actions">
-                    <button class="btn btn-sm btn-success" id="nr-btn-apply-edited">⚡ Primijeni</button>
-                    <button class="btn btn-sm" id="nr-btn-close-preview">× Zatvori</button>
-                </div>
-            </div>
-            <div class="nr-preview-hint">
-                Format: <code>original#->#ispravka</code> — jedan per red.
-                Redovi koji počinju s <code>#!</code> su komentari.
-            </div>
-            <textarea class="nr-textarea" id="nr-replacement-textarea"
-                placeholder="original#->#ispravka&#10;varijanta#->#kanonska_forma"
-                spellcheck="false"></textarea>
-            <div class="nr-pairs-count" id="nr-pairs-count"></div>
-        </div>
-
-    </div>
-    <!-- /panel-zamjene -->
-
-        <!-- ════════════════════════════════════════════════════
-             EPUB STYLER TAB — Skriptorij 02.06.2026
-             ════════════════════════════════════════════════════ -->
-        <div class="tab-panel" id="panel-stil" style="display:none">
-            <div class="section-header">
-                <h2 class="section-title">✨ Premium Stil — Stara knjižara</h2>
-                <span class="section-subtitle">Primjeni vydavački potpis na prevedenu knjigu</span>
-            </div>
-
-            <!-- ── Preview estetike ───────────────────────────────── -->
-            <div class="st-preview-card">
-                <div class="st-preview-title">📖 Pregled estetike</div>
-                <div class="st-book-preview">
-                    <div class="st-dropcap-demo">T</div>
-                    <div class="st-lorem-lines">
-                        <div class="st-lorem-line"></div>
-                        <div class="st-lorem-line"></div>
-                        <div class="st-lorem-line"></div>
-                        <div class="st-lorem-line"></div>
-                    </div>
-                    <div class="st-ornament-demo">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 28" width="200" height="28">
-                            <g fill="none" stroke="#8B6914" stroke-width="1">
-                                <line x1="0" y1="14" x2="80" y2="14" opacity="0.6"/>
-                                <line x1="120" y1="14" x2="200" y2="14" opacity="0.6"/>
-                                <path d="M 85 14 Q 90 6 100 14 Q 110 22 115 14" stroke-width="1.5"/>
-                                <circle cx="100" cy="14" r="2.5" fill="#8B6914" opacity="0.7"/>
-                            </g>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Odabir knjige ──────────────────────────────────── -->
-            <div class="nr-card">
-                <div class="nr-row">
-                    <label class="nr-label">Knjiga</label>
-                    <select id="st-book-select" class="nr-select">
-                        <option value="">— odaberi knjigu —</option>
-                    </select>
-                    <button class="btn btn-sm" id="st-refresh-books" title="Osvježi">↺</button>
-                </div>
-            </div>
-
-            <!-- ── Opcije stilizacije ─────────────────────────────── -->
-            <div class="nr-card">
-                <div class="nr-label" style="margin-bottom:.6rem">Opcije</div>
-                <div class="st-options-grid">
-                    <label class="st-option">
-                        <input type="checkbox" id="st-opt-dropcaps" checked>
-                        <span class="st-option-icon">🔤</span>
-                        <span class="st-option-label">Dropcap inicijali</span>
-                    </label>
-                    <label class="st-option">
-                        <input type="checkbox" id="st-opt-ornaments" checked>
-                        <span class="st-option-icon">🌿</span>
-                        <span class="st-option-label">Ornamenti</span>
-                    </label>
-                    <label class="st-option">
-                        <input type="checkbox" id="st-opt-toc" checked>
-                        <span class="st-option-icon">📋</span>
-                        <span class="st-option-label">Sadržaj (TOC)</span>
-                    </label>
-                    <label class="st-option">
-                        <input type="checkbox" id="st-opt-ai-toc" checked>
-                        <span class="st-option-icon">🤖</span>
-                        <span class="st-option-label">AI naslovi pogl.</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- ── Akcija ─────────────────────────────────────────── -->
-            <div class="nr-card nr-actions-card">
-                <div class="nr-actions-row">
-                    <button class="btn-gold" id="st-btn-style" disabled>
-                        <span>✨</span>
-                        <span>Primijeni stil</span>
-                    </button>
-                </div>
-                <div class="nr-status-row" id="st-status-row" style="display:none">
-                    <span class="dot dot-active" id="st-status-dot"></span>
-                    <span id="st-status-text" class="nr-status-text">Stilizacija u toku...</span>
-                </div>
-            </div>
-
-            <!-- ── Rezultati ──────────────────────────────────────── -->
-            <div class="st-result-card" id="st-result-card" style="display:none">
-                <div class="st-result-row">
-                    <div class="st-result-info">
-                        <div>📚 Poglavlja: <strong id="st-stat-chapters">—</strong></div>
-                        <div>🔤 Dropcaps: <strong id="st-stat-dropcaps">—</strong></div>
-                        <div>📋 TOC: <strong id="st-stat-toc">—</strong></div>
-                    </div>
-                </div>
-                <div class="st-download-row">
-                    <a class="btn-gold" id="st-btn-download-epub" href="#" download style="display:none">
-                        ⬇ Preuzmi EPUB
-                    </a>
-                    <a class="btn-gold" id="st-btn-download-css" href="#" download style="display:none">
-                        📱 Moon+ CSS
-                    </a>
-                </div>
-            </div>
-
-            <!-- ── Log ────────────────────────────────────────────── -->
-            <div class="nr-card nr-log-card" id="st-log-card" style="display:none">
-                <div class="nr-log-header">
-                    <span class="nr-log-title">Log</span>
-                    <button class="btn btn-sm nr-log-clear" id="st-btn-clear-log">× Očisti</button>
-                </div>
-                <div class="audit-log" id="st-audit-log"></div>
-            </div>
-        </div>
-        <!-- /panel-stil -->
-
-    <!-- ═══════════════ PANEL: TTS FILTER ═══════════════ -->
-    <div id="panel-tts-filter" class="tab-panel" style="display:none;">
-
-        <!-- ── Odabir knjige ──────────────────────────────── -->
-        <div class="nr-card">
-            <div class="nr-row">
-                <label class="nr-label">📚 Knjiga</label>
-                <select id="tts-book-select" class="nr-select">
-                    <option value="">— odaberi knjigu —</option>
-                </select>
-                <button class="btn btn-sm" id="tts-refresh-books" title="Osvježi listu">↺</button>
-            </div>
-            <div class="nr-row" id="tts-replacement-info" style="display:none">
-                <span class="nr-badge nr-badge-info" id="tts-replacement-status"></span>
-                <button class="btn btn-sm" id="tts-btn-preview" style="display:none">👁 Pregledaj fajl</button>
-            </div>
-        </div>
-
-        <!-- ── Info banner ─────────────────────────────────── -->
-        <div class="nr-card" style="background:rgba(99,102,241,0.06);border-color:rgba(99,102,241,0.2);">
-            <div style="font-size:0.78rem;color:var(--tx-2);line-height:1.5">
-                🔊 <strong>TTS Filter</strong> — generira <code>.ttsfilter</code> fajl kompatibilan
-                sa Moon+ Reader i drugim TTS aplikacijama.<br>
-                Skenirat će prevedenu knjigu i primijeniti zamjene iz <code>.replacement</code> fajla.
-            </div>
-        </div>
-
-        <!-- ── Akcijski gumbi ──────────────────────────────── -->
-        <div class="nr-card nr-actions-card">
-            <div class="nr-actions-row">
-                <button class="btn btn-primary" id="tts-btn-scan" disabled>
-                    <span class="btn-icon">🔊</span>
-                    <span class="btn-label">Generiraj TTS filter</span>
-                </button>
-                <button class="btn btn-sm btn-outline" id="tts-btn-apply-file" disabled style="display:none">
-                    <span class="btn-icon">⚡</span>
-                    <span class="btn-label">Primijeni .replacement</span>
-                </button>
-            </div>
-            <div class="nr-status-row" id="tts-status-row" style="display:none">
-                <span class="dot dot-active" id="tts-status-dot"></span>
-                <span id="tts-status-text" class="nr-status-text">Obrada u toku...</span>
-            </div>
-        </div>
-
-        <!-- ── Rezultati / statistike ──────────────────────── -->
-        <div class="nr-card" id="tts-results-card" style="display:none">
-            <div class="nr-stats-row">
-                <div class="nr-stat">
-                    <span class="nr-stat-num" id="tts-stat-entities">—</span>
-                    <span class="nr-stat-label">entiteta</span>
-                </div>
-                <div class="nr-stat">
-                    <span class="nr-stat-num" id="tts-stat-found">—</span>
-                    <span class="nr-stat-label">varijanti</span>
-                </div>
-                <div class="nr-stat nr-stat-accent">
-                    <span class="nr-stat-num" id="tts-stat-applied">—</span>
-                    <span class="nr-stat-label">zamjena</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Audit log ───────────────────────────────────── -->
-        <div class="nr-card nr-log-card" id="tts-log-card" style="display:none">
-            <div class="nr-log-header">
-                <span class="nr-log-title">Log</span>
-                <button class="btn btn-sm nr-log-clear" id="tts-btn-clear-log">× Očisti</button>
-            </div>
-            <div class="audit-log" id="tts-audit-log"></div>
-        </div>
-
-        <!-- ── Preview / edit zamjena ──────────────────────── -->
-        <div class="nr-card nr-preview-card" id="tts-preview-card" style="display:none">
-            <div class="nr-preview-header">
-                <span class="nr-preview-title">📄 TTS Zamjene</span>
-                <div class="nr-preview-actions">
-                    <button class="btn btn-sm btn-success" id="tts-btn-apply-edited">⚡ Primijeni</button>
-                    <button class="btn btn-sm" id="tts-btn-close-preview">× Zatvori</button>
-                </div>
-            </div>
-            <div class="nr-preview-hint">
-                Format: <code>original#->#ispravka</code> — jedan per red.
-                Redovi koji počinju s <code>#!</code> su komentari.
-            </div>
-            <textarea class="nr-textarea" id="tts-replacement-textarea"
-                placeholder="original#->#ispravka&#10;varijanta#->#kanonska_forma"
-                spellcheck="false"></textarea>
-            <div class="nr-pairs-count" id="tts-pairs-count"></div>
-        </div>
-
-    </div>
-    <!-- /panel-tts-filter -->
-
-
-    <!-- ═══════════════ PANEL: ZAMJENE IMENA ═══════════════ -->
-    <div id="panel-zamjene" class="tab-panel" style="display:none;">
-        <div class="card">
-            <div class="card-header">
-                <span class="card-icon">🔤</span>
-                <span class="card-title">ZAMJENE IMENA</span>
-                <span class="badge badge-info" id="zamjene-badge" style="display:none;"></span>
-            </div>
-            <div class="card-body">
-                <!-- Odabir knjige -->
-                <div class="form-row">
-                    <label class="form-label">Knjiga</label>
-                    <select id="zamjene-book-select" class="form-select">
-                        <option value="">— odaberi knjigu —</option>
-                    </select>
+            <!-- ═══ TAB: STIL ═══ -->
+            <div class="tab-panel" id="panel-stil">
+                <div class="section-header">
+                    <h2 class="section-title">✨ Premium Stil — Stara knjižara</h2>
+                    <span class="section-subtitle">Primjeni izdavački potpis na prevedenu knjigu</span>
                 </div>
 
-                <!-- Akcija -->
-                <div class="form-row" style="margin-top:12px;">
-                    <button id="btn-zamjene-scan" class="btn btn-sm btn-success" disabled>
-                        🔍 Skeniraj i zamijeni
-                    </button>
-                    <button id="btn-zamjene-preview" class="btn btn-sm" disabled style="display:none;">
-                        📄 Pregledaj .replacement
-                    </button>
-                    <button id="btn-zamjene-apply" class="btn btn-sm btn-success" disabled style="display:none;">
-                        ✅ Primijeni izmjene
-                    </button>
-                </div>
-
-                <!-- Audit log -->
-                <div id="zamjene-log" class="audit-log" style="display:none; margin-top:14px; max-height:240px; overflow-y:auto;">
-                </div>
-
-                <!-- Statistike -->
-                <div id="zamjene-stats" style="display:none; margin-top:12px;">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-label">ZAMIJENJENO</div>
-                            <div class="stat-value" id="zamjene-count">0</div>
+                <div class="st-preview-card">
+                    <div class="st-preview-title">📖 Pregled estetike</div>
+                    <div class="st-book-preview">
+                        <div class="st-dropcap-demo">T</div>
+                        <div class="st-lorem-lines">
+                            <div class="st-lorem-line"></div>
+                            <div class="st-lorem-line"></div>
+                            <div class="st-lorem-line"></div>
+                            <div class="st-lorem-line"></div>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-label">STATUS</div>
-                            <div class="stat-value" id="zamjene-status">—</div>
+                        <div class="st-ornament-demo">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 28" width="200" height="28">
+                                <g fill="none" stroke="#8B6914" stroke-width="1">
+                                    <line x1="0" y1="14" x2="80" y2="14" opacity="0.6"/>
+                                    <line x1="120" y1="14" x2="200" y2="14" opacity="0.6"/>
+                                    <path d="M 85 14 Q 90 6 100 14 Q 110 22 115 14" stroke-width="1.5"/>
+                                    <circle cx="100" cy="14" r="2.5" fill="#8B6914" opacity="0.7"/>
+                                </g>
+                            </svg>
                         </div>
                     </div>
                 </div>
 
-                <!-- Preview textarea -->
-                <div id="zamjene-preview-area" style="display:none; margin-top:12px;">
-                    <textarea id="zamjene-textarea"
-                        style="width:100%; min-height:200px; background:var(--bg-2); color:var(--tx-1);
-                               border:1px solid var(--bd); border-radius:var(--r-md); padding:10px;
-                               font-family:var(--font-mono); font-size:12px; resize:vertical;"
-                        placeholder="Sadržaj .replacement fajla..."></textarea>
-                    <div style="margin-top:8px; text-align:right;">
-                        <button id="btn-zamjene-save-edit" class="btn btn-sm btn-success">
-                            💾 Sačuvaj izmjene
+                <div class="nr-card">
+                    <div class="upload-zone" id="st-upload-zone">
+                        <div class="upload-icon">📖</div>
+                        <div class="upload-label">Učitaj knjigu (bilo gdje s telefona)</div>
+                        <div class="upload-sub">.epub ili .mobi</div>
+                        <input type="file" id="st-file-input" accept=".epub,.mobi" />
+                    </div>
+                    <div id="st-upload-status" class="upload-status"></div>
+                    <div class="nr-row" id="st-selected-row" style="display:none">
+                        <label class="nr-label">Odabrano</label>
+                        <span class="nr-badge nr-badge-ok" id="st-selected-book"></span>
+                    </div>
+                </div>
+
+                <div class="nr-card">
+                    <div class="nr-label">Opcije</div>
+                    <div class="st-options-grid">
+                        <label class="st-option">
+                            <input type="checkbox" id="st-opt-dropcaps" checked>
+                            <span class="st-option-icon">🔤</span>
+                            <span class="st-option-label">Dropcap inicijali</span>
+                        </label>
+                        <label class="st-option">
+                            <input type="checkbox" id="st-opt-ornaments" checked>
+                            <span class="st-option-icon">🌿</span>
+                            <span class="st-option-label">Ornamenti</span>
+                        </label>
+                        <label class="st-option">
+                            <input type="checkbox" id="st-opt-toc" checked>
+                            <span class="st-option-icon">📋</span>
+                            <span class="st-option-label">Sadržaj (TOC)</span>
+                        </label>
+                        <label class="st-option">
+                            <input type="checkbox" id="st-opt-ai-toc" checked>
+                            <span class="st-option-icon">🤖</span>
+                            <span class="st-option-label">AI naslovi pogl.</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="nr-card nr-actions-card">
+                    <div class="nr-actions-row">
+                        <button class="btn-gold" id="st-btn-style" disabled>
+                            <span>✨</span>
+                            <span>Primijeni stil</span>
                         </button>
                     </div>
+                    <div class="nr-status-row" id="st-status-row" style="display:none">
+                        <span class="dot dot-active" id="st-status-dot"></span>
+                        <span id="st-status-text" class="nr-status-text">Stilizacija u toku...</span>
+                    </div>
                 </div>
+
+                <div class="st-result-card" id="st-result-card" style="display:none">
+                    <div class="st-result-row">
+                        <div class="st-result-info">
+                            <div>📚 Poglavlja: <strong id="st-stat-chapters">—</strong></div>
+                            <div>🔤 Dropcaps: <strong id="st-stat-dropcaps">—</strong></div>
+                            <div>📋 TOC: <strong id="st-stat-toc">—</strong></div>
+                        </div>
+                    </div>
+                    <div class="st-download-row">
+                        <a class="btn-gold" id="st-btn-download-epub" href="#" download style="display:none">⬇ Preuzmi EPUB</a>
+                        <a class="btn-gold" id="st-btn-download-css" href="#" download style="display:none">📱 Moon+ CSS</a>
+                    </div>
+                </div>
+
+                <div class="nr-card nr-log-card" id="st-log-card" style="display:none">
+                    <div class="nr-log-header">
+                        <span class="nr-log-title">Log</span>
+                        <button class="btn btn-sm nr-log-clear" id="st-btn-clear-log">× Očisti</button>
+                    </div>
+                    <div class="audit-log" id="st-audit-log"></div>
+                </div>
+            </div>
+
+            <!-- ═══ TAB: TTS FILTER ═══ -->
+            <div class="tab-panel" id="panel-tts-filter">
+                <div class="nr-card">
+                    <div class="upload-zone" id="tts-upload-zone">
+                        <div class="upload-icon">📖</div>
+                        <div class="upload-label">Učitaj knjigu (bilo gdje s telefona)</div>
+                        <div class="upload-sub">.epub ili .mobi</div>
+                        <input type="file" id="tts-file-input" accept=".epub,.mobi" />
+                    </div>
+                    <div id="tts-upload-status" class="upload-status"></div>
+                    <div class="nr-row" id="tts-selected-row" style="display:none">
+                        <label class="nr-label">📚 Odabrano</label>
+                        <span class="nr-badge nr-badge-ok" id="tts-selected-book"></span>
+                    </div>
+                    <div class="nr-row" id="tts-replacement-info" style="display:none">
+                        <span class="nr-badge nr-badge-info" id="tts-replacement-status"></span>
+                        <button class="btn btn-sm" id="tts-btn-preview" style="display:none">👁 Pregledaj fajl</button>
+                    </div>
+                </div>
+
+                <div class="nr-card tts-info-card">
+                    <div class="tts-info-text">
+                        🔊 <strong>TTS Filter</strong> — generira <code>.ttsfilter</code> fajl kompatibilan sa Moon+ Reader i drugim TTS aplikacijama.<br>
+                        Skenirat će prevedenu knjigu i primijeniti zamjene iz <code>.replacement</code> fajla.
+                    </div>
+                </div>
+
+                <div class="nr-card nr-actions-card">
+                    <div class="nr-actions-row">
+                        <button class="btn btn-primary" id="tts-btn-scan" disabled>
+                            <span class="btn-icon">🔊</span>
+                            <span class="btn-label">Generiraj TTS filter</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline" id="tts-btn-apply-file" disabled style="display:none">
+                            <span class="btn-icon">⚡</span>
+                            <span class="btn-label">Primijeni .replacement</span>
+                        </button>
+                    </div>
+                    <div class="nr-status-row" id="tts-status-row" style="display:none">
+                        <span class="dot dot-active" id="tts-status-dot"></span>
+                        <span id="tts-status-text" class="nr-status-text">Obrada u toku...</span>
+                    </div>
+                </div>
+
+                <div class="nr-card" id="tts-results-card" style="display:none">
+                    <div class="nr-stats-row">
+                        <div class="nr-stat">
+                            <span class="nr-stat-num" id="tts-stat-entities">—</span>
+                            <span class="nr-stat-label">entiteta</span>
+                        </div>
+                        <div class="nr-stat">
+                            <span class="nr-stat-num" id="tts-stat-found">—</span>
+                            <span class="nr-stat-label">varijanti</span>
+                        </div>
+                        <div class="nr-stat nr-stat-accent">
+                            <span class="nr-stat-num" id="tts-stat-applied">—</span>
+                            <span class="nr-stat-label">zamjena</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nr-card nr-log-card" id="tts-log-card" style="display:none">
+                    <div class="nr-log-header">
+                        <span class="nr-log-title">Log</span>
+                        <button class="btn btn-sm nr-log-clear" id="tts-btn-clear-log">× Očisti</button>
+                    </div>
+                    <div class="audit-log" id="tts-audit-log"></div>
+                </div>
+
+                <div class="nr-card nr-preview-card" id="tts-preview-card" style="display:none">
+                    <div class="nr-preview-header">
+                        <span class="nr-preview-title">📄 TTS Zamjene</span>
+                        <div class="nr-preview-actions">
+                            <button class="btn btn-sm btn-success" id="tts-btn-apply-edited">⚡ Primijeni</button>
+                            <button class="btn btn-sm" id="tts-btn-close-preview">× Zatvori</button>
+                        </div>
+                    </div>
+                    <div class="nr-preview-hint">
+                        Format: <code>original#->#ispravka</code> — jedan po red.
+                        Redovi koji počinju s <code>#!</code> su komentari.
+                    </div>
+                    <textarea class="nr-textarea" id="tts-replacement-textarea" placeholder="original#->#ispravka&#10;varijanta#->#kanonska_forma" spellcheck="false"></textarea>
+                    <div class="nr-pairs-count" id="tts-pairs-count"></div>
+                </div>
+            </div>
+
+            <!-- ═══ TAB: MONITOR ═══ -->
+            <div class="tab-panel" id="tab-monitor">
+                <div class="card monitor-head">
+                    <div>
+                        <span class="mon-label">UTC</span>
+                        <span id="mon-utc" class="mon-value">--:--:--</span>
+                        <span class="mon-label" style="margin-left:12px">reset RPD za</span>
+                        <span id="mon-reset" class="mon-value">--</span>
+                    </div>
+                    <div>
+                        <label class="mon-auto">
+                            <input type="checkbox" id="mon-auto" checked> auto-refresh 5s
+                        </label>
+                        <button class="btn btn-sm" id="mon-refresh" style="margin-left:8px">↻ Osvježi</button>
+                    </div>
+                </div>
+                <div id="mon-body"></div>
             </div>
         </div>
     </div>
-    <!-- ═══════════════ /PANEL: ZAMJENE IMENA ═══════════════ -->
 
+    <!-- ═══════════════════ INLINE SCRIPTS ═══════════════════ -->
+    <script>
+    (function() {
+        const btn = document.getElementById('btn-load-qa-flags');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            const list = document.getElementById('qa-flags-list');
+            const empty = document.getElementById('qa-flags-empty');
+            list.innerHTML = '';
+            empty.textContent = 'Učitavam...';
+            try {
+                const r = await fetch('/api/qa_flags');
+                const d = await r.json();
+                if (!d.ok || !d.flags || d.flags.length === 0) {
+                    empty.textContent = 'Nema QA flagova.';
+                    return;
+                }
+                empty.textContent = '';
+                for (const f of d.flags) {
+                    const div = document.createElement('div');
+                    div.className = 'qa-flag-item';
+                    div.innerHTML = '<div class="qa-flag-head">' +
+                        '<strong>' + f.knjiga + '</strong> / ' + f.blok + ' — ocjena: ' + (f.ocjena !== null ? f.ocjena : '?') + '</div>' +
+                        '<div class="qa-flag-reason">' + (f.razlog || '') + '</div>' +
+                        '<textarea class="qa-flag-textarea" id="qa-edit-' + f.blok + '">' + (f.tekst || '').replace(/</g, '&lt;') + '</textarea>' +
+                        '<button class="btn btn-sm qa-flag-save" data-knjiga="' + f.knjiga + '" data-blok="' + f.blok + '">Sačuvaj</button>';
+                    list.appendChild(div);
+                }
+                list.querySelectorAll('.qa-flag-save').forEach(b => {
+                    b.addEventListener('click', async () => {
+                        const knjiga = b.dataset.knjiga;
+                        const blok = b.dataset.blok;
+                        const tekst = document.getElementById('qa-edit-' + blok).value;
+                        b.textContent = 'Spremam...';
+                        b.disabled = true;
+                        try {
+                            const r = await fetch('/api/qa_flags/save', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({knjiga, blok, tekst})
+                            });
+                            const d = await r.json();
+                            if (d.ok) {
+                                b.textContent = '✓ Sačuvano';
+                                b.classList.add('saved');
+                            } else {
+                                b.textContent = '✗ ' + (d.greska || 'Greška');
+                            }
+                        } catch (e) {
+                            b.textContent = '✗ ' + e.message;
+                        }
+                    });
+                });
+            } catch (e) {
+                empty.textContent = 'Greška: ' + e.message;
+            }
+        });
+    })();
+    </script>
+
+    <script src="/static/js/main.js?v=1791803042"></script>
+    <script src="/static/js/heatmap.js?v=1791803042"></script>
+    <script src="/static/js/ui/fleet.js?v=1791803042"></script>
 </body>
 </html>

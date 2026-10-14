@@ -1,0 +1,254 @@
+{
+  "knjiga": "Ja_sam_legenda_--_Richard_Matheson_Matheson_Richard_--_Kentaur_--_5110511f7a8ee649743128dd48ef5ac5_--_Anna_s_Archive",
+  "jezik": "HR",
+  "termini": {
+    "Robert": {
+      "hr": "Robert",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 48,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nevil": {
+      "hr": "Nevil",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 208,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Beli": {
+      "hr": "Beli",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kimaron": {
+      "hr": "Kimaron",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Keti": {
+      "hr": "Keti",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Bena": {
+      "hr": "Bena",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kortmana": {
+      "hr": "Kortman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 33,
+      "spoji_sa": "Kortman",
+      "potvrdjeno": true
+    },
+    "Nevile": {
+      "hr": "Nevile",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Panami": {
+      "hr": "Panama",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Virdžiniju": {
+      "hr": "Virginija",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "Virginija",
+      "potvrdjeno": true
+    },
+    "Kampton": {
+      "hr": "Compton",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Inglvud": {
+      "hr": "Inglewood",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Roberta": {
+      "hr": "Roberta",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Nevila": {
+      "hr": "Nevila",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 20,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vampiri": {
+      "hr": "Vampiri",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kortman": {
+      "hr": "Kortman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 31,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Virdžinija": {
+      "hr": "Virdžinija",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kompton": {
+      "hr": "Kompton",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vampir": {
+      "hr": "Vampir",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Monike": {
+      "hr": "Monika",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "Monika",
+      "potvrdjeno": true
+    },
+    "Bobe": {
+      "hr": "Bobe",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Niko": {
+      "hr": "Niko",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Nevilu": {
+      "hr": "Nevilu",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "Nevil",
+      "potvrdjeno": true
+    },
+    "Bene": {
+      "hr": "Bene",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Klica": {
+      "hr": "Klica",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Nevilovo": {
+      "hr": "Nevilovo",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "Nevil",
+      "potvrdjeno": true
+    },
+    "Nevilove": {
+      "hr": "Nevilove",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "Nevil",
+      "potvrdjeno": true
+    },
+    "Kortmanu": {
+      "hr": "Kortman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Toru": {
+      "hr": "Toru",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 3,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Roberte": {
+      "hr": "Robert",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "Robert",
+      "potvrdjeno": true
+    },
+    "Virdži": {
+      "hr": "Virdži",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    }
+  }
+}

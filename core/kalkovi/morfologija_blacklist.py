@@ -2,7 +2,7 @@
 core/kalkovi/morfologija_blacklist.py
 ──────────────────────────────────────
 Eksplicitna lista nepostojećih / haluciniranih glagolskih oblika
-za BS/HR jezik. Injektira se u system prompt via prompt_injector.py.
+za HR jezik. Injektira se u system prompt via prompt_injector.py.
 
 Svrha: smanjiti morfološke halucinacije za 60-70% bez fine-tuninga,
 dajući modelu konkretne negativne primjere (što NIKAD ne pisati).
@@ -114,7 +114,7 @@ ISPRAVNI_OBLICI: list[str] = [
 BLACKLIST_PROMPT_BLOK: str = """
 ## Morfološka pravila — APSOLUTNE ZABRANE
 
-Nikada ne koristiš sljedeće oblike jer NE POSTOJE u bosanskom/hrvatskom:
+Nikada ne koristiš sljedeće oblike jer NE POSTOJE u hrvatskom:
 - voljevao, gledavao, hodavao, vidjevao, čujevao, trčavao, pjevavao
 - govorivao, nosivao, radivao, stavivao, uzimivao, pravivao, tražavao
 - popivajući (→ ispijajući), uzdisnuo (→ uzdahnuo)

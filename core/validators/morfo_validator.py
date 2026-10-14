@@ -65,7 +65,7 @@ class ValidacijaRezultat:
 
 
 def _system_prompt() -> str:
-    return f"""Ti si stručni lektor za bosanski/hrvatski jezik, specijaliziran isključivo za morfologiju glagola.
+    return f"""Ti si stručni lektor za hrvatski jezik, specijaliziran isključivo za morfologiju glagola.
 
 TVOJ JEDINI ZADATAK: Pronađi i ispravi nepostojeće / halucirane glagolske oblike u tekstu.
 

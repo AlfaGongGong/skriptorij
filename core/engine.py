@@ -28,7 +28,11 @@ class SkriptorijAllInOne:
         self.model_name = model_name
         self.shared_stats = shared_stats
         self.shared_controls = shared_controls
-        self.fleet = FleetManager(config_path="dev_api.json")
+        try:
+            from config.settings import CONFIG_PATH as _cfg
+        except ImportError:
+            _cfg = "dev_api.json"
+        self.fleet = FleetManager(config_path=_cfg)
         try:
             from api_fleet import register_active_fleet
             register_active_fleet(self.fleet)
@@ -70,6 +74,10 @@ class SkriptorijAllInOne:
             pass
         self.knjiga_analizirana = False
         self.glosar_tekst = ""
+        try:
+            self._auto_generiraj_kanon()
+        except Exception:
+            pass
 
         self._chapter_summaries = {}
         self._chapter_order = []
@@ -91,6 +99,23 @@ class SkriptorijAllInOne:
         self.knjiga_mode: str | None = None
 
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+        # ── FIX: učitaj quality_scores odmah u shared_stats ──────────────────
+        # Bez ovoga, shared_stats["quality_scores"] je {} na startu pa svaki
+        # cached blok bez prethodno učitane ocjene prolazi kroz AI scorer
+        # (_quality_scoring s "DATABASE") trošeći API kvotu na svakom restartu.
+        qs_path = self.checkpoint_dir / "quality_scores.json"
+        if qs_path.exists():
+            try:
+                loaded_qs = json.loads(qs_path.read_text("utf-8"))
+                if isinstance(loaded_qs, dict):
+                    self.shared_stats.setdefault("quality_scores", {}).update(loaded_qs)
+                    self.log(
+                        f"📊 Učitani quality scores: {len(loaded_qs)} blokova iz prethodne sesije",
+                        "info",
+                    )
+            except Exception as _e:
+                self.log(f"⚠️ Greška pri učitavanju quality_scores.json: {_e}", "warning")
         self.log(
             f"V10.2 Engine inicijaliziran: {self.book_path.name} [STANDARD mod] "
             f"| checkpoint: {self.checkpoint_dir}",
@@ -226,7 +251,174 @@ class SkriptorijAllInOne:
     # GLOSAR & KONTEKST
     # =========================================================================
 
+    def _ucitaj_kanon_glosar(self):
+        """Ucitaj glosar iz data/kanon/knjige/<knjiga_id>.json.
+
+        Vraća SVE potvrđene termine, uključujući one gdje je hr == en
+        (za njih piše: "ostavi kako jest").
+        """
+        try:
+            import json as _json
+            from pathlib import Path as _P
+            knjiga_id = _P(self.book_path).stem
+            kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (knjiga_id + ".json")
+            if not kanon_path.exists():
+                return ""
+            data = _json.loads(kanon_path.read_text(encoding="utf-8"))
+            termini = data.get("termini", {})
+            linije = []
+            for en, info in sorted(termini.items()):
+                if not info.get("potvrdjeno"):
+                    continue
+                hr = info.get("hr", en)
+                kat = info.get("kategorija", "?")
+                spoji = info.get("spoji_sa", "")
+                if hr and hr != en:
+                    linija = "- " + en + " -> " + hr
+                    if spoji and spoji != en:
+                        linija += " (spoji sa: " + spoji + ")"
+                    linija += " [" + kat + "]"
+                    linije.append(linija)
+                else:
+                    # hr == en: ime ostaje kako jest, NE prevodi se
+                    linija = "- " + en + " (OSTAVI KAKO JEST, ne prevodi) [" + kat + "]"
+                    linije.append(linija)
+            return "\n".join(linije)
+        except Exception:
+            return ""
+
+    def _auto_generiraj_kanon(self):
+        """Auto-generiraj kanon ako ne postoji."""
+        try:
+            import json as _json
+            import re as _re
+            import zipfile as _zip
+            import shutil as _sh
+            from pathlib import Path as _P
+            from collections import Counter as _Counter
+            from bs4 import BeautifulSoup as _BS
+        except ImportError:
+            return False
+
+        knjiga_id = _P(self.book_path).stem
+        kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (knjiga_id + ".json")
+
+        if kanon_path.exists():
+            return True
+
+        self.log("Kanon ne postoji — generiram automatski...", "system")
+
+        imena = _Counter()
+        try:
+            with _zip.ZipFile(self.book_path) as z:
+                for n in z.namelist():
+                    if not n.endswith((".xhtml", ".html", ".htm")):
+                        continue
+                    try:
+                        html = z.read(n).decode("utf-8", errors="replace")
+                    except Exception:
+                        continue
+                    soup = _BS(html, "html.parser")
+                    tekst = soup.get_text(" ", strip=True)
+                    for m in _re.finditer(r"\b([A-ZČĆŠĐŽ][a-zčćšđž]{2,})\b", tekst):
+                        imena[m.group(1)] += 1
+        except Exception as e:
+            self.log("Ekstrakcija pala: " + str(e), "warning")
+            return False
+
+        from core.glosar_ekstrakcija import mehanicka_cistka, posalji_ai_batch, detektuj_jezik
+        jezik = detektuj_jezik(self.book_path)
+        self.log("Jezik knjige: " + jezik, "system")
+
+        cisto = mehanicka_cistka(imena, min_pojava=3)
+        if len(cisto) > 300:
+            cisto = dict(sorted(cisto.items(), key=lambda x: x[1], reverse=True)[:300])
+        self.log("Kandidata za glosar: " + str(len(cisto)), "tech")
+
+        fleet = getattr(self, "fleet", None)
+        if fleet is None:
+            try:
+                from api_fleet import FleetManager
+                from config.settings import CONFIG_PATH
+                fleet = FleetManager(config_path=CONFIG_PATH)
+            except Exception:
+                return False
+
+        # ─── AI obrada s timeoutom i progress logom ───
+        import time as _time
+        rezultati = {}
+        termini = list(cisto.keys())
+        ukupno_b = (len(termini) + 9) // 10
+        t_start = _time.time()
+        TIMEOUT_S = 300.0  # 5 min max za glosar
+        neuspjesi_uzastopni = 0
+
+        for i in range(0, len(termini), 10):
+            # Timeout
+            if _time.time() - t_start > TIMEOUT_S:
+                self.log("Glosar timeout (" + str(TIMEOUT_S) + "s) — prekidam, nastavljam bez", "warning")
+                break
+
+            # Ako 3 batcha zaredom vrate 0, odustani
+            if neuspjesi_uzastopni >= 3:
+                self.log("Glosar: 3 neuspjesna batcha — odustajem od AI obrade", "warning")
+                break
+
+            batch = termini[i:i+10]
+            broj = i // 10 + 1
+            self.log("Glosar: batch " + str(broj) + "/" + str(ukupno_b) + " (" + str(len(batch)) + " termina)", "tech")
+
+            try:
+                r = posalji_ai_batch(jezik, batch, fleet)
+            except Exception as e:
+                self.log("Glosar batch greska: " + str(e), "warning")
+                r = {}
+
+            if r:
+                rezultati.update(r)
+                neuspjesi_uzastopni = 0
+                self.log("Glosar: batch " + str(broj) + " OK (" + str(len(r)) + " rezultata)", "tech")
+            else:
+                neuspjesi_uzastopni += 1
+                self.log("Glosar: batch " + str(broj) + " prazan (neuspjeh " + str(neuspjesi_uzastopni) + "/3)", "warning")
+
+        self.log("Glosar: " + str(len(rezultati)) + " od " + str(len(termini)) + " termina obrađeno", "system")
+
+        glosar = {"knjiga": knjiga_id, "jezik": jezik, "termini": {}}
+        for ime, broj in cisto.items():
+            r = rezultati.get(ime, {})
+            if r.get("izbaci"):
+                continue
+            glosar["termini"][ime] = {
+                "hr": r.get("hr", ime),
+                "kategorija": r.get("kategorija", "?"),
+                "odbacene_varijante": [],
+                "broj_pojava": broj,
+                "spoji_sa": r.get("spoji_sa", ""),
+                "potvrdjeno": bool(r.get("kategorija")),
+            }
+
+        kanon_path.parent.mkdir(parents=True, exist_ok=True)
+        kanon_path.write_text(
+            _json.dumps(glosar, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        self.log("Kanon sacuvan: " + kanon_path.name + " (" + str(len(glosar["termini"])) + ")", "system")
+
+        try:
+            dst = _P("/storage/emulated/0/Books/MoonReader/kanon") / kanon_path.name
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            _sh.copy2(kanon_path, dst)
+        except Exception:
+            pass
+
+        return True
+
+
     def _build_glosar_tekst(self):
+        kanon = self._ucitaj_kanon_glosar()
+        if kanon:
+            return kanon
         return self.context_mgr.build_glosar_tekst()
 
     def _extract_relevant_glossary(self, chunk_text):
@@ -299,7 +491,7 @@ class SkriptorijAllInOne:
     # CHUNKING
     # =========================================================================
 
-    def chunk_html(self, html_content: str, max_words=800) -> list:
+    def chunk_html(self, html_content: str, max_words=500) -> list:
         from core.chunking import chunk_html
         return chunk_html(html_content, max_words)
 

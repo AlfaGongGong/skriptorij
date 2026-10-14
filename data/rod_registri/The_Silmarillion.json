@@ -1,0 +1,512 @@
+{
+  "Melkor": {
+    "rod": "M",
+    "clue_m": 10,
+    "clue_z": 0
+  },
+  "Tada": {
+    "rod": "M",
+    "clue_m": 8,
+    "clue_z": 0
+  },
+  "On": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Razumijevanje": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sauron": {
+    "rod": "M",
+    "clue_m": 5,
+    "clue_z": 0
+  },
+  "Salmar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Telperion": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tulkas": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Naposljetku": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Eru": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Yavanna": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Zaljev": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Aredhel": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Djecu": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dugo": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Lako": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ungoliant": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Varda": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Finarfin": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Fingon": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Takav": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Uinen": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Thingol": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Melian": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Mandos": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Toliki": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tilion": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Maedhros": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Angband": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Caranthir": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Morgoth": {
+    "rod": "M",
+    "clue_m": 8,
+    "clue_z": 0
+  },
+  "Još": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Linaewen": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Turgona": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Finrod": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Gelion": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nevrast": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kula": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Idril": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Galadriel": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Turgon": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Iako": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Suhi": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Maeglin": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Patuljačkom": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Mudrost": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Haldad": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Halet": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Tuor": {
+    "rod": "M",
+    "clue_m": 5,
+    "clue_z": 0
+  },
+  "Bregor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Beren": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Morwen": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Hithlum": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Fingolfin": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Hador": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tolika": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Bregolas": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Orodreth": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Glaurung": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Nargothrond": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Eilinel": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Huan": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Led": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Došao": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bitka": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Otamo": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Dimbar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Beleg": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Uzalud": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jednom": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nienor": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Čim": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Brandir": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Turambar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zatim": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Odozdo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Put": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Maia": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Najčešće": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Velika": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Elwing": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 1
+  },
+  "Maglor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Valinora": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Beleriand": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zemlja": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Armenelos": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Amandil": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tama": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Prekasno": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Eregion": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Patuljcima": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Odande": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tri": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Osgiliath": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Isildurova": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Isildur": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Gondor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Radagast": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Mithrandir": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Anduin": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Illuin": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Visoki": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

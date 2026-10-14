@@ -8,7 +8,7 @@
  */
 
 const PROV_ICONS = {
-    GEMINI:'♊', GROQ:'⚡', CEREBRAS:'🔬', SAMBANOVA:'🧠',
+    GEMINI:'♊', NVIDIA:'🟩', CLOUDFLARE:'🟧', GROQ:'⚡', CEREBRAS:'🔬', SAMBANOVA:'🧠',
     MISTRAL:'💫', COHERE:'🌐', OPENROUTER:'🔀', GITHUB:'🐙',
     TOGETHER:'🤝', FIREWORKS:'🎆', CHUTES:'🪣', HUGGINGFACE:'🤗',
     KLUSTER:'🔗', GEMMA:'🔷',
@@ -16,6 +16,8 @@ const PROV_ICONS = {
 
 const PROV_CONSOLE_URLS = {
     GEMINI:      'https://aistudio.google.com/',
+    NVIDIA:      'https://build.nvidia.com/',
+    CLOUDFLARE:  'https://dash.cloudflare.com/',
     GROQ:        'https://console.groq.com/',
     CEREBRAS:    'https://cloud.cerebras.ai/',
     SAMBANOVA:   'https://cloud.sambanova.ai/',

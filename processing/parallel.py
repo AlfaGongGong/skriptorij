@@ -4,9 +4,10 @@
 import asyncio
 import random
 
-# Veličina sliding window-a — maksimalno N aktivnih chunka u isto vrijeme.
+# Veličina sliding window-a — max N paralelnih chunkova (svaki = 4 AI poziva).
+# 3 chunka × 4 faze = 12 paralelnih poziva — sigurno za free tier.
 # Za 8 ključeva to znači 4 paralelna poziva (konzervativno, bez DDoS-a)
-_SLIDING_WINDOW_SIZE = 6  # PROBLEM #1 fix: bio 1 (ubijao dinamički algoritam); sada = gornja granica iz _get_window_size (max 6)
+_SLIDING_WINDOW_SIZE = 3  # PROBLEM #1 fix: bio 1 (ubijao dinamički algoritam); sada = gornja granica iz _get_window_size (max 6)
 
 
 class AdaptiveParallelism:

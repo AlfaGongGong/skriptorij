@@ -1,0 +1,1062 @@
+{
+  "knjiga": "Pola_kralja_--_Joe_Abercrombie_Abercrombie_Joe_--_2014_--_747df9f20e8f3b4d5fc64ee38f4995d4_--_Anna_s_Archive",
+  "jezik": "HR",
+  "termini": {
+    "Yarvi": {
+      "hr": "Yarvi",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 757,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Sumael": {
+      "hr": "Sumael",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 174,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Rulf": {
+      "hr": "Rulf",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 165,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jaud": {
+      "hr": "Jaud",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 109,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ankran": {
+      "hr": "Ankran",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 104,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gundring": {
+      "hr": "Gundring",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 101,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Shadikshirram": {
+      "hr": "Shadikshirram",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 89,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yarvija": {
+      "hr": "Yarvija",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 79,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Trigg": {
+      "hr": "Trigg",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 73,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yarviju": {
+      "hr": "Yarviju",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 69,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Gettlanda": {
+      "hr": "Gettland",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 49,
+      "spoji_sa": "Gettland",
+      "potvrdjeno": true
+    },
+    "Uthil": {
+      "hr": "Uthil",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 49,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yarvijeva": {
+      "hr": "Yarvijeva",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 46,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Gorm": {
+      "hr": "Gorm",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 39,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Grom": {
+      "hr": "Grom",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 36,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yarvijev": {
+      "hr": "Yarvijev",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 34,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Hurik": {
+      "hr": "Hurik",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 32,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Jedan": {
+      "hr": "Jedan",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 31,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Scaer": {
+      "hr": "Scaer",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 31,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Posljednja": {
+      "hr": "Posljednja",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 29,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nisam": {
+      "hr": "Nisam",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 28,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Južni": {
+      "hr": "Južni",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 27,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Otac": {
+      "hr": "Otac",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 26,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Kralj": {
+      "hr": "Kralj",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 26,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bozi": {
+      "hr": "Bozi",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 26,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nikad": {
+      "hr": "Nikad",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Natkralj": {
+      "hr": "Natkralj",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Wexen": {
+      "hr": "Wexen",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Isriun": {
+      "hr": "Isriun",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Thorlbyju": {
+      "hr": "Thorlby",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "Thorlby",
+      "potvrdjeno": true
+    },
+    "Ankrana": {
+      "hr": "Ankrana",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Laithlin": {
+      "hr": "Laithlin",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gettland": {
+      "hr": "Gettland",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Odema": {
+      "hr": "Odema",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vansterlanda": {
+      "hr": "Vansterland",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "Vansterland",
+      "potvrdjeno": true
+    },
+    "Thorlby": {
+      "hr": "Thorlby",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Keimdal": {
+      "hr": "Keimdal",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yarvijeve": {
+      "hr": "Yarvi",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Gorma": {
+      "hr": "Gorm",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "Gorm",
+      "potvrdjeno": true
+    },
+    "Yarvijevu": {
+      "hr": "Yarvijeva",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Natkralja": {
+      "hr": "Natkralj",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Uthrika": {
+      "hr": "Uthrik",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Uthila": {
+      "hr": "Uthila",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jauda": {
+      "hr": "Jauda",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gettlanđani": {
+      "hr": "Gettlanđani",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yarvijevo": {
+      "hr": "Yarvijevo",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Thorlbyja": {
+      "hr": "Thorlbyja",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Božanstva": {
+      "hr": "Božanstva",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Yorv": {
+      "hr": "Yorv",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yarvijevom": {
+      "hr": "Yarvijevom",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Kapetanica": {
+      "hr": "Kapetanica",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Rulfa": {
+      "hr": "Rulfa",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jaudu": {
+      "hr": "Jaud",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "Jaud",
+      "potvrdjeno": true
+    },
+    "Shidwala": {
+      "hr": "Shidwala",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Uthrik": {
+      "hr": "Uthrik",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gormom": {
+      "hr": "Gorm",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "Gorm",
+      "potvrdjeno": true
+    },
+    "Skekenkuću": {
+      "hr": "Skekenkuća",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "Skekenkuća",
+      "potvrdjeno": true
+    },
+    "Vansterland": {
+      "hr": "Vansterland",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yarvijevim": {
+      "hr": "Yarvi",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "Yarvi",
+      "potvrdjeno": true
+    },
+    "Vansterlanđana": {
+      "hr": "Vansterlanđanin",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "Vansterland",
+      "potvrdjeno": true
+    },
+    "Shenda": {
+      "hr": "Shenda",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Shadikshirramin": {
+      "hr": "Shadikshirramin",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Trigga": {
+      "hr": "Trigga",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ankranu": {
+      "hr": "Ankranu",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 8,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gettlandu": {
+      "hr": "Gettland",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "Gettland",
+      "potvrdjeno": true
+    },
+    "Skekenkući": {
+      "hr": "Skekenkuć",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "Skekenkuć",
+      "potvrdjeno": true
+    },
+    "Vulsgardu": {
+      "hr": "Vulsgard",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "Vulsgard",
+      "potvrdjeno": true
+    },
+    "Inglinga": {
+      "hr": "Inglinga",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Bolje": {
+      "hr": "Bolje",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Yoverfell": {
+      "hr": "Yoverfell",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Često": {
+      "hr": "Često",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Okrene": {
+      "hr": "Okrene",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Banye": {
+      "hr": "Banye",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Nisi": {
+      "hr": "Nisi",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Čelik": {
+      "hr": "Čelik",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Čekaj": {
+      "hr": "Čekaj",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Jedva": {
+      "hr": "Jedva",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Odemov": {
+      "hr": "Odemov",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 7,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Znam": {
+      "hr": "Znam",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mira": {
+      "hr": "Mira",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Imaš": {
+      "hr": "Imaš",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Stric": {
+      "hr": "Stric",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Muškarac": {
+      "hr": "Muškarac",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Barem": {
+      "hr": "Barem",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Jeste": {
+      "hr": "Jeste",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pogleda": {
+      "hr": "Pogleda",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Osjeti": {
+      "hr": "Osjeti",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Odemu": {
+      "hr": "Odem",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "Odem",
+      "potvrdjeno": true
+    },
+    "Odemovo": {
+      "hr": "Odemovo",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "Odem",
+      "potvrdjeno": true
+    },
+    "Gormova": {
+      "hr": "Gorm",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "Gorm",
+      "potvrdjeno": true
+    },
+    "Morat": {
+      "hr": "Morat",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Shendi": {
+      "hr": "Shendi",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 6,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Hurika": {
+      "hr": "Hurika",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vansterlanđani": {
+      "hr": "Vansterlanđani",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vansterlanđane": {
+      "hr": "Vansterlanđani",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "Vansterlanđani",
+      "potvrdjeno": true
+    },
+    "Hunnan": {
+      "hr": "Hunnan",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Skekenkuće": {
+      "hr": "Skekenkuće",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Amwendu": {
+      "hr": "Amwendu",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Amwend": {
+      "hr": "Amwend",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lomitelj": {
+      "hr": "Lomitelj",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Triggove": {
+      "hr": "Triggove",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jaudovo": {
+      "hr": "Jaudovo",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "Jaud",
+      "potvrdjeno": true
+    },
+    "Ebdel": {
+      "hr": "Ebdel",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Aric": {
+      "hr": "Aric",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jaudov": {
+      "hr": "Jaudov",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Galijoti": {
+      "hr": "Galijoti",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Čuvari": {
+      "hr": "Čuvari",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Rulfov": {
+      "hr": "Rulfov",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Triggovu": {
+      "hr": "Triggovu",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "Trigg",
+      "potvrdjeno": true
+    },
+    "Ankranovu": {
+      "hr": "Ankranovu",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "Ankran",
+      "potvrdjeno": true
+    },
+    "Ankranov": {
+      "hr": "Ankranov",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "Ankran",
+      "potvrdjeno": true
+    },
+    "Ankranove": {
+      "hr": "Ankranove",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "Ankran",
+      "potvrdjeno": true
+    },
+    "Vulsgard": {
+      "hr": "Vulsgard",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 5,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Keimdala": {
+      "hr": "Keimdala",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Keimdalove": {
+      "hr": "Keimdalove",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "Keimdala",
+      "potvrdjeno": true
+    },
+    "Hurikova": {
+      "hr": "Hurikova",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Odemove": {
+      "hr": "Odemove",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gormov": {
+      "hr": "Gormov",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ankrane": {
+      "hr": "Ankrane",
+      "kategorija": "mjesto",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Triggova": {
+      "hr": "Triggova",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "Trigg",
+      "potvrdjeno": true
+    },
+    "Vansterlanđanin": {
+      "hr": "Vansterlanđanin",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Nadglednik": {
+      "hr": "Nadglednik",
+      "kategorija": "termin",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Mudri": {
+      "hr": "Mudri",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Rulfovu": {
+      "hr": "Rulfovu",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Načas": {
+      "hr": "Načas",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Budući": {
+      "hr": "Budući",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Mišići": {
+      "hr": "Mišići",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pretpostavljam": {
+      "hr": "Pretpostavljam",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Jaudovim": {
+      "hr": "Jaudovim",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Pola": {
+      "hr": "Pola",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Odemovi": {
+      "hr": "Odemovi",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    },
+    "Ugleda": {
+      "hr": "Ugleda",
+      "kategorija": "?",
+      "odbacene_varijante": [],
+      "broj_pojava": 4,
+      "spoji_sa": "",
+      "potvrdjeno": false
+    }
+  }
+}

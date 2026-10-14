@@ -304,29 +304,55 @@ class EpubParser:
             return []
 
     def _extract_content(self, raw_html: str, idx: int):
-        """Vraća (title, body_html, plain_text) iz HTML stringa."""
+        """
+        Vraća (title, body_html, plain_text) iz HTML stringa.
+
+        FIX 07.09.2026: garantuje da body_html ima tacno jedan semanticki
+        naslov (<h1>), umjesto da nizvodni kod (TOC, Styler, dropcap)
+        naklapa. Logika:
+          1. Ako <body> vec ima h1/h2/h3 s tekstom -> to je title, ne diraj.
+          2. Inace title dolazi iz <title> taga ili fallback "Poglavlje N".
+             2a. Ako se taj tekst poklapa s prvim ne-praznim <p> -> taj <p>
+                 se pretvara u <h1> (isti tekst, ispravan tag).
+             2b. Inace se nov <h1> ubacuje na pocetak body-ja.
+        """
         try:
             soup = BeautifulSoup(raw_html, "html.parser")
-
-            # Naslov: <title>, h1, h2 — kojegod nađe
-            title = ""
-            title_tag = soup.find("title")
-            if title_tag:
-                title = title_tag.get_text(strip=True)
-            if not title:
-                for htag in ("h1", "h2", "h3"):
-                    h = soup.find(htag)
-                    if h:
-                        title = h.get_text(strip=True)
-                        break
-            if not title:
-                title = f"Poglavlje {idx + 1}"
-
-            # Body HTML — samo sadržaj <body> taga
             body = soup.find("body")
-            body_html = str(body) if body else str(soup)
+            container = body if body is not None else soup
 
-            # Plain text (za provjeru je li prazan)
+            title = ""
+            for htag in ("h1", "h2", "h3"):
+                h = container.find(htag)
+                if h and h.get_text(strip=True):
+                    title = h.get_text(strip=True)
+                    break
+
+            if not title:
+                title_tag = soup.find("title")
+                if title_tag and title_tag.get_text(strip=True):
+                    title = title_tag.get_text(strip=True)
+                else:
+                    title = f"Poglavlje {idx + 1}"
+
+                first_p = None
+                for p in container.find_all("p"):
+                    if p.get_text(strip=True):
+                        first_p = p
+                        break
+
+                first_p_text = (
+                    first_p.get_text(strip=True).casefold() if first_p else ""
+                )
+
+                if first_p is not None and first_p_text == title.strip().casefold():
+                    first_p.name = "h1"
+                else:
+                    h1_tag = soup.new_tag("h1")
+                    h1_tag.string = title
+                    container.insert(0, h1_tag)
+
+            body_html = str(body) if body is not None else str(soup)
             plain = soup.get_text(separator=" ", strip=True)
 
             return title, body_html, plain

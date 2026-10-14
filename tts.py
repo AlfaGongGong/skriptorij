@@ -298,13 +298,14 @@ def start_from_master(
             return
 
         # ── Pronađi HTML fajlove ─────────────────────────────────────────────
+        from core.natural_sort import natural_sort_key
         html_files = sorted(
             [
                 f
                 for f in engine.work_dir.rglob("*")
                 if f.suffix.lower() in (".html", ".htm", ".xhtml")
             ],
-            key=lambda x: x.name,
+            key=natural_sort_key,
         )
 
         if not html_files:
@@ -327,10 +328,14 @@ def start_from_master(
         shared_stats["pct"] = 20
 
         sav_tekst = []
-        for hf in html_files:
+        total_hf = len(html_files)
+        for idx, hf in enumerate(html_files, 1):
             try:
                 html = hf.read_text("utf-8", errors="ignore")
                 sav_tekst.append(_html_u_tekst(html))
+                if idx % 10 == 0 or idx == total_hf:
+                    log(f"📖 TTS: Skenirano {idx}/{total_hf} fajlova...", "tech")
+                    shared_stats["pct"] = 20 + int(15 * idx / max(total_hf, 1))
             except Exception as e:
                 log(f"⚠️ TTS: Greška pri čitanju {hf.name}: {e}", "warning")
 
@@ -352,11 +357,13 @@ def start_from_master(
         if preostale:
             # Ograniči na max 200 riječi da izbjegnemo predugačak prompt
             batch = preostale[:200]
-            log(f"🤖 TTS: Šaljem {len(batch)} riječi na AI fonetizaciju...", "tech")
+            log(f"🤖 TTS: Šaljem {len(batch)} riječi na AI fonetizaciju (može potrajati)...", "tech")
+            shared_stats["status"] = f"TTS: AI fonetizacija ({len(batch)} riječi)..."
             try:
                 ai_fonetika = asyncio.run(
                     _ai_fonetizacija(batch, engine, log)
                 )
+                log(f"✅ TTS: AI fonetizirao {len(ai_fonetika)}/{len(batch)} riječi.", "success")
             except Exception as e:
                 log(f"⚠️ TTS AI fonetizacija nije uspjela: {e} — nastavljam bez AI.", "warning")
 

@@ -1,0 +1,62 @@
+{
+  "Put": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Vjetar": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Trusdale": {
+    "rod": "M",
+    "clue_m": 8,
+    "clue_z": 0
+  },
+  "Hines": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Cline": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 3
+  },
+  "Jednom": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "John": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dan": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Rowles": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Pokus": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tanjur": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "On": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

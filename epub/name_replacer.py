@@ -266,7 +266,7 @@ def _build_ai_prompt(groups: list[list[str]], full_text_sample: str) -> str:
     # Uzmemo sample teksta (prvih ~2000 znakova čistog teksta)
     sample = full_text_sample[:2000].strip()
 
-    return f"""Ti si ekspert za književni prijevod na bosanski/hrvatski jezik.
+    return f"""Ti si ekspert za književni prijevod na hrvatski jezik.
 
 Analziraš EPUB knjigu i trebaš normalizovati vlastita imena i nazive entiteta.
 
@@ -280,7 +280,7 @@ KANDIDATI ZA NORMALIZACIJU (grupe srodnih oblika):
 
 ZADATAK:
 Za svaki entitet (lik, mjesto, predmet, organizacija) koji ima VIŠESTRUKE VARIJANTE pisanja:
-1. Odredi KANONSKU (standardnu) formu na bosanskom/hrvatskom
+1. Odredi KANONSKU (standardnu) formu na hrvatskom
 2. Navedi SVE varijante koje treba zamijeniti tom kanonskom formom
 3. Uključi sve morfološke oblike (padeže, rod, broj) ako su vidljivi
 

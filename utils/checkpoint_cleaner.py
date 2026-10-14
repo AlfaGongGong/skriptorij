@@ -55,12 +55,13 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
         except (json.JSONDecodeError, ValueError):
             pass
 
+    # FIX 2026-09-25: normaliziraj tipografske navodnike u stripped
+    stripped_norm = _TYPO_Q.sub('"', stripped)
     # Regex fallback — handles truncated or malformed JSON wrappers.
-    # Strogi (ispravni JSON escape), pa pohlepni (neescape-dani navodnici unutar vrijednosti).
     for k in ("finalno_polirano", "korektura", "tekst", "prijevod"):
         m = re.search(
             rf'"{k}"\s*:\s*"((?:[^"\\]|\\.)*)',
-            stripped,
+            stripped_norm,
             re.DOTALL,
         )
         if m:
