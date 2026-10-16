@@ -1,0 +1,2406 @@
+{
+  "knjiga": "Complete_Books_Of_Blood_--_Barker_Clive_--_2010_--_a8dc0b3ed6132205dfdf2dd95d47ec0e_--_Anna_s_Archive",
+  "jezik": "EN",
+  "termini": {
+    "Cleve": {
+      "hr": "Cleve",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 279,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Harry": {
+      "hr": "Harry",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 247,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Karney": {
+      "hr": "Karney",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 200,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Billy": {
+      "hr": "Billy",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 197,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Locke": {
+      "hr": "Locke",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 187,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Valentin": {
+      "hr": "Valentin",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 180,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gavin": {
+      "hr": "Gavin",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 176,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ballard": {
+      "hr": "Ballard",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 175,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Quaid": {
+      "hr": "Quaid",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 146,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lewis": {
+      "hr": "Lewis",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 139,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Steve": {
+      "hr": "Steve",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 131,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Pope": {
+      "hr": "Pope",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 130,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Garvey": {
+      "hr": "Garvey",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 126,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kaufman": {
+      "hr": "Kaufman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 118,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Redman": {
+      "hr": "Redman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 116,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Swann": {
+      "hr": "Swann",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 110,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Virginia": {
+      "hr": "Virginia",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 109,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Charlie": {
+      "hr": "Charlie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 105,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Earl": {
+      "hr": "Earl",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 102,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Galloway": {
+      "hr": "Galloway",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 101,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Helen": {
+      "hr": "Helen",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 99,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Mick": {
+      "hr": "Mick",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 95,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jerry": {
+      "hr": "Jerry",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 95,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Cherrick": {
+      "hr": "Cherrick",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 95,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Reynolds": {
+      "hr": "Reynolds",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 89,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Sadie": {
+      "hr": "Sadie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 89,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Stumpf": {
+      "hr": "Stumpf",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 89,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Carnegie": {
+      "hr": "Carnegie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 87,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Phillipe": {
+      "hr": "Phillipe",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 86,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Maguire": {
+      "hr": "Maguire",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 86,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Mironenko": {
+      "hr": "Mironenko",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 86,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jerome": {
+      "hr": "Jerome",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 84,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lichfield": {
+      "hr": "Lichfield",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 83,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Judd": {
+      "hr": "Judd",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 83,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ricky": {
+      "hr": "Ricky",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 82,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lacey": {
+      "hr": "Lacey",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 81,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ronnie": {
+      "hr": "Ronnie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 81,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gomm": {
+      "hr": "Gomm",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 75,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Buck": {
+      "hr": "Buck",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 74,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Coot": {
+      "hr": "Coot",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 73,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Christ": {
+      "hr": "Christ",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 72,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Brendan": {
+      "hr": "Brendan",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 72,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Rawhead": {
+      "hr": "Rawhead",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 69,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Catso": {
+      "hr": "Catso",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 69,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Eugene": {
+      "hr": "Eugene",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 67,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Marie": {
+      "hr": "Marie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 67,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Anne": {
+      "hr": "Anne",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 66,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Cameron": {
+      "hr": "Cameron",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 66,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yattering": {
+      "hr": "Yattering",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 65,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Laura": {
+      "hr": "Laura",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 64,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Tait": {
+      "hr": "Tait",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 64,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Packard": {
+      "hr": "Packard",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 62,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Boyle": {
+      "hr": "Boyle",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 62,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vanessa": {
+      "hr": "Vanessa",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 62,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Suckling": {
+      "hr": "Suckling",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 62,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gyer": {
+      "hr": "Gyer",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 61,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Dooley": {
+      "hr": "Dooley",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 61,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Davidson": {
+      "hr": "Davidson",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 60,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Blood": {
+      "hr": "Blood",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 58,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jonathan": {
+      "hr": "Jonathan",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 58,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Joel": {
+      "hr": "Joel",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 57,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Declan": {
+      "hr": "Declan",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 57,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Come": {
+      "hr": "Come",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 55,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Behind": {
+      "hr": "Behind",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 55,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Polo": {
+      "hr": "Polo",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 55,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jack": {
+      "hr": "Jack",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 54,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Cripps": {
+      "hr": "Cripps",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 54,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Tell": {
+      "hr": "Tell",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 53,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Somebody": {
+      "hr": "Somebody",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 51,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Aaron": {
+      "hr": "Aaron",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 50,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Birdy": {
+      "hr": "Birdy",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 50,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Klein": {
+      "hr": "Klein",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 50,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jesus": {
+      "hr": "Jesus",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 48,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Hammersmith": {
+      "hr": "Hammersmith",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 47,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Tetelman": {
+      "hr": "Tetelman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 47,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "John": {
+      "hr": "John",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 46,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Elaine": {
+      "hr": "Elaine",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 45,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Voight": {
+      "hr": "Voight",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 43,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Complete": {
+      "hr": "Complete",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 42,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Books": {
+      "hr": "Books",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 42,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Preetorius": {
+      "hr": "Preetorius",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 42,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Butterfield": {
+      "hr": "Butterfield",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 42,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Angela": {
+      "hr": "Angela",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 41,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Look": {
+      "hr": "Look",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 39,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jacqueline": {
+      "hr": "Jacqueline",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 39,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Slape": {
+      "hr": "Slape",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 38,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Welles": {
+      "hr": "Welles",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 38,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Dorothea": {
+      "hr": "Dorothea",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 38,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gina": {
+      "hr": "Gina",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 37,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Trevor": {
+      "hr": "Trevor",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 37,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lucy": {
+      "hr": "Lucy",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 35,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Suddenly": {
+      "hr": "Suddenly",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 34,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Johannson": {
+      "hr": "Johannson",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 34,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Leverthal": {
+      "hr": "Leverthal",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 33,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Diane": {
+      "hr": "Diane",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 33,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lowell": {
+      "hr": "Lowell",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 33,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Amanda": {
+      "hr": "Amanda",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 32,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Henessey": {
+      "hr": "Henessey",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 32,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Popolac": {
+      "hr": "Popolac",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 32,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Norton": {
+      "hr": "Norton",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 32,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jeudwine": {
+      "hr": "Jeudwine",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 32,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Take": {
+      "hr": "Take",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 30,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Give": {
+      "hr": "Give",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 30,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Cheryl": {
+      "hr": "Cheryl",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 30,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Dancy": {
+      "hr": "Dancy",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 30,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Glass": {
+      "hr": "Glass",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 29,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Mahogany": {
+      "hr": "Mahogany",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 28,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Butcher": {
+      "hr": "Butcher",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 28,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Russian": {
+      "hr": "Russian",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 28,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Catherine": {
+      "hr": "Catherine",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 27,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Sure": {
+      "hr": "Sure",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 26,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "People": {
+      "hr": "People",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 26,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Burgess": {
+      "hr": "Burgess",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 26,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kavanagh": {
+      "hr": "Kavanagh",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 26,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Eddie": {
+      "hr": "Eddie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 25,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Constantia": {
+      "hr": "Constantia",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 25,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Eleanor": {
+      "hr": "Eleanor",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 25,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ellen": {
+      "hr": "Ellen",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 25,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Besides": {
+      "hr": "Besides",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 24,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Solal": {
+      "hr": "Solal",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 24,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lindi": {
+      "hr": "Lindi",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 24,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lenny": {
+      "hr": "Lenny",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 24,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Boswell": {
+      "hr": "Boswell",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 24,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Coloqhoun": {
+      "hr": "Coloqhoun",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 24,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Barberio": {
+      "hr": "Barberio",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 23,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Pools": {
+      "hr": "Pools",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 23,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Carole": {
+      "hr": "Carole",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 23,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Floyd": {
+      "hr": "Floyd",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 23,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Byron": {
+      "hr": "Byron",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 23,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Such": {
+      "hr": "Such",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Neither": {
+      "hr": "Neither",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Tallulah": {
+      "hr": "Tallulah",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Titus": {
+      "hr": "Titus",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Sunday": {
+      "hr": "Sunday",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gregorius": {
+      "hr": "Gregorius",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Amour": {
+      "hr": "Amour",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 22,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Palace": {
+      "hr": "Palace",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Instead": {
+      "hr": "Instead",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Pettifer": {
+      "hr": "Pettifer",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gwen": {
+      "hr": "Gwen",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gissing": {
+      "hr": "Gissing",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Isaiah": {
+      "hr": "Isaiah",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Devlin": {
+      "hr": "Devlin",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 21,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Christian": {
+      "hr": "Christian",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 20,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Viola": {
+      "hr": "Viola",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 20,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Either": {
+      "hr": "Either",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 20,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "London": {
+      "hr": "London",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 20,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "York": {
+      "hr": "York",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Welcome": {
+      "hr": "Welcome",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Wait": {
+      "hr": "Wait",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Podujevo": {
+      "hr": "Podujevo",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vassi": {
+      "hr": "Vassi",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Purcell": {
+      "hr": "Purcell",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Chandaman": {
+      "hr": "Chandaman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Guillemot": {
+      "hr": "Guillemot",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 19,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Shall": {
+      "hr": "Shall",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Tonight": {
+      "hr": "Tonight",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Thomas": {
+      "hr": "Thomas",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Duvall": {
+      "hr": "Duvall",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Bishop": {
+      "hr": "Bishop",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Beneath": {
+      "hr": "Beneath",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Zeal": {
+      "hr": "Zeal",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Dork": {
+      "hr": "Dork",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 18,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Doctor": {
+      "hr": "Doctor",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "German": {
+      "hr": "German",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Police": {
+      "hr": "Police",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Help": {
+      "hr": "Help",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Despite": {
+      "hr": "Despite",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Stop": {
+      "hr": "Stop",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "English": {
+      "hr": "English",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Papa": {
+      "hr": "Papa",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Bernadette": {
+      "hr": "Bernadette",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Henry": {
+      "hr": "Henry",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Emmanuelle": {
+      "hr": "Emmanuelle",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Anelisa": {
+      "hr": "Anelisa",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Court": {
+      "hr": "Court",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Fryer": {
+      "hr": "Fryer",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 17,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Beyond": {
+      "hr": "Beyond",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Elysium": {
+      "hr": "Elysium",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Stephen": {
+      "hr": "Stephen",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Loyer": {
+      "hr": "Loyer",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Sing": {
+      "hr": "Sing",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Milton": {
+      "hr": "Milton",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Maggie": {
+      "hr": "Maggie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kerry": {
+      "hr": "Kerry",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Josie": {
+      "hr": "Josie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Wyburd": {
+      "hr": "Wyburd",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 16,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Except": {
+      "hr": "Except",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Tears": {
+      "hr": "Tears",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Soon": {
+      "hr": "Soon",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Christmas": {
+      "hr": "Christmas",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Listen": {
+      "hr": "Listen",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Office": {
+      "hr": "Office",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Terry": {
+      "hr": "Terry",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vaslav": {
+      "hr": "Vaslav",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Boom": {
+      "hr": "Boom",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Madonna": {
+      "hr": "Madonna",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Barbara": {
+      "hr": "Barbara",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Edgar": {
+      "hr": "Edgar",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Wayne": {
+      "hr": "Wayne",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ivanhoe": {
+      "hr": "Ivanhoe",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Wing": {
+      "hr": "Wing",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jape": {
+      "hr": "Jape",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Hermione": {
+      "hr": "Hermione",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 15,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ahead": {
+      "hr": "Ahead",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Saints": {
+      "hr": "Saints",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Governor": {
+      "hr": "Governor",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kevin": {
+      "hr": "Kevin",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Tomorrow": {
+      "hr": "Tomorrow",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Mama": {
+      "hr": "Mama",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Thirty": {
+      "hr": "Thirty",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Later": {
+      "hr": "Later",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Make": {
+      "hr": "Make",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Nicholson": {
+      "hr": "Nicholson",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Amelia": {
+      "hr": "Amelia",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Durning": {
+      "hr": "Durning",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Goldberg": {
+      "hr": "Goldberg",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 14,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Mary": {
+      "hr": "Mary",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Above": {
+      "hr": "Above",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Finally": {
+      "hr": "Finally",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Outside": {
+      "hr": "Outside",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Keep": {
+      "hr": "Keep",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Koos": {
+      "hr": "Koos",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Lyndon": {
+      "hr": "Lyndon",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Sheriff": {
+      "hr": "Sheriff",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kooker": {
+      "hr": "Kooker",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Dupin": {
+      "hr": "Dupin",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Debbie": {
+      "hr": "Debbie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Denny": {
+      "hr": "Denny",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Yeah": {
+      "hr": "Yeah",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Fresco": {
+      "hr": "Fresco",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Leopold": {
+      "hr": "Leopold",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Solomonov": {
+      "hr": "Solomonov",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 13,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Fuller": {
+      "hr": "Fuller",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "East": {
+      "hr": "East",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Eventually": {
+      "hr": "Eventually",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Wouldn": {
+      "hr": "Wouldn",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Shut": {
+      "hr": "Shut",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Dead": {
+      "hr": "Dead",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Four": {
+      "hr": "Four",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Seven": {
+      "hr": "Seven",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Indian": {
+      "hr": "Indian",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Frank": {
+      "hr": "Frank",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kinderman": {
+      "hr": "Kinderman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Forget": {
+      "hr": "Forget",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Paris": {
+      "hr": "Paris",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Saturday": {
+      "hr": "Saturday",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Inspector": {
+      "hr": "Inspector",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Garrow": {
+      "hr": "Garrow",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Raquel": {
+      "hr": "Raquel",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Rafferty": {
+      "hr": "Rafferty",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Satan": {
+      "hr": "Satan",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Spector": {
+      "hr": "Spector",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Butts": {
+      "hr": "Butts",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Indians": {
+      "hr": "Indians",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Bjornstrom": {
+      "hr": "Bjornstrom",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 12,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Upstairs": {
+      "hr": "Upstairs",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Show": {
+      "hr": "Show",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Sooner": {
+      "hr": "Sooner",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Vestry": {
+      "hr": "Vestry",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Archway": {
+      "hr": "Archway",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "George": {
+      "hr": "George",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Dance": {
+      "hr": "Dance",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Blind": {
+      "hr": "Blind",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Candyman": {
+      "hr": "Candyman",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Mayflower": {
+      "hr": "Mayflower",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Gulfs": {
+      "hr": "Gulfs",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Raparee": {
+      "hr": "Raparee",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Maybury": {
+      "hr": "Maybury",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 11,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Number": {
+      "hr": "Number",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Today": {
+      "hr": "Today",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Church": {
+      "hr": "Church",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Stay": {
+      "hr": "Stay",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Kill": {
+      "hr": "Kill",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "North": {
+      "hr": "North",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Ryan": {
+      "hr": "Ryan",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Half": {
+      "hr": "Half",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Eight": {
+      "hr": "Eight",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Seeing": {
+      "hr": "Seeing",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Head": {
+      "hr": "Head",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Morgue": {
+      "hr": "Morgue",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Jacques": {
+      "hr": "Jacques",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Movie": {
+      "hr": "Movie",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Baker": {
+      "hr": "Baker",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Quickly": {
+      "hr": "Quickly",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Smith": {
+      "hr": "Smith",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Nayler": {
+      "hr": "Nayler",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Odell": {
+      "hr": "Odell",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 10,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Somehow": {
+      "hr": "Somehow",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Whether": {
+      "hr": "Whether",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "White": {
+      "hr": "White",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Suppose": {
+      "hr": "Suppose",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "September": {
+      "hr": "September",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Beelzebub": {
+      "hr": "Beelzebub",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Friday": {
+      "hr": "Friday",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Daddy": {
+      "hr": "Daddy",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Think": {
+      "hr": "Think",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Bastard": {
+      "hr": "Bastard",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Eyes": {
+      "hr": "Eyes",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    },
+    "Mouse": {
+      "hr": "Mouse",
+      "kategorija": "lik",
+      "odbacene_varijante": [],
+      "broj_pojava": 9,
+      "spoji_sa": "",
+      "potvrdjeno": true
+    }
+  }
+}

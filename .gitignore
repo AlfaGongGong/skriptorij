@@ -1,89 +1,48 @@
-# ========== ENV (NIKAD NE COMMITUJ) ==========
-.env
-.env.*
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
 
-# ========== API KLJUČEVI (NIKAD NE COMMITUJ) ==========
-dev_api.json
-api_state.json
-proxies.json
-*.key
-*.pem
-
-# ========== BACKUP FAJLOVI I FOLDERI ==========
-_backup_*/
-backups/
-*.backup
+# Backup fajlovi (git ih zamjenjuje)
 *.bak
 *.bak_*
-*.bak_final
-*.bak_revert
-*.bak_simplify
-*.bak_bodylog
-*.bak_prompts
-*.bak_add429
+*.bak2_*
+*.bak3_*
+*.bak_ui_*
+*.bak_ukloni_*
+*.bak_final*
+*.bak_dc*
+*.bak_dropcap*
+*.bak_flowroot*
+*.bak_status*
+*.bak_groq*
+*.bak_glosar*
+*.bak_eta*
+*.bak_kontekst*
+*.bak_pre_*
+*.bak_vrati_*
+*.bak_za_tebe*
+*.bak_rucno_*
+*.bak_pre_vracanja_*
 
-# ========== ZIP ARHIVE ==========
-*.zip
-*.tar.gz
-*.rar
-
-# ========== CLASSLA I AI MODELI (PREVELIKI) ==========
-data/classla_resources/
-*.pt
-*.h5
-*.pkl
-
-# ========== PODACI O KNJIGAMA (PREVELIKI) ==========
-data/*.epub
-data/*.mobi
-data/_skr_*/
-data/\(LIVE\)_*
-
-# ========== CHECKPOINT I GENERISANI PODACI ==========
-*_skr_*/
-checkpoints/
-
-# ========== OUTPUT KNJIGE ==========
-output/
-*.epub_out/
-
-# ========== RUNTIME FAJLOVI ==========
-last_book.json
-quota_cooldowns.json
-
-# ========== PYTHON ==========
-__pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-dist/
-build/
-
-# ========== SKRIPTE ==========
-*.sh
-fixpy.py
-fix.sh
-
-# ========== LOGOVI I TEKST ==========
+# Podaci
+data/kanon/knjige/*.json.bak_*
 *.log
-*.txt
+logs/
+tmp/
+*.tmp
 
-# ========== IDE ==========
-.vscode/
-.idea/
-*.swp
+# Checkpoint-i (ogromni, ne trebaju u git)
+data/_checkpoints/
+/root/skriptorij/_checkpoints/
 
-# ========== OS ==========
+# EPUB / MOBI izlazi
+*.epub
+*.mobi
+
+# OS
 .DS_Store
 Thumbs.db
-
-# ========== ENVIRONMENT ==========
-env/
-node_modules/
-
-# ========== OSTALO ==========
-TrashRecover/
-
-# ========== KALKOVI KARANTENA DB ==========
-data/*.db
-data/*.db.*

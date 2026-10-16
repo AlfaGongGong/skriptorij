@@ -16,6 +16,7 @@ normalize_chapter_html(soup) uklanja oba traga PRIJE nego
 run_epub_styler pozove _add_chapter_ornament()/_add_dropcap().
 """
 
+import re
 from bs4 import BeautifulSoup, NavigableString
 
 
@@ -180,6 +181,27 @@ def _normalize_html(soup):
     return soup
 
 
+
+
+def _ocisti_json_artefakte(html: str) -> str:
+    """Cisti JSON artefakte iz AI odgovora."""
+    # Markdown code fence
+    html = re.sub(r'```json\s*', '', html)
+    html = re.sub(r'```\s*', '', html)
+    # JSON omotaci
+    html = re.sub(
+        r'\{\s*"(?:tekst|text|translation|content|polished|result|html)"\s*:\s*"',
+        '', html
+    )
+    html = re.sub(r'"\s*\}\s*$', '', html, flags=re.MULTILINE)
+    # Escape sekvence
+    html = html.replace('\\n', '\n')
+    html = html.replace('\\"', '"')
+    html = html.replace('\\/', '/')
+    # Samostalne viticaste zagrade
+    html = re.sub(r'^\s*[\{\}]\s*$', '', html, flags=re.MULTILINE)
+    return html
+
 def _strip_everything(soup: BeautifulSoup, sacuvaj_tekst: bool = True) -> dict:
     """
     Uklanja SVE stilove, klase i nepotrebne elemente iz HTML-a — ALI:
@@ -311,6 +333,38 @@ def _strip_everything(soup: BeautifulSoup, sacuvaj_tekst: bool = True) -> dict:
         for attr in ("style", "class", "bgcolor", "background", "text", "link"):
             if body.get(attr):
                 del body[attr]
+
+
+    # ─── 11. Obrisi prazne <p>*</p> i <p> </p> ───────────────────
+    for p in soup.find_all("p"):
+        tekst = p.get_text(strip=True)
+        if tekst in ("*", "", "\u00a0") or (len(tekst) <= 2 and tekst.strip("* ") == ""):
+            p.decompose()
+            stats.setdefault("prazne_p_obrisane", 0)
+            stats["prazne_p_obrisane"] += 1
+
+    # ─── 12. Obrisi <div> sa inline background (AI artefakti) ────
+    for div in soup.find_all("div"):
+        stil = (div.get("style") or "").lower()
+        if "background" in stil:
+            # Ako je <div> omotac (sadrzi <p>, <h1>...), unwrap
+            if div.find(["p", "h1", "h2", "h3", "h4"]):
+                div.unwrap()
+            else:
+                div.decompose()
+            stats.setdefault("ai_div_obrisan", 0)
+            stats["ai_div_obrisan"] += 1
+
+    # ─── 13. Obrisi <span> unutar <p class="booklyfi-prvi"> ─────
+    for p in soup.find_all("p", class_="booklyfi-prvi"):
+        for span in p.find_all("span"):
+            t = span.get_text()
+            if t:
+                span.replace_with(NavigableString(t))
+            else:
+                span.decompose()
+            stats.setdefault("span_u_prvi_obrisan", 0)
+            stats["span_u_prvi_obrisan"] += 1
 
     return stats
 

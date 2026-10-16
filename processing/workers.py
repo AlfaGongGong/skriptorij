@@ -385,11 +385,15 @@ def _qa_ai_ocjena(tekst, fleet):
                 continue
 
             from network.http_client import api_call
+            _t0 = time.time()
             res = api_call(
                 provider=provider, model=model, api_key=api_key,
                 system=_QA_SYSTEM, user="Ocjeni:\n\n" + tekst_skracen,
                 temperature=0.1, max_tokens=500, timeout=60,
             )
+            _dt = time.time() - _t0
+            if res:
+                self.log(f"  ◀ QA {provider} ({model}) | {_dt:.1f}s | {len(res)}c", "tech")
             if not res:
                 continue
 

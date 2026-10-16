@@ -3038,3 +3038,6 @@ details[open] .expert-section-chevron {
     gap: 8px !important;
     flex-wrap: wrap !important;
 }
+
+/* ── FIX 2026-10-15: ukloni brojeve ključeva pored provajdera ── */
+.fq-prov-count { display: none !important; }

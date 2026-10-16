@@ -151,8 +151,11 @@ Vrati ISKLJUCIVO JSON. Budi STROG.
     lista = "\n".join("- " + t for t in batch)
     user_prompt = "Termini:\n\n" + lista
 
-    # Rotiraj kroz SVE moguce providere (redoslijed: brzi/stabilni prvi)
-    PROVIDERI = ["GEMINI", "CLOUDFLARE", "GROQ", "MISTRAL", "NVIDIA", "OPENROUTER", "GEMMA"]
+    # Rotiraj kroz SVE moguce providere
+    # GEMMA samo za dugačke promptove (batch >= 20) — inače timeout/500
+    PROVIDERI = ["GROQ", "GEMINI", "NVIDIA", "OPENROUTER", "CLOUDFLARE", "MISTRAL"]
+    if len(batch) >= 20:
+        PROVIDERI.append("GEMMA")  # Gemma radi za dugačke promptove
 
     for provider in PROVIDERI:
         try:
@@ -169,11 +172,11 @@ Vrati ISKLJUCIVO JSON. Budi STROG.
                 merged = SYSTEM + "\n\n" + user_prompt
                 res = api_call(provider=provider, model=model, api_key=api_key,
                                system="", user=merged,
-                               temperature=0.2, max_tokens=4000, timeout=120)
+                               temperature=0.2, max_tokens=6000, timeout=180)
             else:
                 res = api_call(provider=provider, model=model, api_key=api_key,
                                system=SYSTEM, user=user_prompt,
-                               temperature=0.2, max_tokens=4000, timeout=120)
+                               temperature=0.2, max_tokens=6000, timeout=180)
             if not res:
                 continue
 

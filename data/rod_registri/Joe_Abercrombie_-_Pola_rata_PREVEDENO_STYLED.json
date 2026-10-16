@@ -1,0 +1,292 @@
+{
+  "Džener": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Skara": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 24
+  },
+  "Jiling": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Skaru": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Onda": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jarvi": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Rait": {
+    "rod": "M",
+    "clue_m": 16,
+    "clue_z": 0
+  },
+  "Češalj": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kira": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Plavi": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Raki": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Vlastela": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Advin": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Tada": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Util": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Rin": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Grom": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kol": {
+    "rod": "M",
+    "clue_m": 7,
+    "clue_z": 0
+  },
+  "Kamen": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dunverk": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Lagano": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Luka": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Trn": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 1
+  },
+  "Tvoja": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Sunce": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Rat": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Oud": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 4
+  },
+  "Kakav": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Vrh": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Pošto": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Varoslav": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Oduvijek": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 1
+  },
+  "Kralj": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Skaer": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Paluba": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Čelik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kraljica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Brand": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Jedino": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Edni": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Fin": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Cijena": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Uvijek": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "On": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Gorm": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Put": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sorjorn": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Posvuda": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Makar": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Vjerojatno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Plavog": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dosduvoj": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Skari": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Svakome": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dobro": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Zora": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Batu": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Tekst": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

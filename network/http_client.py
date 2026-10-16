@@ -107,8 +107,55 @@ class ContentFilterError(Exception):
 
 
 # ── Proxy — trenutno isključen ────────────────────────────────────────────────
+# ── Proxy rotacija (Webshare format: IP:PORT:USER:PASS) ─────────────────────
+_proxy_index = 0
+_proxy_lock = threading.Lock()
+_proxy_cache: list[dict] = []
+
+
+def _load_proxies() -> list[dict]:
+    """Učitaj proxy adrese iz dev_api.json → lista dict za requests.post."""
+    global _proxy_cache
+    if _proxy_cache:
+        return _proxy_cache
+    try:
+        import json
+        from pathlib import Path as _P
+        cfg = _P("/root/skriptorij/dev_api.json")
+        if not cfg.exists():
+            return []
+        data = json.loads(cfg.read_text("utf-8"))
+        raw = data.get("PROXIES", [])
+        out = []
+        for line in raw:
+            if not line or not isinstance(line, str):
+                continue
+            parts = line.strip().split(":")
+            if len(parts) == 4:
+                host, port, user, pw = parts
+                url = f"http://{user}:{pw}@{host}:{port}"
+                out.append({"http": url, "https": url})
+            elif len(parts) == 2:
+                host, port = parts
+                url = f"http://{host}:{port}"
+                out.append({"http": url, "https": url})
+        _proxy_cache = out
+        return out
+    except Exception as e:
+        logger.warning("[proxy] Ne mogu učitati proxije: %s", e)
+        return []
+
+
 def _get_next_proxy() -> dict | None:
-    return None
+    """Vrati sljedeći proxy u rotaciji (round-robin). None ako nema proxy-ja."""
+    global _proxy_index
+    proxies = _load_proxies()
+    if not proxies:
+        return None
+    with _proxy_lock:
+        p = proxies[_proxy_index % len(proxies)]
+        _proxy_index += 1
+    return p
 
 
 # ── Google / Gemma model pool ─────────────────────────────────────────────────
@@ -1052,7 +1099,8 @@ def api_call(
     user: str,
     temperature: float = 0.5,
     max_tokens: int = 2400,
-    timeout: int = 60,
+    timeout: int = 180,
+    proxy: dict | None = None,
 ) -> str | None:
     from network.provider_urls import get_url, get_gemini_url
     from network.rate_limiter import get_key_semaphore, get_provider_semaphore
@@ -1060,10 +1108,55 @@ def api_call(
 
     prov_upper = provider.upper()
 
+    # ── DETALJAN LOG ──
+    _t0 = _time.time()
+    _kid = "..." + api_key[-6:] if api_key else "?"
+    _in_tokens = len((system or "") + (user or "")) // 4
+    _proxy_tag = "none"
+    # Ako je proxy dict, izvuci oznaku
+    if proxy and isinstance(proxy, dict):
+        _purl = proxy.get("https") or proxy.get("http") or ""
+        import re as _re_p
+        _m = _re_p.search(r'@([\d.]+):', _purl)
+        _proxy_tag = _m.group(1) if _m else "?"
+    _reasoning = "?"
+    if prov_upper == "GEMINI":
+        _reasoning = "minimal"
+    elif prov_upper == "GEMMA":
+        _reasoning = "n/a"
+    elif prov_upper == "GROQ":
+        _reasoning = "none"
+    elif prov_upper == "NVIDIA":
+        _reasoning = "off"
+
+    logger.info(
+        "▶ API %s | model=%s | ključ=%s | proxy=%s | reasoning=%s | prompt=%dc (~%dt) | max_out=%d | temp=%.2f | timeout=%ds",
+        prov_upper, model, _kid, _proxy_tag, _reasoning,
+        len((system or "") + (user or "")), _in_tokens,
+        max_tokens, temperature, timeout,
+    )
+
     if prov_upper in ("GEMINI", "GEMMA"):
         url = f"{get_gemini_url(model)}?key={api_key}"
         headers = _build_headers(prov_upper)
         payload = _build_gemini_native_payload(system, user, temperature, max_tokens)
+
+        # FIX: thinking OFF za Gemini 3.5 (thinkingBudget: 0 vraća 400!)
+        if prov_upper == "GEMINI":
+            if "generationConfig" not in payload:
+                payload["generationConfig"] = {}
+            payload["generationConfig"]["thinkingConfig"] = {"thinkingLevel": "minimal"}
+
+        # FIX: Gemma — min maxOutputTokens 2048 (inače HTTP 500)
+        if prov_upper == "GEMMA":
+            if "generationConfig" not in payload:
+                payload["generationConfig"] = {}
+            gc = payload["generationConfig"]
+            gc["maxOutputTokens"] = max(gc.get("maxOutputTokens", 2048), 2048)
+
+        # FIX: thinking OFF za Gemini 3.5 (thinkingBudget: 0 ne radi!)
+        if prov_upper == "GEMINI":
+            payload["generationConfig"]["thinkingConfig"] = {"thinkingLevel": "minimal"}
     else:
         url = get_url(prov_upper)
         messages = _build_messages(system, user, model)
@@ -1073,6 +1166,18 @@ def api_call(
             "max_tokens": max_tokens,
             "messages": messages,
         }
+        # FIX: NVIDIA thinking OFF (radi u 1.5s!)
+        if prov_upper == "NVIDIA":
+            payload["chat_template_kwargs"] = {"thinking": False}
+        # FIX: Groq reasoning OFF (radi u 0.4s, bez reasoning tokena)
+        if prov_upper == "GROQ":
+            payload["reasoning_effort"] = "none"
+        # FIX: NVIDIA thinking OFF (radi u 1.5s!)
+        if prov_upper == "NVIDIA":
+            payload["chat_template_kwargs"] = {"thinking": False}
+        # FIX: Groq reasoning OFF
+        if prov_upper == "GROQ":
+            payload["reasoning_effort"] = "none"
         headers = _build_headers(prov_upper, api_key)
 
     prov_sem = get_provider_semaphore(prov_upper)
@@ -1102,11 +1207,18 @@ def api_call(
         except Exception:
             pass
         _time.sleep(random.uniform(0.5, 2.0))  # humanizovani jitter
+        # FIX: proxy rotacija
+        _use_proxy = proxy if proxy is not None else _get_next_proxy()
         try:
-            resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
+            resp = requests.post(
+                url, json=payload, headers=headers, timeout=timeout,
+                proxies=_use_proxy,
+            )
         except requests.exceptions.Timeout:
+            _dt = _time.time() - _t0
             logger.warning(
-                "[api_call] %s ...%s Timeout (%ss)", prov_upper, api_key[-4:], timeout
+                "◀ API %s | ❌ TIMEOUT nakon %.1fs | ključ=%s",
+                prov_upper, _dt, _kid,
             )
             try:
                 # FIX: cooldown SAMO za prov_upper, ne križaj GEMINI↔GEMMA.
@@ -1118,10 +1230,19 @@ def api_call(
                 pass
             return None
         except requests.exceptions.RequestException as e:
-            logger.warning("[api_call] %s mrežna greška: %s", prov_upper, str(e)[:120])
+            _dt = _time.time() - _t0
+            logger.warning(
+                "◀ API %s | ❌ MREŽNA GREŠKA nakon %.1fs | ključ=%s | %s",
+                prov_upper, _dt, _kid, str(e)[:120],
+            )
             return None
 
         if resp.status_code == 429:
+            _dt = _time.time() - _t0
+            logger.warning(
+                "◀ API %s | ⚠️ HTTP 429 nakon %.1fs | ključ=%s",
+                prov_upper, _dt, _kid,
+            )
             ra_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
             try:
                 ra = float(ra_raw) if ra_raw else 10.0

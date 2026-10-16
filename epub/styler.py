@@ -73,12 +73,12 @@ DROPCAP_MAP = _scan_dropcaps()
 # ═══════════════════════════════════════════════════════════════════════════
 
 CSS = """
-body { background:#F5F0E8; color:#2C1810; font-family:Georgia,serif;
+body { background:#FDF6E3; color:#3E2723; font-family:Georgia,serif;
        font-size:1em; line-height:1.6; margin:0 5%; padding:0; }
 p { margin:0; padding:0; text-indent:1.8em; font-size:1em; line-height:1.6; }
 p.booklyfi-prvi { text-indent:0; margin-top:0.5em; margin-bottom:0.3em; }
 p.booklyfi-dijalog { margin:0.3em 0; padding-left:1.5em; text-indent:-1em; }
-h1.booklyfi-naslov { color:#8B0000; text-align:center;
+h1.booklyfi-naslov { color:#5D4037; text-align:center;
     font-size:1.8em; font-weight:600; letter-spacing:0.05em;
     margin:0.5em 0 0.8em 0; line-height:1.3; text-indent:0; }
 img.booklyfi-vijenac { display:block; width:70%; height:auto;
@@ -507,13 +507,13 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
     def _napravi_naslovnu(creator, title):
         import datetime
         year = datetime.datetime.now().year
-        css = ("body{background:#F5F0E8;color:#2C1810;font-family:Georgia,serif;"
+        css = ("body{background:#FDF6E3;color:#3E2723;font-family:Georgia,serif;"
                "margin:0;padding:3em 5% 2em 5%;text-align:center;}"
                ".booklyfi-label{font-size:0.85em;letter-spacing:0.3em;"
                "color:#8B6914;text-transform:uppercase;margin-bottom:4em;}"
-               ".title{font-size:2.4em;font-weight:700;color:#8B0000;"
+               ".title{font-size:2.4em;font-weight:700;color:#5D4037;"
                "letter-spacing:0.05em;line-height:1.2;margin:2em 0 0.5em 0;}"
-               ".author{font-size:1.3em;color:#2C1810;letter-spacing:0.08em;"
+               ".author{font-size:1.3em;color:#3E2723;letter-spacing:0.08em;"
                "margin-top:3em;}"
                ".publisher{font-size:0.9em;color:#8B6914;letter-spacing:0.15em;"
                "margin-top:5em;text-transform:uppercase;}"
@@ -537,9 +537,9 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
         import datetime
         year = datetime.datetime.now().year
         uid_line = f'<p><span class="label">ID:</span> {uid}</p>' if uid else ''
-        css = ("body{background:#F5F0E8;color:#2C1810;font-family:Georgia,serif;"
+        css = ("body{background:#FDF6E3;color:#3E2723;font-family:Georgia,serif;"
                "margin:0 8%;padding:3em 0 2em 0;line-height:1.7;font-size:0.95em;}"
-               "h1{color:#8B0000;text-align:center;font-size:1.3em;"
+               "h1{color:#5D4037;text-align:center;font-size:1.3em;"
                "letter-spacing:0.15em;margin-bottom:2em;}"
                "h2{color:#5C3A1E;font-size:1em;letter-spacing:0.1em;"
                "margin-top:1.5em;margin-bottom:0.5em;font-style:italic;}"
@@ -723,35 +723,10 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
 
     _log(f"   → {dropcaps} dropcapa", "tech")
 
-    # ── OBRIŠI SVE HTML FAJLOVE KOJI NISU POGLAVLJA ──
-    # ZADRŽI: poglavlja + booklyfi_* (naslovna, impresum, toc) + cover
+    # ── NE BRISI HTML FAJLOVE - sve ostaje ──
     poglavlja_paths = {p["full_path"] for p in poglavlja}
-    for n in list(files.keys()):
-        low = n.lower()
-        if not low.endswith((".html", ".xhtml", ".htm")):
-            continue
-        if n in poglavlja_paths:
-            continue
-        # Zadrži booklyfi_* (naslovna, impresum, toc)
-        if "booklyfi_" in low:
-            continue
-        # Zadrži cover
-        if "cover" in low:
-            continue
-        # Obriši front/back matter HTML
-        del files[n]
 
-    # ── OBRIŠI SVE STARE TOC/NCX
-    for n in list(files.keys()):
-        low = n.lower()
-        if low.endswith(".ncx"):
-            del files[n]
-            continue
-        if low.endswith((".html", ".xhtml", ".htm")):
-            if "toc" in low or "sadrzaj" in low or "contents" in low:
-                content = files[n].decode("utf-8", errors="replace")[:3000].lower()
-                if "<nav" in content or "toc" in low:
-                    del files[n]
+    # ── Ne brisi stare TOC/NCX ──
 
     # Novi NCX
     book_title = "Knjiga"
@@ -793,10 +768,10 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="hr">
 <head><meta charset="utf-8"/><title>Sadržaj</title>
-<style>body{{background:#F5F0E8;color:#2C1810;font-family:Georgia,serif;margin:0 8%;padding:2em 0;}}
-h1{{text-align:center;color:#8B0000;}}ul{{list-style:none;padding:0;}}
+<style>body{{background:#FDF6E3;color:#3E2723;font-family:Georgia,serif;margin:0 8%;padding:2em 0;}}
+h1{{text-align:center;color:#5D4037;}}ul{{list-style:none;padding:0;}}
 li{{padding:0.4em 0;border-bottom:1px dotted #8B6914;}}
-a{{color:#2C1810;text-decoration:none;}}</style></head>
+a{{color:#3E2723;text-decoration:none;}}</style></head>
 <body><h1>Sadržaj</h1><ul>
 {items}
 </ul></body></html>'''.encode("utf-8")

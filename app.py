@@ -295,11 +295,28 @@ def create_app() -> Flask:
                 elif isinstance(v, dict) and "score" in v:
                     normalized_qs[k] = float(v["score"])
 
+            # FIX: eksplicitno vrati book_name (ako postoji u SHARED_STATS)
+            book_name = SHARED_STATS.get("book_name", "")
+            current_file = SHARED_STATS.get("current_file", "")
+
+            # Ako je current_file HTML, izvuci ime knjige iz live_audit
+            if not book_name and current_file:
+                if current_file.endswith(".html") or current_file.endswith(".xhtml"):
+                    import re as _re
+                    _la = SHARED_STATS.get("live_audit", "")
+                    _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
+                    if _m:
+                        book_name = _m.group(1)
+                else:
+                    book_name = current_file
+
             return jsonify({
                 **SHARED_STATS,
-                "quality_scores": normalized_qs,
-                "fleet_active":   total_keys,
-                "output_dir":     str(OUTPUT_DIR),
+                "book_name":       book_name,
+                "current_file":    current_file,
+                "quality_scores":  normalized_qs,
+                "fleet_active":    total_keys,
+                "output_dir":      str(OUTPUT_DIR),
             })
         except Exception as e:
             return jsonify({**SHARED_STATS, "error": str(e)}), 500

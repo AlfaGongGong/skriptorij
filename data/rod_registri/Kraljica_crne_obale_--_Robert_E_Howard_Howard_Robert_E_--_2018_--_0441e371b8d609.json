@@ -1,0 +1,112 @@
+{
+  "Kasnije": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Isaaca": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Howard": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Stigijac": {
+    "rod": "M",
+    "clue_m": 6,
+    "clue_z": 0
+  },
+  "Ascalante": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Prospero": {
+    "rod": "M",
+    "clue_m": 7,
+    "clue_z": 0
+  },
+  "Conan": {
+    "rod": "M",
+    "clue_m": 19,
+    "clue_z": 0
+  },
+  "Prostorija": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Dion": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Thoth": {
+    "rod": "M",
+    "clue_m": 5,
+    "clue_z": 0
+  },
+  "Obris": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kralj": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "On": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Strabon": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tsotha": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Amalrus": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Unutra": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Crnac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ponovo": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Thoth-amon": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Trijumfalno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Prostor": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  }
+}

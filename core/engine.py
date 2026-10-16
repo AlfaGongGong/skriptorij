@@ -348,12 +348,12 @@ class SkriptorijAllInOne:
         import time as _time
         rezultati = {}
         termini = list(cisto.keys())
-        ukupno_b = (len(termini) + 9) // 10
+        ukupno_b = (len(termini) + 24) // 25
         t_start = _time.time()
-        TIMEOUT_S = 300.0  # 5 min max za glosar
+        TIMEOUT_S = 1800.0  # 30 min max za glosar
         neuspjesi_uzastopni = 0
 
-        for i in range(0, len(termini), 10):
+        for i in range(0, len(termini), 25):
             # Timeout
             if _time.time() - t_start > TIMEOUT_S:
                 self.log("Glosar timeout (" + str(TIMEOUT_S) + "s) — prekidam, nastavljam bez", "warning")
@@ -364,8 +364,8 @@ class SkriptorijAllInOne:
                 self.log("Glosar: 3 neuspjesna batcha — odustajem od AI obrade", "warning")
                 break
 
-            batch = termini[i:i+10]
-            broj = i // 10 + 1
+            batch = termini[i:i+25]
+            broj = i // 25 + 1
             self.log("Glosar: batch " + str(broj) + "/" + str(ukupno_b) + " (" + str(len(batch)) + " termina)", "tech")
 
             try:
