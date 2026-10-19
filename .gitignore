@@ -4,3 +4,7 @@ __pycache__/
 logs/
 data/kanon/knjige/
 data/classla_resources/
+.skriptorij_server.pid
+quota_cooldowns.json
+analysis/cache/
+.env
