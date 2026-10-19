@@ -128,19 +128,32 @@ def _get_rod_detektor():
 
 # ── Privatni checkpoint helperi ───────────────────────────────────────────────
 
+_CHUNK_SHA_RX = re.compile(r"^<!--\s*chunk_sha:([a-f0-9]+)\s*-->\n?")
+
+
 def _chk_path(self, file_name: str, chunk_idx: int, suffix: str = "") -> object:
     if suffix:
         return self.checkpoint_dir / f"{file_name}_blok_{chunk_idx}.{suffix}.chk"
     return self.checkpoint_dir / f"{file_name}_blok_{chunk_idx}.chk"
 
 
-def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "") -> str | None:
+def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
+              chunk_for_hash: str | None = None) -> str | None:
     from utils.checkpoint_cleaner import _je_placeholder, _ocisti_json_wrapper
+    import hashlib as _hashlib
     p = _chk_path(self, file_name, chunk_idx, suffix)
     if not p.exists():
         return None
     try:
         tekst = p.read_text("utf-8", errors="ignore")
+        m = _CHUNK_SHA_RX.match(tekst)
+        if m:
+            stored = m.group(1)
+            tekst = tekst[m.end():]
+            if chunk_for_hash is not None:
+                expected = _hashlib.sha256(chunk_for_hash.encode("utf-8")).hexdigest()[:16]
+                if stored != expected:
+                    return None
         tekst = _ocisti_json_wrapper(tekst)
         if len(tekst) > 10 and not _je_placeholder(tekst):
             return tekst
@@ -149,8 +162,13 @@ def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "") -> str | N
     return None
 
 
-def _chk_write(self, file_name: str, chunk_idx: int, sadrzaj: str, suffix: str = "") -> None:
+def _chk_write(self, file_name: str, chunk_idx: int, sadrzaj: str, suffix: str = "",
+               chunk_for_hash: str | None = None) -> None:
+    import hashlib as _hashlib
     p = _chk_path(self, file_name, chunk_idx, suffix)
+    if chunk_for_hash is not None:
+        sha = _hashlib.sha256(chunk_for_hash.encode("utf-8")).hexdigest()[:16]
+        sadrzaj = "<!-- chunk_sha:" + sha + " -->\n" + sadrzaj
     self._atomic_write(p, sadrzaj)
 
 
