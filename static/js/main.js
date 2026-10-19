@@ -1018,7 +1018,9 @@ function updateStatus(s) {
     })();
 
     if (s.live_audit) {
-        updateAuditLog(s.live_audit);
+        pollAuditAndUpdate().then(function (ok) {
+            if (ok === false) updateAuditLog(s.live_audit);
+        });
         extractPreview(s.live_audit);
     }
 
@@ -1252,6 +1254,55 @@ function updateAuditLog(html) {
 
     log.innerHTML = output;
     if (_auditAutoScroll) log.scrollTop = log.scrollHeight;
+}
+
+// ── JSON audit (P15) — strukturirani događaji → HTML ───────────────
+function _nivoToLabel(nivo) {
+    const m = {
+        system: "SYS", critical: "GREŠKA", error: "GREŠKA",
+        warning: "UPOZ", success: "OK", tech: "NET",
+        accordion: "AI", info: "INF",
+    };
+    return m[nivo] || "INF";
+}
+
+function _nivoToClass(nivo) {
+    if (nivo === "system") return "log-system";
+    if (nivo === "critical" || nivo === "error") return "log-critical";
+    if (nivo === "warning") return "log-warning";
+    if (nivo === "success") return "log-success";
+    if (nivo === "tech") return "log-tech";
+    return "log-info";
+}
+
+function updateAuditLogFromJSON(events) {
+    if (events == null || events.length === 0) return;
+    let html = "";
+    for (const e of events) {
+        const cls = _nivoToClass(e.nivo);
+        const label = _nivoToLabel(e.nivo);
+        const sub = e.sub ? `<div class=log-sub>${e.sub}</div>` : "";
+        html += `<div class='log-entry ${cls}'>` +
+                `<span class='log-ts'>${e.ts || ""}</span>` +
+                `<span class='log-label'>${label}</span>` +
+                `<span class='log-msg'>${e.tekst || ""}</span>` +
+                sub +
+                `</div>`;
+    }
+    updateAuditLog(html);
+}
+
+async function pollAuditAndUpdate() {
+    try {
+        const r = await fetch("/api/monitor/audit?since=0");
+        if (r.ok === false) return false;
+        const data = await r.json();
+        if (data.events == null || data.events.length === 0) return false;
+        updateAuditLogFromJSON(data.events);
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 function extractPreview(html) {
