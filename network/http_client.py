@@ -548,7 +548,7 @@ async def _async_http_post(
             except Exception:
                 pass
             self.log(
-                f"[{prov_upper}] HTTP 500 — cooldown 60s na ključu ...{key[-4:]}",
+                f"[{prov_upper}] HTTP 500 — cooldown 30s na ključu ...{key[-4:]}",
                 "warning",
             )
             await asyncio.sleep(2.0)
