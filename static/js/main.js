@@ -1156,6 +1156,15 @@ function updateAuditLog(html) {
     const log = document.getElementById("audit-log");
     if (!log) return;
 
+    // Ako korisnik ima aktivnu selekciju unutar log-a, ne diraj DOM.
+    // Sledeci poll ce azurirati kad selekcija nestane.
+    try {
+        const sel = window.getSelection();
+        if (sel && sel.toString().length > 0 && sel.anchorNode && log.contains(sel.anchorNode)) {
+            return;
+        }
+    } catch (e) {}
+
     // Parsiramo svaki <div ...> kao log entry
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
@@ -2589,6 +2598,11 @@ document.addEventListener("DOMContentLoaded", async function () {
             const ind = document.getElementById("audit-scroll-indicator");
             if (ind) ind.style.display = _auditAutoScroll ? "none" : "flex";
         });
+    }
+    // Dugme "Na kraj"
+    const btnResume = document.getElementById("btn-audit-resume");
+    if (btnResume) {
+        btnResume.addEventListener("click", auditResumeScroll);
     }
 
     // ══════ EVENT LISTENERI ══════
