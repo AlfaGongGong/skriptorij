@@ -8,18 +8,18 @@ Server: python3 main.py -> Flask na http://127.0.0.1:8080
 
 <!-- AUTO:START -->
 
-### Auto-generisano: 2026-10-19 14:29
+### Auto-generisano: 2026-10-19 14:36
 
 **Git:**
-- HEAD: 6fe627b prije: AUTO markeri u KONTEKST.md
-- Status: M KONTEKST.md
+- HEAD: c47b6ca docs: ŠTA JE OSTALO sekcija (revizija 2026-10-19)
+- Status: (clean)
 
 **Zadnjih 5 commitova:**
+c47b6ca docs: ŠTA JE OSTALO sekcija (revizija 2026-10-19)
+1414456 prije: ŠTA JE OSTALO sekcija
+9584f5d docs: AUTO sekcija u KONTEKST.md + tools/update_context.py
 6fe627b prije: AUTO markeri u KONTEKST.md
 7bb58fb fix: cache hash — _chk_read/_chk_write prepoznaju promenjen chunk
-60f4165 prije: blok 3 — _chk_write chunk_for_hash
-a56f378 prije: blok 2 — _chk_read chunk_for_hash
-631159e prije: _chk_read/_chk_write hash support
 
 **Kljucni moduli (funkcije/klase/linije):**
   - epub/styler.py: 19f/0c/1287L
@@ -32,7 +32,7 @@ a56f378 prije: blok 2 — _chk_read chunk_for_hash
 **Testovi:**
 FAILED tests/unit/test_http_client.py::test_gemma_rotation_checks_gemma_cooldown_tracker
 FAILED tests/unit/test_provider_router.py::test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider
-11 failed, 48 passed in 4.65s
+11 failed, 48 passed in 2.52s
 
 <!-- AUTO:END -->
 
