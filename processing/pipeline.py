@@ -620,7 +620,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     # ── Cache provjera ───────────────────────────────────────────────────────
     if not force_reprocess:
-        cached_final = _chk_read(self, file_name, chunk_idx)
+        cached_final = _chk_read(self, file_name, chunk_idx, chunk_for_hash=chunk)
         if cached_final and _detektuj_en_ostatke(cached_final) < 0.08:
             qs = self.shared_stats.get("quality_scores", {})
             stem_key = f"{file_name}_blok_{chunk_idx}"
@@ -668,7 +668,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     if knjiga_mode == "LEKTURA":
 
         if not force_reprocess:
-            cached_lek = _chk_read(self, file_name, chunk_idx, "lektura")
+            cached_lek = _chk_read(self, file_name, chunk_idx, "lektura", chunk_for_hash=chunk)
             if cached_lek:
                 if not _chk_path(self, file_name, chunk_idx).exists():
                     _chk_write(self, file_name, chunk_idx, cached_lek)
@@ -800,7 +800,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     sirovo_cached = None
     if not force_reprocess:
-        sirovo_cached = _chk_read(self, file_name, chunk_idx, "prevod")
+        sirovo_cached = _chk_read(self, file_name, chunk_idx, "prevod", chunk_for_hash=chunk)
         if sirovo_cached:
             self.log(
                 f"[{file_name}] Blok {chunk_idx}: ♻️ Sirovi prijevod iz cache-a — nastavljam od lektora.",
