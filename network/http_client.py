@@ -708,24 +708,40 @@ async def _call_gemini_with_full_rotation(
                         )
                         return ctx_res, f"GEMINI-{current_model}-kontekst"
 
-                    # FALLBACK 2: OpenRouter Nemotron
+                    # FALLBACK 2: Gemma (odvojen pool ključeva)
                     self.log(
-                        f"[GEMINI] Kontekst nije pomogao — prelazim na OpenRouter",
+                        f"[GEMINI] Kontekst nije pomogao — prelazim na Gemma",
                         "warning",
                     )
-                    or_res = _posalji_na_openrouter(
-                        sys_content, user_prompt, opt_temp, max_tokens, timeout=180
+                    gemma_content, gemma_engine = await _call_gemma_with_rotation(
+                        self, sys_content, user_prompt, opt_temp, max_tokens,
                     )
-                    if or_res:
+                    if gemma_content:
                         self.log(
-                            f"[GEMINI] OpenRouter uspjeh — vraćam rezultat",
+                            f"[GEMMA] Uspjeh — vraćam rezultat",
                             "warning",
                         )
-                        return or_res, "OPENROUTER-nemotron"
+                        return gemma_content, gemma_engine or "GEMMA"
+
+                    # FALLBACK 3: Mistral (nezavisan od Google safety filtera)
+                    self.log(
+                        f"[GEMMA] Nije uspio — prelazim na Mistral",
+                        "warning",
+                    )
+                    mistral_res, mistral_engine = await _call_single_provider(
+                        self, "MISTRAL", "mistral-small-latest",
+                        sys_content, user_prompt, opt_temp, max_tokens,
+                    )
+                    if mistral_res:
+                        self.log(
+                            f"[MISTRAL] Uspjeh — vraćam rezultat",
+                            "warning",
+                        )
+                        return mistral_res, mistral_engine or "MISTRAL"
 
                     # Svi fallback-ovi pali
                     self.log(
-                        f"[GEMINI] Svi fallback-ovi pali — odustajem",
+                        f"[GEMINI] Svi fallback-ovi pali (kontekst, Gemma, Mistral) — odustajem",
                         "error",
                     )
                     return None, None
