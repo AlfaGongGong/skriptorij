@@ -8,18 +8,19 @@ Server: python3 main.py -> Flask na http://127.0.0.1:8080
 
 <!-- AUTO:START -->
 
-### Auto-generisano: 2026-10-19 14:38
+### Auto-generisano: 2026-10-19 14:51
 
 **Git:**
-- HEAD: 5a2ddd9 docs: AUTO sekcija posle revizije
+- HEAD: 28b0355 docs: AUTO sinhronizacija posle hook/cron setup-a
 - Status: M KONTEKST.md
+ M data/rod_registri/The_Trouble_With_Peace.json
 
 **Zadnjih 5 commitova:**
+28b0355 docs: AUTO sinhronizacija posle hook/cron setup-a
 5a2ddd9 docs: AUTO sekcija posle revizije
 c47b6ca docs: ŠTA JE OSTALO sekcija (revizija 2026-10-19)
 1414456 prije: ŠTA JE OSTALO sekcija
 9584f5d docs: AUTO sekcija u KONTEKST.md + tools/update_context.py
-6fe627b prije: AUTO markeri u KONTEKST.md
 
 **Kljucni moduli (funkcije/klase/linije):**
   - epub/styler.py: 19f/0c/1287L
@@ -32,7 +33,7 @@ c47b6ca docs: ŠTA JE OSTALO sekcija (revizija 2026-10-19)
 **Testovi:**
 FAILED tests/unit/test_http_client.py::test_gemma_rotation_checks_gemma_cooldown_tracker
 FAILED tests/unit/test_provider_router.py::test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider
-11 failed, 48 passed in 2.34s
+11 failed, 48 passed in 2.54s
 
 <!-- AUTO:END -->
 
@@ -272,9 +273,11 @@ Starije (2026-10-12 i prije):
 
 ---
 
-## ŠTA JE OSTALO (revizija 2026-10-19)
+## ŠTA JE OSTALO — radni plan (revizija 2026-10-19)
 
 Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naovamo).
+
+### A. Aktivna revizija (bugovi i nedostaci)
 
 | # | Tačka | Status | Fajl |
 |---|---|---|---|
@@ -294,7 +297,48 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 | 14 | Cache hash fix | ✅ rešeno (blok 1-3) | processing/pipeline.py |
 | 15 | Pola rata cache (318 .chk bez hash) | ⏳ odluka A (ostaje) | /storage/.../booklyfi_checkpoints |
 
-**Preporučeni sledeći zadatak:** #2 (tri imena za isti model) — aktivna greška, može dati 404 ili pogrešan model.
+### B. Predlozi — kod i rad sistema
+
+- [ ] Jedan `providers.json` izvor istine (umesto razbijenog MODEL_MAP + AI_MODEL_STRINGS)
+- [ ] Jedan HTTP klijent (`httpx`/`aiohttp`) umesto blokirajući `api_call` + async
+- [ ] Stanje kvota na disk (verifikovati da restart ne resetuje brojače)
+- [ ] Keš odgovora po chunku — dodati model + glosar u hash (trenutno samo chunk)
+- [ ] Pametnije grupiranje: batch SCORER/VALIDATOR/glosar, chunk veličina po TPM-u
+- [ ] Stilizator kao niz čistih faza (parsiranje, klasifikacija, transformacija, OPF)
+- [ ] Dropcap slike kao zajednički fajlovi u EPUB (ne base64 u svakom poglavlju)
+- [ ] Strukturirano logiranje (JSON događaji: nivo, modul, provider, maskiran ključ)
+- [ ] Golden-test s mini EPUB + `pyflakes`/`ruff` prije svakog pokretanja
+
+### C. Predlozi — UI
+
+- [ ] Dnevnik kao JSON događaji s `?since=id`, umesto HTML stringa (povezano s A#12)
+- [ ] Razmotriti SSE umesto pollinga (manje baterije, bolja reaktivnost)
+- [ ] Donja traka s 3-4 glavna taba umesto 8 (Obrada, Kvalitet, Revizija, Više)
+- [ ] Jedna glavna kartica statusa: faza, poglavlje X/Y, ETA, trenutni provider
+- [ ] Kvote vizualno: trake po provideru (zeleno/žuto/crveno), oznaka kad zapne
+- [ ] Intro s three.js — prikazati samo prvi put, poštovati `prefers-reduced-motion`, lijeno učitavanje
+
+### D. Predlozi — UX
+
+- [ ] Poruke umesto sirovih logova ("GEMINI kvota iscrpljena, prebacujem na GROQ")
+- [ ] Filter u dnevniku "samo upozorenja i greške"
+- [ ] Obavijest kad je gotovo (service worker `sw.js` već postoji)
+- [ ] Wake Lock da ekran ne zaspi tokom obrade
+- [ ] Obrada preživljava osvježavanje stranice, dugme "Nastavi od checkpointa" uvijek vidljivo
+- [ ] Revizija: original i prijevod jedno uz drugo, diff po riječima, akcije prihvati/odbaci/regeneriraj
+- [ ] Klik na heatmap vodi direktno na taj blok
+- [ ] Pregled prije pune obrade: iframe preview (naslovna, prvo poglavlje, plan TOC-a)
+- [ ] Dugme "Provjeri ključeve" s kvačicama po provideru (logika u `test_complete_v4.py`)
+
+### E. Redosled rada (grupisanje po fajlovima)
+
+**Grupa 1:** `config/ai_config.py` — tačke A#2, A#3 (~30 min)
+**Grupa 2:** `network/http_client.py` — tačke A#10, A#11, A#13 (~25 min)
+**Grupa 3a:** `api/routes/monitor.py` — tačka A#12 backend JSON (~60 min)
+**Grupa 3b:** `static/js/main.js` — tačka A#12 frontend parsiranje (~30 min)
+**Grupa 4+:** arhitektonske promjene (B) posle A revizije, jedna po jedna, sa golden-testom
+
+**Preporučeni sledeći:** Grupa 1, prvo #3 (duplikati), pa #2 (tri imena za model).
 
 ---
 

@@ -1,12 +1,12 @@
 {
   "Čim": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "maršal": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "komornik": {
@@ -16,7 +16,7 @@
   },
   "Hoff": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "admiral": {
@@ -42,16 +42,16 @@
   "Wetterlant": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 10
+    "clue_z": 11
   },
   "Zrak": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Govornik": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Vick": {
