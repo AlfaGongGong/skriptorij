@@ -906,20 +906,13 @@ async def _call_gemma_with_rotation(
                     if ctx_res:
                         return ctx_res, f"GEMMA-{current_model}-kontekst"
 
+                    # Fallback na Mistral NE ide ovde — caller (Gemini lanac)
+                    # ili _call_ai_engine petlja preuzima dalje. Inače bi
+                    # Mistral bio pozvan dvaput (jednom iz Gemma lanca,
+                    # jednom iz Gemini lanca) u istoj sekundi.
                     self.log(
-                        f"[GEMMA] Kontekst nije pomogao — prelazim na Mistral",
+                        f"[GEMMA] Kontekst nije pomogao — vraćam None (caller nastavlja)",
                         "warning",
-                    )
-                    mistral_res, mistral_engine = await _call_single_provider(
-                        self, "MISTRAL", "mistral-small-latest",
-                        sys_content, user_prompt, opt_temp, max_tokens,
-                    )
-                    if mistral_res:
-                        return mistral_res, mistral_engine or "MISTRAL"
-
-                    self.log(
-                        f"[GEMMA] Svi fallback-ovi pali (kontekst, Mistral) — odustajem",
-                        "error",
                     )
                     return None, None
 
