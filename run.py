@@ -534,27 +534,6 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.log(f"⚠️ knjiga_mode snimanje palo: {e}", "warning")
 
 
-if __name__ == "__main__":
-    WORK_DIR = next(
-        (a for a in sys.argv[1:] if not a.startswith("--") and Path(a).exists()),
-        None,
-    )
-    if WORK_DIR is None:
-        print("Usage: python run.py <work_dir>")
-        sys.exit(1)
-
-    shared_stats = {"status": "V10.2 AUTO-MODE"}
-    shared_controls = {"stop": False, "reset": False, "pause": False}
-    engine = SkriptorijAllInOne(
-        Path(WORK_DIR).parent / "dummy.epub",
-        "dummy",
-        shared_stats,
-        shared_controls,
-    )
-    engine.work_dir = Path(WORK_DIR)
-    asyncio.run(engine.retroaktivna_relektura_v10(force=False, only_bad=True))
-
-
 def _auto_stilizuj(engine):
     """Automatski pokrece stilizaciju posle uspesne obrade.
     Ne prekida finalizaciju ako stilizacija padne.
@@ -592,3 +571,24 @@ def _auto_stilizuj(engine):
             engine.log(f"Stilizacija nije uspela: {err}", "warning")
     except Exception as e:
         engine.log(f"Auto-stilizacija greska: {type(e).__name__}: {e}", "warning")
+
+
+if __name__ == "__main__":
+    WORK_DIR = next(
+        (a for a in sys.argv[1:] if not a.startswith("--") and Path(a).exists()),
+        None,
+    )
+    if WORK_DIR is None:
+        print("Usage: python run.py <work_dir>")
+        sys.exit(1)
+
+    shared_stats = {"status": "V10.2 AUTO-MODE"}
+    shared_controls = {"stop": False, "reset": False, "pause": False}
+    engine = SkriptorijAllInOne(
+        Path(WORK_DIR).parent / "dummy.epub",
+        "dummy",
+        shared_stats,
+        shared_controls,
+    )
+    engine.work_dir = Path(WORK_DIR)
+    asyncio.run(engine.retroaktivna_relektura_v10(force=False, only_bad=True))
