@@ -1,0 +1,297 @@
+{
+  "Čim": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "maršal": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "komornik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Hoff": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "admiral": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Brak": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "guverner": {
+    "rod": "M",
+    "clue_m": 7,
+    "clue_z": 0
+  },
+  "Orso": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Wetterlant": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 10
+  },
+  "Zrak": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Govornik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Vick": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 9
+  },
+  "Savine": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 16
+  },
+  "Ardee": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 17
+  },
+  "Curnsbick": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Selest": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Liddy": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "May": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Tada": {
+    "rod": "M",
+    "clue_m": 4,
+    "clue_z": 0
+  },
+  "Halder": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Broad": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Malmer": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Figura": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Istina": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Iako": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Problem": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Još": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Zlobno": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Leo": {
+    "rod": "M",
+    "clue_m": 6,
+    "clue_z": 0
+  },
+  "Mustred": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Clensher": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Clover": {
+    "rod": "M",
+    "clue_m": 9,
+    "clue_z": 0
+  },
+  "Downside": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Bitka": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Isern": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Rikke": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
+  },
+  "Shivers": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tallow": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Shudra": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Unutra": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Gotovo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Isher": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Bayaz": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Savineina": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Finree": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 12
+  },
+  "guvernerice": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "guvernerica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "ovoga": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Često": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Vitari": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "On": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Naglasak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Brđanin": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Ubrzo": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "raspao": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Stour": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
+  "Hollowhead": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Sjever": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Caurib": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  }
+}

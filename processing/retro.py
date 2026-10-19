@@ -21,6 +21,8 @@ from core.text_utils import (
 )
 from core.quality import _scoruj_kvalitetu, _QUALITY_RESCUE_THRESHOLD
 
+_RETRO_QA_THRESHOLD = 9.5  # FIX: QA retry prag za retro
+
 # Lazy import — rod_detektor i kalkovi_engine (fail-safe)
 try:
     from core.kalkovi.rod_detektor import rod_detektor as _rod_detektor_singleton
@@ -259,6 +261,38 @@ async def retroaktivna_relektura_v10(
             ocjena, _ = _izracunaj_heuristicki_score(finalno)
 
         ocjena = round(float(max(1.0, min(10.0, ocjena))), 1)
+
+        # FIX: QA retry — ako ocjena < 9.2, pokušaj sa feedbackom (isto kao regular)
+        if ocjena < _RETRO_QA_THRESHOLD:
+            try:
+                from processing.workers import _retry_s_feedbackom
+                _qa_dict = {
+                    "ukupno": ocjena,
+                    "razlog": f"Ocjena ispod {_RETRO_QA_THRESHOLD} nakon retro re-lekture",
+                }
+                res_novi, qa_novi, uspjeh = _retry_s_feedbackom(
+                    self, finalno, old_text_cist, _qa_dict, self.fleet, chunk_idx
+                )
+                if isinstance(qa_novi, dict):
+                    novi_score = float(qa_novi.get("ukupno", 0))
+                else:
+                    novi_score = float(qa_novi) if qa_novi else 0.0
+                if res_novi and (uspjeh or novi_score > ocjena):
+                    finalno = res_novi
+                    ocjena = round(float(max(1.0, min(10.0, novi_score))), 1)
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: 🔁 QA retry poboljšao "
+                        f"{_qa_dict['ukupno']:.1f} → {ocjena:.1f}",
+                        "info",
+                    )
+                else:
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ⚠️ QA retry bez poboljšanja "
+                        f"(ostaje {ocjena:.1f}/10)",
+                        "warning",
+                    )
+            except Exception as _e:
+                self.log(f"⚠️ QA retry greška: {_e}", "warning")
 
         self._quality_scores[chk.stem] = ocjena
         if "quality_scores" not in self.shared_stats:

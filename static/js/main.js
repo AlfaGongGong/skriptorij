@@ -850,7 +850,7 @@ function updateStatus(s) {
     
     // ── AUTO-STILIZACIJA na kraju obrade ──
     const _pctLocal = s.pct || 0;
-    if (false && !_autoStilTriggered && _lastPct < 100 && _pctLocal >= 100) {
+    if (!_autoStilTriggered && _lastPct < 100 && _pctLocal >= 100) {
         _autoStilTriggered = true;
         const cb = document.getElementById("auto-stil");
         if (cb && cb.checked) {
@@ -2119,17 +2119,20 @@ async function loadQualityScores() {
 
         // Dodaj event listenere za qs-block-pill
         document.querySelectorAll(".qs-block-pill[data-stem]").forEach(pill => {
-            pill.addEventListener("click", () => {
+            pill.onclick = (e) => {
+                e.preventDefault(); e.stopPropagation();
                 const stem = pill.dataset.stem;
                 if (_markedForReview.has(stem)) {
-                    _markedForReview.delete(stem);
-                    pill.style.outline = "";
+                    _markedForReview.delete(stem); pill.style.outline = "";
                 } else {
-                    _markedForReview.add(stem);
-                    pill.style.outline = "2px solid var(--amber)";
+                    _markedForReview.add(stem); pill.style.outline = "2px solid var(--amber)";
                 }
                 _updateRefixBar();
-            });
+            };
+            pill.ondblclick = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                if (typeof otvoriReviziju === "function") otvoriReviziju(pill.dataset.stem);
+            };
         });
 
         // Takođe dodaj toggle za file headers
@@ -3710,3 +3713,14 @@ async function auto_stiliziraj(bookName) {
     }
 }
 window.auto_stiliziraj = auto_stiliziraj;
+
+// ── FIX UI: Boxovi za selekciju ──
+document.addEventListener("DOMContentLoaded", () => {
+    const boxPoor = document.getElementById("qs-box-poor");
+    if (boxPoor) boxPoor.onclick = () => selectBadBlocks("poor");
+    const boxCritical = document.getElementById("qs-box-critical");
+    if (boxCritical) boxCritical.onclick = () => selectBadBlocks("critical");
+});
+window.selectBadBlocks = selectBadBlocks;
+window.clearMarkedBlocks = clearMarkedBlocks;
+window.sendMarkedForRefix = sendMarkedForRefix;

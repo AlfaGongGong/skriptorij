@@ -29,23 +29,27 @@ GEMMA_MODEL_POOL = [
 # GEMMA je nositelj (#1) za sve Google uloge — 1500 RPD/ključ.
 # GEMINI je fallback (#2).
 PROVIDER_PRIORITY = {
-    # LEKTOR/KOREKTOR/PREVODILAC: GEMINI #1 (15 RPM, dovoljno za 3 poziva/blok)
-    # GROQ #2 samo kao fallback (OTPM 1000 je tijesan)
-    "PREVODILAC":       ["GEMINI", "GROQ", "NVIDIA", "GEMMA", "OPENROUTER", "CLOUDFLARE", "MISTRAL"],
-    "LEKTOR":           ["GEMINI", "GROQ", "NVIDIA", "GEMMA", "OPENROUTER", "CLOUDFLARE", "MISTRAL"],
-    "KOREKTOR":         ["GEMINI", "GROQ", "NVIDIA", "GEMMA", "OPENROUTER", "CLOUDFLARE", "MISTRAL"],
-    # VALIDATOR/GUARDIAN: GEMINI #1 (JSON mode, kratki)
-    "VALIDATOR":        ["GEMINI", "GROQ", "NVIDIA", "GEMMA", "OPENROUTER", "CLOUDFLARE", "MISTRAL"],
-    "GUARDIAN":         ["GEMINI", "GROQ", "NVIDIA", "GEMMA", "OPENROUTER", "CLOUDFLARE"],
-    # POLISH: GEMINI #1
-    "POLISH":           ["GEMINI", "GROQ", "NVIDIA", "GEMMA", "OPENROUTER", "CLOUDFLARE", "MISTRAL"],
+    # PREVODILAC/LEKTOR/KOREKTOR: GEMINI #1, GROQ #2, GEMMA #3, NVIDIA #4
+    "PREVODILAC":       ["GEMINI", "GROQ", "GEMMA", "NVIDIA", "MISTRAL"],
+    "LEKTOR":           ["GEMINI", "GROQ", "GEMMA", "NVIDIA", "MISTRAL"],
+    "KOREKTOR":         ["GEMINI", "GROQ", "GEMMA", "NVIDIA", "MISTRAL"],
+    
+    # VALIDATOR/GUARDIAN: GEMINI #1, GEMMA #2, GROQ #3
+    "VALIDATOR":        ["GEMINI", "GEMMA", "GROQ", "NVIDIA", "MISTRAL"],
+    "GUARDIAN":         ["GEMINI", "GEMMA", "GROQ", "NVIDIA"],
+    
+    # POLISH: GEMINI #1, GEMMA #2
+    "POLISH":           ["GEMINI", "GEMMA", "GROQ", "NVIDIA", "MISTRAL"],
+    
     # ANALIZA/CHAPTER_SUMMARY: GEMINI #1 (dugi promptovi)
-    "ANALIZA":          ["GEMINI", "GROQ", "NVIDIA", "GEMMA", "OPENROUTER", "CLOUDFLARE"],
-    "CHAPTER_SUMMARY":  ["GEMINI", "GROQ", "NVIDIA", "GEMMA", "OPENROUTER", "CLOUDFLARE"],
-    # GLOSAR_UPDATE: GROQ #1 (kratki JSON, 25 termina = 200 tokena)
-    "GLOSAR_UPDATE":    ["GROQ", "GEMINI", "NVIDIA", "OPENROUTER", "GEMMA", "CLOUDFLARE"],
-    # SCORER: GROQ #1 (kratki prompt, ~150 tokena output)
-    "SCORER":           ["GROQ", "GEMINI", "NVIDIA", "OPENROUTER", "GEMMA", "CLOUDFLARE"],
+    "ANALIZA":          ["GEMINI", "GROQ", "GEMMA", "NVIDIA"],
+    "CHAPTER_SUMMARY":  ["GEMINI", "GROQ", "GEMMA", "NVIDIA"],
+    
+    # GLOSAR_UPDATE: GROQ/GEMMA #1 (kratki JSON, brz)
+    "GLOSAR_UPDATE":    ["GROQ", "GEMMA", "GEMINI", "NVIDIA"],
+    
+    # SCORER: GROQ #1, GEMMA #2 (kratki prompt, brz)
+    "SCORER":           ["GROQ", "GEMMA", "GEMINI", "NVIDIA"],
 }
 
 AI_MODEL_STRINGS = {
@@ -76,7 +80,6 @@ MODEL_MAP = {
     "TOGETHER": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
     "GROQ": "qwen/qwen3.8-27b",
     "GEMINI": GOOGLE_MODEL_POOL[0]["model"],
-    "OPENROUTER": "google/gemma-4-26b-a4b-it:free",
     "COHERE": "command-r-plus-08-2024",
     "CHUTES": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
@@ -84,9 +87,7 @@ MODEL_MAP = {
     "FIREWORKS": "accounts/fireworks/models/llama-v3p3-70b-instruct",
     "GEMMA": GEMMA_MODEL_POOL[0]["model"],
     "GITHUB": "openai/gpt-4.1",
-    "CLOUDFLARE": "@cf/meta/llama-3.1-8b-instruct-fp8",
     "NVIDIA": "nvidia/nemotron-3-ultra-550b-a55b",
-
 }
 
 MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"

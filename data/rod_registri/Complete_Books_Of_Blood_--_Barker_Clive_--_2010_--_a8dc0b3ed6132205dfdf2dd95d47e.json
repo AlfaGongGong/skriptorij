@@ -30,18 +30,18 @@
     "clue_z": 0
   },
   "York": {
-    "rod": null,
-    "clue_m": 1,
-    "clue_z": 0
-  },
-  "Članak": {
     "rod": "M",
     "clue_m": 2,
     "clue_z": 0
   },
+  "Članak": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
   "Kaufman": {
     "rod": "M",
-    "clue_m": 18,
+    "clue_m": 26,
     "clue_z": 0
   },
   "Zrak": {
@@ -51,127 +51,127 @@
   },
   "Mahogany": {
     "rod": "M",
-    "clue_m": 8,
+    "clue_m": 10,
     "clue_z": 0
   },
   "Žrtva": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Žena": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Ionako": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Vagon": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Postupno": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Buka": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Mesar": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Jednostavno": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Glas": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Barem": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Odraz": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Yattering": {
     "rod": "M",
-    "clue_m": 8,
+    "clue_m": 12,
     "clue_z": 0
   },
   "Čovjek": {
     "rod": "M",
-    "clue_m": 8,
+    "clue_m": 11,
     "clue_z": 0
   },
   "Oduvijek": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Naposljetku": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Učinak": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Zatim": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Demon": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Jack": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 14,
     "clue_z": 0
   },
   "Amanda": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 7
+    "clue_z": 11
   },
   "Gina": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 16
+    "clue_z": 25
   },
   "Zbor": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Štednjak": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Protivnik": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Zacijelo": {
@@ -182,61 +182,61 @@
   "Soba": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Nesigurno": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Nekako": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "One": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Tetherdowne": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Šala": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Leverthal": {
     "rod": "Ž",
-    "clue_m": 2,
-    "clue_z": 4
+    "clue_m": 3,
+    "clue_z": 7
   },
   "Lacey": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 16,
     "clue_z": 0
   },
   "Redman": {
     "rod": "M",
-    "clue_m": 29,
+    "clue_m": 48,
     "clue_z": 0
   },
   "On": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Nastava": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Svinjac": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Svinja": {
@@ -247,51 +247,51 @@
   "Krmača": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 5
+    "clue_z": 8
   },
   "Audijencija": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Henessey": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 9,
     "clue_z": 0
   },
   "Redmanu": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Ured": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Vjerojatno": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Slušalica": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Muškarac": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Slape": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Kevin": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Redmanovu": {
@@ -301,32 +301,32 @@
   },
   "Prekasno": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Tada": {
-    "rod": null,
-    "clue_m": 2,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 1
   },
   "Napola": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Trik": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Pod": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Njegov": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Diane": {
@@ -336,82 +336,82 @@
   },
   "Vrt": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Terry": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Eddie": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Ryan": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 9,
     "clue_z": 0
   },
   "Ton": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Galloway": {
     "rod": "M",
-    "clue_m": 25,
+    "clue_m": 36,
     "clue_z": 0
   },
   "Lichfield": {
     "rod": "M",
-    "clue_m": 16,
+    "clue_m": 22,
     "clue_z": 0
   },
   "Još": {
     "rod": null,
     "clue_m": 1,
-    "clue_z": 0
+    "clue_z": 1
   },
   "Elysium": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Oluja": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Constantia": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Hammersmith": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 15,
     "clue_z": 0
   },
   "Iako": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Viola": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Razgovor": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Parter": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Mick": {
@@ -570,6 +570,61 @@
     "clue_z": 0
   },
   "Ponekad": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kaufmanu": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Stan": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Strpljivo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Smrt": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Vlak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Roletna": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Zasigurno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Malo": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Creeley": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Posjetitelj": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nakratko": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0

@@ -250,6 +250,26 @@ def _je_sumnjiv_gubitak_teksta(original: str, kandidat: str, uloga: str = "LEKTO
     return ratio < _MIN_LEKTOR_RATIO
 
 
+def _je_prekinut_tekst(original: str, finalno: str) -> bool:
+    """
+    FIX 1.7: Provjerava da li se tekst prekida usred rečenice.
+    Ako original završava pravom interpunkcijom, a finalno ne,
+    i finalno završava slovom ili crticom — tekst je prekinut.
+    """
+    orig_clean = re.sub(r'<[^>]+>', '', original).strip()
+    final_clean = re.sub(r'<[^>]+>', '', finalno).strip()
+
+    if not orig_clean or not final_clean:
+        return False
+
+    # Ako original završava pravom interpunkcijom (tačka, uzvik, pitanje, navodnik)
+    if orig_clean[-1] in '.!?"”…':
+        # A ako finalno završava sa slovom ili crticom (nema interpunkcije)
+        if final_clean[-1].isalpha() or final_clean[-1] in '-—–':
+            return True
+    return False
+
+
 # ── Korak 5: Helper za kalkove + validator ──────────────────────────────────
 
 def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx: int) -> str:
@@ -732,6 +752,15 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             )
             finalno = sirovo
 
+        # FIX 1.7: Provera prekinutog teksta
+        if _je_prekinut_tekst(chunk, finalno):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ✂️ Tekst prekinut (nema interpunkcije na kraju) — odbijam upis, pokušavam ponovo.",
+                "warning",
+            )
+            self.chunk_skips += 1
+            return None, "TRUNCATED"
+
         _chk_write(self, file_name, chunk_idx, finalno, "lektura")
         _chk_write(self, file_name, chunk_idx, finalno)
 
@@ -888,6 +917,15 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             "warning",
         )
         finalno = sirovo
+
+    # FIX 1.7: Provera prekinutog teksta
+    if _je_prekinut_tekst(chunk, finalno):
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: ✂️ Tekst prekinut (nema interpunkcije na kraju) — odbijam upis, pokušavam ponovo.",
+            "warning",
+        )
+        self.chunk_skips += 1
+        return None, "TRUNCATED"
 
     _chk_write(self, file_name, chunk_idx, finalno)
     try:

@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 # FIX: NVIDIA NIM timeout 180s je bio predug — ako model ne odgovori u 90s,
 # vjerojatno je zagušen. Bolje failati brže i probati drugi provider.
 _NVIDIA_TIMEOUT = 90  # sekundi (bilo 180)
+_GEMINI_TIMEOUT = 45  # FIX: bilo 90 — Gemini obično odgovori u 10-20s
 
 # ─── HTTP headeri (Cloudflare WAF zahtijeva browser UA) ───
 _BROWSER_UA = (
@@ -400,18 +401,20 @@ async def _async_http_post(
         except Exception:
             pass
 
+        # FIX: Gemini/GEMMA timeout 45s (bilo 90s), ostali 45s
+        _read_timeout = _GEMINI_TIMEOUT if prov_upper in ("GEMINI", "GEMMA") else 45
         try:
             resp = await asyncio.to_thread(
                 requests.post,
                 url,
                 headers=headers,
                 json=json_payload,
-                timeout=(10, 45),
+                timeout=(10, _read_timeout),
                 verify=True,
                 proxies=_proxy,
             )
         except requests.exceptions.Timeout:
-            self.log(f"[{prov_upper}] Timeout (90s)", "warning")
+            self.log(f"[{prov_upper}] Timeout ({_read_timeout}s)", "warning")
             try:
                 self.fleet.record_failure(prov, key)
             except Exception:
@@ -420,9 +423,7 @@ async def _async_http_post(
                 from network.quota_tracker import quota_tracker
 
                 quota_tracker.set_key_cooldown(prov_upper, key, 30.0, "timeout 90s")
-                # FIX: postavi cooldown i pod prov (GEMMA) da Gemma zna preskočiti ključ
-                if prov != prov_upper:
-                    quota_tracker.set_key_cooldown(prov, key, 30.0, "timeout 90s")
+
             except Exception:
                 pass
             return None
@@ -543,9 +544,7 @@ async def _async_http_post(
             try:
                 from network.quota_tracker import quota_tracker as _qt
 
-                _qt.set_key_cooldown(prov_upper, key, 60.0, "500 server greška")
-                if prov != prov_upper:
-                    _qt.set_key_cooldown(prov, key, 60.0, "500 server greška")
+                _qt.set_key_cooldown(prov_upper, key, 30.0, "500/503 server greška")
             except Exception:
                 pass
             self.log(
@@ -1252,14 +1251,7 @@ def api_call(
                 quota_tracker.set_key_cooldown(
                     prov_upper, api_key, min(ra, 120.0), "429 RPM"
                 )
-                if prov_upper == "GEMINI":
-                    quota_tracker.set_key_cooldown(
-                        "GEMMA", api_key, min(ra, 120.0), "429 RPM"
-                    )
-                elif prov_upper == "GEMMA":
-                    quota_tracker.set_key_cooldown(
-                        "GEMINI", api_key, min(ra, 120.0), "429 RPM"
-                    )
+
             except Exception:
                 pass
             _time.sleep(min(ra, 120.0) + random.uniform(0.5, 2.0))

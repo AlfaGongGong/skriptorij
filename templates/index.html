@@ -321,12 +321,12 @@
                             <div class="qs-box-val" id="qs-good">0</div>
                             <div class="qs-box-label">✅ Dobro<br />6.5–8.5</div>
                         </div>
-                        <div class="qs-box qs-poor qs-box-clickable" id="qs-box-poor" title="Klikni da označiš sve blokove koji trebaju retro" onclick="selectBadBlocks('poor')">
+                        <div class="qs-box qs-poor qs-box-clickable" id="qs-box-poor" style="cursor:pointer" title="Klikni da označiš sve blokove koji trebaju retro">
                             <div class="qs-box-val" id="qs-poor">0</div>
                             <div class="qs-box-label">⚠ Treba retro<br />4.0–6.5</div>
                             <div class="qs-box-hint">↗ Označi sve</div>
                         </div>
-                        <div class="qs-box qs-critical qs-box-clickable" id="qs-box-critical" title="Klikni da označiš sve kritične blokove" onclick="selectBadBlocks('critical')">
+                        <div class="qs-box qs-critical qs-box-clickable" id="qs-box-critical" style="cursor:pointer" title="Klikni da označiš sve kritične blokove">
                             <div class="qs-box-val" id="qs-critical">0</div>
                             <div class="qs-box-label">🔴 Kritično<br />&lt; 4.0</div>
                             <div class="qs-box-hint">↗ Označi sve</div>
@@ -335,7 +335,7 @@
 
                     <div id="qs-refix-bar" class="banner-refix" style="display:none">
                         <span id="qs-refix-info">0 blokova označeno</span>
-                        <button class="btn btn-sm" onclick="selectBadBlocks('all')" style="border-color:var(--rose);color:var(--rose)">🔴 + Kritični</button>
+                        <button class="btn btn-sm" style="border-color:var(--rose);color:var(--rose)">🔴 + Kritični</button>
                         <button class="btn btn-sm" onclick="clearMarkedBlocks()">✕ Poništi</button>
                         <button class="btn btn-sm btn-warning" onclick="sendMarkedForRefix()">🔧 Pošalji na relekturu</button>
                     </div>

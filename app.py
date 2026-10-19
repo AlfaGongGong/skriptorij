@@ -1455,6 +1455,22 @@ def create_app() -> Flask:
             except Exception as _e:
                 print(f"[review] Ne mogu ažurirati SHARED_STATS: {_e}")
 
+            # FIX: ukloni blok iz human_review.json (riješen je ručno)
+            try:
+                hr_path = chk_path.parent / "human_review.json"
+                if hr_path.exists():
+                    hr_data = json.loads(hr_path.read_text("utf-8"))
+                    if isinstance(hr_data, list):
+                        novi_hr = [item for item in hr_data if item.get("stem") != stem]
+                        if len(novi_hr) != len(hr_data):
+                            hr_path.write_text(
+                                json.dumps(novi_hr, ensure_ascii=False, indent=2),
+                                encoding="utf-8"
+                            )
+                            print(f"[review] Uklonjen {stem} iz human_review.json ({len(hr_data)} → {len(novi_hr)})")
+            except Exception as _e:
+                print(f"[review] Ne mogu ažurirati human_review.json: {_e}")
+
             return jsonify({"ok": True, "stem": stem, "path": str(chk_path), "score": 10.0, "source": "human"})
         except Exception as e:
             return jsonify({"error": str(e)}), 500

@@ -1,48 +1,5 @@
-# Python
+*.bak*
 __pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-venv/
-.pytest_cache/
-
-# Backup fajlovi (git ih zamjenjuje)
-*.bak
-*.bak_*
-*.bak2_*
-*.bak3_*
-*.bak_ui_*
-*.bak_ukloni_*
-*.bak_final*
-*.bak_dc*
-*.bak_dropcap*
-*.bak_flowroot*
-*.bak_status*
-*.bak_groq*
-*.bak_glosar*
-*.bak_eta*
-*.bak_kontekst*
-*.bak_pre_*
-*.bak_vrati_*
-*.bak_za_tebe*
-*.bak_rucno_*
-*.bak_pre_vracanja_*
-
-# Podaci
-data/kanon/knjige/*.json.bak_*
-*.log
+*.pyc
 logs/
-tmp/
-*.tmp
-
-# Checkpoint-i (ogromni, ne trebaju u git)
-data/_checkpoints/
-/root/skriptorij/_checkpoints/
-
-# EPUB / MOBI izlazi
-*.epub
-*.mobi
-
-# OS
-.DS_Store
-Thumbs.db
+data/kanon/knjige/
