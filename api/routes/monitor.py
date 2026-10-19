@@ -16,6 +16,12 @@ def _fleet():
 @bp.route("/api/monitor/status", methods=["GET"])
 def status():
     fleet = _fleet()
+    if fleet is None:
+        return jsonify({
+            "status": "INICIJALIZACIJA",
+            "message": "FleetManager nije registrovan (engine se još pokreće)",
+            "providers": {},
+        })
     now = time.time()
     utc = datetime.now(timezone.utc)
     ponoc = utc.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() + 86400
