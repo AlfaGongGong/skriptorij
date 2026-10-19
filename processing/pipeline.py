@@ -671,7 +671,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             cached_lek = _chk_read(self, file_name, chunk_idx, "lektura", chunk_for_hash=chunk)
             if cached_lek:
                 if not _chk_path(self, file_name, chunk_idx).exists():
-                    _chk_write(self, file_name, chunk_idx, cached_lek)
+                    _chk_write(self, file_name, chunk_idx, cached_lek, chunk_for_hash=chunk)
                 qs_l = self.shared_stats.get("quality_scores", {})
                 stem_key_l = f"{file_name}_blok_{chunk_idx}"
                 raw_val_l = qs_l.get(stem_key_l, None)
@@ -779,8 +779,8 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             self.chunk_skips += 1
             return None, "TRUNCATED"
 
-        _chk_write(self, file_name, chunk_idx, finalno, "lektura")
-        _chk_write(self, file_name, chunk_idx, finalno)
+        _chk_write(self, file_name, chunk_idx, finalno, "lektura", chunk_for_hash=chunk)
+        _chk_write(self, file_name, chunk_idx, finalno, chunk_for_hash=chunk)
 
         self.global_done_chunks += 1
         self.stvarno_prevedeno_u_sesiji += 1
@@ -837,7 +837,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             return None, "N/A"
 
         sirovo = _agresivno_cisti(_smart_extract(raw_fusion))
-        _chk_write(self, file_name, chunk_idx, sirovo, "prevod")
+        _chk_write(self, file_name, chunk_idx, sirovo, "prevod", chunk_for_hash=chunk)
 
     lek_sys = self._get_lektor_prompt(
         prev_kraj=prev_ctx,
@@ -945,7 +945,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         self.chunk_skips += 1
         return None, "TRUNCATED"
 
-    _chk_write(self, file_name, chunk_idx, finalno)
+    _chk_write(self, file_name, chunk_idx, finalno, chunk_for_hash=chunk)
     try:
         _chk_path(self, file_name, chunk_idx, "prevod").unlink(missing_ok=True)
     except Exception:
@@ -1042,7 +1042,7 @@ async def process_chunk_with_retry(
                         pass
 
                 # Upis checkpointa i quality scoringa
-                _chk_write(self, file_name, chunk_idx, tekst)
+                _chk_write(self, file_name, chunk_idx, tekst, chunk_for_hash=chunk)
                 self.global_done_chunks += 1
                 self.stvarno_prevedeno_u_sesiji += 1
 
