@@ -1181,27 +1181,24 @@ def api_call(
 
     prov_sem = get_provider_semaphore(prov_upper)
     key_sem = get_key_semaphore(api_key)
+    # čekanje (min_gap / cooldown) PRIJE semafora, da ne blokira druge workere
+    try:
+        from network.quota_tracker import quota_tracker
+        import re as _re
+
+        ok, reason = quota_tracker.is_key_available(prov_upper, api_key)
+        if not ok:
+            _m = _re.search(r"([\d.]+)s", reason)
+            wait_s = min(float(_m.group(1)) if _m else 5.0, 60.0)
+            logger.debug("[api_call] %s ...%s cekanje %.1fs",
+                         prov_upper, api_key[-4:], wait_s)
+            _time.sleep(wait_s)
+    except Exception:
+        pass
     prov_sem.acquire()
     key_sem.acquire()
     try:
-        # Poštivanje min_gap iz QuotaTracker — kritično za Gemini free tier
-        # Bez ovoga: api_call() šalje zahtjeve svake 0.3-1.2s bez obzira na RPM limit
         try:
-            from network.quota_tracker import quota_tracker
-            import re as _re
-
-            ok, reason = quota_tracker.is_key_available(prov_upper, api_key)
-            if not ok:
-                _m = _re.search(r"([\d.]+)s", reason)
-                wait_s = float(_m.group(1)) if _m else 5.0
-                wait_s = min(wait_s, 60.0)
-                logger.debug(
-                    "[api_call] %s ...%s min_gap cekanje %.1fs",
-                    prov_upper,
-                    api_key[-4:],
-                    wait_s,
-                )
-                _time.sleep(wait_s)
             quota_tracker.record_request(prov_upper, api_key)
         except Exception:
             pass
@@ -1254,7 +1251,7 @@ def api_call(
 
             except Exception:
                 pass
-            _time.sleep(min(ra, 120.0) + random.uniform(0.5, 2.0))
+            # cooldown je zapisan; čekanje se radi izvan semafora u sljedećem pozivu
             return None
 
         if resp.status_code != 200:
