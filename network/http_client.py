@@ -1152,10 +1152,6 @@ def api_call(
                 payload["generationConfig"] = {}
             gc = payload["generationConfig"]
             gc["maxOutputTokens"] = max(gc.get("maxOutputTokens", 2048), 2048)
-
-        # FIX: thinking OFF za Gemini 3.5 (thinkingBudget: 0 ne radi!)
-        if prov_upper == "GEMINI":
-            payload["generationConfig"]["thinkingConfig"] = {"thinkingLevel": "minimal"}
     else:
         url = get_url(prov_upper)
         messages = _build_messages(system, user, model)
@@ -1169,12 +1165,6 @@ def api_call(
         if prov_upper == "NVIDIA":
             payload["chat_template_kwargs"] = {"thinking": False}
         # FIX: Groq reasoning OFF (radi u 0.4s, bez reasoning tokena)
-        if prov_upper == "GROQ":
-            payload["reasoning_effort"] = "none"
-        # FIX: NVIDIA thinking OFF (radi u 1.5s!)
-        if prov_upper == "NVIDIA":
-            payload["chat_template_kwargs"] = {"thinking": False}
-        # FIX: Groq reasoning OFF
         if prov_upper == "GROQ":
             payload["reasoning_effort"] = "none"
         headers = _build_headers(prov_upper, api_key)
