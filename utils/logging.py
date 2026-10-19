@@ -160,6 +160,21 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
 
     if shared_stats is not None:
         shared_stats["live_audit"] = "".join(audit_logs)
+        # ── Paralelno strukturirano (JSON za /api/monitor/audit) ──
+        if "audit_events" not in shared_stats:
+            shared_stats["audit_events"] = []
+            shared_stats["audit_next_id"] = 1
+        _eid = shared_stats["audit_next_id"]
+        shared_stats["audit_next_id"] = _eid + 1
+        shared_stats["audit_events"].append({
+            "id": _eid,
+            "nivo": atype,
+            "tekst": msg,
+            "sub": en_text,
+            "ts": ts,
+        })
+        if len(shared_stats["audit_events"]) > 500:
+            shared_stats["audit_events"] = shared_stats["audit_events"][-500:]
 
 
 
