@@ -8,19 +8,19 @@ Server: python3 main.py -> Flask na http://127.0.0.1:8080
 
 <!-- AUTO:START -->
 
-### Auto-generisano: 2026-10-19 15:13
+### Auto-generisano: 2026-10-19 15:40
 
 **Git:**
-- HEAD: 4fae648 fix: http_client — uklonjeni duplikati NVIDIA/GROQ payload i Gemini thinkingConfig
+- HEAD: 0ae787c docs: status Grupa 2 — #10, #11, #13 zatvoreni
 - Status: M KONTEKST.md
  M data/rod_registri/The_Trouble_With_Peace.json
 
 **Zadnjih 5 commitova:**
+0ae787c docs: status Grupa 2 — #10, #11, #13 zatvoreni
 4fae648 fix: http_client — uklonjeni duplikati NVIDIA/GROQ payload i Gemini thinkingConfig
 9b599a1 docs: ŠTA JE OSTALO → radni plan (A revizija + B/C/D predlozi + E grupisanje)
 28b0355 docs: AUTO sinhronizacija posle hook/cron setup-a
 5a2ddd9 docs: AUTO sekcija posle revizije
-c47b6ca docs: ŠTA JE OSTALO sekcija (revizija 2026-10-19)
 
 **Kljucni moduli (funkcije/klase/linije):**
   - epub/styler.py: 19f/0c/1287L
@@ -33,7 +33,7 @@ c47b6ca docs: ŠTA JE OSTALO sekcija (revizija 2026-10-19)
 **Testovi:**
 FAILED tests/unit/test_http_client.py::test_gemma_rotation_checks_gemma_cooldown_tracker
 FAILED tests/unit/test_provider_router.py::test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider
-11 failed, 48 passed in 2.51s
+11 failed, 48 passed in 2.65s
 
 <!-- AUTO:END -->
 
@@ -113,6 +113,13 @@ FAILED tests/unit/test_provider_router.py::test_call_ai_engine_uses_gemma_cooldo
 ### P15 — `live_audit` kao JSON, ne HTML string
 - Backend šalje listu JSON događaja (id, nivo, tekst) sa `?since=id`
 - Frontend ne parsira HTML nazad
+
+### P16 — Output sa `clear` + `tee` u fajl
+- Svaki blok počinje sa `clear` — prazan ekran, ništa staro ne sme da smeta
+- Sve komande pišu u `/tmp/blok_$(date +%H%M%S).log` kroz `{ ... } 2>&1 | tee "$LOG"`
+- Na kraju bloka: `echo "Log: $LOG"` — korisnik zna gde je
+- Ako se izgubi početak: `cat $(ls -t /tmp/blok_*.log | head -1)` — vraća ceo blok iz fajla
+- Cilj: korisnik uvek dobije čist, kompletan output od nule, bez traženja početka u starom terminalu
 
 ---
 
