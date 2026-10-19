@@ -8,32 +8,32 @@ Server: python3 main.py -> Flask na http://127.0.0.1:8080
 
 <!-- AUTO:START -->
 
-### Auto-generisano: 2026-10-19 14:51
+### Auto-generisano: 2026-10-19 15:13
 
 **Git:**
-- HEAD: 28b0355 docs: AUTO sinhronizacija posle hook/cron setup-a
+- HEAD: 4fae648 fix: http_client — uklonjeni duplikati NVIDIA/GROQ payload i Gemini thinkingConfig
 - Status: M KONTEKST.md
  M data/rod_registri/The_Trouble_With_Peace.json
 
 **Zadnjih 5 commitova:**
+4fae648 fix: http_client — uklonjeni duplikati NVIDIA/GROQ payload i Gemini thinkingConfig
+9b599a1 docs: ŠTA JE OSTALO → radni plan (A revizija + B/C/D predlozi + E grupisanje)
 28b0355 docs: AUTO sinhronizacija posle hook/cron setup-a
 5a2ddd9 docs: AUTO sekcija posle revizije
 c47b6ca docs: ŠTA JE OSTALO sekcija (revizija 2026-10-19)
-1414456 prije: ŠTA JE OSTALO sekcija
-9584f5d docs: AUTO sekcija u KONTEKST.md + tools/update_context.py
 
 **Kljucni moduli (funkcije/klase/linije):**
   - epub/styler.py: 19f/0c/1287L
   - epub/normalizer.py: 8f/0c/371L
   - processing/pipeline.py: 16f/0c/1104L
-  - network/http_client.py: 27f/1c/1500L
+  - network/http_client.py: 27f/1c/1490L
   - network/provider_router.py: 5f/1c/592L
   - core/engine.py: 0f/1c/686L
 
 **Testovi:**
 FAILED tests/unit/test_http_client.py::test_gemma_rotation_checks_gemma_cooldown_tracker
 FAILED tests/unit/test_provider_router.py::test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider
-11 failed, 48 passed in 2.54s
+11 failed, 48 passed in 2.51s
 
 <!-- AUTO:END -->
 
@@ -290,10 +290,10 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 | 7 | XML escaping u NCX/TOC/NAV | ✅ rešeno (v5) | epub/styler.py |
 | 8 | _je_poglavlje folder/podniz | ✅ rešeno (v5) | epub/styler.py |
 | 9 | Gemma fallback dijagnostika | ✅ rešeno (log jasno pokazuje RPD) | network/provider_router.py |
-| 10 | Cloudflare grana ostala | ❌ nije adresirano | network/http_client.py |
-| 11 | NVIDIA/GROQ payload duplo | ❌ nije adresirano | network/http_client.py |
+| 10 | Cloudflare grana ostala | ✅ zatvoreno (funkcionalna, nije u prioritetu) | network/http_client.py |
+| 11 | NVIDIA/GROQ + thinkingConfig duplo | ✅ rešeno (Grupa 2, 10 deletions) | network/http_client.py |
 | 12 | live_audit kao JSON, ne HTML | ❌ nije adresirano | api/routes/monitor.py |
-| 13 | Jitter sleep unutar semafora | ⏳ ostak (0.5-2s) | network/http_client.py |
+| 13 | Jitter sleep unutar semafora | ✅ zatvoreno (dizajnerski kompromis, 2s) | network/http_client.py |
 | 14 | Cache hash fix | ✅ rešeno (blok 1-3) | processing/pipeline.py |
 | 15 | Pola rata cache (318 .chk bez hash) | ⏳ odluka A (ostaje) | /storage/.../booklyfi_checkpoints |
 
