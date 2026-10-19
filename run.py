@@ -431,6 +431,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.generate_ncx()
             engine.finalize()
             _obrada_karantene_kraj_knjige(engine)
+            _auto_stilizuj(engine)
             sharedstats["status"] = "ZAVRŠENO (AUTO-RETRO)"
             sharedstats["pct"] = 100
         return  # Izlaz — ne ulazi u main_loop() ispod
@@ -512,6 +513,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
 
         engine.finalize()
         _obrada_karantene_kraj_knjige(engine)
+        _auto_stilizuj(engine)
 
         # BUG #2 FIX (nastavak): Sačuvaj knjiga_mode u book_analysis.json na kraju
         # sesije da bi ga sljedeća sesija mogla pročitati i preskočiti detekciju.
@@ -551,3 +553,42 @@ if __name__ == "__main__":
     )
     engine.work_dir = Path(WORK_DIR)
     asyncio.run(engine.retroaktivna_relektura_v10(force=False, only_bad=True))
+
+
+def _auto_stilizuj(engine):
+    """Automatski pokrece stilizaciju posle uspesne obrade.
+    Ne prekida finalizaciju ako stilizacija padne.
+    """
+    try:
+        from epub.styler import run_epub_styler
+        from pathlib import Path
+
+        output_file = engine.shared_stats.get("output_file")
+        if not output_file:
+            engine.log("Auto-stilizacija: output_file nije postavljen", "warning")
+            return
+
+        epub_path = Path(output_file)
+        if not epub_path.exists():
+            engine.log(f"Auto-stilizacija: fajl ne postoji: {epub_path}", "warning")
+            return
+
+        engine.log(f"Auto-stilizacija: {epub_path.name}", "system")
+
+        result = run_epub_styler(
+            epub_path=epub_path,
+            fleet=getattr(engine, "fleet", None),
+            log_callback=engine.log,
+        )
+
+        if result and result.get("ok"):
+            engine.log(
+                f"Stilizovano: {Path(result['epub_path']).name} "
+                f"({result.get('chapters', 0)} pogl, {result.get('dropcaps_added', 0)} dropcapa)",
+                "success",
+            )
+        else:
+            err = result.get("error", "?") if result else "?"
+            engine.log(f"Stilizacija nije uspela: {err}", "warning")
+    except Exception as e:
+        engine.log(f"Auto-stilizacija greska: {type(e).__name__}: {e}", "warning")
