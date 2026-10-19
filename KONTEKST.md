@@ -38,15 +38,80 @@ FAILED tests/unit/test_provider_router.py::test_call_ai_engine_uses_gemma_cooldo
 
 ## POSTULATI RADA (MORANJE)
 
-1. Skripte za COPY-PASTE u terminal - JEDAN BLOK.
-2. Sve dijagnostike u JEDNOM bloku.
-3. Svi fixevi u JEDNOM bloku.
-4. NE PRAVI nove fajlove - koristi postojece.
-5. NE MALTETIRAJ sa 'posalji mi X' - uzmi sam kroz kod.
-6. Za TESTIRANJE - mini test EPUB (1-2 poglavlja).
-7. Postuj arhitekturu: logger, fail-safe, checkpoint, backup, _strip_everything.
-8. Ako ne moze odjednom - MAX 2 bloka.
-9. Novi fajlovi SAMO ako postojeci ne mogu.
+### P1 — Git, ne `.bak` fajlovi
+- Prije svake izmene: `git add -A && git commit -m "prije: <opis>"`
+- Ako izmena ne valja: `git checkout -- <fajl>` (vraća sve iz zadnjeg commita)
+- Nikad ne koristiti `.bak` fajlove kao primarni mehanizam za vraćanje
+- `.bak` fajlovi su ignorisani u `.gitignore`
+
+### P2 — Jedna izmena, pa provera
+- U jednom bloku TAČNO JEDNA izmena
+- Posle izmene: `python3 -c "import ast; ast.parse(open('fajl.py').read())"`
+- Ako ne prolazi — odmah `git checkout`, bez rasprave
+- Nikad više od jedne izmene u jednom bloku
+
+### P3 — Zabranjeni obrasci
+- NE koristiti `re.sub` za izmene Python koda
+- NE koristiti `st.find('\ndef ')` za pronalaženje kraja funkcije
+- NE koristiti `sed -i` bez prikaza rezultata prije upisa
+- NE koristiti `find/replace` bilo koje vrste
+
+### P4 — Obavezan `diff` prije primene
+- AI mora prije izmene prikazati:
+
+      STARO: <tačan red>
+      NOVO: <tačan red>
+
+- Korisnik kaže "da" ili "ne". Bez toga AI ne dira ništa.
+
+### P5 — Dijagnostika prije fixa
+- Prikazati: tačan sadržaj funkcije, šta trenutno radi, šta treba da radi
+- Ako ne može — nema pravo da menja
+
+### P6 — Greška se poništava, ne popravlja
+- Kad AI pogreši: `git checkout`, pa ispočetka drugačije
+- Nikad ne "popravljati" preko greške — to pravi novu grešku
+
+### P7 — Backup prije svake AI sesije
+- `tar czf /storage/emulated/0/Download/skriptorij_$(date +%Y%m%d_%H%M%S).tar.gz .`
+- Sigurnosna kopija cijelog projekta, ne pojedinačnih fajlova
+
+### P8 — Kontekst ažuriran prije svake sesije
+- Prije AI: napiši tačno šta je problem (jedna rečenica), šta je posljednja izmena koja je radila, šta NE SME da se dira
+
+### P9 — Ako AI predlaže nešto što nisi tražio — STOP
+- AI ne sme da dira ništa što nije u zahtevu
+- Ako predlaže izmenu van zahteva — korisnik kaže "ne"
+
+### P10 — AI-jev "OK" nije dokaz
+- "Sintaksa OK" ne znači da je izmena ispravna
+- Korisnik pokrene i vidi
+
+### P11 — Integritet podataka prvo
+- Prije izmene: proveriti broj poglavlja, znakova, hash pasusa
+- Izvor naspram izlaza
+- Obrada mora glasno pasti ako se ne slaže
+
+### P12 — Modeli se ne hardkodiraju
+- `model_discovery.py` pri startu povlači `GET /models`
+- Bira iz žive liste, ne iz statičke mape
+- `MODEL_MAP` se koristi samo kao fallback
+
+### P13 — Raspodela opterećenja
+- Kratki zadaci (SCORER, GLOSAR_UPDATE, VALIDATOR) → GROQ/GEMMA
+- GEMINI → PREVODILAC, LEKTOR, POLISH (dugi promptovi)
+- MISTRAL (1 RPM) → samo krajnja rezerva
+
+### P14 — Otpornost
+- Circuit breaker po (provider, ključ, model) sa rastućim cooldownom
+- `quota_tracker` na disk (restart ne resetuje brojače)
+- `finish_reason=length` → retry sa većim `max_tokens`
+- NVIDIA dobija `thinking: False`
+- GEMMA `None` → prvo dijagnostika, pa fix
+
+### P15 — `live_audit` kao JSON, ne HTML string
+- Backend šalje listu JSON događaja (id, nivo, tekst) sa `?since=id`
+- Frontend ne parsira HTML nazad
 
 ---
 
