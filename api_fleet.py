@@ -242,13 +242,10 @@ class FleetManager:
         except Exception:
             saved = {}
 
-        # FIX: GEMMA mora UVIJEK dijeliti GEMINI ključeve (isti Google API
-        # ključ radi za oba modela) — čak i kad korisnik kroz UI eksplicitno
-        # dodaje posebne GEMMA-only ključeve. Stari kod je mirror radio SAMO
-        # ako "GEMMA" nije postojao u configu — čim bi korisnik dodao ijedan
-        # GEMMA ključ, mirror je stao i naslijeđeni GEMINI ključevi su tiho
-        # ispali iz GEMMA rotacije. Sada se uvijek spaja i deduplicira:
-        # GEMMA_efektivno = GEMINI ∪ GEMMA (GEMINI prvi u redoslijedu).
+        # GEMMA i GEMINI su odvojeni servisi — svaki ima svoj pool ključeva.
+        # Vidi reviziju 2026-10-19. Ne spajamo ih više.
+        # Fallback: ako GEMMA nema vlastite ključeve, koristi GEMINI
+        # (backward compat za stare konfiguracije bez odvojenog GEMMA poola).
         if "GEMINI" in raw:
             def _as_key_list(v):
                 if isinstance(v, list):
@@ -267,11 +264,20 @@ class FleetManager:
 
             _gemini_list = _as_key_list(raw["GEMINI"])
             _gemma_list  = _as_key_list(raw.get("GEMMA"))
-            _merged = list(_gemini_list)
-            for _k in _gemma_list:
-                if _k not in _merged:
-                    _merged.append(_k)
-            raw["GEMMA"] = _merged
+            if _gemma_list:
+                # GEMMA ima svoj pool — koristi samo njega
+                raw["GEMMA"] = _gemma_list
+                logger.debug(
+                    "[FleetManager] GEMMA pool: %d vlastitih ključeva (odvojeno od GEMINI %d)",
+                    len(_gemma_list), len(_gemini_list),
+                )
+            else:
+                # Backward compat: GEMMA nema svoje ključeve → dijeli GEMINI
+                raw["GEMMA"] = list(_gemini_list)
+                logger.debug(
+                    "[FleetManager] GEMMA pool: %d ključeva (naslijeđeno od GEMINI)",
+                    len(_gemini_list),
+                )
 
         self.fleet = {}
         self._rr_index = {}
