@@ -379,6 +379,12 @@ class FleetManager:
                 return candidate
 
         fallback = self.resolved_models.get(prov, "") or static_fallback
+        if not fallback:
+            try:
+                from config.ai_config import MODEL_MAP as _MM
+                fallback = _MM.get(prov, "")
+            except Exception:
+                pass
         if fallback and fallback not in dead:
             return fallback
 
