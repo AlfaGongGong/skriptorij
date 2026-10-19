@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime, timezone
 import time
 from pathlib import Path
+from config.settings import SHARED_STATS
 
 bp = Blueprint("monitor", __name__)
 
@@ -102,3 +103,17 @@ def reset_key():
                 except Exception: pass
             hit += 1
     return jsonify({"ok": True, "reset": hit})
+
+
+@bp.route("/api/monitor/audit", methods=["GET"])
+def audit():
+    """Vraca audit_events kao JSON. Inkrementalno preko ?since=id."""
+    since = request.args.get("since", type=int, default=0)
+    events = SHARED_STATS.get("audit_events", [])
+    next_id = SHARED_STATS.get("audit_next_id", 1)
+    filtered = [e for e in events if e.get("id", 0) > since]
+    return jsonify({
+        "events": filtered,
+        "next_id": next_id,
+        "since": since,
+    })
