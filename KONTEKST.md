@@ -8,32 +8,32 @@ Server: python3 main.py -> Flask na http://127.0.0.1:8080
 
 <!-- AUTO:START -->
 
-### Auto-generisano: 2026-10-19 17:20
+### Auto-generisano: 2026-10-19 17:47
 
 **Git:**
-- HEAD: 500a02b feat: frontend prelazi na JSON audit (P15, 3b)
+- HEAD: e9f1379 feat: Gemma fallback lanac — kontekst → Mistral (bez OpenRoutera)
 - Status: M KONTEKST.md
  M data/rod_registri/The_Trouble_With_Peace.json
 
 **Zadnjih 5 commitova:**
-500a02b feat: frontend prelazi na JSON audit (P15, 3b)
-9b0c013 feat: /api/monitor/audit — JSON umesto HTML
-c8ddd52 feat: audit_events u add_audit (paralelno sa live_audit)
-5dc8d9f docs: P16 — output sa clear + tee u fajl
-0ae787c docs: status Grupa 2 — #10, #11, #13 zatvoreni
+e9f1379 feat: Gemma fallback lanac — kontekst → Mistral (bez OpenRoutera)
+aa2f20d feat: Gemini fallback lanac — kontekst → Gemma → Mistral (bez OpenRoutera)
+1e33599 fix: QA score poruka dobija file_name + prevodilac_provider
+7627dfa fix: GEMMA pool odvojen od GEMINI (samo kad ima vlastite kljuceve)
+8008f48 fix: UI audit log — sacuvaj selekciju + povezi dugme 'Na kraj'
 
 **Kljucni moduli (funkcije/klase/linije):**
   - epub/styler.py: 19f/0c/1287L
   - epub/normalizer.py: 8f/0c/371L
-  - processing/pipeline.py: 16f/0c/1104L
-  - network/http_client.py: 27f/1c/1490L
+  - processing/pipeline.py: 16f/0c/1106L
+  - network/http_client.py: 27f/1c/1515L
   - network/provider_router.py: 5f/1c/592L
   - core/engine.py: 0f/1c/686L
 
 **Testovi:**
 FAILED tests/unit/test_http_client.py::test_gemma_rotation_checks_gemma_cooldown_tracker
 FAILED tests/unit/test_provider_router.py::test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider
-11 failed, 48 passed in 3.05s
+11 failed, 48 passed in 3.47s
 
 <!-- AUTO:END -->
 
@@ -346,6 +346,44 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 **Grupa 4+:** arhitektonske promjene (B) posle A revizije, jedna po jedna, sa golden-testom
 
 **Preporučeni sledeći:** Grupa 1, prvo #3 (duplikati), pa #2 (tri imena za model).
+
+---
+
+## FAZA 2 (2026-10-19) — razdvajanje pool-ova + fallback lanac
+
+### Šta je urađeno
+
+1. **GEMMA pool odvojen od GEMINI** (`api_fleet.py`, commit `7627dfa`)
+   - Prije: `GEMMA = GEMINI ∪ GEMMA` (~20 ključeva, deljeni)
+   - Poslije: `GEMMA = samo GEMMA` (8 ključeva), backward compat ako GEMMA prazan
+   - Razlog: dva odvojena servisa, svaki sa svojim limitima
+
+2. **QA score poruka dobija kontekst** (`processing/pipeline.py`, commit `1e33599`)
+   - Prije: `⚠️ Blok 3 [naracija]: score=5.2 — ...`
+   - Poslije: `⚠️ [001.xhtml] Blok 3 [naracija]: score=5.2 (prevodilac: GEMINI) — ...`
+   - Razlog: bez `file_name` i prevodioca, score je bez konteksta
+
+3. **Gemini fallback lanac: kontekst → Gemma → Mistral** (`network/http_client.py`, commit `aa2f20d`)
+   - Prije: kontekst → OpenRouter Nemotron → odustani
+   - Poslije: kontekst → Gemma → Mistral → odustani
+   - Razlog: Gemma je odvojen pool (radi), OpenRouter nije adekvatan
+
+4. **Gemma fallback lanac: kontekst → Mistral** (`network/http_client.py`, commit `e9f1379`)
+   - Prije: kontekst → OpenRouter Nemotron → odustani
+   - Poslije: kontekst → Mistral → odustani
+   - Sinhronizovano sa Gemini lancem
+
+### Rezultat
+
+- OpenRouter više nije u aktivnom lancu (definicija ostaje, nigde se ne poziva)
+- Gemma ima odvojene ključeve — može da radi kad Gemini padne
+- QA score poruke imaju dovoljno konteksta za dijagnostiku
+
+### Šta je ostalo
+
+- **`_posalji_na_openrouter`** — mrtav kod, čeka odluku da li obrisati
+- **Nepotrebne/ponovljene poruke u logu** — treba primere iz UI (screenshot ili tekst)
+- **Gemma ključevi** — 4 od 8 se preklapaju sa GEMINI (korisnik ih duplo stavio)
 
 ---
 
