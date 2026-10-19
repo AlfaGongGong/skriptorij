@@ -540,17 +540,17 @@ async def _async_http_post(
             # prolaze odjednom (burst). Pravilni throttle je u acquire_key/rate_limiter.
             return None
 
-        elif resp.status_code == 500:
+        elif resp.status_code in (500, 503):
             try:
                 from network.quota_tracker import quota_tracker as _qt
 
-                _qt.set_key_cooldown(prov_upper, key, 30.0, "500/503 server greška")
+                _qt.set_key_cooldown(
+                    prov_upper, key, 30.0,
+                    f"{resp.status_code} server greška",
+                )
             except Exception:
                 pass
-            self.log(
-                f"[{prov_upper}] HTTP 500 — cooldown 30s na ključu ...{key[-4:]}",
-                "warning",
-            )
+            # Logovanje je prebaceno u caller (agregacija preko svih kljuceva)
             await asyncio.sleep(2.0)
             return None
 
@@ -648,6 +648,7 @@ async def _call_gemini_with_full_rotation(
     keys_list.sort(key=lambda ks: ks.success_rate, reverse=True)
     pool = _get_google_model_pool()
 
+    _failed_keys = 0
     for ks in keys_list:
         key = ks.key
 
@@ -677,6 +678,8 @@ async def _call_gemini_with_full_rotation(
             data = await _async_http_post(
                 self, url, headers, payload, "GEMINI", "GEMINI", key, _proxy=None
             )
+            if data is None:
+                _failed_keys += 1
 
             if data is not None:
                 content = _extract_gemini_native(data)
@@ -776,7 +779,13 @@ async def _call_gemini_with_full_rotation(
     for ks in keys_list:
         _reset_model_for_key(ks.key)
 
-    self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
+    if _failed_keys > 0:
+        self.log(
+            f"[GEMINI] {_failed_keys}/{len(keys_list)} ključeva palo (500/503) — odustajem",
+            "error",
+        )
+    else:
+        self.log("[GEMINI] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
 
 
