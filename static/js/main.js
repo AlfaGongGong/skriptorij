@@ -847,6 +847,7 @@ function azuriraj_kontekst(s) {
 
 function updateStatus(s) {
     if (!s) return;
+    try { azuriraj_kontekst(s); } catch (e) { console.error("[kontekst]", e); }
     
     // ── AUTO-STILIZACIJA na kraju obrade ──
     const _pctLocal = s.pct || 0;

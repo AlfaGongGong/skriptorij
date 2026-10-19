@@ -10,6 +10,4 @@ analysis/cache/
 .env
 api_state.json
 dev_api.json
-quota_cooldowns.json
-analysis/cache/
 tests/integration/quota_cooldowns.json
