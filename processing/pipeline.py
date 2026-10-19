@@ -545,8 +545,10 @@ async def _quality_scoring(
         self.shared_stats["quality_scores"][stem_key] = score_float
 
         if score_float < 6.5:
+            _prov = prevodilac_provider or "?"
             self.log(
-                f"⚠️ Blok {chunk_idx} [{tip_bloka}]: score={score_float:.1f} — {preview[:60]}…",
+                f"⚠️ [{file_name}] Blok {chunk_idx} [{tip_bloka}]: "
+                f"score={score_float:.1f} (prevodilac: {_prov}) — {preview[:60]}…",
                 "warning",
             )
             hr_path = self.checkpoint_dir / "human_review.json"
