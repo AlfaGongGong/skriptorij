@@ -906,12 +906,21 @@ async def _call_gemma_with_rotation(
                     if ctx_res:
                         return ctx_res, f"GEMMA-{current_model}-kontekst"
 
-                    or_res = _posalji_na_openrouter(
-                        sys_content, user_prompt, opt_temp, max_tokens, timeout=180
+                    self.log(
+                        f"[GEMMA] Kontekst nije pomogao — prelazim na Mistral",
+                        "warning",
                     )
-                    if or_res:
-                        return or_res, "OPENROUTER-nemotron"
+                    mistral_res, mistral_engine = await _call_single_provider(
+                        self, "MISTRAL", "mistral-small-latest",
+                        sys_content, user_prompt, opt_temp, max_tokens,
+                    )
+                    if mistral_res:
+                        return mistral_res, mistral_engine or "MISTRAL"
 
+                    self.log(
+                        f"[GEMMA] Svi fallback-ovi pali (kontekst, Mistral) — odustajem",
+                        "error",
+                    )
                     return None, None
 
                 # FIX: prazan odgovor + finishReason=MAX_TOKENS znaci da model
