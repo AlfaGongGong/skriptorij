@@ -272,4 +272,30 @@ Starije (2026-10-12 i prije):
 
 ---
 
+## ŠTA JE OSTALO (revizija 2026-10-19)
+
+Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naovamo).
+
+| # | Tačka | Status | Fajl |
+|---|---|---|---|
+| 1 | 429 drži semafor 120s | ✅ rešeno (sleep pre acquire) | network/http_client.py |
+| 2 | Tri imena za isti model (qwen/gpt-oss) | ❌ nije adresirano | config/ai_config.py |
+| 3 | Dupli MODEL_MAP / GEMINI_BASE_URL | ❌ nije adresirano | config/ai_config.py |
+| 4 | SKIP_TITLES "prolaznost života" | ✅ rešeno (v7) | epub/styler.py |
+| 5 | Dropcap gubi slovo u em/strong | ✅ rešeno (v5) | epub/styler.py |
+| 6 | _dodaj_naslov briše sve h1-h3 | ✅ rešeno (v7) | epub/styler.py |
+| 7 | XML escaping u NCX/TOC/NAV | ✅ rešeno (v5) | epub/styler.py |
+| 8 | _je_poglavlje folder/podniz | ✅ rešeno (v5) | epub/styler.py |
+| 9 | Gemma fallback dijagnostika | ✅ rešeno (log jasno pokazuje RPD) | network/provider_router.py |
+| 10 | Cloudflare grana ostala | ❌ nije adresirano | network/http_client.py |
+| 11 | NVIDIA/GROQ payload duplo | ❌ nije adresirano | network/http_client.py |
+| 12 | live_audit kao JSON, ne HTML | ❌ nije adresirano | api/routes/monitor.py |
+| 13 | Jitter sleep unutar semafora | ⏳ ostak (0.5-2s) | network/http_client.py |
+| 14 | Cache hash fix | ✅ rešeno (blok 1-3) | processing/pipeline.py |
+| 15 | Pola rata cache (318 .chk bez hash) | ⏳ odluka A (ostaje) | /storage/.../booklyfi_checkpoints |
+
+**Preporučeni sledeći zadatak:** #2 (tri imena za isti model) — aktivna greška, može dati 404 ili pogrešan model.
+
+---
+
 KRAJ KONTEKSTA
