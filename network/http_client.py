@@ -55,7 +55,6 @@ _BROWSER_UA = (
 )
 
 
-
 def _humanize_wait(provider):
     """Čeka minimalni interval + jitter između 2 poziva prema istom provideru."""
     pu = (provider or "").upper()
@@ -98,7 +97,6 @@ def _get_timeout_for_provider(prov_upper: str, default: int = 120) -> int:
     if prov_upper == "CLOUDFLARE":
         return 60  # FIX: bilo 90
     return default
-
 
 
 class ContentFilterError(Exception):
@@ -858,6 +856,7 @@ async def _call_gemma_with_rotation(
     keys_list.sort(key=lambda ks: ks.success_rate, reverse=True)
     pool = _GEMMA_MODEL_POOL_FALLBACK
 
+    _failed_keys = 0
     for ks in keys_list:
         key = ks.key
         # FIX #13: resetiraj circuit breaker PO KLJUČU, ne po pozivu.
@@ -972,18 +971,12 @@ async def _call_gemma_with_rotation(
             # Provjeri GEMMA cooldown — ne ks.available koji gleda GEMINI cooldown
             key_ok_gemma, _r = quota_tracker.is_key_available("GEMMA", key)
             if not key_ok_gemma:
-                self.log(
-                    f"[GEMMA] Ključ ...{key[-4:]} nedostupan (GEMMA cooldown) — preskačem na sljedeći ključ",
-                    "warning",
-                )
+                _failed_keys += 1
                 break
 
             key_ok, _reason = quota_tracker.is_key_available("GEMMA", key)
             if not key_ok:
-                self.log(
-                    f"[GEMMA] Ključ ...{key[-4:]} u cooldownu — preskačem na sljedeći ključ",
-                    "warning",
-                )
+                _failed_keys += 1
                 break
 
             # Model rotation pri 429 (bug #9 fix)
@@ -998,12 +991,16 @@ async def _call_gemma_with_rotation(
                 current_model = next_model
                 await asyncio.sleep(0.5)
             else:
-                self.log(
-                    f"[GEMMA] Svi modeli iscrpljeni za ključ ...{key[-4:]}", "warning"
-                )
+                _failed_keys += 1
                 break
 
-    self.log("[GEMMA] Svi ključevi i modeli iscrpljeni", "error")
+    if _failed_keys > 0:
+        self.log(
+            f"[GEMMA] {_failed_keys}/{len(keys_list)} ključeva palo — odustajem",
+            "error",
+        )
+    else:
+        self.log("[GEMMA] Svi ključevi i modeli iscrpljeni", "error")
     return None, None
 
 
@@ -1396,64 +1393,6 @@ def _je_prohibited_content(response_data) -> bool:
     except Exception:
         pass
     return False
-
-
-def _posalji_na_openrouter(system, user, temperature, max_tokens, timeout=180):
-    """Pošalji na OpenRouter Nemotron kad Gemini blokira."""
-    import urllib.request as _ur, json as _json
-
-    try:
-        from api_fleet import get_active_fleet, FleetManager
-        from config.settings import CONFIG_PATH
-        fleet = get_active_fleet()
-        if not fleet:
-            # Inicijaliziraj fleet ako nije prisutan (test mode)
-            fleet = FleetManager(config_path=CONFIG_PATH)
-
-        key = fleet.get_best_key("OPENROUTER")
-        if not key:
-            print("   [OPENROUTER] Nema ključa")
-            return None
-
-        model = fleet.get_active_model("OPENROUTER")
-        if not model or "llama" in model.lower():
-            model = "nvidia/nemotron-3-ultra-550b-a55b:free"
-
-        payload = {
-            "model": model,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            "max_tokens": max(max_tokens, 8000),
-            "temperature": temperature,
-        }
-
-        req = _ur.Request(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://booklyfi.local",
-                "X-Title": "BooklyFi",
-            },
-            method="POST",
-            data=_json.dumps(payload).encode(),
-        )
-        with _ur.urlopen(req, timeout=timeout) as resp:
-            d = _json.loads(resp.read())
-            choices = d.get("choices", [])
-            if not choices:
-                return None
-            msg = choices[0].get("message", {})
-            content = (msg.get("content") or "").strip()
-            if content and len(content) > 10:
-                return content
-    except Exception as e:
-        print(f"   [OPENROUTER fallback] {type(e).__name__}: {e}")
-    return None
-
-
 def _posalji_na_gemini_s_kontekstom(system, user, max_tokens, timeout):
     """Pošalji Geminiju s kontekstom da je književna scena."""
     try:
