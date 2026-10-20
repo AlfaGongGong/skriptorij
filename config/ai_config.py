@@ -29,27 +29,25 @@ GEMMA_MODEL_POOL = [
 # GEMMA je nositelj (#1) za sve Google uloge — 1500 RPD/ključ.
 # GEMINI je fallback (#2).
 PROVIDER_PRIORITY = {
-    # PREVODILAC/LEKTOR/KOREKTOR: GEMINI #1, GROQ #2, GEMMA #3, NVIDIA #4
-    "PREVODILAC":       ["GEMINI", "GROQ", "GEMMA", "NVIDIA", "MISTRAL"],
-    "LEKTOR":           ["GEMINI", "GROQ", "GEMMA", "NVIDIA", "MISTRAL"],
-    "KOREKTOR":         ["GEMINI", "GROQ", "GEMMA", "NVIDIA", "MISTRAL"],
-    
-    # VALIDATOR/GUARDIAN: GEMINI #1, GEMMA #2, GROQ #3
-    "VALIDATOR":        ["GEMINI", "GEMMA", "GROQ", "NVIDIA", "MISTRAL"],
-    "GUARDIAN":         ["GEMINI", "GEMMA", "GROQ", "NVIDIA"],
-    
-    # POLISH: GEMINI #1, GEMMA #2
-    "POLISH":           ["GEMINI", "GEMMA", "GROQ", "NVIDIA", "MISTRAL"],
-    
-    # ANALIZA/CHAPTER_SUMMARY: GEMINI #1 (dugi promptovi)
-    "ANALIZA":          ["GEMINI", "GROQ", "GEMMA", "NVIDIA"],
-    "CHAPTER_SUMMARY":  ["GEMINI", "GROQ", "GEMMA", "NVIDIA"],
-    
-    # GLOSAR_UPDATE: GROQ/GEMMA #1 (kratki JSON, brz)
-    "GLOSAR_UPDATE":    ["GROQ", "GEMMA", "GEMINI", "NVIDIA"],
-    
-    # SCORER: GROQ #1, GEMMA #2 (kratki prompt, brz)
-    "SCORER":           ["GROQ", "GEMMA", "GEMINI", "NVIDIA"],
+    # Jezik (prevod, lektura, korektor, polish) — GEMINI nosi, GROQ rasterecuje.
+    # NVIDIA/MISTRAL rezerva, GEMMA zadnja.
+    # (Test 2026-10-20: Gemma 4 na Google API timeout/500 na BCS.)
+    "PREVODILAC":       ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+    "LEKTOR":           ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+    "KOREKTOR":         ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+    "POLISH":           ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+
+    # Provjere — GEMINI nosi, GROQ rasterecuje, GEMMA zadnja.
+    "VALIDATOR":        ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+    "GUARDIAN":         ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
+
+    # ANALIZA/CHAPTER_SUMMARY — dugi promptovi, GEMINI nosi.
+    "ANALIZA":          ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
+    "CHAPTER_SUMMARY":  ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
+
+    # GLOSAR_UPDATE/SCORER — kratki JSON, GROQ nosi, GEMINI rasterecuje.
+    "GLOSAR_UPDATE":    ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
+    "SCORER":           ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
 }
 
 AI_MODEL_STRINGS = {
