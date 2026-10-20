@@ -33,8 +33,9 @@ _MODELS_ENDPOINTS: dict[str, str] = {
     "COHERE":      "https://api.cohere.com/v1/models",
     "GEMINI":      "https://generativelanguage.googleapis.com/v1beta/models",
     "GITHUB":      "https://models.github.ai/catalog/models",
-    # FIX #7: NVIDIA nema /v1/models endpoint — uklonjen, koristi FALLBACK_MODELS
-    # "NVIDIA":      "nvidia/nemotron-3-ultra-550b-a55b",  # potvrđeno radi (test 2026-09-25)
+    # FIX 2026-10-20: NVIDIA /v1/models RADI (81 model, test 10:05).
+    # Endpoint je bio zakomentarisan zbog pogresne pretpostavke. Vracen.
+    "NVIDIA":      "https://integrate.api.nvidia.com/v1/models",
 }
 
 FALLBACK_MODELS: dict[str, str] = {
@@ -457,8 +458,17 @@ def start_background_discovery(fleet: dict) -> None:
                     models = fetch_models(provider, key)
                     if models:
                         _set_cached_model_list(provider.upper(), models)
+                        logger.info(
+                            "[ModelDiscovery] %s: %d modela osvjezeno (best=%s)",
+                            provider, len(models), models[0],
+                        )
+                    else:
+                        logger.debug(
+                            "[ModelDiscovery] %s: 0 modela (koristi FALLBACK: %s)",
+                            provider, FALLBACK_MODELS.get(provider.upper(), "?"),
+                        )
                 except Exception as exc:
-                    logger.debug("[ModelDiscovery] %s: discovery greška: %s", provider, exc)
+                    logger.warning("[ModelDiscovery] %s: discovery greska: %s", provider, exc)
             time.sleep(_CACHE_TTL)
 
     t = threading.Thread(target=_worker, daemon=True)
