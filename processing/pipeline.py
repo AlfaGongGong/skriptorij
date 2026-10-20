@@ -155,8 +155,34 @@ def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
                 if stored != expected:
                     return None
         tekst = _ocisti_json_wrapper(tekst)
-        if len(tekst) > 10 and not _je_placeholder(tekst):
-            return tekst
+        if len(tekst) <= 10 or _je_placeholder(tekst):
+            return None
+
+        # ── NEW: sanity — .chk ne smije biti drasticno kraci od izvornog chunka
+        # Stiti od nepotpunih .chk (base64 nedovrsen, tekst izgubljen).
+        if chunk_for_hash is not None:
+            try:
+                from bs4 import BeautifulSoup as _BS
+                _text_chk = _BS(tekst, "html.parser").get_text(" ", strip=True)
+                _text_src = _BS(chunk_for_hash, "html.parser").get_text(" ", strip=True)
+                if len(_text_src) > 500 and len(_text_chk) < len(_text_src) * 0.5:
+                    try:
+                        self.log(
+                            f"[{file_name}] Blok {chunk_idx}"
+                            f"{'.' + suffix if suffix else ''}: "
+                            f"⚠️ .chk nepotpun ({len(_text_chk)}c vs {len(_text_src)}c izvor) "
+                            f"— re-obradjujem",
+                            "warning",
+                        )
+                    except Exception:
+                        pass
+                    return None
+                if len(_text_chk) < 20:
+                    return None
+            except Exception:
+                pass
+
+        return tekst
     except Exception:
         pass
     return None
