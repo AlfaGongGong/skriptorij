@@ -2106,6 +2106,23 @@ async function loadQualityScores() {
         setVal("qs-good", good);
         setVal("qs-poor", poor);
         setVal("qs-critical", critical);
+
+        // F3d: metrike iz quality_metrics.json (deterministicki brojaci)
+        const ms = d.metrics_summary || {};
+        const _msTotal = (ms.OK || 0) + (ms.REVIEW || 0) + (ms.REJECT || 0) + (ms.TRUNCATED || 0);
+        const _metricBox = document.getElementById("qs-metrics-grid");
+        if (_metricBox) {
+            if (_msTotal > 0) {
+                _metricBox.style.display = "grid";
+                setVal("qs-metric-ok", ms.OK || 0);
+                setVal("qs-metric-review", ms.REVIEW || 0);
+                setVal("qs-metric-reject", ms.REJECT || 0);
+                setVal("qs-metric-truncated", ms.TRUNCATED || 0);
+            } else {
+                _metricBox.style.display = "none";
+            }
+        }
+
         setVal("qs-print-ready-pct", printReadyPct + "%");
         const bar = document.getElementById("qs-print-ready-bar");
         if (bar) bar.style.width = printReadyPct + "%";
