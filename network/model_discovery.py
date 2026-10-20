@@ -486,3 +486,25 @@ def start_background_discovery(fleet: dict) -> None:
 
     t = threading.Thread(target=_worker, daemon=True)
     t.start()
+
+
+def prime_cache_sync(fleet) -> int:
+    """Sinhrono popuni discovery cache pri startu servera.
+    Vraca broj popunjenih provajdera.
+    """
+    filled = 0
+    for prov, keys in (fleet or {}).items():
+        if not keys:
+            continue
+        key = keys[0].key if hasattr(keys[0], "key") else str(keys[0])
+        try:
+            models = fetch_models(prov, key, timeout=5.0)
+            if models:
+                _set_cached_model_list(prov, models)
+                filled += 1
+                logger.info("[prime_cache] %s: %d modela", prov, len(models))
+        except Exception as exc:
+            logger.debug("[prime_cache] %s: %s", prov, exc)
+    logger.info("[prime_cache] Popunjeno %d provajdera", filled)
+    return filled
+

@@ -45,7 +45,9 @@ register_active_fleet(_fleet_fallback)
 # Pokreni background discovery modela ODMAH pri startu servera,
 # ne cekaj prvi SkriptorijAllInOne init. Tako kes bude pun prije obrade.
 try:
-    from network.model_discovery import start_background_discovery
+    from network.model_discovery import start_background_discovery, prime_cache_sync
+    # Sinhrono popuni cache PRIJE background thread-a (10s po provajderu max)
+    prime_cache_sync(_fleet_fallback.fleet)
     start_background_discovery(_fleet_fallback.fleet)
     print("[BOOKLYFI] Model discovery thread pokrenut pri startu servera")
 except Exception as _e:
@@ -402,7 +404,18 @@ def create_app() -> Flask:
     @app.route("/api/quality_scores")
     def api_quality_scores():
         try:
-            scores_raw = SHARED_STATS.get("quality_scores", {})
+            # ?book= param — ako je dat, vrati podatke za tu knjigu
+            from flask import request as _req_qs
+            _book_req = _req_qs.args.get("book", "").strip()
+            if _book_req:
+                _clean_qs = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(_book_req).stem)
+                _qs_path = CHECKPOINT_BASE_DIR / f"_skr_{_clean_qs}" / "checkpoints" / "quality_scores.json"
+                if _qs_path.exists():
+                    scores_raw = json.loads(_qs_path.read_text("utf-8"))
+                else:
+                    scores_raw = {}
+            else:
+                scores_raw = SHARED_STATS.get("quality_scores", {})
 
             if not scores_raw:
                 try:
@@ -467,7 +480,12 @@ def create_app() -> Flask:
             metrics_summary = {"OK": 0, "REVIEW": 0, "REJECT": 0, "TRUNCATED": 0}
             try:
                 _mp = None
-                if output_file:
+                if _book_req:
+                    _clean_m = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(_book_req).stem)
+                    _mp_c = CHECKPOINT_BASE_DIR / f"_skr_{_clean_m}" / "checkpoints" / "quality_metrics.json"
+                    if _mp_c.exists():
+                        _mp = _mp_c
+                if _mp is None and output_file:
                     _stem_m = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(output_file).stem)
                     _mp_c = CHECKPOINT_BASE_DIR / f"_skr_{_stem_m}" / "checkpoints" / "quality_metrics.json"
                     if _mp_c.exists():
