@@ -398,8 +398,9 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         min_gap_s=62.0,  # 60s + buffer — praktično jedan poziv u minuti
         cooldown_429_s=120.0,
         supports_system_role=True,
-        preferred_roles=["SCORER"],  # samo za posebne slučajeve
-        avoid_roles=["PREVODILAC", "KOREKTOR", "LEKTOR"],  # prenizak RPM
+        preferred_roles=[],  # 1 RPM ukupno — ne moze biti preferred
+        avoid_roles=["PREVODILAC", "KOREKTOR", "LEKTOR", "SCORER", "GLOSAR_UPDATE",
+                     "VALIDATOR", "GUARDIAN", "ANALIZA", "CHAPTER_SUMMARY", "POLISH"],
         quality_tier=2,
         notes="SAMO 1 KLJUČ i 1 RPM na free tier! Koristiti samo za scorer/posebne slučajeve.",
     ),
