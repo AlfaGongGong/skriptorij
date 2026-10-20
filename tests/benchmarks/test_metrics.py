@@ -192,7 +192,8 @@ def test_classify_ratio_review():
         "en_ostaci_per_1000": 0.0,
         "duplikati": 0,
         "tipografija_greske": 0,
-        "ratio_source_target": 0.55,
+        # 0.45 je izmedju 0.4 (reject) i 0.5 (review) -> REVIEW
+        "ratio_source_target": 0.45,
     }
     assert classify_metrics(m) == "REVIEW"
 
