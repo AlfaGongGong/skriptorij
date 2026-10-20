@@ -42,6 +42,15 @@ import logging
 logger = logging.getLogger("booklyfi.app")
 register_active_fleet(_fleet_fallback)
 
+# Pokreni background discovery modela ODMAH pri startu servera,
+# ne cekaj prvi SkriptorijAllInOne init. Tako kes bude pun prije obrade.
+try:
+    from network.model_discovery import start_background_discovery
+    start_background_discovery(_fleet_fallback.fleet)
+    print("[BOOKLYFI] Model discovery thread pokrenut pri startu servera")
+except Exception as _e:
+    print(f"[BOOKLYFI] Model discovery nije pokrenut: {_e}")
+
 
 def _get_fleet() -> FleetManager:
     import api_fleet as _af
