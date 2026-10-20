@@ -387,4 +387,71 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 
 ---
 
+---
+
+## FAZA 3 (2026-10-20) — jedan scorer + deterministicke metrike
+
+### Sta je uradjeno
+
+1. **Base64/truncated `.chk` fix** (`processing/pipeline.py`, commit `71124bf`)
+   - Prije: `_chk_read` prihvatao `.chk` sa 53 chars umesto 2000+ izvora (base64 dropcap video kao tekst)
+   - Poslije: odbija ako izvor > 500c a `.chk` < 50% izvora, ili < 20 chars
+   - Rezultat: 22 nepotpuna bloka iz Pola_rata se re-obradjuju umesto da budu kesirana
+
+2. **F2 — jedan scorer, jedan izvor** (`processing/pipeline.py`, commit `52a1161`)
+   - Prije: V2 put pisao heuristicki score (`ocijeni_kvalitet`), V1 put pisao AI score u `quality_scores.json`
+   - Poslije: V2 put uvek poziva `_quality_scoring` (AI scorer), heuristicki ostaje samo za retry odluku unutar V2
+   - Rezultat: `quality_scores.json` ima konzistentan izvor (AI score)
+
+3. **`core/metrics.py` — deterministicki brojaci** (novi fajl, commit `b388528`)
+   - `compute_metrics(text, source)` vraca: `ekavizmi_per_1000`, `en_ostaci_per_1000`, `duplikati`, `ratio_source_target`, `tipografija_greske`, `reci_ukupno`
+   - Bez AI poziva, uporedivo izmedju knjiga i kroz vreme
+   - 18/18 testova (`tests/benchmarks/test_metrics.py`)
+
+4. **F3a — metrike se racunaju paralelno** (`processing/pipeline.py`, commit `013c9c6`)
+   - `_quality_scoring` sada pise i `quality_metrics.json` (odvojen od `quality_scores.json`)
+   - `quality_scores.json` ostaje nepromenjen — citaci ne vide razliku
+
+5. **`_navodnici_greske` — parnost po tipu** (`core/metrics.py`, commit `c116f08`)
+   - Prije: mesao ASCII `"` i njemacki `„"` u isti zbir → `part0090` davao 15 laznih gresaka
+   - Poslije: ASCII `"` paran, `„..."` mora biti par, `«»`, `''` odvojeno
+   - Rezultat: `part0090` = 1 stvarna greska (chunk boundary), bilo 15
+
+### Brzi fixevi istog dana (povezani)
+
+| Commit | Fajl | Sta |
+|---|---|---|
+| `3fbea77` | `processing/pipeline.py` | `stvarno_prevedeno` sync u `shared_stats` (UI prikaz) |
+| `7b1a5c1` | `network/http_client.py` | Ispis `prelazim na Mistral` prefiks `[GEMINI->GEMMA]` |
+| `f22be6a` | `utils/logging.py` | `add_audit` dedupe — ista poruka u 2s → 1 zapis sa `(xN)` |
+| `a53d518` | `core/quality.py` + `pipeline.py` | Cache accept 7.5, retry target 9.2 (realno dostizno) |
+| `91646eb` | `config/ai_config.py` | MISTRAL `preferred=[]` (1 RPM ne moze biti preferred) |
+| `7690c21` | `config/ai_config.py` | PROFILES uskladjeni sa PRIORITY |
+| `53f4293` | `config/ai_config.py` | Gemma na kraj prioriteta u svih 10 uloga |
+| `f498d21` | `network/model_discovery.py` | GEMINI filter — uklonjen `gemma-4` |
+| `562b626` | `network/model_discovery.py` | NVIDIA vracen u `_MODELS_ENDPOINTS` |
+| `71bb6fe` | `app.py` | Discovery pri startu servera |
+| `31c774b` | `network/model_discovery.py` | Ispravni URL-evi za GROQ/OPENROUTER |
+| `d8c6760` | `network/http_client.py` | Uklonjen `_posalji_na_openrouter` + Gemma 503 agregacija |
+
+### Reseno iz FAZA 2 "Sta je ostalo"
+
+- **`_posalji_na_openrouter`** — uklonjen u `d8c6760`
+- **Nepotrebne/ponovljene poruke** — `add_audit` dedupe (`f22be6a`)
+- **Gemma kljucevi overlap** — uklonjen ranije (GEMINI 12 / GEMMA 4, 0 overlap)
+
+### U toku (FAZA 3 nedovrseno)
+
+- **F3b** — `quality_class` iz metrika (`OK` / `REVIEW` / `REJECT`)
+- **F3c** — UI prikaz metrika umesto samo score-a
+
+### Otvoreno (za buduce faze)
+
+- **EKAVIZMI `[149]`** (`\breci\b`) — hvata i ijekavski "reci" (lazni pozitiv). U `core/kalkovi/ekavizmi.py`, treba suziti na infinitiv.
+- **`ocijeni_kvalitet`** — jos u `WorkersV2` kao interni hint za retry, moze se ukloniti kad F3b bude gotov
+- **`_qa_ai_ocjena`** — sinhroni AI scorer, ostaje samo za retry feedback
+- **Skala zasícena** — 75% blokova na 9.8. Metrike su prvi korak; potpuni redizajn tek sledi.
+
+---
+
 KRAJ KONTEKSTA
