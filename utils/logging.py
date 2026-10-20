@@ -1,3 +1,4 @@
+import time
 
 
 """
@@ -159,6 +160,27 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
         audit_logs = audit_logs[-MAX_AUDIT_LINES:]
 
     if shared_stats is not None:
+        # ── Dedupe: ista poruka u posljednje 2s → inkrementiraj brojač ──
+        _dedupe_window = 2.0
+        _now_ts = time.time()
+        _last = shared_stats.get("_audit_last", {})
+        _key = (atype, msg[:120])
+        _prev = _last.get(_key, {})
+        if (_prev.get("ts", 0) > _now_ts - _dedupe_window
+                and _prev.get("nivo") == atype):
+            _prev["count"] = _prev.get("count", 1) + 1
+            _prev["ts"] = _now_ts
+            _last[_key] = _prev
+            shared_stats["_audit_last"] = _last
+            _events = shared_stats.get("audit_events", [])
+            if _events:
+                _events[-1]["tekst"] = msg + " (×" + str(_prev["count"]) + ")"
+            shared_stats["live_audit"] = "".join(audit_logs)
+            return
+        else:
+            _last[_key] = {"ts": _now_ts, "nivo": atype, "count": 1}
+            shared_stats["_audit_last"] = _last
+
         shared_stats["live_audit"] = "".join(audit_logs)
         # ── Paralelno strukturirano (JSON za /api/monitor/audit) ──
         if "audit_events" not in shared_stats:
