@@ -583,6 +583,11 @@ async def _quality_scoring(
                     _existing_m = _json_m.loads(_mp.read_text("utf-8"))
                 except Exception:
                     _existing_m = {}
+            try:
+                from core.metrics import classify_metrics as _classify
+                _metrics["quality_class"] = _classify(_metrics)
+            except Exception:
+                _metrics["quality_class"] = "?"
             _existing_m[stem_key] = _metrics
             self._atomic_write(
                 _mp,

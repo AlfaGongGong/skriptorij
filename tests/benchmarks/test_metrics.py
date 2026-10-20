@@ -121,3 +121,78 @@ def test_tipografija_skracenice_i_redni_brojevi_nisu_greska():
 def test_tipografija_nesparen_navodnik():
     assert compute_metrics('<p>Rekao je "dobar dan.</p>')["tipografija_greske"] >= 1
     assert compute_metrics('<p>Rekao je "dobar dan".</p>')["tipografija_greske"] == 0
+
+
+# ─────────────────────────────────────────────────────────────
+# F3b — classify_metrics
+# ─────────────────────────────────────────────────────────────
+
+from core.metrics import classify_metrics
+
+
+def test_classify_prazan_truncated():
+    assert classify_metrics({}) == "TRUNCATED"
+    assert classify_metrics(None) == "TRUNCATED"
+
+
+def test_classify_premalo_reci_truncated():
+    assert classify_metrics({"reci_ukupno": 20}) == "TRUNCATED"
+    assert classify_metrics({"reci_ukupno": 49}) == "TRUNCATED"
+
+
+def test_classify_ok():
+    m = {
+        "reci_ukupno": 500,
+        "ekavizmi_per_1000": 0.0,
+        "en_ostaci_per_1000": 0.0,
+        "duplikati": 0,
+        "tipografija_greske": 1,
+    }
+    assert classify_metrics(m) == "OK"
+
+
+def test_classify_review_jedna_metrika():
+    m = {
+        "reci_ukupno": 500,
+        "ekavizmi_per_1000": 0.0,
+        "en_ostaci_per_1000": 0.0,
+        "duplikati": 1,
+        "tipografija_greske": 1,
+    }
+    assert classify_metrics(m) == "REVIEW"
+
+
+def test_classify_reject_jedna_metrika():
+    m = {
+        "reci_ukupno": 500,
+        "ekavizmi_per_1000": 50.0,
+        "en_ostaci_per_1000": 0.0,
+        "duplikati": 0,
+        "tipografija_greske": 0,
+    }
+    assert classify_metrics(m) == "REJECT"
+
+
+def test_classify_ratio_reject():
+    m = {
+        "reci_ukupno": 500,
+        "ekavizmi_per_1000": 0.0,
+        "en_ostaci_per_1000": 0.0,
+        "duplikati": 0,
+        "tipografija_greske": 0,
+        "ratio_source_target": 0.3,
+    }
+    assert classify_metrics(m) == "REJECT"
+
+
+def test_classify_ratio_review():
+    m = {
+        "reci_ukupno": 500,
+        "ekavizmi_per_1000": 0.0,
+        "en_ostaci_per_1000": 0.0,
+        "duplikati": 0,
+        "tipografija_greske": 0,
+        "ratio_source_target": 0.55,
+    }
+    assert classify_metrics(m) == "REVIEW"
+

@@ -201,3 +201,57 @@ def compute_metrics(text: str, source: str | None = None) -> dict:
         "tipografija_greske": _tipografija(pasusi),
         "reci_ukupno": reci,
     }
+
+
+# ─────────────────────────────────────────────────────────────
+# Klasifikacija iz metrika (F3b)
+# ─────────────────────────────────────────────────────────────
+
+_METRIC_THRESHOLDS = {
+    # {metrika: (OK_max, REVIEW_max)} — iznad REVIEW_max = REJECT
+    "ekavizmi_per_1000":  (2.0,  10.0),
+    "en_ostaci_per_1000": (5.0,  25.0),
+    "duplikati":          (0,     2),
+    "tipografija_greske": (3,    15),
+}
+
+
+def classify_metrics(metrics: dict) -> str:
+    """
+    Klasifikuje blok iz metrika (bez AI):
+      TRUNCATED  — premalo reci (< 50), ne meri se
+      REJECT     — bilo koja metrika preko REVIEW_max
+      REVIEW     — 1-2 metrike preko OK, nijedna preko REVIEW
+      OK         — sve u granicama
+    """
+    if not metrics:
+        return "TRUNCATED"
+    if metrics.get("reci_ukupno", 0) < 50:
+        return "TRUNCATED"
+
+    reject = False
+    review = 0
+    for key, (ok_max, review_max) in _METRIC_THRESHOLDS.items():
+        v = metrics.get(key, 0)
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            continue
+        if v > review_max:
+            reject = True
+        elif v > ok_max:
+            review += 1
+
+    ratio = metrics.get("ratio_source_target")
+    if isinstance(ratio, (int, float)):
+        if ratio < 0.4 or ratio > 1.8:
+            reject = True
+        elif ratio < 0.5 or ratio > 1.5:
+            review += 1
+
+    if reject:
+        return "REJECT"
+    if review >= 1:
+        return "REVIEW"
+    return "OK"
+
