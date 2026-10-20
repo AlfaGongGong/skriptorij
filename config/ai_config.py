@@ -175,10 +175,12 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         min_gap_s=7.5,  # 60s / 8 rpm_safe = 7.5s razmak između poziva jednog ključa
         cooldown_429_s=15.0,  # 15s cooldown po ključu nakon RPM 429
         supports_system_role=True,
-        preferred_roles=["LEKTOR", "POLISH", "SCORER", "ANALIZA"],
+        preferred_roles=["PREVODILAC", "LEKTOR", "KOREKTOR", "POLISH",
+                         "VALIDATOR", "GUARDIAN", "ANALIZA", "CHAPTER_SUMMARY"],
         avoid_roles=[],  # radi sve
         quality_tier=1,
-        notes="Primarni: 3.5-flash (stable, nema shutdown). 8 ključeva × 500 RPD = 4000 RPD/dan. 2.5 fallback do okt 2026.",
+        notes="Primarni: 3.5-flash (stable). 12 kljuceva x 500 RPD = 6000 RPD/dan. "
+              "#1 za jezik i analizu, #2 za SCORER/GLOSAR_UPDATE.",
     ),
     # ── GROQ ────────────────────────────────────────────────────────────────
     # Free tier (STARI podaci za llama-3.3-70b-versatile — model ugašen 17.06.2026):
@@ -197,10 +199,11 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         cooldown_429_s=10.0,  # FIX: Groq šalje Retry-After (2-10s) pa se profil rijetko koristi.
                                # 65s je bilo predugo — drži ključ zaključan kad Groq nema header.
         supports_system_role=True,
-        preferred_roles=["PREVODILAC", "KOREKTOR"],
-        avoid_roles=["SCORER"],  # RPD previše vrijedan za scorer
+        preferred_roles=["PREVODILAC", "KOREKTOR", "SCORER", "GLOSAR_UPDATE"],
+        avoid_roles=[],
         quality_tier=2,
-        notes="Brz. 5 ključeva. RPD je usko grlo — čuvati za prevod/korektor.",
+        notes="Brz. 6 kljuceva. RPD 6000 (6 x 1000). #1 za SCORER/GLOSAR_UPDATE, "
+              "#2 za PREVODILAC/LEKTOR/KOREKTOR.",
     ),
     # ── SAMBANOVA ───────────────────────────────────────────────────────────
     # Free tier: Meta-Llama-3.3-70B = 10 RPM / 10000 RPD / 4096 TPM
@@ -468,10 +471,13 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         min_gap_s=5.0,  # 60/12 = 5.0s
         cooldown_429_s=15.0,  # isto kao Gemini — Google API
         supports_system_role=False,  # Gemma nema system role
-        preferred_roles=["LEKTOR", "POLISH"],
-        avoid_roles=["SCORER"],
+        preferred_roles=[],  # Gemma 4 nepouzdana na BCS (test 2026-10-20)
+        avoid_roles=["LEKTOR", "POLISH", "PREVODILAC", "KOREKTOR",
+                     "SCORER", "VALIDATOR", "GUARDIAN",
+                     "ANALIZA", "CHAPTER_SUMMARY", "GLOSAR_UPDATE"],
         quality_tier=2,
-        notes="Gemma 4 na Gemini native endpointu. Koristi GEMINI ključeve. 15 RPM / 1500 RPD.",
+        notes="Gemma 4 na Google API: timeout (26b) / 500 (31b) na BCS (test 2026-10-20). "
+              "Poslednja u svim prioritetima. Ne koristiti za jezicke uloge dok se ne nadje stabilniji model.",
     ),
 }
 
