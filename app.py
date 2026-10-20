@@ -462,6 +462,35 @@ def create_app() -> Flask:
                 by_file[fn]["avg"] = round(by_file[fn]["total"] / cnt, 2) if cnt else 0.0
                 del by_file[fn]["total"]
 
+            # F3c: metrike iz quality_metrics.json (deterministicki brojaci)
+            metrics_data = {}
+            metrics_summary = {"OK": 0, "REVIEW": 0, "REJECT": 0, "TRUNCATED": 0}
+            try:
+                _mp = None
+                if output_file:
+                    _stem_m = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(output_file).stem)
+                    _mp_c = CHECKPOINT_BASE_DIR / f"_skr_{_stem_m}" / "checkpoints" / "quality_metrics.json"
+                    if _mp_c.exists():
+                        _mp = _mp_c
+                if _mp is None:
+                    _skr_dirs_m = sorted(
+                        CHECKPOINT_BASE_DIR.glob("_skr_*"),
+                        key=lambda p: p.stat().st_mtime,
+                        reverse=True,
+                    )
+                    if _skr_dirs_m:
+                        _mp_c = _skr_dirs_m[0] / "checkpoints" / "quality_metrics.json"
+                        if _mp_c.exists():
+                            _mp = _mp_c
+                if _mp:
+                    metrics_data = json.loads(_mp.read_text("utf-8"))
+                    for _m in metrics_data.values():
+                        _cls = _m.get("quality_class", "?")
+                        if _cls in metrics_summary:
+                            metrics_summary[_cls] += 1
+            except Exception:
+                metrics_data = {}
+
             return jsonify({
                 "scores":   scores,
                 "by_file":  by_file,
@@ -473,6 +502,8 @@ def create_app() -> Flask:
                     "pct_print_ready": round((excellent / n) * 100, 1),
                 },
                 "losi_blokovi": {k: v for k, v in scores.items() if v < 6.5},
+                "metrics": metrics_data,
+                "metrics_summary": metrics_summary,
             })
         except Exception as e:
             return jsonify({"error": str(e), "has_data": False}), 500

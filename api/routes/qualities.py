@@ -57,9 +57,6 @@ def _get_quality_cache_path() -> Path | None:
     return None
 
 
-@bp.route("/api/quality_scores")
-
-
 def _get_metrics_path() -> Path | None:
     """Pronalazi quality_metrics.json za aktivni ili zadnji projekt."""
     import re as _re
@@ -89,6 +86,8 @@ def _get_metrics_path() -> Path | None:
             return candidate
     return None
 
+
+@bp.route("/api/quality_scores")
 def get_quality_scores():
     """
     Vraća quality scores za aktivan projekt.
