@@ -786,6 +786,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
         self.global_done_chunks += 1
         self.stvarno_prevedeno_u_sesiji += 1
+        self.shared_stats["stvarno_prevedeno"] = self.stvarno_prevedeno_u_sesiji
         gc.collect()
         self.log(f"[{file_name}] Blok {chunk_idx}: ✍️ HR lektura ({prov_l}→{prov_kor_l})", "tech")
 
@@ -955,6 +956,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     self.global_done_chunks += 1
     self.stvarno_prevedeno_u_sesiji += 1
+    self.shared_stats["stvarno_prevedeno"] = self.stvarno_prevedeno_u_sesiji
 
     prov_label = f"{prov1}→{prov2}→{prov3}"
     await _quality_scoring(
@@ -1047,6 +1049,7 @@ async def process_chunk_with_retry(
                 _chk_write(self, file_name, chunk_idx, tekst, chunk_for_hash=chunk)
                 self.global_done_chunks += 1
                 self.stvarno_prevedeno_u_sesiji += 1
+                self.shared_stats["stvarno_prevedeno"] = self.stvarno_prevedeno_u_sesiji
 
                 # Sačuvaj quality score iz V2
                 stem_key = f"{file_name}_blok_{chunk_idx}"
