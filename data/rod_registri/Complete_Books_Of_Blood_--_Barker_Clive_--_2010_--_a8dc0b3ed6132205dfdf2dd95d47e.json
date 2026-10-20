@@ -22,7 +22,7 @@
   "Jasno": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Posrednik": {
     "rod": "M",
@@ -86,7 +86,7 @@
   },
   "Mesar": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 7,
     "clue_z": 0
   },
   "Jednostavno": {

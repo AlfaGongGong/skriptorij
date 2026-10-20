@@ -1,12 +1,12 @@
 {
   "Čim": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 4,
     "clue_z": 0
   },
   "maršal": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 9,
     "clue_z": 0
   },
   "komornik": {
@@ -16,7 +16,7 @@
   },
   "Hoff": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "admiral": {
@@ -42,32 +42,32 @@
   "Wetterlant": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 11
+    "clue_z": 23
   },
   "Zrak": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Govornik": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Vick": {
     "rod": "Ž",
-    "clue_m": 0,
-    "clue_z": 9
+    "clue_m": 1,
+    "clue_z": 19
   },
   "Savine": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 16
+    "clue_z": 22
   },
   "Ardee": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 17
+    "clue_z": 20
   },
   "Curnsbick": {
     "rod": "M",
@@ -82,46 +82,46 @@
   "Liddy": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 6
   },
   "May": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 5
   },
   "Tada": {
+    "rod": "M",
+    "clue_m": 5,
+    "clue_z": 0
+  },
+  "Halder": {
     "rod": "M",
     "clue_m": 4,
     "clue_z": 0
   },
-  "Halder": {
-    "rod": null,
-    "clue_m": 1,
-    "clue_z": 0
-  },
   "Broad": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Malmer": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 4,
     "clue_z": 0
   },
   "Figura": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 4
   },
   "Istina": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 4
   },
   "Iako": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Problem": {
@@ -130,18 +130,18 @@
     "clue_z": 0
   },
   "Još": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 3
   },
   "Zlobno": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Leo": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 7,
     "clue_z": 0
   },
   "Mustred": {
@@ -156,7 +156,7 @@
   },
   "Clover": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 12,
     "clue_z": 0
   },
   "Downside": {
@@ -165,23 +165,23 @@
     "clue_z": 0
   },
   "Bitka": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 3
   },
   "Isern": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 7
   },
   "Rikke": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 8
   },
   "Shivers": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Tallow": {
@@ -191,12 +191,12 @@
   },
   "Shudra": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Unutra": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Gotovo": {
@@ -222,7 +222,7 @@
   "Finree": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 12
+    "clue_z": 20
   },
   "guvernerice": {
     "rod": null,
@@ -230,9 +230,9 @@
     "clue_z": 1
   },
   "guvernerica": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 3
   },
   "ovoga": {
     "rod": null,
@@ -247,7 +247,7 @@
   "Vitari": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 5
   },
   "On": {
     "rod": "M",
@@ -260,8 +260,8 @@
     "clue_z": 0
   },
   "Brđanin": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Ubrzo": {
@@ -270,18 +270,18 @@
     "clue_z": 1
   },
   "raspao": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Stour": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Hollowhead": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Sjever": {
