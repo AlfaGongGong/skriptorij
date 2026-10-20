@@ -726,7 +726,7 @@ async def _call_gemini_with_full_rotation(
 
                     # FALLBACK 3: Mistral (nezavisan od Google safety filtera)
                     self.log(
-                        f"[GEMMA] Nije uspio — prelazim na Mistral",
+                        f"[GEMINI→GEMMA] Nije uspio — prelazim na Mistral",
                         "warning",
                     )
                     mistral_res, mistral_engine = await _call_single_provider(
