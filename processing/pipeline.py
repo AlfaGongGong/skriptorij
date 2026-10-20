@@ -30,7 +30,7 @@ from core.text_utils import (
     _je_ai_anotacija,
 )
 from processing.rescue import _spasi_od_sirovog
-from core.quality import _QUALITY_RESCUE_THRESHOLD
+from core.quality import _QUALITY_RESCUE_THRESHOLD, _CACHE_ACCEPT_SCORE
 
 # ── Korak 2, 3, 4 integracije ──────────────────────────────────────────────
 try:
@@ -629,7 +629,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             raw_val = qs.get(stem_key, None)
             cached_score = _norm_score(raw_val) if raw_val is not None else None
 
-            if cached_score is None or cached_score >= _QUALITY_RESCUE_THRESHOLD:
+            if cached_score is None or cached_score >= _CACHE_ACCEPT_SCORE:
                 if cached_score is None:
                     # Blok nema pohranjenu ocjenu — scoruj keširani sadržaj
                     tip_bloka_c = detektuj_tip_bloka(chunk)
@@ -651,7 +651,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             else:
                 self.log(
                     f"[{file_name}] Blok {chunk_idx}: ♻️ Cache ignorisan "
-                    f"(score={cached_score:.1f} < {_QUALITY_RESCUE_THRESHOLD}) — ponovo obrađujem.",
+                    f"(score={cached_score:.1f} < {_CACHE_ACCEPT_SCORE}) — ponovo obrađujem.",
                     "warning",
                 )
 
@@ -688,10 +688,10 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     )
                     new_qs_val_l = self.shared_stats.get("quality_scores", {}).get(stem_key_l)
                     cached_score_l = _norm_score(new_qs_val_l) if new_qs_val_l is not None else None
-                if cached_score_l is not None and cached_score_l < _QUALITY_RESCUE_THRESHOLD:
+                if cached_score_l is not None and cached_score_l < _CACHE_ACCEPT_SCORE:
                     self.log(
                         f"[{file_name}] Blok {chunk_idx}: ♻️ Lektura cache ignorisan "
-                        f"(score={cached_score_l:.1f} < {_QUALITY_RESCUE_THRESHOLD}) — ponovo lektoriram.",
+                        f"(score={cached_score_l:.1f} < {_CACHE_ACCEPT_SCORE}) — ponovo lektoriram.",
                         "warning",
                     )
                 else:

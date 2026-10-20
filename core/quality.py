@@ -16,7 +16,14 @@ from bs4 import BeautifulSoup
 
 # ─── Konstante ────────────────────────────────────────────────────────────────
 
-_QUALITY_RESCUE_THRESHOLD    = 9.5
+# Prag za retry — realno dostizan (AI scoreri max 9.2-9.3).
+# Score < 9.2 -> retry s feedbackom; score >= 9.2 -> OK, ne diraj.
+_QUALITY_RESCUE_THRESHOLD    = 9.2
+
+# Prag za prihvatanje kesa — ne gubi revidirano pri restartu.
+# Score >= 7.5 ("dobar prevod") -> kes se prihvata. Score < 7.5 -> ponovo obradi.
+_CACHE_ACCEPT_SCORE = 7.5
+
 _QUALITY_EXCELLENT_THRESHOLD = 8.5
 
 # Težine za EN kontaminaciju
