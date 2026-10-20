@@ -9,6 +9,36 @@ from core.text_utils import _HTML_TAG_RE, _detektuj_en_ostatke
 from core.quality import _scoruj_kvalitetu, _QUALITY_RESCUE_THRESHOLD
 
 
+
+def _je_toc_fajl(html_content: str) -> bool:
+    """Detektuje originalni Sadrzaj (TOC) — preskoci obradu."""
+    try:
+        from bs4 import BeautifulSoup as _BS
+        soup = _BS(html_content, "html.parser")
+
+        if soup.find("section", id="toc"):
+            return True
+        if soup.find("nav", attrs={"epub:type": "toc"}):
+            return True
+
+        h1 = soup.find("h1")
+        if h1:
+            t = h1.get_text(strip=True).lower()
+            if t in ("sadržaj", "sadrzaj", "contents", "toc", "table of contents"):
+                return True
+
+        links = soup.find_all("a", href=True)
+        if len(links) >= 10:
+            full_text = soup.get_text(strip=True)
+            link_text = " ".join(a.get_text(strip=True) for a in links)
+            non_link = full_text.replace(link_text, "").strip()
+            if len(non_link) < 500:
+                return True
+    except Exception:
+        pass
+    return False
+
+
 # ============================================================================
 # FIX #4 — Robusno JSON parsiranje AI odgovora
 # ============================================================================

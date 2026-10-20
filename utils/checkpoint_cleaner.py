@@ -85,6 +85,21 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
             extracted = m2.group(1).strip()
             if extracted and extracted.lower() not in _PLACEHOLDERS:
                 return extracted
+    # Fallback za truncated JSON — AI ponekad vrati {"korektura": "<div ..."}
+    # bez zatvorene viticaste zagrade. Regex izvlaci vrijednost do kraja.
+    import re as _re_fb
+    m_fb = _re_fb.search(
+        r'"(?:finalno_polirano|korektura|tekst|prijevod)"\s*:\s*"',
+        stripped,
+    )
+    if m_fb:
+        rest = stripped[m_fb.end():]
+        rest = rest.replace('\\\\"', '"').replace('\\\\', '\\').replace('\\"', '"')
+        rest = rest.replace("\\n", "\n").replace("\\t", "\t")
+        rest = rest.rstrip().rstrip('"').rstrip("}").rstrip()
+        if len(rest) > 20:
+            return rest
+
     return sadrzaj
 
 
