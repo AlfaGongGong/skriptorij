@@ -1083,22 +1083,28 @@ async def process_chunk_with_retry(
                     self._quality_scores = {}
                 if "quality_scores" not in self.shared_stats:
                     self.shared_stats["quality_scores"] = {}
-                qs_raw = rezultat.get("quality_score", 0.0)
-                qs = float(qs_raw) if qs_raw else 0.0
-                # Ako V2 nije dao quality_score, pokreni nezavisni scorer
-                if qs < 0.5:
-                    try:
-                        await _quality_scoring(
-                            self, tekst, chunk, chunk_idx, file_name,
-                            tip_bloka, engine_label,
-                            tip_ocjenjivanja="prevod",
-                            prevodilac_provider=engine_label,
-                        )
-                        qs = self.shared_stats.get("quality_scores", {}).get(stem_key, 0.0)
-                    except Exception:
-                        pass
-                self._quality_scores[stem_key] = qs
-                self.shared_stats["quality_scores"][stem_key] = qs
+                # F2: uvek pozovi _quality_scoring (AI scorer) — jedan izvor istine.
+                # V2 heuristicki score ostaje samo kao interni hint u WorkersV2
+                # (za retry odluku), ne pise se u quality_scores.json.
+                # Ako AI scorer padne, fallback na V2 heuristicki.
+                try:
+                    await _quality_scoring(
+                        self, tekst, chunk, chunk_idx, file_name,
+                        tip_bloka, engine_label,
+                        tip_ocjenjivanja="prevod",
+                        prevodilac_provider=engine_label,
+                    )
+                    qs = self.shared_stats.get("quality_scores", {}).get(stem_key, 0.0)
+                except Exception as _qs_err:
+                    qs_raw = rezultat.get("quality_score", 0.0)
+                    qs = float(qs_raw) if qs_raw else 0.0
+                    self.log(
+                        f"⚠️ [{file_name}] Blok {chunk_idx}: AI scorer pao "
+                        f"({_qs_err}), koristim V2 heuristicki ({qs:.1f})",
+                        "warning",
+                    )
+                    self._quality_scores[stem_key] = qs
+                    self.shared_stats["quality_scores"][stem_key] = qs
 
                 return tekst, engine_label
 
