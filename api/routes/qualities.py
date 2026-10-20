@@ -58,6 +58,37 @@ def _get_quality_cache_path() -> Path | None:
 
 
 @bp.route("/api/quality_scores")
+
+
+def _get_metrics_path() -> Path | None:
+    """Pronalazi quality_metrics.json za aktivni ili zadnji projekt."""
+    import re as _re
+
+    output_file = SHARED_STATS.get("output_file", "")
+    if output_file:
+        stem = _re.sub(r"[^a-zA-Z0-9_\-]", "", Path(output_file).stem)
+        candidate = (
+            CHECKPOINT_BASE_DIR / f"_skr_{stem}" / "checkpoints" / "quality_metrics.json"
+        )
+        if candidate.exists():
+            return candidate
+
+    current = SHARED_STATS.get("current_file", "")
+    if current:
+        stem = _re.sub(r"[^a-zA-Z0-9_\-]", "", Path(current).stem)
+        candidate = (
+            CHECKPOINT_BASE_DIR / f"_skr_{stem}" / "checkpoints" / "quality_metrics.json"
+        )
+        if candidate.exists():
+            return candidate
+
+    qs_path = _get_quality_cache_path()
+    if qs_path:
+        candidate = qs_path.parent / "quality_metrics.json"
+        if candidate.exists():
+            return candidate
+    return None
+
 def get_quality_scores():
     """
     Vraća quality scores za aktivan projekt.
@@ -115,11 +146,27 @@ def get_quality_scores():
             # Sortiraj blokove po indeksu
             by_file[fn]["blocks"].sort(key=lambda x: x["stem"])
 
+        # F3c: metrike (ako quality_metrics.json postoji)
+        metrics_data = {}
+        metrics_summary = {"OK": 0, "REVIEW": 0, "REJECT": 0, "TRUNCATED": 0}
+        mp = _get_metrics_path()
+        if mp:
+            try:
+                metrics_data = json.loads(mp.read_text("utf-8"))
+                for m in metrics_data.values():
+                    cls = m.get("quality_class", "?")
+                    if cls in metrics_summary:
+                        metrics_summary[cls] += 1
+            except Exception:
+                metrics_data = {}
+
         return jsonify(
             {
                 "scores": scores,
                 "summary": summary,
                 "by_file": by_file,
+                "metrics": metrics_data,
+                "metrics_summary": metrics_summary,
                 "has_data": True,
                 "source": str(cache_path),
             }
