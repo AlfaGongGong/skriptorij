@@ -149,16 +149,19 @@ def _tipografija_pasus(p: str) -> int:
 
 
 def _navodnici_greske(tekst: str) -> int:
-    """Nespareni navodnici na nivou cijelog teksta (dijalog moze preci preko pasusa)."""
-    ravni = tekst.count('"')
-    otv = tekst.count("\u201e")  # „
-    zatv = tekst.count("\u201c") + tekst.count("\u201d")  # “ ”
-    if otv:
-        n = abs(otv - (zatv + ravni))
-    else:
-        n = ravni % 2
+    """Nespareni navodnici po tipu. ASCII " se ne mesa sa „ “."""
+    n = 0
+    # ASCII "..." — paran broj (svaki otvoreni ima zatvoreni)
+    n += tekst.count('"') % 2
+    # „...“ (njemacki) — otv mora biti == zatv
+    n += abs(tekst.count("\u201e") - tekst.count("\u201c"))
+    # ”...” (francuski, samo zatvoreni) — samo ako nema „
+    if tekst.count("\u201e") == 0:
         n += abs(tekst.count("\u201c") - tekst.count("\u201d"))
-    n += abs(tekst.count("\u00ab") - tekst.count("\u00bb"))  # « »
+    # «...» — paran
+    n += abs(tekst.count("\u00ab") - tekst.count("\u00bb"))
+    # ‘...’ — paran
+    n += abs(tekst.count("\u2018") - tekst.count("\u2019"))
     return n
 
 
