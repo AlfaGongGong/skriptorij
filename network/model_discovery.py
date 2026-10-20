@@ -20,12 +20,12 @@ logger = logging.getLogger(__name__)
 _CACHE_TTL = 3600.0
 
 _MODELS_ENDPOINTS: dict[str, str] = {
-    "GROQ":        "qwen/qwen3.8-27b",
+    "GROQ":        "https://api.groq.com/openai/v1/models",
     "CEREBRAS":    "https://api.cerebras.ai/v1/models",
     "MISTRAL":     "https://api.mistral.ai/v1/models",
     "SAMBANOVA":   "https://api.sambanova.ai/v1/models",
     "TOGETHER":    "https://api.together.xyz/v1/models",
-    "OPENROUTER": "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "OPENROUTER": "https://openrouter.ai/api/v1/models",
     "FIREWORKS":   "https://api.fireworks.ai/inference/v1/models",
     "KLUSTER":     "https://api.kluster.ai/v1/models",
     "CHUTES":      "https://llm.chutes.ai/v1/models",
@@ -299,7 +299,11 @@ def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str
         return []
 
     if resp.status_code != 200:
-        logger.warning("[ModelDiscovery] %s GET /models → HTTP %d", provider, resp.status_code)
+        _fb = FALLBACK_MODELS.get(prov, "?")
+        logger.warning(
+            "[ModelDiscovery] %s /models → HTTP %d — koristim fallback: %s",
+            provider, resp.status_code, _fb,
+        )
         return []
 
     try:

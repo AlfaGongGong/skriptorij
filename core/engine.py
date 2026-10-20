@@ -46,10 +46,9 @@ class SkriptorijAllInOne:
         #   (nakon key_check-a većina će već biti cachirana, ovo popunjava ostatak).
         # start_background_refresh: osvježava cache svakih sat vremena.
         try:
-            from network.model_discovery import startup_key_check, prime_cache_sync, start_background_refresh
-            startup_key_check(self.fleet)
-            prime_cache_sync(self.fleet)
-            start_background_refresh(self.fleet)
+            from network.model_discovery import start_background_discovery
+            # start_background_discovery ocekuje dict {provider: [KeyState, ...]}
+            start_background_discovery(self.fleet.fleet)
         except Exception:
             pass
 
