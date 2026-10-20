@@ -89,6 +89,8 @@ _PROVIDER_FILTERS: dict[str, list] = {
     ],
     "GROQ": [
         lambda m: "whisper" not in m,
+        # Reasoning modeli trose tokene na interno razmisljanje i seku odgovor.
+        lambda m: "gpt-oss" not in m,
         lambda m: "guard" not in m,
         lambda m: "tts" not in m,
     ],
@@ -131,6 +133,15 @@ def _score_model_strength(provider: str, model_id: str) -> float:
         score += 2.5
     elif "llama-3" in m:
         score += 1.5
+
+    # Bonus za non-reasoning modele (ne seku odgovor)
+    if "qwen" in m and "thinking" not in m:
+        score += 3.0
+    if "llama-3.3" in m or "llama-3.1" in m:
+        score += 2.5
+    # Penal za reasoning modele
+    if "gpt-oss" in m or "o1-" in m or "o3-" in m:
+        score -= 5.0
 
     if "deepseek-v3" in m or "deepseek-r2" in m:
         score += 6.0

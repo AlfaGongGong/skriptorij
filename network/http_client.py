@@ -1098,7 +1098,11 @@ async def _call_single_provider(
             boost_ceiling = 4000
         else:
             boost_ceiling = 8192
-        boosted_tokens = min(max_tokens * 3, boost_ceiling)
+        # Ako je boost rezultat mali (max_tokens=256 * 3 = 768), skoči na ceiling
+        _boosted = min(max_tokens * 3, boost_ceiling)
+        if _boosted < boost_ceiling // 2 and max_tokens < boost_ceiling // 2:
+            _boosted = boost_ceiling
+        boosted_tokens = _boosted
         if boosted_tokens > max_tokens:
             self.log(
                 f"[{prov_upper}] {model} length-cutoff prazan — "
@@ -1189,10 +1193,25 @@ def api_call(
     else:
         url = get_url(prov_upper)
         messages = _build_messages(system, user, model)
+        # Reasoning modeli trose tokene na razmisljanje pre vidljivog odgovora.
+        # Ako je provider GROQ i model je reasoning, daj MU ODMAH veliki budzet
+        # (ne cekaj boost — boost daje samo 768 za 256 tokena, nedovoljno).
+        _is_reasoning = (
+            "gpt-oss" in (model or "").lower()
+            or "qwen3.8" in (model or "").lower() and "thinking" in (model or "").lower()
+        )
+        _effective_max_tokens = max_tokens
+        if prov_upper == "GROQ" and _is_reasoning:
+            _effective_max_tokens = max(max_tokens, 6000)
+            logger.info(
+                "[api_call] GROQ reasoning model %s — max_tokens %d → %d",
+                model, max_tokens, _effective_max_tokens,
+            )
+
         payload = {
             "model": model,
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            "max_tokens": _effective_max_tokens,
             "messages": messages,
         }
         # FIX: NVIDIA thinking OFF (radi u 1.5s!)
