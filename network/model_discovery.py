@@ -292,6 +292,19 @@ def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str
         return _fetch_gemini_native_models(api_key, timeout)
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    # Cloudflare bot protection za GROQ (error 1010) — isti fingerprint kao http_client
+    if prov == "GROQ":
+        headers["Accept-Encoding"] = "identity"
+        headers["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        headers["Accept"] = "application/json, text/plain, */*"
+        headers["Accept-Language"] = "en-US,en;q=0.9"
+        headers["Origin"] = "https://console.groq.com"
+        headers["Referer"] = "https://console.groq.com/"
+        headers["Sec-Fetch-Dest"] = "empty"
+        headers["Sec-Fetch-Mode"] = "cors"
+        headers["Sec-Fetch-Site"] = "same-origin"
+        headers["Connection"] = "keep-alive"
+        headers["DNT"] = "1"
 
     try:
         resp = requests.get(endpoint, headers=headers, timeout=timeout)
