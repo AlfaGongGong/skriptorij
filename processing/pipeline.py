@@ -570,6 +570,27 @@ async def _quality_scoring(
         self._quality_scores[stem_key] = score_float
         self.shared_stats["quality_scores"][stem_key] = score_float
 
+        # F3a: metrike — deterministicki brojaci gresaka, paralelno sa score-om.
+        # Upisuju se u odvojen fajl quality_metrics.json (ne dira quality_scores).
+        try:
+            from core.metrics import compute_metrics
+            _metrics = compute_metrics(finalno, original_chunk)
+            _mp = self.checkpoint_dir / "quality_metrics.json"
+            _existing_m = {}
+            if _mp.exists():
+                try:
+                    import json as _json_m
+                    _existing_m = _json_m.loads(_mp.read_text("utf-8"))
+                except Exception:
+                    _existing_m = {}
+            _existing_m[stem_key] = _metrics
+            self._atomic_write(
+                _mp,
+                __import__("json").dumps(_existing_m, ensure_ascii=False, indent=2),
+            )
+        except Exception:
+            pass
+
         if score_float < 6.5:
             _prov = prevodilac_provider or "?"
             self.log(
