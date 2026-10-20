@@ -82,6 +82,16 @@ def _build_headers(provider, api_key=None, extra=None):
             h["x-goog-api-key"] = api_key
         else:
             h["Authorization"] = f"Bearer {api_key}"
+    # Cloudflare bot protection (error 1010) za GROQ — treba pun browser fingerprint
+    if provider == "GROQ":
+        h["Accept-Encoding"] = "identity"  # BEZ gzip/br — urllib ne dekodira
+        h["Origin"] = "https://console.groq.com"
+        h["Referer"] = "https://console.groq.com/"
+        h["Sec-Fetch-Dest"] = "empty"
+        h["Sec-Fetch-Mode"] = "cors"
+        h["Sec-Fetch-Site"] = "same-origin"
+        h["Connection"] = "keep-alive"
+        h["DNT"] = "1"
     if provider == "OPENROUTER":
         h["HTTP-Referer"] = "https://booklyfi.local"
         h["X-Title"] = "BooklyFi"
