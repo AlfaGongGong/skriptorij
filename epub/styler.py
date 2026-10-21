@@ -963,9 +963,9 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
         return False
 
     def _naslov_iz(hb, toc_naslov, book_title):
-        # Preskoči toc_naslov ako je samo ime knjige (Calibre stavlja isto za sve)
+        # Preskoči toc_naslov ako sadrži ime knjige (Calibre stavlja isto za sve)
         if (toc_naslov and not GENERIC_RX.match(toc_naslov.strip())
-                and (not book_title or toc_naslov.strip().lower() != book_title.strip().lower())):
+                and not (book_title and book_title.strip().lower() in toc_naslov.strip().lower())):
             return toc_naslov
         try:
             s = BeautifulSoup(hb, "html.parser")
@@ -979,7 +979,7 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
             if tt:
                 t = tt.get_text(strip=True)
                 if t and 0 < len(t) < 120:
-                    if not book_title or t.lower() != book_title.lower():
+                    if not (book_title and book_title.strip().lower() in t.lower()):
                         return t
             first_p = s.find("p")
             if first_p:
@@ -1014,6 +1014,8 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
                 return False, "cover(title)", None, False
             if imgs >= 1 and tlen < 30:
                 return False, "samo-slika", None, False
+            if imgs >= 1 and tlen < 100:
+                return False, "cover-slicica", None, False
 
             if "table of contents" in title or "inhaltsverzeichnis" in title:
                 return False, "toc(title)", None, False
