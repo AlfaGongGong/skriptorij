@@ -286,12 +286,23 @@ def _extract_gemini_native(data: dict) -> str | None:
         if not candidates:
             fb = data.get("promptFeedback", {})
             if fb.get("blockReason"):
-                logger.warning("[GEMINI] Sadržaj blokiran: %s", fb.get("blockReason"))
+                ratings = _safety_summary(data)
+                if ratings:
+                    logger.warning(
+                        "[GEMINI] Sadrzaj blokiran: %s | safety: %s",
+                        fb.get("blockReason"), ratings,
+                    )
+                else:
+                    logger.warning("[GEMINI] Sadrzaj blokiran: %s", fb.get("blockReason"))
             return None
         cand = candidates[0]
         finish = cand.get("finishReason", "")
         if finish == "SAFETY":
-            logger.warning("[GEMINI] Odgovor blokiran (SAFETY filter)")
+            ratings = _safety_summary(data)
+            if ratings:
+                logger.warning("[GEMINI] Odgovor blokiran (SAFETY) | safety: %s", ratings)
+            else:
+                logger.warning("[GEMINI] Odgovor blokiran (SAFETY filter)")
             return None
         parts = cand.get("content", {}).get("parts", [])
         text = "".join(
@@ -305,18 +316,45 @@ def _extract_gemini_native(data: dict) -> str | None:
 
 
 # ── Cohere v2 response ────────────────────────────────────────────────────────
+def _safety_summary(data: dict) -> str:
+    """Vrati sazetak safetyRatings iz promptFeedback i candidates.
+    Format: 'HARM_CATEGORY_X=PROB(HIGH) HARM_CATEGORY_Y=PROB(MEDIUM)'
+    ili '' ako nema safetyRatings."""
+    out = []
+    fb = data.get("promptFeedback") or {}
+    for r in (fb.get("safetyRatings") or []):
+        cat = r.get("category", "?")
+        prob = r.get("probability", "?")
+        blocked = " BLOCKED" if r.get("blocked") else ""
+        out.append(f"{cat}=PROB({prob}){blocked}")
+    cands = data.get("candidates") or []
+    if cands:
+        for r in (cands[0].get("safetyRatings") or []):
+            cat = r.get("category", "?")
+            prob = r.get("probability", "?")
+            blocked = " BLOCKED" if r.get("blocked") else ""
+            out.append(f"[cand]{cat}=PROB({prob}){blocked}")
+    return " ".join(out)
+
+
 def _diagnose_empty_gemini_response(data: dict) -> str:
-    """Čitljiv razlog zašto je Gemini/Gemma odgovor prazan."""
+    """Citljiv razlog zasto je Gemini/Gemma odgovor prazan."""
     if not data:
         return "prazan data objekat"
     fb = data.get("promptFeedback", {})
     if fb.get("blockReason"):
+        ratings = _safety_summary(data)
+        if ratings:
+            return f"blokiran prompt (blockReason={fb['blockReason']}, {ratings})"
         return f"blokiran prompt (blockReason={fb['blockReason']})"
     candidates = data.get("candidates", [])
     if not candidates:
         return "nema candidates u odgovoru"
     finish = candidates[0].get("finishReason", "")
     if finish == "SAFETY":
+        ratings = _safety_summary(data)
+        if ratings:
+            return f"SAFETY filter (finishReason=SAFETY, {ratings})"
         return "SAFETY filter (finishReason=SAFETY)"
     if finish and finish != "STOP":
         return f"finishReason={finish}"
