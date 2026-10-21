@@ -22,7 +22,7 @@ if [ -z "$TEXT" ]; then
     echo "  clipboard prazan"; exit 1
 fi
 
-echo "═══ 1. Trazim === FILE: X === blokove ═══"
+echo "═══ 1. === FILE: X === blokovi ═══"
 python3 - "$TEXT" << 'PYEOF'
 import sys, re
 from pathlib import Path
@@ -38,12 +38,11 @@ for path, content in files:
 PYEOF
 
 echo ""
-echo "═══ 2. Trazim CLAUDE_LOG unos ═══"
+echo "═══ 2. CLAUDE_LOG unos ═══"
 python3 - "$TEXT" << 'PYEOF'
 import sys, re
 from pathlib import Path
 text = sys.argv[1]
-# trazi zapis koji pocinje sa "## [YYYY-MM-DD" i ide do kraja ili do sljedeceg "## ["
 m = re.search(r'(## \[\d{4}-\d{2}-\d{2}.*?)(?=\n## \[|\n=== FILE|\Z)', text, re.DOTALL)
 if not m:
     print("  (nema CLAUDE_LOG zapisa)")
@@ -53,13 +52,12 @@ log = Path("CLAUDE_LOG.md")
 if not log.exists():
     log.write_text("# CLAUDE LOG\n\n---\n\n", "utf-8")
 src = log.read_text("utf-8")
-# ubaci poslije "---\n\n"
 if "---\n\n" in src:
     src = src.replace("---\n\n", f"---\n\n{entry}\n\n", 1)
 else:
     src += "\n\n" + entry + "\n"
 log.write_text(src, "utf-8")
-print(f"  ✅ CLAUDE_LOG.md azuriran (+{len(entry)} bajtova)")
+print(f"  ✅ CLAUDE_LOG.md (+{len(entry)} bajtova)")
 PYEOF
 
 echo ""
@@ -71,7 +69,3 @@ else
     git commit -m "claude: paste-back $(date +%H:%M)"
     echo "  ✅ commit $(git rev-parse --short HEAD)"
 fi
-
-echo ""
-echo "═══ 4. Git status ═══"
-git status --short
