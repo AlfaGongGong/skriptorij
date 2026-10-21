@@ -963,7 +963,9 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
         return False
 
     def _naslov_iz(hb, toc_naslov, book_title):
-        if toc_naslov and not GENERIC_RX.match(toc_naslov.strip()):
+        # Preskoči toc_naslov ako je samo ime knjige (Calibre stavlja isto za sve)
+        if (toc_naslov and not GENERIC_RX.match(toc_naslov.strip())
+                and (not book_title or toc_naslov.strip().lower() != book_title.strip().lower())):
             return toc_naslov
         try:
             s = BeautifulSoup(hb, "html.parser")
@@ -978,6 +980,13 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
                 t = tt.get_text(strip=True)
                 if t and 0 < len(t) < 120:
                     if not book_title or t.lower() != book_title.lower():
+                        return t
+            first_p = s.find("p")
+            if first_p:
+                t = first_p.get_text(strip=True)
+                if t and 0 < len(t) < 80:
+                    tu = t.upper()
+                    if (t == tu or any(kw in tu for kw in ("DIO", "KNJIGA", "PART", "BOOK"))):
                         return t
         except Exception:
             pass
@@ -995,6 +1004,9 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
             tlen = len(text)
             tlow = text[:1200].lower()
             href_base = href.rsplit("/", 1)[-1]
+
+            if tlen < 10 and imgs == 0:
+                return False, "prazan", None, False
 
             if href in cover_hrefs or href_base in cover_hrefs:
                 return False, "cover(opf)", None, False
@@ -1263,7 +1275,7 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
 
     for ir in stag.find_all("itemref"):
         ir.decompose()
-    for iid in ("booklyfi-naslovna", "booklyfi-impresum"):
+    for iid in ("booklyfi-naslovna", "booklyfi-impresum", "nav"):
         ir = opf_soup.new_tag("itemref"); ir["idref"] = iid
         stag.append(ir)
     for iid in orig_ids:
