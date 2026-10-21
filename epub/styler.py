@@ -1160,6 +1160,7 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
             _dodaj_naslov(soup, p["order"], naslov=p["naslov"])
         else:
             _dodaj_naslov(soup, p["order"])
+        p["_ima_h1"] = bool(soup.find("h1"))
         if _dodaj_dropcap(soup): dropcaps += 1
         head = soup.find("head")
         if not head:
@@ -1191,8 +1192,8 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
     ncx_path = (opf_dir + "/toc.ncx") if opf_dir else "toc.ncx"
     nps = []
     for p in poglavlja:
-        if p.get("no_heading"):
-            continue  # posveta: nema h1 u EPUB-u -> nema u TOC-u
+        if not p.get("_ima_h1"):
+            continue  # nema h1 u EPUB-u -> nema u TOC-u
         nas = p.get("naslov") or ("POGLAVLJE %d" % p["order"])
         nps.append('<navPoint id="np-%d" playOrder="%d"><navLabel><text>%s</text></navLabel>'
                    '<content src="%s"/></navPoint>' % (p["order"], p["order"], _esc(nas), _esc(p["href"])))
@@ -1206,8 +1207,8 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
     nav_path = (opf_dir + "/nav.xhtml") if opf_dir else "nav.xhtml"
     nav_its = []
     for p in poglavlja:
-        if p.get("no_heading"):
-            continue  # posveta: nema h1 u EPUB-u -> nema u TOC-u
+        if not p.get("_ima_h1"):
+            continue  # nema h1 u EPUB-u -> nema u TOC-u
         nas = p.get("naslov") or ("POGLAVLJE %d" % p["order"])
         nav_its.append('<li><a href="%s">%s</a></li>' % (_esc(p["href"]), _esc(nas)))
     first_href = poglavlja[0]["href"] if poglavlja else Path(nas_path).name
