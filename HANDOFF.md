@@ -40,6 +40,35 @@ Detalji u `/root/skriptorij/KONTEKST.md`.
 
 Ako zadatak zahteva izmenu ovih — vrati „OVO NE DIRAM, potreban je kontekst sesije" i stani.
 
+## OBAVEZNO — CLAUDE_LOG.md poslije svakog zadatka
+
+Poslije svakog zavrsenog zadatka, azuriraj `/root/skriptorij/CLAUDE_LOG.md`.
+Ovaj fajl je jedina memorija izmedju Claude acc — kad korisnik potrosi limit
+i predje na novi acc, salvije samo ovaj fajl + KONTEKST.md i nastavljas
+kao da si isti acc. NE preskaci ovo.
+
+Format (append-only, ne brisi staro, dodaj novo na vrh ispod zaglavlja):
+
+```
+## [YYYY-MM-DD HH:MM] Zadatak: <kratki naziv>
+- Status: ZAVRSEN | DJELIMICNO | BLOKIRAN
+- Fajlovi kreirani: <pune putanje>
+- Fajlovi izmijenjeni: <pune putanje>
+- Testovi: <broj prosli>/<broj ukupno>, npr. 8/8
+- Commit: <hash ako je korisnik commitovao>
+- Sljedeci korak: <1 recenica>
+- Napomene: <opciono — sta nije uradjeno, gdje zapelo>
+```
+
+Ako je zadatak DJELIMICNO ili BLOKIRAN — obavezno napisi u "Napomene"
+tacno gdje si stao (fajl, linija, greska). Sljedeci acc mora moci nastaviti
+bez pitanja.
+
+Ako je zadatak ZAVRSEN — "Sljedeci korak" je konkretan (npr. "Iteracija 2 iz
+HANDOFF.md").
+
+Ne cekaj da te korisnik pita — azuriraj log prije nego vratis odgovor.
+
 ## Kako koristiti ovaj dokument
 
 Za svaku iteraciju kopiraj brief u Claude sesiju. Claude:
