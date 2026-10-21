@@ -23,15 +23,14 @@ def _load_keys() -> list[str]:
     try:
         from api_fleet import FleetManager
         fm = FleetManager()
-        for attr in ("GEMMA_KEYS", "gemma_keys", "pools", "keys"):
-            val = getattr(fm, attr, None)
-            if isinstance(val, list):
-                out.extend(v for v in val if isinstance(v, str))
-            elif isinstance(val, dict):
-                for name, inner in val.items():
-                    if "GEMMA" in str(name).upper():
-                        if isinstance(inner, list):
-                            out.extend(v for v in inner if isinstance(v, str))
+        fleet = getattr(fm, "fleet", None)
+        if isinstance(fleet, dict):
+            gemma = fleet.get("GEMMA")
+            if isinstance(gemma, list):
+                for ks in gemma:
+                    k = getattr(ks, "key", None)
+                    if isinstance(k, str) and k.strip():
+                        out.append(k)
     except Exception as e:
         print(f"[!] FleetManager: {e}")
 
