@@ -888,11 +888,14 @@ async def _call_gemma_with_rotation(
             url = f"{get_gemini_url(current_model)}?key={key}"
             headers = _build_headers("GEMMA")
             #  — Gemma 4 thinking model, isključi za bulk prevod
+            # Gemma 4 je thinking model — troši 200-300+ tokena na thoughts
+            # prije vidljivog odgovora. thinkingConfig nije podrzan (400).
+            # Bez minimuma, mali max_tokens se potrosi na thoughts -> prazan.
             payload = _build_gemini_native_payload(
                 sys_content,
                 user_prompt,
                 opt_temp,
-                max_tokens,
+                max(max_tokens, 2000),
             )
 
             data = await _async_http_post(
