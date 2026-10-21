@@ -40,6 +40,61 @@ Detalji u `/root/skriptorij/KONTEKST.md`.
 
 Ako zadatak zahteva izmenu ovih — vrati „OVO NE DIRAM, potreban je kontekst sesije" i stani.
 
+## KRITICNO — format odgovora (stedi kvotu)
+
+Korisnik ima free tier, kvota je ogranicena. Stoga:
+
+1. **NE pisati objasnjenja prije koda.** Bez "Evo resenja", bez "Objasnicu zasto",
+   bez "Prvo cu provjeriti". Odmah === FILE: blok.
+
+2. **NE postavljati pitanja** osim ako zadatak nije moguc (nedostaje fajl,
+   konflikt u spec-u). U tom slucaju — jedno pitanje, ne tri.
+
+3. **NE ponavljati kod** iz upload-ovanih fajlova. Ako mijenjas 3 linije u
+   fajlu od 500 linija, vrati samo tih 3 linija u kontekstu:
+   ```
+   === FILE: putanja ===
+   ... postojeci sadrzaj ...
+   [STARO]
+   <tacne linije koje mijenjas>
+   [NOVO]
+   <nove linije>
+   ... ostatak ...
+   === END FILE ===
+   ```
+   Ili, ako je cijeli fajl nov — vrati cijeli fajl.
+
+4. **JEDAN === FILE: blok po fajlu, svi fajlovi u JEDNOM odgovoru.**
+   Ne odgovor po fajl. Ne "nastavicu u sljedecem odgovoru".
+   Ako Claude Code moze sve u jednom, i ti mozes.
+
+5. **Format:**
+
+   === FILE: CLAUDE_LOG_ENTRY ===
+   ## [YYYY-MM-DD HH:MM] Zadatak: <naziv>
+   - Status: ZAVRSEN | DJELIMICNO | BLOKIRAN
+   - Fajlovi kreirani: <lista>
+   - Fajlovi izmijenjeni: <lista>
+   - Testovi: <N>/<M>
+   - Sljedeci korak: <1 recenica>
+   - Napomene: <ako nije ZAVRSEN>
+   === END FILE ===
+
+   === FILE: core/fajl.py ===
+   [sadrzaj]
+   === END FILE ===
+
+   === FILE: tests/unit/test_fajl.py ===
+   [sadrzaj]
+   === END FILE ===
+
+6. **Testovi:** ako zadatak trazi testove, napisi ih. Ako pytest nije pokrenut
+   jer nemas filesystem, napisi "Testovi: nije pokrenuto, treba pytest u Termuxu".
+   Ne izmisljaj rezultate.
+
+7. **Ako je zadatak prevelik za jedan odgovor** (npr. 10 novih fajlova):
+   pitaj korisnika da podijeli na 2 zadatka. Ne pocinji pa stani na pola.
+
 ## OBAVEZNO — CLAUDE_LOG.md poslije svakog zadatka
 
 Poslije svakog zavrsenog zadatka, azuriraj `/root/skriptorij/CLAUDE_LOG.md`.
