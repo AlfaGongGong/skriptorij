@@ -6,12 +6,12 @@
   },
   "maršal": {
     "rod": "M",
-    "clue_m": 28,
+    "clue_m": 31,
     "clue_z": 0
   },
   "komornik": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Hoff": {
@@ -31,7 +31,7 @@
   },
   "guverner": {
     "rod": "M",
-    "clue_m": 7,
+    "clue_m": 8,
     "clue_z": 0
   },
   "Orso": {
@@ -41,8 +41,8 @@
   },
   "Wetterlant": {
     "rod": "Ž",
-    "clue_m": 1,
-    "clue_z": 41
+    "clue_m": 2,
+    "clue_z": 48
   },
   "Zrak": {
     "rod": "M",
@@ -62,7 +62,7 @@
   "Savine": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 62
+    "clue_z": 64
   },
   "Ardee": {
     "rod": "Ž",
@@ -71,7 +71,7 @@
   },
   "Curnsbick": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Selest": {
@@ -92,7 +92,7 @@
   "Tada": {
     "rod": "M",
     "clue_m": 6,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Halder": {
     "rod": "M",
@@ -117,11 +117,11 @@
   "Istina": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 11
+    "clue_z": 12
   },
   "Iako": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Problem": {
@@ -141,12 +141,12 @@
   },
   "Leo": {
     "rod": "M",
-    "clue_m": 25,
+    "clue_m": 26,
     "clue_z": 0
   },
   "Mustred": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Clensher": {
@@ -156,7 +156,7 @@
   },
   "Clover": {
     "rod": "M",
-    "clue_m": 16,
+    "clue_m": 17,
     "clue_z": 0
   },
   "Downside": {
@@ -177,11 +177,11 @@
   "Rikke": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 16
+    "clue_z": 17
   },
   "Shivers": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 7,
     "clue_z": 0
   },
   "Tallow": {
@@ -206,7 +206,7 @@
   },
   "Isher": {
     "rod": "M",
-    "clue_m": 15,
+    "clue_m": 18,
     "clue_z": 1
   },
   "Bayaz": {
@@ -251,7 +251,7 @@
   },
   "On": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 13,
     "clue_z": 0
   },
   "Naglasak": {
@@ -296,7 +296,7 @@
   },
   "kancelar": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "namjesnik": {
@@ -321,7 +321,7 @@
   },
   "Jedva": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 1
   },
   "Onda": {
@@ -497,12 +497,12 @@
   "Isold": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Brock": {
     "rod": "Ž",
-    "clue_m": 0,
-    "clue_z": 3
+    "clue_m": 1,
+    "clue_z": 4
   },
   "Mirno": {
     "rod": null,
@@ -516,12 +516,12 @@
   },
   "Barezin": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Heugen": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Otvorenog": {
@@ -685,8 +685,8 @@
     "clue_z": 1
   },
   "Antaup": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Most": {
@@ -710,9 +710,9 @@
     "clue_z": 0
   },
   "Soba": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Vjerojatno": {
     "rod": null,
@@ -736,7 +736,7 @@
   },
   "Steebling": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Plan": {
@@ -825,6 +825,76 @@
     "clue_z": 0
   },
   "Verturio": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nail": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Dugog": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Neprestano": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Brockov": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Mnogima": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Lako": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Ožiljak": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Cloverov": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Cloverova": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Jurand": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Chamberlain": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Krvnik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Glokta": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "West": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
