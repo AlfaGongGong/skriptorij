@@ -454,47 +454,55 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 
 ---
 
-## FAZA 4 (2026-10-22) — cleanup, discovery, refaktor
+## FAZA 4 (2026-10-22) — cleanup, discovery, refaktor, fallback
 
-### Sta je uradjeno
+### Sta je uradjeno (20+ commitova, 84/84 testova)
 
-| Commit | Fajl | Sta |
-|---|---|---|
-| `6b65936` | `network/provider_router.py` | namespace po prov_upper (GEMINI/GEMMA razdvojeni) |
-| `9cb1c8a` | `network/model_discovery.py` | discovery filter — audio/vision/reasoning/non-HR odbaceni |
-| `e4eb8e0` | više | 4 test fixa — api_fleet UnboundLocal, pool modeli, gemma pool, FakeFleet default |
-| `e3d9982` | `network/http_client.py`, `network/model_discovery.py` | A#3 — hardkodovani URL-ovi u get_gemini_url i GEMINI_DIRECT_BASE_URL |
-| `f88a4bc` | `static/css/style.css` | .fq-* trake vracene za fleet.js |
-| `c881162` | `static/js/metrics.js` | obrisan — F3d pokriva metrike u Quality tabu |
-| `e13bb05` | `processing/pipeline.py` | bisekcija po paragrafima kad Gemini blokira chunk |
-| ranije | `network/http_client.py` | Gemma 4 thinking model — min 2000 max_tokens |
-| ranije | `network/http_client.py` | safetyRatings dijagnostika (Fix A+B) |
-| ranije | `epub/styler.py` | 9 fixeva za omnibus trilogiju (A1, A1b, A2, A3, C, C2, D, E1, E2) |
+**Fallback i otpornost:**
+- `e827ba3` — 503 UNAVAILABLE (Google high demand) — 5s backoff, rotacija modela
+- `3b82859` + `9a82738` — 429: RPM 60s vs RPD do ponoci (streak 3x), retryDelay iz body
+- `e827ba3` — URLError retry (24% u dijagnostici)
+- `a4597c9` — GEMINI_TIMEOUT 45→20s, global 30s u petlji, _async_http_post 45→20
+- `9a82738` — fallback 2 kruga (30s/60s pauze) + treci GEMINI + ALL_FAILED marker
+
+**Discovery i modeli:**
+- `9cb1c8a` — discovery filter (audio/vision/reasoning/non-HR odbaceni)
+- `56eb4fe` — dinamički izbor modela po ulozi (`config/model_roles.py` + `enrich_models_with_metrics`)
+- `9c44f01` — Blok 2: 6 provider-level profila + aliasi
+
+**Cleanup i refaktor:**
+- `6b65936` — provider_router namespace po prov_upper (GEMINI/GEMMA razdvojeni)
+- `e4eb8e0` — 4 test fixa (api_fleet UnboundLocal, pool modeli, gemma pool)
+- `e3d9982` — A#3 hardkodovani URL-ovi
+- `c881162` — obrisan metrics.js duplikat (F3d pokriva metrike)
+- `f88a4bc` — .fq-* trake vracene
+
+**Replacements:**
+- `542a8c3` — Moon+ replacement parser + CLI (post-polish EPUB)
+- Testirano na A Little Hatred: 266 pravila, 175 aktivirano, 4335 zamjena
 
 ### Baseline
 
 **Testovi:** 84 passed, 0 failed (bio 11 failed, 48 passed)
 
-### Sta je ostalo (Blok 2-5 refaktora)
+### Kljucni testovi danas
 
-- **Blok 2** — `model_profiles.py` profil po provajderu (u toku)
-- **Blok 3** — `prompts.py` patchevi po provajderu
-- **Blok 4** — `workers.py` + `api_fleet.py` provider umjesto model_ime
-- **Blok 5** — `ai_config.py` AI_MODEL_STRINGS → fallback po provajderu
-- **Blok 6** — testovi za discovery filter
-
-### Pokrenuti alati
-
-- `bookly` — Termux skripta (ulaz u proot)
-- `/usr/local/bin/bookly` — proot skripta (venv komande, cp, sync, pytest)
-- `tools/probudi_gemmu.py` — Gemma dijagnostika
-- `diag_blokovi.py` — safety dijagnostika
+- `gemini-3.5-flash-lite`: 12s po pozivu (stabilno)
+- `gemini-3.1-flash-lite`: 30-47s (high demand, mrtav danas)
+- `gemini-flash-lite-latest`: 75s (high demand)
+- `gemini-3.8-flash`: 7.79s ali 20 RPD
+- **GROQ qwen3.8-27b: 2.4s, 500+ RPD**
+- **NVIDIA nemotron-3-ultra-550b: 9.4s**
 
 ### Otvoreno
 
-- **GEMMA** discovery — nema endpoint u `_MODELS_ENDPOINTS`, `fetch_models("GEMMA")` vraća `[]`
-- **MISTRAL** — 23 valid modela, 8 medium/small varijanti (dedup po baznom imenu u Bloku 6)
-- **NVIDIA** — 63 valid modela, još previše
+- **GEMMA discovery** — nema endpoint, `fetch_models("GEMMA")` vraca `[]`
+- **Blok 3** — prompts.py patchevi po provajderu
+- **Blok 4** — workers.py provider umjesto model_ime
+- **Blok 5** — ai_config.py AI_MODEL_STRINGS fallback
+- **GEMMA/MISTRAL/NVIDIA dedup** — previse modela poslije filtera
+- **`gemini-flash-lite-latest`** — testirati sutra kad Google odmori
+- **3 sumnjiva pravila** u replacement fajlu (`Uffrith→Afriθ`, `Meadow→medou`, `Oxelu→Okse`)
 
 ---
 

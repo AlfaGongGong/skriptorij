@@ -63,4 +63,16 @@ Stilizator: 9 fixeva (A1, A1b, A2, A3, C, C2, D, E1, E2). Commit e59b621.
   - 3 sumnjiva pravila u korisnikovom fajlu: Uffrith→Afriθ, Meadow→medou, Oxelu→Okse (ostavljena, korisnik odlucio)
   - XML greske u originalu: text/part0066.html (JSON wrapper od prije) i booklyfi_001 (&middot;) — Moon+ tolerise, ali `&#183;` fix je ispravan
 
+## [2026-10-22 23:46] Zadatak: Fallback 3 kruga + timeout + 429 RPM + dinamički modeli
+- Status: ZAVRSEN
+- Fajlovi kreirani: config/model_roles.py
+- Fajlovi izmijenjeni: network/http_client.py, network/provider_router.py, processing/pipeline.py, api_fleet.py, network/model_discovery.py
+- Testovi: 84/84 passed
+- Commit: 9a82738 (finalni), a4597c9, 56eb4fe, 9c44f01, 9cb1c8a, 6b65936, e827ba3
+- Sljedeci korak: Blok 3 (prompts.py po provajderu) ili GEMMA discovery endpoint
+- Napomene: 20+ commitova danas. Fallback: 2 kruga 30s/60s + treci GEMINI + ALL_FAILED marker.
+  Dinamicki model po ulozi (model_roles.py). 429 fix: RPM 60s vs RPD 24h (streak 3x).
+  Timeout 30s global. GROQ 2.4s (brz), GEMINI 12s (kvalitet), NVIDIA 9.4s (rezerva).
+  Gemini high demand danas — 75s za flash-lite-latest. Sutra testirati kad odmori.
+
 
