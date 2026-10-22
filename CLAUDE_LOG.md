@@ -30,3 +30,11 @@ Stilizator: 9 fixeva (A1, A1b, A2, A3, C, C2, D, E1, E2). Commit e59b621.
 - Sljedeci korak: provjeri u UI, pa Iteracija 3
 - Napomene: panel u #metrics-panel, cita GET /api/quality_scores (metrics + metrics_summary)
 
+## [2026-10-22 09:05] Zadatak: Cleanup — metrics.js obrisan (F3d ostaje)
+- Status: ZAVRSEN
+- Fajlovi obrisani: static/js/metrics.js
+- Fajlovi izmijenjeni: templates/index.html (uklonjen #metrics-panel + <script>), static/css/style.css (uklonjen .mx-*, ostao .fq-*)
+- Testovi: node --check fleet.js OK; Flask restart; curl /api/quality_scores → {OK:413, REVIEW:19, REJECT:1, TRUNCATED:10}
+- Sljedeci korak: Fleet kvote trake (fq-*) ostaju u dashboardu; F3d u Quality tabu pokriva metrike
+- Napomene: Odluka korisnika — F3d (commit 7834453) je dovoljan prikaz metrika, novi metrics.js je bio duplikat istog izvora /api/quality_scores. Iteracija 3 iz HANDOFF.md je sljedeća (3-4 taba + kartica statusa).
+
