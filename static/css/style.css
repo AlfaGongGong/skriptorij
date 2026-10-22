@@ -3079,3 +3079,145 @@ details[open] .expert-section-chevron {
 
 /* ── FIX 2026-10-15: ukloni brojeve ključeva pored provajdera ── */
 .fq-prov-count { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════════
+   F3c-JS (2026-10-22): panel metrika (mx-) + trake kvota (fq-)
+   ═══════════════════════════════════════════════════════════ */
+
+.mx-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.mx-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    background: var(--mx-bg, var(--bg-2));
+    border: 1px solid var(--mx-c, var(--bd));
+    border-radius: var(--r-md);
+    color: var(--mx-c, var(--tx-2));
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all var(--t-fast);
+}
+.mx-badge strong { font-size: 1.2rem; font-weight: 800; line-height: 1; }
+.mx-badge span   { font-size: 0.6rem; letter-spacing: 0.05em; }
+.mx-badge.mx-active { box-shadow: 0 0 0 2px var(--mx-c); }
+
+.mx-ok        { --mx-c: var(--emerald); --mx-bg: rgba(16, 185, 129, 0.12); }
+.mx-review    { --mx-c: var(--amber);   --mx-bg: rgba(245, 158, 11, 0.12); }
+.mx-reject    { --mx-c: var(--rose);    --mx-bg: rgba(244, 63, 94, 0.12); }
+.mx-truncated { --mx-c: var(--tx-3);    --mx-bg: rgba(93, 105, 128, 0.15); }
+.mx-unknown   { --mx-c: var(--tx-3);    --mx-bg: transparent; }
+
+.mx-pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 100px;
+    border: 1px solid var(--mx-c);
+    background: var(--mx-bg);
+    color: var(--mx-c);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.mx-status {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--tx-3);
+    margin-bottom: 8px;
+}
+.mx-status-err { color: var(--amber); }
+
+.mx-table-wrap { overflow-x: auto; }
+.mx-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+}
+.mx-table th,
+.mx-table td {
+    padding: 5px 8px;
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--bd-soft);
+}
+.mx-table th { color: var(--tx-3); font-weight: 600; }
+.mx-table th:first-child,
+.mx-table td:first-child { text-align: left; }
+.mx-table td:last-child,
+.mx-table th:last-child  { text-align: center; }
+.mx-stem {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--tx-2);
+}
+.mx-empty { padding: 12px; color: var(--tx-3); font-size: 0.8rem; text-align: center; }
+.mx-foot {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--tx-3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.mx-busy { opacity: 0.5; }
+
+.fq-bar {
+    height: 4px;
+    margin-top: 3px;
+    background: var(--bg-3);
+    border-radius: 100px;
+    overflow: hidden;
+}
+.fq-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transition: width var(--t-med);
+}
+.fq-bar-fill.ok   { background: var(--emerald); }
+.fq-bar-fill.warn { background: var(--amber); }
+.fq-bar-fill.crit { background: var(--rose); }
+
+.quota-warn { color: var(--amber); }
+.quota-crit { color: var(--rose); }
+
+.fq-quota-mini { display: inline-flex; gap: 10px; margin-left: auto; }
+.fq-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--tx-3);
+}
+.fq-bar-mini { display: inline-block; width: 40px; margin-top: 0; }
+.fq-mini-pct.ok   { color: var(--emerald); }
+.fq-mini-pct.warn { color: var(--amber); }
+.fq-mini-pct.crit { color: var(--rose); }
+
+.fq-badge-stuck {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    border: 1px solid var(--rose);
+    border-radius: 100px;
+    background: rgba(244, 63, 94, 0.15);
+    color: var(--rose);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+}
