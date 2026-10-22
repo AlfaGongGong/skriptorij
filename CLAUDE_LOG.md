@@ -21,3 +21,12 @@ Testovi: 71/71 sinhronizovano (stilizator), 3/3 rucno (Gemma)
 Sljedeci korak: Iteracija 1 iz HANDOFF.md (F3b quality_class + EKAVIZMI)
 Napomene: Gemma 4 trosi 270 thoughts tokena. Fix: max(max_tokens, 2000).
 Stilizator: 9 fixeva (A1, A1b, A2, A3, C, C2, D, E1, E2). Commit e59b621.
+
+## [2026-10-22 08:55] Zadatak: Iteracija 2 — F3c-JS metrics.js + C5-JS fleet trake
+- Status: ZAVRSEN
+- Fajlovi kreirani: static/js/metrics.js
+- Fajlovi izmijenjeni: static/js/ui/fleet.js, static/css/style.css, templates/index.html
+- Testovi: node --check OK (metrics.js, fleet.js)
+- Sljedeci korak: provjeri u UI, pa Iteracija 3
+- Napomene: panel u #metrics-panel, cita GET /api/quality_scores (metrics + metrics_summary)
+
