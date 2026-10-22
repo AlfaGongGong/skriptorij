@@ -60,7 +60,7 @@ def test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider(monkeyp
             key_state = type("KeyState", (), {"key": "KEY_1234", "success_rate": 1.0})()
             self.fleet = {"GEMINI": [key_state], "GEMMA": [key_state]}
 
-        def get_active_model(self, provider):
+        def get_active_model(self, provider, default=None):
             return MODEL_MAP[provider]
 
     class FakeEngine:

@@ -33,8 +33,8 @@ def test_google_pool_uses_only_whitelisted_models(monkeypatch):
     assert "gemini-3-flash" not in model_ids
     assert "some-random-model" not in model_ids
     # Whitelistirani modeli su prisutni; statički ai_config redosljed ostaje autoritativan
-    assert model_ids[0] == "gemini-3.5-flash"
-    assert "gemini-3.5-flash" in model_ids
+    assert model_ids[0] == "gemini-3.5-flash-lite"
+    assert "gemini-3.5-flash-lite" in model_ids
 
 
 def test_google_pool_falls_back_when_discovery_empty(monkeypatch):
@@ -68,7 +68,7 @@ def test_google_pool_preserves_static_order_after_dead_filter(monkeypatch):
     _reset_dead_models()
     monkeypatch.setattr(
         "network.model_discovery.get_dead_models",
-        lambda _p: frozenset({"gemini-3.5-flash"}),
+        lambda _p: frozenset({"gemini-3.5-flash-lite"}),
     )
 
     pool = http_client._get_google_model_pool()
@@ -77,8 +77,6 @@ def test_google_pool_preserves_static_order_after_dead_filter(monkeypatch):
     assert model_ids[0] == "gemini-3.1-flash-lite"
     assert model_ids == [
         "gemini-3.1-flash-lite",
-        "gemini-2.5-flash-lite",
-        "gemini-2.5-flash",
     ]
 
 

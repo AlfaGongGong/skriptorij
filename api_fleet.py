@@ -670,7 +670,7 @@ class FleetManager:
                         prov_u, key[-4:], _reason,
                     )
                     try:
-                        from network.quota_tracker import quota_tracker
+                        # (globalni import vec postoji)
                         # FIX #8: ispravni pozivi — set_key_cooldown postoji,
                         # record_error na QuotaTracker ne postoji.
                         quota_tracker.set_key_cooldown(prov_u, key, 90.0, _reason)
