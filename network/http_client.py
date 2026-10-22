@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 # FIX: NVIDIA NIM timeout 180s je bio predug — ako model ne odgovori u 90s,
 # vjerojatno je zagušen. Bolje failati brže i probati drugi provider.
 _NVIDIA_TIMEOUT = 90  # sekundi (bilo 180)
-_GEMINI_TIMEOUT = 45  # FIX: bilo 90 — Gemini obično odgovori u 10-20s
+_GEMINI_TIMEOUT = 20  # 2026-10-22: bilo 45 — high demand 40-80s; 20s dovoljno
 
 # ─── HTTP headeri (Cloudflare WAF zahtijeva browser UA) ───
 _BROWSER_UA = (
@@ -448,7 +448,7 @@ async def _async_http_post(
             pass
 
         # FIX: Gemini/GEMMA timeout 45s (bilo 90s), ostali 45s
-        _read_timeout = _GEMINI_TIMEOUT if prov_upper in ("GEMINI", "GEMMA") else 45
+        _read_timeout = _GEMINI_TIMEOUT if prov_upper in ("GEMINI", "GEMMA") else 20
         try:
             resp = await asyncio.to_thread(
                 requests.post,
@@ -721,7 +721,17 @@ async def _call_gemini_with_full_rotation(
     pool = _get_google_model_pool()
 
     _failed_keys = 0
+    import time as _time_gt
+    _gemini_start_ts = _time_gt.time()
+    _GEMINI_MAX_TOTAL_S = 30.0
     for ks in keys_list:
+        if _time_gt.time() - _gemini_start_ts > _GEMINI_MAX_TOTAL_S:
+            self.log(
+                f"[GEMINI] Global timeout {_GEMINI_MAX_TOTAL_S:.0f}s — "
+                f"prelazim na sljedeci provider",
+                "warning",
+            )
+            return None, "GEMINI_TIMEOUT"
         key = ks.key
 
         if preferred_model and preferred_model in {m["model"] for m in pool}:
