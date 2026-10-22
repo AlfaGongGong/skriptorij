@@ -427,8 +427,138 @@ async def _call_ai_engine(
             continue
         break
 
-    self.log(f"❌ [{uloga}] Svi provideri iscrpljeni za blok {chunk_idx}", "error")
-    return None, "N/A"
+    # 2026-10-22: prvi krug pao — pauza 30s, pa drugi krug sa svim providerima
+    self.log(
+        f"⏳ [{uloga}] Prvi krug fallback-a pao za blok {chunk_idx} — "
+        f"pauza 30s, pa drugi krug",
+        "warning",
+    )
+    await asyncio.sleep(30.0)
+
+    for attempt2 in range(MAX_ATTEMPTS):
+        any_activity2 = False
+        for prov_upper in ordered:
+            if self.shared_controls.get("stop"):
+                return None, "N/A"
+
+            if prov_upper in ("GEMINI", "GEMMA"):
+                gemini_keys = self.fleet.fleet.get(prov_upper, [])
+                if not gemini_keys:
+                    continue
+                from network.quota_tracker import quota_tracker
+                import re as _re
+                has_available_or_short_cd = False
+                for ks in gemini_keys:
+                    ok, reason = quota_tracker.is_key_available(prov_upper, ks.key)
+                    if ok:
+                        has_available_or_short_cd = True
+                        break
+                    m = _re.search(r'([\d.]+)s', reason)
+                    secs = float(m.group(1)) if m else 99999.0
+                    if secs <= 60.0:
+                        has_available_or_short_cd = True
+                        break
+                if not has_available_or_short_cd:
+                    any_activity2 = True
+                    continue
+            else:
+                key = self.fleet.get_best_key(prov_upper)
+                if not key:
+                    keys = self.fleet.fleet.get(prov_upper, [])
+                    if keys:
+                        any_activity2 = True
+                    continue
+
+            model = None
+            if prov_upper == "GEMINI":
+                try:
+                    from config.model_roles import pick_model_for_role
+                    from network.model_discovery import (
+                        get_cached_model_list, enrich_models_with_metrics,
+                    )
+                    cached = get_cached_model_list("GEMINI")
+                    if cached:
+                        enriched = enrich_models_with_metrics("GEMINI", cached)
+                        model = pick_model_for_role(uloga, enriched)
+                except Exception:
+                    model = None
+            if not model:
+                model = self.fleet.get_active_model(prov_upper, MODEL_MAP.get(prov_upper))
+            if not model:
+                continue
+
+            opt_temp, opt_max_tokens = _resolve_model_generation_params(
+                uloga, model, base_temp, base_max_tokens
+            )
+            await asyncio.sleep(random.uniform(0.5, 1.5))
+            self.log(
+                f"📤 [{uloga}] Krug 2 — šaljem blok {chunk_idx} na AI ({prov_upper})...",
+                "tech",
+            )
+            try:
+                raw, label = await _call_single_provider(
+                    self, prov_upper, model,
+                    sys_c, prompt, opt_temp, max_tokens=opt_max_tokens
+                )
+            except ContentFilterError as cfe:
+                self.log(f"⛔ [{uloga}] {cfe} — preskačem chunk {chunk_idx}", "warning")
+                return None, "CONTENT_FILTER"
+            except (ConnectionError, OSError, asyncio.TimeoutError) as net_err:
+                self.log(
+                    f"[{prov_upper}] {type(net_err).__name__} — 2s retry",
+                    "warning",
+                )
+                await asyncio.sleep(2.0)
+                try:
+                    raw, label = await _call_single_provider(
+                        self, prov_upper, model,
+                        sys_c, prompt, opt_temp, max_tokens=opt_max_tokens
+                    )
+                except Exception:
+                    raw, label = None, None
+
+            any_activity2 = True
+            if raw:
+                self.log(f"✅ [{uloga}] Krug 2 uspješan ({prov_upper})", "warning")
+                return raw, label
+
+        if attempt2 < MAX_ATTEMPTS - 1 and any_activity2:
+            await asyncio.sleep(5.0)
+            continue
+        break
+
+    # Treći krug — samo GEMINI
+    self.log(
+        f"⏳ [{uloga}] Drugi krug pao — pauza 60s, pa posljednji pokušaj (samo GEMINI)",
+        "warning",
+    )
+    await asyncio.sleep(60.0)
+
+    try:
+        from config.model_roles import pick_model_for_role
+        from network.model_discovery import get_cached_model_list, enrich_models_with_metrics
+        cached = get_cached_model_list("GEMINI")
+        model = None
+        if cached:
+            enriched = enrich_models_with_metrics("GEMINI", cached)
+            model = pick_model_for_role(uloga, enriched)
+        if not model:
+            model = MODEL_MAP.get("GEMINI", "gemini-3.5-flash-lite")
+        raw, label = await _call_single_provider(
+            self, "GEMINI", model,
+            sys_c, prompt, base_temp, max_tokens=base_max_tokens,
+        )
+        if raw:
+            self.log(f"✅ [{uloga}] Treći krug uspješan (GEMINI/{model})", "warning")
+            return raw, label
+    except Exception as e:
+        self.log(f"❌ [{uloga}] Treći krug EXC: {e}", "warning")
+
+    self.log(
+        f"❌ [{uloga}] Sva 3 kruga fallback-a pala za blok {chunk_idx}",
+        "error",
+    )
+    return None, "ALL_FAILED"
 
 
 # ── V2 Routing ────────────────────────────────────────────────────────────────

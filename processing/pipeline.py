@@ -969,6 +969,21 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 self.chunk_skips += 1
                 return None, "CONTENT_FILTER"
         if not raw_fusion:
+            if prov1 == "ALL_FAILED":
+                marker = (
+                    f"<p>[[NEPREVEDENO: chunk {chunk_idx}]]</p>\n"
+                    f"<p><!-- EN original sacuvan u .prevod fajlu --></p>"
+                )
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ❌ Svi provideri pali "
+                    f"poslije 3 kruga — upisujem marker, nastavljam dalje",
+                    "error",
+                )
+                self.chunk_skips += 1
+                _chk_write(self, file_name, chunk_idx, chunk, "prevod",
+                           chunk_for_hash=chunk)
+                _chk_write(self, file_name, chunk_idx, marker, chunk_for_hash=chunk)
+                return marker, "ALL_FAILED"
             self.chunk_skips += 1
             return None, "N/A"
 
