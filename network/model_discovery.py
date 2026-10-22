@@ -14,6 +14,7 @@ import logging
 import threading
 import requests
 from typing import Optional
+from config.ai_config import GEMINI_DIRECT_BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ _MODELS_ENDPOINTS: dict[str, str] = {
     "CHUTES":      "https://llm.chutes.ai/v1/models",
     "HUGGINGFACE": "https://router.huggingface.co/v1/models",
     "COHERE":      "https://api.cohere.com/v1/models",
-    "GEMINI":      "https://generativelanguage.googleapis.com/v1beta/models",
+    "GEMINI":      f"{GEMINI_DIRECT_BASE_URL}/v1beta/models",
     "GITHUB":      "https://models.github.ai/catalog/models",
     # FIX 2026-10-20: NVIDIA /v1/models RADI (81 model, test 10:05).
     # Endpoint je bio zakomentarisan zbog pogresne pretpostavke. Vracen.
@@ -246,7 +247,7 @@ def _score_model_strength(provider: str, model_id: str) -> float:
 
 
 def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0) -> list[str]:
-    base_url = "https://generativelanguage.googleapis.com/v1beta/models"
+    base_url = f"{GEMINI_DIRECT_BASE_URL}/v1beta/models"
     model_ids: list[str] = []
     page_token = None
 

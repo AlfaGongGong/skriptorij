@@ -9,10 +9,10 @@ from config.ai_config import GOOGLE_MODEL_POOL, MORFO_VALIDATOR_MODEL, PROVIDER_
 def test_google_model_pool_uses_current_rpd_limits():
     by_model = {entry["model"]: entry for entry in GOOGLE_MODEL_POOL}
 
-    assert by_model["gemini-3.5-flash"]["rpd"] == 20
+    # Pool sadrzi samo aktivne modele (3.5 i 3.1 flash-lite).
+    # 2.5-flash i 2.5-flash-lite su uklonjeni iz pool-a.
+    assert by_model["gemini-3.5-flash-lite"]["rpd"] == 500
     assert by_model["gemini-3.1-flash-lite"]["rpd"] == 500
-    assert by_model["gemini-2.5-flash-lite"]["rpd"] == 20
-    assert by_model["gemini-2.5-flash"]["rpd"] == 20
 
 
 def test_gemma_is_present_in_secondary_provider_priorities():

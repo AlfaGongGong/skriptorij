@@ -1464,6 +1464,7 @@ def _je_prohibited_content(response_data) -> bool:
         pass
     return False
 def _posalji_na_gemini_s_kontekstom(system, user, max_tokens, timeout):
+    from network.provider_urls import get_gemini_url
     """Pošalji Geminiju s kontekstom da je književna scena."""
     try:
         import urllib.request as _ur, json as _json
@@ -1503,7 +1504,7 @@ def _posalji_na_gemini_s_kontekstom(system, user, max_tokens, timeout):
             ],
         }
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+        url = f"{get_gemini_url(model)}?key={key}"
         req = _ur.Request(
             url,
             headers={"Content-Type": "application/json"},
