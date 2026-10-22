@@ -3079,3 +3079,56 @@ details[open] .expert-section-chevron {
 
 /* ── FIX 2026-10-15: ukloni brojeve ključeva pored provajdera ── */
 .fq-prov-count { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════════
+   Fleet: trake kvota (fq-*) — za fleet.js
+   Vraćeno 2026-10-22 posle cleanup-a
+   ═══════════════════════════════════════════════════════════ */
+
+.fq-bar {
+    height: 4px;
+    margin-top: 3px;
+    background: var(--bg-3);
+    border-radius: 100px;
+    overflow: hidden;
+}
+.fq-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transition: width var(--t-med);
+}
+.fq-bar-fill.ok   { background: var(--emerald); }
+.fq-bar-fill.warn { background: var(--amber); }
+.fq-bar-fill.crit { background: var(--rose); }
+
+.quota-warn { color: var(--amber); }
+.quota-crit { color: var(--rose); }
+
+.fq-quota-mini { display: inline-flex; gap: 10px; margin-left: auto; }
+.fq-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--tx-3);
+}
+.fq-bar-mini { display: inline-block; width: 40px; margin-top: 0; }
+.fq-mini-pct.ok   { color: var(--emerald); }
+.fq-mini-pct.warn { color: var(--amber); }
+.fq-mini-pct.crit { color: var(--rose); }
+
+.fq-badge-stuck {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    border: 1px solid var(--rose);
+    border-radius: 100px;
+    background: rgba(244, 63, 94, 0.15);
+    color: var(--rose);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+}
