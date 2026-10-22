@@ -369,6 +369,22 @@ async def _call_ai_engine(
             except ContentFilterError as cfe:
                 self.log(f"⛔ [{uloga}] {cfe} — preskačem chunk {chunk_idx}", "warning")
                 return None, "CONTENT_FILTER"
+            except (ConnectionError, OSError, asyncio.TimeoutError) as net_err:
+                # 2026-10-22: mrezni problem (24% u dijagnostici).
+                # 1 retry sa 2s pauzom prije nego odustanes.
+                self.log(
+                    f"[{prov_upper}] {type(net_err).__name__} — 2s retry",
+                    "warning",
+                )
+                await asyncio.sleep(2.0)
+                try:
+                    raw, label = await _call_single_provider(
+                        self, prov_upper, model,
+                        sys_c, prompt,
+                        opt_temp, max_tokens=opt_max_tokens
+                    )
+                except Exception:
+                    raw, label = None, None
 
             any_activity = True
             if raw:

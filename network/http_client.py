@@ -587,18 +587,44 @@ async def _async_http_post(
             return None
 
         elif resp.status_code in (500, 503):
-            try:
-                from network.quota_tracker import quota_tracker as _qt
+            # 2026-10-22: 503 UNAVAILABLE = Google "high demand".
+            # Kljuc je dobar, server preopterecen. Kratki backoff, NE 30s cooldown.
+            _is_high_demand = False
+            if resp.status_code == 503:
+                try:
+                    _body = resp.json()
+                    _status = (_body.get("error") or {}).get("status", "")
+                    _is_high_demand = (_status == "UNAVAILABLE")
+                except Exception:
+                    pass
 
-                _qt.set_key_cooldown(
-                    prov_upper, key, 30.0,
-                    f"{resp.status_code} server greška",
+            if _is_high_demand:
+                try:
+                    from network.quota_tracker import quota_tracker as _qt
+                    _qt.set_key_cooldown(
+                        prov_upper, key, 5.0,
+                        "503 high demand (kratki backoff)",
+                    )
+                except Exception:
+                    pass
+                await asyncio.sleep(5.0)
+                self.log(
+                    f"[{prov_upper}] 503 UNAVAILABLE (Google high demand) — "
+                    f"5s backoff, kljuc valjan",
+                    "warning",
                 )
-            except Exception:
-                pass
-            # Logovanje je prebaceno u caller (agregacija preko svih kljuceva)
-            await asyncio.sleep(2.0)
-            return None
+                return None
+            else:
+                try:
+                    from network.quota_tracker import quota_tracker as _qt
+                    _qt.set_key_cooldown(
+                        prov_upper, key, 30.0,
+                        f"{resp.status_code} server greska",
+                    )
+                except Exception:
+                    pass
+                await asyncio.sleep(2.0)
+                return None
 
         elif resp.status_code in (401, 402, 403, 412):
             self.log(
@@ -726,6 +752,26 @@ async def _call_gemini_with_full_rotation(
             )
             if data is None:
                 _failed_keys += 1
+                # 2026-10-22: 503 UNAVAILABLE dolazi kao None.
+                # Ako 2x zaredom na istom modelu, prebaci na sljedeci model.
+                _ck = "_consec_503_" + key[-4:]
+                _consec_503 = getattr(self, _ck, 0) + 1
+                setattr(self, _ck, _consec_503)
+                if _consec_503 >= 2 and len(pool) > 1:
+                    self.log(
+                        f"[GEMINI] {current_model}: 2x 503 — "
+                        f"prelazim na sljedeci model",
+                        "warning",
+                    )
+                    setattr(self, _ck, 0)
+                    next_model = _rotate_model_for_key(key, pool)
+                    if next_model and next_model != current_model:
+                        current_model = next_model
+                        continue
+            else:
+                _ck = "_consec_503_" + key[-4:]
+                if hasattr(self, _ck):
+                    setattr(self, _ck, 0)
 
             if data is not None:
                 content = _extract_gemini_native(data)
