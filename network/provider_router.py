@@ -348,7 +348,23 @@ async def _call_ai_engine(
                         any_activity = True
                     continue
 
-            model = self.fleet.get_active_model(prov_upper, MODEL_MAP.get(prov_upper))
+            # 2026-10-22: dinamicki izbor modela po ulozi
+            model = None
+            if prov_upper == "GEMINI":
+                try:
+                    from config.model_roles import pick_model_for_role
+                    from network.model_discovery import (
+                        get_cached_model_list,
+                        enrich_models_with_metrics,
+                    )
+                    cached = get_cached_model_list("GEMINI")
+                    if cached:
+                        enriched = enrich_models_with_metrics("GEMINI", cached)
+                        model = pick_model_for_role(uloga, enriched)
+                except Exception:
+                    model = None
+            if not model:
+                model = self.fleet.get_active_model(prov_upper, MODEL_MAP.get(prov_upper))
             if not model:
                 continue
 

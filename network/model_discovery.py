@@ -426,6 +426,38 @@ def get_cached_model(provider: str) -> Optional[str]:
     return model_id
 
 
+_MODEL_METRICS_CACHE: dict[str, dict] = {}
+"""Cache latencije i RPD-a po modelu. Popunjava se benchmark-om (Faza 2)."""
+
+
+def enrich_models_with_metrics(provider: str, models: list[str]) -> list[dict]:
+    """
+    Obogacuje listu modela sa RPD (iz GOOGLE_MODEL_POOL) i latencijom (cache).
+    Vraca: [{"model": name, "rpd": int, "latency_s": float}, ...]
+    """
+    try:
+        from config.ai_config import GOOGLE_MODEL_POOL
+    except ImportError:
+        GOOGLE_MODEL_POOL = []
+
+    out = []
+    for m in models:
+        rpd = 0
+        if provider.upper() == "GEMINI":
+            for entry in GOOGLE_MODEL_POOL:
+                if entry.get("model") == m:
+                    rpd = int(entry.get("rpd", 0))
+                    break
+        latency = _MODEL_METRICS_CACHE.get(m, {}).get("latency_s", 999.0)
+        out.append({"model": m, "rpd": rpd, "latency_s": latency})
+    return out
+
+
+def set_model_latency(model: str, latency_s: float) -> None:
+    """Upisi izmerenu latenciju modela u cache (Faza 2)."""
+    _MODEL_METRICS_CACHE.setdefault(model, {})["latency_s"] = float(latency_s)
+
+
 def get_cached_model_list(provider: str) -> list[str]:
     prov = provider.upper()
     with _cache_lock:
