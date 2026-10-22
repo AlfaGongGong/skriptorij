@@ -60,12 +60,22 @@ FALLBACK_MODELS: dict[str, str] = {
 }
 
 _GLOBAL_EXCLUDE = frozenset([
-    "embed", "embedding", "rerank", "reranking",
-    "whisper", "tts", "speech", "transcrib",
+    # embedding, rerank, retrieval
+    "embed", "embedding", "rerank", "reranking", "retrieval", "bert",
+    # audio/TTS
+    "whisper", "tts", "speech", "transcrib", "orpheus",
+    # image/video generation
+    "imagen", "veo", "lyria", "aqa", "diffusion", "cosmos",
+    # vision (multimodal za slike — ne za prevod teksta)
+    "vision-only", "vision-instruct",
+    # moderation, guard, safety
     "guard", "moderat",
-    "imagen", "veo", "lyria", "aqa",
-    "vision-only",
-    "retrieval", "bert",
+    # non-HR jezici (arapski, indijski, portugalski, korejski)
+    "allam", "jais", "sabia", "sarvam", "sea-lion", "gork",
+    # reasoning-only (troši tokene, seče odgovor)
+    "o1-", "o3-", "o4-", "-reasoning", "-thinking",
+    # reward, protein, special
+    "reward", "esmfold", "protein",
 ])
 
 _PROVIDER_FILTERS: dict[str, list] = {
@@ -76,7 +86,16 @@ _PROVIDER_FILTERS: dict[str, list] = {
         lambda m: "ultra" not in m,
         lambda m: "embed" not in m,
     ],
-    "MISTRAL":    [lambda m: "embed" not in m],
+    "MISTRAL":    [
+        lambda m: "embed" not in m,
+        lambda m: "ministral" not in m,      # mali, 8-14B — preslab
+        lambda m: "codestral" not in m,      # code
+        lambda m: "pixtral" not in m,        # vision
+        lambda m: "devstral" not in m,       # code
+        lambda m: "ocr" not in m,            # OCR
+        lambda m: "moderation" not in m,     # moderation
+        lambda m: "saba" not in m,           # arapski
+    ],
     "COHERE":     [
         lambda m: "embed" not in m,
         lambda m: "rerank" not in m,
