@@ -51,4 +51,16 @@ Stilizator: 9 fixeva (A1, A1b, A2, A3, C, C2, D, E1, E2). Commit e59b621.
   GEMINI ~12/18. GEMMA nema endpoint (0 modela) — otvoreno.
   Test 3 fix: provider_router koristi prov_upper kao namespace (GEMINI/GEMMA razdvojeni).
 
+## [2026-10-22 14:30] Zadatak: Moon+ replacements + styler &middot; fix
+- Status: ZAVRSEN
+- Fajlovi kreirani: core/replacements.py, tools/apply_replacements.py
+- Fajlovi izmijenjeni: epub/styler.py (&middot; → &#183;)
+- Testovi: parser 6/6, dry-run na A Little Hatred (266 pravila, 175 aktivirano, 4335 zamjena), EPUB otvoren u Moon+ Reader-u ✅
+- Sljedeci korak: 503 dijagnostika (test 3, test 4) ili Faza 3 (learning iz fires)
+- Napomene:
+  - Moon+ replacement format: `\bSearch\b#->#Replace` (regex), `*Search#->#Replace` (literal)
+  - apply_to_html koristi regex-based text node replacement (ne BeautifulSoup) — cuva XML deklaraciju i formatiranje
+  - 3 sumnjiva pravila u korisnikovom fajlu: Uffrith→Afriθ, Meadow→medou, Oxelu→Okse (ostavljena, korisnik odlucio)
+  - XML greske u originalu: text/part0066.html (JSON wrapper od prije) i booklyfi_001 (&middot;) — Moon+ tolerise, ali `&#183;` fix je ispravan
+
 
