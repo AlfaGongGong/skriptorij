@@ -61,7 +61,7 @@ def test_google_pool_excludes_dead_models(monkeypatch):
 
     assert dead_model not in model_ids
     # Ostali whitelistirani modeli ostaju
-    assert "gemini-3.5-flash" in model_ids
+    assert "gemini-3.5-flash-lite" in model_ids
 
 
 def test_google_pool_preserves_static_order_after_dead_filter(monkeypatch):
@@ -398,7 +398,7 @@ def test_gemma_rotation_checks_gemma_cooldown_tracker(monkeypatch):
 
     class FakeEngine:
         def __init__(self):
-            self.fleet = type("Fleet", (), {"fleet": {"GEMINI": [FakeKeyState()]}})()
+            self.fleet = type("Fleet", (), {"fleet": {"GEMMA": [FakeKeyState()]}})()
 
         def log(self, msg, level="info"):
             pass
@@ -408,5 +408,5 @@ def test_gemma_rotation_checks_gemma_cooldown_tracker(monkeypatch):
     )
 
     assert content == "GEMMA ODGOVOR"
-    assert label == "GEMMA-gemma-4-26b-it"
+    assert label == "GEMMA-gemma-4-26b-a4b-it"
     assert fake_quota_tracker.providers == ["GEMMA", "GEMMA", "GEMMA"]
