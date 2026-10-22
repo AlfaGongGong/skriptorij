@@ -359,10 +359,10 @@ def selftest():
     st = bisekcija(tekst, lambda t: "BLOK" if "XXX" in t else "OK", max_dubina=4)
     assert st["prosle"] + st["blokirane"] + st["neprovjereno"] == ukupno, st
     assert st["blokirane"] == 2 and st["najmanji"] == 2, st
-    assert st["prosle"] == ukupno - 4, st
+    assert st["prosle"] == ukupno - 2, st
 
     # sve blokirano -> nista ne prolazi, najmanji je list stabla
-    st2 = bisekcija(tekst, lambda t: "BLOK", max_dubina=4)
+    st2 = bisekcija(tekst, lambda t: "BLOK", max_dubina=4, budzet=100)
     assert st2["prosle"] == 0 and st2["blokirane"] == ukupno, st2
 
     # greske se ne racunaju kao prolaz niti blok
