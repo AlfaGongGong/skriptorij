@@ -658,6 +658,66 @@ async def _quality_scoring(
 
 # ── Glavni AI pipeline ────────────────────────────────────────────────────────
 
+async def _posalji_po_paragrafima(self, chunk, chunk_idx, file_name,
+                                   fusion_sys, tip_bloka):
+    """
+    Kad Gemini blokira cijeli chunk (PROHIBITED_CONTENT / CONTENT_FILTER),
+    pokusaj svaki paragraf zasebno. Toxicne paragrafe markiraj (sa originalom
+    u HTML komentaru), ostale prevedi.
+    Vraca (tekst, broj_markiranih) ili (None, 0) ako nema paragrafa.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(chunk, "html.parser")
+    paras = soup.find_all("p")
+
+    if not paras:
+        tekst = soup.get_text().strip()
+        if not tekst:
+            return None, 0
+        recenice = re.split(r'(?<=[.!?])\s+', tekst)
+        if len(recenice) < 2:
+            return None, 0
+        dijelovi = [" ".join(recenice[i:i+3]) for i in range(0, len(recenice), 3)]
+        paras_iter = [(None, d) for d in dijelovi]
+        is_html = False
+    else:
+        paras_iter = [(p, str(p)) for p in paras]
+        is_html = True
+
+    rezultati = []
+    markirano = 0
+
+    for i, (_, p_html) in enumerate(paras_iter):
+        raw, prov = await self._call_ai_engine(
+            f"Engleski tekst za prevod:\n{p_html}",
+            chunk_idx, uloga="PREVODILAC",
+            filename=file_name, sys_override=fusion_sys,
+            tip_bloka=tip_bloka,
+        )
+        if prov == "CONTENT_FILTER" or not raw:
+            original_esc = p_html.replace("--", "- -")
+            if is_html:
+                rezultati.append(
+                    f"<p>[[MANUAL: chunk {chunk_idx}, dio {i+1}]]"
+                    f"<!-- EN: {original_esc} --></p>"
+                )
+            else:
+                rezultati.append(
+                    f"[[MANUAL: chunk {chunk_idx}, dio {i+1}]]"
+                    f"<!-- EN: {original_esc} -->"
+                )
+            markirano += 1
+        else:
+            tekst = _smart_extract(raw)
+            if is_html:
+                rezultati.append(f"<p>{tekst}</p>")
+            else:
+                rezultati.append(tekst)
+
+    return "\n".join(rezultati), markirano
+
+
 async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file_name):
     """
     Obrađuje jedan HTML chunk kroz AI pipeline.
@@ -884,9 +944,30 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             filename=file_name, sys_override=fusion_sys, tip_bloka=tip_bloka,
         )
         if prov1 == "CONTENT_FILTER":
-            self.log(f"[{file_name}] Blok {chunk_idx}: ⛔ Content filter — chunk preskočen.", "warning")
-            self.chunk_skips += 1
-            return None, "CONTENT_FILTER"
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⛔ Content filter — "
+                f"pokusavam paragraf po paragraf",
+                "warning",
+            )
+            bisekt, markirano = await _posalji_po_paragrafima(
+                self, chunk, chunk_idx, file_name, fusion_sys, tip_bloka,
+            )
+            if bisekt:
+                raw_fusion = bisekt
+                prov1 = f"BISEKCIJA/{markirano}mark"
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ✅ Bisekcija "
+                    f"prosla, markirano {markirano} paragraf(a)",
+                    "tech",
+                )
+            else:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ❌ Bisekcija "
+                    f"nije uspjela (nema paragrafa)",
+                    "warning",
+                )
+                self.chunk_skips += 1
+                return None, "CONTENT_FILTER"
         if not raw_fusion:
             self.chunk_skips += 1
             return None, "N/A"
