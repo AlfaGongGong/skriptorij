@@ -325,13 +325,10 @@ async def _call_ai_engine(
                 import re as _re
                 has_available_or_short_cd = False
                 for ks in gemini_keys:
-                    if prov_upper == "GEMMA":
-                        # Za GEMMA: provjeri GEMINI namespace (zajednički ključ)
-                        # pa zatim GEMMA namespace (zaseban cooldown)
-                        quota_tracker.is_key_available("GEMINI", ks.key)
-                        ok, reason = quota_tracker.is_key_available("GEMMA", ks.key)
-                    else:
-                        ok, reason = quota_tracker.is_key_available("GEMINI", ks.key)
+                    # FIX 2026-10-22: koristi prov_upper kao namespace
+                    # (GEMMA provider -> GEMMA namespace; GEMINI provider -> GEMINI namespace).
+                    # GEMINI i GEMMA imaju zasebne cooldown namespace-ove u quota_trackeru.
+                    ok, reason = quota_tracker.is_key_available(prov_upper, ks.key)
                     if ok:
                         has_available_or_short_cd = True
                         break
