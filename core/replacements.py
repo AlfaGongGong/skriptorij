@@ -107,34 +107,62 @@ def apply_to_text(text: str, rules: List[Rule]) -> tuple[str, List[Fire]]:
 def apply_to_html(html_bytes: bytes, rules: List[Rule]) -> tuple[bytes, List[Fire]]:
     """
     Primijeni pravila na HTML tekstualne cvorove.
-    NE dira <style>, <script>, atribute, base64.
+    NE dira <style>, <script>, atribute, base64, XML deklaraciju.
     Vraca (novi_bytes, fires).
+
+    Koristi regex-based pristup (ne BeautifulSoup) — cuva originalnu
+    XML strukturu sto je neophodno za EPUB (XHTML = XML).
     """
-    try:
-        from bs4 import BeautifulSoup, NavigableString
-    except ImportError:
-        raise ImportError("BeautifulSoup nije instaliran")
+    import uuid
+    import re as _re
 
-    soup = BeautifulSoup(html_bytes, "html.parser")
+    html = html_bytes.decode("utf-8", errors="strict")
 
-    # Ukloni <style> i <script> iz razmatranja (ostaju u HTML-u)
-    for tag in soup.find_all(["style", "script"]):
-        tag.decompose()
+    # 1. Sacuvaj <script> i <style> (ne diramo sadrzaj)
+    saved = []
+    token_prefix = "___SAVED_" + uuid.uuid4().hex[:8] + "_"
 
+    def _save_block(m):
+        saved.append(m.group(0))
+        return f"{token_prefix}{len(saved)-1}___"
+
+    html = _re.sub(r'<script\b[^>]*>.*?</script>', _save_block, html,
+                   flags=_re.DOTALL | _re.IGNORECASE)
+    html = _re.sub(r'<style\b[^>]*>.*?</style>', _save_block, html,
+                   flags=_re.DOTALL | _re.IGNORECASE)
+
+    # 2. Iteriraj kroz tagove i tekst izmedju njih
     all_fires: List[Fire] = []
+    parts: List[str] = []
+    pos = 0
 
-    for node in soup.find_all(string=True):
-        if not isinstance(node, NavigableString):
-            continue
-        original = str(node)
-        if not original.strip():
-            continue
-        new_text, fires = apply_to_text(original, rules)
-        if new_text != original:
-            node.replace_with(NavigableString(new_text))
+    for tag_match in _re.finditer(r'<[^>]+>', html):
+        # Tekst pre taga
+        text = html[pos:tag_match.start()]
+        if text:
+            new_text, fires = apply_to_text(text, rules)
+            if fires:
+                all_fires.extend(fires)
+            parts.append(new_text)
+        # Tag kao sto je
+        parts.append(tag_match.group(0))
+        pos = tag_match.end()
+
+    # Preostali tekst
+    if pos < len(html):
+        text = html[pos:]
+        new_text, fires = apply_to_text(text, rules)
+        if fires:
             all_fires.extend(fires)
+        parts.append(new_text)
 
-    return str(soup).encode("utf-8"), all_fires
+    result = "".join(parts)
+
+    # 3. Vrati <script> i <style>
+    for i, block in enumerate(saved):
+        result = result.replace(f"{token_prefix}{i}___", block)
+
+    return result.encode("utf-8"), all_fires
 
 
 def summarize(fires: List[Fire], total_rules: int) -> str:
