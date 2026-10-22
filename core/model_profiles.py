@@ -8,7 +8,7 @@ i anti-patterne karakteristične za taj model.
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 
-from config.ai_config import AI_MODEL_STRINGS
+from config.ai_config import AI_MODEL_STRINGS, MODEL_MAP
 
 
 @dataclass
@@ -487,6 +487,147 @@ PROFILI: Dict[str, ModelProfile] = {
 # ─────────────────────────────────────────────────────────────
 # POMOĆNE FUNKCIJE
 # ─────────────────────────────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════
+# Blok 2 (2026-10-22): provider-level profiles
+# Model se bira iz discovery-ja; api_model_string je fallback (MODEL_MAP).
+# Stari model-specific kljucevi su aliasi ka ovim profilima (vidi ispod).
+# ═══════════════════════════════════════════════════════════════
+
+PROFILI["groq"] = ModelProfile(
+    ime="groq",
+    provider="groq",
+    api_model_string=MODEL_MAP.get("GROQ", ""),
+    rpm_limit=30, rpd_limit=14400,
+    snage=["brz", "visoki rpm limit", "dobar za masovnu obradu"],
+    slabosti=["sistematski srbizmi/ekavizmi", "morfološke halucinacije", "doslovan prijevod idioma"],
+    anti_patterne=[
+        r"\bneverovatno?\b", r"\bposeduje\b", r"\bposedujem\b",
+        r"\bvideo\b(?!\s+\w+\s+\w)", r"\bsreo\b", r"\bneo\b", r"\bpeo\b",
+        r"^Naravno[,!]?\s",
+    ],
+    preferred_roles=["prevodilac"],
+    blacklisted_roles=["validator", "chapter_summary"],
+    temp_prevodilac=0.65, temp_lektor=0.60, temp_validator=0.30,
+    max_tokens_chunk=1800,
+    notes="Provider-level profil za GROQ. Model iz discovery-ja.",
+)
+
+PROFILI["mistral"] = ModelProfile(
+    ime="mistral",
+    provider="mistral",
+    api_model_string=MODEL_MAP.get("MISTRAL", ""),
+    rpm_limit=5, rpd_limit=14400,
+    snage=["dobar književni stil", "razumije kontekst"],
+    slabosti=["sklon meta-komentarima", "markdown blokovi"],
+    anti_patterne=[
+        r"^Naravno[,!]?\s", r"^Evo\s", r"^Svakako[,!]?\s",
+        r"```[\w]*\n", r"\n```",
+        r"^\*\*Prijevod\*\*", r"^\*\*Napomena\*\*",
+    ],
+    preferred_roles=["prevodilac", "lektor", "validator"],
+    blacklisted_roles=[],
+    temp_prevodilac=0.55, temp_lektor=0.60, temp_validator=0.30,
+    max_tokens_chunk=2048,
+    notes="Provider-level profil za MISTRAL. Model iz discovery-ja.",
+)
+
+PROFILI["gemini"] = ModelProfile(
+    ime="gemini",
+    provider="gemini",
+    api_model_string=MODEL_MAP.get("GEMINI", ""),
+    rpm_limit=15, rpd_limit=500,
+    snage=["književni stil", "HR morfologija", "dugi kontekst", "razumijevanje idioma"],
+    slabosti=["meta-komentari", "markdown blokovi", "predugi odgovori", "anglicizmi"],
+    anti_patterne=[
+        r"^Naravno[,!]?\s", r"^Evo\s(prijevoda|mog|rezultata)", r"^Svakako[,!]?\s",
+        r"```[\w]*\n", r"\n```",
+        r"^\*\*Prijevod\*\*", r"^\*\*Napomena\*\*",
+        r"Nadam se da", r"Slobodno pitajte",
+    ],
+    preferred_roles=["prevodilac", "lektor", "validator", "chapter_summary"],
+    blacklisted_roles=[],
+    temp_prevodilac=0.72, temp_lektor=0.65, temp_validator=0.30,
+    max_tokens_chunk=2048,
+    notes="Provider-level profil za GEMINI. Model iz discovery-ja.",
+)
+
+PROFILI["gemma"] = ModelProfile(
+    ime="gemma",
+    provider="gemma",
+    api_model_string=MODEL_MAP.get("GEMMA", ""),
+    rpm_limit=15, rpd_limit=1500,
+    snage=["thinking model", "visoki RPD"],
+    slabosti=["troši tokene na reasoning", "meta-komentari"],
+    anti_patterne=[
+        r"^Naravno[,!]?\s", r"^Evo\s",
+        r"```[\w]*\n", r"\n```",
+    ],
+    preferred_roles=["prevodilac", "lektor"],
+    blacklisted_roles=[],
+    temp_prevodilac=0.55, temp_lektor=0.60, temp_validator=0.30,
+    max_tokens_chunk=2048,
+    notes="Provider-level profil za GEMMA. Model iz discovery-ja. Thinking model — min 2000 tokens.",
+)
+
+PROFILI["nvidia"] = ModelProfile(
+    ime="nvidia",
+    provider="nvidia",
+    api_model_string=MODEL_MAP.get("NVIDIA", ""),
+    rpm_limit=0, rpd_limit=0,
+    snage=["veliki modeli", "dobar kontekst"],
+    slabosti=["srbizmi", "meta-komentari"],
+    anti_patterne=[
+        r"^Naravno[,!]?\s", r"^Evo\s",
+        r"\bneverovatno?\b", r"\bposeduje\b",
+    ],
+    preferred_roles=["prevodilac", "lektor", "validator"],
+    blacklisted_roles=[],
+    temp_prevodilac=0.55, temp_lektor=0.60, temp_validator=0.30,
+    max_tokens_chunk=2048,
+    notes="Provider-level profil za NVIDIA. Model iz discovery-ja.",
+)
+
+PROFILI["cloudflare"] = ModelProfile(
+    ime="cloudflare",
+    provider="cloudflare",
+    api_model_string=MODEL_MAP.get("CLOUDFLARE", ""),
+    rpm_limit=30, rpd_limit=10000,
+    snage=["besplatan tier", "visoki limit"],
+    slabosti=["manji modeli", "generički stil"],
+    anti_patterne=[
+        r"^Naravno[,!]?\s", r"^Evo\s",
+        r"```[\w]*\n",
+    ],
+    preferred_roles=["prevodilac", "lektor"],
+    blacklisted_roles=[],
+    temp_prevodilac=0.60, temp_lektor=0.60, temp_validator=0.30,
+    max_tokens_chunk=2048,
+    notes="Provider-level profil za CLOUDFLARE. Model iz discovery-ja.",
+)
+
+# ── Aliasi: stari model-specific kljucevi pokazuju na provider profile ──
+_ALIASI = {
+    "llama33_70b_groq": "groq",
+    "llama31_70b_cerebras": None,   # CEREBRAS jos nema provider profil — ostaje star
+    "qwen_chutes": None,             # CHUTES jos nema — ostaje star
+    "llama_sambanova": None,         # SAMBANOVA jos nema — ostaje star
+    "deepseek_openrouter": None,     # OPENROUTER jos nema — ostaje star
+    "mistral_large": "mistral",
+    "mistral_nemo": "mistral",
+    "gemini_25_flash": "gemini",
+    "gemini_20_flash": "gemini",
+    "gemini_3_flash": "gemini",
+    "gemini_31_flash_lite": "gemini",
+    "gemini_25_flash_lite": "gemini",
+    "gemma4_26b": "gemma",
+    "gemma4_31b": "gemma",
+    "gemma3_27b": "gemma",
+}
+for _old, _new in _ALIASI.items():
+    if _new and _new in PROFILI:
+        PROFILI[_old] = PROFILI[_new]
+
 
 def get_profil(ime: str) -> Optional[ModelProfile]:
     """Vraća ModelProfile za dati identifikator. None ako nije pronađen."""
