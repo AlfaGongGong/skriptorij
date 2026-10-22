@@ -38,3 +38,17 @@ Stilizator: 9 fixeva (A1, A1b, A2, A3, C, C2, D, E1, E2). Commit e59b621.
 - Sljedeci korak: Fleet kvote trake (fq-*) ostaju u dashboardu; F3d u Quality tabu pokriva metrike
 - Napomene: Odluka korisnika — F3d (commit 7834453) je dovoljan prikaz metrika, novi metrics.js je bio duplikat istog izvora /api/quality_scores. Iteracija 3 iz HANDOFF.md je sljedeća (3-4 taba + kartica statusa).
 
+## [2026-10-22 11:15] Zadatak: Blok 1 discovery filter + test 3 namespace
+- Status: ZAVRSEN
+- Fajlovi kreirani: (nijedan)
+- Fajlovi izmijenjeni: network/model_discovery.py, network/provider_router.py
+- Testovi: 84/84 passed (bio 83/1, baseline 48/11)
+- Commit: 6b65936, 9cb1c8a
+- Sljedeci korak: Blok 2 refaktor (model_profiles.py profil po provajderu)
+- Napomene: Discovery filter prosiren (_GLOBAL_EXCLUDE audio/vision/reasoning/non-HR,
+  MISTRAL filter voxtral/codestral/pixtral/magistral, GEMINI filter image/omni/exp).
+  Rezultat: GROQ 1/1, MISTRAL 23/23 (jos visok), NVIDIA 63/63, OPENROUTER 17/17,
+  GEMINI ~12/18. GEMMA nema endpoint (0 modela) — otvoreno.
+  Test 3 fix: provider_router koristi prov_upper kao namespace (GEMINI/GEMMA razdvojeni).
+
+

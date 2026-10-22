@@ -31,9 +31,7 @@ aa2f20d feat: Gemini fallback lanac — kontekst → Gemma → Mistral (bez Open
   - core/engine.py: 0f/1c/686L
 
 **Testovi:**
-FAILED tests/unit/test_http_client.py::test_gemma_rotation_checks_gemma_cooldown_tracker
-FAILED tests/unit/test_provider_router.py::test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider
-11 failed, 48 passed in 3.47s
+84 passed, 0 failed (2026-10-22)
 
 <!-- AUTO:END -->
 
@@ -451,6 +449,52 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 - **`ocijeni_kvalitet`** — jos u `WorkersV2` kao interni hint za retry, moze se ukloniti kad F3b bude gotov
 - **`_qa_ai_ocjena`** — sinhroni AI scorer, ostaje samo za retry feedback
 - **Skala zasícena** — 75% blokova na 9.8. Metrike su prvi korak; potpuni redizajn tek sledi.
+
+---
+
+---
+
+## FAZA 4 (2026-10-22) — cleanup, discovery, refaktor
+
+### Sta je uradjeno
+
+| Commit | Fajl | Sta |
+|---|---|---|
+| `6b65936` | `network/provider_router.py` | namespace po prov_upper (GEMINI/GEMMA razdvojeni) |
+| `9cb1c8a` | `network/model_discovery.py` | discovery filter — audio/vision/reasoning/non-HR odbaceni |
+| `e4eb8e0` | više | 4 test fixa — api_fleet UnboundLocal, pool modeli, gemma pool, FakeFleet default |
+| `e3d9982` | `network/http_client.py`, `network/model_discovery.py` | A#3 — hardkodovani URL-ovi u get_gemini_url i GEMINI_DIRECT_BASE_URL |
+| `f88a4bc` | `static/css/style.css` | .fq-* trake vracene za fleet.js |
+| `c881162` | `static/js/metrics.js` | obrisan — F3d pokriva metrike u Quality tabu |
+| `e13bb05` | `processing/pipeline.py` | bisekcija po paragrafima kad Gemini blokira chunk |
+| ranije | `network/http_client.py` | Gemma 4 thinking model — min 2000 max_tokens |
+| ranije | `network/http_client.py` | safetyRatings dijagnostika (Fix A+B) |
+| ranije | `epub/styler.py` | 9 fixeva za omnibus trilogiju (A1, A1b, A2, A3, C, C2, D, E1, E2) |
+
+### Baseline
+
+**Testovi:** 84 passed, 0 failed (bio 11 failed, 48 passed)
+
+### Sta je ostalo (Blok 2-5 refaktora)
+
+- **Blok 2** — `model_profiles.py` profil po provajderu (u toku)
+- **Blok 3** — `prompts.py` patchevi po provajderu
+- **Blok 4** — `workers.py` + `api_fleet.py` provider umjesto model_ime
+- **Blok 5** — `ai_config.py` AI_MODEL_STRINGS → fallback po provajderu
+- **Blok 6** — testovi za discovery filter
+
+### Pokrenuti alati
+
+- `bookly` — Termux skripta (ulaz u proot)
+- `/usr/local/bin/bookly` — proot skripta (venv komande, cp, sync, pytest)
+- `tools/probudi_gemmu.py` — Gemma dijagnostika
+- `diag_blokovi.py` — safety dijagnostika
+
+### Otvoreno
+
+- **GEMMA** discovery — nema endpoint u `_MODELS_ENDPOINTS`, `fetch_models("GEMMA")` vraća `[]`
+- **MISTRAL** — 23 valid modela, 8 medium/small varijanti (dedup po baznom imenu u Bloku 6)
+- **NVIDIA** — 63 valid modela, još previše
 
 ---
 
