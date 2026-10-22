@@ -726,7 +726,7 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
                 '<p style="font-size:0.85em;letter-spacing:0.3em;color:#8B6914;">BOOKLYFI IZDANJE</p>'
                 '<hr/><h1 style="font-size:2.4em;">' + _esc(book_title) + '</h1>'
                 '<hr/><p style="font-size:1.3em;margin-top:3em;">' + _esc(creator) + '</p>'
-                '<p style="font-size:0.9em;color:#8B6914;margin-top:5em;">Booklyfi &middot; ' + str(year) + '</p></div>')
+                '<p style="font-size:0.9em;color:#8B6914;margin-top:5em;">Booklyfi &#183; ' + str(year) + '</p></div>')
     imp_body = ('<h1 style="text-align:center;">IMPRESUM</h1>'
                 '<p><b>Naslov:</b> ' + _esc(book_title) + '</p>'
                 '<p><b>Autor:</b> ' + _esc(creator) + '</p>'
@@ -1179,7 +1179,7 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
                 '<p style="font-size:0.85em;letter-spacing:0.3em;color:#8B6914;">BOOKLYFI IZDANJE</p>'
                 '<hr/><h1 style="font-size:2.4em;">' + _esc(book_title) + '</h1>'
                 '<hr/><p style="font-size:1.3em;margin-top:3em;">' + _esc(creator) + '</p>'
-                '<p style="font-size:0.9em;color:#8B6914;margin-top:5em;">Booklyfi &middot; ' + str(year) + '</p></div>')
+                '<p style="font-size:0.9em;color:#8B6914;margin-top:5em;">Booklyfi &#183; ' + str(year) + '</p></div>')
     imp_body = ('<h1 style="text-align:center;">IMPRESUM</h1>'
                 '<p><b>Naslov:</b> ' + _esc(book_title) + '</p>'
                 '<p><b>Autor:</b> ' + _esc(creator) + '</p>'
