@@ -138,11 +138,12 @@ def _smart_extract(raw: str) -> str:
     # Stari regex je tražio samo ASCII → propuštao JSON artefakte u .chk.
     raw_norm = _TYPO_Q.sub('"', raw)
 
-    m = re.search(r'"finalno_polirano"\s*:\s*"(.+)"\s*\}?\s*$', raw_norm, re.DOTALL)
+    # 2026-10-24: \}? -> [\}]* (hvata i {{...}} dupli JSON)
+    m = re.search(r'"finalno_polirano"\s*:\s*"(.+)"\s*[\}]*\s*$', raw_norm, re.DOTALL)
     if m:
         return _unescape_json_fallback(m.group(1))
 
-    m = re.search(r'"korektura"\s*:\s*"(.+)"\s*\}?\s*$', raw_norm, re.DOTALL)
+    m = re.search(r'"korektura"\s*:\s*"(.+)"\s*[\}]*\s*$', raw_norm, re.DOTALL)
     if m:
         return _unescape_json_fallback(m.group(1))
 
