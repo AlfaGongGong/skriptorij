@@ -597,33 +597,25 @@ class FleetManager:
                 pass
 
             # Ako je RESOURCE_EXHAUSTED bez retryDelay — ne znamo je li RPM ili RPD.
-            # 2026-10-22 FIX: Google za RPM 429 salje SAMO
+            # 2026-10-23 FIX: Google za RPM 429 salje SAMO
             # "Resource has been exhausted (e.g. check quota)." bez retryDelay.
-            # Ne mozemo pretpostaviti RPD (24h cooldown) — probaj RPM (60s),
-            # a ako se ponovi 3x zaredom na istom kljucu, tek onda predji na RPD.
+            # NIKAD ne pretpostavljaj RPD (24h) samo na osnovu streak-a — to je
+            # dovelo do 12h blokade svih kljuceva 23.10.2026.
+            # RPD SAMO ako Google eksplicitno kaze "rpd", "daily", "per day",
+            # ili retry_after > 3600 (1h).
             if retry_after is None:
                 err_msg    = str(body.get("error", {}).get("message", "")).lower()
                 err_status = str(body.get("error", {}).get("status",  "").lower())
                 if "resource_exhausted" in err_status or "quota" in err_msg:
-                    # Broj uzastopnih 429 na ovom kljucu (resetuje se na uspjeh)
-                    _rpm_streak_key = f"_rpm_429_streak_{key[-4:]}"
-                    _rpm_streak = getattr(self, _rpm_streak_key, 0) + 1
-                    setattr(self, _rpm_streak_key, _rpm_streak)
-
-                    if _rpm_streak < 3:
-                        # Verovatno RPM — 60s cooldown
-                        retry_after = 60.0
-                        logger.info(
-                            "[FleetManager] %s ...%s 429 bez retryDelay "
-                            "(streak %d) — RPM pretpostavka: %.0fs",
-                            prov_u, key[-4:], _rpm_streak, retry_after,
-                        )
-                        syslog.debug(
-                            "[FleetManager] %s ...%s 429 RPM cooldown %.0fs (streak %d)",
-                            prov_u, key[-4:], retry_after, _rpm_streak,
-                        )
-                    else:
-                        # 3x zaredom — verovatno RPD, idi do ponoci UTC
+                    # Eksplicitna RPD detekcija
+                    _is_explicit_rpd = (
+                        "rpd" in err_msg
+                        or "per day" in err_msg
+                        or "daily" in err_msg
+                        or "po danu" in err_msg
+                    )
+                    if _is_explicit_rpd:
+                        # Google je rekao RPD — cooldown do ponoci UTC
                         import datetime
                         utc_now  = datetime.datetime.utcnow()
                         midnight = (utc_now + datetime.timedelta(days=1)).replace(
@@ -631,14 +623,22 @@ class FleetManager:
                         )
                         retry_after = (midnight - utc_now).total_seconds() + 60.0
                         logger.warning(
-                            "[FleetManager] %s ...%s 429 3x zaredom (streak %d) "
-                            "— RPD pretpostavka: cooldown do ponoci UTC %.1fh",
-                            prov_u, key[-4:], _rpm_streak, retry_after / 3600,
+                            "[FleetManager] %s ...%s RPD iscrpljen (eksplicitno) "
+                            "— cooldown do ponoci UTC %.1fh",
+                            prov_u, key[-4:], retry_after / 3600,
                         )
                         syslog.warning(
-                            "[FleetManager] %s ...%s GEMINI RPD iscrpljen "
-                            "(3x 429 streak) — cooldown %.1fh",
+                            "[FleetManager] %s ...%s RPD iscrpljen "
+                            "— cooldown %.1fh",
                             prov_u, key[-4:], retry_after / 3600,
+                        )
+                    else:
+                        # Nije eksplicitno RPD — uvek RPM 60s
+                        retry_after = 60.0
+                        logger.info(
+                            "[FleetManager] %s ...%s 429 bez RPD oznake "
+                            "— RPM cooldown 60s",
+                            prov_u, key[-4:],
                         )
 
                 # FIX 21.05.2026: RATE_LIMIT_EXCEEDED (RPM 429) — nema retryDelay ni header.
