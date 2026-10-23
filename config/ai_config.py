@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import List
+from config.providers import all_fallbacks, all_profiles
 
 # RPD limiti (free tier, maj 2026):
 #   gemini-3.5-flash:      10 RPM / 20 RPD  — primarni, stabilan
@@ -50,43 +51,11 @@ PROVIDER_PRIORITY = {
     "SCORER":           ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
 }
 
-AI_MODEL_STRINGS = {
-    "gemini_25_flash": "gemini-3.5-flash-lite",
-    # Backward-compatible alias: the old gemini_20_flash profile now targets
-    # the stable replacement model after gemini-2.0-flash deprecation.
-    "gemini_20_flash": "gemini-3.5-flash-lite",
-    "gemini_3_flash": "gemini-3.5-flash-lite",    # gemini-3.0-flash ne postoji; koristi 3.5-flash
-    "gemini_31_flash_lite": "gemini-3.1-flash-lite",
-    "gemini_25_flash_lite": "gemini-2.5-flash-lite",
-    "gemma4_26b": "gemma-4-26b-a4b-it",
-    "gemma4_31b": "gemma-4-31b-it",
-    "gemma3_27b": "gemma-3-27b-it",
-    "llama33_70b_groq": "openai/gpt-oss-120b",
-    "llama31_70b_cerebras": "llama-3.1-70b",
-    "mistral_large": "mistral-large-latest",
-    "mistral_nemo": "open-mistral-nemo",
-    "command_r_plus_cohere": "command-r-plus",
-    "llama_sambanova": "Meta-Llama-3.1-70B-Instruct",
-    "deepseek_openrouter": "deepseek/deepseek-v4-flash:free",
-    "qwen_chutes": "Qwen/Qwen2.5-72B-Instruct",
-}
+# 2026-10-24: izvedeno iz providers.json (jedan izvor istine)
+AI_MODEL_STRINGS = all_profiles()
 
-MODEL_MAP = {
-    "CEREBRAS": "llama-4-scout-17b-16e-instruct",
-    "SAMBANOVA": "Meta-Llama-3.3-70B-Instruct",
-    "MISTRAL": "mistral-small-latest",
-    "TOGETHER": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    "GROQ": "qwen/qwen3.8-27b",
-    "GEMINI": GOOGLE_MODEL_POOL[0]["model"],
-    "COHERE": "command-r-plus-08-2024",
-    "CHUTES": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
-    "HUGGINGFACE": "meta-llama/Llama-3.3-70B-Instruct",
-    "KLUSTER": "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
-    "FIREWORKS": "accounts/fireworks/models/llama-v3p3-70b-instruct",
-    "GEMMA": GEMMA_MODEL_POOL[0]["model"],
-    "GITHUB": "openai/gpt-4.1",
-    "NVIDIA": "nvidia/nemotron-3-ultra-550b-a55b",
-}
+# 2026-10-24: izvedeno iz providers.json
+MODEL_MAP = all_fallbacks()
 
 MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"
 

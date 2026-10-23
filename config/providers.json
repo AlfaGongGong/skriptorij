@@ -1,0 +1,88 @@
+{
+  "_comment": "Jedan izvor istine za provajdere, fallback modele i profile. MODEL_MAP i AI_MODEL_STRINGS u ai_config.py se izvode iz ovoga.",
+  "GEMINI": {
+    "fallback": "gemini-3.5-flash-lite",
+    "profiles": {
+      "gemini_25_flash": "gemini-3.5-flash-lite",
+      "gemini_20_flash": "gemini-3.5-flash-lite",
+      "gemini_3_flash": "gemini-3.5-flash-lite",
+      "gemini_31_flash_lite": "gemini-3.1-flash-lite",
+      "gemini_25_flash_lite": "gemini-2.5-flash-lite"
+    }
+  },
+  "GEMMA": {
+    "fallback": "gemma-4-26b-a4b-it",
+    "profiles": {
+      "gemma4_26b": "gemma-4-26b-a4b-it",
+      "gemma4_31b": "gemma-4-31b-it",
+      "gemma3_27b": "gemma-3-27b-it"
+    }
+  },
+  "GROQ": {
+    "fallback": "qwen/qwen3.8-27b",
+    "profiles": {
+      "llama33_70b_groq": "openai/gpt-oss-120b"
+    }
+  },
+  "CEREBRAS": {
+    "fallback": "llama-4-scout-17b-16e-instruct",
+    "profiles": {
+      "llama31_70b_cerebras": "llama-3.1-70b"
+    }
+  },
+  "SAMBANOVA": {
+    "fallback": "Meta-Llama-3.3-70B-Instruct",
+    "profiles": {
+      "llama_sambanova": "Meta-Llama-3.1-70B-Instruct"
+    }
+  },
+  "MISTRAL": {
+    "fallback": "mistral-small-latest",
+    "profiles": {
+      "mistral_large": "mistral-large-latest",
+      "mistral_nemo": "open-mistral-nemo"
+    }
+  },
+  "TOGETHER": {
+    "fallback": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "profiles": {}
+  },
+  "COHERE": {
+    "fallback": "command-r-plus-08-2024",
+    "profiles": {
+      "command_r_plus_cohere": "command-r-plus"
+    }
+  },
+  "CHUTES": {
+    "fallback": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    "profiles": {
+      "qwen_chutes": "Qwen/Qwen2.5-72B-Instruct"
+    }
+  },
+  "HUGGINGFACE": {
+    "fallback": "meta-llama/Llama-3.3-70B-Instruct",
+    "profiles": {}
+  },
+  "KLUSTER": {
+    "fallback": "klusterai/Meta-Llama-3.3-70B-Instruct-Turbo",
+    "profiles": {}
+  },
+  "FIREWORKS": {
+    "fallback": "accounts/fireworks/models/llama-v3p3-70b-instruct",
+    "profiles": {}
+  },
+  "GITHUB": {
+    "fallback": "openai/gpt-4.1",
+    "profiles": {}
+  },
+  "NVIDIA": {
+    "fallback": "nvidia/nemotron-3-ultra-550b-a55b",
+    "profiles": {}
+  },
+  "OPENROUTER": {
+    "fallback": "deepseek/deepseek-v4-flash:free",
+    "profiles": {
+      "deepseek_openrouter": "deepseek/deepseek-v4-flash:free"
+    }
+  }
+}
