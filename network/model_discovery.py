@@ -276,7 +276,8 @@ def _score_model_strength(provider: str, model_id: str) -> float:
     return score
 
 
-def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0) -> list[str]:
+def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0,
+                                provider_filter: str = "GEMINI") -> list[str]:
     base_url = f"{GEMINI_DIRECT_BASE_URL}/v1beta/models"
     model_ids: list[str] = []
     page_token = None
@@ -309,7 +310,11 @@ def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0) -> list[str
                 continue
             if "generateContent" not in item.get("supportedGenerationMethods", []):
                 continue
-            if _is_valid_chat_model("GEMINI", model_id):
+            # 2026-10-23: filter po provajderu (GEMMA ili GEMINI)
+            if provider_filter == "GEMMA":
+                if "gemma" in model_id.lower():
+                    model_ids.append(model_id)
+            elif _is_valid_chat_model("GEMINI", model_id):
                 model_ids.append(model_id)
 
         page_token = data.get("nextPageToken")
@@ -319,7 +324,7 @@ def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0) -> list[str
     if not model_ids:
         return []
 
-    model_ids.sort(key=lambda m: _score_model_strength("GEMINI", m), reverse=True)
+    model_ids.sort(key=lambda m: _score_model_strength(provider_filter, m), reverse=True)
     logger.info("[ModelDiscovery] GEMINI: %d modela (best: %s)", len(model_ids), model_ids[0])
     return model_ids
 
@@ -360,10 +365,7 @@ def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str
 
     if prov in ("GEMINI", "GEMMA"):
         # 2026-10-23: GEMMA ide kroz isti Google native /models endpoint
-        gemini_models = _fetch_gemini_native_models(api_key, timeout)
-        if prov == "GEMMA":
-            return [m for m in gemini_models if "gemma" in m.lower()]
-        return gemini_models
+        return _fetch_gemini_native_models(api_key, timeout, provider_filter=prov)
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     # Cloudflare bot protection za GROQ (error 1010) — isti fingerprint kao http_client
