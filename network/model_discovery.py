@@ -122,6 +122,17 @@ _PROVIDER_FILTERS: dict[str, list] = {
         lambda m: "/registries/" not in m,
         lambda m: "/versions/" not in m,
     ],
+    # 2026-10-23: NVIDIA filter
+    "NVIDIA": [
+        lambda m: "llama2" not in m,
+        lambda m: "codellama" not in m,
+        lambda m: "-code-" not in m,
+        lambda m: "palmyra-creative" not in m,
+        lambda m: "reward" not in m,
+        lambda m: "guard" not in m,
+        lambda m: "cosmos" not in m,
+        lambda m: "diffusion" not in m,
+    ],
 }
 
 
@@ -313,14 +324,46 @@ def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0) -> list[str
     return model_ids
 
 
+def _dedup_by_base(models: list[str], provider: str) -> list[str]:
+    """
+    2026-10-23: Dedup po baznom imenu (mistral-medium-latest = mistral-medium).
+    Koristi se za MISTRAL gde API vraca 20+ varijanti iste familije.
+    """
+    if provider.upper() != "MISTRAL":
+        return models
+    _BASE_FAMILIES = (
+        "mistral-large", "mistral-medium", "mistral-small",
+        "mistral-nemo", "open-mistral-nemo",
+    )
+    seen_bases = set()
+    result = []
+    for m in models:
+        low = m.lower()
+        matched = None
+        for base in _BASE_FAMILIES:
+            if low.startswith(base):
+                matched = base
+                break
+        if matched:
+            if matched in seen_bases:
+                continue
+            seen_bases.add(matched)
+        result.append(m)
+    return result
+
+
 def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str]:
     prov = provider.upper()
     endpoint = _MODELS_ENDPOINTS.get(prov)
     if not endpoint:
         return []
 
-    if prov == "GEMINI":
-        return _fetch_gemini_native_models(api_key, timeout)
+    if prov in ("GEMINI", "GEMMA"):
+        # 2026-10-23: GEMMA ide kroz isti Google native /models endpoint
+        gemini_models = _fetch_gemini_native_models(api_key, timeout)
+        if prov == "GEMMA":
+            return [m for m in gemini_models if "gemma" in m.lower()]
+        return gemini_models
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     # Cloudflare bot protection za GROQ (error 1010) — isti fingerprint kao http_client
@@ -371,7 +414,8 @@ def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str
             model_ids.append(mid)
 
     model_ids.sort(key=lambda mid: _score_model_strength(provider, mid), reverse=True)
-    return model_ids
+    # 2026-10-23: dedup po baznom imenu (MISTRAL)
+    return _dedup_by_base(model_ids, prov)
 
 
 # ── Thread-safe cache ─────────────────────────────────────────────────────────
