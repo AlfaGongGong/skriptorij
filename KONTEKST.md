@@ -542,7 +542,7 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 |---|---|---|
 | `fd68c6a` | `checkpoint_cleaner.py` | `_ocisti_json_wrapper` cisti escape u HTML-u (`class=„X"` → `class="X"`) |
 | `6093652` | `checkpoint_cleaner.py` | `_ocisti_json_wrapper` hvata `chunk_sha` pre JSON provere |
-| `b48037f` | `http_client.py` | `_extract_gemini_native` filtrira `<thinking>`, `<\|thinking\|>`, `<\|channel\|>thought` |
+| `b48037f` | `http_client.py` | `_extract_gemini_native` filtrira `<thinking>`, thinking tagove (qwen/llama), channel thought blokove |
 
 ### Baseline
 
