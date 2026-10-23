@@ -649,3 +649,60 @@ CLOUDFLARE_MODEL_POOL = [
     # Qwen 2.5 Coder 32B — jak multilingual
     {"model": "@cf/qwen/qwen2.5-coder-32b-instruct", "rpm": 30, "rpd": 10000},
 ]
+
+def get_provider_for_model(model_ime: str) -> str | None:
+    """
+    Mapira interno ime modela (npr. "gemini_25_flash", "qwen_chutes")
+    u ime provajdera (npr. "GEMINI", "CHUTES").
+
+    Vraca None ako ne moze da mapira.
+    """
+    if not model_ime:
+        return None
+
+    # 1. Direktno po imenu (prefix/substring)
+    _PREFIX_MAP = (
+        ("gemini_25_flash", "GEMINI"),
+        ("gemini_20_flash", "GEMINI"),
+        ("gemini_3_flash", "GEMINI"),
+        ("gemini_31_flash_lite", "GEMINI"),
+        ("gemini_25_flash_lite", "GEMINI"),
+        ("gemma4_26b", "GEMMA"),
+        ("gemma4_31b", "GEMMA"),
+        ("gemma3_27b", "GEMMA"),
+        ("llama33_70b_groq", "GROQ"),
+        ("llama31_70b_cerebras", "CEREBRAS"),
+        ("mistral_large", "MISTRAL"),
+        ("mistral_nemo", "MISTRAL"),
+        ("command_r_plus_cohere", "COHERE"),
+        ("llama_sambanova", "SAMBANOVA"),
+        ("deepseek_openrouter", "OPENROUTER"),
+        ("qwen_chutes", "CHUTES"),
+    )
+    low = model_ime.lower()
+    for prefix, prov in _PREFIX_MAP:
+        if prefix in low:
+            return prov
+
+    # 2. Ako je model_ime vec provajder (case-insensitive)
+    upper = model_ime.upper()
+    _KNOWN_PROVIDERS = {
+        "GEMINI", "GEMMA", "GROQ", "CEREBRAS", "MISTRAL",
+        "COHERE", "SAMBANOVA", "OPENROUTER", "CHUTES",
+        "NVIDIA", "CLOUDFLARE",
+    }
+    if upper in _KNOWN_PROVIDERS:
+        return upper
+
+    # 3. Probaj preko AI_MODEL_STRINGS → MODEL_MAP
+    try:
+        api_string = AI_MODEL_STRINGS.get(model_ime)
+        if api_string:
+            for prov, api in MODEL_MAP.items():
+                if api == api_string:
+                    return prov
+    except Exception:
+        pass
+
+    return None
+
