@@ -116,10 +116,6 @@ def get_next_google_model(current_model: str) -> dict:
     return GOOGLE_MODEL_POOL[0]
 
 
-def get_model_api_string(profile_name: str, fallback: str = "") -> str:
-    return AI_MODEL_STRINGS.get(profile_name, fallback)
-
-
 @dataclass
 class ProviderProfile:
     name: str  # uppercase ime ("GEMINI", "GROQ" ...)
