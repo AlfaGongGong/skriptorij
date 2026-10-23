@@ -310,6 +310,12 @@ def _extract_gemini_native(data: dict) -> str | None:
             for p in parts
             if isinstance(p, dict) and not p.get("thought", False)
         ).strip()
+        # 2026-10-23: ukloni <thinking> i <|thinking|> blokove (qwen/llama)
+        import re as _re_t
+        text = _re_t.sub(r'<thinking>.*?</thinking>', '', text, flags=_re_t.DOTALL | _re_t.IGNORECASE)
+        text = _re_t.sub(r'<\|thinking\|>.*?<\|/thinking\|>', '', text, flags=_re_t.DOTALL | _re_t.IGNORECASE)
+        text = _re_t.sub(r'<\|channel\|>thought.*?<\|/channel\|>', '', text, flags=_re_t.DOTALL | _re_t.IGNORECASE)
+        text = text.strip()
         return text or None
     except (KeyError, IndexError, TypeError):
         return None
