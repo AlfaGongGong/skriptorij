@@ -35,6 +35,25 @@ _PHANTOM_CONTAINS = [
 ]
 
 
+def _ocisti_escape(text: str) -> str:
+    """2026-10-23: ocisti escape-ovane navodnike u HTML-u.
+
+    class=„galley-rw" → class="galley-rw"
+    class=\"galley-rw\" → class="galley-rw"
+    \" → "
+    """
+    import re as _re
+    # class=„X" ili class=„X” → class="X"
+    text = _re.sub(r'=„([^"„”]*)["”]', r'="\1"', text)
+    # class=\"X\" → class="X"
+    text = _re.sub(r'=\\"([^"\\]*)\\"', r'="\1"', text)
+    # class=\"X → class="X"
+    text = _re.sub(r'=\\"([^"\\]*)', r'="\1"', text)
+    # Ostali \" → " (samo van JSON konteksta)
+    text = text.replace('\\"', '"')
+    return text
+
+
 def _ocisti_json_wrapper(sadrzaj: str) -> str:
     # 2026-10-23: ukloni chunk_sha komentar pre provere
     sha_prefix = ""
@@ -46,6 +65,10 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
             stripped = stripped[idx+3:].strip()
     
     if not stripped.startswith("{"):
+        # 2026-10-23: ocisti escape-ovane navodnike i u cistom HTML-u
+        _cleaned_html = _ocisti_escape(stripped)
+        if _cleaned_html != stripped:
+            return sha_prefix + _cleaned_html
         return sadrzaj
     
     # 2026-10-23: ocisti \" i \„ pre json.loads (Google/Gemma kvari escape)
