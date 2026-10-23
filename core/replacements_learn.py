@@ -127,6 +127,10 @@ def learn_from_fires(fires: list, all_rules: list) -> LearnResult:
 
     # Za svako aktivirano pravilo
     for (line, search, replace), fires_for_rule in po_rule.items():
+        # 2026-10-23: preskoči no-op (search == replace, ne donosi nista)
+        _search_clean = _izvuci_iz_search(search)
+        if _search_clean == replace:
+            continue
         total_count = sum(f.count for f in fires_for_rule)
         conf = _confidence(total_count)
 
@@ -177,7 +181,7 @@ def to_glosar_dict(result: LearnResult, min_confidence: float = 0.7) -> dict:
     return {
         c.original: c.prevod
         for c in result.glosar_candidates
-        if c.confidence >= min_confidence
+        if c.confidence >= min_confidence and c.original != c.prevod
     }
 
 
@@ -199,7 +203,7 @@ def to_kalkovi_list(result: LearnResult, min_confidence: float = 0.85) -> list[d
             "confidence": c.confidence,
         }
         for c in result.anti_pattern_candidates
-        if c.confidence >= min_confidence
+        if c.confidence >= min_confidence and c.pattern != c.replacement
     ]
 
 
