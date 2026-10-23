@@ -645,6 +645,123 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Ijekavica obavezna."
         ),
     },
+
+    # ═══════════════════════════════════════════════════════════════
+    # PROVIDER-LEVEL PATCHES (2026-10-23)
+    # Koriste se kad model_ime nije prepoznat (novi model iz discovery-ja)
+    # ═══════════════════════════════════════════════════════════════
+
+    "GEMINI": {
+        "anti_meta": (
+            "VAŽNO: Ne počinji odgovor s 'Naravno', 'Svakako', 'Evo prijevoda' ili sličnim uvodima. "
+            "Ne dodavaj napomene, komentare ili objašnjenja na kraju. "
+            "Odmah kreni s prijevodom/lekturom."
+        ),
+        "anti_markdown": (
+            "Ne koristiš markdown formatiranje. Ne koristiš ``` blokove. "
+            "Vraćaš čisti HTML tekst, ništa drugo."
+        ),
+        "anti_srbizmi": (
+            "Pišeš hrvatski, ijekavica. "
+            "Nikad: neverovatno, poseduje, hteo, video (ekavski). "
+            "Uvijek: nevjerojatno, posjeduje, htio, vidio."
+        ),
+    },
+
+    "GEMMA": {
+        "anti_meta": (
+            "Odmah kreni s prijevodom. Bez uvodnih fraza."
+        ),
+        "anti_srbizmi": (
+            "Pišeš hrvatski, ijekavica. "
+            "Nikad: neverovatno, poseduje, hteo, video. "
+            "Uvijek: nevjerojatno, posjeduje, htio, vidio."
+        ),
+    },
+
+    "GROQ": {
+        "anti_srbizmi": (
+            "KRITIČNO: Pišeš ISKLJUČIVO hrvatskim jezikom — IJEKAVICA. "
+            "ZABRANJENI ekavski oblici: neverovatno (→nevjerojatno), "
+            "poseduje (→posjeduje), hteo (→htio), video (→vidio). "
+            "Uvijek provjeri glagolske pridjeve radne u muškom rodu."
+        ),
+        "anti_da": (
+            "Nikad ne koristiš 'da' uz modalne glagole: "
+            "'morao je da kaže' → 'morao je kazati', "
+            "'htio je da vidi' → 'htio je vidjeti'."
+        ),
+        "anti_literal": (
+            "Ne prevodiš idiome doslovno. "
+            "'He had a gut feeling' → 'Imao je predosjećaj', ne 'imao je crijevni osjećaj'."
+        ),
+    },
+
+    "CEREBRAS": {
+        "anti_srbizmi": (
+            "KRITIČNO — IJEKAVICA OBAVEZNA: "
+            "neverovatno→nevjerojatno, poseduje→posjeduje, hteo→htio, "
+            "video→vidio, doneo→donio, odneo→odnio, poneo→ponio."
+        ),
+        "anti_halucinacije": (
+            "ZABRANJENI nepostojeći glagolski oblici: "
+            "voljevao, hodavao, gledavao, vidjevao, čujevao, "
+            "uzdisnuo (→uzdahnuo), popivajući (→ispijajući). "
+            "Provjeri svaki glagolski pridjev radni."
+        ),
+        "anti_da": (
+            "Nikad 'da' uz modalne glagole: "
+            "'morao je da ode' → 'morao je otići'."
+        ),
+    },
+
+    "MISTRAL": {
+        "vary_syntax": (
+            "Variraj strukturu rečenica — ne ponavljaj iste sintaksne obrasce. "
+            "Tekst treba biti književan i živ, ne robotski dosljedan."
+        ),
+        "loosen_style": (
+            "Ne budi previše krut u stilu. Prirodni tok rečenice je važniji od gramatičke savršenosti."
+        ),
+    },
+
+    "COHERE": {
+        "vary_syntax": (
+            "Variraj strukturu rečenica — ne ponavljaj iste sintaksne obrasce."
+        ),
+        "anti_english": (
+            "Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."
+        ),
+    },
+
+    "SAMBANOVA": {
+        "anti_literal": (
+            "Ne prevodiš idiome doslovno. "
+            "'He had a gut feeling' → 'Imao je predosjećaj'."
+        ),
+        "anti_srbizmi": (
+            "Pišeš hrvatski, ijekavica. "
+            "Nikad: neverovatno, poseduje, hteo, video. "
+            "Uvijek: nevjerojatno, posjeduje, htio, vidio."
+        ),
+    },
+
+    "OPENROUTER": {
+        "anti_english": (
+            "Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."
+        ),
+    },
+
+    "CHUTES": {
+        "anti_english": (
+            "Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."
+        ),
+        "anti_srbizmi": (
+            "Pišeš hrvatski, ijekavica. "
+            "Nikad: neverovatno, poseduje, hteo, video. "
+            "Uvijek: nevjerojatno, posjeduje, htio, vidio."
+        ),
+    },
 }
 
 
@@ -726,6 +843,15 @@ def get_system_prompt(
 
     # 2. Model patch
     patches = MODEL_PATCHES.get(model_ime, {})
+    # 2026-10-23: fallback na provajder ako tacan model_ime nije nadjen
+    if not patches:
+        try:
+            from config.ai_config import get_provider_for_model
+            _prov = get_provider_for_model(model_ime)
+            if _prov:
+                patches = MODEL_PATCHES.get(_prov, {})
+        except Exception:
+            pass
     for patch_key, patch_text in patches.items():
         parts.append(patch_text)
 
