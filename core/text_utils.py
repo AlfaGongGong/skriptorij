@@ -91,6 +91,14 @@ def _strip_html_wrapper(tekst: str) -> str:
     return tekst
 
 
+def _ocisti_escape_artifacts(s: str) -> str:
+    """
+    2026-10-24: ocisti '"..."' pattern u HTML atributima.
+    Escape artifact iz AI odgovora: class='"galley-rw"' -> class="galley-rw"
+    """
+    return re.sub(r"""=\s*'\"([^\"]*)\"'""", r'="\1"', s)
+
+
 def _unescape_json_fallback(s: str) -> str:
     """FIX: regex fallback ispod hvata sirovi sadrzaj JSON stringa BEZ
     json unescape-ovanja (namjerno - originalni tekst cesto ima
@@ -101,7 +109,8 @@ def _unescape_json_fallback(s: str) -> str:
     s = s.replace('\\t', '\t')
     s = s.replace('\\r', '\r')
     s = s.replace('\\"', '"')
-    return s
+    # 2026-10-24: ocisti '"..."' artifacts u HTML atributima
+    return _ocisti_escape_artifacts(s)
 
 
 def _smart_extract(raw: str) -> str:
@@ -125,7 +134,9 @@ def _smart_extract(raw: str) -> str:
                 # B01 FIX: "finalno_polirano" je prvi — to je što LEKTOR_TEMPLATE vraća
                 for k in ["finalno_polirano", "korektura", "translated", "tekst", "text"]:
                     if k in data and data[k]:
-                        return _strip_html_wrapper(str(data[k]).strip())
+                        return _ocisti_escape_artifacts(
+                            _strip_html_wrapper(str(data[k]).strip())
+                        )
         except Exception:
             pass
 
