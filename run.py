@@ -44,6 +44,23 @@ def _ucitaj_quality_scores(engine, sharedstats):
     return {}
 
 
+def _save_book_analysis(engine, mode: str) -> None:
+    """2026-10-23: upisi knjiga_mode u book_analysis.json za sledeci restart."""
+    try:
+        import json
+        ba_path = engine.checkpoint_dir / "book_analysis.json"
+        existing = {}
+        if ba_path.exists():
+            try:
+                existing = json.loads(ba_path.read_text("utf-8"))
+            except Exception:
+                existing = {}
+        existing["knjiga_mode"] = mode
+        ba_path.write_text(json.dumps(existing, ensure_ascii=False, indent=2), "utf-8")
+    except Exception:
+        pass
+
+
 def _odredi_strategiju(engine, html_files, scores: dict) -> str:
     """
     Određuje strategiju obrade na osnovu:
@@ -97,6 +114,16 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
             pass
 
         if saved_mode in ("PREVOD", "LEKTURA"):
+            # 2026-10-23 FIX: override PREVOD ako filename sadrzi PREVEDENO
+            book_name = engine.book_path.name.upper() if hasattr(engine, "book_path") else ""
+            if saved_mode == "PREVOD" and "PREVEDENO" in book_name:
+                engine.log(
+                    f"💾 Nastavak sesije: saved_mode='PREVOD' ali filename "
+                    f"sadrzi 'PREVEDENO' → override na LEKTURA",
+                    "warning",
+                )
+                _save_book_analysis(engine, "LEKTURA")
+                return "LEKTURA"
             engine.log(
                 f"💾 Nastavak sesije: {chk_count} checkpointa pronađeno — "
                 f"koristim sačuvani mode '{saved_mode}' (preskačem detekciju).",
@@ -104,13 +131,32 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
             )
             return saved_mode
         else:
-            engine.log(
-                f"💾 Nastavak sesije: {chk_count} checkpointa — "
-                f"sačuvani mode nije dostupan, defaultujem na PREVOD "
-                f"(detekcija bi bila netačna na nastavku sesije).",
-                "system",
-            )
-            return "PREVOD"
+            # 2026-10-23 FIX: filename heuristika umesto default PREVOD
+            book_name = engine.book_path.name.upper() if hasattr(engine, "book_path") else ""
+            if "PREVEDENO" in book_name:
+                engine.log(
+                    f"💾 Nastavak sesije: {chk_count} checkpointa — "
+                    f"filename sadrzi 'PREVEDENO' → LEKTURA",
+                    "system",
+                )
+                _save_book_analysis(engine, "LEKTURA")
+                return "LEKTURA"
+            # Probaj detekciju iz html_files
+            try:
+                detected = engine._detect_knjiga_mode(html_files, n_files=5)
+                engine.log(
+                    f"💾 Nastavak sesije: {chk_count} checkpointa — "
+                    f"detektovano '{detected}' iz html_files",
+                    "system",
+                )
+                _save_book_analysis(engine, detected)
+                return detected
+            except Exception as e:
+                engine.log(
+                    f"⚠️  Detekcija pala ({e}) — default PREVOD",
+                    "warning",
+                )
+                return "PREVOD"
 
     # Svježa sesija (nema checkpointa) — detektuj jezik knjige
     knjiga_mode = engine._detect_knjiga_mode(html_files, n_files=5)

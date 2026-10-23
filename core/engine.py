@@ -154,16 +154,16 @@ class SkriptorijAllInOne:
 
     def _detect_language(self, text: str) -> str:
         """
-        Brza per-chunk detekcija jezika za interne/fallback upotrebe.
-        Vraća "HR" ili "EN".
+        2026-10-23: vraca "LEKTURA" ili "PREVOD" (ne "HR"/"EN").
+        Per-chunk detekcija jezika za fallback kad self.knjiga_mode nije postavljen.
         NAPOMENA: Za glavni pipeline koristi self.knjiga_mode (postavljeno jednom
                   za cijelu knjigu), ne ovaj metod.
         """
         from core.text_utils import _detektuj_en_ostatke, _HR_DIACRITICALS
         cist = re.sub(r"<[^>]+>", "", text)
         if any(c in _HR_DIACRITICALS for c in cist):
-            return "HR"
-        return "EN" if _detektuj_en_ostatke(text) > 0.08 else "HR"
+            return "LEKTURA"
+        return "PREVOD" if _detektuj_en_ostatke(text) > 0.08 else "LEKTURA"
 
     # =========================================================================
     # DETEKCIJA MODA KNJIGE — jednom za cijelu knjigu
