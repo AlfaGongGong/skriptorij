@@ -506,4 +506,102 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 
 ---
 
+---
+
+## FAZA 5 (2026-10-23) — retryDelay fix, GEMMA discovery, mode detection, replacements_learn
+
+### Sta je uradjeno danas (14 commitova)
+
+**Kriticni fixevi (blokirali produkciju):**
+
+| Commit | Fajl | Sta |
+|---|---|---|
+| `b7ac191` | `api_fleet.py` | **retryDelay > 3600s bez RPD oznake = RPM 60s** (sprecena 10h blokada) |
+| `5317aee` | `api_fleet.py` | f-string `.0fs` → `.0f}s` (invalid format specifier) |
+| `7f1cf6c` | `api_fleet.py` | RPD detekcija — samo eksplicitno (`rpd`/`daily`/`per day`), nikad streak heuristika |
+| `7a11c48` | `run.py`, `core/engine.py` | Mode detection — filename heuristika (`PREVEDENO` → LEKTURA), `_detect_language` vraca LEKTURA/PREVOD |
+
+**GEMMA discovery (bio mrtav od pocetka):**
+
+| Commit | Fajl | Sta |
+|---|---|---|
+| `b8ea8be` | `model_discovery.py` | `pageSize=50` → `pageSize=1000` (vraca 60 modela, 2 gemma) |
+| `8974e9d` | `model_discovery.py` | GEMMA grana **pre** `_MODELS_ENDPOINTS` provere (GEMMA nema endpoint u mapi) |
+
+**Replacements / Faza 3:**
+
+| Commit | Fajl | Sta |
+|---|---|---|
+| `4a39e8c` | `tools/replacements_learn_cli.py` | CLI za analizu Moon+ replacement fajlova |
+| `73b60f1` | `core/replacements_learn.py` | Learning iz fires — glosar + anti-pattern kandidati |
+| `d25aa0a` | `core/replacements_learn.py` | No-op filter (search == replace) |
+
+**Cleanup iz FAZE 4 (dodatno):**
+
+| Commit | Fajl | Sta |
+|---|---|---|
+| `fd68c6a` | `checkpoint_cleaner.py` | `_ocisti_json_wrapper` cisti escape u HTML-u (`class=„X"` → `class="X"`) |
+| `6093652` | `checkpoint_cleaner.py` | `_ocisti_json_wrapper` hvata `chunk_sha` pre JSON provere |
+| `b48037f` | `http_client.py` | `_extract_gemini_native` filtrira `<thinking>`, `<\|thinking\|>`, `<\|channel\|>thought` |
+
+### Baseline
+
+**Testovi:** 84 passed, 0 failed
+
+### Mode detection — kako sad radi
+
+1. `book_analysis.json` u checkpoint folderu cuva `knjiga_mode` (`PREVOD` ili `LEKTURA`)
+2. `_odredi_strategiju` (run.py) cita:
+   - Prvo `book_analysis.json` — ako postoji `saved_mode`, koristi ga
+   - **Override:** ako `saved_mode == PREVOD` ali filename sadrzi `PREVEDENO` → vrati LEKTURA
+   - Ako nema `saved_mode` — filename heuristika, pa `_detect_knjiga_mode`
+3. `_detect_language` (engine.py) sada vraca `LEKTURA`/`PREVOD` (ne `HR`/`EN`)
+4. `pipeline.py:782` — `if knjiga_mode == "LEKTURA"` sada radi (pre nije, jer je bilo `"HR"`)
+
+### GEMMA discovery — kako sad radi
+
+- `_fetch_gemini_native_models(api_key, provider_filter="GEMMA")` vraca 2 modela
+- `_fetch_gemini_native_models(api_key, provider_filter="GEMINI")` vraca 18 modela
+- `fetch_models("GEMMA")` vraca 2 modela (gemma-4-31b-it, gemma-4-26b-a4b-it)
+- **Nije "nije resivo"** — sa `pageSize=1000` Google API vraca 60 modela ukupno
+
+### retryDelay — kako sad radi
+
+- Google `retryDelay: "36564s"` (10h) → ako **nema** `rpd`/`daily`/`per day` u `message` → **RPM 60s**
+- Google `retryDelay: "36564s"` (10h) → ako **ima** `daily` u `message` → **RPD 36564s** (10h)
+- Google `retryDelay: "60s"` → **RPM 60s** (bez provere, ispod 1h)
+- Bez `retryDelay` — kao pre (`_is_explicit_rpd` provera)
+
+### The_Trouble_With_Peace — stanje
+
+**Input:** `/storage/emulated/0/Books/MoonReader/STYLED/Joe_Abercrombie_-_The_Trouble_With_Peace_PREVEDENO_STYLED.epub`
+
+**Output:**
+- `_FIXED.epub` — replacement + escape fix (XML 0/82)
+- `_FINAL.epub` — stilizovan (78 chapters, 73 dropcaps, NCX 78 navPoints, XML 0/80)
+
+**Replacement:** `/storage/emulated/0/Download/The_Trouble_With_Peace_replacement.txt` (auto-generisan, 131 pravila, ~5000 zamena)
+
+**Checkpoint folders:**
+- `_skr_The_Trouble_With_Peace` — 447 `.chk`, 448 scores, `book_analysis.json: LEKTURA`
+- `_skr_PREVEDENO_The_Trouble_With_Peace` — 299 `.chk`, 132 scores
+
+### Otvoreno (posle FAZA 5)
+
+**Blok 4** — `workers.py` provider umesto `model_ime` (reverse lookup) — 45 min
+**Blok 5** — `ai_config.py` `AI_MODEL_STRINGS` fallback po provajderu — 30 min
+**Testovi discovery** — za `pageSize=1000` i GEMMA granu — 30 min
+**`part0066.html`** — JSON wrapper u `pipeline.py` (bug od pre) — 1h
+**3 sumnjiva pravila** u replacement fajlu (`Uffrith→Afriθ`, `Meadow→medou`, `Oxelu→Okse`)
+**`GEMINI_BASE_URL`** (Cloudflare) mrtav u `provider_urls.py`
+**Sve B/C/D** iz ranijih faza — ne-blokirajuce
+
+### Kljucne lekcije danas
+
+1. **`pageSize=1000`** je bio skriveni bug — GEMMA discovery je bio "mrtav" jer Google vraca 18 modela sa `pageSize=50`, a 60 sa `pageSize=1000`. **Nije "nije resivo" — bila je pogresna pretpostavka.**
+2. **12h blokada kljuceva** — `retryDelay: 36564s` se prihvatao direktno. Google ne razlikuje RPM od RPD u tekstu. **Fix:** ako > 3600s i nema `daily`/`rpd` — RPM 60s.
+3. **Mode mismatch** — `book_analysis.json` je imao `PREVOD` za HR knjigu. Pipeline je pokusavao PREVODILAC na HR tekstu. Model je vracao "vec je HR", scorer davao 3. **Fix:** filename heuristika + `_detect_language` vraca LEKTURA/PREVOD.
+
+---
+
 KRAJ KONTEKSTA
