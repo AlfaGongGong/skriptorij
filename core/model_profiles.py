@@ -629,6 +629,22 @@ for _old, _new in _ALIASI.items():
         PROFILI[_old] = PROFILI[_new]
 
 
+def _provider_fallback_profil(ime: str) -> Optional[ModelProfile]:
+    """
+    2026-10-23: ako tacan model_ime nije u PROFILI, probaj provajder.
+    npr. 'gemini-4-flash-lite' -> get_provider_for_model() -> 'GEMINI' -> PROFILI['gemini']
+    """
+    try:
+        from config.ai_config import get_provider_for_model
+        prov = get_provider_for_model(ime)
+        if prov:
+            # PROFILI kljucevi su lower-case (gemini, gemma, groq, mistral...)
+            return PROFILI.get(prov.lower()) or PROFILI.get(prov)
+    except Exception:
+        pass
+    return None
+
+
 def get_profil(ime: str) -> Optional[ModelProfile]:
     """Vraća ModelProfile za dati identifikator. None ako nije pronađen."""
     return PROFILI.get(ime)
@@ -645,7 +661,7 @@ def get_profili_za_ulogu(uloga: str) -> List[ModelProfile]:
 
 def get_anti_patterne(ime: str) -> List[str]:
     """Vraća listu regex anti-patterna za dati model."""
-    p = PROFILI.get(ime)
+    p = PROFILI.get(ime) or _provider_fallback_profil(ime)
     return p.anti_patterne if p else []
 
 
@@ -654,7 +670,7 @@ def get_temp(ime: str, uloga: str) -> float:
 
     Prioritet: temperatura_po_ulozi (novi dict sistem) > flat polja (stari sistem).
     """
-    p = PROFILI.get(ime)
+    p = PROFILI.get(ime) or _provider_fallback_profil(ime)
     if not p:
         return 0.75
     # Novi sistem — dict po ulozi ima prioritet
@@ -674,7 +690,7 @@ def get_max_tokens(ime: str, uloga: str = "prevodilac") -> int:
 
     Prioritet: max_tokens_po_ulozi (novi dict sistem) > flat polja (stari sistem).
     """
-    p = PROFILI.get(ime)
+    p = PROFILI.get(ime) or _provider_fallback_profil(ime)
     if not p:
         return 2048
     # Novi sistem — dict po ulozi ima prioritet
