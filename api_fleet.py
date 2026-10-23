@@ -587,11 +587,39 @@ class FleetManager:
                 for d in details:
                     rd = d.get("retryDelay", "")
                     if rd and isinstance(rd, str) and rd.endswith("s"):
-                        retry_after = float(rd[:-1])
-                        logger.info(
-                            "[FleetManager] %s ...%s retryDelay iz body-a: %.0fs",
-                            prov_u, key[-4:], retry_after,
-                        )
+                        _retry_val = float(rd[:-1])
+                        # 2026-10-23 FIX: Google moze poslati retryDelay 36564s (10h)
+                        # za RPM ili TPM burst, ne samo RPD. Ne blokiraj kljuceve 10h
+                        # bez eksplicitne RPD oznake u message-u. Ovo je dovelo do
+                        # 2x 12h blokade svih kljuceva 23.10.2026.
+                        if _retry_val > 3600:
+                            _err_msg_check = str(body.get("error", {}).get("message", "")).lower()
+                            _is_rpd_hint = (
+                                "rpd" in _err_msg_check
+                                or "per day" in _err_msg_check
+                                or "daily" in _err_msg_check
+                                or "po danu" in _err_msg_check
+                            )
+                            if _is_rpd_hint:
+                                retry_after = _retry_val
+                                logger.warning(
+                                    "[FleetManager] %s ...%s retryDelay %.0fs "
+                                    "(RPD eksplicitno) — cooldown %.1fh",
+                                    prov_u, key[-4:], _retry_val, _retry_val / 3600,
+                                )
+                            else:
+                                retry_after = 60.0
+                                logger.warning(
+                                    "[FleetManager] %s ...%s retryDelay %.0fs "
+                                    "(>1h, nije RPD) — RPM 60s (sprecena 10h blokada)",
+                                    prov_u, key[-4:], _retry_val,
+                                )
+                        else:
+                            retry_after = _retry_val
+                            logger.info(
+                                "[FleetManager] %s ...%s retryDelay iz body-a: %.0fs",
+                                prov_u, key[-4:], retry_after,
+                            )
                         break
             except Exception:
                 pass
