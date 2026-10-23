@@ -36,9 +36,30 @@ _PHANTOM_CONTAINS = [
 
 
 def _ocisti_json_wrapper(sadrzaj: str) -> str:
+    # 2026-10-23: ukloni chunk_sha komentar pre provere
+    sha_prefix = ""
     stripped = sadrzaj.strip()
+    if stripped.startswith("<!--"):
+        idx = stripped.find("-->")
+        if idx > 0:
+            sha_prefix = stripped[:idx+3] + "\n"
+            stripped = stripped[idx+3:].strip()
+    
     if not stripped.startswith("{"):
         return sadrzaj
+    
+    # 2026-10-23: ocisti \" i \„ pre json.loads (Google/Gemma kvari escape)
+    _cleaned = stripped.replace('\\„', '"').replace('\\"', '"')
+    try:
+        import json as _json_try
+        _data = _json_try.loads(_cleaned)
+        for _k in ("finalno_polirano", "korektura", "tekst", "prijevod"):
+            if _k in _data and isinstance(_data[_k], str) and _data[_k].strip():
+                _extracted = _data[_k].strip()
+                if _extracted.lower() not in _PLACEHOLDERS:
+                    return sha_prefix + _extracted
+    except (ValueError, TypeError):
+        pass
 
     # Normalizuj tipografske navodnike → ASCII za potrebe json.loads.
     # AI modeli ponekad koriste „..." umjesto ASCII "" čak i u JSON omotaču.
@@ -103,7 +124,32 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
     return sadrzaj
 
 
+_REASONING_MARKERS = (
+    "the user wants",
+    "let me analyze",
+    "let me analyze",
+    "let me fix",
+    "i need to",
+    "original text with",
+    "analysing the",
+    "i'll analyze",
+)
+
+
 def _je_placeholder(sadrzaj: str) -> bool:
+    # 2026-10-23: prekinut JSON wrapper (pocinje sa { ali nema })
+    _s = sadrzaj.strip()
+    if _s.startswith("<!--"):
+        _idx = _s.find("-->")
+        if _idx > 0:
+            _s = _s[_idx+3:].strip()
+    if _s.startswith("{") and not _s.rstrip().endswith("}"):
+        return True  # prekinut JSON
+    
+    # 2026-10-23: reasoning markeri
+    if any(_m in _s[:500].lower() for _m in _REASONING_MARKERS):
+        return True
+    
     cist = re.sub(r"<[^>]+>", "", sadrzaj).strip().lower()
     if cist in _PLACEHOLDERS or len(cist) < 5:
         return True
