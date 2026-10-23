@@ -283,7 +283,7 @@ def _fetch_gemini_native_models(api_key: str, timeout: float = 10.0,
     page_token = None
 
     for _ in range(5):
-        url = f"{base_url}?key={api_key}&pageSize=50"
+        url = f"{base_url}?key={api_key}&pageSize=1000"
         if page_token:
             url += f"&pageToken={page_token}"
 
