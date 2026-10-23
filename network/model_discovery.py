@@ -359,13 +359,16 @@ def _dedup_by_base(models: list[str], provider: str) -> list[str]:
 
 def fetch_models(provider: str, api_key: str, timeout: float = 10.0) -> list[str]:
     prov = provider.upper()
+
+    # 2026-10-23 FIX: GEMMA/GEMINI idu kroz Google native /models.
+    # Provera MORA biti PRE _MODELS_ENDPOINTS jer GEMMA nema endpoint
+    # (deli GEMINI endpoint, ali pod drugim filterom).
+    if prov in ("GEMINI", "GEMMA"):
+        return _fetch_gemini_native_models(api_key, timeout, provider_filter=prov)
+
     endpoint = _MODELS_ENDPOINTS.get(prov)
     if not endpoint:
         return []
-
-    if prov in ("GEMINI", "GEMMA"):
-        # 2026-10-23: GEMMA ide kroz isti Google native /models endpoint
-        return _fetch_gemini_native_models(api_key, timeout, provider_filter=prov)
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     # Cloudflare bot protection za GROQ (error 1010) — isti fingerprint kao http_client
