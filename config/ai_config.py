@@ -684,6 +684,36 @@ def get_provider_for_model(model_ime: str) -> str | None:
         if prefix in low:
             return prov
 
+    # 2026-10-23: heuristike za nove modele (npr. gemini-flash-lite-latest, qwen/qwen3.8-27b)
+    if "gemini" in low or "gemma" in low:
+        # gemma pre gemini (da ne uhvati gemma kao gemini)
+        if "gemma" in low:
+            return "GEMMA"
+        return "GEMINI"
+    if "qwen" in low:
+        return "GROQ"  # qwen modele koristi GROQ
+    if "mistral" in low:
+        return "MISTRAL"
+    if "llama" in low:
+        # llama modele: groq, cerebras, sambanova, openrouter
+        if "groq" in low:
+            return "GROQ"
+        if "cerebras" in low:
+            return "CEREBRAS"
+        if "sambanova" in low:
+            return "SAMBANOVA"
+        if "openrouter" in low or "free" in low:
+            return "OPENROUTER"
+        return "GROQ"  # default llama -> GROQ
+    if "deepseek" in low:
+        return "OPENROUTER"  # ili CHUTES
+    if "command" in low or "cohere" in low:
+        return "COHERE"
+    if "nemotron" in low or "nvidia" in low:
+        return "NVIDIA"
+    if "cloudflare" in low or "@cf/" in low:
+        return "CLOUDFLARE"
+
     # 2. Ako je model_ime vec provajder (case-insensitive)
     upper = model_ime.upper()
     _KNOWN_PROVIDERS = {
