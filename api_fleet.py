@@ -768,7 +768,7 @@ class FleetManager:
                     "[FleetManager] %s ...%s → %d odbijen (rejected[%d]=%d, retry_after=%s)",
                     prov_u, key[-4:], status_code, status_code,
                     ks.calls_rejected[status_code],
-                    f"{retry_after:.0fs}" if retry_after else "n/a",
+                    f"{retry_after:.0f}s" if retry_after else "n/a",
                 )
 
         self._save_state()
