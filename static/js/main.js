@@ -2257,36 +2257,67 @@ function _updateRefixBar() {
     }
 }
 
-function selectBadBlocks(tip) {
+async function selectBadBlocks(tip) {
     const pills = document.querySelectorAll(".qs-block-pill[data-stem]");
+
+    // human_review: fetch lista iz API-ja
+    let humanReviewStems = null;
+    if (tip === "human_review") {
+        try {
+            const r = await fetch("/api/review/list");
+            const data = await r.json();
+            const items = Array.isArray(data) ? data : [];
+            humanReviewStems = new Set(
+                items.map(it => (it.stem || (it.file || "").replace(/\.chk$/, ""))).filter(Boolean)
+            );
+        } catch (_) {
+            humanReviewStems = new Set();
+        }
+    }
+
+    let selectedCount = 0;
     pills.forEach(function (pill) {
         const m = pill.textContent.match(/[\d.]+$/);
         const score = m ? parseFloat(m[0]) : 10;
+        const stem = pill.dataset.stem;
         let treba = false;
-        if (tip === "poor") treba = score >= 4.0 && score < 6.5;
-        if (tip === "critical") treba = score < 4.0;
-        if (tip === "all") treba = score < 6.5;
+
+        if (tip === "all")            treba = true;
+        else if (tip === "excellent") treba = score >= 8.5;
+        else if (tip === "good")      treba = score >= 6.5 && score < 8.5;
+        else if (tip === "poor")      treba = score >= 4.0 && score < 6.5;
+        else if (tip === "critical")  treba = score < 4.0;
+        else if (tip === "human_review") treba = humanReviewStems && humanReviewStems.has(stem);
+
         if (treba) {
-            _markedForReview.add(pill.dataset.stem);
+            _markedForReview.add(stem);
             pill.style.outline = "2px solid var(--amber)";
+            selectedCount++;
         }
     });
+
+    // Legacy: osvježi vizuelni state na 4 summary boxa
     const poorBox = document.getElementById("qs-box-poor");
     const critBox = document.getElementById("qs-box-critical");
-    if (poorBox)
-        poorBox.classList.toggle(
-            "qs-selected",
-            tip === "poor" || tip === "all"
-        );
-    if (critBox)
-        critBox.classList.toggle(
-            "qs-selected",
-            tip === "critical" || tip === "all"
-        );
+    if (poorBox) poorBox.classList.toggle("qs-selected", tip === "poor" || tip === "all");
+    if (critBox) critBox.classList.toggle("qs-selected", tip === "critical" || tip === "all");
+
+    // Otvori sve grupe da vidiš šta je selektovano
     document.querySelectorAll(".qs-blocks-grid.hidden").forEach(function (g) {
         g.classList.remove("hidden");
     });
+
+    // Highlight aktivno dugme u selection baru
+    document.querySelectorAll("#qs-select-bar [data-select]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.select === tip);
+    });
+
     _updateRefixBar();
+    if (tip === "human_review" && selectedCount === 0) {
+        showToast("Nema blokova u human_review.json", "info");
+    } else if (selectedCount > 0) {
+        showToast(`Selektovano ${selectedCount} blokova (${tip})`, "success");
+    }
 }
 
 function clearMarkedBlocks() {
@@ -2300,6 +2331,8 @@ function clearMarkedBlocks() {
     const critBox = document.getElementById("qs-box-critical");
     if (poorBox) poorBox.classList.remove("qs-selected");
     if (critBox) critBox.classList.remove("qs-selected");
+    // Očisti active state u selection baru
+    document.querySelectorAll("#qs-select-bar [data-select]").forEach(b => b.classList.remove("active"));
     _updateRefixBar();
 }
 
@@ -3799,10 +3832,24 @@ window.auto_stiliziraj = auto_stiliziraj;
 
 // ── FIX UI: Boxovi za selekciju ──
 document.addEventListener("DOMContentLoaded", () => {
+    // Legacy: boxovi ostaju klikabilni kao shortcut
     const boxPoor = document.getElementById("qs-box-poor");
     if (boxPoor) boxPoor.onclick = () => selectBadBlocks("poor");
     const boxCritical = document.getElementById("qs-box-critical");
     if (boxCritical) boxCritical.onclick = () => selectBadBlocks("critical");
+
+    // Selection bar — 6 dugmadi
+    document.querySelectorAll("#qs-select-bar [data-select]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tip = btn.dataset.select;
+            if (tip === "clear") {
+                clearMarkedBlocks();
+                document.querySelectorAll("#qs-select-bar [data-select]").forEach(b => b.classList.remove("active"));
+            } else {
+                selectBadBlocks(tip);
+            }
+        });
+    });
 });
 window.selectBadBlocks = selectBadBlocks;
 window.clearMarkedBlocks = clearMarkedBlocks;

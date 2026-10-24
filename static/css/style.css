@@ -3430,3 +3430,58 @@ a.fq-prov-name:hover { text-decoration: underline; }
     .fq-table { font-size: 0.6rem; }
     .fq-th { font-size: 0.54rem; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   Quality selection bar (BATCH UI-1, 2026-10-24)
+   ═══════════════════════════════════════════════════════════ */
+.quality-select-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    margin-bottom: 12px;
+}
+
+.qs-sel-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--tx-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: 2px;
+    flex-shrink: 0;
+}
+
+.quality-select-bar .btn {
+    font-size: 0.68rem;
+    padding: 5px 9px;
+    min-height: 28px;
+}
+
+.quality-select-bar .btn.active {
+    background: var(--amber);
+    color: #000 !important;
+    border-color: var(--amber) !important;
+    font-weight: 700;
+}
+
+@media (max-width: 480px) {
+    .quality-select-bar {
+        padding: 8px;
+        gap: 4px;
+    }
+    .quality-select-bar .btn {
+        font-size: 0.62rem;
+        padding: 4px 7px;
+    }
+    .qs-sel-label {
+        font-size: 0.58rem;
+        width: 100%;
+        margin-bottom: 2px;
+    }
+}

@@ -333,6 +333,18 @@
                         </div>
                     </div>
 
+                    <!-- Selection bar — selekcija po bojama/statusu -->
+                    <div class="quality-select-bar" id="qs-select-bar">
+                        <span class="qs-sel-label">Selektuj:</span>
+                        <button class="btn btn-sm" data-select="all" title="Svi blokovi">⊕ Sve</button>
+                        <button class="btn btn-sm" data-select="excellent" style="border-color:var(--emerald);color:var(--emerald)" title="Score ≥ 8.5">🌟 Odlično</button>
+                        <button class="btn btn-sm" data-select="good" style="border-color:var(--accent-2);color:var(--accent-2)" title="Score 6.5-8.5">✅ Dobro</button>
+                        <button class="btn btn-sm" data-select="poor" style="border-color:var(--amber);color:var(--amber)" title="Score 4.0-6.5">⚠ Loše</button>
+                        <button class="btn btn-sm" data-select="critical" style="border-color:var(--rose);color:var(--rose)" title="Score < 4.0">🔴 Kritično</button>
+                        <button class="btn btn-sm" data-select="human_review" style="border-color:var(--violet);color:var(--violet)" title="Blokovi iz human_review.json">👤 Human Review</button>
+                        <button class="btn btn-sm btn-outline" data-select="clear" title="Poništi selekciju" style="margin-left:auto">✕ Poništi</button>
+                    </div>
+
                     <!-- F3d: deterministicke metrike (quality_metrics.json) -->
                     <div class="quality-metrics-grid" id="qs-metrics-grid" style="display:none">
                         <div class="qs-metric-box qs-metric-ok">
