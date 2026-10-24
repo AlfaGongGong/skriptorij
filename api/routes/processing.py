@@ -6,8 +6,8 @@ Dio Skriptorij V12.0 sistema.
 import json
 import logging
 import os
-import re
 import pathlib
+import re
 import threading
 import time
 import traceback
@@ -16,12 +16,12 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request
 
 from config.settings import (
+    CHECKPOINT_BASE_DIR,
+    CONFIG_PATH,
+    INPUT_DIR,
     PROJECTS_ROOT,
     SHARED_CONTROLS,
     SHARED_STATS,
-    CONFIG_PATH,
-    INPUT_DIR,
-    CHECKPOINT_BASE_DIR,
 )
 
 bp = Blueprint("processing", __name__)
@@ -80,6 +80,7 @@ def _get_checkpoint_count_base(book_path: Path) -> tuple[int, Path | None]:
 def _obrisi_checkpoint_i_kes(book: str) -> dict:
     """Briše cijeli _skr_ direktorij za datu knjigu iz CHECKPOINT_BASE_DIR."""
     from utils.checkpoint_cleaner import full_reset
+
     stem = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
     return full_reset(stem)
 
@@ -131,13 +132,18 @@ def get_status():
         # Ako je HTML, izvuci iz live_audit
         if not _book or _book.endswith(".html"):
             import re as _re
+
             _la = SHARED_STATS.get("live_audit", "")
             # Pattern: "Engine inicijaliziran: NAZIV.epub"
-            _m = _re.search(r"Engine inicijaliziran:&#92;s*([^&#92;s&lt;]+&#92;.epub)", _la)
+            _m = _re.search(
+                r"Engine inicijaliziran:&#92;s*([^&#92;s&lt;]+&#92;.epub)", _la
+            )
             if not _m:
                 _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
             if not _m:
-                _m = _re.search(r"checkpoint:\s*[^\s]*?/_skr_([^\s/]+)/checkpoints", _la)
+                _m = _re.search(
+                    r"checkpoint:\s*[^\s]*?/_skr_([^\s/]+)/checkpoints", _la
+                )
             if _m:
                 _name = _m.group(1)
                 _name = _re.sub(r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE)
@@ -153,12 +159,15 @@ def get_status():
     if not SHARED_STATS.get("current_file"):
         try:
             import re as _re
+
             _la = SHARED_STATS.get("live_audit", "")
             # Pattern: "Engine inicijaliziran: NAZIV.epub"
             _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
             if not _m:
                 # Pattern: "checkpoint: .../_skr_NAZIV/checkpoints"
-                _m = _re.search(r"checkpoint:\s*[^\s]*?/_(?:skr_)([^\s/]+)/checkpoints", _la)
+                _m = _re.search(
+                    r"checkpoint:\s*[^\s]*?/_(?:skr_)([^\s/]+)/checkpoints", _la
+                )
             if _m:
                 _name = _m.group(1)
                 # Ukloni hashove i sufiksе
@@ -195,7 +204,7 @@ def start_processing():
         if not data or "book" not in data:
             return jsonify({"error": "Nije odabran fajl"}), 400
 
-        book  = data["book"]
+        book = data["book"]
         model = data.get("model", "V10_TURBO")
 
         # Podržavamo tool (novi JS) i mode (stari JS) — ali samo RETRO i TTS
@@ -222,22 +231,28 @@ def start_processing():
             if has_checkpoints
             else f"Sistem: Inicijalizacija auto-mode detekcije za: {book}\n"
         )
-        SHARED_STATS.update({
-            "status":          "POKRETANJE...",
-            "current_file":    book,
-            "active_engine":   model,
-            "pct":             SHARED_STATS.get("pct", 0) if has_checkpoints else 0,
-            "ok":              SHARED_STATS.get("ok", "0 / 0") if has_checkpoints else "0 / 0",
-            "live_audit":      SHARED_STATS.get("live_audit", "") + audit_entry,
-            "output_file":     SHARED_STATS.get("output_file") if has_checkpoints else "",
-            "quality_scores":  SHARED_STATS.get("quality_scores", {}) if has_checkpoints else {},
-            "glosar_problemi": {},
-            "knjiga_mode":     None,   # engine postavlja
-            "knjiga_mode_info": "",
-        })
+        SHARED_STATS.update(
+            {
+                "status": "POKRETANJE...",
+                "current_file": book,
+                "active_engine": model,
+                "pct": SHARED_STATS.get("pct", 0) if has_checkpoints else 0,
+                "ok": SHARED_STATS.get("ok", "0 / 0") if has_checkpoints else "0 / 0",
+                "live_audit": SHARED_STATS.get("live_audit", "") + audit_entry,
+                "output_file": SHARED_STATS.get("output_file")
+                if has_checkpoints
+                else "",
+                "quality_scores": SHARED_STATS.get("quality_scores", {})
+                if has_checkpoints
+                else {},
+                "glosar_problemi": {},
+                "knjiga_mode": None,  # engine postavlja
+                "knjiga_mode_info": "",
+            }
+        )
 
         _start_time = time.time()
-        _start_pct  = 0
+        _start_pct = 0
 
         try:
             with open(os.path.join(PROJECTS_ROOT, "last_book.json"), "w") as f:
@@ -257,30 +272,35 @@ def start_processing():
 
         elif tool == "RETRO":
             import asyncio
+
             from processing.retro import retroaktivna_relektura_v10
 
             def _run_retro(fp=full_path, mdl=model):
                 try:
                     from core.engine import SkriptorijAllInOne
+
                     engine = SkriptorijAllInOne(fp, mdl, SHARED_STATS, SHARED_CONTROLS)
                     engine.work_dir.mkdir(parents=True, exist_ok=True)
                     engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
                     SHARED_STATS["status"] = "RETRO RE-LEKTURA"
                     SHARED_STATS["pct"] = 0
-                    asyncio.run(retroaktivna_relektura_v10(
-                        engine,
-                        force=False,
-                        only_bad=True,
-                        bad_threshold=6.5,
-                    ))
+                    asyncio.run(
+                        retroaktivna_relektura_v10(
+                            engine,
+                            force=False,
+                            only_bad=True,
+                            bad_threshold=6.5,
+                        )
+                    )
                     SHARED_STATS["status"] = "ZAVRŠENO (RETRO)"
                     SHARED_STATS["pct"] = 100
                 except Exception as exc:
                     import traceback as _tb
+
                     SHARED_STATS["status"] = f"RETRO GREŠKA: {exc}"
                     SHARED_STATS["live_audit"] = (
-                        SHARED_STATS.get("live_audit", "") +
-                        f"\n[RETRO ERROR] {_tb.format_exc()}"
+                        SHARED_STATS.get("live_audit", "")
+                        + f"\n[RETRO ERROR] {_tb.format_exc()}"
                     )
 
             thread = threading.Thread(target=_run_retro, daemon=True)
@@ -308,13 +328,15 @@ def start_processing():
         # Za TTS: stop ostaje True — TTS ne koristi stop flag, a stari thread se zaustavlja.
         if tool != "TTS":
             SHARED_CONTROLS["stop"] = False
-        return jsonify({
-            "status": "Started",
-            "file":   book,
-            "tool":   tool,
-            "mode":   "AUTO",   # engine automatski detektuje
-            "has_checkpoints": has_checkpoints,
-        })
+        return jsonify(
+            {
+                "status": "Started",
+                "file": book,
+                "tool": tool,
+                "mode": "AUTO",  # engine automatski detektuje
+                "has_checkpoints": has_checkpoints,
+            }
+        )
 
     except Exception as e:
         err_msg = traceback.format_exc()
@@ -336,22 +358,24 @@ def reset_route():
     book = data.get("book") or SHARED_STATS.get("current_file", "")
 
     SHARED_CONTROLS["reset"] = True
-    SHARED_CONTROLS["stop"]  = True
+    SHARED_CONTROLS["stop"] = True
 
     reset_result = {}
     if book:
         reset_result = _obrisi_checkpoint_i_kes(book)
 
-    SHARED_STATS.update({
-        "pct":        0,
-        "ok":         "0 / 0",
-        "status":     "IDLE",
-        "live_audit": "Sistem resetovan.\n",
-        "quality_scores": {},
-        "glosar_problemi": {},
-        "knjiga_mode": None,
-        "knjiga_mode_info": "",
-    })
+    SHARED_STATS.update(
+        {
+            "pct": 0,
+            "ok": "0 / 0",
+            "status": "IDLE",
+            "live_audit": "Sistem resetovan.\n",
+            "quality_scores": {},
+            "glosar_problemi": {},
+            "knjiga_mode": None,
+            "knjiga_mode_info": "",
+        }
+    )
     return jsonify({"status": "reset", "reset": reset_result})
 
 
@@ -366,48 +390,59 @@ def reset_full_route():
     if not book:
         return jsonify({"error": "Nedostaje parametar 'book'"}), 400
 
-    SHARED_CONTROLS["stop"]  = True
+    SHARED_CONTROLS["stop"] = True
     SHARED_CONTROLS["pause"] = False
     SHARED_CONTROLS["reset"] = True
 
     reset_result = _obrisi_checkpoint_i_kes(book)
 
-    SHARED_STATS.update({
-        "status":       "IDLE",
-        "pct":          0,
-        "ok":           "0 / 0",
-        "skipped":      0,
-        "current_file": "",
-        "active_engine": "---",
-        "live_audit":   "Sistem u potpunosti resetovan.\n",
-        "output_file":  "",
-        "quality_scores": {},
-        "glosar_problemi": {},
-        "knjiga_mode":  None,
-        "knjiga_mode_info": "",
-    })
-    return jsonify({
-        "ok":    reset_result.get("ok", False),
-        "book":  book,
-        "reset": reset_result,
-    })
+    SHARED_STATS.update(
+        {
+            "status": "IDLE",
+            "pct": 0,
+            "ok": "0 / 0",
+            "skipped": 0,
+            "current_file": "",
+            "active_engine": "---",
+            "live_audit": "Sistem u potpunosti resetovan.\n",
+            "output_file": "",
+            "quality_scores": {},
+            "glosar_problemi": {},
+            "knjiga_mode": None,
+            "knjiga_mode_info": "",
+        }
+    )
+    return jsonify(
+        {
+            "ok": reset_result.get("ok", False),
+            "book": book,
+            "reset": reset_result,
+        }
+    )
 
 
 @bp.route("/api/debug/retro_check")
 def debug_retro_check():
     """Privremeni endpoint — provjera da li je novi processing.py učitan."""
-    import os, inspect
+    import inspect
+    import os
+
     src = inspect.getfile(debug_retro_check)
     mtime = os.path.getmtime(src)
     import datetime
-    return jsonify({
-        "file":     src,
-        "modified": datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S"),
-        "retro_supported":    True,
-        "auto_mode_support":  True,
-        "checkpoint_base":    str(CHECKPOINT_BASE_DIR),
-        "version":            "v3_auto_mode",
-    })
+
+    return jsonify(
+        {
+            "file": src,
+            "modified": datetime.datetime.fromtimestamp(mtime).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            "retro_supported": True,
+            "auto_mode_support": True,
+            "checkpoint_base": str(CHECKPOINT_BASE_DIR),
+            "version": "v3_auto_mode",
+        }
+    )
 
 
 # ============================================================================
@@ -428,15 +463,18 @@ def cache_clear():
             return jsonify({"error": "Nije odabrana knjiga"}), 400
 
         from core.engine import SkriptorijAllInOne
+
         engine = SkriptorijAllInOne(
             str(Path(INPUT_DIR) / book), "dummy", SHARED_STATS, SHARED_CONTROLS
         )
         obrisano = engine.obrisi_cache(samo_losi=False)
-        return jsonify({
-            "status":  "ok",
-            "obrisano": obrisano,
-            "poruka":  f"Obrisan kompletan cache: {obrisano} blokova",
-        })
+        return jsonify(
+            {
+                "status": "ok",
+                "obrisano": obrisano,
+                "poruka": f"Obrisan kompletan cache: {obrisano} blokova",
+            }
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -455,16 +493,19 @@ def cache_clear_bad():
             return jsonify({"error": "Nije odabrana knjiga"}), 400
 
         from core.engine import SkriptorijAllInOne
+
         engine = SkriptorijAllInOne(
             str(Path(INPUT_DIR) / book), "dummy", SHARED_STATS, SHARED_CONTROLS
         )
         obrisano = engine.obrisi_cache(samo_losi=True, threshold=threshold)
-        return jsonify({
-            "status":    "ok",
-            "obrisano":  obrisano,
-            "threshold": threshold,
-            "poruka":    f"Obrisano {obrisano} loših blokova (score < {threshold})",
-        })
+        return jsonify(
+            {
+                "status": "ok",
+                "obrisano": obrisano,
+                "threshold": threshold,
+                "poruka": f"Obrisano {obrisano} loših blokova (score < {threshold})",
+            }
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -484,6 +525,7 @@ def _resolve_chunk_path(chk_dir, stem: str):
     Vraća Path objekt (može ne postojati) ili None ako ne može ni pronaći kandidata.
     """
     from pathlib import Path
+
     chk_dir = Path(chk_dir)
 
     # 1. Direktno poklapanje
@@ -494,7 +536,9 @@ def _resolve_chunk_path(chk_dir, stem: str):
     # 2. Ukloni .htm/.html/.xhtml ispred _blok_ i pokušaj ponovo
     clean_stem2 = re.sub(r"\.(x?html?)(_blok_)", r"\2", stem, flags=re.IGNORECASE)
     clean_stem3 = stem.replace(".htm_", "_").replace(".html_", "_")
-    clean_stem1 = re.sub(r"\.(x?html?)(_.+)?$", r"\2", stem, flags=re.IGNORECASE).lstrip("_")
+    clean_stem1 = re.sub(
+        r"\.(x?html?)(_.+)?$", r"\2", stem, flags=re.IGNORECASE
+    ).lstrip("_")
 
     for s in (clean_stem2, clean_stem3, clean_stem1):
         if s == stem:
@@ -509,14 +553,17 @@ def _resolve_chunk_path(chk_dir, stem: str):
         blok_num = blok_match.group(1)
         base_part = stem.split("_blok_")[0]
         base_clean = re.sub(r"\.(x?html?)$", "", base_part, flags=re.IGNORECASE)
-        for pattern in (f"*{base_clean}*_blok_{blok_num}.chk",
-                        f"*_blok_{blok_num}.chk"):
+        for pattern in (
+            f"*{base_clean}*_blok_{blok_num}.chk",
+            f"*_blok_{blok_num}.chk",
+        ):
             matches = list(chk_dir.glob(pattern))
             if matches:
                 return matches[0]
 
     # 4. Vrati nepostojeći path (pozivač provjerava .exists())
     return chk_dir / f"{stem}.chk"
+
 
 @bp.route("/api/review/list", methods=["GET"])
 def review_list():
@@ -539,7 +586,9 @@ def review_list():
             last_book_path = Path(PROJECTS_ROOT) / "last_book.json"
             if last_book_path.exists():
                 try:
-                    book = json.loads(last_book_path.read_text("utf-8")).get("last_book", "")
+                    book = json.loads(last_book_path.read_text("utf-8")).get(
+                        "last_book", ""
+                    )
                 except Exception:
                     pass
 
@@ -585,19 +634,21 @@ def review_list():
                         # Odredi file_name iz stem-a
                         parts = stem.split("_blok_")
                         file_name = parts[0] if len(parts) == 2 else stem
-                        blok_num  = parts[1] if len(parts) == 2 else "?"
+                        blok_num = parts[1] if len(parts) == 2 else "?"
 
                         # Kreiraj review item za prikaz u UI
                         reason = _build_reason(score_f)
-                        review_items.append({
-                            "stem":    stem,
-                            "file":    file_name,
-                            "blok":    blok_num,
-                            "score":   round(score_f, 1),
-                            "reason":  reason,
-                            "source":  "quality_scores",
-                            "preview": "—"
-                        })
+                        review_items.append(
+                            {
+                                "stem": stem,
+                                "file": file_name,
+                                "blok": blok_num,
+                                "score": round(score_f, 1),
+                                "reason": reason,
+                                "source": "quality_scores",
+                                "preview": "—",
+                            }
+                        )
                         seen_stems.add(stem)
             except Exception:
                 pass
@@ -635,13 +686,17 @@ def review_chunk(chunk_stem):
             last_book_path = Path(PROJECTS_ROOT) / "last_book.json"
             if last_book_path.exists():
                 try:
-                    book = json.loads(last_book_path.read_text("utf-8")).get("last_book", "")
+                    book = json.loads(last_book_path.read_text("utf-8")).get(
+                        "last_book", ""
+                    )
                 except Exception:
                     pass
 
         if not book:
             # FIX: jsonify umjesto abort(404) — abort vraća HTML stranicu
-            return jsonify({"error": "Nema aktivne knjige. Odaberi knjigu pa pokušaj ponovo."}), 404
+            return jsonify(
+                {"error": "Nema aktivne knjige. Odaberi knjigu pa pokušaj ponovo."}
+            ), 404
 
         # FIX: ispravljen regex — bez dvostrukog backslasha
         clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
@@ -694,49 +749,61 @@ def fix_bad_blocks():
             return jsonify({"error": f"Fajl nije pronađen: {book}"}), 404
 
         SHARED_CONTROLS.update({"pause": False, "stop": False, "reset": False})
-        SHARED_STATS.update({
-            "status":        "FIX LOŠIH BLOKOVA...",
-            "current_file":  book,
-            "active_engine": model,
-            "pct":           0,
-        })
+        SHARED_STATS.update(
+            {
+                "status": "FIX LOŠIH BLOKOVA...",
+                "current_file": book,
+                "active_engine": model,
+                "pct": 0,
+            }
+        )
 
         import asyncio
         import threading
+
         from processing.retro import send_to_fix
 
         def _run_fix():
             try:
                 from core.engine import SkriptorijAllInOne
-                engine = SkriptorijAllInOne(full_path, model, SHARED_STATS, SHARED_CONTROLS)
+
+                engine = SkriptorijAllInOne(
+                    full_path, model, SHARED_STATS, SHARED_CONTROLS
+                )
                 SHARED_STATS["status"] = "FIX: BRISANJE LOŠEG CACHE-A..."
                 asyncio.run(send_to_fix(engine, score_threshold=threshold))
                 SHARED_STATS["status"] = "FIX ZAVRŠEN"
                 SHARED_STATS["pct"] = 100
             except Exception as exc:
                 import traceback as _tb
+
                 SHARED_STATS["status"] = f"FIX GREŠKA: {exc}"
                 SHARED_STATS["live_audit"] = (
-                    SHARED_STATS.get("live_audit", "") +
-                    f"\n[FIX ERROR] {_tb.format_exc()}"
+                    SHARED_STATS.get("live_audit", "")
+                    + f"\n[FIX ERROR] {_tb.format_exc()}"
                 )
 
         thread = threading.Thread(target=_run_fix, daemon=True)
         thread.start()
 
-        return jsonify({
-            "status":    "Started",
-            "book":      book,
-            "threshold": threshold,
-            "poruka":    f"Pokrenuto automatsko ispravljanje blokova s scoreom < {threshold}",
-        })
+        return jsonify(
+            {
+                "status": "Started",
+                "book": book,
+                "threshold": threshold,
+                "poruka": f"Pokrenuto automatsko ispravljanje blokova s scoreom < {threshold}",
+            }
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @bp.route("/api/admin/rebuild_review", methods=["POST"])
 def rebuild_review():
     """Ručno pokreće mark_for_review za prvi checkpoint aktivne knjige."""
-    import json as _json, os as _os
+    import json as _json
+    import os as _os
+
     from core.engine import SkriptorijAllInOne
 
     # 1. Odredi aktivnu knjigu iz SHARED_STATS ili last_book.json
@@ -763,7 +830,7 @@ def rebuild_review():
             return jsonify({"error": "Nema checkpointa"}), 400
         prvi = chk_list[0]
 
-        if hasattr(eng, 'mark_for_review'):
+        if hasattr(eng, "mark_for_review"):
             eng.mark_for_review(str(prvi))
 
         return jsonify({"status": "ok", "message": f"Review pokrenut za {prvi.name}"})
@@ -783,8 +850,10 @@ def _init_review_state():
             except Exception:
                 pass
     if book:
-        clean = re.sub(r'[^a-zA-Z0-9_\\-]', '', Path(book).stem)
-        hr_path = Path(PROJECTS_ROOT) / f"_skr_{clean}" / "checkpoints" / "human_review.json"
+        clean = re.sub(r"[^a-zA-Z0-9_\\-]", "", Path(book).stem)
+        hr_path = (
+            Path(PROJECTS_ROOT) / f"_skr_{clean}" / "checkpoints" / "human_review.json"
+        )
     if hr_path and hr_path.exists():
         try:
             data = json.loads(hr_path.read_text("utf-8"))
@@ -793,7 +862,9 @@ def _init_review_state():
         except Exception:
             pass
 
+
 _init_review_state()
+
 
 @bp.route("/api/epub_preview")
 def epub_preview():
@@ -804,7 +875,9 @@ def epub_preview():
     from flask import Response
 
     try:
-        book = SHARED_STATS.get("current_file", "") or SHARED_STATS.get("output_file", "")
+        book = SHARED_STATS.get("current_file", "") or SHARED_STATS.get(
+            "output_file", ""
+        )
         if not book:
             lbp = Path(PROJECTS_ROOT) / "last_book.json"
             if lbp.exists():
@@ -814,17 +887,23 @@ def epub_preview():
                     pass
 
         if not book:
-            return Response("Nema aktivne knjige. Odaberi i pokreni obradu.", mimetype="text/plain")
+            return Response(
+                "Nema aktivne knjige. Odaberi i pokreni obradu.", mimetype="text/plain"
+            )
 
-        clean   = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
+        clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
         chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
 
         if not chk_dir.exists():
-            return Response("Nema checkpointa. Obrada još nije počela.", mimetype="text/plain")
+            return Response(
+                "Nema checkpointa. Obrada još nije počela.", mimetype="text/plain"
+            )
 
         chk_files = sorted(chk_dir.glob("*.chk"))
         if not chk_files:
-            return Response("Obrada u toku — nema još sačuvanih blokova.", mimetype="text/plain")
+            return Response(
+                "Obrada u toku — nema još sačuvanih blokova.", mimetype="text/plain"
+            )
 
         dijelovi = []
         for chk in chk_files:
@@ -879,13 +958,13 @@ def clean_annotations():
         return jsonify({"error": "Nema aktivne knjige"}), 400
 
     try:
-        from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
         from epub.parser import _strip_json_artifacts_from_html
+        from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
 
         # Sanitizacija: dozvoli samo alfanumeričke znakove i _- za stem
         clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
         work_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}"
-        chk_dir  = work_dir / "checkpoints"
+        chk_dir = work_dir / "checkpoints"
 
         # Provjeri da putanja ostaje unutar CHECKPOINT_BASE_DIR
         try:
@@ -907,29 +986,38 @@ def clean_annotations():
         html_popravljeno = 0
         if work_dir.exists():
             from core.natural_sort import natural_sort_key
+
             html_files = sorted(
-                (f for f in work_dir.rglob("*")
-                 if f.suffix.lower() in {".html", ".htm", ".xhtml"}
-                 and not f.name.startswith(".")),
+                (
+                    f
+                    for f in work_dir.rglob("*")
+                    if f.suffix.lower() in {".html", ".htm", ".xhtml"}
+                    and not f.name.startswith(".")
+                ),
                 key=natural_sort_key,
             )
             if html_files:
-                html_popravljeno = _strip_json_artifacts_from_html(html_files, log_fn=_log)
+                html_popravljeno = _strip_json_artifacts_from_html(
+                    html_files, log_fn=_log
+                )
             else:
                 _log("ℹ️ Nema HTML fajlova za čišćenje u work_dir.")
 
-        return jsonify({
-            "chk_popravljeno":  chk_popravljeno,
-            "html_popravljeno": html_popravljeno,
-            "status": "ok",
-            "book":   Path(book).name,
-        })
+        return jsonify(
+            {
+                "chk_popravljeno": chk_popravljeno,
+                "html_popravljeno": html_popravljeno,
+                "status": "ok",
+                "book": Path(book).name,
+            }
+        )
     except Exception:
         logging.exception("clean_annotations: greška pri čišćenju")
         return jsonify({"error": "Greška pri čišćenju anotacija"}), 500
 
 
 # ─── B3 FIX: epub_text + epub_plain endpointi za Revizija tab ─────────────────
+
 
 @bp.route("/api/epub_text/<path:book>")
 def epub_text(book):
@@ -938,7 +1026,9 @@ def epub_text(book):
     Koristi se u Revizija tabu za prikaz prevedenog teksta.
     Response: {"blocks": [{"stem": "...", "text": "...", "score": 7.2}, ...]}
     """
-    import json as _j, re as _re
+    import json as _j
+    import re as _re
+
     from processing.retro import _je_finalni_chk
 
     try:
@@ -946,7 +1036,9 @@ def epub_text(book):
         chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
 
         if not chk_dir.exists():
-            return jsonify({"error": f"Checkpoint dir nije pronađen: {chk_dir}", "blocks": []}), 404
+            return jsonify(
+                {"error": f"Checkpoint dir nije pronađen: {chk_dir}", "blocks": []}
+            ), 404
 
         # Učitaj quality scores
         qs_path = chk_dir / "quality_scores.json"
@@ -970,11 +1062,13 @@ def epub_text(book):
             try:
                 text = chk.read_text("utf-8", errors="ignore")
                 score = scores.get(chk.stem, None)
-                blocks.append({
-                    "stem":  chk.stem,
-                    "text":  text,
-                    "score": round(score, 1) if score is not None else None,
-                })
+                blocks.append(
+                    {
+                        "stem": chk.stem,
+                        "text": text,
+                        "score": round(score, 1) if score is not None else None,
+                    }
+                )
             except Exception:
                 pass
 
@@ -990,8 +1084,11 @@ def epub_plain(book):
     Kao epub_text ali vraća plain text (bez HTML tagova) — za pretragu i diff.
     Response: {"blocks": [{"stem": "...", "text": "...", "score": 7.2}, ...]}
     """
-    import json as _j, re as _re
+    import json as _j
+    import re as _re
+
     from bs4 import BeautifulSoup
+
     from config.settings import CHECKPOINT_BASE_DIR
     from processing.retro import _je_finalni_chk
 
@@ -1000,7 +1097,9 @@ def epub_plain(book):
         chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
 
         if not chk_dir.exists():
-            return jsonify({"error": f"Checkpoint dir nije pronađen: {chk_dir}", "blocks": []}), 404
+            return jsonify(
+                {"error": f"Checkpoint dir nije pronađen: {chk_dir}", "blocks": []}
+            ), 404
 
         qs_path = chk_dir / "quality_scores.json"
         scores = {}
@@ -1019,15 +1118,19 @@ def epub_plain(book):
             try:
                 raw = chk.read_text("utf-8", errors="ignore")
                 try:
-                    plain = BeautifulSoup(raw, "html.parser").get_text(separator=" ", strip=True)
+                    plain = BeautifulSoup(raw, "html.parser").get_text(
+                        separator=" ", strip=True
+                    )
                 except Exception:
                     plain = _re.sub(r"<[^>]+>", " ", raw).strip()
                 score = scores.get(chk.stem, None)
-                blocks.append({
-                    "stem":  chk.stem,
-                    "text":  plain,
-                    "score": round(score, 1) if score is not None else None,
-                })
+                blocks.append(
+                    {
+                        "stem": chk.stem,
+                        "text": plain,
+                        "score": round(score, 1) if score is not None else None,
+                    }
+                )
             except Exception:
                 pass
 

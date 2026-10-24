@@ -3,101 +3,109 @@
 AI routing logika. Odabir provajdera i modela prema ulozi, tipu bloka i dostupnosti.
 """
 
-import random
 import asyncio
 import logging
-from typing import Optional, Tuple, List, Dict
+import random
+from typing import Dict, List, Optional, Tuple
 
 from config.ai_config import MODEL_MAP, PROVIDER_PRIORITY
-from core.text_utils import _adaptive_temp
 from core.model_profiles import PROFILI, ModelProfile
-from network.http_client import _call_single_provider, ContentFilterError
+from core.text_utils import _adaptive_temp
+from network.http_client import ContentFilterError, _call_single_provider
 
 try:
     from config.ai_config import (
-        should_avoid_for_role as _pp_avoid,
         get_quality_tier as _pp_tier,
     )
+    from config.ai_config import (
+        should_avoid_for_role as _pp_avoid,
+    )
+
     _PROFILES_OK = True
 except ImportError:
     _PROFILES_OK = False
+
     def _pp_avoid(provider: str, role: str) -> bool:
         return False
+
     def _pp_tier(provider: str) -> int:
         return 3
+
 
 logger = logging.getLogger(__name__)
 
 # FIX 2026-09-26: provideri koji NE RADE — isključeni iz rotacije
-EXCLUDE_FROM_ROTATION: frozenset = frozenset({
-    # FIX 2026-09-26: samo GEMMA (thinking model)
-    "GEMMA",
-})
+EXCLUDE_FROM_ROTATION: frozenset = frozenset(
+    {
+        # FIX 2026-09-26: samo GEMMA (thinking model)
+        "GEMMA",
+    }
+)
 
 # ── Temperatura i token mape po ulozi ────────────────────────────────────────
 
 TEMP_MAP = {
-    "PREVODILAC":      0.32,
-    "LEKTOR":          0.45,
-    "KOREKTOR":        0.15,
-    "VALIDATOR":       0.05,
-    "GUARDIAN":        0.10,
-    "POLISH":          0.68,
-    "ANALIZA":         0.10,
+    "PREVODILAC": 0.32,
+    "LEKTOR": 0.45,
+    "KOREKTOR": 0.15,
+    "VALIDATOR": 0.05,
+    "GUARDIAN": 0.10,
+    "POLISH": 0.68,
+    "ANALIZA": 0.10,
     "CHAPTER_SUMMARY": 0.30,
-    "GLOSAR_UPDATE":   0.10,
-    "SCORER":          0.05,
+    "GLOSAR_UPDATE": 0.10,
+    "SCORER": 0.05,
 }
 
 MAX_TOKENS_MAP = {
     # Standardne vrijednosti — Qwen 3.8 27B je pravi chat model, ne troši tokene
     # na interno razmišljanje, pa ne treba boost
-    "PREVODILAC":      2800,
-    "LEKTOR":          2800,
-    "KOREKTOR":        2400,
-    "VALIDATOR":       800,
-    "GUARDIAN":        2400,
-    "POLISH":          2800,
-    "ANALIZA":         1024,
+    "PREVODILAC": 2800,
+    "LEKTOR": 2800,
+    "KOREKTOR": 2400,
+    "VALIDATOR": 800,
+    "GUARDIAN": 2400,
+    "POLISH": 2800,
+    "ANALIZA": 1024,
     "CHAPTER_SUMMARY": 512,
-    "GLOSAR_UPDATE":   512,
-    "SCORER":          256,
+    "GLOSAR_UPDATE": 512,
+    "SCORER": 256,
 }
 
 _MODEL_TUNING_BY_ID = {
     "gemini-3.5-flash": {
         "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
-        "LEKTOR":     {"temp_mul": 0.90, "max_tokens": 2200},
-        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 700},
-        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
-        "SCORER":     {"temp_mul": 0.70, "max_tokens": 256},
+        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
+        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
+        "SCORER": {"temp_mul": 0.70, "max_tokens": 256},
     },
     "gemini-3.1-flash-lite": {
         "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2000},
-        "LEKTOR":     {"temp_mul": 0.92, "max_tokens": 2000},
-        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 600},
-        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1600},
-        "SCORER":     {"temp_mul": 0.70, "max_tokens": 256},
+        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2000},
+        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 600},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1600},
+        "SCORER": {"temp_mul": 0.70, "max_tokens": 256},
     },
     "gemini-2.5-flash": {
         "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
-        "LEKTOR":     {"temp_mul": 0.90, "max_tokens": 2200},
-        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 700},
-        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
-        "SCORER":     {"temp_mul": 0.70, "max_tokens": 256},
+        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
+        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
+        "SCORER": {"temp_mul": 0.70, "max_tokens": 256},
     },
     "gemini-2.5-flash-lite": {
         "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2000},
-        "LEKTOR":     {"temp_mul": 0.92, "max_tokens": 2000},
-        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 600},
-        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1600},
-        "SCORER":     {"temp_mul": 0.70, "max_tokens": 256},
+        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2000},
+        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 600},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1600},
+        "SCORER": {"temp_mul": 0.70, "max_tokens": 256},
     },
     "gemini-2.0-flash": {
         "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
-        "LEKTOR":     {"temp_mul": 0.90, "max_tokens": 2200},
-        "VALIDATOR":  {"temp_mul": 0.75, "max_tokens": 700},
-        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
+        "LEKTOR": {"temp_mul": 0.90, "max_tokens": 2200},
+        "VALIDATOR": {"temp_mul": 0.75, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
     },
     # FIX 2026-09-25: Gemma 4 je thinking model — bez obzira koliko tokena
     # joj daš, potroši ih na interno razmišljanje. Zato je degradirana na
@@ -105,48 +113,50 @@ _MODEL_TUNING_BY_ID = {
     # ne gubimo previše vremena kad ipak dođe na red.
     "gemma-4-26b-a4b-it": {
         "PREVODILAC": {"temp_mul": 0.82, "max_tokens": 2400},
-        "LEKTOR":     {"temp_mul": 0.85, "max_tokens": 2400},
-        "VALIDATOR":  {"temp_mul": 0.70, "max_tokens": 800},
-        "KOREKTOR":   {"temp_mul": 0.95, "max_tokens": 2400},
+        "LEKTOR": {"temp_mul": 0.85, "max_tokens": 2400},
+        "VALIDATOR": {"temp_mul": 0.70, "max_tokens": 800},
+        "KOREKTOR": {"temp_mul": 0.95, "max_tokens": 2400},
     },
     "gemma-4-31b-it": {
         "PREVODILAC": {"temp_mul": 0.82, "max_tokens": 2400},
-        "LEKTOR":     {"temp_mul": 0.85, "max_tokens": 2400},
-        "VALIDATOR":  {"temp_mul": 0.70, "max_tokens": 800},
-        "KOREKTOR":   {"temp_mul": 0.95, "max_tokens": 2400},
+        "LEKTOR": {"temp_mul": 0.85, "max_tokens": 2400},
+        "VALIDATOR": {"temp_mul": 0.70, "max_tokens": 800},
+        "KOREKTOR": {"temp_mul": 0.95, "max_tokens": 2400},
     },
     "mistral-small-latest": {
         "PREVODILAC": {"temp_mul": 0.92, "max_tokens": 2400},
-        "LEKTOR":     {"temp_mul": 0.95, "max_tokens": 2400},
-        "VALIDATOR":  {"temp_mul": 0.85, "max_tokens": 700},
-        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 2000},
+        "LEKTOR": {"temp_mul": 0.95, "max_tokens": 2400},
+        "VALIDATOR": {"temp_mul": 0.85, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 2000},
     },
     "command-r-plus-08-2024": {
         "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2200},
-        "LEKTOR":     {"temp_mul": 0.92, "max_tokens": 2200},
-        "VALIDATOR":  {"temp_mul": 0.80, "max_tokens": 700},
-        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
+        "LEKTOR": {"temp_mul": 0.92, "max_tokens": 2200},
+        "VALIDATOR": {"temp_mul": 0.80, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
     },
     "gpt-4o": {
         "PREVODILAC": {"temp_mul": 0.90, "max_tokens": 2400},
-        "LEKTOR":     {"temp_mul": 0.93, "max_tokens": 2400},
-        "VALIDATOR":  {"temp_mul": 0.80, "max_tokens": 700},
-        "KOREKTOR":   {"temp_mul": 1.00, "max_tokens": 1800},
+        "LEKTOR": {"temp_mul": 0.93, "max_tokens": 2400},
+        "VALIDATOR": {"temp_mul": 0.80, "max_tokens": 700},
+        "KOREKTOR": {"temp_mul": 1.00, "max_tokens": 1800},
     },
 }
 
 _MODEL_FAMILY_TUNING = {
     "gemini-": {"temp_mul": 0.90, "max_tokens": 2200},
-    "gemma-":  {"temp_mul": 0.84, "max_tokens": 2400},  # FIX: bio 16000 — thinking model
-    "mistral":     {"temp_mul": 0.95, "max_tokens": 2400},
-    "command-r":   {"temp_mul": 0.92, "max_tokens": 2200},
-    "gpt-4":       {"temp_mul": 0.93, "max_tokens": 2400},
-    "llama":       {"temp_mul": 0.98, "max_tokens": 2600},
-    "deepseek":    {"temp_mul": 0.95, "max_tokens": 2300},
+    "gemma-": {"temp_mul": 0.84, "max_tokens": 2400},  # FIX: bio 16000 — thinking model
+    "mistral": {"temp_mul": 0.95, "max_tokens": 2400},
+    "command-r": {"temp_mul": 0.92, "max_tokens": 2200},
+    "gpt-4": {"temp_mul": 0.93, "max_tokens": 2400},
+    "llama": {"temp_mul": 0.98, "max_tokens": 2600},
+    "deepseek": {"temp_mul": 0.95, "max_tokens": 2300},
 }
 
 
-def _resolve_model_generation_params(uloga: str, model: str, base_temp: float, base_max_tokens: int) -> tuple[float, int]:
+def _resolve_model_generation_params(
+    uloga: str, model: str, base_temp: float, base_max_tokens: int
+) -> tuple[float, int]:
     role = (uloga or "").upper()
     model_l = (model or "").lower()
 
@@ -208,6 +218,7 @@ async def call_provider(
     SkriptorijAllInOne instanci umjesto ove funkcije.
     """
     import logging
+
     _logger = logging.getLogger(__name__)
 
     from config.ai_config import MODEL_MAP, PROVIDER_PRIORITY
@@ -215,6 +226,7 @@ async def call_provider(
 
     if uloga == "ANALIZA":
         from core.prompts import ANALIZA_SYS
+
         sys_c = ANALIZA_SYS
     else:
         sys_c = None
@@ -243,7 +255,8 @@ async def call_provider(
         if not model:
             continue
         try:
-            result = await asyncio.to_thread(api_call, 
+            result = await asyncio.to_thread(
+                api_call,
                 provider=prov_upper,
                 model=model,
                 api_key=api_key,
@@ -263,9 +276,13 @@ async def call_provider(
 
 
 async def _call_ai_engine(
-    self, prompt, chunk_idx,
-    uloga="LEKTOR", filename="",
-    sys_override=None, tip_bloka="naracija"
+    self,
+    prompt,
+    chunk_idx,
+    uloga="LEKTOR",
+    filename="",
+    sys_override=None,
+    tip_bloka="naracija",
 ):
     svi_upper = {p.upper() for p in self.fleet.fleet.keys()}
     base_temp = _adaptive_temp(uloga, tip_bloka, TEMP_MAP.get(uloga, 0.35))
@@ -285,18 +302,23 @@ async def _call_ai_engine(
             sys_c = self._get_polish_prompt(tip_bloka)
         elif uloga == "ANALIZA":
             from core.prompts import ANALIZA_SYS
+
             sys_c = ANALIZA_SYS
         elif uloga == "CHAPTER_SUMMARY":
             from core.prompts import CHAPTER_SUMMARY_SYS
+
             sys_c = CHAPTER_SUMMARY_SYS
         elif uloga == "GLOSAR_UPDATE":
             from core.prompts import GLOSAR_UPDATE_SYS
+
             sys_c = GLOSAR_UPDATE_SYS
         elif uloga == "VALIDATOR":
             from core.prompts import GLOSAR_VALIDATION_SYS
+
             sys_c = GLOSAR_VALIDATION_SYS
         elif uloga == "SCORER":
             from core.prompts import QUALITY_SCORER_SYS
+
             sys_c = QUALITY_SCORER_SYS
 
     preferred = PROVIDER_PRIORITY.get(uloga, [])
@@ -321,8 +343,10 @@ async def _call_ai_engine(
                 gemini_keys = self.fleet.fleet.get(prov_upper, [])
                 if not gemini_keys:
                     continue
-                from network.quota_tracker import quota_tracker
                 import re as _re
+
+                from network.quota_tracker import quota_tracker
+
                 has_available_or_short_cd = False
                 for ks in gemini_keys:
                     # FIX 2026-10-22: koristi prov_upper kao namespace
@@ -332,7 +356,7 @@ async def _call_ai_engine(
                     if ok:
                         has_available_or_short_cd = True
                         break
-                    m = _re.search(r'([\d.]+)s', reason)
+                    m = _re.search(r"([\d.]+)s", reason)
                     secs = float(m.group(1)) if m else 99999.0
                     if secs <= 60.0:
                         has_available_or_short_cd = True
@@ -354,9 +378,10 @@ async def _call_ai_engine(
                 try:
                     from config.model_roles import pick_model_for_role
                     from network.model_discovery import (
-                        get_cached_model_list,
                         enrich_models_with_metrics,
+                        get_cached_model_list,
                     )
+
                     cached = get_cached_model_list("GEMINI")
                     if cached:
                         enriched = enrich_models_with_metrics("GEMINI", cached)
@@ -364,7 +389,9 @@ async def _call_ai_engine(
                 except Exception:
                     model = None
             if not model:
-                model = self.fleet.get_active_model(prov_upper, MODEL_MAP.get(prov_upper))
+                model = self.fleet.get_active_model(
+                    prov_upper, MODEL_MAP.get(prov_upper)
+                )
             if not model:
                 continue
 
@@ -374,18 +401,25 @@ async def _call_ai_engine(
 
             await asyncio.sleep(random.uniform(0.2, 0.8))
 
-            self.log(f"\U0001f4e4 [{uloga}] \u0160aljem blok {chunk_idx} na AI ({prov_upper})...", "tech")
+            self.log(
+                f"\U0001f4e4 [{uloga}] \u0160aljem blok {chunk_idx} na AI ({prov_upper})...",
+                "tech",
+            )
 
             try:
                 raw, label = await _call_single_provider(
-                    self, prov_upper, model,
-                    sys_c, prompt,
-                    opt_temp, max_tokens=opt_max_tokens
+                    self,
+                    prov_upper,
+                    model,
+                    sys_c,
+                    prompt,
+                    opt_temp,
+                    max_tokens=opt_max_tokens,
                 )
             except ContentFilterError as cfe:
                 self.log(f"⛔ [{uloga}] {cfe} — preskačem chunk {chunk_idx}", "warning")
                 return None, "CONTENT_FILTER"
-            except (ConnectionError, OSError, asyncio.TimeoutError) as net_err:
+            except (TimeoutError, ConnectionError, OSError) as net_err:
                 # 2026-10-22: mrezni problem (24% u dijagnostici).
                 # 1 retry sa 2s pauzom prije nego odustanes.
                 self.log(
@@ -395,9 +429,13 @@ async def _call_ai_engine(
                 await asyncio.sleep(2.0)
                 try:
                     raw, label = await _call_single_provider(
-                        self, prov_upper, model,
-                        sys_c, prompt,
-                        opt_temp, max_tokens=opt_max_tokens
+                        self,
+                        prov_upper,
+                        model,
+                        sys_c,
+                        prompt,
+                        opt_temp,
+                        max_tokens=opt_max_tokens,
                     )
                 except Exception:
                     raw, label = None, None
@@ -408,20 +446,22 @@ async def _call_ai_engine(
 
         if attempt < MAX_ATTEMPTS - 1 and any_activity:
             from network.quota_tracker import quota_tracker
+
             min_wait = 60.0
             for prov_upper in ordered:
                 for ks in self.fleet.fleet.get(prov_upper, []):
                     ok, reason = quota_tracker.is_key_available(prov_upper, ks.key)
                     if not ok:
                         import re as _re
-                        m = _re.search(r'([\d.]+)s', reason)
+
+                        m = _re.search(r"([\d.]+)s", reason)
                         secs = float(m.group(1)) if m else 60.0
                         if secs < min_wait:
                             min_wait = secs
             wait_s = min(min_wait + 1.0, 45.0)
             self.log(
                 f"⏳ [{uloga}] Pokušaj {attempt + 1}/{MAX_ATTEMPTS} bez odgovora — čekam {wait_s:.1f}s (blok {chunk_idx})",
-                "warning"
+                "warning",
             )
             await asyncio.sleep(wait_s)
             continue
@@ -445,15 +485,17 @@ async def _call_ai_engine(
                 gemini_keys = self.fleet.fleet.get(prov_upper, [])
                 if not gemini_keys:
                     continue
-                from network.quota_tracker import quota_tracker
                 import re as _re
+
+                from network.quota_tracker import quota_tracker
+
                 has_available_or_short_cd = False
                 for ks in gemini_keys:
                     ok, reason = quota_tracker.is_key_available(prov_upper, ks.key)
                     if ok:
                         has_available_or_short_cd = True
                         break
-                    m = _re.search(r'([\d.]+)s', reason)
+                    m = _re.search(r"([\d.]+)s", reason)
                     secs = float(m.group(1)) if m else 99999.0
                     if secs <= 60.0:
                         has_available_or_short_cd = True
@@ -474,8 +516,10 @@ async def _call_ai_engine(
                 try:
                     from config.model_roles import pick_model_for_role
                     from network.model_discovery import (
-                        get_cached_model_list, enrich_models_with_metrics,
+                        enrich_models_with_metrics,
+                        get_cached_model_list,
                     )
+
                     cached = get_cached_model_list("GEMINI")
                     if cached:
                         enriched = enrich_models_with_metrics("GEMINI", cached)
@@ -483,7 +527,9 @@ async def _call_ai_engine(
                 except Exception:
                     model = None
             if not model:
-                model = self.fleet.get_active_model(prov_upper, MODEL_MAP.get(prov_upper))
+                model = self.fleet.get_active_model(
+                    prov_upper, MODEL_MAP.get(prov_upper)
+                )
             if not model:
                 continue
 
@@ -497,13 +543,18 @@ async def _call_ai_engine(
             )
             try:
                 raw, label = await _call_single_provider(
-                    self, prov_upper, model,
-                    sys_c, prompt, opt_temp, max_tokens=opt_max_tokens
+                    self,
+                    prov_upper,
+                    model,
+                    sys_c,
+                    prompt,
+                    opt_temp,
+                    max_tokens=opt_max_tokens,
                 )
             except ContentFilterError as cfe:
                 self.log(f"⛔ [{uloga}] {cfe} — preskačem chunk {chunk_idx}", "warning")
                 return None, "CONTENT_FILTER"
-            except (ConnectionError, OSError, asyncio.TimeoutError) as net_err:
+            except (TimeoutError, ConnectionError, OSError) as net_err:
                 self.log(
                     f"[{prov_upper}] {type(net_err).__name__} — 2s retry",
                     "warning",
@@ -511,8 +562,13 @@ async def _call_ai_engine(
                 await asyncio.sleep(2.0)
                 try:
                     raw, label = await _call_single_provider(
-                        self, prov_upper, model,
-                        sys_c, prompt, opt_temp, max_tokens=opt_max_tokens
+                        self,
+                        prov_upper,
+                        model,
+                        sys_c,
+                        prompt,
+                        opt_temp,
+                        max_tokens=opt_max_tokens,
                     )
                 except Exception:
                     raw, label = None, None
@@ -536,7 +592,11 @@ async def _call_ai_engine(
 
     try:
         from config.model_roles import pick_model_for_role
-        from network.model_discovery import get_cached_model_list, enrich_models_with_metrics
+        from network.model_discovery import (
+            enrich_models_with_metrics,
+            get_cached_model_list,
+        )
+
         cached = get_cached_model_list("GEMINI")
         model = None
         if cached:
@@ -545,8 +605,13 @@ async def _call_ai_engine(
         if not model:
             model = MODEL_MAP.get("GEMINI", "gemini-3.5-flash-lite")
         raw, label = await _call_single_provider(
-            self, "GEMINI", model,
-            sys_c, prompt, base_temp, max_tokens=base_max_tokens,
+            self,
+            "GEMINI",
+            model,
+            sys_c,
+            prompt,
+            base_temp,
+            max_tokens=base_max_tokens,
         )
         if raw:
             self.log(f"✅ [{uloga}] Treći krug uspješan (GEMINI/{model})", "warning")
@@ -565,35 +630,35 @@ async def _call_ai_engine(
 
 _SCORE_TEZINE = {
     "preferred_role_match": 0.40,
-    "tip_bloka_bonus":      0.15,
-    "rpm_availability":     0.25,
-    "blacklist_penalty":    -1.0,
+    "tip_bloka_bonus": 0.15,
+    "rpm_availability": 0.25,
+    "blacklist_penalty": -1.0,
 }
 
-_TIP_BLOKA_BONUSI: Dict[str, Dict[str, float]] = {
+_TIP_BLOKA_BONUSI: dict[str, dict[str, float]] = {
     "dijalog": {
-        "gemini_3_flash":       0.12,
+        "gemini_3_flash": 0.12,
         "gemini_31_flash_lite": 0.12,
         "gemini_25_flash_lite": 0.12,
-        "gemma4_26b":           0.10,
-        "gemma4_31b":           0.10,
-        "gemini_25_flash":      0.15,
-        "gemini_20_flash":      0.10,
-        "mistral_large":        0.05,
+        "gemma4_26b": 0.10,
+        "gemma4_31b": 0.10,
+        "gemini_25_flash": 0.15,
+        "gemini_20_flash": 0.10,
+        "mistral_large": 0.05,
     },
     "poetski": {
         "gemini_25_flash": 0.20,
         "gemini_20_flash": 0.15,
     },
     "naracija": {
-        "gemini_25_flash":      0.10,
-        "gemini_20_flash":      0.08,
+        "gemini_25_flash": 0.10,
+        "gemini_20_flash": 0.08,
         "command_r_plus_cohere": 0.05,
     },
     "tehnicki": {
-        "mistral_large":     0.15,
+        "mistral_large": 0.15,
         "deepseek_openrouter": 0.10,
-        "qwen_chutes":       0.05,
+        "qwen_chutes": 0.05,
     },
     "dark_fantasy": {
         "gemini_25_flash": 0.20,
@@ -604,7 +669,9 @@ _TIP_BLOKA_BONUSI: Dict[str, Dict[str, float]] = {
 _MAX_RPM = 30.0
 
 
-def _score_model(profil: ModelProfile, uloga: str, tip_bloka: Optional[str] = None) -> float:
+def _score_model(
+    profil: ModelProfile, uloga: str, tip_bloka: str | None = None
+) -> float:
     if _PROFILES_OK and _pp_avoid(profil.provider, uloga):
         return -1.0
 
@@ -629,17 +696,18 @@ def _score_model(profil: ModelProfile, uloga: str, tip_bloka: Optional[str] = No
 class ProviderRouterV2:
     """Model-aware router koji bira optimalni model za svaki zadatak."""
 
-    def __init__(self, dostupni_kljucevi: Optional[Dict[str, List[str]]] = None):
+    def __init__(self, dostupni_kljucevi: dict[str, list[str]] | None = None):
         self.dostupni_kljucevi = {
             k.upper(): v for k, v in (dostupni_kljucevi or {}).items()
         }
-        self._health_scores: Dict[str, float] = {}
-        self._kljuc_index: Dict[str, int] = {}
+        self._health_scores: dict[str, float] = {}
+        self._kljuc_index: dict[str, int] = {}
 
     @staticmethod
     def _get_fleet():
         try:
             import api_fleet as _af
+
             return _af._active_fleet
         except (ImportError, AttributeError):
             return None
@@ -672,7 +740,7 @@ class ProviderRouterV2:
             return fleet.get_best_key(prov_u) is not None
         return True
 
-    def _get_kljuc(self, provider: str) -> Optional[str]:
+    def _get_kljuc(self, provider: str) -> str | None:
         prov_u = provider.upper()
         kljucevi = self.dostupni_kljucevi.get(prov_u, [])
         if kljucevi:
@@ -687,9 +755,9 @@ class ProviderRouterV2:
     def get_best_model(
         self,
         uloga: str,
-        tip_bloka: Optional[str] = None,
-        exclude: Optional[List[str]] = None,
-    ) -> Optional[Tuple[str, str, Optional[str]]]:
+        tip_bloka: str | None = None,
+        exclude: list[str] | None = None,
+    ) -> tuple[str, str, str | None] | None:
         exclude = exclude or []
         kandidati = []
 
@@ -705,13 +773,17 @@ class ProviderRouterV2:
 
             health = self.get_health_score(profil.provider)
             if health < 0.1:
-                logger.warning("Provider %s health=%.2f — preskačem", profil.provider, health)
+                logger.warning(
+                    "Provider %s health=%.2f — preskačem", profil.provider, health
+                )
                 continue
 
             kandidati.append((score * health, ime, profil))
 
         if not kandidati:
-            logger.error("Nema dostupnih modela za ulogu=%s, tip_bloka=%s", uloga, tip_bloka)
+            logger.error(
+                "Nema dostupnih modela za ulogu=%s, tip_bloka=%s", uloga, tip_bloka
+            )
             return None
 
         kandidati.sort(key=lambda x: x[0], reverse=True)
@@ -720,15 +792,19 @@ class ProviderRouterV2:
         api_key = self._get_kljuc(best_profil.provider)
         logger.info(
             "RouterV2: uloga=%s tip=%s → %s (%s) score=%.3f",
-            uloga, tip_bloka, best_ime, best_profil.provider, best_score,
+            uloga,
+            tip_bloka,
+            best_ime,
+            best_profil.provider,
+            best_score,
         )
         return best_profil.provider, best_profil.api_model_string, api_key
 
     def get_ranked_models(
         self,
         uloga: str,
-        tip_bloka: Optional[str] = None,
-    ) -> List[Tuple[float, str, ModelProfile]]:
+        tip_bloka: str | None = None,
+    ) -> list[tuple[float, str, ModelProfile]]:
         result = []
         for ime, profil in PROFILI.items():
             if not self._provider_dostupan(profil):
@@ -745,7 +821,9 @@ class ProviderRouterV2:
 provider_router_v2 = ProviderRouterV2()
 
 
-def init_router_v2(dostupni_kljucevi: Dict[str, List[str]]) -> None:
+def init_router_v2(dostupni_kljucevi: dict[str, list[str]]) -> None:
     global provider_router_v2
     provider_router_v2 = ProviderRouterV2(dostupni_kljucevi)
-    logger.info("RouterV2 inicijaliziran. Provideri: %s", list(dostupni_kljucevi.keys()))
+    logger.info(
+        "RouterV2 inicijaliziran. Provideri: %s", list(dostupni_kljucevi.keys())
+    )

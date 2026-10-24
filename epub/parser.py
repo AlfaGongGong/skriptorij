@@ -1,10 +1,9 @@
-
-
 # epub/parser.py
 import re
-
 import warnings
+
 from bs4 import XMLParsedAsHTMLWarning
+
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 from bs4 import BeautifulSoup, NavigableString
@@ -18,10 +17,10 @@ _Q = r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b"\s]'
 # _Q1 = samo navodnici (bez whitespace) za graničnike vrijednosti
 _Q1 = r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b"]'
 # Ključevi JSON omotača koje prepoznajemo
-_JSON_KEYS = r'(?:finalno_polirano|korektura|tekst|prijevod)'
+_JSON_KEYS = r"(?:finalno_polirano|korektura|tekst|prijevod)"
 
 _JSON_ARTIFACT_PREFIX = re.compile(
-    rf'^\s*\{{{_Q}*{_JSON_KEYS}{_Q}*:\s*{_Q}*',
+    rf"^\s*\{{{_Q}*{_JSON_KEYS}{_Q}*:\s*{_Q}*",
     re.IGNORECASE,
 )
 _JSON_ARTIFACT_TRAILER = re.compile(
@@ -33,7 +32,7 @@ _JSON_ARTIFACT_TRAILER = re.compile(
 #   "Uputi dramatične{ „korektura": „...cijeli tekst..."}"
 # Pohlepni (.+?) je namjerno kratak (non-greedy) jer tražimo do prve zatvorene tipografske/ASCII ".
 _EMBEDDED_JSON_RE = re.compile(
-    rf'\{{{_Q}*(?:finalno_polirano|korektura){_Q}*:\s*{_Q1}(.*?){_Q1}\s*\}}\s*$',
+    rf"\{{{_Q}*(?:finalno_polirano|korektura){_Q}*:\s*{_Q1}(.*?){_Q1}\s*\}}\s*$",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -99,12 +98,14 @@ def _strip_json_artifacts_from_html(html_fajlovi: list, log_fn=None) -> int:
         log_fn(f"🔧 JSON omotači uklonjeni iz {fixed} HTML fajl(ov)a.", "tech")
     return fixed
 
+
 def _ukloni_inline_stilove(html_fajlovi: list, log_fn=None) -> int:
     modificirano = 0
     for fajl in html_fajlovi:
         try:
             original = fajl.read_text("utf-8", errors="ignore")
-            if "style=" not in original: continue
+            if "style=" not in original:
+                continue
             soup = BeautifulSoup(original, "html.parser")
             izmijenjeno = False
             for tag in soup.find_all(True):
@@ -114,10 +115,12 @@ def _ukloni_inline_stilove(html_fajlovi: list, log_fn=None) -> int:
             if izmijenjeno:
                 fajl.write_text(str(soup), encoding="utf-8")
                 modificirano += 1
-        except Exception: pass
+        except Exception:
+            pass
     if modificirano and log_fn:
         log_fn(f"🎨 Inline stilovi očišćeni u {modificirano} HTML fajl(ov)a.", "tech")
     return modificirano
+
 
 def _zamijeni_epub_css(html_fajlovi: list, work_dir, log_fn=None) -> int:
     # pojednostavljeno
@@ -129,6 +132,7 @@ def _zamijeni_epub_css(html_fajlovi: list, work_dir, log_fn=None) -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 import zipfile
 
+
 def _booklyfi_charset_filter(tekst: str) -> str:
     """
     Uklanja izolirane ćirilične znakove iz latiničnog teksta.
@@ -138,23 +142,74 @@ def _booklyfi_charset_filter(tekst: str) -> str:
     """
     if not tekst:
         return tekst
-    cir = sum(1 for c in tekst if '\u0400' <= c <= '\u04FF')
+    cir = sum(1 for c in tekst if "\u0400" <= c <= "\u04ff")
     ukupno = max(len(tekst), 1)
     if cir == 0 or cir / ukupno > 0.10:
         return tekst  # ili čisto latinica ili stvarno ćirilični tekst
     # Zamijeni svaki ćirilični znak odgovarajućim latiničnim, ako postoji
     _CIR_LAT = {
-        'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ж':'ž',
-        'з':'z','и':'i','ј':'j','к':'k','л':'l','м':'m','н':'n',
-        'о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f',
-        'х':'h','ц':'c','ч':'č','ш':'š','ђ':'đ','ћ':'ć','њ':'nj',
-        'љ':'lj','џ':'dž','А':'A','Б':'B','В':'V','Г':'G','Д':'D',
-        'Е':'E','Ж':'Ž','З':'Z','И':'I','Ј':'J','К':'K','Л':'L',
-        'М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T',
-        'У':'U','Ф':'F','Х':'H','Ц':'C','Ч':'Č','Ш':'Š','Ђ':'Đ',
-        'Ћ':'Ć','Њ':'Nj','Љ':'Lj','Џ':'Dž',
+        "а": "a",
+        "б": "b",
+        "в": "v",
+        "г": "g",
+        "д": "d",
+        "е": "e",
+        "ж": "ž",
+        "з": "z",
+        "и": "i",
+        "ј": "j",
+        "к": "k",
+        "л": "l",
+        "м": "m",
+        "н": "n",
+        "о": "o",
+        "п": "p",
+        "р": "r",
+        "с": "s",
+        "т": "t",
+        "у": "u",
+        "ф": "f",
+        "х": "h",
+        "ц": "c",
+        "ч": "č",
+        "ш": "š",
+        "ђ": "đ",
+        "ћ": "ć",
+        "њ": "nj",
+        "љ": "lj",
+        "џ": "dž",
+        "А": "A",
+        "Б": "B",
+        "В": "V",
+        "Г": "G",
+        "Д": "D",
+        "Е": "E",
+        "Ж": "Ž",
+        "З": "Z",
+        "И": "I",
+        "Ј": "J",
+        "К": "K",
+        "Л": "L",
+        "М": "M",
+        "Н": "N",
+        "О": "O",
+        "П": "P",
+        "Р": "R",
+        "С": "S",
+        "Т": "T",
+        "У": "U",
+        "Ф": "F",
+        "Х": "H",
+        "Ц": "C",
+        "Ч": "Č",
+        "Ш": "Š",
+        "Ђ": "Đ",
+        "Ћ": "Ć",
+        "Њ": "Nj",
+        "Љ": "Lj",
+        "Џ": "Dž",
     }
-    return ''.join(_CIR_LAT.get(c, c) for c in tekst)
+    return "".join(_CIR_LAT.get(c, c) for c in tekst)
 
 
 def _booklyfi_deduplicate_heading(tekst: str) -> str:
@@ -167,17 +222,16 @@ def _booklyfi_deduplicate_heading(tekst: str) -> str:
     if not tekst:
         return tekst
     # Pokreni samo ako vidimo potencijalnu duplikaciju (performance)
-    if tekst.count('\n') > 2:
+    if tekst.count("\n") > 2:
         return tekst  # preskači duge blokove
     # Pronađi ponavljanje na početku: "X X" gdje X > 5 znakova
     import re as _re
+
     pattern = _re.compile(
-        r'^((?:[A-ZČĆŠŽĐ][A-ZČĆŠŽĐA-Za-z0-9\s]+){1,8})\s+\1',
-        _re.MULTILINE | _re.UNICODE
+        r"^((?:[A-ZČĆŠŽĐ][A-ZČĆŠŽĐA-Za-z0-9\s]+){1,8})\s+\1",
+        _re.MULTILINE | _re.UNICODE,
     )
-    return pattern.sub(r'\1', tekst)
-
-
+    return pattern.sub(r"\1", tekst)
 
 
 class EpubParser:
@@ -221,7 +275,8 @@ class EpubParser:
             else:
                 # Fallback: uzmi sve HTML fajlove abecednim redom
                 spine_items = sorted(
-                    n for n in names
+                    n
+                    for n in names
                     if n.lower().endswith((".html", ".xhtml", ".htm"))
                     and not n.startswith("__")
                 )
@@ -230,7 +285,9 @@ class EpubParser:
 
             for idx, item_href in enumerate(spine_items):
                 # Normaliziraj putanju unutar zipa
-                full_path = (opf_dir + "/" + item_href).lstrip("/") if opf_dir else item_href
+                full_path = (
+                    (opf_dir + "/" + item_href).lstrip("/") if opf_dir else item_href
+                )
 
                 # Provjeri alternativu ako puna putanja ne postoji
                 if full_path not in names:
@@ -249,13 +306,15 @@ class EpubParser:
                 if not plain.strip():
                     continue  # Preskoči prazna poglavlja
 
-                chapters.append({
-                    "idx":     idx,
-                    "title":   title,
-                    "html":    html_body,
-                    "text":    plain[:500],   # Kratki preview teksta
-                    "partial": False,
-                })
+                chapters.append(
+                    {
+                        "idx": idx,
+                        "title": title,
+                        "html": html_body,
+                        "text": plain[:500],  # Kratki preview teksta
+                        "partial": False,
+                    }
+                )
 
         return chapters
 
@@ -268,7 +327,9 @@ class EpubParser:
         # Preko container.xml
         if "META-INF/container.xml" in names:
             try:
-                container_xml = zf.read("META-INF/container.xml").decode("utf-8", errors="replace")
+                container_xml = zf.read("META-INF/container.xml").decode(
+                    "utf-8", errors="replace"
+                )
                 soup = BeautifulSoup(container_xml, "html.parser")
                 rf = soup.find("rootfile")
                 if rf and rf.get("full-path"):
@@ -286,9 +347,9 @@ class EpubParser:
             # Manifest: id → href
             manifest = {}
             for item in soup.find_all("item"):
-                item_id   = item.get("id", "")
+                item_id = item.get("id", "")
                 item_href = item.get("href", "")
-                media     = item.get("media-type", "")
+                media = item.get("media-type", "")
                 if "html" in media or item_href.endswith((".html", ".xhtml", ".htm")):
                     manifest[item_id] = item_href
 

@@ -4,6 +4,7 @@ config/providers.py — jedan izvor istine za provajdere, fallback modele i prof
 MODEL_MAP i AI_MODEL_STRINGS (u ai_config.py) se izvode iz providers.json.
 Backward-compatible: svi postojeći pozivaoci rade nepromenjeno.
 """
+
 import json
 from pathlib import Path
 

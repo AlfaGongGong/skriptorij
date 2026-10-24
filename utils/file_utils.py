@@ -1,6 +1,5 @@
-
-
 """Pomoćne funkcije — file utilities."""
+
 import os
 import re
 from typing import Optional
@@ -11,8 +10,17 @@ def secure_filename(filename: str) -> str:
     if not filename:
         return "nepoznato.epub"
     zamjene = {
-        "č": "c", "ć": "c", "ž": "z", "š": "s", "đ": "dj",
-        "Č": "C", "Ć": "C", "Ž": "Z", "Š": "S", "Đ": "Dj", " ": "_",
+        "č": "c",
+        "ć": "c",
+        "ž": "z",
+        "š": "s",
+        "đ": "dj",
+        "Č": "C",
+        "Ć": "C",
+        "Ž": "Z",
+        "Š": "S",
+        "Đ": "Dj",
+        " ": "_",
     }
     for d, e in zamjene.items():
         filename = filename.replace(d, e)
@@ -22,7 +30,7 @@ def secure_filename(filename: str) -> str:
     return filename.strip("._-") or "knjiga.epub"
 
 
-def safe_path(filename: str, root: Optional[str] = None) -> str:
+def safe_path(filename: str, root: str | None = None) -> str:
     """Vraća sigurnu apsolutnu putanju unutar root direktorija."""
     from config.settings import PROJECTS_ROOT
 
@@ -32,6 +40,3 @@ def safe_path(filename: str, root: Optional[str] = None) -> str:
     if not full.startswith(os.path.realpath(base)):
         raise ValueError(f"Path traversal pokušaj: {filename}")
     return full
-
-
-

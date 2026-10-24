@@ -8,6 +8,7 @@ Upotreba:
 
 --dry-run: samo prikazi sta bi se promijenilo, ne pisi EPUB.
 """
+
 import argparse
 import sys
 import zipfile
@@ -16,7 +17,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.replacements import (
-    load_moon_replacements, apply_to_html, summarize,
+    apply_to_html,
+    load_moon_replacements,
 )
 
 
@@ -34,7 +36,7 @@ def main():
         print(f"❌ EPUB ne postoji: {epub_in}")
         return 1
 
-    print(f"═══ 1. Ucitavam pravila ═══")
+    print("═══ 1. Ucitavam pravila ═══")
     try:
         rules = load_moon_replacements(args.rules)
     except FileNotFoundError as e:
@@ -47,18 +49,20 @@ def main():
         modes[r.mode] = modes.get(r.mode, 0) + 1
     print(f"  Regex: {modes.get('regex', 0)}, Literal: {modes.get('literal', 0)}")
 
-    print(f"\n═══ 2. Otvaram EPUB ═══")
+    print("\n═══ 2. Otvaram EPUB ═══")
     print(f"  {epub_in}")
 
-    output = Path(args.output) if args.output else epub_in.with_name(
-        epub_in.stem + "_FIXED.epub"
+    output = (
+        Path(args.output)
+        if args.output
+        else epub_in.with_name(epub_in.stem + "_FIXED.epub")
     )
 
     total_fires = []
     files_changed = 0
     files_total = 0
 
-    print(f"\n═══ 3. Primjenjujem pravila ═══")
+    print("\n═══ 3. Primjenjujem pravila ═══")
     if args.dry_run:
         print("  (DRY RUN — ne pise)")
 
@@ -82,14 +86,16 @@ def main():
 
             new_files[name] = new_data
 
-    print(f"\n═══ 4. Sazetak ═══")
+    print("\n═══ 4. Sazetak ═══")
     print(f"  Fajlova ukupno: {files_total}")
     print(f"  Fajlova promijenjeno: {files_changed}")
-    print(f"  Pravila aktivirana: {len(set((f.rule.source_line) for f in total_fires))}")
+    print(
+        f"  Pravila aktivirana: {len(set((f.rule.source_line) for f in total_fires))}"
+    )
     print(f"  Ukupno zamjena: {sum(f.count for f in total_fires)}")
 
     if total_fires:
-        print(f"\n  Top 20 pravila po broju zamjena:")
+        print("\n  Top 20 pravila po broju zamjena:")
         by_rule = {}
         for f in total_fires:
             key = (f.rule.source_line, f.rule.original)
@@ -101,7 +107,7 @@ def main():
         print(f"\n  (dry run — {output} nije kreiran)")
         return 0
 
-    print(f"\n═══ 5. Pisem novi EPUB ═══")
+    print("\n═══ 5. Pisem novi EPUB ═══")
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zout:
         for name, data in new_files.items():
             zout.writestr(name, data)

@@ -3,8 +3,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from network import http_client
 import network.model_discovery as _md
+from network import http_client
 
 
 def _reset_dead_models():
@@ -19,12 +19,14 @@ def test_google_pool_uses_only_whitelisted_models(monkeypatch):
         "network.model_discovery.get_cached_model_list",
         lambda _provider: [
             "gemini-3-flash",
-            "gemini-2.5-flash",       # GA verzija (whitelisted)
+            "gemini-2.5-flash",  # GA verzija (whitelisted)
             "gemini-3.5-flash",
             "some-random-model",
         ],
     )
-    monkeypatch.setattr("network.model_discovery.get_dead_models", lambda _p: frozenset())
+    monkeypatch.setattr(
+        "network.model_discovery.get_dead_models", lambda _p: frozenset()
+    )
 
     pool = http_client._get_google_model_pool()
     model_ids = [m["model"] for m in pool]
@@ -39,8 +41,12 @@ def test_google_pool_uses_only_whitelisted_models(monkeypatch):
 
 def test_google_pool_falls_back_when_discovery_empty(monkeypatch):
     _reset_dead_models()
-    monkeypatch.setattr("network.model_discovery.get_cached_model_list", lambda _provider: [])
-    monkeypatch.setattr("network.model_discovery.get_dead_models", lambda _p: frozenset())
+    monkeypatch.setattr(
+        "network.model_discovery.get_cached_model_list", lambda _provider: []
+    )
+    monkeypatch.setattr(
+        "network.model_discovery.get_dead_models", lambda _p: frozenset()
+    )
     pool = http_client._get_google_model_pool()
 
     assert pool == http_client._GOOGLE_MODEL_POOL_FALLBACK
@@ -102,7 +108,9 @@ def test_mark_model_dead_and_get():
 def test_invalidate_cached_model_marks_dead():
     _reset_dead_models()
     # Postavi cache
-    _md._set_cached_model_list("GEMINI", ["gemini-2.0-flash", "gemini-2.5-flash-lite-preview-06-17"])
+    _md._set_cached_model_list(
+        "GEMINI", ["gemini-2.0-flash", "gemini-2.5-flash-lite-preview-06-17"]
+    )
 
     _md.invalidate_cached_model("GEMINI", "gemini-2.0-flash")
 
@@ -120,7 +128,9 @@ def test_set_cached_model_list_revives_dead_models():
     assert "gemini-2.0-flash" in _md.get_dead_models("GEMINI")
 
     # API ponovo vraća model u listi — oživjava ga
-    _md._set_cached_model_list("GEMINI", ["gemini-2.0-flash", "gemini-2.5-flash-lite-preview-06-17"])
+    _md._set_cached_model_list(
+        "GEMINI", ["gemini-2.0-flash", "gemini-2.5-flash-lite-preview-06-17"]
+    )
 
     assert "gemini-2.0-flash" not in _md.get_dead_models("GEMINI")
 
@@ -153,8 +163,9 @@ def test_gemini_rotates_model_on_429(monkeypatch):
 
     tried_models: list[str] = []
 
-    async def fake_async_http_post(self_obj, url, headers, payload,
-                                    prov, prov_upper, key, _proxy=None):
+    async def fake_async_http_post(
+        self_obj, url, headers, payload, prov, prov_upper, key, _proxy=None
+    ):
         # Model je u URL-u za Gemini native: .../models/{model}:generateContent
         model = url.split("/models/")[-1].split(":")[0] if "/models/" in url else ""
         tried_models.append(model)
@@ -172,8 +183,10 @@ def test_gemini_rotates_model_on_429(monkeypatch):
     monkeypatch.setattr("asyncio.sleep", _noop_sleep)
 
     from api_fleet import FleetManager, KeyState
+
     _fleet = FleetManager.__new__(FleetManager)
     import threading
+
     _fleet.lock = threading.Lock()
     _fleet.fleet = {"GEMINI": [KeyState("TEST_KEY_1234", "GEMINI")]}
     _fleet.resolved_models = {"GEMINI": pool[0]["model"]}
@@ -191,10 +204,16 @@ def test_gemini_rotates_model_on_429(monkeypatch):
         http_client._call_gemini_with_full_rotation(engine, None, "test", 0.5, 100)
     )
     content, label = result
-    assert content == "ODGOVOR", "Trebalo je uspjeti s drugim modelom nakon 429 na prvom"
+    assert content == "ODGOVOR", (
+        "Trebalo je uspjeti s drugim modelom nakon 429 na prvom"
+    )
     assert len(tried_models) >= 2, "Morala su biti isprobana barem 2 modela"
-    assert tried_models[0] == pool[0]["model"], "Prvi pokušaj mora biti s primarnim modelom"
-    assert tried_models[1] != pool[0]["model"], "Drugi pokušaj mora biti s drugim modelom"
+    assert tried_models[0] == pool[0]["model"], (
+        "Prvi pokušaj mora biti s primarnim modelom"
+    )
+    assert tried_models[1] != pool[0]["model"], (
+        "Drugi pokušaj mora biti s drugim modelom"
+    )
 
 
 def test_gemini_skips_inactive_key_on_billing(monkeypatch):
@@ -211,8 +230,9 @@ def test_gemini_skips_inactive_key_on_billing(monkeypatch):
 
     tried_models: list[str] = []
 
-    async def fake_async_http_post(self_obj, url, headers, payload,
-                                    prov, prov_upper, key, _proxy=None):
+    async def fake_async_http_post(
+        self_obj, url, headers, payload, prov, prov_upper, key, _proxy=None
+    ):
         model = payload.get("model", "")
         tried_models.append(model)
         # Svi modeli vraćaju None — simulira billing/kvotu
@@ -227,8 +247,10 @@ def test_gemini_skips_inactive_key_on_billing(monkeypatch):
     monkeypatch.setattr("asyncio.sleep", _noop_sleep)
 
     from api_fleet import FleetManager, KeyState
+
     _fleet = FleetManager.__new__(FleetManager)
     import threading
+
     _fleet.lock = threading.Lock()
     _fleet.fleet = {"GEMINI": [KeyState("BILLING_KEY_5678", "GEMINI")]}
     _fleet.resolved_models = {"GEMINI": pool[0]["model"]}
@@ -263,6 +285,7 @@ def test_gemini_fresh_snapshot_picks_up_new_key(monkeypatch):
     """
     import asyncio
     import threading
+
     from api_fleet import FleetManager, KeyState
 
     _reset_dead_models()
@@ -271,14 +294,17 @@ def test_gemini_fresh_snapshot_picks_up_new_key(monkeypatch):
 
     call_count = [0]
 
-    async def fake_async_http_post(self_obj, url, headers, payload,
-                                    prov, prov_upper, key, _proxy=None):
+    async def fake_async_http_post(
+        self_obj, url, headers, payload, prov, prov_upper, key, _proxy=None
+    ):
         call_count[0] += 1
         if key == "OLD_KEY_0001":
             # Stari ključ — svi pozivi vraćaju None
             return None
         # Novi ključ koji je "dodan za vrijeme rotacije" — Gemini native format
-        return {"candidates": [{"content": {"parts": [{"text": "NOVI_KLJUČ_ODGOVOR"}]}}]}
+        return {
+            "candidates": [{"content": {"parts": [{"text": "NOVI_KLJUČ_ODGOVOR"}]}}]
+        }
 
     monkeypatch.setattr("network.http_client._async_http_post", fake_async_http_post)
     monkeypatch.setattr("network.http_client._get_next_proxy", lambda: None)
@@ -321,14 +347,16 @@ def test_gemini_fresh_snapshot_picks_up_new_key(monkeypatch):
 def test_gemini_resets_key_model_cache_after_full_exhaustion(monkeypatch):
     import asyncio
     import threading
+
     from api_fleet import FleetManager, KeyState
 
     _reset_dead_models()
     pool = http_client._GOOGLE_MODEL_POOL_FALLBACK
     key = "RESET_KEY_1234"
 
-    async def fake_async_http_post(client_instance, url, headers, payload,
-                                    prov, prov_upper, key, _proxy=None):
+    async def fake_async_http_post(
+        client_instance, url, headers, payload, prov, prov_upper, key, _proxy=None
+    ):
         return None
 
     monkeypatch.setattr("network.http_client._async_http_post", fake_async_http_post)
@@ -352,7 +380,11 @@ def test_gemini_resets_key_model_cache_after_full_exhaustion(monkeypatch):
             pass
 
     http_client._key_model_cache[key] = len(pool) - 1
-    asyncio.run(http_client._call_gemini_with_full_rotation(FakeEngine(fleet), None, "test", 0.5, 100))
+    asyncio.run(
+        http_client._call_gemini_with_full_rotation(
+            FakeEngine(fleet), None, "test", 0.5, 100
+        )
+    )
 
     assert http_client._get_model_for_key(key, pool) == pool[0]["model"]
 
@@ -386,8 +418,9 @@ def test_gemma_rotation_checks_gemma_cooldown_tracker(monkeypatch):
     fake_quota_tracker = FakeQuotaTracker()
     monkeypatch.setattr("network.quota_tracker.quota_tracker", fake_quota_tracker)
 
-    async def fake_async_http_post(self_obj, url, headers, payload,
-                                    prov, prov_upper, key, _proxy=None):
+    async def fake_async_http_post(
+        self_obj, url, headers, payload, prov, prov_upper, key, _proxy=None
+    ):
         return {"candidates": [{"content": {"parts": [{"text": "GEMMA ODGOVOR"}]}}]}
 
     async def _noop_sleep(_s):

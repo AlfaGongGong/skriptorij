@@ -1,8 +1,23 @@
-
 # processing/rescue.py
-from core.text_utils import _smart_extract, _detektuj_en_ostatke, _detektuj_halucinaciju, _je_placeholder
+from core.text_utils import (
+    _detektuj_en_ostatke,
+    _detektuj_halucinaciju,
+    _je_placeholder,
+    _smart_extract,
+)
 
-async def _spasi_od_sirovog(self, sirovo, chunk, chunk_idx, file_name, prev_ctx, rel_glosar, razlog, tip_bloka="naracija"):
+
+async def _spasi_od_sirovog(
+    self,
+    sirovo,
+    chunk,
+    chunk_idx,
+    file_name,
+    prev_ctx,
+    rel_glosar,
+    razlog,
+    tip_bloka="naracija",
+):
     # Redosljed provajdera — GEMINI nije uvijek prvi.
     # Ako je Gemini upravo vratio grešku (u cooldownu), počinjemo s drugima.
     # Dinamički sortiramo: dostupni ključevi idu prvi, ostali iza.
@@ -20,18 +35,23 @@ async def _spasi_od_sirovog(self, sirovo, chunk, chunk_idx, file_name, prev_ctx,
 
     PROV_REDOSLJED = sorted(
         [p for p in _BASE_REDOSLJED if p in svi_upper],
-        key=lambda p: (0 if _prov_dostupan(p) else 1)
+        key=lambda p: 0 if _prov_dostupan(p) else 1,
     )
 
     chapter_summary = self._get_chapter_summary_for_lektor(file_name)
-    lek_sys = self._get_lektor_prompt(prev_kraj=prev_ctx, glosar_injekcija=rel_glosar, chapter_summary=chapter_summary, tip_bloka=tip_bloka)
+    lek_sys = self._get_lektor_prompt(
+        prev_kraj=prev_ctx,
+        glosar_injekcija=rel_glosar,
+        chapter_summary=chapter_summary,
+        tip_bloka=tip_bloka,
+    )
     p_lek = (
         f"IZVORNI ENGLESKI TEKST:\n{chunk}\n\n"
         f"TEKST ZA POPRAVAK (problem: {razlog}):\n{sirovo}\n\n"
         "ZADATAK: Agresivno lektoriraj — prevedi SVE engleske ostatke, ispravi kalkove, "
         "vrati cist hrvatski. Obavezno ijekavica. Navodnici: \u201eovako\u201c. "
         "Dijalog: \u2014 em-crtica. Glagol+da+prezent \u2192 infinitiv.\n"
-        "Vrati ISKLJUCIVO JSON: {\"finalno_polirano\": \"TEKST\"}"
+        'Vrati ISKLJUCIVO JSON: {"finalno_polirano": "TEKST"}'
     )
 
     for temp in TEMP_LADDER:
@@ -42,16 +62,21 @@ async def _spasi_od_sirovog(self, sirovo, chunk, chunk_idx, file_name, prev_ctx,
             m_name = self.fleet.get_active_model(up)
             if not m_name:
                 continue
-            raw_s, label_s = await self._call_single_provider(up, m_name, lek_sys, p_lek, temp, max_tokens=1400)
+            raw_s, label_s = await self._call_single_provider(
+                up, m_name, lek_sys, p_lek, temp, max_tokens=1400
+            )
             if not raw_s:
                 continue
             kand = _smart_extract(raw_s)
-            if (kand and not _je_placeholder(kand)
-                    and _detektuj_en_ostatke(kand) <= 0.08
-                    and not _detektuj_halucinaciju(chunk, kand)):
-                self.log(f"[{file_name}] Blok {chunk_idx}: ✅ Spašeno ({label_s}, temp={temp})", "info")
+            if (
+                kand
+                and not _je_placeholder(kand)
+                and _detektuj_en_ostatke(kand) <= 0.08
+                and not _detektuj_halucinaciju(chunk, kand)
+            ):
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ✅ Spašeno ({label_s}, temp={temp})",
+                    "info",
+                )
                 return kand, label_s
     return None, None
-
-
-

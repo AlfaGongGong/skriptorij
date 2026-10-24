@@ -4,6 +4,7 @@ core/metrics.py — deterministicke metrike kvaliteta teksta.
 Brojaci gresaka umjesto ocjene 1-10: uporedivo izmedju knjiga i kroz vrijeme.
 Cista funkcija: bez AI poziva, bez mijenjanja postojeceg koda.
 """
+
 import html
 import re
 from collections import Counter
@@ -23,11 +24,41 @@ _RE_RAZMAK = re.compile(r"[.,;:!?](?=[^\W\d_])")
 _RE_CRTICA = re.compile(r"^\s*-\s*[^\W\d_]")
 _RE_VELIKO = re.compile(r"([^\s.!?]+)([.!?])\s+(?=[^\W\d_])")
 
-_SKRACENICE = frozenset({
-    "itd", "itp", "tj", "npr", "tzv", "ur", "god", "br", "sv", "str", "usp",
-    "dr", "mr", "prof", "gđa", "gđica", "gosp", "sl", "vs", "etc", "cf", "mj",
-    "tel", "ul", "ing", "dipl", "inž", "doc", "akad", "sr", "cca",
-})
+_SKRACENICE = frozenset(
+    {
+        "itd",
+        "itp",
+        "tj",
+        "npr",
+        "tzv",
+        "ur",
+        "god",
+        "br",
+        "sv",
+        "str",
+        "usp",
+        "dr",
+        "mr",
+        "prof",
+        "gđa",
+        "gđica",
+        "gosp",
+        "sl",
+        "vs",
+        "etc",
+        "cf",
+        "mj",
+        "tel",
+        "ul",
+        "ing",
+        "dipl",
+        "inž",
+        "doc",
+        "akad",
+        "sr",
+        "cca",
+    }
+)
 
 _KOMPILIRANI = None
 
@@ -129,7 +160,11 @@ def _tipografija_pasus(p: str) -> int:
                     continue  # tropoint
                 if not tok[i + 1].isupper():
                     continue  # domena/fajl/skracenica, ne recenica
-                if i > 0 and tok[i - 1].isalpha() and (i < 2 or not tok[i - 2].isalnum()):
+                if (
+                    i > 0
+                    and tok[i - 1].isalpha()
+                    and (i < 2 or not tok[i - 2].isalnum())
+                ):
                     continue  # inicijal ili d.o.o.
             n += 1
 
@@ -141,7 +176,9 @@ def _tipografija_pasus(p: str) -> int:
     # malo slovo iza kraja recenice
     for m in _RE_VELIKO.finditer(p):
         pre, znak = m.group(1), m.group(2)
-        if znak == "." and (pre.isdigit() or len(pre) == 1 or pre.lower() in _SKRACENICE):
+        if znak == "." and (
+            pre.isdigit() or len(pre) == 1 or pre.lower() in _SKRACENICE
+        ):
             continue
         if p[m.end()].islower():
             n += 1
@@ -209,10 +246,10 @@ def compute_metrics(text: str, source: str | None = None) -> dict:
 
 _METRIC_THRESHOLDS = {
     # {metrika: (OK_max, REVIEW_max)} — iznad REVIEW_max = REJECT
-    "ekavizmi_per_1000":  (2.0,  10.0),
-    "en_ostaci_per_1000": (5.0,  25.0),
-    "duplikati":          (0,     2),
-    "tipografija_greske": (3,    15),
+    "ekavizmi_per_1000": (2.0, 10.0),
+    "en_ostaci_per_1000": (5.0, 25.0),
+    "duplikati": (0, 2),
+    "tipografija_greske": (3, 15),
 }
 
 
@@ -254,4 +291,3 @@ def classify_metrics(metrics: dict) -> str:
     if review >= 1:
         return "REVIEW"
     return "OK"
-

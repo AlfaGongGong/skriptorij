@@ -1,6 +1,6 @@
+import asyncio
 import os
 import sys
-import asyncio
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
@@ -44,7 +44,9 @@ def test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider(monkeyp
     fake_quota_tracker = FakeQuotaTracker()
     monkeypatch.setattr("network.quota_tracker.quota_tracker", fake_quota_tracker)
 
-    async def fake_call_single_provider(self_obj, prov_upper, model, sys_content, user_prompt, opt_temp, max_tokens=2400):
+    async def fake_call_single_provider(
+        self_obj, prov_upper, model, sys_content, user_prompt, opt_temp, max_tokens=2400
+    ):
         if prov_upper == "GEMMA":
             return "OK", f"{prov_upper}-{model}"
         return None, None
@@ -52,7 +54,9 @@ def test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider(monkeyp
     async def _noop_sleep(_s):
         pass
 
-    monkeypatch.setattr("network.provider_router._call_single_provider", fake_call_single_provider)
+    monkeypatch.setattr(
+        "network.provider_router._call_single_provider", fake_call_single_provider
+    )
     monkeypatch.setattr("asyncio.sleep", _noop_sleep)
 
     class FakeFleet:
@@ -72,7 +76,9 @@ def test_call_ai_engine_uses_gemma_cooldown_namespace_for_gemma_provider(monkeyp
             pass
 
     content, label = asyncio.run(
-        __import__("network.provider_router", fromlist=["_call_ai_engine"])._call_ai_engine(
+        __import__(
+            "network.provider_router", fromlist=["_call_ai_engine"]
+        )._call_ai_engine(
             FakeEngine(),
             "prompt",
             0,

@@ -3,13 +3,14 @@
 Backfill quality_metrics.json iz postojecih .chk fajlova.
 Deterministicki, ne poziva AI. Idempotentan.
 """
+
 import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, "/root/skriptorij")
 from config.settings import CHECKPOINT_BASE_DIR
-from core.metrics import compute_metrics, classify_metrics
+from core.metrics import classify_metrics, compute_metrics
 
 
 def backfill_one(checkpoints_dir: Path) -> dict:
@@ -42,7 +43,12 @@ def backfill_one(checkpoints_dir: Path) -> dict:
             json.dumps(existing, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-    return {"added": added, "skipped": skipped, "errors": errors, "total": len(existing)}
+    return {
+        "added": added,
+        "skipped": skipped,
+        "errors": errors,
+        "total": len(existing),
+    }
 
 
 def main():
@@ -64,7 +70,9 @@ def main():
         print(f"{proj.name[:60]}")
         print(f"  .chk fajlova: {len(chks)}")
         s = backfill_one(ck)
-        print(f"  added: {s['added']}, skipped: {s['skipped']}, errors: {s['errors']}, total: {s['total']}")
+        print(
+            f"  added: {s['added']}, skipped: {s['skipped']}, errors: {s['errors']}, total: {s['total']}"
+        )
         print()
         ta += s["added"]
         ts += s["skipped"]

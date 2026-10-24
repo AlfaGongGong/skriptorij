@@ -2,6 +2,7 @@
 """Dijagnostika: probudi Gemmu. Ne dira produkcijski kod.
 Troši: GET /models za sve ključeve (0 kvote) + 1 generateContent (1 kvota).
 """
+
 import asyncio
 import os
 import sys
@@ -22,6 +23,7 @@ def _load_keys() -> list[str]:
     out: list[str] = []
     try:
         from api_fleet import FleetManager
+
         fm = FleetManager()
         fleet = getattr(fm, "fleet", None)
         if isinstance(fleet, dict):
@@ -37,6 +39,7 @@ def _load_keys() -> list[str]:
     if not out:
         try:
             from config import ai_config
+
             for attr in dir(ai_config):
                 if "GEMMA" in attr.upper() and "KEY" in attr.upper():
                     val = getattr(ai_config, attr)
@@ -64,6 +67,7 @@ def _load_model() -> str | None:
     """Gemma model — model_discovery, pa ai_config. NIKAD hardkod (P12)."""
     try:
         from network import model_discovery
+
         for fn_name in ("get_models", "models_for", "discover", "get_for_provider"):
             fn = getattr(model_discovery, fn_name, None)
             if callable(fn):
@@ -85,6 +89,7 @@ def _load_model() -> str | None:
 
     try:
         from config import ai_config
+
         mm = getattr(ai_config, "MODEL_MAP", None)
         if isinstance(mm, dict):
             for k, v in mm.items():
@@ -140,7 +145,9 @@ async def main() -> int:
                         msg = r.json().get("error", {}).get("message", r.text[:150])
                     except Exception:
                         msg = r.text[:150]
-                    print(f"  #{i} {_mask(k)}: GET /models {r.status_code} FAIL — {msg}")
+                    print(
+                        f"  #{i} {_mask(k)}: GET /models {r.status_code} FAIL — {msg}"
+                    )
             except Exception as e:
                 print(f"  #{i} {_mask(k)}: GET /models EXC — {type(e).__name__}: {e}")
 
@@ -148,7 +155,9 @@ async def main() -> int:
             print(f"\n=== Test generacije na {_mask(valid_key)} ===")
             url = f"{GEMINI_BASE}/models/{model}:generateContent?key={valid_key}"
             payload = {
-                "contents": [{"role": "user", "parts": [{"text": "Odgovori jednom riječju: OK"}]}],
+                "contents": [
+                    {"role": "user", "parts": [{"text": "Odgovori jednom riječju: OK"}]}
+                ],
                 "generationConfig": {"temperature": 0.0, "maxOutputTokens": 10},
             }
             try:
@@ -166,7 +175,9 @@ async def main() -> int:
                 if cands:
                     print(f"  finishReason: {cands[0].get('finishReason')}")
                     parts = cands[0].get("content", {}).get("parts", []) or []
-                    txt = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
+                    txt = "".join(
+                        p.get("text", "") for p in parts if isinstance(p, dict)
+                    )
                     print(f"  text: {txt!r}")
                 if r.status_code != 200:
                     err = data.get("error", {}) or {}

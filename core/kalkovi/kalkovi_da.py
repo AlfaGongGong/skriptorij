@@ -43,9 +43,9 @@ def _m(modal_oblici, infinitiv):
         rezultat.append(
             (
                 rf"\b{oblik}\s+da\s+(\w+)",
-                lambda m, inf=infinitiv: f"{m.group(0).split('da')[0].rstrip()} {inf}"
-                if False
-                else r"\g<0>",  # placeholder — koristimo dolje
+                lambda m, inf=infinitiv: (
+                    f"{m.group(0).split('da')[0].rstrip()} {inf}" if False else r"\g<0>"
+                ),  # placeholder — koristimo dolje
             )
         )
     return rezultat
@@ -93,10 +93,8 @@ KALKOVI = [
     # ══════════════════════════════════════════════════════════════════════
     # 11. ZNATI (u smislu "umjeti")
     # ══════════════════════════════════════════════════════════════════════
-    (
-    ),
-    (
-    ),
+    (),
+    (),
     # ══════════════════════════════════════════════════════════════════════
     # 12. VOLJETI / VOLITI
     # ══════════════════════════════════════════════════════════════════════
@@ -161,7 +159,6 @@ KALKOVI = [
     # ══════════════════════════════════════════════════════════════════════
     # 25. ČEKATI / JEDVA ČEKATI
     # ══════════════════════════════════════════════════════════════════════
-
     # ═══════════════════════════════════════════════════════════════════
     # FRAZNI KALKOVI — dodani 2026-09-25
     # Ovi patterni su BEZ capture grupe (bez \1) — sigurni.
@@ -254,5 +251,4 @@ KALKOVI = [
     (r"\bs pravom\b", r"opravdano"),
     (r"\bbez ikakve sumnje\b", r"nesumnjivo"),
     (r"\bna sve na[čc]ine\b", r"svim sredstvima"),
-
 ]

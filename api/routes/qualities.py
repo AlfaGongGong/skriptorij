@@ -3,16 +3,19 @@
 Rute za quality scores — dohvat i prikaz po blokovima i fajlovima.
 """
 
-import logging
-
-from config.settings import PROJECTS_ROOT, INPUT_DIR
-from config.settings import SHARED_CONTROLS
 import json
+import logging
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 
-from config.settings import CHECKPOINT_BASE_DIR, SHARED_STATS
+from config.settings import (
+    CHECKPOINT_BASE_DIR,
+    INPUT_DIR,
+    PROJECTS_ROOT,
+    SHARED_CONTROLS,
+    SHARED_STATS,
+)
 
 bp = Blueprint("quality_routes", __name__)
 logger = logging.getLogger(__name__)
@@ -65,7 +68,10 @@ def _get_metrics_path() -> Path | None:
     if output_file:
         stem = _re.sub(r"[^a-zA-Z0-9_\-]", "", Path(output_file).stem)
         candidate = (
-            CHECKPOINT_BASE_DIR / f"_skr_{stem}" / "checkpoints" / "quality_metrics.json"
+            CHECKPOINT_BASE_DIR
+            / f"_skr_{stem}"
+            / "checkpoints"
+            / "quality_metrics.json"
         )
         if candidate.exists():
             return candidate
@@ -74,7 +80,10 @@ def _get_metrics_path() -> Path | None:
     if current:
         stem = _re.sub(r"[^a-zA-Z0-9_\-]", "", Path(current).stem)
         candidate = (
-            CHECKPOINT_BASE_DIR / f"_skr_{stem}" / "checkpoints" / "quality_metrics.json"
+            CHECKPOINT_BASE_DIR
+            / f"_skr_{stem}"
+            / "checkpoints"
+            / "quality_metrics.json"
         )
         if candidate.exists():
             return candidate
@@ -173,7 +182,12 @@ def get_quality_scores():
 
     except Exception as e:
         logger.error("quality_scores greška: %s", e, exc_info=True)
-        return jsonify({"error": "Interna greška pri učitavanju quality scores.", "has_data": False}), 500
+        return jsonify(
+            {
+                "error": "Interna greška pri učitavanju quality scores.",
+                "has_data": False,
+            }
+        ), 500
 
 
 @bp.route("/api/quality_scores/file/<path:file_name>")
@@ -408,8 +422,8 @@ def human_review():
             return jsonify({"error": "Nedostaje stem"}), 400
         # Spremi bilješku u notes fajl
         book = SHARED_STATS.get("current_file", "")
-        import re as _re
         import json as _j
+        import re as _re
 
         clean = _re.sub(r"[^a-zA-Z0-9_\-]", "", Path(book).stem) if book else ""
         if clean:
@@ -522,6 +536,7 @@ def style_epub_endpoint():
     """
     import traceback
     from pathlib import Path
+
     from config.settings import INPUT_DIR, OUTPUT_DIR, SHARED_STATS
 
     data = request.get_json(silent=True) or {}
@@ -529,6 +544,7 @@ def style_epub_endpoint():
 
     def _log(msg, atype="info"):
         from utils.logging import add_audit
+
         audit_msgs.append({"msg": msg, "type": atype})
         add_audit(msg, atype, shared_stats=SHARED_STATS)
 
@@ -569,9 +585,10 @@ def style_epub_endpoint():
 
     try:
         mode = data.get("mode", "booklyfi")
-        
+
         if mode == "ai":
             from epub.styler_ai import run_epub_styler_ai
+
             bez_ai = bool(options.get("bez_ai", False))
             result = run_epub_styler_ai(
                 epub_path=epub_path,
@@ -581,6 +598,7 @@ def style_epub_endpoint():
             )
         elif mode == "booklyfi":
             from stil_ai import stilizuj_epub
+
             result = stilizuj_epub(
                 epub_path=epub_path,
                 output_path=output,
@@ -590,8 +608,9 @@ def style_epub_endpoint():
                 result = {"ok": False, "error": result.get("greska", "?")}
 
         else:
-            from epub.styler import run_epub_styler
             from api_fleet import get_active_fleet
+            from epub.styler import run_epub_styler
+
             fleet = get_active_fleet()
             result = run_epub_styler(
                 epub_path=epub_path,
@@ -608,18 +627,21 @@ def style_epub_endpoint():
         return jsonify({"ok": False, "error": f"Modul nije dostupan: {e}"}), 500
     except Exception:
         logger.exception("[style_epub] Neočekivana greška")
-        return jsonify({
-            "ok": False,
-            "error": "Interna greška — vidi server log",
-            "traceback": traceback.format_exc()[-600:],
-            "audit": audit_msgs,
-        }), 500
+        return jsonify(
+            {
+                "ok": False,
+                "error": "Interna greška — vidi server log",
+                "traceback": traceback.format_exc()[-600:],
+                "audit": audit_msgs,
+            }
+        ), 500
 
 
 @bp.route("/api/style_epub/preview_css", methods=["GET"])
 def style_epub_preview_css():
     """Vraća Moon+ Reader CSS profil za pregled/download."""
     from pathlib import Path
+
     from config.settings import OUTPUT_DIR
 
     fname = request.args.get("file", "")
@@ -631,10 +653,14 @@ def style_epub_preview_css():
         return "CSS fajl nije pronađen", 404
 
     content_css = css_path.read_text(encoding="utf-8")
-    return content_css, 200, {
-        "Content-Type": "text/css; charset=utf-8",
-        "Content-Disposition": f'attachment; filename="{css_path.name}"',
-    }
+    return (
+        content_css,
+        200,
+        {
+            "Content-Type": "text/css; charset=utf-8",
+            "Content-Disposition": f'attachment; filename="{css_path.name}"',
+        },
+    )
 
 
 @bp.route("/api/qa_flags")
@@ -646,6 +672,7 @@ def qa_flags():
     """
     import json as _json
     from pathlib import Path as _P
+
     from config.settings import CHECKPOINT_BASE_DIR
 
     file_filter = request.args.get("file", "")
@@ -653,7 +680,11 @@ def qa_flags():
     rezultati = []
     try:
         if not _P(CHECKPOINT_BASE_DIR).exists():
-            return _json.dumps({"ok": True, "flags": []}), 200, {"Content-Type": "application/json"}
+            return (
+                _json.dumps({"ok": True, "flags": []}),
+                200,
+                {"Content-Type": "application/json"},
+            )
 
         # Prolaz kroz sve checkpoint foldere
         for chk_dir in _P(CHECKPOINT_BASE_DIR).glob("_skr_*"):
@@ -683,7 +714,11 @@ def qa_flags():
                 if content.strip().startswith("{"):
                     try:
                         data = _json.loads(content)
-                        ocjena = data.get("score") or data.get("ocjena") or data.get("ukupno")
+                        ocjena = (
+                            data.get("score")
+                            or data.get("ocjena")
+                            or data.get("ukupno")
+                        )
                         razlog = data.get("razlog", "") or data.get("reason", "")
                         if ocjena is None:
                             # Iz JSON-a uzmi tekst
@@ -705,7 +740,9 @@ def qa_flags():
                             pass
 
                 # QA-FLAG ako < 9.5 ili ima marker
-                ima_flag = "QA-FLAG" in content[:500] or (ocjena is not None and float(ocjena) < 9.5)
+                ima_flag = "QA-FLAG" in content[:500] or (
+                    ocjena is not None and float(ocjena) < 9.5
+                )
 
                 if ima_flag:
                     # Očisti tekst za prikaz
@@ -713,7 +750,10 @@ def qa_flags():
                     if "<!-- QA-FLAG" in tekst:
                         # Nađi razlog iz markera
                         import re as _re
-                        m = _re.search(r"<!-- QA-FLAG: ocjena=([0-9.]+) razlog=([^>]+) -->", tekst)
+
+                        m = _re.search(
+                            r"<!-- QA-FLAG: ocjena=([0-9.]+) razlog=([^>]+) -->", tekst
+                        )
                         if m:
                             try:
                                 ocjena = float(m.group(1))
@@ -723,25 +763,39 @@ def qa_flags():
                         tekst = tekst.replace(m.group(0), "").strip() if m else tekst
 
                     from bs4 import BeautifulSoup as _BS
+
                     try:
                         soup = _BS(tekst, "html.parser")
                         plain = soup.get_text(" ", strip=True)
                     except Exception:
                         plain = tekst
 
-                    rezultati.append({
-                        "knjiga": knjiga,
-                        "blok": chk.stem,
-                        "fajl": chk.name,
-                        "ocjena": float(ocjena) if ocjena is not None else None,
-                        "razlog": razlog[:500],
-                        "tekst": plain[:1000],
-                    })
+                    rezultati.append(
+                        {
+                            "knjiga": knjiga,
+                            "blok": chk.stem,
+                            "fajl": chk.name,
+                            "ocjena": float(ocjena) if ocjena is not None else None,
+                            "razlog": razlog[:500],
+                            "tekst": plain[:1000],
+                        }
+                    )
     except Exception as e:
-        return _json.dumps({"ok": False, "greska": str(e)}), 500, {"Content-Type": "application/json"}
+        return (
+            _json.dumps({"ok": False, "greska": str(e)}),
+            500,
+            {"Content-Type": "application/json"},
+        )
 
-    rezultati.sort(key=lambda x: (x["ocjena"] or 0))
-    return _json.dumps({"ok": True, "flags": rezultati, "ukupno": len(rezultati)}, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+    rezultati.sort(key=lambda x: x["ocjena"] or 0)
+    return (
+        _json.dumps(
+            {"ok": True, "flags": rezultati, "ukupno": len(rezultati)},
+            ensure_ascii=False,
+        ),
+        200,
+        {"Content-Type": "application/json"},
+    )
 
 
 @bp.route("/api/qa_flags/save", methods=["POST"])
@@ -749,6 +803,7 @@ def qa_flags_save():
     """Sacuvaj rucno ispravljeni chunk i oznaci kao rijesen."""
     import json as _json
     from pathlib import Path as _P
+
     from config.settings import CHECKPOINT_BASE_DIR
 
     data = request.get_json() or {}
@@ -757,28 +812,52 @@ def qa_flags_save():
     novi_tekst = data.get("tekst", "")
 
     if not knjiga or not blok or not novi_tekst:
-        return _json.dumps({"ok": False, "greska": "Nedostaju parametri"}), 400, {"Content-Type": "application/json"}
+        return (
+            _json.dumps({"ok": False, "greska": "Nedostaju parametri"}),
+            400,
+            {"Content-Type": "application/json"},
+        )
 
-    chk_path = _P(CHECKPOINT_BASE_DIR) / ("_skr_" + knjiga) / "checkpoints" / (blok + ".chk")
+    chk_path = (
+        _P(CHECKPOINT_BASE_DIR) / ("_skr_" + knjiga) / "checkpoints" / (blok + ".chk")
+    )
     if not chk_path.exists():
-        return _json.dumps({"ok": False, "greska": "Blok ne postoji"}), 404, {"Content-Type": "application/json"}
+        return (
+            _json.dumps({"ok": False, "greska": "Blok ne postoji"}),
+            404,
+            {"Content-Type": "application/json"},
+        )
 
     # Sacuvaj novi tekst (bez QA-FLAG markera — rijeseno)
     chk_path.write_text(novi_tekst, encoding="utf-8")
 
-    return _json.dumps({"ok": True, "poruka": "Sacuvano"}), 200, {"Content-Type": "application/json"}
+    return (
+        _json.dumps({"ok": True, "poruka": "Sacuvano"}),
+        200,
+        {"Content-Type": "application/json"},
+    )
 
 
 @bp.route("/api/report/<knjiga_id>")
 def report_knjiga(knjiga_id):
     """Report za knjigu."""
     import json as _json
+
     try:
         from core.quality import generiraj_report
+
         r = generiraj_report(knjiga_id)
-        return _json.dumps({"ok": True, "report": r}, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+        return (
+            _json.dumps({"ok": True, "report": r}, ensure_ascii=False),
+            200,
+            {"Content-Type": "application/json"},
+        )
     except Exception as e:
-        return _json.dumps({"ok": False, "greska": str(e)}), 500, {"Content-Type": "application/json"}
+        return (
+            _json.dumps({"ok": False, "greska": str(e)}),
+            500,
+            {"Content-Type": "application/json"},
+        )
 
 
 @bp.route("/api/report")
@@ -786,9 +865,10 @@ def report_sve():
     """Report za sve knjige."""
     import json as _json
     from pathlib import Path as _P
+
     try:
-        from core.quality import generiraj_report
         from config.settings import CHECKPOINT_BASE_DIR
+        from core.quality import generiraj_report
 
         rezultati = []
         for chk_dir in _P(CHECKPOINT_BASE_DIR).glob("_skr_*"):
@@ -799,7 +879,14 @@ def report_sve():
             if "greska" not in r:
                 rezultati.append(r)
 
-        return _json.dumps({"ok": True, "reporti": rezultati}, ensure_ascii=False), 200, {"Content-Type": "application/json"}
+        return (
+            _json.dumps({"ok": True, "reporti": rezultati}, ensure_ascii=False),
+            200,
+            {"Content-Type": "application/json"},
+        )
     except Exception as e:
-        return _json.dumps({"ok": False, "greska": str(e)}), 500, {"Content-Type": "application/json"}
-
+        return (
+            _json.dumps({"ok": False, "greska": str(e)}),
+            500,
+            {"Content-Type": "application/json"},
+        )

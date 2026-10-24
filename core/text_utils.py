@@ -10,9 +10,11 @@
 #   B19: _strip_ai_json broken regex `r"?` ``` `\s*$"` — fixed u svim fajlovima
 #        gdje se pojavljuje (ovdje je _smart_extract).
 
-import re
 import json
+import re
+
 from bs4 import BeautifulSoup
+
 try:
     from core.kalkovi.engine import primijeni_html_safe as _kalkovi_primijeni
 except ImportError:
@@ -23,6 +25,7 @@ import re as _re_tu
 # Shared regex za detekciju HTML taga (ne entiteta) u stringu.
 # Koristi se u workers.py i retro.py — definirano ovdje da nema dupliciranja.
 _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
+
 
 def _booklyfi_fix_spojnice(tekst: str) -> str:
     """
@@ -35,38 +38,76 @@ def _booklyfi_fix_spojnice(tekst: str) -> str:
         return tekst
     # Fix 1: malo slovo direktno uz veliko (bez razmaka) — ubaci razmak
     # Izuzetak: HTML tagovi, akronimi, vlastita imena s apostrofom
-    tekst = _re_tu.sub(
-        r'(?<=[a-zčćšžđ])(?=[A-ZČĆŠŽĐ])',
-        ' ',
-        tekst
-    )
+    tekst = _re_tu.sub(r"(?<=[a-zčćšžđ])(?=[A-ZČĆŠŽĐ])", " ", tekst)
     # Fix 2: Izolirano slovo + razmak + nastavak (razlomljena riječ pri copy/paste)
     # "B io" → "Bio", "P oglavlje" → "Poglavlje"
     tekst = _re_tu.sub(
-        r'\b([A-ZČĆŠŽĐ])\s+([a-zčćšžđ]{2,})',
-        lambda m: m.group(1) + m.group(2),
-        tekst
+        r"\b([A-ZČĆŠŽĐ])\s+([a-zčćšžđ]{2,})", lambda m: m.group(1) + m.group(2), tekst
     )
     # Fix 3: višestruki razmaci (osim newline)
-    tekst = _re_tu.sub(r'[^\S\n]{2,}', ' ', tekst)
+    tekst = _re_tu.sub(r"[^\S\n]{2,}", " ", tekst)
     return tekst
 
 
-
-
 # FIX: Strane riječi koje EN detektor NE smije brojati kao engleski ostatak
-_STRANI_JEZIK_WHITELIST = frozenset({
-    # Njemački (čest u književnim prijevodima)
-    "der", "die", "das", "den", "dem", "des", "ein", "eine", "einen",
-    "und", "oder", "nicht", "mit", "von", "bei", "nach", "aus", "auf",
-    "ist", "war", "hat", "haben", "sein", "sind", "wird", "wurde",
-    "ich", "du", "er", "wir", "ihr", "mich", "mein", "lassen",
-    "schlemmen", "nacht", "mann", "herr", "gut", "verdammte",
-    # Latinski
-    "et", "ad", "per", "sub", "pro", "de", "ex",
-    # Talijanski/Španski
-    "el", "los", "del", "una",
-})
+_STRANI_JEZIK_WHITELIST = frozenset(
+    {
+        # Njemački (čest u književnim prijevodima)
+        "der",
+        "die",
+        "das",
+        "den",
+        "dem",
+        "des",
+        "ein",
+        "eine",
+        "einen",
+        "und",
+        "oder",
+        "nicht",
+        "mit",
+        "von",
+        "bei",
+        "nach",
+        "aus",
+        "auf",
+        "ist",
+        "war",
+        "hat",
+        "haben",
+        "sein",
+        "sind",
+        "wird",
+        "wurde",
+        "ich",
+        "du",
+        "er",
+        "wir",
+        "ihr",
+        "mich",
+        "mein",
+        "lassen",
+        "schlemmen",
+        "nacht",
+        "mann",
+        "herr",
+        "gut",
+        "verdammte",
+        # Latinski
+        "et",
+        "ad",
+        "per",
+        "sub",
+        "pro",
+        "de",
+        "ex",
+        # Talijanski/Španski
+        "el",
+        "los",
+        "del",
+        "una",
+    }
+)
 
 _HR_DIACRITICALS = frozenset("šćčžđŠĆČŽĐ")
 
@@ -105,9 +146,9 @@ def _unescape_json_fallback(s: str) -> str:
     neescape-ovane navodnike koji bi inace srusili json.loads). Zato
     ostaju sirovi "\\n" umjesto pravih prijeloma reda - rucno ih ispravljamo.
     """
-    s = s.replace('\\n', '\n')
-    s = s.replace('\\t', '\t')
-    s = s.replace('\\r', '\r')
+    s = s.replace("\\n", "\n")
+    s = s.replace("\\t", "\t")
+    s = s.replace("\\r", "\r")
     s = s.replace('\\"', '"')
     # 2026-10-24: ocisti '"..."' artifacts u HTML atributima
     return _ocisti_escape_artifacts(s)
@@ -125,14 +166,20 @@ def _smart_extract(raw: str) -> str:
     # Neki AI modeli (posebno manji) prate "NAVODNICI" pravilo premijerno i
     # koriste „..." i u JSON omotaču (ključevi, graničnici stringa), što
     # proizvodi nevaljani JSON. Normalizacijom omogućavamo uspješan json.loads.
-    _TYPO_Q = re.compile(r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b]')
+    _TYPO_Q = re.compile(r"[\u201e\u201c\u201d\u2018\u2019\u201a\u201b]")
 
     for candidate in (raw, _TYPO_Q.sub('"', raw)):
         try:
             data = json.loads(candidate)
             if isinstance(data, dict):
                 # B01 FIX: "finalno_polirano" je prvi — to je što LEKTOR_TEMPLATE vraća
-                for k in ["finalno_polirano", "korektura", "translated", "tekst", "text"]:
+                for k in [
+                    "finalno_polirano",
+                    "korektura",
+                    "translated",
+                    "tekst",
+                    "text",
+                ]:
                     if k in data and data[k]:
                         return _ocisti_escape_artifacts(
                             _strip_html_wrapper(str(data[k]).strip())
@@ -228,12 +275,37 @@ def _je_ai_anotacija(tekst: str) -> bool:
     return len(_ANOTACIJA_PATERN_RE.findall(tekst)) >= _MIN_ANOTACIJA_PATTERNS
 
 
-_EN_STOPWORDS = frozenset({
-    "the", "and", "was", "for", "with", "his", "they",
-    "have", "from", "this", "that", "are", "not", "but",
-    "had", "her", "she", "him", "been", "when", "into",
-    "there", "then", "than", "would", "could", "their",
-})
+_EN_STOPWORDS = frozenset(
+    {
+        "the",
+        "and",
+        "was",
+        "for",
+        "with",
+        "his",
+        "they",
+        "have",
+        "from",
+        "this",
+        "that",
+        "are",
+        "not",
+        "but",
+        "had",
+        "her",
+        "she",
+        "him",
+        "been",
+        "when",
+        "into",
+        "there",
+        "then",
+        "than",
+        "would",
+        "could",
+        "their",
+    }
+)
 
 
 def _detektuj_en_ostatke(tekst: str) -> float:
@@ -303,14 +375,18 @@ def detektuj_tip_bloka(html_chunk: str) -> str:
     if recjenice:
         dash_count = len(re.findall(r"[—–-]{1,2}", cist))
         quote_count = len(re.findall(r'[„""\']+ ', cist))
-        if (dialog_markers / max(1, len(recjenice)) > 0.25
-                or (dash_count + quote_count) > len(recjenice) * 0.4):
+        if (
+            dialog_markers / max(1, len(recjenice)) > 0.25
+            or (dash_count + quote_count) > len(recjenice) * 0.4
+        ):
             return "dijalog"
 
     br_count = len(re.findall(r"<br\s*/?>", html_chunk, re.IGNORECASE))
-    em_block = bool(re.search(
-        r"<(?:em|i)[^>]*>.*?</(?:em|i)>", html_chunk, re.IGNORECASE | re.DOTALL
-    ))
+    em_block = bool(
+        re.search(
+            r"<(?:em|i)[^>]*>.*?</(?:em|i)>", html_chunk, re.IGNORECASE | re.DOTALL
+        )
+    )
     prosjecna_duljina = (
         sum(len(r) for r in recjenice) / max(1, len(recjenice)) if recjenice else 0
     )
@@ -319,11 +395,14 @@ def detektuj_tip_bloka(html_chunk: str) -> str:
     if prosjecna_duljina < 40 and len(recjenice) >= 3:
         return "poetski"
 
-    glagoli_govora = len(re.findall(
-        r"\b(?:said|told|asked|replied|whispered|shouted|answered"
-        r"|reče|odvrati|upita|prošaputa)\b",
-        cist, re.IGNORECASE,
-    ))
+    glagoli_govora = len(
+        re.findall(
+            r"\b(?:said|told|asked|replied|whispered|shouted|answered"
+            r"|reče|odvrati|upita|prošaputa)\b",
+            cist,
+            re.IGNORECASE,
+        )
+    )
     if prosjecna_duljina > 120 and glagoli_govora == 0:
         return "opis"
 
@@ -400,46 +479,47 @@ def _automatska_korekcija(tekst: str) -> str:
     B07 FIX: Sada strip HTML tagova prije regex matchinga, pa vrati HTML strukturu.
     Prošireno s više kalkova koji su bili propušteni.
     """
+
     # Radi na čistom tekstu → primijeni korekcije → tekst se vraća u HTML blok
     # NAPOMENA: korekcije se primjenjuju samo na text nodove, HTML tagovi ostaju
     def _korigiraj_cist(cist: str) -> str:
         zamjene = [
             # ── Modalni kalkovi (da + prezent → infinitiv) ──────────────────
-            (r"\bbio\s+je\s+u\s+stanju\s+da\b",         "mogao je"),
-            (r"\bbila\s+je\s+u\s+stanju\s+da\b",         "mogla je"),
-            (r"\bnije\s+bio\s+u\s+mogu[ćc]nosti\b",      "nije mogao"),
-            (r"\bnije\s+bila\s+u\s+mogu[ćc]nosti\b",     "nije mogla"),
-            (r"\buspio\s+je\s+da\s+uradi\b",              "uspio je uraditi"),
-            (r"\bpokušao\s+je\s+da\b",                    "pokušao je"),
-            (r"\bpokušala\s+je\s+da\b",                   "pokušala je"),
-            (r"\bodlučio\s+je\s+da\b",                    "odlučio je"),
-            (r"\bodlučila\s+je\s+da\b",                   "odlučila je"),
-            (r"\bhtio\s+je\s+da\b",                       "htio je"),
-            (r"\bhtjela\s+je\s+da\b",                     "htjela je"),
-            (r"\bmorao\s+je\s+da\b",                      "morao je"),
-            (r"\bmorala\s+je\s+da\b",                     "morala je"),
-            (r"\bmorao\s+sam\s+da\b",                     "morao sam"),
-            (r"\bmorala\s+sam\s+da\b",                    "morala sam"),
-            (r"\bznao\s+je\s+da\b\s+(?=\w+i\b)",         "znao je"),
+            (r"\bbio\s+je\s+u\s+stanju\s+da\b", "mogao je"),
+            (r"\bbila\s+je\s+u\s+stanju\s+da\b", "mogla je"),
+            (r"\bnije\s+bio\s+u\s+mogu[ćc]nosti\b", "nije mogao"),
+            (r"\bnije\s+bila\s+u\s+mogu[ćc]nosti\b", "nije mogla"),
+            (r"\buspio\s+je\s+da\s+uradi\b", "uspio je uraditi"),
+            (r"\bpokušao\s+je\s+da\b", "pokušao je"),
+            (r"\bpokušala\s+je\s+da\b", "pokušala je"),
+            (r"\bodlučio\s+je\s+da\b", "odlučio je"),
+            (r"\bodlučila\s+je\s+da\b", "odlučila je"),
+            (r"\bhtio\s+je\s+da\b", "htio je"),
+            (r"\bhtjela\s+je\s+da\b", "htjela je"),
+            (r"\bmorao\s+je\s+da\b", "morao je"),
+            (r"\bmorala\s+je\s+da\b", "morala je"),
+            (r"\bmorao\s+sam\s+da\b", "morao sam"),
+            (r"\bmorala\s+sam\s+da\b", "morala sam"),
+            (r"\bznao\s+je\s+da\b\s+(?=\w+i\b)", "znao je"),
             # ── Srpski oblici → HR ───────────────────────────────────────────
-            (r"\bsaglasan\b",                              "suglasan"),
-            (r"\bsaglasnost\b",                            "suglasnost"),
-            (r"\bpreduzeti\b",                             "poduzeti"),
-            (r"\bpreduzeo\b",                              "poduzeo"),
-            (r"\bpreduzeće\b",                             "poduzeće"),
-            (r"\bpreduzima\b",                             "poduzima"),
-            (r"\buočio\s+je\s+da\b",                      "uočio je kako"),
+            (r"\bsaglasan\b", "suglasan"),
+            (r"\bsaglasnost\b", "suglasnost"),
+            (r"\bpreduzeti\b", "poduzeti"),
+            (r"\bpreduzeo\b", "poduzeo"),
+            (r"\bpreduzeće\b", "poduzeće"),
+            (r"\bpreduzima\b", "poduzima"),
+            (r"\buočio\s+je\s+da\b", "uočio je kako"),
             # ── Fraze/kalkovi ─────────────────────────────────────────────────
-            (r"\bu\s+pogledu\s+toga\b",                   "što se toga tiče"),
-            (r"\bimati\s+u\s+vidu\b",                     "imati na umu"),
-            (r"\bna\s+kraju\s+krajeva\b",                 "naposljetku"),
-            (r"\bu\s+cilju\s+toga\s+da\b",               "kako bi"),
-            (r"\bs\s+ciljem\s+da\b",                      "s namjerom da"),
-            (r"\bu\s+smislu\s+toga\b",                    "u tom smislu"),
-            (r"\bkao\s+rezultat\s+toga\b",               "stoga"),
-            (r"\bprovesti\s+u\s+djelo\b",                "ostvariti"),
-            (r"\bkoristeć[ia]\s+se\b",                    "koristeći"),
-            (r"\bod\s+strane\s+(\w+)a\b",                r"od \1a"),  # samo glajšanje
+            (r"\bu\s+pogledu\s+toga\b", "što se toga tiče"),
+            (r"\bimati\s+u\s+vidu\b", "imati na umu"),
+            (r"\bna\s+kraju\s+krajeva\b", "naposljetku"),
+            (r"\bu\s+cilju\s+toga\s+da\b", "kako bi"),
+            (r"\bs\s+ciljem\s+da\b", "s namjerom da"),
+            (r"\bu\s+smislu\s+toga\b", "u tom smislu"),
+            (r"\bkao\s+rezultat\s+toga\b", "stoga"),
+            (r"\bprovesti\s+u\s+djelo\b", "ostvariti"),
+            (r"\bkoristeć[ia]\s+se\b", "koristeći"),
+            (r"\bod\s+strane\s+(\w+)a\b", r"od \1a"),  # samo glajšanje
         ]
         for pattern, zamjena in zamjene:
             cist = re.sub(pattern, zamjena, cist, flags=re.IGNORECASE)

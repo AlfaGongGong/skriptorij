@@ -1,0 +1,1442 @@
+ČISTOĆA — IZVJEŠTAJ  2026-10-24 14:55:14
+Projekat: /root/skriptorij
+Mod: samo izvještaj
+Broj u zagradi = redaka nalaza (0 = čisto).
+
+=== Sintaksne greške (0) ===
+OK
+
+=== Importi modula kojih nema (0) ===
+OK
+
+=== Bugovi (ruff: F,E9,B,PLE,PIE,S110) (283) ===
+analysis/book_context.py:93:17: B905 `zip()` without an explicit `strict=` parameter
+analysis/book_context.py:301:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+analysis/book_context.py:630:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+analysis/book_context.py:642:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+analysis/book_context.py:677:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/middleware/__init__.py:23:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/keys.py:32:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/monitor.py:5:21: F401 [*] `pathlib.Path` imported but unused
+api/routes/monitor.py:77:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/monitor.py:109:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:150:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:170:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:180:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:245:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:543:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:569:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:602:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:639:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:749:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:783:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:793:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:813:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:875:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:962:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:978:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:1012:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/processing.py:1031:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/qualities.py:280:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/qualities.py:326:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/qualities.py:426:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/qualities.py:694:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/qualities.py:704:25: S110 `try`-`except`-`pass` detected, consider logging the exception
+api/routes/qualities.py:720:29: S110 `try`-`except`-`pass` detected, consider logging the exception
+api_fleet.py:21:8: F401 [*] `math` imported but unused
+api_fleet.py:26:30: F401 [*] `config.ai_config.GOOGLE_MODEL_POOL` imported but unused
+api_fleet.py:26:49: F401 [*] `config.ai_config.get_google_model_for_key` imported but unused
+api_fleet.py:26:75: F401 [*] `config.ai_config.get_next_google_model` imported but unused
+api_fleet.py:392:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+api_fleet.py:403:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+api_fleet.py:624:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:24:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:252:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:294:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:315:20: PIE810 Call `endswith` once with a `tuple`
+app.py:379:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:439:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:646:29: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:1160:29: F841 [*] Local variable `e` is assigned to but never used
+app.py:1464:21: F841 Local variable `clean` is assigned to but never used
+app.py:1551:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:1643:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+app.py:1730:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+config/ai_config.py:699:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+config/system_logger.py:85:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/autor_analiza.py:17:25: F401 [*] `collections.Counter` imported but unused
+core/engine.py:39:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:52:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:72:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:78:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:146:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:411:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:450:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:605:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:614:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:627:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/engine.py:642:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/glosar_ekstrakcija.py:6:25: F401 [*] `collections.Counter` imported but unused
+core/glosar_ekstrakcija.py:109:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/kalkovi/__init__.py:75:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/kalkovi/da_konjugator.py:21:20: F401 [*] `typing.Optional` imported but unused
+core/kalkovi/dinamicki_detektor.py:103:16: PIE810 Call `startswith` once with a `tuple`
+core/kalkovi/glagoli_mapa.py:15:20: F401 [*] `typing.Iterator` imported but unused
+core/kalkovi/rod_detektor.py:167:56: B033 [*] Sets should not contain duplicate item `"Neka"`
+core/kalkovi/rod_detektor.py:180:47: B033 [*] Sets should not contain duplicate item `"Svaki"`
+core/kalkovi/rod_detektor.py:181:41: B033 [*] Sets should not contain duplicate item `"Svako"`
+core/kalkovi_retro_scan.py:484:9: B007 Loop control variable `red` not used within loop body
+core/metadata.py:33:8: F401 [*] `zipfile` imported but unused
+core/metadata.py:34:22: F401 [*] `datetime.datetime` imported but unused
+core/metadata.py:193:12: PIE810 Call `startswith` once with a `tuple`
+core/model_profiles.py:643:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/prompts.py:853:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/prompts.py:855:9: B007 Loop control variable `patch_key` not used within loop body
+core/qa_benchmark.py:328:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/quality.py:64:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/quality.py:296:42: PLE2510 Invalid unescaped character backspace, use "\b" instead
+core/quality.py:299:25: PLE2510 Invalid unescaped character backspace, use "\b" instead
+core/quality.py:306:24: PLE2510 Invalid unescaped character backspace, use "\b" instead
+core/quality.py:306:51: PLE2510 Invalid unescaped character backspace, use "\b" instead
+core/quality.py:482:23: B905 `zip()` without an explicit `strict=` parameter
+core/quality.py:650:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/quality.py:680:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/quality.py:704:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/replacements.py:14:36: F401 [*] `dataclasses.field` imported but unused
+core/replacements.py:16:26: F401 [*] `typing.Optional` imported but unused
+core/replacements.py:95:20: B023 Function definition does not bind loop variable `rule`
+core/replacements_learn.py:16:21: F401 [*] `pathlib.Path` imported but unused
+core/replacements_learn.py:17:20: F401 [*] `typing.Optional` imported but unused
+core/text_utils.py:89:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/text_utils.py:140:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/text_utils.py:289:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+core/validators/morfo_validator.py:164:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/name_replacer.py:42:17: F401 [*] `bs4.BeautifulSoup` imported but unused
+epub/name_replacer.py:169:9: F821 Undefined name `os`
+epub/name_replacer.py:173:13: F821 Undefined name `os`
+epub/name_replacer.py:174:13: F821 Undefined name `os`
+epub/name_replacer.py:175:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/name_replacer.py:238:9: B007 Loop control variable `pkey` not used within loop body
+epub/name_replacer.py:267:5: F841 Local variable `sample` is assigned to but never used
+epub/name_replacer.py:269:12: F541 [*] f-string without any placeholders
+epub/name_replacer.py:275:1: B018 Found useless expression. Either assign it to a variable or remove it.
+epub/name_replacer.py:275:2: F821 Undefined name `sample`
+epub/name_replacer.py:655:15: F541 [*] f-string without any placeholders
+epub/normalizer.py:95:21: F401 [*] `bs4.NavigableString` imported but unused
+epub/packager.py:89:26: F821 Undefined name `re`
+epub/packager.py:179:40: F401 [*] `bs4.NavigableString` imported but unused
+epub/packager.py:188:5: F841 Local variable `images_dir` is assigned to but never used
+epub/packager.py:323:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/packager.py:432:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/packager.py:449:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/packager.py:514:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/packager.py:573:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/parser.py:96:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/parser.py:117:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/parser.py:276:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:38:32: F401 [*] `bs4.NavigableString` imported but unused
+epub/styler.py:283:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:299:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:355:12: PIE810 Call `startswith` once with a `tuple`
+epub/styler.py:388:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:407:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:447:21: F811 [*] Redefinition of unused `NavigableString` from line 38: `NavigableString` redefined here
+epub/styler.py:574:50: B023 Function definition does not bind loop variable `dirname`
+epub/styler.py:633:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:728:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:743:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:1059:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:1166:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+epub/styler.py:1181:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+main.py:176:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+main.py:210:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:86:15: F821 Undefined name `MIN_INTERVAL_PER_PROVIDER`
+network/http_client.py:86:49: F821 Undefined name `_DEFAULT_MIN_INTERVAL`
+network/http_client.py:87:10: F821 Undefined name `_humanize_lock`
+network/http_client.py:88:16: F821 Undefined name `_last_call_ts`
+network/http_client.py:89:15: F821 Undefined name `_time_h`
+network/http_client.py:92:42: F821 Undefined name `_rand_h`
+network/http_client.py:93:13: F821 Undefined name `_time_h`
+network/http_client.py:94:9: F821 Undefined name `_last_call_ts`
+network/http_client.py:94:29: F821 Undefined name `_time_h`
+network/http_client.py:140:5: PIE790 [*] Unnecessary `pass` statement
+network/http_client.py:478:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:497:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:504:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:534:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:562:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:578:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:593:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:599:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:607:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:629:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:639:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:655:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:677:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:842:29: F541 [*] f-string without any placeholders
+network/http_client.py:849:25: F541 [*] f-string without any placeholders
+network/http_client.py:857:29: F541 [*] f-string without any placeholders
+network/http_client.py:864:25: F541 [*] f-string without any placeholders
+network/http_client.py:873:29: F541 [*] f-string without any placeholders
+network/http_client.py:880:25: F541 [*] f-string without any placeholders
+network/http_client.py:902:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:1060:25: F541 [*] f-string without any placeholders
+network/http_client.py:1367:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:1374:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:1396:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:1423:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/http_client.py:1550:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/provider_router.py:232:42: F821 Undefined name `self`
+network/provider_router.py:662:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/provider_urls.py:9:5: F401 [*] `config.ai_config.GEMINI_DIRECT_BASE_URL` imported but unused
+network/provider_urls.py:10:5: F401 [*] `config.ai_config.get_gemini_direct_url` imported but unused
+network/provider_urls.py:11:5: F401 [*] `config.ai_config.get_gemini_url` imported but unused
+network/quota_tracker.py:120:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/rate_limiter.py:86:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/rate_limiter.py:486:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+network/rate_limiter.py:494:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/parallel.py:87:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:33:26: F401 [*] `core.quality._QUALITY_RESCUE_THRESHOLD` imported but unused
+processing/pipeline.py:206:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:211:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:215:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:632:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:657:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:688:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:691:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:979:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:1102:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:1143:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:1174:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:1176:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/pipeline.py:1234:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:68:17: PIE810 Call `endswith` once with a `tuple`
+processing/retro.py:137:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:312:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:343:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:355:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:370:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:407:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:451:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:500:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:558:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:607:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/retro.py:633:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/workers.py:9:45: F401 [*] `core.quality._QUALITY_RESCUE_THRESHOLD` imported but unused
+processing/workers.py:37:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/workers.py:128:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/workers.py:143:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/workers.py:430:17: F821 Undefined name `self`
+processing/workers.py:680:18: B007 Loop control variable `eng` not used within loop body
+processing/workers.py:767:25: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/workers.py:787:21: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/workers.py:789:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+processing/workers.py:1226:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+run.py:60:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+run.py:113:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+run.py:121:21: F541 [*] f-string without any placeholders
+run.py:122:21: F541 [*] f-string without any placeholders
+run.py:192:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+run.py:329:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+run.py:376:16: PIE810 Call `startswith` once with a `tuple`
+run.py:411:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+run.py:424:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+run.py:475:17: S110 `try`-`except`-`pass` detected, consider logging the exception
+run.py:539:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+stil_ai.py:23:32: F401 [*] `bs4.NavigableString` imported but unused
+stil_ai.py:62:21: F401 [*] `bs4.Tag` imported but unused
+stil_ai.py:411:23: B905 `zip()` without an explicit `strict=` parameter
+stil_ai.py:914:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+stil_ai.py:1156:12: PIE810 Call `endswith` once with a `tuple`
+stil_ai.py:1201:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+stil_ai.py:1272:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+stil_ai.py:1282:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+stil_ai.py:1285:69: F821 Undefined name `_UPOZORENO`
+stil_ai.py:1286:9: F821 Undefined name `_UPOZORENO`
+stil_ai.py:1291:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+stil_ai.py:1320:12: F401 [*] `os` imported but unused
+stil_ai.py:1320:25: F401 [*] `tempfile` imported but unused
+stil_ai.py:1327:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+stil_ai.py:1456:19: F541 [*] f-string without any placeholders
+stil_ai.py:1458:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+stil_ai.py:1462:19: F541 [*] f-string without any placeholders
+stil_ai.py:1512:11: F541 [*] f-string without any placeholders
+stil_ai.py:1531:11: F541 [*] f-string without any placeholders
+stil_ai.py:1540:15: F541 [*] f-string without any placeholders
+test_complete_v4.py:91:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+test_complete_v4.py:114:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+test_complete_v4.py:252:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+test_complete_v4.py:370:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+test_complete_v4.py:377:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+test_complete_v4.py:747:13: B007 Loop control variable `i` not used within loop body
+test_complete_v4.py:1036:13: S110 `try`-`except`-`pass` detected, consider logging the exception
+tests/golden/test_replacements.py:8:8: F401 [*] `pytest` imported but unused
+tests/golden/test_styler.py:57:31: F541 [*] f-string without any placeholders
+tests/unit/test_discovery_fixes.py:112:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+tools/apply_replacements.py:19:44: F401 [*] `core.replacements.summarize` imported but unused
+tools/apply_replacements.py:37:11: F541 [*] f-string without any placeholders
+tools/apply_replacements.py:50:11: F541 [*] f-string without any placeholders
+tools/apply_replacements.py:61:11: F541 [*] f-string without any placeholders
+tools/apply_replacements.py:85:11: F541 [*] f-string without any placeholders
+tools/apply_replacements.py:92:15: F541 [*] f-string without any placeholders
+tools/apply_replacements.py:104:11: F541 [*] f-string without any placeholders
+tools/replacements_learn_cli.py:51:15: F541 [*] f-string without any placeholders
+tools/replacements_learn_cli.py:58:15: F541 [*] f-string without any placeholders
+tools/replacements_learn_cli.py:83:15: F541 [*] f-string without any placeholders
+tts.py:407:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+utils/export.py:50:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+utils/logging.py:1:16: F401 [*] `json` imported but unused
+utils/logging.py:253:25: F821 Undefined name `logger`
+utils/logging.py:254:28: F821 Undefined name `logger`
+utils/logging.py:255:26: F821 Undefined name `logger`
+utils/logging.py:256:26: F821 Undefined name `logger`
+utils/logging.py:257:25: F821 Undefined name `logger`
+utils/logging.py:259:9: S110 `try`-`except`-`pass` detected, consider logging the exception
+utils/logging.py:274:5: S110 `try`-`except`-`pass` detected, consider logging the exception
+
+=== Neispravni JSON fajlovi (1) ===
+[JSON] ./static/manifest.json: json.decoder.JSONDecodeError: Extra data: line 31 column 1 (char 621)
+
+=== Shell skripte (shellcheck) ===
+PRESKOČENO (nije instaliran: shellcheck)
+
+=== Tipske greške (mypy) (0) ===
+OK
+
+=== Testovi (119) ===
+INTERNALERROR> Traceback (most recent call last):
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/main.py", line 318, in wrap_session
+INTERNALERROR>     session.exitstatus = doit(config, session) or 0
+INTERNALERROR>                          ~~~~^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/main.py", line 371, in _main
+INTERNALERROR>     config.hook.pytest_collection(session=session)
+INTERNALERROR>     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>     ~~~~~~~~~~~~~~^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/logging.py", line 788, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>     ~~~~~~~~~~~~~~^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/warnings.py", line 98, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>     ~~~~~~~~~~~~~~^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/config/__init__.py", line 1409, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/main.py", line 382, in pytest_collection
+INTERNALERROR>     session.perform_collect()
+INTERNALERROR>     ~~~~~~~~~~~~~~~~~~~~~~~^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/main.py", line 857, in perform_collect
+INTERNALERROR>     self.items.extend(self.genitems(node))
+INTERNALERROR>     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/main.py", line 1023, in genitems
+INTERNALERROR>     yield from self.genitems(subnode)
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/main.py", line 1020, in genitems
+INTERNALERROR>     rep, duplicate = self._collect_one_node(node, handle_dupes)
+INTERNALERROR>                      ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/main.py", line 883, in _collect_one_node
+INTERNALERROR>     rep = collect_one_node(node)
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/runner.py", line 576, in collect_one_node
+INTERNALERROR>     rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+INTERNALERROR>                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>     ~~~~~~~~~~~~~~^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/capture.py", line 880, in pytest_make_collect_report
+INTERNALERROR>     rep = yield
+INTERNALERROR>           ^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/runner.py", line 400, in pytest_make_collect_report
+INTERNALERROR>     call = CallInfo.from_call(
+INTERNALERROR>         collect, "collect", reraise=(KeyboardInterrupt, SystemExit)
+INTERNALERROR>     )
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/runner.py", line 353, in from_call
+INTERNALERROR>     result: TResult | None = func()
+INTERNALERROR>                              ~~~~^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/runner.py", line 398, in collect
+INTERNALERROR>     return list(collector.collect())
+INTERNALERROR>                 ~~~~~~~~~~~~~~~~~^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/python.py", line 563, in collect
+INTERNALERROR>     self._register_setup_module_fixture()
+INTERNALERROR>     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/python.py", line 576, in _register_setup_module_fixture
+INTERNALERROR>     self.obj, ("setUpModule", "setup_module")
+INTERNALERROR>     ^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/python.py", line 289, in obj
+INTERNALERROR>     self._obj = obj = self._getobj()
+INTERNALERROR>                       ~~~~~~~~~~~~^^
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/python.py", line 560, in _getobj
+INTERNALERROR>     return importtestmodule(self.path, self.config)
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/python.py", line 507, in importtestmodule
+INTERNALERROR>     mod = import_path(
+INTERNALERROR>         path,
+INTERNALERROR>     ...<2 lines>...
+INTERNALERROR>         consider_namespace_packages=config.getini("consider_namespace_packages"),
+INTERNALERROR>     )
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/pathlib.py", line 587, in import_path
+INTERNALERROR>     importlib.import_module(module_name)
+INTERNALERROR>     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+INTERNALERROR>   File "/usr/lib/python3.13/importlib/__init__.py", line 88, in import_module
+INTERNALERROR>     return _bootstrap._gcd_import(name[level:], package, level)
+INTERNALERROR>            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+INTERNALERROR>   File "/root/skriptorij/venv/lib/python3.13/site-packages/_pytest/assertion/rewrite.py", line 197, in exec_modulemainloop: caught unexpected SystemExit!
+INTERNALERROR>     exec(co, module.__dict__)
+INTERNALERROR>     ~~~~^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/skriptorij/test_complete_v4.py", line 78, in <module>
+INTERNALERROR>     args = ap.parse_args()
+INTERNALERROR>   File "/usr/lib/python3.13/argparse.py", line 1916, in parse_args
+INTERNALERROR>     self.error(msg)
+INTERNALERROR>     ~~~~~~~~~~^^^^^
+INTERNALERROR>   File "/usr/lib/python3.13/argparse.py", line 2672, in error
+INTERNALERROR>     self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+INTERNALERROR>     ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/usr/lib/python3.13/argparse.py", line 2659, in exit
+INTERNALERROR>     _sys.exit(status)
+INTERNALERROR>     ~~~~~~~~~^^^^^^^^
+INTERNALERROR> SystemExit: 2
+
+=== Mrtav kod (vulture) (12) ===
+api_fleet.py:26: unused import 'get_google_model_for_key' (90% confidence)
+api_fleet.py:26: unused import 'get_next_google_model' (90% confidence)
+core/kalkovi/glagoli_mapa.py:15: unused import 'Iterator' (90% confidence)
+core/kalkovi/kalkovi_da.py:46: unsatisfiable 'ternary' condition (100% confidence)
+core/text_utils.py:17: unused import '_kalkovi_primijeni' (90% confidence)
+epub/name_replacer.py:408: unused variable 'all_pairs' (100% confidence)
+epub/normalizer.py:205: unused variable 'sacuvaj_tekst' (100% confidence)
+main.py:156: unused variable 'frame' (100% confidence)
+main.py:156: unused variable 'signum' (100% confidence)
+network/provider_urls.py:8: unused import 'get_gemini_direct_url' (90% confidence)
+tests/unit/test_http_client.py:330: unused variable 'client_instance' (100% confidence)
+utils/logging.py:1: unused import '_json_b8' (90% confidence)
+
+=== Fajlovi koje niko ne importuje (4) ===
+[ORFAN] /root/skriptorij/api/routes/renewal.py
+[ORFAN] /root/skriptorij/core/dynamic_few_shot.py
+[ORFAN] /root/skriptorij/core/kalkovi/auto_promoter.py
+[ORFAN] /root/skriptorij/core/retry_engine.py
+
+=== Ovisnosti: neiskorištene/nedostaju (8) ===
+[1mapi/routes/books.py[m[36m:[m6[36m:[m1[36m:[m [1m[31mDEP003[m 'werkzeug' imported but it is a transitive dependency
+[1mapi/routes/processing.py[m[36m:[m294[36m:[m21[36m:[m [1m[31mDEP001[m 'skriptorij' imported but missing from the dependency definitions
+[1mcore/kalkovi/dinamicki_detektor.py[m[36m:[m15[36m:[m12[36m:[m [1m[31mDEP001[m 'classla' imported but missing from the dependency definitions
+[1mrequirements.txt[m[36m:[m [1m[31mDEP002[m 'lxml' defined as a dependency but not used in the codebase
+[1mrequirements.txt[m[36m:[m [1m[31mDEP002[m 'ebooklib' defined as a dependency but not used in the codebase
+[1mrequirements.txt[m[36m:[m [1m[31mDEP002[m 'watchdog' defined as a dependency but not used in the codebase
+[1mrun.py[m[36m:[m21[36m:[m12[36m:[m [1m[31mDEP003[m 'mobi' imported but it is a transitive dependency
+[1mtools/probudi_gemmu.py[m[36m:[m109[36m:[m16[36m:[m [1m[31mDEP003[m 'httpx' imported but it is a transitive dependency
+
+=== Zakomentirani kod (37) ===
+api/routes/processing.py:135:13: ERA001 Found commented-out code
+api/routes/processing.py:157:13: ERA001 Found commented-out code
+api/routes/processing.py:160:17: ERA001 Found commented-out code
+api_fleet.py:583:9: ERA001 Found commented-out code
+config/ai_config.py:609:5: ERA001 Found commented-out code
+config/settings.py:58:1: ERA001 Found commented-out code
+config/system_logger.py:12:1: ERA001 Found commented-out code
+config/system_logger.py:13:1: ERA001 Found commented-out code
+config/system_logger.py:14:1: ERA001 Found commented-out code
+config/system_logger.py:15:1: ERA001 Found commented-out code
+config/system_logger.py:16:1: ERA001 Found commented-out code
+core/engine.py:58:9: ERA001 Found commented-out code
+core/engine.py:59:9: ERA001 Found commented-out code
+core/kalkovi/dijalog.py:98:5: ERA001 Found commented-out code
+core/kalkovi/rod_detektor.py:53:1: ERA001 Found commented-out code
+core/kalkovi/rod_detektor.py:256:9: ERA001 Found commented-out code
+core/kalkovi/rod_detektor.py:381:13: ERA001 Found commented-out code
+core/kalkovi/rod_detektor.py:465:9: ERA001 Found commented-out code
+core/kalkovi_retro_scan.py:213:5: ERA001 Found commented-out code
+core/retry_engine.py:249:1: ERA001 Found commented-out code
+core/retry_engine.py:251:1: ERA001 Found commented-out code
+core/retry_engine.py:252:1: ERA001 Found commented-out code
+core/retry_engine.py:253:1: ERA001 Found commented-out code
+core/retry_engine.py:254:1: ERA001 Found commented-out code
+core/retry_engine.py:255:1: ERA001 Found commented-out code
+core/retry_engine.py:256:1: ERA001 Found commented-out code
+core/retry_engine.py:257:1: ERA001 Found commented-out code
+core/retry_engine.py:260:1: ERA001 Found commented-out code
+core/retry_engine.py:261:1: ERA001 Found commented-out code
+network/http_client.py:6:1: ERA001 Found commented-out code
+network/http_client.py:7:1: ERA001 Found commented-out code
+network/http_client.py:13:1: ERA001 Found commented-out code
+network/http_client.py:14:1: ERA001 Found commented-out code
+network/http_client.py:17:1: ERA001 Found commented-out code
+network/http_client.py:20:1: ERA001 Found commented-out code
+network/http_client.py:21:1: ERA001 Found commented-out code
+processing/retro.py:416:1: ERA001 Found commented-out code
+
+=== Copy-paste blokovi (pylint) (58) ===
+diag_blokovi.py:1:0: R0801: Similar lines in 2 files
+==api.routes.processing:[363:399]
+==app:[864:894]
+    data = request.get_json(force=True) or {}
+    book = data.get("book", "").strip()
+    if not book:
+        return jsonify({"error": "Nedostaje parametar 'book'"}), 400
+    SHARED_CONTROLS["stop"]  = True
+    SHARED_CONTROLS["pause"] = False
+    SHARED_CONTROLS["reset"] = True
+    reset_result = _obrisi_checkpoint_i_kes(book)
+    SHARED_STATS.update({
+        "status":       "IDLE",
+        "pct":          0,
+        "ok":           "0 / 0",
+        "skipped":      0,
+        "current_file": "",
+        "active_engine": "---",
+        "live_audit":   "Sistem u potpunosti resetovan.\n",
+        "output_file":  "",
+        "quality_scores": {},
+        "glosar_problemi": {},
+        "knjiga_mode":  None,
+        "knjiga_mode_info": "",
+    })
+    return jsonify({
+        "ok":    reset_result.get("ok", False),
+        "book":  book,
+        "reset": reset_result,
+    })
+@bp.route("/api/debug/retro_check")
+def debug_retro_check():
+    """Privremeni endpoint — provjera da li je novi processing.py učitan."""
+    import os, inspect (duplicate-code)
+diag_blokovi.py:1:0: R0801: Similar lines in 2 files
+==processing.pipeline:[265:274]
+==utils.checkpoint_cleaner:[25:34]
+    "pošalji tekst za obradu",
+    "naravno, evo lektoriranog",
+    "naravno, evo prijevoda",
+    "evo lektoriranog teksta:",
+    "evo prijevoda:",
+    "evo korigiranog teksta:",
+    "svakako, evo",
+    "kao što ste tražili",
+    "kao što si tražio", (duplicate-code)
+diag_blokovi.py:1:0: R0801: Similar lines in 2 files
+==core.kalkovi.dinamicki_promoter:[26:35]
+==core.kalkovi.dinamicki_validator:[119:128]
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("""
+                SELECT id, pattern, tip, broj_pojavljivanja,
+                       CASE WHEN broj_pojavljivanja > 0
+                            THEN ukupan_score / broj_pojavljivanja
+                            ELSE 0 END as avg_score,
+                       knjige_set, rollback_count
+                FROM kandidati (duplicate-code)
+
+=== Ista imena / ista tijela funkcija (12) ===
+[ISTO IME] _html_u_tekst definirano u: /root/skriptorij/core/kalkovi_retro_scan.py, /root/skriptorij/tts.py
+[ISTO IME] _je_placeholder definirano u: /root/skriptorij/core/text_utils.py, /root/skriptorij/utils/checkpoint_cleaner.py
+[ISTO IME] _list_books definirano u: /root/skriptorij/api/routes/books.py, /root/skriptorij/app.py
+[ISTO IME] _mask definirano u: /root/skriptorij/stil_ai.py, /root/skriptorij/tools/probudi_gemmu.py
+[ISTO IME] _obrisi_checkpoint_i_kes definirano u: /root/skriptorij/api/routes/control.py, /root/skriptorij/api/routes/processing.py, /root/skriptorij/app.py
+[ISTO IME] _similarity definirano u: /root/skriptorij/core/few_shot_global.py, /root/skriptorij/core/skip_oracle.py
+[ISTO IME] _strip_ai_json definirano u: /root/skriptorij/core/quality.py, /root/skriptorij/processing/pipeline.py
+[ISTO IME] _ucitaj_quality_scores definirano u: /root/skriptorij/core/qa_benchmark.py, /root/skriptorij/run.py
+[ISTO IME] analiziraj_knjigu definirano u: /root/skriptorij/analysis/book_context.py, /root/skriptorij/core/autor_analiza.py
+[ISTO IME] get_max_tokens definirano u: /root/skriptorij/core/model_profiles.py, /root/skriptorij/core/prompts.py
+[ISTO IME] summarize definirano u: /root/skriptorij/core/replacements.py, /root/skriptorij/core/replacements_learn.py
+[ISTO TIJELO] /root/skriptorij/epub/styler.py:597 _page()  ==  /root/skriptorij/epub/styler.py:1000 _page()
+
+=== Identični fajlovi (md5) (29) ===
+2f592b3b897d54a1711ece7037d1e67e  ./data/kalkovi_karantena_RECOVERED_20260912_111111.db
+2f592b3b897d54a1711ece7037d1e67e  ./data/kalkovi_karantena_RECOVERED_20260912_111229.db
+365d8b600353bcbdef843e58e6a8243f  ./static/js/main.js.bak_20261015_193654
+365d8b600353bcbdef843e58e6a8243f  ./static/js/main.js.bak_20261015_193701
+365d8b600353bcbdef843e58e6a8243f  ./static/js/main.js.bak_20261015_193740
+365d8b600353bcbdef843e58e6a8243f  ./static/js/main.js.bak_20261015_193810
+365d8b600353bcbdef843e58e6a8243f  ./static/js/main.js.bak_ui_fix
+37c170f85d13518d04781a43b6ec81d5  ./static/css/style.css.bak_20261015_193421
+37c170f85d13518d04781a43b6ec81d5  ./static/css/style.css.bak_20261015_194034
+4deb9d1d1fce45c226339cff759aca2e  ./data/kalkovi_karantena.db.corrupt_20260912_110015
+4deb9d1d1fce45c226339cff759aca2e  ./data/kalkovi_karantena.db.corrupt_FINAL_20260912_111825
+601ed1730e75639050468bc8b235a85b  ./config/ai_config.py.bak_fix_provideri
+601ed1730e75639050468bc8b235a85b  ./config/ai_config.py.bak_rucno_provideri
+78d2f3cdc5bf4ac83817f4bf7b32fdb3  ./processing/retro.py.bak_qa_retry
+78d2f3cdc5bf4ac83817f4bf7b32fdb3  ./processing/retro.py.bak_qa_v2
+8188763424fc4f0d150f5ab619b168cf  ./templates/index.html.bak_20261015_193421
+8188763424fc4f0d150f5ab619b168cf  ./templates/index.html.bak_ui_fix
+84a743d5ec6047adaf853c87ee9a90a7  ./core/glosar_ekstrakcija.py
+84a743d5ec6047adaf853c87ee9a90a7  ./core/glosar_ekstrakcija.py.bak_ukloni_providere
+86a947893e9783822d9cf4dd15425e56  ./config/ai_config.py.bak_grupa_a
+86a947893e9783822d9cf4dd15425e56  ./config/ai_config.py.bak_ukloni_providere
+88f2fa2f8be00d5086baca3493648344  ./static/js/ui/fleet.js
+88f2fa2f8be00d5086baca3493648344  ./static/js/ui/fleet.js.bak_ui_v2
+e6825ad0798e461d78bbd06ccf8c80f1  ./templates/index.html.bak_kontekst
+e6825ad0798e461d78bbd06ccf8c80f1  ./templates/index.html.bak_ui_v2
+f4a926dc103b570b766b918412d1a646  ./network/provider_router.py.bak_final
+f4a926dc103b570b766b918412d1a646  ./network/provider_router.py.bak_ukloni_providere
+ff59f7e94fd2d1fc3adfde2188e3fed7  ./api/routes/processing.py
+ff59f7e94fd2d1fc3adfde2188e3fed7  ./api/routes/processing.py.bak_status_fix
+
+=== Privremeni fajlovi i __pycache__ (17) ===
+./api/routes/__pycache__
+./api/__pycache__
+./__pycache__
+./config/__pycache__
+./epub/__pycache__
+./network/__pycache__
+./tests/integration/__pycache__
+./tests/unit/__pycache__
+./tests/benchmarks/__pycache__
+./tests/__pycache__
+./tests/golden/__pycache__
+./processing/__pycache__
+./core/kalkovi/__pycache__
+./core/validators/__pycache__
+./core/__pycache__
+./analysis/__pycache__
+./utils/__pycache__
+
+=== Sumnjiva imena (_old, _copy, _v2..) (9) ===
+./templates/index.html.bak_ui_v2
+./static/js/ui/fleet.js.bak_ui_v2
+./static/js/main.js.bak_ui_v2
+./network/model_discovery.py.bak_final
+./network/provider_router.py.bak_final
+./data/kalkovi_karantena.db.corrupt_FINAL_20260912_111825
+./processing/retro.py.bak_qa_v2
+./core/glosar_ekstrakcija.py.bak_final
+./test_complete_v4.py
+
+=== Prazni fajlovi i folderi (4) ===
+[PRAZAN FAJL] ./tests/integration/test_timeout_cooldown_loop.py
+[PRAZAN FAJL] ./data/kalkovi_karantena_RECOVERED_20260912_110015.db
+[PRAZAN FAJL] ./data/kalkovi_karantena_RECOVERED_20260912_110957.db
+[PRAZAN FAJL] ./core/dynamic_few_shot.py
+
+=== CRLF završeci redova (0) ===
+OK
+
+=== Bandit (srednji+ rizik, npr. debug=True) (24) ===
+>> Issue: [B310:blacklist] Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.
+   Location: ./diag_blokovi.py:179:13
+>> Issue: [B108:hardcoded_tmp_directory] Probable insecure usage of temp file/directory.
+   Location: ./diag_blokovi.py:275:14
+>> Issue: [B108:hardcoded_tmp_directory] Probable insecure usage of temp file/directory.
+   Location: ./diag_blokovi.py:321:20
+>> Issue: [B310:blacklist] Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.
+   Location: ./main.py:56:17
+>> Issue: [B605:start_process_with_a_shell] Starting a process with a shell, possible injection detected, security issue.
+   Location: ./main.py:182:4
+>> Issue: [B605:start_process_with_a_shell] Starting a process with a shell, possible injection detected, security issue.
+   Location: ./main.py:204:21
+>> Issue: [B104:hardcoded_bind_all_interfaces] Possible binding to all interfaces.
+   Location: ./main.py:223:21
+>> Issue: [B310:blacklist] Audit url open for permitted schemes. Allowing use of file:/ or custom schemes is often unexpected.
+   Location: ./network/http_client.py:1601:13
+>> Issue: [B108:hardcoded_tmp_directory] Probable insecure usage of temp file/directory.
+   Location: ./test_complete_v4.py:95:51
+>> Issue: [B108:hardcoded_tmp_directory] Probable insecure usage of temp file/directory.
+   Location: ./test_complete_v4.py:993:71
+>> Issue: [B314:blacklist] Using xml.etree.ElementTree.fromstring to parse untrusted XML data is known to be vulnerable to XML attacks. Replace xml.etree.ElementTree.fromstring with its defusedxml equivalent function or make sure defusedxml.defuse_stdlib() is called
+   Location: ./tests/golden/test_styler.py:63:16
+>> Issue: [B602:subprocess_popen_with_shell_equals_true] subprocess call with shell=True identified, security issue.
+   Location: ./tools/update_context.py:14:15
+
+=== Moguće tajne/API ključevi u kodu (32) ===
+[MOGUĆA TAJNA U KODU] ./api_state.json:102
+[MOGUĆA TAJNA U KODU] ./api_state.json:162
+[MOGUĆA TAJNA U KODU] ./api_state.json:169
+[MOGUĆA TAJNA U KODU] ./api_state.json:176
+[MOGUĆA TAJNA U KODU] ./api_state.json:183
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072596:80
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072596:128
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072596:135
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072596:142
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072596:149
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072596:283
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072809:80
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072809:128
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072809:135
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072809:142
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072809:149
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak_1792072809:305
+[MOGUĆA TAJNA U KODU] ./dev_api.json:14
+[MOGUĆA TAJNA U KODU] ./dev_api.json:26
+[MOGUĆA TAJNA U KODU] ./dev_api.json:27
+[MOGUĆA TAJNA U KODU] ./dev_api.json:28
+[MOGUĆA TAJNA U KODU] ./dev_api.json:29
+[MOGUĆA TAJNA U KODU] ./quota_cooldowns.json:5567
+[MOGUĆA TAJNA U KODU] ./quota_cooldowns.json:8230
+[MOGUĆA TAJNA U KODU] ./quota_cooldowns.json:8244
+[MOGUĆA TAJNA U KODU] ./quota_cooldowns.json:8258
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak.20261022_153739:94
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak.20261022_153739:142
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak.20261022_153739:149
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak.20261022_153739:156
+[MOGUĆA TAJNA U KODU] ./api_state.json.bak.20261022_153739:163
+[MOGUĆA TAJNA U KODU] ./quota_cooldowns.json.bak.20261022_154003:47
+
+=== Debugger ostaci (breakpoint/pdb) (0) ===
+OK
+
+=== print() umjesto logging (100) ===
+analysis/book_context.py:574:5: T201 `print` found
+analysis/book_context.py:586:5: T201 `print` found
+analysis/book_context.py:587:5: T201 `print` found
+analysis/book_context.py:588:5: T201 `print` found
+analysis/book_context.py:596:5: T201 `print` found
+analysis/book_context.py:597:5: T201 `print` found
+analysis/book_context.py:604:5: T201 `print` found
+analysis/book_context.py:605:5: T201 `print` found
+analysis/book_context.py:606:5: T201 `print` found
+analysis/book_context.py:608:5: T201 `print` found
+api/routes/control.py:23:9: T201 `print` found
+api/routes/processing.py:105:9: T201 `print` found
+api/routes/processing.py:325:9: T201 `print` found
+app.py:52:5: T201 `print` found
+app.py:54:5: T201 `print` found
+app.py:791:21: T201 `print` found
+app.py:1502:25: T201 `print` found
+app.py:1504:17: T201 `print` found
+app.py:1512:17: T201 `print` found
+app.py:1514:17: T201 `print` found
+app.py:1528:29: T201 `print` found
+app.py:1530:17: T201 `print` found
+config/ai_config.py:531:5: T201 `print` found
+config/ai_config.py:537:13: T201 `print` found
+config/ai_config.py:545:9: T201 `print` found
+config/ai_config.py:551:13: T201 `print` found
+config/ai_config.py:552:5: T201 `print` found
+config/ai_config.py:553:5: T201 `print` found
+core/autor_analiza.py:198:9: T201 `print` found
+core/autor_analiza.py:201:5: T201 `print` found
+core/autor_analiza.py:202:5: T201 `print` found
+core/autor_analiza.py:203:5: T201 `print` found
+core/autor_analiza.py:204:5: T201 `print` found
+core/autor_analiza.py:205:5: T201 `print` found
+core/autor_analiza.py:206:5: T201 `print` found
+core/kalkovi/da_konjugator.py:126:5: T201 `print` found
+core/kalkovi/da_konjugator.py:127:5: T201 `print` found
+core/kalkovi/da_konjugator.py:131:9: T201 `print` found
+core/kalkovi/da_konjugator.py:133:13: T201 `print` found
+core/kalkovi/da_konjugator.py:134:9: T201 `print` found
+core/kalkovi/engine.py:316:9: T201 `print` found
+core/kalkovi/engine.py:321:5: T201 `print` found
+core/kalkovi/engine.py:322:5: T201 `print` found
+core/kalkovi/engine.py:323:5: T201 `print` found
+core/kalkovi/engine.py:324:5: T201 `print` found
+core/kalkovi/glagoli_mapa.py:371:5: T201 `print` found
+core/kalkovi/glagoli_mapa.py:372:5: T201 `print` found
+core/kalkovi/glagoli_mapa.py:373:5: T201 `print` found
+core/kalkovi/glagoli_mapa.py:374:5: T201 `print` found
+core/kalkovi/glagoli_mapa.py:375:5: T201 `print` found
+core/kalkovi/glagoli_mapa.py:379:9: T201 `print` found
+core/kalkovi/morfologija_blacklist.py:206:5: T201 `print` found
+core/kalkovi/morfologija_blacklist.py:207:5: T201 `print` found
+core/kalkovi/morfologija_blacklist.py:209:5: T201 `print` found
+core/kalkovi/morfologija_blacklist.py:211:9: T201 `print` found
+core/kalkovi/morfologija_blacklist.py:212:5: T201 `print` found
+core/kalkovi/morfologija_blacklist.py:213:5: T201 `print` found
+core/kalkovi/morfologija_blacklist.py:215:5: T201 `print` found
+core/kalkovi/rod_detektor.py:633:5: T201 `print` found
+core/kalkovi/rod_detektor.py:637:9: T201 `print` found
+core/kalkovi/rod_detektor.py:638:9: T201 `print` found
+core/kalkovi/rod_detektor.py:640:13: T201 `print` found
+core/kalkovi/rod_detektor.py:641:9: T201 `print` found
+core/kalkovi_retro_scan.py:322:5: T201 `print` found
+core/kalkovi_retro_scan.py:323:5: T201 `print` found
+core/kalkovi_retro_scan.py:324:5: T201 `print` found
+core/kalkovi_retro_scan.py:327:5: T201 `print` found
+core/kalkovi_retro_scan.py:330:5: T201 `print` found
+core/kalkovi_retro_scan.py:331:5: T201 `print` found
+core/kalkovi_retro_scan.py:334:5: T201 `print` found
+core/kalkovi_retro_scan.py:357:9: T201 `print` found
+core/kalkovi_retro_scan.py:364:5: T201 `print` found
+core/kalkovi_retro_scan.py:376:5: T201 `print` found
+core/kalkovi_retro_scan.py:379:5: T201 `print` found
+core/model_profiles.py:706:5: T201 `print` found
+core/model_profiles.py:708:9: T201 `print` found
+core/prompt_injector.py:211:5: T201 `print` found
+core/prompt_injector.py:214:5: T201 `print` found
+core/prompt_injector.py:215:5: T201 `print` found
+core/prompt_injector.py:216:5: T201 `print` found
+core/prompt_injector.py:220:5: T201 `print` found
+core/prompt_injector.py:221:5: T201 `print` found
+core/prompt_injector.py:222:5: T201 `print` found
+core/prompt_injector.py:235:9: T201 `print` found
+core/prompt_injector.py:237:9: T201 `print` found
+core/prompt_injector.py:238:9: T201 `print` found
+core/prompt_injector.py:239:9: T201 `print` found
+core/prompt_injector.py:240:9: T201 `print` found
+core/prompt_injector.py:241:9: T201 `print` found
+core/prompt_injector.py:244:9: T201 `print` found
+core/prompts.py:890:5: T201 `print` found
+core/prompts.py:892:5: T201 `print` found
+core/prompts.py:893:5: T201 `print` found
+core/prompts.py:894:5: T201 `print` found
+core/prompts.py:896:5: T201 `print` found
+core/replacements.py:79:13: T201 `print` found
+core/validators/morfo_validator.py:415:5: T201 `print` found
+core/validators/morfo_validator.py:427:9: T201 `print` found
+core/validators/morfo_validator.py:430:13: T201 `print` found
+core/validators/morfo_validator.py:432:13: T201 `print` found
+
+=== TODO/FIXME/HACK (14) ===
+./config/ai_config.py:152:    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
+./config/ai_config.py.bak_ukloni_providere:186:    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
+./config/ai_config.py.bak_fix_provideri:184:    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
+./config/ai_config.py.bak_rucno_provideri:184:    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
+./config/ai_config.py.bak_groq_vrati:184:    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
+./config/ai_config.py.bak_grupa_a:186:    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
+./epub/styler.py:518:    Zamena src="data:image/png;base64,XXX" sa relativnim putem do PNG-a.
+./DIJAGNOSTIKA_ZA_POPRAVKE.txt:3779:    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
+./DIJAGNOSTIKA_SVE_GRUPE.txt:2835:    # TODO: provjeriti stvarni RPM/RPD za openai/gpt-oss-120b na console.groq.com
+./tools/cistoca.sh:267:chk_todo()       { grep -rnIE "${GEX[@]}" --include='*.py' --include='*.sh' -e '\b(TODO|FIXME|XXX|HACK)\b' . | cut -c1-160 | head -n 100;
+./tools/cistoca.sh:423:sekcija "TODO/FIXME/HACK"                     -      chk_todo
+./diag_blokovi.py:357:    tekst = "\n".join(["p%d r1 r2 r3" % i for i in range(5)] + ["XXX r1 r2 r3"])
+./diag_blokovi.py:359:    st = bisekcija(tekst, lambda t: "BLOK" if "XXX" in t else "OK", max_dubina=4)
+./diag_blokovi.py:374:    st4 = bisekcija(tekst, lambda t: "BLOK" if "XXX" in t else "OK", budzet=1)
+
+=== Imena modela razbacana po kodu (60) ===
+./config/ai_config.py:20:    {"model": "gemini-3.5-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py:22:    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py:26:    {"model": "gemma-4-26b-a4b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py:27:    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py:60:MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"
+./config/ai_config.py.bak_ukloni_providere:19:    {"model": "gemini-3.5-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py.bak_ukloni_providere:21:    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py.bak_ukloni_providere:25:    {"model": "gemma-4-26b-a4b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py.bak_ukloni_providere:26:    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py.bak_ukloni_providere:52:    "gemini_25_flash": "gemini-3.5-flash-lite",
+./config/ai_config.py.bak_ukloni_providere:55:    "gemini_20_flash": "gemini-3.5-flash-lite",
+./config/ai_config.py.bak_ukloni_providere:56:    "gemini_3_flash": "gemini-3.5-flash-lite",    # gemini-3.0-flash ne postoji; koristi 3.5-f
+./config/ai_config.py.bak_ukloni_providere:57:    "gemini_31_flash_lite": "gemini-3.1-flash-lite",
+./config/ai_config.py.bak_ukloni_providere:58:    "gemini_25_flash_lite": "gemini-2.5-flash-lite",
+./config/ai_config.py.bak_ukloni_providere:59:    "gemma4_26b": "gemma-4-26b-a4b-it",
+./config/ai_config.py.bak_ukloni_providere:60:    "gemma4_31b": "gemma-4-31b-it",
+./config/ai_config.py.bak_ukloni_providere:61:    "gemma3_27b": "gemma-3-27b-it",
+./config/ai_config.py.bak_ukloni_providere:63:    "llama31_70b_cerebras": "llama-3.1-70b",
+./config/ai_config.py.bak_ukloni_providere:64:    "mistral_large": "mistral-large-latest",
+./config/ai_config.py.bak_ukloni_providere:73:    "CEREBRAS": "llama-4-scout-17b-16e-instruct",
+./config/ai_config.py.bak_ukloni_providere:75:    "MISTRAL": "mistral-small-latest",
+./config/ai_config.py.bak_ukloni_providere:92:MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"
+./config/ai_config.py.bak_fix_provideri:19:    {"model": "gemini-3.5-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py.bak_fix_provideri:21:    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py.bak_fix_provideri:25:    {"model": "gemma-4-26b-a4b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py.bak_fix_provideri:26:    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py.bak_fix_provideri:52:    "gemini_25_flash": "gemini-3.5-flash-lite",
+./config/ai_config.py.bak_fix_provideri:55:    "gemini_20_flash": "gemini-3.5-flash-lite",
+./config/ai_config.py.bak_fix_provideri:56:    "gemini_3_flash": "gemini-3.5-flash-lite",    # gemini-3.0-flash ne postoji; koristi 3.5-flas
+./config/ai_config.py.bak_fix_provideri:57:    "gemini_31_flash_lite": "gemini-3.1-flash-lite",
+./config/ai_config.py.bak_fix_provideri:58:    "gemini_25_flash_lite": "gemini-2.5-flash-lite",
+./config/ai_config.py.bak_fix_provideri:59:    "gemma4_26b": "gemma-4-26b-a4b-it",
+./config/ai_config.py.bak_fix_provideri:60:    "gemma4_31b": "gemma-4-31b-it",
+./config/ai_config.py.bak_fix_provideri:61:    "gemma3_27b": "gemma-3-27b-it",
+./config/ai_config.py.bak_fix_provideri:63:    "llama31_70b_cerebras": "llama-3.1-70b",
+./config/ai_config.py.bak_fix_provideri:64:    "mistral_large": "mistral-large-latest",
+./config/ai_config.py.bak_fix_provideri:73:    "CEREBRAS": "llama-4-scout-17b-16e-instruct",
+./config/ai_config.py.bak_fix_provideri:75:    "MISTRAL": "mistral-small-latest",
+./config/ai_config.py.bak_fix_provideri:90:MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"
+./config/ai_config.py.bak_rucno_provideri:19:    {"model": "gemini-3.5-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py.bak_rucno_provideri:21:    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py.bak_rucno_provideri:25:    {"model": "gemma-4-26b-a4b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py.bak_rucno_provideri:26:    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py.bak_rucno_provideri:52:    "gemini_25_flash": "gemini-3.5-flash-lite",
+./config/ai_config.py.bak_rucno_provideri:55:    "gemini_20_flash": "gemini-3.5-flash-lite",
+./config/ai_config.py.bak_rucno_provideri:56:    "gemini_3_flash": "gemini-3.5-flash-lite",    # gemini-3.0-flash ne postoji; koristi 3.5-fl
+./config/ai_config.py.bak_rucno_provideri:57:    "gemini_31_flash_lite": "gemini-3.1-flash-lite",
+./config/ai_config.py.bak_rucno_provideri:58:    "gemini_25_flash_lite": "gemini-2.5-flash-lite",
+./config/ai_config.py.bak_rucno_provideri:59:    "gemma4_26b": "gemma-4-26b-a4b-it",
+./config/ai_config.py.bak_rucno_provideri:60:    "gemma4_31b": "gemma-4-31b-it",
+./config/ai_config.py.bak_rucno_provideri:61:    "gemma3_27b": "gemma-3-27b-it",
+./config/ai_config.py.bak_rucno_provideri:63:    "llama31_70b_cerebras": "llama-3.1-70b",
+./config/ai_config.py.bak_rucno_provideri:64:    "mistral_large": "mistral-large-latest",
+./config/ai_config.py.bak_rucno_provideri:73:    "CEREBRAS": "llama-4-scout-17b-16e-instruct",
+./config/ai_config.py.bak_rucno_provideri:75:    "MISTRAL": "mistral-small-latest",
+./config/ai_config.py.bak_rucno_provideri:90:MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"
+./config/ai_config.py.bak_groq_vrati:19:    {"model": "gemini-3.5-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py.bak_groq_vrati:21:    {"model": "gemini-3.1-flash-lite", "rpm": 15, "rpd": 500},
+./config/ai_config.py.bak_groq_vrati:25:    {"model": "gemma-4-26b-a4b-it", "rpm": 15, "rpd": 1500},
+./config/ai_config.py.bak_groq_vrati:26:    {"model": "gemma-4-31b-it", "rpm": 15, "rpd": 1500},
+
+=== Složenost i veličina (radon) (304) ===
+./api/routes/keys.py
+    F 133:0 ping_key - C (20)
+    F 61:0 add_key - C (11)
+./api/routes/processing.py
+    F 522:0 review_list - D (21)
+    F 125:0 get_status - C (17)
+    F 186:0 start_processing - C (16)
+    F 850:0 clean_annotations - C (16)
+    F 799:0 epub_preview - C (13)
+    F 935:0 epub_text - C (13)
+    F 988:0 epub_plain - C (12)
+    F 626:0 review_chunk - C (11)
+./api/routes/qualities.py
+    F 641:0 qa_flags - E (33)
+    F 507:0 style_epub_endpoint - C (20)
+    F 357:0 human_review - C (14)
+    F 91:0 get_quality_scores - C (13)
+    F 243:0 fix_marked_blocks - C (11)
+./api/routes/fleet.py
+    F 14:0 _normalize_fleet_summary - C (15)
+./api/routes/monitor.py
+    F 17:0 status - C (16)
+    F 88:0 reset_key - C (14)
+./api_fleet.py
+    M 544:4 FleetManager.analyze_response - F (48)
+    F 70:0 _check_body_content - D (23)
+    M 232:4 FleetManager._load_config - C (20)
+    M 366:4 FleetManager.get_active_model - C (12)
+./config/ai_config.py
+    F 618:0 get_provider_for_model - D (27)
+./main.py
+    F 99:0 _kill_previous_instance - C (11)
+./epub/packager.py
+    F 166:0 _finaliziraj_fix_epub - F (52)
+    F 335:0 finalize - E (38)
+    F 57:0 apply_dropcap_and_toc - C (14)
+./epub/parser.py
+    F 55:0 _strip_json_artifacts_from_html - C (16)
+    M 306:4 EpubParser._extract_content - C (15)
+    M 211:4 EpubParser._parse - C (12)
+./epub/name_replacer.py
+    F 458:0 run_name_replacer - C (17)
+./epub/styler.py
+    F 986:0 run_epub_styler - F (89)
+    F 583:0 run_epub_styler - F (76)
+    F 104:0 _ukloni_sve - D (25)
+    F 369:0 _izvuci_toc_mapu - D (25)
+    F 150:0 _normalizuj - C (19)
+    F 446:0 _dodaj_dropcap - C (18)
+    F 515:0 _ekstrahuj_zajednicke_slike - C (17)
+    F 321:0 _je_poglavlje - C (16)
+    F 938:0 _dodaj_naslov - C (16)
+    F 412:0 _dodaj_naslov - C (14)
+./epub/normalizer.py
+    F 205:0 _strip_everything - F (55)
+    F 82:0 _normalize_html - D (27)
+./epub/styler_ai.py
+    F 9:0 run_epub_styler_ai - D (22)
+./network/model_discovery.py
+    F 149:0 _score_model_strength - F (73)
+    F 360:0 fetch_models - C (17)
+    F 279:0 _fetch_gemini_native_models - C (15)
+./network/http_client.py
+    F 456:0 _async_http_post - F (45)
+    F 1259:0 api_call - F (45)
+    F 711:0 _call_gemini_with_full_rotation - F (41)
+    F 943:0 _call_gemma_with_rotation - E (36)
+    F 1456:0 _call_cloudflare_native - C (17)
+    F 1146:0 _call_single_provider - C (16)
+    F 306:0 _extract_gemini_native - C (12)
+./network/provider_router.py
+    F 265:0 _call_ai_engine - F (72)
+    F 182:0 call_provider - C (18)
+./network/quota_tracker.py
+    M 343:4 QuotaTracker._persist_cooldowns - C (14)
+    M 429:4 QuotaTracker._load_windows_for_key - C (14)
+    M 94:4 KeyQuota.record_error - C (13)
+    M 45:4 KeyQuota.is_available - C (12)
+./network/rate_limiter.py
+    F 159:0 _extract_total_tokens - D (21)
+    F 373:0 acquire_key - C (20)
+    F 196:0 register_provider_runtime_limits - C (11)
+    F 296:0 _throttle_provider - C (11)
+./network/key_renewal.py
+    F 84:0 renew_key - E (32)
+./tests/golden/test_styler.py
+    F 35:0 test_styler_output_is_valid_epub - C (13)
+./processing/pipeline.py
+    F 757:0 process_chunk_with_ai - F (75)
+    F 355:0 _primijeni_kalkove_i_validator - E (39)
+    F 538:0 _quality_scoring - D (29)
+    F 157:0 _chk_read - D (26)
+    F 461:0 _init_book_context - D (23)
+    F 1190:0 process_chunk_with_retry - C (19)
+    F 697:0 _posalji_po_paragrafima - C (12)
+./processing/retro.py
+    F 84:0 retroaktivna_relektura_v10 - F (88)
+    F 432:0 mark_for_review - D (24)
+    F 516:0 retroaktivna_rod_korekcija - D (24)
+    F 617:0 send_to_fix - C (13)
+./processing/workers.py
+    F 649:0 process_single_file_worker - E (37)
+    F 47:0 _robust_json_parse - D (27)
+    F 154:0 _validiraj_glosar_poglavlja - D (25)
+    M 1067:4 WorkerV2._postprocessing - C (18)
+    M 1122:4 WorkerV2.obradi_chunk - C (18)
+    F 396:0 _qa_ai_ocjena - C (13)
+    F 479:0 _retry_s_feedbackom - C (11)
+./processing/rescue.py
+    F 5:0 _spasi_od_sirovog - C (14)
+./core/quality.py
+    F 82:0 _izracunaj_heuristicki_score - D (27)
+    F 336:0 _scoruj_kvalitetu - D (27)
+    F 655:0 generiraj_report - D (22)
+    F 282:0 _je_nonprose_blok - C (14)
+    F 505:0 quality_summary - C (14)
+    F 49:0 _ekstrahuj_cist_tekst - C (11)
+./core/kalkovi/dinamicki_detektor.py
+    M 269:4 DinamickiDetektor.analiziraj - C (18)
+./core/kalkovi/auto_promoter.py
+    F 32:0 auto_promote - C (16)
+./core/kalkovi/rod_detektor.py
+    M 517:4 RodDetektor.batch_primijeni - C (13)
+    F 354:0 _koriguj_chunk - C (11)
+./core/kalkovi_retro_scan.py
+    F 174:0 _parsiraj_chk - C (16)
+    F 230:0 scan_sve_knjige - C (12)
+./core/engine.py
+    M 289:4 SkriptorijAllInOne._auto_generiraj_kanon - C (19)
+    M 582:4 SkriptorijAllInOne.obrisi_cache - C (12)
+    M 26:4 SkriptorijAllInOne.__init__ - C (11)
+./core/validators/morfo_validator.py
+    F 218:0 validiraj_tekst - C (16)
+./core/qa_benchmark.py
+    M 374:4 QABenchmark.analiziraj_fajl - D (30)
+    C 361:0 QABenchmark - C (17)
+    F 257:0 _ucitaj_chunkove - C (14)
+    F 194:0 analiziraj_blok - C (11)
+./core/text_utils.py
+    F 294:0 detektuj_tip_bloka - C (15)
+    F 272:0 _detektuj_halucinaciju - C (13)
+    F 116:0 _smart_extract - C (12)
+    F 333:0 _adaptive_temp - C (12)
+./core/chunking.py
+    F 138:0 _split_p_tag - C (18)
+    F 201:0 _grupisi_djecu - C (17)
+    F 98:0 _split_long_sentence - C (13)
+    F 50:0 _split_text_by_sentences - C (12)
+./core/autor_analiza.py
+    F 21:0 analiziraj_tekst - D (22)
+    F 117:0 napravi_prompt - C (12)
+./core/glosar_ekstrakcija.py
+    F 114:0 posalji_ai_batch - D (24)
+    F 75:0 detektuj_jezik - C (11)
+./core/metadata.py
+    F 86:0 standardizuj_metapodatke - E (31)
+./core/metrics.py
+    F 113:0 _tipografija_pasus - D (22)
+    F 219:0 classify_metrics - C (14)
+./core/replacements.py
+    F 36:0 load_moon_replacements - C (15)
+./core/replacements_learn.py
+    F 103:0 learn_from_fires - C (11)
+./run.py
+    F 271:0 start_skriptorij_from_master - F (42)
+    F 64:0 _odredi_strategiju - C (19)
+    F 166:0 _pametni_reset_cachea - C (11)
+./stil_ai.py
+    F 814:0 dodaj_dropcap - E (40)
+    F 1469:0 main - D (27)
+    F 355:0 _gradi_navodnici - C (20)
+    F 684:0 _naslov_element - C (20)
+    F 1308:0 stilizuj_epub - C (16)
+    F 506:0 klasificiraj_i_primijeni - C (15)
+    F 647:0 ocisti_stare - C (13)
+    F 1243:0 obradi_poglavlje - C (13)
+    F 975:0 primijeni_inline - C (12)
+    F 1003:0 _osiguraj_container_xml - C (12)
+    F 1135:0 _preskoci - C (11)
+./analysis/book_context.py
+    F 55:0 _dekliniraj_ime - C (16)
+    M 395:4 BookContext.dodaj_few_shot_iz_quality_scores - C (14)
+    M 645:4 BookContextManager.build_glosar_tekst - C (11)
+./tts.py
+    F 262:0 start_from_master - C (20)
+    F 411:0 _primijeni_checkpointe_na_html - C (12)
+./utils/export.py
+    F 14:0 get_epub_metadata - C (11)
+./utils/logging.py
+    F 61:0 add_audit - D (26)
+    F 217:0 add_structured - C (14)
+./utils/checkpoint_cleaner.py
+    F 57:0 _ocisti_json_wrapper - D (28)
+    F 162:0 _je_placeholder - C (14)
+    F 189:0 _no_cisti_chk_fajlove - C (11)
+./test_complete_v4.py
+    F 283:0 _call_with_retry - D (27)
+    F 436:0 analyze_openai - D (24)
+    F 949:0 print_summary - D (24)
+    F 723:0 run_burst - C (16)
+    F 396:0 analyze_gemini - C (14)
+    F 577:0 test_openai - C (14)
+    F 658:0 test_models - C (13)
+    F 536:0 test_gemini - C (11)
+    F 630:0 test_keys - C (11)
+    F 1006:0 main - C (11)
+./tools/probudi_gemmu.py
+    F 20:0 _load_keys - D (22)
+    F 63:0 _load_model - D (21)
+    F 107:0 main - D (21)
+./tools/apply_replacements.py
+    F 23:0 main - C (18)
+./tools/replacements_learn_cli.py
+    F 26:0 main - D (23)
+./diag_blokovi.py
+    F 130:0 sazetak - E (36)
+    F 328:0 selftest - D (27)
+    F 238:0 main - D (22)
+    F 38:0 klasifikuj - C (17)
+[VELIK FAJL] /root/skriptorij/api_fleet.py: 825 redaka
+[VELIK FAJL] /root/skriptorij/app.py: 1824 redaka
+[VELIK FAJL] /root/skriptorij/stil_ai.py: 1594 redaka
+[VELIK FAJL] /root/skriptorij/test_complete_v4.py: 1041 redaka
+[VELIK FAJL] /root/skriptorij/api/routes/processing.py: 1037 redaka
+[VELIK FAJL] /root/skriptorij/api/routes/qualities.py: 806 redaka
+[VELIK FAJL] /root/skriptorij/epub/styler.py: 1387 redaka
+[VELIK FAJL] /root/skriptorij/network/http_client.py: 1615 redaka
+[VELIK FAJL] /root/skriptorij/processing/pipeline.py: 1305 redaka
+[VELIK FAJL] /root/skriptorij/processing/workers.py: 1313 redaka
+[VELIK FAJL] /root/skriptorij/core/prompts.py: 930 redaka
+[VELIK FAJL] /root/skriptorij/analysis/book_context.py: 804 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api_fleet.py:232 _load_config() = 82 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api_fleet.py:544 analyze_response() = 234 redaka
+[DUGA FUNKCIJA] /root/skriptorij/app.py:163 create_app() = 1659 redaka
+[DUGA FUNKCIJA] /root/skriptorij/app.py:405 api_quality_scores() = 123 redaka
+[DUGA FUNKCIJA] /root/skriptorij/app.py:579 api_start() = 230 redaka
+[DUGA FUNKCIJA] /root/skriptorij/app.py:958 api_keys_ping() = 107 redaka
+[DUGA FUNKCIJA] /root/skriptorij/app.py:1419 api_review_chunk_post() = 116 redaka
+[DUGA FUNKCIJA] /root/skriptorij/app.py:1610 api_epub_text() = 85 redaka
+[DUGA FUNKCIJA] /root/skriptorij/app.py:1698 api_epub_plain() = 84 redaka
+[DUGA FUNKCIJA] /root/skriptorij/app.py:632 run_engine() = 162 redaka
+[DUGA FUNKCIJA] /root/skriptorij/run.py:64 _odredi_strategiju() = 100 redaka
+[DUGA FUNKCIJA] /root/skriptorij/run.py:271 start_skriptorij_from_master() = 310 redaka
+[DUGA FUNKCIJA] /root/skriptorij/stil_ai.py:814 dodaj_dropcap() = 159 redaka
+[DUGA FUNKCIJA] /root/skriptorij/stil_ai.py:1308 stilizuj_epub() = 138 redaka
+[DUGA FUNKCIJA] /root/skriptorij/stil_ai.py:1469 main() = 121 redaka
+[DUGA FUNKCIJA] /root/skriptorij/tts.py:262 start_from_master() = 147 redaka
+[DUGA FUNKCIJA] /root/skriptorij/test_complete_v4.py:785 run_all() = 160 redaka
+[DUGA FUNKCIJA] /root/skriptorij/diag_blokovi.py:238 main() = 87 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api/routes/keys.py:133 ping_key() = 82 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api/routes/processing.py:186 start_processing() = 141 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api/routes/processing.py:522 review_list() = 90 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api/routes/qualities.py:91 get_quality_scores() = 86 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api/routes/qualities.py:243 fix_marked_blocks() = 111 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api/routes/qualities.py:507 style_epub_endpoint() = 110 redaka
+[DUGA FUNKCIJA] /root/skriptorij/api/routes/qualities.py:641 qa_flags() = 104 redaka
+[DUGA FUNKCIJA] /root/skriptorij/config/ai_config.py:618 get_provider_for_model() = 85 redaka
+[DUGA FUNKCIJA] /root/skriptorij/epub/packager.py:166 _finaliziraj_fix_epub() = 167 redaka
+[DUGA FUNKCIJA] /root/skriptorij/epub/packager.py:335 finalize() = 240 redaka
+[DUGA FUNKCIJA] /root/skriptorij/epub/name_replacer.py:458 run_name_replacer() = 167 redaka
+[DUGA FUNKCIJA] /root/skriptorij/epub/styler.py:583 run_epub_styler() = 320 redaka
+[DUGA FUNKCIJA] /root/skriptorij/epub/styler.py:986 run_epub_styler() = 399 redaka
+[DUGA FUNKCIJA] /root/skriptorij/epub/normalizer.py:82 _normalize_html() = 100 redaka
+[DUGA FUNKCIJA] /root/skriptorij/epub/normalizer.py:205 _strip_everything() = 165 redaka
+[DUGA FUNKCIJA] /root/skriptorij/epub/styler_ai.py:9 run_epub_styler_ai() = 95 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/model_discovery.py:149 _score_model_strength() = 128 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/http_client.py:456 _async_http_post() = 252 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/http_client.py:711 _call_gemini_with_full_rotation() = 212 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/http_client.py:943 _call_gemma_with_rotation() = 200 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/http_client.py:1146 _call_single_provider() = 110 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/http_client.py:1259 api_call() = 184 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/provider_router.py:182 call_provider() = 81 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/provider_router.py:265 _call_ai_engine() = 297 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/rate_limiter.py:373 acquire_key() = 115 redaka
+[DUGA FUNKCIJA] /root/skriptorij/network/key_renewal.py:84 renew_key() = 144 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/pipeline.py:355 _primijeni_kalkove_i_validator() = 104 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/pipeline.py:538 _quality_scoring() = 155 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/pipeline.py:757 process_chunk_with_ai() = 429 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/pipeline.py:1190 process_chunk_with_retry() = 115 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/retro.py:84 retroaktivna_relektura_v10() = 329 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/retro.py:432 mark_for_review() = 82 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/retro.py:516 retroaktivna_rod_korekcija() = 99 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/workers.py:47 _robust_json_parse() = 100 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/workers.py:154 _validiraj_glosar_poglavlja() = 140 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/workers.py:649 process_single_file_worker() = 185 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/workers.py:1122 obradi_chunk() = 136 redaka
+[DUGA FUNKCIJA] /root/skriptorij/processing/parallel.py:46 process_chunks_parallel() = 91 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/quality.py:82 _izracunaj_heuristicki_score() = 120 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/quality.py:336 _scoruj_kvalitetu() = 122 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/kalkovi_retro_scan.py:230 scan_sve_knjige() = 85 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/kalkovi_retro_scan.py:419 primijeni_u_qa_benchmark() = 88 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/engine.py:26 __init__() = 97 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/engine.py:289 _auto_generiraj_kanon() = 126 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/qa_benchmark.py:374 analiziraj_fajl() = 124 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/autor_analiza.py:21 analiziraj_tekst() = 94 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/glosar_ekstrakcija.py:114 posalji_ai_batch() = 108 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/metadata.py:86 standardizuj_metapodatke() = 181 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/kalkovi/auto_promoter.py:32 auto_promote() = 82 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/kalkovi/rod_detektor.py:517 batch_primijeni() = 94 redaka
+[DUGA FUNKCIJA] /root/skriptorij/core/validators/morfo_validator.py:218 validiraj_tekst() = 103 redaka
+[DUGA FUNKCIJA] /root/skriptorij/utils/logging.py:61 add_audit() = 146 redaka
+[DUGA FUNKCIJA] /root/skriptorij/utils/checkpoint_cleaner.py:57 _ocisti_json_wrapper() = 91 redaka
+[DUGA FUNKCIJA] /root/skriptorij/tools/apply_replacements.py:23 main() = 89 redaka
+[DUGA FUNKCIJA] /root/skriptorij/tools/replacements_learn_cli.py:26 main() = 118 redaka
+
+=== Stil (importi, UP, SIM, RET) (200) ===
+analysis/book_context.py:62:9: SIM108 Use ternary operator `rod = "Ž" if ime.endswith("a") and not ime.endswith("ica") else "M"` instead of `if`-`else`-block
+analysis/book_context.py:128:14: UP045 [*] Use `X | None` for type annotations
+analysis/book_context.py:133:18: UP045 [*] Use `X | None` for type annotations
+analysis/book_context.py:293:35: UP045 [*] Use `X | None` for type annotations
+analysis/book_context.py:517:52: UP045 [*] Use `X | None` for type annotations
+analysis/book_context.py:729:5: I001 [*] Import block is un-sorted or un-formatted
+analysis/book_context.py:774:5: I001 [*] Import block is un-sorted or un-formatted
+analysis/book_context.py:776:5: SIM102 Use a single `if` statement instead of nested `if` statements
+analysis/book_context.py:790:5: I001 [*] Import block is un-sorted or un-formatted
+api/__init__.py:11:1: I001 [*] Import block is un-sorted or un-formatted
+api/file_browser.py:2:1: I001 [*] Import block is un-sorted or un-formatted
+api/routes/__init__.py:4:1: I001 [*] Import block is un-sorted or un-formatted
+api/routes/control.py:2:1: I001 [*] Import block is un-sorted or un-formatted
+api/routes/export.py:4:1: I001 [*] Import block is un-sorted or un-formatted
+api/routes/export.py:35:9: RET505 [*] Unnecessary `elif` after `return` statement
+api/routes/keys.py:190:9: RET505 [*] Unnecessary `elif` after `return` statement
+api/routes/monitor.py:2:1: I001 [*] Import block is un-sorted or un-formatted
+api/routes/monitor.py:26:24: UP017 [*] Use `datetime.UTC` alias
+api/routes/monitor.py:108:17: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/processing.py:6:1: I001 [*] Import block is un-sorted or un-formatted
+api/routes/processing.py:117:19: SIM118 Use `key in dict` instead of `key in dict.keys()`
+api/routes/processing.py:259:13: I001 [*] Import block is un-sorted or un-formatted
+api/routes/processing.py:399:5: I001 [*] Import block is un-sorted or un-formatted
+api/routes/processing.py:541:17: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/processing.py:637:17: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/processing.py:662:9: RET505 [*] Unnecessary `elif` after `return` statement
+api/routes/processing.py:704:9: I001 [*] Import block is un-sorted or un-formatted
+api/routes/processing.py:739:5: I001 [*] Import block is un-sorted or un-formatted
+api/routes/processing.py:747:13: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/processing.py:781:13: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/processing.py:811:17: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/processing.py:873:13: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/processing.py:882:9: I001 [*] Import block is un-sorted or un-formatted
+api/routes/processing.py:941:5: I001 [*] Import block is un-sorted or un-formatted
+api/routes/processing.py:972:25: SIM910 [*] Use `scores.get(chk.stem)` instead of `scores.get(chk.stem, None)`
+api/routes/processing.py:993:5: I001 [*] Import block is un-sorted or un-formatted
+api/routes/processing.py:1025:25: SIM910 [*] Use `scores.get(chk.stem)` instead of `scores.get(chk.stem, None)`
+api/routes/qualities.py:6:1: I001 [*] Import block is un-sorted or un-formatted
+api/routes/qualities.py:322:21: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/qualities.py:411:9: I001 [*] Import block is un-sorted or un-formatted
+api/routes/qualities.py:424:17: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/qualities.py:523:5: I001 [*] Import block is un-sorted or un-formatted
+api/routes/qualities.py:593:13: I001 [*] Import block is un-sorted or un-formatted
+api/routes/qualities.py:622:5: I001 [*] Import block is un-sorted or un-formatted
+api/routes/qualities.py:647:5: I001 [*] Import block is un-sorted or un-formatted
+api/routes/qualities.py:718:29: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+api/routes/qualities.py:750:5: I001 [*] Import block is un-sorted or un-formatted
+api/routes/qualities.py:790:9: I001 [*] Import block is un-sorted or un-formatted
+api/routes/renewal.py:6:1: I001 [*] Import block is un-sorted or un-formatted
+api_fleet.py:18:1: I001 [*] Import block is un-sorted or un-formatted
+api_fleet.py:367:9: I001 [*] Import block is un-sorted or un-formatted
+api_fleet.py:576:21: SIM105 Use `contextlib.suppress(TypeError, ValueError)` instead of `try`-`except`-`pass`
+app.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+app.py:22:5: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+app.py:39:1: I001 [*] Import block is un-sorted or un-formatted
+app.py:48:5: I001 [*] Import block is un-sorted or un-formatted
+app.py:64:5: I001 [*] Import block is un-sorted or un-formatted
+app.py:165:5: SIM105 Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
+app.py:600:13: SIM102 Use a single `if` statement instead of nested `if` statements
+app.py:635:21: I001 [*] Import block is un-sorted or un-formatted
+app.py:644:29: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+app.py:689:25: I001 [*] Import block is un-sorted or un-formatted
+app.py:723:25: I001 [*] Import block is un-sorted or un-formatted
+app.py:960:13: I001 [*] Import block is un-sorted or un-formatted
+app.py:1178:17: SIM108 Use ternary operator `target = p if p.exists() else _find_epub(p.name)` instead of `if`-`else`-block
+app.py:1277:21: SIM114 [*] Combine `if` branches using logical `or` operator
+app.py:1540:9: I001 [*] Import block is un-sorted or un-formatted
+app.py:1549:21: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+app.py:1682:29: SIM910 [*] Use `scores.get(chk.stem)` instead of `scores.get(chk.stem, None)`
+app.py:1769:29: SIM910 [*] Use `scores.get(chk.stem)` instead of `scores.get(chk.stem, None)`
+app.py:1785:9: I001 [*] Import block is un-sorted or un-formatted
+config/__init__.py:2:1: I001 [*] Import block is un-sorted or un-formatted
+config/ai_config.py:5:1: I001 [*] Import block is un-sorted or un-formatted
+config/ai_config.py:8:1: UP035 `typing.List` is deprecated, use `list` instead
+config/ai_config.py:99:22: UP006 [*] Use `list` instead of `List` for type annotation
+config/ai_config.py:100:18: UP006 [*] Use `list` instead of `List` for type annotation
+config/model_roles.py:17:1: I001 [*] Import block is un-sorted or un-formatted
+config/model_roles.py:99:69: UP045 [*] Use `X | None` for type annotations
+config/settings.py:104:1: I001 [*] Import block is un-sorted or un-formatted
+config/system_logger.py:23:1: I001 [*] Import block is un-sorted or un-formatted
+core/autor_analiza.py:15:1: I001 [*] Import block is un-sorted or un-formatted
+core/autor_analiza.py:166:5: I001 [*] Import block is un-sorted or un-formatted
+core/chunking.py:18:1: I001 [*] Import block is un-sorted or un-formatted
+core/chunking.py:23:1: I001 [*] Import block is un-sorted or un-formatted
+core/chunking.py:279:12: RET504 Unnecessary assignment to `chunks` before `return` statement
+core/engine.py:12:1: I001 [*] Import block is un-sorted or un-formatted
+core/engine.py:76:9: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+core/engine.py:144:13: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+core/engine.py:162:9: I001 [*] Import block is un-sorted or un-formatted
+core/engine.py:186:9: I001 [*] Import block is un-sorted or un-formatted
+core/engine.py:224:9: SIM114 [*] Combine `if` branches using logical `or` operator
+core/engine.py:292:13: I001 [*] Import block is un-sorted or un-formatted
+core/engine.py:328:9: I001 [*] Import block is un-sorted or un-formatted
+core/engine.py:603:17: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+core/engine.py:640:13: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+core/few_shot_global.py:6:1: I001 [*] Import block is un-sorted or un-formatted
+core/glosar_ekstrakcija.py:4:1: I001 [*] Import block is un-sorted or un-formatted
+core/glosar_ekstrakcija.py:9:19: SIM905 [*] Consider using a list literal instead of `str.split`
+core/glosar_ekstrakcija.py:77:5: I001 [*] Import block is un-sorted or un-formatted
+core/glosar_ekstrakcija.py:107:17: RET505 [*] Unnecessary `elif` after `return` statement
+core/kalkovi/__init__.py:4:1: I001 [*] Import block is un-sorted or un-formatted
+core/kalkovi/__init__.py:82:5: I001 [*] Import block is un-sorted or un-formatted
+core/kalkovi/auto_promoter.py:6:1: I001 [*] Import block is un-sorted or un-formatted
+core/kalkovi/auto_promoter.py:73:9: SIM108 Use ternary operator `broj_knjiga = 999 if "RUCNO_DODANO" in knjige else len(set(knjige))` instead of `if`-`else`-block
+core/kalkovi/da_konjugator.py:18:1: I001 [*] Import block is un-sorted or un-formatted
+core/kalkovi/dinamicki_detektor.py:7:1: I001 [*] Import block is un-sorted or un-formatted
+core/kalkovi/dinamicki_detektor.py:220:9: SIM103 Return the condition directly
+core/kalkovi/dinamicki_detektor.py:319:25: SIM102 Use a single `if` statement instead of nested `if` statements
+core/kalkovi/dinamicki_promoter.py:6:1: I001 [*] Import block is un-sorted or un-formatted
+core/kalkovi/dinamicki_promoter.py:52:9: RET505 [*] Unnecessary `elif` after `return` statement
+core/kalkovi/dinamicki_validator.py:7:1: I001 [*] Import block is un-sorted or un-formatted
+core/kalkovi/engine.py:51:44: UP045 [*] Use `X | None` for type annotations
+core/kalkovi/engine.py:69:19: UP045 [*] Use `X | None` for type annotations
+core/kalkovi/engine.py:200:17: UP045 [*] Use `X | None` for type annotations
+core/kalkovi/glagoli_mapa.py:14:1: I001 [*] Import block is un-sorted or un-formatted
+core/kalkovi/glagoli_mapa.py:15:1: UP035 [*] Import from `collections.abc` instead: `Iterator`
+core/kalkovi/rod_detektor.py:321:35: UP045 [*] Use `X | None` for type annotations
+core/kalkovi/rod_detektor.py:373:9: SIM108 Use ternary operator `pogresni = GPR_M_Z if rod == "Ž" else GPR_Z_M` instead of `if`-`else`-block
+core/kalkovi/rod_detektor.py:480:21: UP045 [*] Use `X | None` for type annotations
+core/kalkovi/rod_detektor.py:521:21: UP045 [*] Use `X | None` for type annotations
+core/metadata.py:89:16: UP045 [*] Use `X | None` for type annotations
+core/metadata.py:90:20: UP045 [*] Use `X | None` for type annotations
+core/metadata.py:91:18: UP045 [*] Use `X | None` for type annotations
+core/metadata.py:92:18: UP045 [*] Use `X | None` for type annotations
+core/metadata.py:93:20: UP045 [*] Use `X | None` for type annotations
+core/metadata.py:94:23: UP045 [*] Use `X | None` for type annotations
+core/metrics.py:58:5: SIM108 Use binary operator `izvori = nadjeno or re.split(r"\n\s*\n", _RE_BLOK.sub("\n\n", tekst))` instead of `if`-`else`-block
+core/model_profiles.py:8:1: I001 [*] Import block is un-sorted or un-formatted
+core/model_profiles.py:9:1: UP035 `typing.List` is deprecated, use `list` instead
+core/model_profiles.py:9:1: UP035 `typing.Dict` is deprecated, use `dict` instead
+core/model_profiles.py:19:20: UP006 [*] Use `list` instead of `List` for type annotation
+core/model_profiles.py:26:12: UP006 [*] Use `list` instead of `List` for type annotation
+core/model_profiles.py:27:15: UP006 [*] Use `list` instead of `List` for type annotation
+core/model_profiles.py:28:22: UP006 [*] Use `list` instead of `List` for type annotation
+core/model_profiles.py:29:24: UP006 [*] Use `list` instead of `List` for type annotation
+core/model_profiles.py:40:27: UP006 [*] Use `dict` instead of `Dict` for type annotation
+core/model_profiles.py:41:26: UP006 [*] Use `dict` instead of `Dict` for type annotation
+core/model_profiles.py:54:10: UP006 [*] Use `dict` instead of `Dict` for type annotation
+core/model_profiles.py:632:44: UP045 [*] Use `X | None` for type annotations
+core/model_profiles.py:648:29: UP045 [*] Use `X | None` for type annotations
+core/model_profiles.py:653:41: UP006 [*] Use `list` instead of `List` for type annotation
+core/model_profiles.py:662:36: UP006 [*] Use `list` instead of `List` for type annotation
+core/prompt_injector.py:114:55: UP045 [*] Use `X | None` for type annotations
+core/prompt_injector.py:132:50: UP045 [*] Use `X | None` for type annotations
+core/prompt_injector.py:165:25: UP045 [*] Use `X | None` for type annotations
+core/prompt_injector.py:174:9: RET505 [*] Unnecessary `else` after `return` statement
+core/prompts.py:449:1: UP035 `typing.Dict` is deprecated, use `dict` instead
+core/prompts.py:449:1: I001 [*] Import block is un-sorted or un-formatted
+core/prompts.py:505:16: UP006 [*] Use `dict` instead of `Dict` for type annotation
+core/prompts.py:505:26: UP006 [*] Use `dict` instead of `Dict` for type annotation
+core/prompts.py:772:20: UP006 [*] Use `dict` instead of `Dict` for type annotation
+core/prompts.py:821:16: UP045 [*] Use `X | None` for type annotations
+core/prompts.py:822:20: UP045 [*] Use `X | None` for type annotations
+core/qa_benchmark.py:1:1: UP009 [*] UTF-8 encoding declaration is unnecessary
+core/qa_benchmark.py:17:1: I001 [*] Import block is un-sorted or un-formatted
+core/qa_benchmark.py:277:37: UP015 [*] Unnecessary mode argument
+core/qa_benchmark.py:309:49: UP045 [*] Use `X | None` for type annotations
+core/qa_benchmark.py:314:40: UP015 [*] Unnecessary mode argument
+core/qa_benchmark.py:322:40: UP045 [*] Use `X | None` for type annotations
+core/qa_benchmark.py:326:35: UP015 [*] Unnecessary mode argument
+core/qa_benchmark.py:333:53: UP045 [*] Use `X | None` for type annotations
+core/qa_benchmark.py:377:30: UP045 [*] Use `X | None` for type annotations
+core/quality.py:13:1: I001 [*] Import block is un-sorted or un-formatted
+core/quality.py:108:5: RET505 [*] Unnecessary `elif` after `return` statement
+core/quality.py:217:16: C401 Unnecessary generator (rewrite as a set comprehension)
+core/quality.py:389:13: SIM105 Use `contextlib.suppress(ImportError)` instead of `try`-`except`-`pass`
+core/quality.py:646:17: SIM118 Use `key in dict` instead of `key in dict.keys()`
+core/quality.py:678:9: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+core/replacements.py:16:1: UP035 `typing.List` is deprecated, use `list` instead
+core/replacements.py:36:42: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:38:12: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:90:37: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:90:63: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:92:12: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:107:45: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:107:73: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:116:5: I001 [*] Import block is un-sorted or un-formatted
+core/replacements.py:135:16: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:136:12: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements.py:168:22: UP006 [*] Use `list` instead of `List` for type annotation
+core/replacements_learn.py:14:1: I001 [*] Import block is un-sorted or un-formatted
+core/replacements_learn.py:81:5: SIM103 Return the condition `all(c.isalpha() or c in "-'" for c in cist)` directly
+core/replacements_learn.py:126:29: SIM118 [*] Use `key in dict` instead of `key in dict.keys()`
+core/retry_engine.py:10:1: I001 [*] Import block is un-sorted or un-formatted
+core/skip_oracle.py:7:1: I001 [*] Import block is un-sorted or un-formatted
+core/text_utils.py:13:1: I001 [*] Import block is un-sorted or un-formatted
+core/text_utils.py:52:12: RET504 Unnecessary assignment to `tekst` before `return` statement
+core/text_utils.py:395:12: RET504 Unnecessary assignment to `tekst` before `return` statement
+core/validators/morfo_validator.py:55:13: UP045 [*] Use `X | None` for type annotations
+core/validators/morfo_validator.py:157:37: UP045 [*] Use `X | None` for type annotations
+core/validators/morfo_validator.py:220:14: UP045 [*] Use `X | None` for type annotations
+core/validators/morfo_validator.py:252:9: SIM108 Use ternary operator `efektivni_key = api_key or _dohvati_api_key(fleet) if trebamo_ai else None` instead of `if`-`else`-block
+core/validators/morfo_validator.py:337:18: UP045 [*] Use `X | None` for type annotations
+core/validators/morfo_validator.py:365:26: UP045 [*] Use `X | None` for type annotations
+diag_blokovi.py:211:5: I001 [*] Import block is un-sorted or un-formatted
+diag_blokovi.py:357:24: UP031 Use format specifiers instead of percent format
+epub/name_replacer.py:30:1: I001 [*] Import block is un-sorted or un-formatted
+epub/name_replacer.py:152:18: UP045 [*] Use `X | None` for type annotations
+epub/name_replacer.py:324:9: I001 [*] Import block is un-sorted or un-formatted
+epub/name_replacer.py:632:5: I001 [*] Import block is un-sorted or un-formatted
+
+=== Formatiranje (ruff format) (0) ===
+OK
+
+=== Higijena projekta (10) ===
+nema README
+nema konfiguracije alata (pyproject.toml ili ruff.toml)
+ima .env, ali nema .env.example (šablon bez tajni)
+nepinovano u requirements.txt: flask>=3.1.0
+nepinovano u requirements.txt: requests>=2.32.0
+nepinovano u requirements.txt: beautifulsoup4>=4.12.0
+nepinovano u requirements.txt: lxml>=6.0.0
+nepinovano u requirements.txt: ebooklib>=0.18
+nepinovano u requirements.txt: pytest>=9.0.0
+nepinovano u requirements.txt: watchdog
+
+=== SAŽETAK ===
+    0  Sintaksne greške
+    0  Importi modula kojih nema
+  283  Bugovi (ruff: F,E9,B,PLE,PIE,S110)
+    1  Neispravni JSON fajlovi
+    -  Shell skripte (shellcheck)
+    0  Tipske greške (mypy)
+  119  Testovi
+   12  Mrtav kod (vulture)
+    4  Fajlovi koje niko ne importuje
+    8  Ovisnosti: neiskorištene/nedostaju
+   37  Zakomentirani kod
+   58  Copy-paste blokovi (pylint)
+   12  Ista imena / ista tijela funkcija
+   29  Identični fajlovi (md5)
+   17  Privremeni fajlovi i __pycache__
+    9  Sumnjiva imena (_old, _copy, _v2..)
+    4  Prazni fajlovi i folderi
+    0  CRLF završeci redova
+   24  Bandit (srednji+ rizik, npr. debug=True)
+   32  Moguće tajne/API ključevi u kodu
+    0  Debugger ostaci (breakpoint/pdb)
+  100  print() umjesto logging
+   14  TODO/FIXME/HACK
+   60  Imena modela razbacana po kodu
+  304  Složenost i veličina (radon)
+  200  Stil (importi, UP, SIM, RET)
+    0  Formatiranje (ruff format)
+   10  Higijena projekta
+UKUPNO redaka nalaza: 1337
+
+REDOSLIJED RUČNOG ČIŠĆENJA:
+ 1. Tajne u kodu / .env u gitu  -> odmah, i rotiraj ključ
+ 2. Sintaksa, importi, bugovi   -> ono što ne radi
+ 3. Orfani i mrtav kod          -> prvo grep po stringu (MODEL_MAP, rotacija po imenu)
+ 4. Duplikati                   -> izvuci u zajedničku funkciju
+ 5. Modeli razbacani po kodu    -> centralizuj u jedan config

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """core/glosar_ekstrakcija.py — Ekstrakcija, cistka i AI provjera glosara."""
 
-import re
 import json
-from collections import Counter
+import re
 
-
-STOP_RIJECI = set("""
+STOP_RIJECI = set(
+    """
 The And But Or Of To In On At For With By From As Is Was Were Be Been Being
 Have Has Had Do Does Did Will Would Could Should May Might Must Can This That
 These Those It Its He She They We You I Me Him Her Them Us My Your His Their
@@ -53,7 +52,8 @@ Nije Ali Sto Možda Samo Ako Kako Kada Zato Tako Onda Sada Ovdje Tamo Gdje
 Zašto Jer Ipak Naravno Svakako Dakle Nego Niti Ili Zatim Poslije Prije Osim
 Prema Protiv Bez Kroz Iznad Ispod Unatoč Usprkos Nakon Tijekom Bilo Bila
 Bio Bili Bile Bitno Bože Gospode Hvala Molim Izvoli Izvolite
-""".split())
+""".split()
+)
 
 
 def mehanicka_cistka(imena, min_pojava=3):
@@ -75,6 +75,7 @@ def mehanicka_cistka(imena, min_pojava=3):
 def detektuj_jezik(epub_path):
     """Vrati 'HR' ili 'EN' na osnovu prvih paragrafa."""
     import zipfile
+
     from bs4 import BeautifulSoup
 
     try:
@@ -93,10 +94,33 @@ def detektuj_jezik(epub_path):
 
                 hr_dijakritici = sum(tekst.count(c) for c in "čćžšđ")
                 hr_rijeci = 0
-                for w in [" je ", " se ", " da ", " na ", " za ", " koji ", " koja ", " koje ", " nije ", " kao "]:
+                for w in [
+                    " je ",
+                    " se ",
+                    " da ",
+                    " na ",
+                    " za ",
+                    " koji ",
+                    " koja ",
+                    " koje ",
+                    " nije ",
+                    " kao ",
+                ]:
                     hr_rijeci += tekst.count(w)
                 en_rijeci = 0
-                for w in [" the ", " and ", " of ", " is ", " to ", " a ", " in ", " that ", " was ", " he ", " she "]:
+                for w in [
+                    " the ",
+                    " and ",
+                    " of ",
+                    " is ",
+                    " to ",
+                    " a ",
+                    " in ",
+                    " that ",
+                    " was ",
+                    " he ",
+                    " she ",
+                ]:
                     en_rijeci += tekst.count(w)
 
                 hr_score = hr_dijakritici + hr_rijeci * 3
@@ -168,15 +192,33 @@ Vrati ISKLJUCIVO JSON. Budi STROG.
                 continue
 
             # GEMMA ne podrzava system role — merge u user
-            if not getattr(fleet.get_profile(provider) if hasattr(fleet, "get_profile") else None, "supports_system_role", True):
+            if not getattr(
+                fleet.get_profile(provider) if hasattr(fleet, "get_profile") else None,
+                "supports_system_role",
+                True,
+            ):
                 merged = SYSTEM + "\n\n" + user_prompt
-                res = api_call(provider=provider, model=model, api_key=api_key,
-                               system="", user=merged,
-                               temperature=0.2, max_tokens=6000, timeout=180)
+                res = api_call(
+                    provider=provider,
+                    model=model,
+                    api_key=api_key,
+                    system="",
+                    user=merged,
+                    temperature=0.2,
+                    max_tokens=6000,
+                    timeout=180,
+                )
             else:
-                res = api_call(provider=provider, model=model, api_key=api_key,
-                               system=SYSTEM, user=user_prompt,
-                               temperature=0.2, max_tokens=6000, timeout=180)
+                res = api_call(
+                    provider=provider,
+                    model=model,
+                    api_key=api_key,
+                    system=SYSTEM,
+                    user=user_prompt,
+                    temperature=0.2,
+                    max_tokens=6000,
+                    timeout=180,
+                )
             if not res:
                 continue
 

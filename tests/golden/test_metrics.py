@@ -3,6 +3,7 @@ tests/golden/test_metrics.py
 Golden test za core/metrics.py — deterministicki brojaci (vec postoji u benchmarks/).
 Ovde: brzi smoke za hash stabilnost.
 """
+
 import sys
 from pathlib import Path
 
@@ -11,8 +12,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 def test_metrics_deterministic_hash():
     """Isti tekst → iste metrike (determinizam)."""
+    import hashlib
+    import json
+
     from core.metrics import compute_metrics
-    import json, hashlib
 
     text = "<p>On je rekao da će doći. Lepo vreme danas.</p>"
     m1 = compute_metrics(text)
@@ -28,7 +31,7 @@ def test_metrics_deterministic_hash():
 
 def test_metrics_classify_consistency():
     """classify_metrics na istim metrikama → isti rezultat."""
-    from core.metrics import compute_metrics, classify_metrics
+    from core.metrics import classify_metrics, compute_metrics
 
     text = "<p>Lijepo vrijeme danas.</p>"
     m = compute_metrics(text)

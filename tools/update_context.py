@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Azurira AUTO sekciju u KONTEKST.md. Ne dira ostalo."""
-import ast, subprocess, sys, datetime
+
+import ast
+import datetime
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 KONTEKST = ROOT / "KONTEKST.md"
 START = "<!-- AUTO:START -->"
 END = "<!-- AUTO:END -->"
+
 
 def _run(cmd):
     try:
@@ -16,20 +21,27 @@ def _run(cmd):
     except Exception as e:
         return f"(greska: {e})"
 
+
 def _count_lines(p):
     try:
         return sum(1 for _ in p.open("r", encoding="utf-8", errors="ignore"))
     except Exception:
         return 0
 
+
 def _module_stats(path):
     try:
         tree = ast.parse(path.read_text("utf-8"))
-        funcs = sum(1 for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)))
+        funcs = sum(
+            1
+            for n in tree.body
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+        )
         classes = sum(1 for n in tree.body if isinstance(n, ast.ClassDef))
         return f"{funcs}f/{classes}c/{_count_lines(path)}L"
     except Exception:
         return "?"
+
 
 def build_auto():
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -96,7 +108,7 @@ def main():
         return 3
 
     novo_auto = build_auto()
-    novo = src[:i] + novo_auto + src[j + len(END):]
+    novo = src[:i] + novo_auto + src[j + len(END) :]
 
     tmp = KONTEKST.with_suffix(".md.tmp")
     tmp.write_text(novo, "utf-8")

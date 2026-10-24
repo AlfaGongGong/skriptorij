@@ -3,16 +3,19 @@ Auto-Kalk Promoter — automatski promoviše kalkove iz karantene.
 BEZ DEGRADACIJE: promoviše samo kalkove sa >= 10 potvrda iz >= 3 knjige.
 """
 
-import json, sqlite3, logging
-from pathlib import Path
+import json
+import logging
+import sqlite3
 from datetime import datetime
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 DB_PATH = Path("data/kalkovi_karantena.db")
 PROMOTED_LOG = Path("data/auto_promoted_kalkovi.json")
-MIN_POTVRDA = 10      # BEZ DEGRADACIJE: bar 10 pojava prije promocije
-MIN_KNJIGA = 3         # BEZ DEGRADACIJE: bar u 3 različite knjige
+MIN_POTVRDA = 10  # BEZ DEGRADACIJE: bar 10 pojava prije promocije
+MIN_KNJIGA = 3  # BEZ DEGRADACIJE: bar u 3 različite knjige
+
 
 def _get_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -20,14 +23,17 @@ def _get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def _load_promoted():
     if PROMOTED_LOG.exists():
         return json.loads(PROMOTED_LOG.read_text())
     return []
 
+
 def _save_promoted(promoted):
     PROMOTED_LOG.parent.mkdir(parents=True, exist_ok=True)
     PROMOTED_LOG.write_text(json.dumps(promoted, ensure_ascii=False, indent=2))
+
 
 def auto_promote(dry_run=True):
     """
@@ -44,14 +50,17 @@ def auto_promote(dry_run=True):
 
     # Dohvati kandidate
     try:
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT pattern, tip, broj_pojavljivanja, ukupan_score,
                    knjige_set, status
             FROM kandidati
             WHERE status = 'kandidat'
               AND broj_pojavljivanja >= ?
             ORDER BY broj_pojavljivanja DESC
-        """, (MIN_POTVRDA,)).fetchall()
+        """,
+            (MIN_POTVRDA,),
+        ).fetchall()
     except sqlite3.OperationalError as e:
         logger.warning(f"[auto_promoter] SQL greška: {e}")
         return []
@@ -92,15 +101,15 @@ def auto_promote(dry_run=True):
             try:
                 lista_path = Path("core/kalkovi/dinamicki_lista.py")
                 if lista_path.exists():
-                    sadrzaj = lista_path.read_text(encoding='utf-8')
+                    sadrzaj = lista_path.read_text(encoding="utf-8")
                     # Format: ("pattern", "tip"),
                     linija = f'    ("{pattern}", "{row["tip"]}"),  # auto-promoted {datetime.now():%Y-%m-%d}\n'
                     # Nađi "]" (kraj liste)
                     marker = sadrzaj.rfind("]")
                     if marker > 0:
-                        # Ubaci prije "]" 
+                        # Ubaci prije "]"
                         sadrzaj = sadrzaj[:marker] + linija + sadrzaj[marker:]
-                        lista_path.write_text(sadrzaj, encoding='utf-8')
+                        lista_path.write_text(sadrzaj, encoding="utf-8")
             except Exception as e:
                 logger.warning(f"[auto_promoter] Greška pri upisu: {e}")
 
@@ -112,6 +121,7 @@ def auto_promote(dry_run=True):
 
     return novi
 
+
 def get_stats():
     """Vraća statistiku karantene."""
     conn = _get_db()
@@ -119,7 +129,7 @@ def get_stats():
         ukupno = conn.execute("SELECT COUNT(*) FROM kandidati").fetchone()[0]
         spremni = conn.execute(
             "SELECT COUNT(*) FROM (SELECT pattern FROM kandidati GROUP BY pattern HAVING SUM(pojavljivanja) >= ?)",
-            (MIN_POTVRDA,)
+            (MIN_POTVRDA,),
         ).fetchone()[0]
     except Exception:  # NOTE #1 fix: bare except zamjenjen
         ukupno, spremni = 0, 0

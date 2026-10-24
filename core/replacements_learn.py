@@ -11,14 +11,12 @@ Ovaj modul analizira `Fire` listu i generiše:
 
 Ne piše u pipeline. Samo priprema podatke.
 """
+
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional
-
 
 # Marker za ime/mesto: kratko, veliko slovo, bez razmaka, word boundary
-_IME_RX = re.compile(r'^\\b([A-ZČĆŽŠĐ][a-zčćžšđA-ZČĆŽŠĐ\-]+)\\b$')
+_IME_RX = re.compile(r"^\\b([A-ZČĆŽŠĐ][a-zčćžšđA-ZČĆŽŠĐ\-]+)\\b$")
 
 # Marker za rečenicu/konstrukciju: sadrži razmak, tačku, navodnik
 _KONSTRUKCIJA_RX = re.compile(r'[\s.,;:!?"„”\'—–-]')
@@ -26,17 +24,17 @@ _KONSTRUKCIJA_RX = re.compile(r'[\s.,;:!?"„”\'—–-]')
 
 @dataclass
 class GlosarCandidate:
-    original: str        # "Pratchett"
-    prevod: str          # "Pračet"
-    count: int           # koliko puta se aktiviralo
-    confidence: float    # 0-1, na osnovu broja pojava
+    original: str  # "Pratchett"
+    prevod: str  # "Pračet"
+    count: int  # koliko puta se aktiviralo
+    confidence: float  # 0-1, na osnovu broja pojava
     source_line: int
 
 
 @dataclass
 class AntiPatternCandidate:
-    pattern: str         # "bio je rekao"
-    replacement: str     # "rekao je"
+    pattern: str  # "bio je rekao"
+    replacement: str  # "rekao je"
     count: int
     confidence: float
     source_line: int
@@ -62,9 +60,9 @@ class LearnResult:
 def _izvuci_iz_search(search: str) -> str:
     """Izvuci čist tekst iz regex patterna (ukloni \\b, \\B, grupe)."""
     s = search
-    s = re.sub(r'^\\[bB]', '', s)
-    s = re.sub(r'\\[bB]$', '', s)
-    s = s.replace('\\', '')
+    s = re.sub(r"^\\[bB]", "", s)
+    s = re.sub(r"\\[bB]$", "", s)
+    s = s.replace("\\", "")
     return s.strip()
 
 
@@ -97,6 +95,7 @@ def _confidence(count: int) -> float:
         return 1.0
     # Logaritamska skala: 1→0.5, 5→0.75, 20→1.0
     import math
+
     return min(1.0, 0.5 + math.log10(count) / 2.6)
 
 
@@ -135,30 +134,36 @@ def learn_from_fires(fires: list, all_rules: list) -> LearnResult:
         conf = _confidence(total_count)
 
         if _je_ime(search):
-            result.glosar_candidates.append(GlosarCandidate(
-                original=_izvuci_iz_search(search),
-                prevod=replace,
-                count=total_count,
-                confidence=conf,
-                source_line=line,
-            ))
+            result.glosar_candidates.append(
+                GlosarCandidate(
+                    original=_izvuci_iz_search(search),
+                    prevod=replace,
+                    count=total_count,
+                    confidence=conf,
+                    source_line=line,
+                )
+            )
         elif _je_konstrukcija(search):
-            result.anti_pattern_candidates.append(AntiPatternCandidate(
-                pattern=_izvuci_iz_search(search),
-                replacement=replace,
-                count=total_count,
-                confidence=conf,
-                source_line=line,
-            ))
+            result.anti_pattern_candidates.append(
+                AntiPatternCandidate(
+                    pattern=_izvuci_iz_search(search),
+                    replacement=replace,
+                    count=total_count,
+                    confidence=conf,
+                    source_line=line,
+                )
+            )
 
     # Neaktivna pravila
     for rule in all_rules:
         if rule.source_line not in fired_lines:
-            result.unused_rules.append(UnusedRule(
-                search=rule.search,
-                replace=rule.replace,
-                source_line=rule.source_line,
-            ))
+            result.unused_rules.append(
+                UnusedRule(
+                    search=rule.search,
+                    replace=rule.replace,
+                    source_line=rule.source_line,
+                )
+            )
 
     # Sortiraj: glosar po count desc, anti-pattern po count desc
     result.glosar_candidates.sort(key=lambda c: -c.count)
@@ -211,7 +216,7 @@ def summarize(result: LearnResult) -> str:
     """Kratki tekstualni sažetak."""
     lines = [
         f"Ukupno pravila: {result.total_rules}",
-        f"Aktivirano: {result.unique_rules_fired} ({100*result.unique_rules_fired//max(1,result.total_rules)}%)",
+        f"Aktivirano: {result.unique_rules_fired} ({100 * result.unique_rules_fired // max(1, result.total_rules)}%)",
         f"Ukupno zamena: {result.total_fires}",
         f"Glosar kandidata: {len(result.glosar_candidates)}",
         f"Anti-pattern kandidata: {len(result.anti_pattern_candidates)}",
@@ -220,9 +225,13 @@ def summarize(result: LearnResult) -> str:
     if result.glosar_candidates:
         lines.append("\nTop 10 glosar kandidata:")
         for c in result.glosar_candidates[:10]:
-            lines.append(f"  {c.original:20} -> {c.prevod:20} ({c.count}x, conf={c.confidence:.2f})")
+            lines.append(
+                f"  {c.original:20} -> {c.prevod:20} ({c.count}x, conf={c.confidence:.2f})"
+            )
     if result.anti_pattern_candidates:
         lines.append("\nTop 10 anti-pattern kandidata:")
         for c in result.anti_pattern_candidates[:10]:
-            lines.append(f"  {c.pattern:30} -> {c.replacement:30} ({c.count}x, conf={c.confidence:.2f})")
+            lines.append(
+                f"  {c.pattern:30} -> {c.replacement:30} ({c.count}x, conf={c.confidence:.2f})"
+            )
     return "\n".join(lines)

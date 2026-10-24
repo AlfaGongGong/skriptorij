@@ -10,22 +10,25 @@
 import json
 import re
 from pathlib import Path
+
 from bs4 import BeautifulSoup
+
+from core.quality import _QUALITY_RESCUE_THRESHOLD, _scoruj_kvalitetu
 from core.text_utils import (
-    _agresivno_cisti,
-    _smart_extract,
-    _post_process_tipografija,
-    _detektuj_halucinaciju,
-    _detektuj_en_ostatke,
     _HTML_TAG_RE,
+    _agresivno_cisti,
+    _detektuj_en_ostatke,
+    _detektuj_halucinaciju,
+    _post_process_tipografija,
+    _smart_extract,
 )
-from core.quality import _scoruj_kvalitetu, _QUALITY_RESCUE_THRESHOLD
 
 _RETRO_QA_THRESHOLD = 9.5  # FIX: QA retry prag za retro
 
 # Lazy import — rod_detektor i kalkovi_engine (fail-safe)
 try:
     from core.kalkovi.rod_detektor import rod_detektor as _rod_detektor_singleton
+
     _ROD_DETEKTOR_OK = True
 except Exception:
     _rod_detektor_singleton = None
@@ -33,6 +36,7 @@ except Exception:
 
 try:
     from core.kalkovi.engine import kalkovi_engine as _kalkovi_engine_retro
+
     _KALKOVI_RETRO_OK = True
 except Exception:
     _kalkovi_engine_retro = None
@@ -64,7 +68,9 @@ def _je_finalni_chk(chk_path: Path) -> bool:
                 chapter001.html_blok_0.lektura.chk
     """
     # Ako stem (bez .chk) sadrži ".prevod" ili ".lektura" → međukorak
-    stem = chk_path.stem  # npr. "chapter001.html_blok_0" ili "chapter001.html_blok_0.prevod"
+    stem = (
+        chk_path.stem
+    )  # npr. "chapter001.html_blok_0" ili "chapter001.html_blok_0.prevod"
     return not (stem.endswith(".prevod") or stem.endswith(".lektura"))
 
 
@@ -77,13 +83,18 @@ def _get_checkpoint_dir(self) -> Path:
         return self.checkpoint_dir
     # Fallback: izgradi iz CHECKPOINT_BASE_DIR
     from config.settings import CHECKPOINT_BASE_DIR
+
     clean_name = getattr(self, "clean_book_name", "knjiga")
     return CHECKPOINT_BASE_DIR / f"_skr_{clean_name}" / "checkpoints"
 
 
 async def retroaktivna_relektura_v10(
-    self, target_work_dir=None, force=False, only_bad=False,
-    bad_threshold=_QUALITY_RESCUE_THRESHOLD, stems_whitelist=None
+    self,
+    target_work_dir=None,
+    force=False,
+    only_bad=False,
+    bad_threshold=_QUALITY_RESCUE_THRESHOLD,
+    stems_whitelist=None,
 ):
     """
     B10 FIX: Iterira samo finalne .chk fajlove (ne međukorak fajlove).
@@ -98,9 +109,7 @@ async def retroaktivna_relektura_v10(
     self.checkpoint_dir = chk_dir  # ažuriraj engine atribut
 
     # B10 FIX: samo finalni .chk fajlovi
-    svi_chk = sorted(
-        [f for f in chk_dir.glob("*.chk") if _je_finalni_chk(f)]
-    )
+    svi_chk = sorted([f for f in chk_dir.glob("*.chk") if _je_finalni_chk(f)])
 
     if not svi_chk:
         self.log("❌ Nema finalnih .chk fajlova.", "error")
@@ -137,8 +146,7 @@ async def retroaktivna_relektura_v10(
             except Exception:
                 pass
         ciljani = [
-            chk for chk in svi_chk
-            if prev_scores.get(chk.stem, 10.0) < bad_threshold
+            chk for chk in svi_chk if prev_scores.get(chk.stem, 10.0) < bad_threshold
         ]
     else:
         ciljani = svi_chk
@@ -165,12 +173,8 @@ async def retroaktivna_relektura_v10(
         except Exception:
             old_text_cist = re.sub(r"<[^>]+>", " ", old_text_raw).strip()
 
-        file_name = (
-            chk.stem.split("_blok_")[0] if "_blok_" in chk.stem else "retro"
-        )
-        chunk_idx_str = (
-            chk.stem.split("_blok_")[-1] if "_blok_" in chk.stem else "0"
-        )
+        file_name = chk.stem.split("_blok_")[0] if "_blok_" in chk.stem else "retro"
+        chunk_idx_str = chk.stem.split("_blok_")[-1] if "_blok_" in chk.stem else "0"
         try:
             chunk_idx = int(chunk_idx_str)
         except ValueError:
@@ -178,7 +182,9 @@ async def retroaktivna_relektura_v10(
 
         rel_glosar = self._extract_relevant_glossary(old_text_cist)
         chapter_summary = self._get_chapter_summary_for_lektor(file_name)
-        tip_bloka = "naracija"  # retro uvijek naracija (sigurno, nema HTML za detekciju)
+        tip_bloka = (
+            "naracija"  # retro uvijek naracija (sigurno, nema HTML za detekciju)
+        )
 
         lek_sys = self._get_lektor_prompt(
             prev_kraj="",
@@ -189,8 +195,12 @@ async def retroaktivna_relektura_v10(
         # B11 FIX: šalje čisti tekst, ne sirovi HTML
         p_lek = f"Lektoriraj tekst:\n{old_text_cist}"
         raw_l, _ = await self._call_ai_engine(
-            p_lek, chunk_idx, uloga="LEKTOR",
-            filename=file_name, sys_override=lek_sys, tip_bloka=tip_bloka,
+            p_lek,
+            chunk_idx,
+            uloga="LEKTOR",
+            filename=file_name,
+            sys_override=lek_sys,
+            tip_bloka=tip_bloka,
         )
         # B-retro FIX: _smart_extract pravilno parsira JSON {"finalno_polirano": "..."}
         # _agresivno_cisti nije parsiralo JSON → pisalo je raw JSON u .chk
@@ -258,6 +268,7 @@ async def retroaktivna_relektura_v10(
 
         if ocjena is None or not isinstance(ocjena, (int, float)):
             from core.quality import _izracunaj_heuristicki_score
+
             ocjena, _ = _izracunaj_heuristicki_score(finalno)
 
         ocjena = round(float(max(1.0, min(10.0, ocjena))), 1)
@@ -266,6 +277,7 @@ async def retroaktivna_relektura_v10(
         if ocjena < _RETRO_QA_THRESHOLD:
             try:
                 from processing.workers import _retry_s_feedbackom
+
                 _qa_dict = {
                     "ukupno": ocjena,
                     "razlog": f"Ocjena ispod {_RETRO_QA_THRESHOLD} nakon retro re-lekture",
@@ -321,7 +333,7 @@ async def retroaktivna_relektura_v10(
             _tmp_qs = _qs_cache_now.with_suffix(".tmp")
             _tmp_qs.write_text(
                 json.dumps(_existing_now, ensure_ascii=False, indent=2),
-                encoding="utf-8"
+                encoding="utf-8",
             )
             _tmp_qs.replace(_qs_cache_now)
         except Exception as _flush_err:
@@ -345,7 +357,9 @@ async def retroaktivna_relektura_v10(
 
         if _ROD_DETEKTOR_OK and _rod_detektor_singleton is not None:
             try:
-                knjiga_id_r = getattr(self, "clean_book_name", "") or chk.stem.split("_blok_")[0]
+                knjiga_id_r = (
+                    getattr(self, "clean_book_name", "") or chk.stem.split("_blok_")[0]
+                )
                 glosar_rod_r = _izvuci_glosar_rod(self)
                 finalno_r, n_rod = _rod_detektor_singleton.primijeni(
                     finalno, knjiga_id=knjiga_id_r, glosar_rod=glosar_rod_r
@@ -389,9 +403,11 @@ async def retroaktivna_relektura_v10(
     # Popuni html_files iz work_dir i resetiraj toc_entries prije dropcap/toc petlje.
     if not self.html_files and self.work_dir.exists():
         from core.natural_sort import natural_sort_key
+
         self.html_files = sorted(
             [
-                f for f in self.work_dir.rglob("*")
+                f
+                for f in self.work_dir.rglob("*")
                 if f.suffix.lower() in {".html", ".htm", ".xhtml", ".xml"}
                 and "checkpoints" not in f.parts
             ],
@@ -415,11 +431,23 @@ async def retroaktivna_relektura_v10(
 # R1 FIX: Whitelist fajlova koji legitimno sadrže engleski
 # (naslovnica, bibliografija, sadržaj, copyright, kolofon)
 _WHITELIST_STEMS_PREFIXES = (
-    "01_halftitle", "02_titlepage", "03_otherbyauthor", "04_copyright",
-    "05_dedication", "06_contents", "07_",  # intro/predgovor obično ok
-    "halftitle", "titlepage", "otherbyauthor", "copyright",
-    "dedication", "contents", "toc", "colophon",
-    "abouttheauthor", "otherrecommendations",
+    "01_halftitle",
+    "02_titlepage",
+    "03_otherbyauthor",
+    "04_copyright",
+    "05_dedication",
+    "06_contents",
+    "07_",  # intro/predgovor obično ok
+    "halftitle",
+    "titlepage",
+    "otherbyauthor",
+    "copyright",
+    "dedication",
+    "contents",
+    "toc",
+    "colophon",
+    "abouttheauthor",
+    "otherrecommendations",
 )
 
 
@@ -489,14 +517,19 @@ async def mark_for_review(self, score_threshold: float = _QUALITY_RESCUE_THRESHO
                     reason.append("Dijalog bez em-crtice")
 
             if needs_review:
-                review_list.append({
-                    "file":     chk_file.name,
-                    "stem":     chk_file.stem,
-                    "score":    qs,
-                    "reason":   ", ".join(reason),
-                    "severity": "score" if (qs is not None and qs < score_threshold) else "heuristic",
-                    "preview":  BeautifulSoup(text, "html.parser").get_text()[:120] + "...",
-                })
+                review_list.append(
+                    {
+                        "file": chk_file.name,
+                        "stem": chk_file.stem,
+                        "score": qs,
+                        "reason": ", ".join(reason),
+                        "severity": "score"
+                        if (qs is not None and qs < score_threshold)
+                        else "heuristic",
+                        "preview": BeautifulSoup(text, "html.parser").get_text()[:120]
+                        + "...",
+                    }
+                )
         except Exception:
             pass
 
@@ -635,9 +668,9 @@ async def send_to_fix(self, score_threshold: float = _QUALITY_RESCUE_THRESHOLD):
 
     # B14 FIX: samo finalni fajlovi
     losi = [
-        chk for chk in sorted(chk_dir.glob("*.chk"))
-        if _je_finalni_chk(chk)
-        and scores.get(chk.stem, 10.0) < score_threshold
+        chk
+        for chk in sorted(chk_dir.glob("*.chk"))
+        if _je_finalni_chk(chk) and scores.get(chk.stem, 10.0) < score_threshold
     ]
 
     if not losi:

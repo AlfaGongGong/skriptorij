@@ -74,21 +74,18 @@ _PREVODILAC_TIP_INSTRUKCIJE = {
 - Ton govora: prenesi registar (formalni/neformalni/kolokvijalni) identičan originalu
 - Unutarnji monolog: <em>kurzivom ovako</em>
 - Temperatura prevoda: malo slobodnija — prirodnost > doslovnost""",
-
     "poetski": """POETSKI TEKST SPECIFIČNO:
 - Sačuvaj ritam, mjeru i zvučnost — prevod je sekundaran, osjećaj primaran
 - Ponavljanja i anafore: čuvaj ih, ne eliminiraj
 - Kratke rečenice i stihovi: ne spajaj ih u duge
 - <br> tagovi na kraju stiha: obavezno zadrži
 - Dozvoljene jezičke slobode ako rima ili ritam zahtijevaju""",
-
     "opis": """OPISNI TEKST SPECIFIČNO:
 - Sačuvaj bogatstvo detalja — svaki pridjev i prilog je namjeran
 - Senzorni opis (vid/sluh/miris/dodir/okus): prenesi precizan redosljed
 - Pasivne konstrukcije su OK gdje originalno postoje
 - Dugačke rečenice: dozvoljene ako opisuju složenu sliku
 - Vokabular: što bogatiji, izbjegavaj generičke zamjene""",
-
     "naracija": """NARATIVNI TEKST SPECIFIČNO:
 - Tempo: identičan originalu — kratke rečenice za napetost, duge za atmosferu
 - Glagolski vidovi: dosljedni kroz odlomak
@@ -361,8 +358,13 @@ Ako nema problema: {"konzistentno": true, "problemi": [], "sažetak": "Glosar je
 
 # ─── Pomoćne funkcije ─────────────────────────────────────────────────────────
 
-def get_prevodilac_prompt(book_context: dict, glosar_injekcija: str, prev_kraj: str,
-                          tip_bloka: str = "naracija") -> str:
+
+def get_prevodilac_prompt(
+    book_context: dict,
+    glosar_injekcija: str,
+    prev_kraj: str,
+    tip_bloka: str = "naracija",
+) -> str:
     ton = book_context.get("ton", "neutralan")
     stil = book_context.get("stil_pripovijedanja", "3. lice")
     zanr = book_context.get("zanr", "nepoznat")
@@ -380,6 +382,7 @@ def get_prevodilac_prompt(book_context: dict, glosar_injekcija: str, prev_kraj: 
     if autor_profil:
         try:
             from core.autor_analiza import napravi_prompt
+
             _tekst = napravi_prompt(autor_profil)
             if _tekst:
                 autor_stil = "\nSTIL AUTORA (analiza):\n" + _tekst + "\n"
@@ -396,8 +399,13 @@ def get_prevodilac_prompt(book_context: dict, glosar_injekcija: str, prev_kraj: 
     )
 
 
-def get_lektor_prompt(book_context: dict, prev_kraj: str, glosar_injekcija: str,
-                      chapter_summary: str, tip_bloka: str = "naracija") -> str:
+def get_lektor_prompt(
+    book_context: dict,
+    prev_kraj: str,
+    glosar_injekcija: str,
+    chapter_summary: str,
+    tip_bloka: str = "naracija",
+) -> str:
     """
     B09 FIX: Uklonjen `for_gemma` parametar koji je umetao broken `{text}` placeholder.
     Gemma modeli se sada oslanjaju na http_client.py _NO_SYSTEM_ROLE mechanism
@@ -437,6 +445,7 @@ def get_polish_prompt(book_context: dict, tip_bloka: str) -> str:
         stilski_vodic=stilski_vodic,
     )
 
+
 # ── V2 prompt merge ────────────────────────────────────────────────────────────
 
 """
@@ -446,8 +455,7 @@ Nasljednik core/prompts.py — backward compatible.
 Koristi core/model_profiles.py za model-specifična upozorenja.
 """
 
-from typing import Optional, Dict
-
+from typing import Dict, Optional
 
 # ─────────────────────────────────────────────────────────────
 # BASE PROMPTOVI — zajednička osnova za sve modele
@@ -502,8 +510,7 @@ Vraćaš SAMO ispravljeni tekst — bez komentara, bez objašnjenja.
 # MODEL PATCHES — dodaci specifični za svaki model
 # ─────────────────────────────────────────────────────────────
 
-MODEL_PATCHES: Dict[str, Dict[str, str]] = {
-
+MODEL_PATCHES: dict[str, dict[str, str]] = {
     "gemini_25_flash": {
         "anti_meta": (
             "VAŽNO: Ne počinji odgovor s 'Naravno', 'Svakako', 'Evo prijevoda' ili sličnim uvodima. "
@@ -520,7 +527,7 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "\n"
             "1. ATMOSFERA: pojačaj jezu i tjeskobu, ne ublažavaj. Čuvaj mračne tonove.\n"
             "2. SENZORNI JEZIK: konkretni opisi — miris, tekstura, zvuk, bol.\n"
-            "   \"the wet rasp\" → \"mokro hropanje\" (ne samo \"disanje\").\n"
+            '   "the wet rasp" → "mokro hropanje" (ne samo "disanje").\n'
             "3. RITAM: kratke rečenice za napetost, duge za tjeskobu — ne mijenjaj strukturu.\n"
             "4. TJELESNI GLAGOLI: shamble→vući se, lurch→posrnuti, flinch→trznuti se,\n"
             "   recoil→sgroziti se, snarl→režati, hiss→siktati, rasp→hropiti.\n"
@@ -529,32 +536,25 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "   corpse→leš/lešina, wound→rana, whisper→šapat, scream→vrisak/krik/urlik,\n"
             "   decay→raspadanje, abyss→ponor/bezdno, ancient→drevni, ritual→obred,\n"
             "   demon→demon/đavo, monster→nakaza/čudovište.\n"
-            "7. METAFORE: prevodi živo — \"heart turned to stone\"→\"srce se skamenilo\",\n"
-            "   \"darkness swallowed him\"→\"tama ga progutala\". Ne kalkiraj.\n"
+            '7. METAFORE: prevodi živo — "heart turned to stone"→"srce se skamenilo",\n'
+            '   "darkness swallowed him"→"tama ga progutala". Ne kalkiraj.\n'
             "8. KOHERENTNOST: isti emocionalni naboj od prve do zadnje rečenice bloka."
         ),
     },
-
     "gemini_20_flash": {
         "anti_meta": (
             "Ne počinji s 'Naravno', 'Evo' ili sličnim. Odmah kreni s tekstom."
         ),
-        "anti_markdown": (
-            "Bez ``` blokova. Čisti HTML izlaz."
-        ),
+        "anti_markdown": ("Bez ``` blokova. Čisti HTML izlaz."),
     },
-
     "gemma3_27b": {
-        "anti_meta": (
-            "Odmah kreni s prijevodom. Bez uvodnih fraza."
-        ),
+        "anti_meta": ("Odmah kreni s prijevodom. Bez uvodnih fraza."),
         "anti_srbizmi": (
             "Pišeš hrvatski, ijekavica. "
             "Nikad: neverovatno, poseduje, hteo, video (ekavski), sreo (provjeri kontekst). "
             "Uvijek: nevjerojatno, posjeduje, htio, vidio."
         ),
     },
-
     "llama33_70b_groq": {
         "anti_srbizmi": (
             "KRITIČNO: Pišeš ISKLJUČIVO hrvatskim jezikom — IJEKAVICA. "
@@ -573,7 +573,6 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "'He had a gut feeling' → 'Imao je predosjećaj', ne 'imao je crijevni osjećaj'."
         ),
     },
-
     "llama31_70b_cerebras": {
         "anti_srbizmi": (
             "KRITIČNO — IJEKAVICA OBAVEZNA: "
@@ -588,11 +587,9 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Provjeri svaki glagolski pridjev radni."
         ),
         "anti_da": (
-            "Nikad 'da' uz modalne glagole: "
-            "'morao je da ode' → 'morao je otići'."
+            "Nikad 'da' uz modalne glagole: 'morao je da ode' → 'morao je otići'."
         ),
     },
-
     "mistral_large": {
         "vary_syntax": (
             "Variiaj strukturu rečenica — ne ponavljaj iste sintaksne obrasce. "
@@ -603,13 +600,9 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Idiomi se prevode slobodnije, ne riječ po riječ."
         ),
     },
-
     "mistral_nemo": {
-        "vary_syntax": (
-            "Variiaj strukturu rečenica. Književni stil, ne doslovan."
-        ),
+        "vary_syntax": ("Variiaj strukturu rečenica. Književni stil, ne doslovan."),
     },
-
     "command_r_plus_cohere": {
         "vary_syntax": (
             "Variiaj strukturu rečenica — izbjegavaj ponavljanje istih obrazaca. "
@@ -620,37 +613,26 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Svaki engleski termin mora biti preveden ili adaptiran."
         ),
     },
-
     "llama_sambanova": {
-        "anti_literal": (
-            "Ne prevodis idiome doslovno. Slobodan, književan prijevod."
-        ),
+        "anti_literal": ("Ne prevodis idiome doslovno. Slobodan, književan prijevod."),
         "anti_srbizmi": (
             "Hrvatski standard obavezan. Ijekavica. Bez srbizama i ekavizama."
         ),
     },
-
     "deepseek_openrouter": {
         "anti_english": (
             "Izlaz je ISKLJUČIVO na hrvatskom. "
             "Bez engleskih fraza ili citata u prijevodu."
         ),
     },
-
     "qwen_chutes": {
-        "anti_english": (
-            "Izlaz je ISKLJUČIVO na hrvatskom. Bez engleskog."
-        ),
-        "anti_srbizmi": (
-            "Ijekavica obavezna."
-        ),
+        "anti_english": ("Izlaz je ISKLJUČIVO na hrvatskom. Bez engleskog."),
+        "anti_srbizmi": ("Ijekavica obavezna."),
     },
-
     # ═══════════════════════════════════════════════════════════════
     # PROVIDER-LEVEL PATCHES (2026-10-23)
     # Koriste se kad model_ime nije prepoznat (novi model iz discovery-ja)
     # ═══════════════════════════════════════════════════════════════
-
     "GEMINI": {
         "anti_meta": (
             "VAŽNO: Ne počinji odgovor s 'Naravno', 'Svakako', 'Evo prijevoda' ili sličnim uvodima. "
@@ -667,18 +649,14 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Uvijek: nevjerojatno, posjeduje, htio, vidio."
         ),
     },
-
     "GEMMA": {
-        "anti_meta": (
-            "Odmah kreni s prijevodom. Bez uvodnih fraza."
-        ),
+        "anti_meta": ("Odmah kreni s prijevodom. Bez uvodnih fraza."),
         "anti_srbizmi": (
             "Pišeš hrvatski, ijekavica. "
             "Nikad: neverovatno, poseduje, hteo, video. "
             "Uvijek: nevjerojatno, posjeduje, htio, vidio."
         ),
     },
-
     "GROQ": {
         "anti_srbizmi": (
             "KRITIČNO: Pišeš ISKLJUČIVO hrvatskim jezikom — IJEKAVICA. "
@@ -696,7 +674,6 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "'He had a gut feeling' → 'Imao je predosjećaj', ne 'imao je crijevni osjećaj'."
         ),
     },
-
     "CEREBRAS": {
         "anti_srbizmi": (
             "KRITIČNO — IJEKAVICA OBAVEZNA: "
@@ -710,11 +687,9 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Provjeri svaki glagolski pridjev radni."
         ),
         "anti_da": (
-            "Nikad 'da' uz modalne glagole: "
-            "'morao je da ode' → 'morao je otići'."
+            "Nikad 'da' uz modalne glagole: 'morao je da ode' → 'morao je otići'."
         ),
     },
-
     "MISTRAL": {
         "vary_syntax": (
             "Variraj strukturu rečenica — ne ponavljaj iste sintaksne obrasce. "
@@ -724,16 +699,12 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Ne budi previše krut u stilu. Prirodni tok rečenice je važniji od gramatičke savršenosti."
         ),
     },
-
     "COHERE": {
         "vary_syntax": (
             "Variraj strukturu rečenica — ne ponavljaj iste sintaksne obrasce."
         ),
-        "anti_english": (
-            "Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."
-        ),
+        "anti_english": ("Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."),
     },
-
     "SAMBANOVA": {
         "anti_literal": (
             "Ne prevodiš idiome doslovno. "
@@ -745,17 +716,11 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
             "Uvijek: nevjerojatno, posjeduje, htio, vidio."
         ),
     },
-
     "OPENROUTER": {
-        "anti_english": (
-            "Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."
-        ),
+        "anti_english": ("Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."),
     },
-
     "CHUTES": {
-        "anti_english": (
-            "Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."
-        ),
+        "anti_english": ("Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."),
         "anti_srbizmi": (
             "Pišeš hrvatski, ijekavica. "
             "Nikad: neverovatno, poseduje, hteo, video. "
@@ -769,7 +734,7 @@ MODEL_PATCHES: Dict[str, Dict[str, str]] = {
 # PATCH PO TIPU BLOKA
 # ─────────────────────────────────────────────────────────────
 
-TIP_BLOKA_PATCHES: Dict[str, str] = {
+TIP_BLOKA_PATCHES: dict[str, str] = {
     "dijalog": (
         "Ovaj blok sadrži DIJALOG. "
         "Navodnici u dijalogu pišu se kao »tekst« ili — tekst (em-crtica). "
@@ -815,11 +780,12 @@ TIP_BLOKA_PATCHES: Dict[str, str] = {
 # GLAVNA FUNKCIJA
 # ─────────────────────────────────────────────────────────────
 
+
 def get_system_prompt(
     uloga: str,
     model_ime: str,
-    tip_bloka: Optional[str] = None,
-    extra_context: Optional[str] = None,
+    tip_bloka: str | None = None,
+    extra_context: str | None = None,
 ) -> str:
     """
     Sastavlja kompletan system prompt za dati model i ulogu.
@@ -847,6 +813,7 @@ def get_system_prompt(
     if not patches:
         try:
             from config.ai_config import get_provider_for_model
+
             _prov = get_provider_for_model(model_ime)
             if _prov:
                 patches = MODEL_PATCHES.get(_prov, {})
@@ -869,12 +836,14 @@ def get_system_prompt(
 def get_temperatura(model_ime: str, uloga: str) -> float:
     """Vraća optimalnu temperaturu za model i ulogu."""
     from core.model_profiles import get_temp
+
     return get_temp(model_ime, uloga)
 
 
 def get_max_tokens(model_ime: str, uloga: str = "prevodilac") -> int:
     """Vraća max_tokens za model i ulogu."""
     from core.model_profiles import get_max_tokens as _gmt
+
     return _gmt(model_ime, uloga)
 
 
@@ -924,6 +893,9 @@ def get_toc_title_prompt(paragraph: str, max_len: int = 200) -> str:
     text = paragraph.strip()[:max_len]
     return (
         "Prvi paragraf poglavlja:\n"
-        + chr(34) + text + chr(34) + "\n\n"
+        + chr(34)
+        + text
+        + chr(34)
+        + "\n\n"
         + "Predlozi kratak naslov poglavlja (max 5 rijeci) na bosanskom."
     )

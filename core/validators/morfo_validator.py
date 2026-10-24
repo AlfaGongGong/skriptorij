@@ -25,12 +25,16 @@ try:
         HALUCIRANI_OBLICI,
         skeniraj_halucinacije,
     )
+
     _BLACKLIST_DOSTUPAN = True
 except ImportError:
     _BLACKLIST_DOSTUPAN = False
     BLACKLIST_PROMPT_BLOK = ""
     HALUCIRANI_OBLICI = {}
-    def skeniraj_halucinacije(tekst): return []  # noqa: E704
+
+    def skeniraj_halucinacije(tekst):
+        return []  # noqa: E704
+
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +56,7 @@ class ValidacijaRezultat:
     izmjene: list[dict] = field(default_factory=list)
     pre_screening_nalazi: list[dict] = field(default_factory=list)
     ai_korissten: bool = False
-    greska: Optional[str] = None
+    greska: str | None = None
     trajanje_ms: int = 0
 
     @property
@@ -104,8 +108,8 @@ Vrati JSON s rezultatom."""
 def _parsiraj_ai_odgovor(raw: str, originalni: str) -> tuple[str, list[dict]]:
     """Parsira JSON odgovor AI-a i vraća (ispravljeni_tekst, izmjene)."""
     raw = raw.strip()
-    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
-    raw = re.sub(r'\s*```$', '', raw, flags=re.MULTILINE)
+    raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
+    raw = re.sub(r"\s*```$", "", raw, flags=re.MULTILINE)
     raw = raw.strip()
 
     data = json.loads(raw)
@@ -154,7 +158,7 @@ def _pozovi_ai(
     return _parsiraj_ai_odgovor(odgovor, tekst)
 
 
-def _dohvati_api_key(fleet=None) -> Optional[str]:
+def _dohvati_api_key(fleet=None) -> str | None:
     """Dohvata API ključ iz fleeta ili env varijable."""
     if fleet is not None:
         try:
@@ -171,18 +175,20 @@ def _regex_zamjene(tekst: str) -> tuple[str, list[dict]]:
     rezultat = tekst
 
     for pogresno, ispravno in HALUCIRANI_OBLICI.items():
-        pattern = re.compile(r'\b' + re.escape(pogresno) + r'\b', re.IGNORECASE)
+        pattern = re.compile(r"\b" + re.escape(pogresno) + r"\b", re.IGNORECASE)
         if not pattern.search(rezultat):
             continue
 
         def _zamijeni(m, _isp=ispravno):
             orig = m.group(0)
             zamjena = (_isp[0].upper() + _isp[1:]) if orig[0].isupper() else _isp
-            izmjene.append({
-                "original": orig,
-                "ispravak": zamjena,
-                "objasnjenje": "regex_blacklist",
-            })
+            izmjene.append(
+                {
+                    "original": orig,
+                    "ispravak": zamjena,
+                    "objasnjenje": "regex_blacklist",
+                }
+            )
             return zamjena
 
         rezultat = pattern.sub(_zamijeni, rezultat)
@@ -217,7 +223,7 @@ def _audit_log(
 
 def validiraj_tekst(
     tekst: str,
-    api_key: Optional[str] = None,
+    api_key: str | None = None,
     knjiga_id: str = "unknown",
     chunk_id: int = 0,
     force_ai: bool = False,
@@ -283,7 +289,7 @@ def validiraj_tekst(
                 except Exception as e:
                     zadnja_greska = str(e)
                     logger.warning(
-                        f"[morfo_validator] AI pokušaj {pokusaj+1}/{MAX_RETRIES+1} neuspješan: {e}"
+                        f"[morfo_validator] AI pokušaj {pokusaj + 1}/{MAX_RETRIES + 1} neuspješan: {e}"
                     )
                     if pokusaj < MAX_RETRIES:
                         time.sleep(RETRY_DELAY)
@@ -293,7 +299,7 @@ def validiraj_tekst(
                 rezultat.izmjene.extend(ai_izmjene)
             else:
                 logger.error(
-                    f"[morfo_validator] AI prolaz neuspješan nakon {MAX_RETRIES+1} pokušaja. "
+                    f"[morfo_validator] AI prolaz neuspješan nakon {MAX_RETRIES + 1} pokušaja. "
                     f"Zadnja greška: {zadnja_greska}. Koristim regex rezultat."
                 )
                 rezultat.greska = zadnja_greska
@@ -309,7 +315,9 @@ def validiraj_tekst(
             rezultat.validirani_tekst = tekst_nakon_regex
 
     except Exception as e:
-        logger.error(f"[morfo_validator] Kritična greška — vraćam original. Greška: {e}")
+        logger.error(
+            f"[morfo_validator] Kritična greška — vraćam original. Greška: {e}"
+        )
         rezultat.greska = str(e)
         rezultat.validirani_tekst = tekst
 
@@ -334,7 +342,7 @@ class MorfoValidator:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         skip_ai: bool = False,
     ):
         self._api_key = api_key
@@ -355,14 +363,16 @@ class MorfoValidator:
         i poštuje quota_tracker/rate_limiter kao i ostatak pipeline-a.
         """
         self._engine = engine
-        logger.debug("[morfo_validator] Engine postavljen — koristim fleet za AI pozive")
+        logger.debug(
+            "[morfo_validator] Engine postavljen — koristim fleet za AI pozive"
+        )
 
     @property
     def _fleet(self):
         return getattr(self._engine, "fleet", None) if self._engine else None
 
     @property
-    def api_key(self) -> Optional[str]:
+    def api_key(self) -> str | None:
         """Dohvaća API ključ: iz fleeta ako je engine postavljen, inače direktno."""
         key = _dohvati_api_key(self._fleet)
         return key or self._api_key

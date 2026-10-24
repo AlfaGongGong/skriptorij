@@ -3,6 +3,7 @@ tests/golden/test_styler.py
 Golden test za epub/styler.py — deterministicka provera nad mini EPUB-om.
 Ne menja izvor, pise u tmp dir.
 """
+
 import sys
 import zipfile
 from pathlib import Path
@@ -53,8 +54,9 @@ def test_styler_output_is_valid_epub(tmp_path):
         assert ncx, "nema NCX"
         ncx_content = z.read(ncx[0]).decode("utf-8", errors="replace")
         import re
+
         navpoints = len(re.findall(r"<navPoint", ncx_content))
-        assert navpoints > 0, f"NCX ima 0 navPoints"
+        assert navpoints > 0, "NCX ima 0 navPoints"
 
         # XML validnost za sve XHTML
         errors = []

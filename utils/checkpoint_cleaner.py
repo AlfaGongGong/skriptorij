@@ -1,4 +1,5 @@
 """Čišćenje checkpoint fajlova od JSON omotača i placeholder teksta."""
+
 import json
 import logging
 import re
@@ -8,17 +9,25 @@ from pathlib import Path
 try:
     from core.text_utils import _je_ai_anotacija as _detect_anotacija
 except ImportError:
-    logging.warning("checkpoint_cleaner: core.text_utils nedostupan — detekcija anotacija isključena")
+    logging.warning(
+        "checkpoint_cleaner: core.text_utils nedostupan — detekcija anotacija isključena"
+    )
     _detect_anotacija = None
 
 _PLACEHOLDERS = {
-    "lektorisani tekst ovdje", "korigirani tekst ovdje",
-    "lektorirani tekst ovdje", "prevedeni tekst ovdje",
+    "lektorisani tekst ovdje",
+    "korigirani tekst ovdje",
+    "lektorirani tekst ovdje",
+    "prevedeni tekst ovdje",
     "molim te, pošalji tekst za obradu. čekam ga.",
     "pošalji tekst za obradu.",
     "čekam ga.",
-    "[prijevod ovdje]", "[lektura ovdje]", "[tekst ovdje]",
-    "ovdje unesite tekst", "tekst za lekturu", "tekst za prijevod",
+    "[prijevod ovdje]",
+    "[lektura ovdje]",
+    "[tekst ovdje]",
+    "ovdje unesite tekst",
+    "tekst za lekturu",
+    "tekst za prijevod",
 }
 
 _PHANTOM_CONTAINS = [
@@ -43,6 +52,7 @@ def _ocisti_escape(text: str) -> str:
     \" → "
     """
     import re as _re
+
     # class=„X" ili class=„X” → class="X"
     text = _re.sub(r'=„([^"„”]*)["”]', r'="\1"', text)
     # class=\"X\" → class="X"
@@ -61,20 +71,21 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
     if stripped.startswith("<!--"):
         idx = stripped.find("-->")
         if idx > 0:
-            sha_prefix = stripped[:idx+3] + "\n"
-            stripped = stripped[idx+3:].strip()
-    
+            sha_prefix = stripped[: idx + 3] + "\n"
+            stripped = stripped[idx + 3 :].strip()
+
     if not stripped.startswith("{"):
         # 2026-10-23: ocisti escape-ovane navodnike i u cistom HTML-u
         _cleaned_html = _ocisti_escape(stripped)
         if _cleaned_html != stripped:
             return sha_prefix + _cleaned_html
         return sadrzaj
-    
+
     # 2026-10-23: ocisti \" i \„ pre json.loads (Google/Gemma kvari escape)
-    _cleaned = stripped.replace('\\„', '"').replace('\\"', '"')
+    _cleaned = stripped.replace("\\„", '"').replace('\\"', '"')
     try:
         import json as _json_try
+
         _data = _json_try.loads(_cleaned)
         for _k in ("finalno_polirano", "korektura", "tekst", "prijevod"):
             if _k in _data and isinstance(_data[_k], str) and _data[_k].strip():
@@ -86,7 +97,7 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
 
     # Normalizuj tipografske navodnike → ASCII za potrebe json.loads.
     # AI modeli ponekad koriste „..." umjesto ASCII "" čak i u JSON omotaču.
-    _TYPO_Q = re.compile(r'[\u201e\u201c\u201d\u2018\u2019\u201a\u201b]')
+    _TYPO_Q = re.compile(r"[\u201e\u201c\u201d\u2018\u2019\u201a\u201b]")
 
     for candidate in (stripped, _TYPO_Q.sub('"', stripped)):
         try:
@@ -132,13 +143,14 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
     # Fallback za truncated JSON — AI ponekad vrati {"korektura": "<div ..."}
     # bez zatvorene viticaste zagrade. Regex izvlaci vrijednost do kraja.
     import re as _re_fb
+
     m_fb = _re_fb.search(
         r'"(?:finalno_polirano|korektura|tekst|prijevod)"\s*:\s*"',
         stripped,
     )
     if m_fb:
-        rest = stripped[m_fb.end():]
-        rest = rest.replace('\\\\"', '"').replace('\\\\', '\\').replace('\\"', '"')
+        rest = stripped[m_fb.end() :]
+        rest = rest.replace('\\\\"', '"').replace("\\\\", "\\").replace('\\"', '"')
         rest = rest.replace("\\n", "\n").replace("\\t", "\t")
         rest = rest.rstrip().rstrip('"').rstrip("}").rstrip()
         if len(rest) > 20:
@@ -165,14 +177,14 @@ def _je_placeholder(sadrzaj: str) -> bool:
     if _s.startswith("<!--"):
         _idx = _s.find("-->")
         if _idx > 0:
-            _s = _s[_idx+3:].strip()
+            _s = _s[_idx + 3 :].strip()
     if _s.startswith("{") and not _s.rstrip().endswith("}"):
         return True  # prekinut JSON
-    
+
     # 2026-10-23: reasoning markeri
     if any(_m in _s[:500].lower() for _m in _REASONING_MARKERS):
         return True
-    
+
     cist = re.sub(r"<[^>]+>", "", sadrzaj).strip().lower()
     if cist in _PLACEHOLDERS or len(cist) < 5:
         return True

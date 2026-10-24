@@ -30,7 +30,9 @@ def get_epub_metadata(epub_path: str) -> dict:
             # Pronađi OPF fajl
             opf_name = None
             if "META-INF/container.xml" in z.namelist():
-                container = z.read("META-INF/container.xml").decode("utf-8", errors="ignore")
+                container = z.read("META-INF/container.xml").decode(
+                    "utf-8", errors="ignore"
+                )
                 m = re.search(r"full-path=['\"]([^'\"]+\.opf)['\"]", container)
                 if m:
                     opf_name = m.group(1)
@@ -39,14 +41,18 @@ def get_epub_metadata(epub_path: str) -> dict:
                 opf = z.read(opf_name).decode("utf-8", errors="ignore")
 
                 def _tag(tag, text):
-                    m = re.search(rf"<(?:dc:)?{tag}[^>]*>(.*?)</(?:dc:)?{tag}>", text, re.DOTALL)
+                    m = re.search(
+                        rf"<(?:dc:)?{tag}[^>]*>(.*?)</(?:dc:)?{tag}>", text, re.DOTALL
+                    )
                     return m.group(1).strip() if m else ""
 
                 meta["title"] = _tag("title", opf) or meta["title"]
                 meta["author"] = _tag("creator", opf) or meta["author"]
                 meta["language"] = _tag("language", opf) or meta["language"]
                 meta["publisher"] = _tag("publisher", opf) or meta["publisher"]
-                meta["description"] = _tag("description", opf)[:300] or meta["description"]
+                meta["description"] = (
+                    _tag("description", opf)[:300] or meta["description"]
+                )
     except Exception:
         pass
     return meta

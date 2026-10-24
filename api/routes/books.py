@@ -1,4 +1,5 @@
 """Rute za upravljanje knjigama (listanje, pretraga, upload)."""
+
 import logging
 from pathlib import Path
 
@@ -20,11 +21,13 @@ def _list_books() -> list[dict]:
     books = []
     for p in sorted(base.glob("*")):
         if p.suffix.lower() in _SUPPORTED_EXTS and not p.name.startswith("(LIVE)"):
-            books.append({
-                "name": p.name,
-                "path": str(p),
-                "size_bytes": p.stat().st_size,
-            })
+            books.append(
+                {
+                    "name": p.name,
+                    "path": str(p),
+                    "size_bytes": p.stat().st_size,
+                }
+            )
     return books
 
 
@@ -37,7 +40,9 @@ def api_books():
         return jsonify({"books": books, "files": [b["name"] for b in books]})
     except Exception:
         logger.exception("Greška pri čitanju knjiga")
-        return jsonify({"error": "Greška pri čitanju knjiga", "books": [], "files": []}), 500
+        return jsonify(
+            {"error": "Greška pri čitanju knjiga", "books": [], "files": []}
+        ), 500
 
 
 @bp.route("/api/upload_book", methods=["POST"])

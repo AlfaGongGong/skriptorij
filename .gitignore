@@ -12,3 +12,8 @@ api_state.json
 dev_api.json
 tests/integration/quota_cooldowns.json
 data/rod_registri/
+
+.cistoca/
+.env.*
+!.env.example
+*.corrupt*

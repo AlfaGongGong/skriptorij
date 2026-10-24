@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import List
+
 from config.providers import all_fallbacks, all_profiles
 
 # RPD limiti (free tier, maj 2026):
@@ -33,22 +34,19 @@ PROVIDER_PRIORITY = {
     # Jezik (prevod, lektura, korektor, polish) — GEMINI nosi, GROQ rasterecuje.
     # NVIDIA/MISTRAL rezerva, GEMMA zadnja.
     # (Test 2026-10-20: Gemma 4 na Google API timeout/500 na BCS.)
-    "PREVODILAC":       ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
-    "LEKTOR":           ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
-    "KOREKTOR":         ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
-    "POLISH":           ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
-
+    "PREVODILAC": ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+    "LEKTOR": ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+    "KOREKTOR": ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+    "POLISH": ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
     # Provjere — GEMINI nosi, GROQ rasterecuje, GEMMA zadnja.
-    "VALIDATOR":        ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
-    "GUARDIAN":         ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
-
+    "VALIDATOR": ["GEMINI", "GROQ", "NVIDIA", "MISTRAL", "GEMMA"],
+    "GUARDIAN": ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
     # ANALIZA/CHAPTER_SUMMARY — dugi promptovi, GEMINI nosi.
-    "ANALIZA":          ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
-    "CHAPTER_SUMMARY":  ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
-
+    "ANALIZA": ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
+    "CHAPTER_SUMMARY": ["GEMINI", "GROQ", "NVIDIA", "GEMMA"],
     # GLOSAR_UPDATE/SCORER — kratki JSON, GROQ nosi, GEMINI rasterecuje.
-    "GLOSAR_UPDATE":    ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
-    "SCORER":           ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
+    "GLOSAR_UPDATE": ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
+    "SCORER": ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
 }
 
 # 2026-10-24: izvedeno iz providers.json (jedan izvor istine)
@@ -96,8 +94,8 @@ class ProviderProfile:
     min_gap_s: float  # min razmak između poziva JEDNOG ključa
     cooldown_429_s: float  # kratki cooldown na RPM 429 (ne kvota!)
     supports_system_role: bool  # prihvata {"role":"system"}?
-    preferred_roles: List[str]  # uloge u kojima je odličan
-    avoid_roles: List[str]  # uloge za koje je loš
+    preferred_roles: list[str]  # uloge u kojima je odličan
+    avoid_roles: list[str]  # uloge za koje je loš
     quality_tier: int  # 1=top, 2=solid, 3=ok, 4=fallback
     notes: str = ""
 
@@ -140,12 +138,20 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         min_gap_s=7.5,  # 60s / 8 rpm_safe = 7.5s razmak između poziva jednog ključa
         cooldown_429_s=15.0,  # 15s cooldown po ključu nakon RPM 429
         supports_system_role=True,
-        preferred_roles=["PREVODILAC", "LEKTOR", "KOREKTOR", "POLISH",
-                         "VALIDATOR", "GUARDIAN", "ANALIZA", "CHAPTER_SUMMARY"],
+        preferred_roles=[
+            "PREVODILAC",
+            "LEKTOR",
+            "KOREKTOR",
+            "POLISH",
+            "VALIDATOR",
+            "GUARDIAN",
+            "ANALIZA",
+            "CHAPTER_SUMMARY",
+        ],
         avoid_roles=[],  # radi sve
         quality_tier=1,
         notes="Primarni: 3.5-flash (stable). 12 kljuceva x 500 RPD = 6000 RPD/dan. "
-              "#1 za jezik i analizu, #2 za SCORER/GLOSAR_UPDATE.",
+        "#1 za jezik i analizu, #2 za SCORER/GLOSAR_UPDATE.",
     ),
     # ── GROQ ────────────────────────────────────────────────────────────────
     # Free tier (STARI podaci za llama-3.3-70b-versatile — model ugašen 17.06.2026):
@@ -162,13 +168,13 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         tpm_hard=6000,  # FIX: qwen3.8-27b free tier ~6k TPM (bilo 15k, previse)
         min_gap_s=2.5,  # 60/24 = 2.5s
         cooldown_429_s=10.0,  # FIX: Groq šalje Retry-After (2-10s) pa se profil rijetko koristi.
-                               # 65s je bilo predugo — drži ključ zaključan kad Groq nema header.
+        # 65s je bilo predugo — drži ključ zaključan kad Groq nema header.
         supports_system_role=True,
         preferred_roles=["PREVODILAC", "KOREKTOR", "SCORER", "GLOSAR_UPDATE"],
         avoid_roles=[],
         quality_tier=2,
         notes="Brz. 6 kljuceva. RPD 6000 (6 x 1000). #1 za SCORER/GLOSAR_UPDATE, "
-              "#2 za PREVODILAC/LEKTOR/KOREKTOR.",
+        "#2 za PREVODILAC/LEKTOR/KOREKTOR.",
     ),
     # ── SAMBANOVA ───────────────────────────────────────────────────────────
     # Free tier: Meta-Llama-3.3-70B = 10 RPM / 10000 RPD / 4096 TPM
@@ -183,7 +189,7 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         rpm_hard=10,
         rpm_safe=8,
         rpd_hard=10_000,
-        rpd_safe=400,   # Realno po ključu — TPM limit čini RPD irrelevantnim
+        rpd_safe=400,  # Realno po ključu — TPM limit čini RPD irrelevantnim
         tpm_hard=4_096,  # KRITIČNO nizak! Ovo je pravo usko grlo.
         min_gap_s=7.5,  # 60/8 = 7.5s
         cooldown_429_s=75.0,  # TPM 429 treba čekati cijeli 60s prozor + buffer
@@ -364,8 +370,18 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         cooldown_429_s=120.0,
         supports_system_role=True,
         preferred_roles=[],  # 1 RPM ukupno — ne moze biti preferred
-        avoid_roles=["PREVODILAC", "KOREKTOR", "LEKTOR", "SCORER", "GLOSAR_UPDATE",
-                     "VALIDATOR", "GUARDIAN", "ANALIZA", "CHAPTER_SUMMARY", "POLISH"],
+        avoid_roles=[
+            "PREVODILAC",
+            "KOREKTOR",
+            "LEKTOR",
+            "SCORER",
+            "GLOSAR_UPDATE",
+            "VALIDATOR",
+            "GUARDIAN",
+            "ANALIZA",
+            "CHAPTER_SUMMARY",
+            "POLISH",
+        ],
         quality_tier=2,
         notes="SAMO 1 KLJUČ i 1 RPM na free tier! Koristiti samo za scorer/posebne slučajeve.",
     ),
@@ -438,12 +454,21 @@ PROVIDER_PROFILES: dict[str, ProviderProfile] = {
         cooldown_429_s=15.0,  # isto kao Gemini — Google API
         supports_system_role=False,  # Gemma nema system role
         preferred_roles=[],  # Gemma 4 nepouzdana na BCS (test 2026-10-20)
-        avoid_roles=["LEKTOR", "POLISH", "PREVODILAC", "KOREKTOR",
-                     "SCORER", "VALIDATOR", "GUARDIAN",
-                     "ANALIZA", "CHAPTER_SUMMARY", "GLOSAR_UPDATE"],
+        avoid_roles=[
+            "LEKTOR",
+            "POLISH",
+            "PREVODILAC",
+            "KOREKTOR",
+            "SCORER",
+            "VALIDATOR",
+            "GUARDIAN",
+            "ANALIZA",
+            "CHAPTER_SUMMARY",
+            "GLOSAR_UPDATE",
+        ],
         quality_tier=2,
         notes="Gemma 4 na Google API: timeout (26b) / 500 (31b) na BCS (test 2026-10-20). "
-              "Poslednja u svim prioritetima. Ne koristiti za jezicke uloge dok se ne nadje stabilniji model.",
+        "Poslednja u svim prioritetima. Ne koristiti za jezicke uloge dok se ne nadje stabilniji model.",
     ),
 }
 
@@ -474,8 +499,6 @@ def get_min_gap(provider: str) -> float:
     """Minimalni razmak između poziva jednog ključa (sekunde)."""
     p = get_profile(provider)
     return p.min_gap_s if p else 5.0
-
-
 
 
 # FIX #1: prva get_tpm_safe obrisana (dupla definicija)
@@ -561,22 +584,22 @@ def print_fleet_capacity(fleet_keys: dict[str, list]) -> None:
 # Vrijednosti su konzervativne — discovery može vratiti niže, ali ovo je
 # donja granica koju rate_limiter NIKAD ne spušta ispod.
 PROVIDER_TPM_SAFE = {
-    "GEMINI":     250000,
-    "GEMMA":      250000,
-    "GROQ":       12000,      # FIX: bilo 6400 — output chunk ~7000 tok
-    "CEREBRAS":   15000,
-    "SAMBANOVA":  20000,
-    "MISTRAL":    500000,
-    "COHERE":     100000,
+    "GEMINI": 250000,
+    "GEMMA": 250000,
+    "GROQ": 12000,  # FIX: bilo 6400 — output chunk ~7000 tok
+    "CEREBRAS": 15000,
+    "SAMBANOVA": 20000,
+    "MISTRAL": 500000,
+    "COHERE": 100000,
     "OPENROUTER": 20000,
-    "GITHUB":     15000,
-    "NVIDIA":     40000,      # NVIDIA NIM free tier ~40k TPM
-    "CLOUDFLARE": 30000,      # Workers AI free tier
-    "TOGETHER":   20000,
-    "FIREWORKS":  20000,
-    "CHUTES":     20000,
-    "HUGGINGFACE":15000,
-    "KLUSTER":    20000,
+    "GITHUB": 15000,
+    "NVIDIA": 40000,  # NVIDIA NIM free tier ~40k TPM
+    "CLOUDFLARE": 30000,  # Workers AI free tier
+    "TOGETHER": 20000,
+    "FIREWORKS": 20000,
+    "CHUTES": 20000,
+    "HUGGINGFACE": 15000,
+    "KLUSTER": 20000,
 }
 
 
@@ -614,6 +637,7 @@ CLOUDFLARE_MODEL_POOL = [
     # Qwen 2.5 Coder 32B — jak multilingual
     {"model": "@cf/qwen/qwen2.5-coder-32b-instruct", "rpm": 30, "rpd": 10000},
 ]
+
 
 def get_provider_for_model(model_ime: str) -> str | None:
     """
@@ -682,9 +706,17 @@ def get_provider_for_model(model_ime: str) -> str | None:
     # 2. Ako je model_ime vec provajder (case-insensitive)
     upper = model_ime.upper()
     _KNOWN_PROVIDERS = {
-        "GEMINI", "GEMMA", "GROQ", "CEREBRAS", "MISTRAL",
-        "COHERE", "SAMBANOVA", "OPENROUTER", "CHUTES",
-        "NVIDIA", "CLOUDFLARE",
+        "GEMINI",
+        "GEMMA",
+        "GROQ",
+        "CEREBRAS",
+        "MISTRAL",
+        "COHERE",
+        "SAMBANOVA",
+        "OPENROUTER",
+        "CHUTES",
+        "NVIDIA",
+        "CLOUDFLARE",
     }
     if upper in _KNOWN_PROVIDERS:
         return upper
@@ -700,4 +732,3 @@ def get_provider_for_model(model_ime: str) -> str | None:
         pass
 
     return None
-

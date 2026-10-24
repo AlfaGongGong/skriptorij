@@ -37,7 +37,7 @@ CHK_ROOT = Path("/storage/emulated/0/booklyfi_checkpoints")
 DB_PATH = Path("/storage/emulated/0/booklyfi_checkpoints/kalkovi_karantena.db")
 
 # qa_benchmark.py — apsolutna putanja ili relativna od mjesta poziva
-QA_BENCHMARK_PATH = Path(__file__).parent  / "qa_benchmark.py"
+QA_BENCHMARK_PATH = Path(__file__).parent / "qa_benchmark.py"
 
 # Prag za automatsku primjenu u qa_benchmark.py
 MIN_POJAVLJIVANJA = 3  # kalk mora biti viđen u ≥ 3 bloka

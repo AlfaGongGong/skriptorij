@@ -9,8 +9,19 @@ Koristenje:
 --bez-ai : ne zove AI (naslovi iz teksta, scena "description",
            dijalog samo heuristikom: odlomak koji pocinje crticom/navodnicima).
 """
-import sys, os, re, json, time, base64, shutil, tempfile, zipfile, posixpath, struct
-from functools import lru_cache
+
+import base64
+import json
+import os
+import posixpath
+import re
+import shutil
+import struct
+import sys
+import tempfile
+import time
+import zipfile
+from functools import cache, lru_cache
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -20,38 +31,53 @@ for _d in Path(SKRIPTORIJ_DIR).rglob("__pycache__"):
     shutil.rmtree(_d, ignore_errors=True)
 
 import warnings
-from bs4 import BeautifulSoup, NavigableString
+
+from bs4 import BeautifulSoup
+
 try:
     from bs4 import XMLParsedAsHTMLWarning
+
     warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 except ImportError:
     pass
 
 ORNAMENTS_DIR = os.environ.get(
-    "STIL_ORNAMENTS", "/storage/emulated/0/Books/MoonReader/ornaments_small_size")
+    "STIL_ORNAMENTS", "/storage/emulated/0/Books/MoonReader/ornaments_small_size"
+)
 
 # ═══ Stilovi ═══
-STYLE_BODY = ("font-family:Georgia,serif;font-size:1em;line-height:1.6;"
-              "margin:0 5%;position:relative;")
-STYLE_P = ("margin:0;padding:0;text-indent:1.8em;"
-           "font-size:1em;line-height:1.6;")
-STYLE_P_FIRST = ("margin:0.3em 0 0 0;padding:0;"
-                 "text-indent:0;font-size:1em;line-height:1.6;")
-STYLE_DIALOG = ("margin:0.3em 0;padding:0 0 0 1.5em;"
-                "text-indent:-1em;font-size:1em;line-height:1.6;")
-STYLE_BREAK = ("text-align:center;text-indent:0;margin:1em 0;padding:0;"
-               "letter-spacing:0.4em;color:#8B0000;")
-STYLE_H1 = ("font-family:Georgia,serif;color:#8B0000;text-align:center;"
-            "font-size:1.8em;font-weight:600;letter-spacing:0.05em;"
-            "margin:0.5em 0 0.8em 0;line-height:1.3;text-indent:0;")
-STYLE_H2 = ("font-family:Georgia,serif;color:#8B0000;text-align:center;"
-            "font-size:1.2em;font-weight:600;"
-            "margin:1em 0 0.6em 0;line-height:1.3;text-indent:0;")
+STYLE_BODY = (
+    "font-family:Georgia,serif;font-size:1em;line-height:1.6;"
+    "margin:0 5%;position:relative;"
+)
+STYLE_P = "margin:0;padding:0;text-indent:1.8em;font-size:1em;line-height:1.6;"
+STYLE_P_FIRST = (
+    "margin:0.3em 0 0 0;padding:0;text-indent:0;font-size:1em;line-height:1.6;"
+)
+STYLE_DIALOG = (
+    "margin:0.3em 0;padding:0 0 0 1.5em;text-indent:-1em;font-size:1em;line-height:1.6;"
+)
+STYLE_BREAK = (
+    "text-align:center;text-indent:0;margin:1em 0;padding:0;"
+    "letter-spacing:0.4em;color:#8B0000;"
+)
+STYLE_H1 = (
+    "font-family:Georgia,serif;color:#8B0000;text-align:center;"
+    "font-size:1.8em;font-weight:600;letter-spacing:0.05em;"
+    "margin:0.5em 0 0.8em 0;line-height:1.3;text-indent:0;"
+)
+STYLE_H2 = (
+    "font-family:Georgia,serif;color:#8B0000;text-align:center;"
+    "font-size:1.2em;font-weight:600;"
+    "margin:1em 0 0.6em 0;line-height:1.3;text-indent:0;"
+)
 STYLE_ORN = "text-align:center;margin:0.5em auto 0.8em auto;padding:0;text-indent:0;"
-STYLE_DC_IMG = ("float:left;display:inline;"
-                "width:2.5em;height:auto;max-width:none;"
-                "margin:0.05em 0.15em 0 0;padding:0;vertical-align:top;"
-                "shape-outside:margin-box;")
+STYLE_DC_IMG = (
+    "float:left;display:inline;"
+    "width:2.5em;height:auto;max-width:none;"
+    "margin:0.05em 0.15em 0 0;padding:0;vertical-align:top;"
+    "shape-outside:margin-box;"
+)
 STYLE_ORN_IMG = "display:inline-block;height:2.5em;width:auto;"
 
 # ═══ CSS BLOK — ubacuje se u <style> tag u svako poglavlje ═══
@@ -59,11 +85,9 @@ CSS_BLOCK = """body{font-family:Georgia,serif;font-size:1em;line-height:1.6;marg
 
 
 def _soup_new_tag(soup, name, text):
-    from bs4 import Tag
     t = soup.new_tag(name)
     t.string = text
     return t
-
 
 
 CLS_DIJALOG = "booklyfi-dijalog"
@@ -74,13 +98,18 @@ CLS_DC_IMG = "booklyfi-dropcap"
 
 # ═══ Dropcap / ornamenti ═══
 DROPCAP_MAP = {}
-ORN_INDEX = {}      # naziv fajla (lower-case) -> Path, svi fajlovi u folderu
+ORN_INDEX = {}  # naziv fajla (lower-case) -> Path, svi fajlovi u folderu
 DIGRAFI = ("LJ", "NJ", "DŽ")
-RES_SUBDIR = "images/booklyfi"      # gdje u EPUB-u (relativno na OPF) idu slike
-_EXT = {"image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif", "image/webp": ".webp"}
+RES_SUBDIR = "images/booklyfi"  # gdje u EPUB-u (relativno na OPF) idu slike
+_EXT = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+}
 
 
-@lru_cache(maxsize=None)
+@cache
 def _mime(path):
     """Stvarni tip slike po sadrzaju (a ne po nastavku); None ako nije slika."""
     try:
@@ -98,7 +127,7 @@ def _mime(path):
     return None
 
 
-@lru_cache(maxsize=None)
+@cache
 def _b64(path):
     return base64.b64encode(Path(path).read_bytes()).decode()
 
@@ -135,8 +164,12 @@ def _opis_slike(path):
         if len(h) < 29:
             return f"PNG OSTECEN/prekratak ({kb:.0f}KB)"
         w, hh = struct.unpack(">II", h[16:24])
-        tip = {0: "gray", 2: "RGB", 3: "palette", 4: "gray+A", 6: "RGBA"}.get(h[25], str(h[25]))
-        return f"PNG {w}x{hh} {tip} {h[24]}-bit{' interlaced' if h[28] else ''} {kb:.0f}KB"
+        tip = {0: "gray", 2: "RGB", 3: "palette", 4: "gray+A", 6: "RGBA"}.get(
+            h[25], str(h[25])
+        )
+        return (
+            f"PNG {w}x{hh} {tip} {h[24]}-bit{' interlaced' if h[28] else ''} {kb:.0f}KB"
+        )
     return f"{mime.split('/')[1].upper()} {kb:.0f}KB"
 
 
@@ -149,7 +182,10 @@ def provjeri_ornamente():
     if DROPCAP_MAP:
         kljuc = sorted(DROPCAP_MAP)[0]
         print(f"   dropcap {kljuc}:".ljust(16) + _opis_slike(DROPCAP_MAP[kljuc]))
-    if any(f is None for f in (ORN_INDEX.get(_ime_ornamenta(sc)) for sc in SCENE + ("center",))):
+    if any(
+        f is None
+        for f in (ORN_INDEX.get(_ime_ornamenta(sc)) for sc in SCENE + ("center",))
+    ):
         ostalo = [f.name for f in ORN_INDEX.values() if len(f.stem) > 2][:15]
         print("   Ostali fajlovi u folderu: " + (", ".join(ostalo) or "(nema)"))
 
@@ -164,16 +200,17 @@ def _nadji_ornament(scena):
 
 # ═══ AI (fleet) ═══
 _AI = {"fleet": None, "prio": None, "api_call": None}
-_PADOVI = {}   # provider -> uzastopni neuspjesi
-_BLOK = {}     # provider -> do kad je preskacemo
+_PADOVI = {}  # provider -> uzastopni neuspjesi
+_BLOK = {}  # provider -> do kad je preskacemo
 
 
 def init_fleet():
     try:
         from api_fleet import FleetManager
-        from config.settings import CONFIG_PATH
         from config.ai_config import PROVIDER_PRIORITY
+        from config.settings import CONFIG_PATH
         from network.http_client import api_call
+
         fleet = FleetManager(config_path=CONFIG_PATH)
     except Exception as e:
         print(f"Fleet GRESKA: {e}")
@@ -185,7 +222,9 @@ def init_fleet():
 
 def _pad(provider):
     n = _PADOVI[provider] = _PADOVI.get(provider, 0) + 1
-    if n >= 3:  # 3 uzastopna neuspjeha -> pauza 2 min (umjesto 3x180s timeouta po pozivu)
+    if (
+        n >= 3
+    ):  # 3 uzastopna neuspjeha -> pauza 2 min (umjesto 3x180s timeouta po pozivu)
         _BLOK[provider] = time.time() + 120
         _PADOVI[provider] = 0
 
@@ -204,9 +243,16 @@ def ai_call(prompt, system, max_tokens=4000, timeout=180):
         if not model:
             continue
         try:
-            r = _AI["api_call"](provider=provider, model=model, api_key=key,
-                                system=system, user=prompt,
-                                temperature=0.1, max_tokens=max_tokens, timeout=timeout)
+            r = _AI["api_call"](
+                provider=provider,
+                model=model,
+                api_key=key,
+                system=system,
+                user=prompt,
+                temperature=0.1,
+                max_tokens=max_tokens,
+                timeout=timeout,
+            )
         except Exception as e:
             print(f"      AI {provider}: {type(e).__name__}: {str(e)[:80]}")
             _pad(provider)
@@ -224,7 +270,7 @@ def _spasi_objekte(text):
     out = []
     for m in re.finditer(r"\{", text):
         try:
-            obj, _ = dec.raw_decode(text[m.start():])
+            obj, _ = dec.raw_decode(text[m.start() :])
         except ValueError:
             continue
         if isinstance(obj, dict):
@@ -247,7 +293,7 @@ def parse_json(text):
             return _spasi_objekte(text)  # odgovor odsjecen (max_tokens)
     for m in re.finditer(r"[\[{]", text):
         try:
-            return dec.raw_decode(text[m.start():])[0]
+            return dec.raw_decode(text[m.start() :])[0]
         except ValueError:
             continue
     return _spasi_objekte(text)
@@ -266,7 +312,7 @@ def _kao_listu(data):
 
 
 # ═══ Tekstni helperi ═══
-_PH_LO, _PH_HI = "\ue000", "\uf8ff"   # privatni znakovi = zamjene za HTML tagove
+_PH_LO, _PH_HI = "\ue000", "\uf8ff"  # privatni znakovi = zamjene za HTML tagove
 _TAG_RE = re.compile(r"<[^>]*>")
 
 
@@ -277,6 +323,7 @@ def _mask(html):
     def rep(m):
         tags.append(m.group(0))
         return chr(0xE000 + len(tags) - 1)
+
     return _TAG_RE.sub(rep, html), tags
 
 
@@ -305,8 +352,11 @@ def _klase(el):
 
 def _je_prekid(t):
     """Odlomak tipa '* * *', '###', '~~~' (prekid scene)."""
-    return (len(t) <= 15 and not any(c.isalnum() for c in t)
-            and re.search(r"[*#~•·◆♦✦]", t) is not None)
+    return (
+        len(t) <= 15
+        and not any(c.isalnum() for c in t)
+        and re.search(r"[*#~•·◆♦✦]", t) is not None
+    )
 
 
 # ═══ Dijalog: prepoznavanje i pretvorba u crticu ═══
@@ -314,7 +364,7 @@ _POCINJE_DIJ = re.compile(r"^\s*[-–—―„»«“\"]")
 _KAND = re.compile(r"[„»«“\"]|\s[–—―]\s")
 _DASH_START = re.compile(r"^[\s\ue000-\uf8ff]*[-–—―]+\s*")
 _INT_DASH = re.compile(r"\s+[–—―]+\s+")
-_NAV_OTV = {"„": "“”\"", "»": "«", "«": "»", "\"": "\"”", "“": "”\""}
+_NAV_OTV = {"„": '“”"', "»": "«", "«": "»", '"': '"”', "“": '”"'}
 
 
 def _pocinje_dijalogom(t):
@@ -338,7 +388,7 @@ def _segmentiraj_navodnike(t):
     for i, ch in enumerate(t):
         if zatv is None:
             # “ je otvarajuci samo ako se kasnije pojavi ” (inace je BCS zatvarajuci)
-            if ch in _NAV_OTV and not (ch == "“" and "”" not in t[i + 1:]):
+            if ch in _NAV_OTV and not (ch == "“" and "”" not in t[i + 1 :]):
                 flush("n")
                 zatv = _NAV_OTV[ch]
             else:
@@ -373,7 +423,7 @@ def _gradi_navodnici(t, razdvoji):
                 pending = ""
             prev = "g"
             continue
-        if not any(c.isalnum() for c in s):     # samo interpunkcija / tagovi
+        if not any(c.isalnum() for c in s):  # samo interpunkcija / tagovi
             if cur is not None:
                 cur += s
             else:
@@ -385,7 +435,7 @@ def _gradi_navodnici(t, razdvoji):
         if cur is not None and prev == "g" and (zarez or crtica or _malo(s)):
             if zarez and not re.search(r"[.!?…,]\W*$", cur):
                 cur += ","
-            cur += " — " + s                    # oznaka govornika ("rekao je")
+            cur += " — " + s  # oznaka govornika ("rekao je")
             prev = "tag"
         else:
             if cur is not None:
@@ -403,7 +453,7 @@ def _gradi_dash(t, razdvoji):
     """— A. — rekao je. — B.  ->  ['— A. — rekao je.', '— B.'] (ako razdvoji)."""
     m = _DASH_START.match(t)
     lead = "".join(c for c in m.group(0) if _PH_LO <= c <= _PH_HI)
-    parts = [x.strip() for x in _INT_DASH.split(t[m.end():]) if x.strip()]
+    parts = [x.strip() for x in _INT_DASH.split(t[m.end() :]) if x.strip()]
     if not parts:
         return [t]
     turns = []
@@ -442,7 +492,7 @@ def _zamijeni_odlomak(soup, p, broj):
     for kind, html in dijelovi:
         np_ = soup.new_tag("p")
         for ch in list(BeautifulSoup(html, "html.parser").contents):
-            np_.append(ch)          # cuva <i>, <em>, <a> ...
+            np_.append(ch)  # cuva <i>, <em>, <a> ...
         if kind == "d":
             np_["class"] = [CLS_DIJALOG]
         novi.append(np_)
@@ -463,9 +513,10 @@ def ai_klasificiraj(tekstovi):
     """tekstovi: lista stringova -> {indeks: (tip, broj_govornika)} (samo uspjesno klasificirani)."""
     rez = {}
     for start in range(0, len(tekstovi), BATCH_KLAS):
-        chunk = tekstovi[start:start + BATCH_KLAS]
-        listing = "\n".join(f"[{j}] {t[:400].replace(chr(10), ' ')}"
-                            for j, t in enumerate(chunk))
+        chunk = tekstovi[start : start + BATCH_KLAS]
+        listing = "\n".join(
+            f"[{j}] {t[:400].replace(chr(10), ' ')}" for j, t in enumerate(chunk)
+        )
         prompt = f"""Analiziraj {len(chunk)} odlomaka knjige ispod.
 Za SVAKI odlomak reci je li "dijalog", "opis" ili "dijalog+opis".
 
@@ -488,7 +539,9 @@ VRATI JSON ARRAY (bez markdowna):
 
 ODLOMCI:
 {listing}"""
-        r = ai_call(prompt, "Vracas SAMO JSON. Bez markdowna, bez objasnjenja.", max_tokens=3000)
+        r = ai_call(
+            prompt, "Vracas SAMO JSON. Bez markdowna, bez objasnjenja.", max_tokens=3000
+        )
         for item in _kao_listu(parse_json(r)):
             if not isinstance(item, dict):
                 continue
@@ -524,7 +577,7 @@ def klasificiraj_i_primijeni(soup):
     for j, (i, t) in enumerate(kandidati):
         if j in ai:
             tip, broj = ai[j]
-        else:                                   # fallback: samo ono sto ocito izgleda kao dijalog
+        else:  # fallback: samo ono sto ocito izgleda kao dijalog
             bez_ai += 1
             tip, broj = ("dijalog", 1) if _pocinje_dijalogom(t) else ("opis", 1)
         if tip != "opis":
@@ -541,7 +594,7 @@ def ai_naslovi(files_data):
     """Za fajlove bez <h1-h3>: je li prvi redak naslov? -> {fname: naslov}."""
     out = {}
     for start in range(0, len(files_data), 60):
-        chunk = files_data[start:start + 60]
+        chunk = files_data[start : start + 60]
         lines = []
         for i, fd in enumerate(chunk):
             lines.append(f"[{i}] {fd['fname'].split('/')[-1]}")
@@ -562,7 +615,12 @@ def ai_naslovi(files_data):
             if not isinstance(item, dict):
                 continue
             i, n = item.get("i"), item.get("naslov")
-            if isinstance(i, int) and 0 <= i < len(chunk) and isinstance(n, str) and n.strip():
+            if (
+                isinstance(i, int)
+                and 0 <= i < len(chunk)
+                and isinstance(n, str)
+                and n.strip()
+            ):
                 out[chunk[i]["fname"]] = n.strip()
     return out
 
@@ -572,7 +630,13 @@ def _uzorak(tekst, n=1500):
     if len(tekst) <= n:
         return tekst
     k, mid = n // 3, len(tekst) // 2
-    return tekst[:k] + " [...] " + tekst[mid - k // 2: mid + k // 2] + " [...] " + tekst[-k:]
+    return (
+        tekst[:k]
+        + " [...] "
+        + tekst[mid - k // 2 : mid + k // 2]
+        + " [...] "
+        + tekst[-k:]
+    )
 
 
 def ai_meta(tekst, treba_naslov):
@@ -582,10 +646,14 @@ def ai_meta(tekst, treba_naslov):
     polja = '"scena": "battle|romance|death|dialog|description|intro"'
     if treba_naslov:
         polja += ', "naslov": "kratak naslov 3-6 rijeci na bosanskom/hrvatskom koji sazima radnju"'
-    prompt = ("Za ovo poglavlje knjige vrati JSON objekt: {" + polja + "}\n"
-              "Scena = dominantni tip poglavlja. Bez navodnika oko naslova, bez tocke.\n\n"
-              "TEKST:\n" + _uzorak(tekst))
-    data = parse_json(ai_call(prompt, "Vracas SAMO JSON objekt.", max_tokens=150, timeout=60))
+    prompt = (
+        "Za ovo poglavlje knjige vrati JSON objekt: {" + polja + "}\n"
+        "Scena = dominantni tip poglavlja. Bez navodnika oko naslova, bez tocke.\n\n"
+        "TEKST:\n" + _uzorak(tekst)
+    )
+    data = parse_json(
+        ai_call(prompt, "Vracas SAMO JSON objekt.", max_tokens=150, timeout=60)
+    )
     if isinstance(data, list) and data:
         data = data[0]
     scena, naslov = "description", None
@@ -608,7 +676,7 @@ class Resursi:
 
     def __init__(self, opf_path):
         self.opf_path = opf_path
-        self.koristeno = {}     # zip_path -> (Path, mime)
+        self.koristeno = {}  # zip_path -> (Path, mime)
 
     def href(self, png, ime, chapter_fname):
         mime = _mime(str(png))
@@ -634,11 +702,14 @@ class Resursi:
             href = posixpath.relpath(zip_path, opf_dir or ".")
             if re.search(r"""href\s*=\s*["']%s["']""" % re.escape(href), opf):
                 continue
-            id_ = "booklyfi-" + re.sub(r"[^A-Za-z0-9_-]", "_",
-                                       posixpath.splitext(posixpath.basename(zip_path))[0])
+            id_ = "booklyfi-" + re.sub(
+                r"[^A-Za-z0-9_-]",
+                "_",
+                posixpath.splitext(posixpath.basename(zip_path))[0],
+            )
             novi.append(f'<{prefix}item id="{id_}" href="{href}" media-type="{mime}"/>')
         if novi:
-            opf = opf[:m.start()] + "\n".join(novi) + "\n" + opf[m.start():]
+            opf = opf[: m.start()] + "\n".join(novi) + "\n" + opf[m.start() :]
             files[self.opf_path] = opf.encode("utf-8")
         return len(self.koristeno)
 
@@ -673,6 +744,7 @@ def ocisti_stare(soup):
 def _slicno(a, b):
     def n(s):
         return re.sub(r"[\W_]+", " ", s.casefold()).strip()
+
     a, b = n(a), n(b)
     if not a or not b:
         return False
@@ -683,7 +755,7 @@ def _slicno(a, b):
 
 def _naslov_element(soup):
     """Prvi <title> iz <head> (ako nije generički), <h1>-<h3>, ili <p> naslov.
-    
+
     NAPOMENA: poziva se PRIJE _strip_everything, na originalnom HTML-u.
     Prioritet:
       1. <title> iz <head> — pravi naslov poglavlja (Calibre)
@@ -697,9 +769,18 @@ def _naslov_element(soup):
         if t and len(t) < 100:
             # Preskoči generičke naslove
             genericki = (
-                "poglavlje ", "chapter ", "section ", "part ",
-                "stranica ", "page ", "untitled", "bez naslova",
-                "cover", "naslovna", "sadržaj", "toc",
+                "poglavlje ",
+                "chapter ",
+                "section ",
+                "part ",
+                "stranica ",
+                "page ",
+                "untitled",
+                "bez naslova",
+                "cover",
+                "naslovna",
+                "sadržaj",
+                "toc",
             )
             t_low = t.lower()
             if not any(t_low.startswith(g) for g in genericki):
@@ -707,38 +788,43 @@ def _naslov_element(soup):
                 fake = soup.new_tag("p")
                 fake.string = t
                 return fake
-    
+
     # ── 2. <h1>-<h3> ────────────────────────────────────────
     h = soup.find(["h1", "h2", "h3"])
     if h and not any(p.get_text(strip=True) for p in h.find_all_previous("p")):
         # Provjeri da nije generički ("Poglavlje N")
         h_text = h.get_text(" ", strip=True)
         h_low = h_text.lower()
-        if not any(h_low.startswith(g) for g in (
-            "poglavlje ", "chapter ", "section ", "part ",
-            "stranica ", "page ",
-        )):
+        if not any(
+            h_low.startswith(g)
+            for g in (
+                "poglavlje ",
+                "chapter ",
+                "section ",
+                "part ",
+                "stranica ",
+                "page ",
+            )
+        ):
             return h
-    
+
     # ── 3. <p> koji izgleda kao naslov ──────────────────────
     body = soup.find("body")
     if not body:
         return None
-    
+
     for i, p in enumerate(body.find_all("p")):
         if i > 5:
             break
-        
+
         text = p.get_text(" ", strip=True)
         if not text:
             continue
-        
-        if (len(text) < 60
-            and text[0].isupper()
-            and len(text.split()) <= 10):
+
+        if len(text) < 60 and text[0].isupper() and len(text.split()) <= 10:
             if "," not in text or len(text) < 40:
                 return p
-    
+
     return None
 
 
@@ -774,10 +860,17 @@ def dodaj_ornament(soup, scena, res, fname):
     k = _nadji_ornament(scena)
     if not body or k is None:
         return False
-    div = soup.new_tag("div", attrs={"class": ["booklyfi-ornament"], "style": STYLE_ORN})
-    img = soup.new_tag("img", attrs={
-        "src": res.href(k, k.stem.lower(), fname),
-        "alt": "*", "style": STYLE_ORN_IMG})
+    div = soup.new_tag(
+        "div", attrs={"class": ["booklyfi-ornament"], "style": STYLE_ORN}
+    )
+    img = soup.new_tag(
+        "img",
+        attrs={
+            "src": res.href(k, k.stem.lower(), fname),
+            "alt": "*",
+            "style": STYLE_ORN_IMG,
+        },
+    )
     div.append(img)
     body.insert(0, div)
     return True
@@ -803,7 +896,7 @@ def _nadji_inicijal(p):
         idx = next((i for i, c in enumerate(s) if c.isalpha()), None)
         if idx is None:
             if s.strip():
-                return None          # pocinje crticom/navodnikom/brojem
+                return None  # pocinje crticom/navodnikom/brojem
             continue
         if s[:idx].strip():
             return None
@@ -844,10 +937,19 @@ def dodaj_dropcap(soup, res, fname):
         div.decompose()
 
     SKIP_KLASE = {
-        "chapter-title", "chapter-number", "chapter-number-title",
-        "booklyfi-naslov", "chapter_subtitle", "subtitle",
-        "title", "naslov", "epigraph", "quote", "blockquote",
-        "chapter-heading", "chapterheader",
+        "chapter-title",
+        "chapter-number",
+        "chapter-number-title",
+        "booklyfi-naslov",
+        "chapter_subtitle",
+        "subtitle",
+        "title",
+        "naslov",
+        "epigraph",
+        "quote",
+        "blockquote",
+        "chapter-heading",
+        "chapterheader",
     }
 
     def _je_naslov(tag):
@@ -864,7 +966,7 @@ def dodaj_dropcap(soup, res, fname):
     def _je_citat(t):
         if not t:
             return False
-        if t[0] in ('"', '„', '“', '«', '‹', "'", '‚', '‘'):
+        if t[0] in ('"', "„", "“", "«", "‹", "'", "‚", "‘"):
             return True
         if any(c in '"„""«' for c in t[:5]):
             return True
@@ -932,29 +1034,36 @@ def dodaj_dropcap(soup, res, fname):
         idx = s_pun.find(kljuc) if kljuc in s_pun else s_pun.upper().find(kljuc)
         if idx < 0:
             idx = 0
-        slovo = s_pun[idx:idx+n] if idx+n <= len(s_pun) else kljuc
-        ostatak = s_pun[idx+n:].lstrip() if s_pun[idx+n:idx+n+1].isspace() else s_pun[idx+n:]
+        slovo = s_pun[idx : idx + n] if idx + n <= len(s_pun) else kljuc
+        ostatak = (
+            s_pun[idx + n :].lstrip()
+            if s_pun[idx + n : idx + n + 1].isspace()
+            else s_pun[idx + n :]
+        )
         # FIX: očisti duple ponavljajuće prvo slovo (AAAutorska → Autorska)
         # (nastaje zbog prethodnih stilizacija koje su vraćale span u tekst)
         if slovo and ostatak:
             while ostatak.startswith(slovo):
-                ostatak = ostatak[len(slovo):]
+                ostatak = ostatak[len(slovo) :]
 
         # Napravi img i span
-        img = soup.new_tag("img", attrs={
-            "class": "booklyfi-dropcap",
-            "src": res.href(png, ime, fname),
-            "alt": slovo,
-            "style": (
-                "float:left;display:inline;width:2.5em;height:auto;"
-                "max-width:none;margin:0.05em 0.15em 0 0;padding:0;"
-                "vertical-align:top;"
-            ),
-        })
+        img = soup.new_tag(
+            "img",
+            attrs={
+                "class": "booklyfi-dropcap",
+                "src": res.href(png, ime, fname),
+                "alt": slovo,
+                "style": (
+                    "float:left;display:inline;width:2.5em;height:auto;"
+                    "max-width:none;margin:0.05em 0.15em 0 0;padding:0;"
+                    "vertical-align:top;"
+                ),
+            },
+        )
 
-        span = soup.new_tag("span", attrs={
-            "style": "color:transparent;font-size:1px;line-height:0;"
-        })
+        span = soup.new_tag(
+            "span", attrs={"style": "color:transparent;font-size:1px;line-height:0;"}
+        )
         span.string = slovo
 
         # Očisti <p> i ubaci novo
@@ -978,7 +1087,7 @@ def primijeni_inline(soup):
         body["style"] = STYLE_BODY
     for h in soup.find_all(["h1", "h2", "h3", "h4"]):
         h["style"] = STYLE_H1 if CLS_NASLOV in _klase(h) else STYLE_H2
-    prekid = True   # prvi odlomak i odlomak nakon prekida scene = bez uvlake
+    prekid = True  # prvi odlomak i odlomak nakon prekida scene = bez uvlake
     for p in (body or soup).find_all("p"):
         if p.find_parent("div", class_=CLS_DC_BLOCK):
             continue
@@ -1016,11 +1125,11 @@ def _osiguraj_container_xml(files):
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<container version="1.0" '
             'xmlns="urn:oasis:names:tc:opendocument:xmlns:container">\n'
-            '  <rootfiles>\n'
+            "  <rootfiles>\n"
             f'    <rootfile full-path="{opf_path}" '
             'media-type="application/oebps-package+xml"/>\n'
-            '  </rootfiles>\n'
-            '</container>\n'
+            "  </rootfiles>\n"
+            "</container>\n"
         )
         files[cname] = new_xml.encode("utf-8")
         return True
@@ -1048,15 +1157,14 @@ def _osiguraj_container_xml(files):
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<container version="1.0" '
         'xmlns="urn:oasis:names:tc:opendocument:xmlns:container">\n'
-        '  <rootfiles>\n'
+        "  <rootfiles>\n"
         f'    <rootfile full-path="{opf_path}" '
         'media-type="application/oebps-package+xml"/>\n'
-        '  </rootfiles>\n'
-        '</container>\n'
+        "  </rootfiles>\n"
+        "</container>\n"
     )
     files[cname] = new_xml.encode("utf-8")
     return True
-
 
 
 def popravi_container(files):
@@ -1064,32 +1172,32 @@ def popravi_container(files):
     cname = "META-INF/container.xml"
     if cname not in files:
         return False
-    
+
     raw = files[cname]
     # Je li XML? Ako sadrzi <container u prvih 500 bajtova — OK
     if b"<container" in raw[:500].lower():
         return False
-    
+
     # Pokvaren — regeneriraj
     opf_path = None
     for name in files:
         if name.lower().endswith(".opf"):
             opf_path = name
             break
-    
+
     if not opf_path:
         print("   UPOZORENJE: container.xml pokvaren, ne mogu naci OPF")
         return False
-    
+
     new_xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<container version="1.0" '
         'xmlns="urn:oasis:names:tc:opendocument:xmlns:container">\n'
-        '  <rootfiles>\n'
+        "  <rootfiles>\n"
         f'    <rootfile full-path="{opf_path}" '
         'media-type="application/oebps-package+xml"/>\n'
-        '  </rootfiles>\n'
-        '</container>\n'
+        "  </rootfiles>\n"
+        "</container>\n"
     )
     files[cname] = new_xml.encode("utf-8")
     print(f"   Popravljen container.xml -> {opf_path}")
@@ -1110,14 +1218,18 @@ def spine_redoslijed(files, opf_path):
         return []
     opf = BeautifulSoup(files[opf_path], "html.parser")
     baza = posixpath.dirname(opf_path)
-    manifest = {it["id"]: it["href"] for it in opf.find_all("item")
-                if it.get("id") and it.get("href")}
+    manifest = {
+        it["id"]: it["href"]
+        for it in opf.find_all("item")
+        if it.get("id") and it.get("href")
+    }
     out = []
     for ref in opf.find_all("itemref"):
         href = manifest.get(ref.get("idref"))
         if href:
-            out.append(posixpath.normpath(
-                posixpath.join(baza, unquote(href.split("#")[0]))))
+            out.append(
+                posixpath.normpath(posixpath.join(baza, unquote(href.split("#")[0])))
+            )
     return out
 
 
@@ -1127,45 +1239,80 @@ def _prirodni(s):
 
 def _preskoci(fname):
     tokeni = re.split(r"[^a-z0-9]+", Path(fname).stem.lower())
-    return any(re.fullmatch(r"(toc|nav|cover|titlepage|copyright)\d*", t) for t in tokeni)
+    return any(
+        re.fullmatch(r"(toc|nav|cover|titlepage|copyright)\d*", t) for t in tokeni
+    )
+
 
 # DODANO: preskoci META-INF i container.xml
 _original_preskoci = _preskoci
 
+
 def _preskoci(n):
     import os as _os
+
     n_lower = str(n).lower()
     base = _os.path.basename(n_lower)
 
     # META-INF i sve XML
-    if 'meta-inf' in n_lower or 'meta_inf' in n_lower:
+    if "meta-inf" in n_lower or "meta_inf" in n_lower:
         return True
-    if base in ('container.xml', 'mimetype', 'content.opf', 'toc.ncx'):
+    if base in ("container.xml", "mimetype", "content.opf", "toc.ncx"):
         return True
-    if 'container' in base and base.endswith('.xml'):
+    if "container" in base and base.endswith(".xml"):
         return True
 
     # Tehnicke stranice
-    tehnicke = ('cover', 'titlepage', 'copyright', 'colophon',
-                'toc', 'sadrzaj', 'nav', 'abouttheauthor', 'about-author',
-                'ad-card', 'adcard', 'acknowledgements', 'acknowledgments',
-                'appendix', 'newsletter', 'praise', 'teaser',
-                'dedication', 'posveta', 'welcome', 'dobrodosli',
-                'preface', 'predgovor', 'intro', 'uvod')
+    tehnicke = (
+        "cover",
+        "titlepage",
+        "copyright",
+        "colophon",
+        "toc",
+        "sadrzaj",
+        "nav",
+        "abouttheauthor",
+        "about-author",
+        "ad-card",
+        "adcard",
+        "acknowledgements",
+        "acknowledgments",
+        "appendix",
+        "newsletter",
+        "praise",
+        "teaser",
+        "dedication",
+        "posveta",
+        "welcome",
+        "dobrodosli",
+        "preface",
+        "predgovor",
+        "intro",
+        "uvod",
+    )
     for t in tehnicke:
-        if base.startswith(t) or base.endswith(t + '.xhtml') or base.endswith(t + '.html'):
+        if (
+            base.startswith(t)
+            or base.endswith(t + ".xhtml")
+            or base.endswith(t + ".html")
+        ):
             return True
 
     # .ncx, .opf, .xml
-    if base.endswith(('.ncx', '.opf', '.xml')):
+    if base.endswith((".ncx", ".opf", ".xml")):
         return True
 
     return _original_preskoci(n)
 
+
 def nadji_poglavlja(files, opf_path):
     """Vraća listu (fname, html_str) tuple-ova za sva poglavlja."""
     ext = (".html", ".xhtml", ".htm")
-    spine = [n for n in spine_redoslijed(files, opf_path) if n in files and n.lower().endswith(ext)]
+    spine = [
+        n
+        for n in spine_redoslijed(files, opf_path)
+        if n in files and n.lower().endswith(ext)
+    ]
     if spine:
         nazivi = list(dict.fromkeys(spine))
     else:
@@ -1181,6 +1328,7 @@ def nadji_poglavlja(files, opf_path):
         rezultat.append((n, html))
     return rezultat
 
+
 def snimi_epub(src, files):
     out = Path(src)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -1189,7 +1337,9 @@ def snimi_epub(src, files):
     try:
         with zipfile.ZipFile(tmp, "w") as z:
             if "mimetype" in files:
-                z.writestr("mimetype", files["mimetype"], compress_type=zipfile.ZIP_STORED)
+                z.writestr(
+                    "mimetype", files["mimetype"], compress_type=zipfile.ZIP_STORED
+                )
             for n, d in files.items():
                 if n == "mimetype" or n.endswith("/"):
                     continue
@@ -1223,6 +1373,7 @@ def _osiguraj_css(soup):
     head.append(style_tag)
     return soup
 
+
 def _pripremi_soup(html):
     """Parsira HTML i stripuje SVE stilove/klase/slike/spanove.
 
@@ -1232,6 +1383,7 @@ def _pripremi_soup(html):
     soup = BeautifulSoup(html, "html.parser")
     try:
         from epub.normalizer import _strip_everything
+
         _strip_everything(soup)
     except Exception as e:
         print(f"      ⚠ strip greška: {e}")
@@ -1268,18 +1420,23 @@ def obradi_poglavlje(html, naslov_ai, redni, ukupno, fname, res, log_callback=No
     _msg = f"[{redni:2d}/{ukupno}] {naslov[:45]:45s} | scena: {scena}"
     print(_msg)
     if log_callback:
-        try: log_callback(_msg, "info")
-        except Exception: pass
+        try:
+            log_callback(_msg, "info")
+        except Exception:
+            pass
 
     # 5. Dijalog
     n_kand, n_zam, n_bez = klasificiraj_i_primijeni(soup)
     if n_kand:
-        _dmsg = (f"      dijalog: {n_kand} kandidata, {n_zam} odlomaka preoblikovano"
-                 + (f", {n_bez} bez AI odgovora (heuristika)" if n_bez else ""))
+        _dmsg = f"      dijalog: {n_kand} kandidata, {n_zam} odlomaka preoblikovano" + (
+            f", {n_bez} bez AI odgovora (heuristika)" if n_bez else ""
+        )
         print(_dmsg)
         if log_callback:
-            try: log_callback(_dmsg, "tech")
-            except Exception: pass
+            try:
+                log_callback(_dmsg, "tech")
+            except Exception:
+                pass
 
     # 6. Ornament za scenu
     if not dodaj_ornament(soup, scena, res, fname) and scena not in _UPOZORENO:
@@ -1287,8 +1444,10 @@ def obradi_poglavlje(html, naslov_ai, redni, ukupno, fname, res, log_callback=No
         _omsg = f"      UPOZORENJE: nema ornamenta za scenu '{scena}'"
         print(_omsg)
         if log_callback:
-            try: log_callback(_omsg, "warning")
-            except Exception: pass
+            try:
+                log_callback(_omsg, "warning")
+            except Exception:
+                pass
 
     # 7. Naslov (h1) — SAMO ako već ne postoji
     if not soup.find("h1"):
@@ -1317,7 +1476,7 @@ def stilizuj_epub(epub_path, output_path=None, log_callback=None):
     :returns:             {"ok": bool, "output": str, "greska": str|None,
                            "poglavlja": int, "dropcapovi": int}
     """
-    import os, zipfile, tempfile
+    import zipfile
     from pathlib import Path as _P
 
     def _log(msg, tip="info"):
@@ -1328,8 +1487,13 @@ def stilizuj_epub(epub_path, output_path=None, log_callback=None):
                 pass
         print(f"  [{tip}] {msg}")
 
-    rezultat = {"ok": False, "output": None, "greska": None,
-                "poglavlja": 0, "dropcapovi": 0}
+    rezultat = {
+        "ok": False,
+        "output": None,
+        "greska": None,
+        "poglavlja": 0,
+        "dropcapovi": 0,
+    }
 
     epub_path = _P(epub_path)
     if not epub_path.exists():
@@ -1347,23 +1511,34 @@ def stilizuj_epub(epub_path, output_path=None, log_callback=None):
         if output_path is None:
             try:
                 from epub.styler import (
-                    _extract_book_metadata,
-                    _build_normalized_name,
                     STYLED_OUTPUT_DIR,
+                    _build_normalized_name,
+                    _extract_book_metadata,
                 )
+
                 creator, title = _extract_book_metadata(files)
                 out_dir = _P(STYLED_OUTPUT_DIR)
                 out_dir.mkdir(parents=True, exist_ok=True)
-                output_path = out_dir / _build_normalized_name(creator, title, "PREVEDENO_STYLED")
+                output_path = out_dir / _build_normalized_name(
+                    creator, title, "PREVEDENO_STYLED"
+                )
                 _log(f"Izlaz: {output_path.name}", "system")
             except Exception as _e:
-                _log(f"Ne mogu odrediti STYLED putanju ({_e}) — koristim _PREVEDENO_STYLED pored originala", "warning")
-                output_path = epub_path.with_name(epub_path.stem + "_PREVEDENO_STYLED" + epub_path.suffix)
+                _log(
+                    f"Ne mogu odrediti STYLED putanju ({_e}) — koristim _PREVEDENO_STYLED pored originala",
+                    "warning",
+                )
+                output_path = epub_path.with_name(
+                    epub_path.stem + "_PREVEDENO_STYLED" + epub_path.suffix
+                )
 
         # Inicijalizuj fleet
         if _AI["fleet"] is None:
             if not init_fleet():
-                _log("Fleet nije dostupan — nastavljam bez AI klasifikacije scene", "warning")
+                _log(
+                    "Fleet nije dostupan — nastavljam bez AI klasifikacije scene",
+                    "warning",
+                )
 
         # Učitaj dropcap mape
         ucitaj_dropcap()
@@ -1377,7 +1552,7 @@ def stilizuj_epub(epub_path, output_path=None, log_callback=None):
                 _log("Generiran container.xml", "tech")
             except Exception as e:
                 _log(f"container.xml greška: {e}", "warning")
-        
+
         opf_path = nadji_opf(files)
         if not opf_path:
             rezultat["greska"] = "Nema OPF-a u EPUB-u"
@@ -1415,19 +1590,26 @@ def stilizuj_epub(epub_path, output_path=None, log_callback=None):
 
         # Standardizuj metapodatke
         try:
-            from core.metadata import standardizuj_metapodatke
             from datetime import datetime as _dt
+
+            from core.metadata import standardizuj_metapodatke
+
             _stats_meta = standardizuj_metapodatke(
                 files=files,
                 opf_path=opf_path,
                 epub_path=str(output_path),
-                stylized_at=_dt.now().isoformat(timespec='seconds'),
-                pipeline_version='V10_TURBO',
+                stylized_at=_dt.now().isoformat(timespec="seconds"),
+                pipeline_version="V10_TURBO",
             )
-            if _stats_meta.get('ok'):
-                _log('Metadata standardizovani (' + str(_stats_meta['booklyfi_meta_added']) + ' booklyfi polja)', 'tech')
+            if _stats_meta.get("ok"):
+                _log(
+                    "Metadata standardizovani ("
+                    + str(_stats_meta["booklyfi_meta_added"])
+                    + " booklyfi polja)",
+                    "tech",
+                )
         except Exception as _e:
-            _log('Metadata greška: ' + str(_e), 'warning')
+            _log("Metadata greška: " + str(_e), "warning")
         snimi_epub(output_path, files)
         _log(f"Sačuvano: {output_path}", "info")
 
@@ -1439,6 +1621,7 @@ def stilizuj_epub(epub_path, output_path=None, log_callback=None):
 
     except Exception as e:
         import traceback
+
         rezultat["greska"] = f"{type(e).__name__}: {e}"
         _log(f"GREŠKA: {rezultat['greska']}", "warning")
         traceback.print_exc()
@@ -1447,19 +1630,20 @@ def stilizuj_epub(epub_path, output_path=None, log_callback=None):
 
 def _safe_copy(src, dst):
     """Kopiraj fajl, ali preskoči ako su isti."""
-    from pathlib import Path as _P
     import shutil as _sh
+    from pathlib import Path as _P
+
     src_p = _P(src)
     dst_p = _P(dst)
     try:
         if src_p.resolve() == dst_p.resolve():
-            print(f"   (isti fajl — preskačem kopiju)")
+            print("   (isti fajl — preskačem kopiju)")
             return
     except Exception:
         pass
     try:
         if src_p.samefile(dst_p):
-            print(f"   (isti fajl — preskačem kopiju)")
+            print("   (isti fajl — preskačem kopiju)")
             return
     except (OSError, FileNotFoundError):
         pass
@@ -1467,7 +1651,7 @@ def _safe_copy(src, dst):
 
 
 def main():
-    if "--ornamenti" in sys.argv:       # samo dijagnostika ornamenata, bez EPUB-a
+    if "--ornamenti" in sys.argv:  # samo dijagnostika ornamenata, bez EPUB-a
         ucitaj_dropcap()
         provjeri_ornamente()
         return
@@ -1507,28 +1691,33 @@ def main():
 
     # FAZA 1: priprema
     import time as _time
+
     _t0 = _time.time()
     print(f"\n{'═' * 60}")
-    print(f"[FAZA 1/3] Priprema — parsiranje HTML fajlova...")
+    print("[FAZA 1/3] Priprema — parsiranje HTML fajlova...")
     print(f"{'═' * 60}")
     files_data = []
     for fname, _html_tuple in html_names:
-        soup = BeautifulSoup(files[fname].decode("utf-8", errors="replace"), "html.parser")
+        soup = BeautifulSoup(
+            files[fname].decode("utf-8", errors="replace"), "html.parser"
+        )
         body = soup.find("body")
         if not body or len(body.get_text(strip=True)) < 100:
             continue
         ps = [t for t in (p.get_text(" ", strip=True) for p in body.find_all("p")) if t]
-        files_data.append({
-            "fname": fname,
-            "prvi_redak": ps[0] if ps else body.get_text(" ", strip=True)[:100],
-            "drugi_redak": ps[1] if len(ps) > 1 else "",
-            "ima_naslov": _naslov_element(soup) is not None,
-        })
+        files_data.append(
+            {
+                "fname": fname,
+                "prvi_redak": ps[0] if ps else body.get_text(" ", strip=True)[:100],
+                "drugi_redak": ps[1] if len(ps) > 1 else "",
+                "ima_naslov": _naslov_element(soup) is not None,
+            }
+        )
     print(f"   Validnih: {len(files_data)}\n")
 
     # FAZA 2: AI naslovi (samo za poglavlja bez h1-h3)
     print(f"\n{'═' * 60}")
-    print(f"[FAZA 2/3] AI naslovi — samo za poglavlja bez naslova...")
+    print("[FAZA 2/3] AI naslovi — samo za poglavlja bez naslova...")
     print(f"{'═' * 60}")
     treba = [fd for fd in files_data if not fd["ima_naslov"]]
     if treba:
@@ -1537,7 +1726,7 @@ def main():
         print(f"   {len(naslovi_map)}/{len(treba)} naslova prepoznato")
     else:
         naslovi_map = {}
-        print(f"   Sva poglavlja imaju naslov — AI se ne poziva ✅")
+        print("   Sva poglavlja imaju naslov — AI se ne poziva ✅")
 
     # FAZA 3: stilizacija
     print(f"\n{'═' * 60}")
@@ -1546,12 +1735,18 @@ def main():
     for i, fd in enumerate(files_data, 1):
         fname = fd["fname"]
         _pct = int(100 * i / len(files_data))
-        _bar = "█" * (i * 30 // len(files_data)) + "░" * (30 - i * 30 // len(files_data))
-        print(f"  [{i:3d}/{len(files_data)}] {_bar} {_pct:3d}%  {fname.split('/')[-1]:40s}", end="")
+        _bar = "█" * (i * 30 // len(files_data)) + "░" * (
+            30 - i * 30 // len(files_data)
+        )
+        print(
+            f"  [{i:3d}/{len(files_data)}] {_bar} {_pct:3d}%  {fname.split('/')[-1]:40s}",
+            end="",
+        )
         try:
             html = files[fname].decode("utf-8", errors="replace")
             files[fname] = obradi_poglavlje(
-                html, naslovi_map.get(fname), i, len(files_data), fname, res).encode("utf-8")
+                html, naslovi_map.get(fname), i, len(files_data), fname, res
+            ).encode("utf-8")
             print(" ✅")
         except Exception as e:
             print(f" ❌ {type(e).__name__}: {e}")
@@ -1566,17 +1761,22 @@ def main():
         out_path = src  # fallback
         try:
             from epub.styler import (
-                _extract_book_metadata,
-                _build_normalized_name,
                 STYLED_OUTPUT_DIR,
+                _build_normalized_name,
+                _extract_book_metadata,
             )
+
             creator, title = _extract_book_metadata(files)
             out_dir = Path(STYLED_OUTPUT_DIR)
             out_dir.mkdir(parents=True, exist_ok=True)
-            out_path = str(out_dir / _build_normalized_name(creator, title, "PREVEDENO_STYLED"))
+            out_path = str(
+                out_dir / _build_normalized_name(creator, title, "PREVEDENO_STYLED")
+            )
             print(f"   Izlaz: {out_path}")
         except Exception as _e:
-            print(f"   UPOZORENJE: ne mogu odrediti STYLED putanju ({_e}), snimam pored originala")
+            print(
+                f"   UPOZORENJE: ne mogu odrediti STYLED putanju ({_e}), snimam pored originala"
+            )
 
         # Kopiraj original u novu putanju pa je prepiši stilizovanim sadržajem
         _safe_copy(src, out_path)

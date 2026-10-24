@@ -1,14 +1,14 @@
-
-
 """Integration testovi za API rute."""
+
 import json
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 import pytest
 from flask import Flask
+
 from app import create_app
 from config.ai_config import MODEL_MAP
 

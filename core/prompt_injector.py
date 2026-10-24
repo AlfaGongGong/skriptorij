@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # Fail-safe importovi
 try:
     from core.kalkovi.morfologija_blacklist import BLACKLIST_PROMPT_BLOK
+
     _BLACKLIST_OK = True
 except ImportError:
     BLACKLIST_PROMPT_BLOK = ""
@@ -38,6 +39,7 @@ except ImportError:
 
 try:
     from analysis.book_context import BookContext
+
     _BOOK_CONTEXT_OK = True
 except ImportError:
     BookContext = None
@@ -111,7 +113,7 @@ class PromptInjector:
             logger.warning(f"[prompt_injector] Glosar injection greška: {e}")
             return ""
 
-    def _inject_chapter_summary(self, broj_poglavlja: Optional[int]) -> str:
+    def _inject_chapter_summary(self, broj_poglavlja: int | None) -> str:
         if not self.ukljuci_summary or not self.ctx or not broj_poglavlja:
             return ""
         try:
@@ -129,7 +131,7 @@ class PromptInjector:
             logger.warning(f"[prompt_injector] Few-shot injection greška: {e}")
             return ""
 
-    def build_context_blok(self, broj_poglavlja: Optional[int] = None) -> str:
+    def build_context_blok(self, broj_poglavlja: int | None = None) -> str:
         """Gradi kompletni kontekst blok (sve sekcije zajedno)."""
         sekcije = []
 
@@ -162,14 +164,14 @@ class PromptInjector:
     def build_system_prompt(
         self,
         base_prompt: str,
-        broj_poglavlja: Optional[int] = None,
+        broj_poglavlja: int | None = None,
         model_name: str = "",
     ) -> str:
         """Gradi kompletni system prompt kombiniranjem baznog prompta s kontekstom."""
         kontekst = self.build_context_blok(broj_poglavlja)
 
         if kontekst:
-            separator = "\n\n" + "="*60 + "\n## KONTEKST KNJIGE\n" + "="*60 + "\n\n"
+            separator = "\n\n" + "=" * 60 + "\n## KONTEKST KNJIGE\n" + "=" * 60 + "\n\n"
             return base_prompt + separator + kontekst
         else:
             return base_prompt
@@ -187,18 +189,22 @@ class PromptInjector:
 
     def __repr__(self) -> str:
         stat = self.statistika()
-        aktivno = [k for k, v in stat.items() if v is True or (isinstance(v, int) and v > 0)]
+        aktivno = [
+            k for k, v in stat.items() if v is True or (isinstance(v, int) and v > 0)
+        ]
         return f"PromptInjector(aktivno={aktivno})"
 
 
 # ── Singleton helper ───────────────────────────────────────────────────────
 _injector_cache: dict[str, PromptInjector] = {}
 
+
 def get_injector(knjiga_id: str, **kwargs) -> PromptInjector:
     """Vraća PromptInjector instancu za danu knjigu (singleton per knjiga)."""
     if knjiga_id not in _injector_cache:
         if _BOOK_CONTEXT_OK:
             from analysis.book_context import BookContext
+
             ctx = BookContext(knjiga_id=knjiga_id)
         else:
             ctx = None
@@ -223,12 +229,13 @@ if __name__ == "__main__":
 
     try:
         from analysis.book_context import BookContext
+
         ctx = BookContext(knjiga_id="test_injector")
         ctx.dodaj_likove_bulk([("Takeshi", "M"), ("Ana", "Ž"), "Bancroft"])
         ctx.dodaj_few_shot(
             "The room was dark and cold.",
             "Soba je bila tamna i hladna.",
-            "Jednostavan prijevod bez kalkova"
+            "Jednostavan prijevod bez kalkova",
         )
 
         injector_full = PromptInjector(book_context=ctx)

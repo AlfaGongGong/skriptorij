@@ -1,5 +1,3 @@
-
-
 # processing/parallel.py
 import asyncio
 import random
@@ -58,7 +56,7 @@ class AdaptiveParallelism:
         self.engine.log(
             f"🔀 Parallel: {len(chunks)} chunka, window={window_size} "
             f"(aktivnih ključeva: {self.engine.fleet.get_total_active_keys()})",
-            "tech"
+            "tech",
         )
 
         # Semaphore koji osigurava max window_size istovremenih poziva
@@ -73,17 +71,19 @@ class AdaptiveParallelism:
                     _is_cache_hit = False
                     try:
                         from core.quality import _QUALITY_RESCUE_THRESHOLD
+
                         _chk = (
-                            self.engine.checkpoint_dir
-                            / f"{file_name}_blok_{idx}.chk"
+                            self.engine.checkpoint_dir / f"{file_name}_blok_{idx}.chk"
                         )
                         if _chk.exists():
-                            _qs  = self.engine.shared_stats.get("quality_scores", {})
+                            _qs = self.engine.shared_stats.get("quality_scores", {})
                             _raw = _qs.get(f"{file_name}_blok_{idx}")
-                            _sc  = float(_raw) if _raw is not None else None
+                            _sc = float(_raw) if _raw is not None else None
                             # cache hit ako: score nepoznat (bit će scorovan)
                             # ILI score iznad threshold-a
-                            _is_cache_hit = (_sc is None or _sc >= _QUALITY_RESCUE_THRESHOLD)
+                            _is_cache_hit = (
+                                _sc is None or _sc >= _QUALITY_RESCUE_THRESHOLD
+                            )
                     except Exception:
                         pass
 
@@ -94,11 +94,14 @@ class AdaptiveParallelism:
                         # Ovo sprečava thundering herd gdje svi krenu u 0.7s prozoru.
                         try:
                             from config.ai_config import get_min_gap
-                            _prov = getattr(self.engine, '_primary_provider', 'GEMINI')
+
+                            _prov = getattr(self.engine, "_primary_provider", "GEMINI")
                             _gap = get_min_gap(_prov)
                         except Exception:
                             _gap = 7.5
-                        stagger = (idx % max(window_size, 1)) * (_gap / max(window_size, 1))
+                        stagger = (idx % max(window_size, 1)) * (
+                            _gap / max(window_size, 1)
+                        )
                         stagger += random.uniform(0.1, 0.5)  # mali jitter
                         await asyncio.sleep(stagger)
 
@@ -116,8 +119,7 @@ class AdaptiveParallelism:
         # (ovo je ispravno za sliding window: taskovi čekaju na acquire,
         #  ne čekaju da prethodni task završi pa tek onda bude kreiran)
         tasks = [
-            asyncio.create_task(process_one(i, chunk))
-            for i, chunk in enumerate(chunks)
+            asyncio.create_task(process_one(i, chunk)) for i, chunk in enumerate(chunks)
         ]
 
         # Procesuj rezultate čim stignu (ne čekaj na redosljed)
@@ -134,6 +136,3 @@ class AdaptiveParallelism:
         await asyncio.sleep(delay)
 
         return results
-
-
-

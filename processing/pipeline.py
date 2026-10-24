@@ -10,31 +10,34 @@ IZMJENE vs v3.0:
   - Korak 7: Nezavisni scorer — bilježenje prevoditelja za quality_scorer_v2
 """
 
-import gc
 import asyncio
-import re
+import gc
 import json
 import os as _os
-from pathlib import Path
-from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+import re
 import warnings
-warnings.filterwarnings('ignore', category=XMLParsedAsHTMLWarning)
+from pathlib import Path
+
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+from core.quality import _CACHE_ACCEPT_SCORE
 from core.text_utils import (
-    _smart_extract,
     _agresivno_cisti,
+    _automatska_korekcija,
     _detektuj_en_ostatke,
     _detektuj_halucinaciju,
-    _post_process_tipografija,
-    _automatska_korekcija,
-    detektuj_tip_bloka,
     _je_ai_anotacija,
+    _post_process_tipografija,
+    _smart_extract,
+    detektuj_tip_bloka,
 )
 from processing.rescue import _spasi_od_sirovog
-from core.quality import _QUALITY_RESCUE_THRESHOLD, _CACHE_ACCEPT_SCORE
 
 # ── Korak 2, 3, 4 integracije ──────────────────────────────────────────────
 try:
     from core.kalkovi.engine import kalkovi_engine
+
     _KALKOVI_OK = True
 except ImportError:
     kalkovi_engine = None
@@ -42,6 +45,7 @@ except ImportError:
 
 try:
     from core.validators.morfo_validator import MorfoValidator
+
     _MORFO_OK = True
 except ImportError:
     MorfoValidator = None
@@ -49,6 +53,7 @@ except ImportError:
 
 try:
     from analysis.book_context import BookContext
+
     _BOOK_CTX_OK = True
 except ImportError:
     BookContext = None
@@ -56,6 +61,7 @@ except ImportError:
 
 try:
     from core.prompt_injector import PromptInjector
+
     _INJECTOR_OK = True
 except ImportError:
     PromptInjector = None
@@ -66,6 +72,7 @@ USE_WORKERS_V2: bool = _os.environ.get("BOOKLYFI_V2", "1").strip() == "1"
 
 try:
     from processing.workers import WorkerV2
+
     _V2_DOSTUPAN = True
 except ImportError:
     WorkerV2 = None
@@ -75,6 +82,7 @@ except ImportError:
 # Korak 7 — Nezavisni scorer (odvojeni try, nema veze s WorkerV2)
 try:
     from core.quality import zabilježi_prevoditelja as _zabilježi_prev
+
     _SCORER_V2_OK = True
 except ImportError:
     _zabilježi_prev = None
@@ -82,6 +90,7 @@ except ImportError:
 # ── Samoučeći sistem V1.0 ──────────────────────────────────────────────────
 try:
     from core.few_shot_global import dodaj_odlican_prevod, formatiraj_za_prompt
+
     _FEW_SHOT_OK = True
 except ImportError:
     dodaj_odlican_prevod = None
@@ -90,6 +99,7 @@ except ImportError:
 
 try:
     from core.skip_oracle import moze_skipovati_korektor
+
     _SKIP_ORACLE_OK = True
 except ImportError:
     moze_skipovati_korektor = None
@@ -99,12 +109,14 @@ except ImportError:
 # ── Karantena detektor (singleton, lazy init) ────────────────────────────────
 _karantena_detektor = None
 
+
 def _get_karantena_detektor():
     """Vraća singleton DinamickiDetektor, inicijaliziran pri prvom pozivu."""
     global _karantena_detektor
     if _karantena_detektor is None:
         try:
             from core.kalkovi.dinamicki_detektor import DinamickiDetektor
+
             _karantena_detektor = DinamickiDetektor()
         except Exception:
             _karantena_detektor = False  # sentinel: ne pokušavaj ponovo
@@ -114,12 +126,14 @@ def _get_karantena_detektor():
 # ── Rod detektor (singleton, lazy init) ──────────────────────────────────────
 _rod_detektor_pipeline = None
 
+
 def _get_rod_detektor():
     """Vraća DIJELJENI RodDetektor singleton (isti objekt kao u workers.py)."""
     global _rod_detektor_pipeline
     if _rod_detektor_pipeline is None:
         try:
             from core.kalkovi.rod_detektor import rod_detektor as _shared_rod_detektor
+
             _rod_detektor_pipeline = _shared_rod_detektor
         except Exception:
             _rod_detektor_pipeline = False
@@ -128,25 +142,35 @@ def _get_rod_detektor():
 
 # ── Privatni checkpoint helperi ───────────────────────────────────────────────
 
-_CHUNK_SHA_RX = re.compile(r"^<!--\s*chunk_sha:(?P<v2>v2:(?P<mh>[a-f0-9]+):(?P<gh>[a-f0-9]+):)?(?P<h>[a-f0-9]+)\s*-->\s*\n?")
+_CHUNK_SHA_RX = re.compile(
+    r"^<!--\s*chunk_sha:(?P<v2>v2:(?P<mh>[a-f0-9]+):(?P<gh>[a-f0-9]+):)?(?P<h>[a-f0-9]+)\s*-->\s*\n?"
+)
+
 
 def _hash_glosar(glosar) -> str:
     """2026-10-24 B4b: hash glosara za keš validaciju.
     Vraca "" ako je glosar prazan (konzistentno, ne None).
     """
-    import hashlib as _hl, json as _json
+    import hashlib as _hl
+    import json as _json
+
     if not glosar:
         return ""
     try:
         if isinstance(glosar, dict):
-            canonical = _json.dumps(glosar, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+            canonical = _json.dumps(
+                glosar, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+            )
         elif isinstance(glosar, (list, tuple)):
-            canonical = _json.dumps(list(glosar), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+            canonical = _json.dumps(
+                list(glosar), sort_keys=True, ensure_ascii=False, separators=(",", ":")
+            )
         else:
             canonical = str(glosar)
         return _hl.sha256(canonical.encode("utf-8")).hexdigest()[:16]
     except Exception:
         return ""
+
 
 def _chk_path(self, file_name: str, chunk_idx: int, suffix: str = "") -> object:
     if suffix:
@@ -154,12 +178,19 @@ def _chk_path(self, file_name: str, chunk_idx: int, suffix: str = "") -> object:
     return self.checkpoint_dir / f"{file_name}_blok_{chunk_idx}.chk"
 
 
-def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
-              chunk_for_hash: str | None = None,
-              model_hash: str | None = None,
-              glosar_hash: str | None = None) -> str | None:
-    from utils.checkpoint_cleaner import _je_placeholder, _ocisti_json_wrapper
+def _chk_read(
+    self,
+    file_name: str,
+    chunk_idx: int,
+    suffix: str = "",
+    chunk_for_hash: str | None = None,
+    model_hash: str | None = None,
+    glosar_hash: str | None = None,
+) -> str | None:
     import hashlib as _hashlib
+
+    from utils.checkpoint_cleaner import _je_placeholder, _ocisti_json_wrapper
+
     p = _chk_path(self, file_name, chunk_idx, suffix)
     if not p.exists():
         return None
@@ -170,17 +201,20 @@ def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
             # 2026-10-24 B4a: v2 format (model + glosar + chunk), v1 (samo chunk)
             stored = m.group("h")
             is_v2 = m.group("v2") is not None
-            tekst = tekst[m.end():]
+            tekst = tekst[m.end() :]
             if chunk_for_hash is not None:
                 if is_v2 and (model_hash is not None or glosar_hash is not None):
                     stored_mh = m.group("mh") or ""
                     stored_gh = m.group("gh") or ""
                     _mh_expected = (model_hash or "")[:16]
                     _gh_expected = (glosar_hash or "")[:16]
-                    if (model_hash is not None and stored_mh != _mh_expected) or \
-                       (glosar_hash is not None and stored_gh != _gh_expected):
+                    if (model_hash is not None and stored_mh != _mh_expected) or (
+                        glosar_hash is not None and stored_gh != _gh_expected
+                    ):
                         return None
-                expected = _hashlib.sha256(chunk_for_hash.encode("utf-8")).hexdigest()[:16]
+                expected = _hashlib.sha256(chunk_for_hash.encode("utf-8")).hexdigest()[
+                    :16
+                ]
                 if stored != expected:
                     return None
         tekst = _ocisti_json_wrapper(tekst)
@@ -192,6 +226,7 @@ def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
         if chunk_for_hash is not None:
             try:
                 from bs4 import BeautifulSoup as _BS
+
                 _text_chk = _BS(tekst, "html.parser").get_text(" ", strip=True)
                 _text_src = _BS(chunk_for_hash, "html.parser").get_text(" ", strip=True)
                 if len(_text_src) > 500 and len(_text_chk) < len(_text_src) * 0.5:
@@ -217,18 +252,27 @@ def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
     return None
 
 
-def _chk_write(self, file_name: str, chunk_idx: int, sadrzaj: str, suffix: str = "",
-               chunk_for_hash: str | None = None,
-               model_hash: str | None = None,
-               glosar_hash: str | None = None) -> None:
+def _chk_write(
+    self,
+    file_name: str,
+    chunk_idx: int,
+    sadrzaj: str,
+    suffix: str = "",
+    chunk_for_hash: str | None = None,
+    model_hash: str | None = None,
+    glosar_hash: str | None = None,
+) -> None:
     import hashlib as _hashlib
+
     p = _chk_path(self, file_name, chunk_idx, suffix)
     if chunk_for_hash is not None:
         sha = _hashlib.sha256(chunk_for_hash.encode("utf-8")).hexdigest()[:16]
         if model_hash is not None or glosar_hash is not None:
             _mh = (model_hash or "")[:16]
             _gh = (glosar_hash or "")[:16]
-            sadrzaj = "<!-- chunk_sha:v2:" + _mh + ":" + _gh + ":" + sha + " -->\n" + sadrzaj
+            sadrzaj = (
+                "<!-- chunk_sha:v2:" + _mh + ":" + _gh + ":" + sha + " -->\n" + sadrzaj
+            )
         else:
             sadrzaj = "<!-- chunk_sha:" + sha + " -->\n" + sadrzaj
     self._atomic_write(p, sadrzaj)
@@ -255,8 +299,13 @@ def _je_placeholder_lokalni(tekst: str) -> bool:
         "molim te, pošalji tekst za obradu. čekam ga.",
         "pošalji tekst za obradu.",
         "čekam ga.",
-        "[prijevod]", "[translation]", "[tekst]", "[text]",
-        "placeholder", "[prijevod ovdje]", "[lektura ovdje]",
+        "[prijevod]",
+        "[translation]",
+        "[tekst]",
+        "[text]",
+        "placeholder",
+        "[prijevod ovdje]",
+        "[lektura ovdje]",
     }
     if cist in _exact:
         return True
@@ -317,12 +366,17 @@ def _plain_len(tekst: str) -> int:
         return len((tekst or "").strip())
 
 
-def _je_sumnjiv_gubitak_teksta(original: str, kandidat: str, uloga: str = "LEKTOR") -> bool:
+def _je_sumnjiv_gubitak_teksta(
+    original: str, kandidat: str, uloga: str = "LEKTOR"
+) -> bool:
     if not original or not kandidat:
         return False
     orig_len = _plain_len(original)
     cand_len = _plain_len(kandidat)
-    if orig_len < _MIN_ORIG_LEN_FOR_LOSS_CHECK or cand_len < _MIN_CAND_LEN_FOR_LOSS_CHECK:
+    if (
+        orig_len < _MIN_ORIG_LEN_FOR_LOSS_CHECK
+        or cand_len < _MIN_CAND_LEN_FOR_LOSS_CHECK
+    ):
         return False
     ratio = cand_len / max(1, orig_len)
     if uloga == "PREVODILAC":
@@ -336,8 +390,8 @@ def _je_prekinut_tekst(original: str, finalno: str) -> bool:
     Ako original završava pravom interpunkcijom, a finalno ne,
     i finalno završava slovom ili crticom — tekst je prekinut.
     """
-    orig_clean = re.sub(r'<[^>]+>', '', original).strip()
-    final_clean = re.sub(r'<[^>]+>', '', finalno).strip()
+    orig_clean = re.sub(r"<[^>]+>", "", original).strip()
+    final_clean = re.sub(r"<[^>]+>", "", finalno).strip()
 
     if not orig_clean or not final_clean:
         return False
@@ -345,14 +399,17 @@ def _je_prekinut_tekst(original: str, finalno: str) -> bool:
     # Ako original završava pravom interpunkcijom (tačka, uzvik, pitanje, navodnik)
     if orig_clean[-1] in '.!?"”…':
         # A ako finalno završava sa slovom ili crticom (nema interpunkcije)
-        if final_clean[-1].isalpha() or final_clean[-1] in '-—–':
+        if final_clean[-1].isalpha() or final_clean[-1] in "-—–":
             return True
     return False
 
 
 # ── Korak 5: Helper za kalkove + validator ──────────────────────────────────
 
-def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx: int) -> str:
+
+def _primijeni_kalkove_i_validator(
+    self, finalno: str, file_name: str, chunk_idx: int
+) -> str:
     """
     Primjenjuje kalkovi engine (Korak 2) i morfo validator (Korak 3).
     Fail-safe: ako bilo što ne uspije, vraća originalni tekst.
@@ -366,7 +423,9 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
             if hasattr(self, "book_context") and self.book_context:
                 glosar = getattr(self.book_context, "glosar", {})
             blok_id = f"{file_name}_blok_{chunk_idx}"
-            finalno_k, _ = kalkovi_engine.primijeni(finalno, glosar=glosar, blok_id=blok_id)
+            finalno_k, _ = kalkovi_engine.primijeni(
+                finalno, glosar=glosar, blok_id=blok_id
+            )
             if finalno_k and len(finalno_k.strip()) > 10:
                 finalno = finalno_k
         except Exception as e:
@@ -376,9 +435,13 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
     validator = getattr(self, "morfo_validator", None)
     if validator and len(finalno.strip()) > 50:
         try:
-            finalno = validator.validiraj(finalno, knjiga_id=file_name, chunk_id=chunk_idx)
+            finalno = validator.validiraj(
+                finalno, knjiga_id=file_name, chunk_id=chunk_idx
+            )
         except Exception as e:
-            logging.warning(f"[pipeline] Morfo validator greška (blok {chunk_idx}): {e}")
+            logging.warning(
+                f"[pipeline] Morfo validator greška (blok {chunk_idx}): {e}"
+            )
 
     # Korak 11a: Karantena detektor — pasivno bilježenje kandidiata
     detektor = _get_karantena_detektor()
@@ -388,6 +451,7 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
             bp = getattr(self, "book_path", None)
             if bp:
                 from pathlib import Path as _Path
+
                 knjiga_str = _Path(bp).stem
             quality_score = 0.0
             qs = getattr(self, "shared_stats", {})
@@ -405,13 +469,16 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
                 quality_score=quality_score,
             )
         except Exception as e:
-            logging.debug(f"[pipeline] Karantena detektor greška (blok {chunk_idx}): {e}")
+            logging.debug(
+                f"[pipeline] Karantena detektor greška (blok {chunk_idx}): {e}"
+            )
 
     # Korak 11a-fix: da_konjugator — "modal + da + glagol" → "modal + infinitiv"
     # FIX 2026-09-25: Gemma/GPT-OSS vraćaju "želim da radim" umjesto "želim raditi".
     # Konjugator pretvara SAMO kad su modal i glagol ista lica (subjekt isti).
     try:
         from core.kalkovi.da_konjugator import konjuguj as _da_konjuguj
+
         if finalno:
             finalno_dk, n_dk = _da_konjuguj(finalno, agresivno=False)
             if n_dk > 0 and finalno_dk and len(finalno_dk.strip()) > 10:
@@ -430,6 +497,7 @@ def _primijeni_kalkove_i_validator(self, finalno: str, file_name: str, chunk_idx
             bp = getattr(self, "book_path", None)
             if bp:
                 from pathlib import Path as _PathR
+
                 knjiga_id_rod = _PathR(bp).stem
             elif hasattr(self, "clean_book_name"):
                 knjiga_id_rod = self.clean_book_name
@@ -484,6 +552,7 @@ def _init_book_context(self, knjiga_id: str):
     if self.book_context is not None:
         try:
             from core.autor_analiza import analiziraj_knjigu
+
             _epub = getattr(self, "book_path", None)
             if _epub and Path(_epub).exists():
                 _profil = analiziraj_knjigu(str(_epub))
@@ -535,17 +604,36 @@ def _init_book_context(self, knjiga_id: str):
 
 # ── Quality scoring helper ────────────────────────────────────────────────────
 
+
 async def _quality_scoring(
-    self, finalno: str, original_chunk, chunk_idx: int,
-    file_name: str, tip_bloka: str, prov_label: str,
+    self,
+    finalno: str,
+    original_chunk,
+    chunk_idx: int,
+    file_name: str,
+    tip_bloka: str,
+    prov_label: str,
     tip_ocjenjivanja: str = "opci",
     prevodilac_provider: str = None,
 ) -> None:
     _PARATEKST_KW = (
-        "halftitle", "title", "otherbyauthor", "alsoby", "seriespage",
-        "copyright", "dedication", "contents", "toc", "colophon",
-        "frontmatter", "backmatter", "epigraph", "acknowledgment",
-        "aboutauthor", "cover", "insert",
+        "halftitle",
+        "title",
+        "otherbyauthor",
+        "alsoby",
+        "seriespage",
+        "copyright",
+        "dedication",
+        "contents",
+        "toc",
+        "colophon",
+        "frontmatter",
+        "backmatter",
+        "epigraph",
+        "acknowledgment",
+        "aboutauthor",
+        "cover",
+        "insert",
     )
     fn_lower = file_name.lower().replace("_", "").replace("-", "")
     je_paratekst = any(kw in fn_lower for kw in _PARATEKST_KW)
@@ -560,11 +648,14 @@ async def _quality_scoring(
         score_float = 8.5
         self._quality_scores[stem_key] = score_float
         self.shared_stats["quality_scores"][stem_key] = score_float
-        self.log(f"[{file_name}] Blok {chunk_idx}: paratekst → ocjena {score_float}", "tech")
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: paratekst → ocjena {score_float}", "tech"
+        )
         return
 
     try:
         from core.quality import _scoruj_kvalitetu
+
         score = await _scoruj_kvalitetu(
             finalno,
             self._call_ai_engine,
@@ -610,17 +701,20 @@ async def _quality_scoring(
         # Upisuju se u odvojen fajl quality_metrics.json (ne dira quality_scores).
         try:
             from core.metrics import compute_metrics
+
             _metrics = compute_metrics(finalno, original_chunk)
             _mp = self.checkpoint_dir / "quality_metrics.json"
             _existing_m = {}
             if _mp.exists():
                 try:
                     import json as _json_m
+
                     _existing_m = _json_m.loads(_mp.read_text("utf-8"))
                 except Exception:
                     _existing_m = {}
             try:
                 from core.metrics import classify_metrics as _classify
+
                 _metrics["quality_class"] = _classify(_metrics)
             except Exception:
                 _metrics["quality_class"] = "?"
@@ -641,15 +735,20 @@ async def _quality_scoring(
             )
             hr_path = self.checkpoint_dir / "human_review.json"
             try:
-                hr_data = json.loads(_strip_ai_json(hr_path.read_text("utf-8"))) \
-                          if hr_path.exists() else []
+                hr_data = (
+                    json.loads(_strip_ai_json(hr_path.read_text("utf-8")))
+                    if hr_path.exists()
+                    else []
+                )
                 if not any(item.get("stem") == stem_key for item in hr_data):
-                    hr_data.append({
-                        "stem": stem_key,
-                        "score": score_float,
-                        "tip": tip_bloka,
-                        "preview": preview,
-                    })
+                    hr_data.append(
+                        {
+                            "stem": stem_key,
+                            "score": score_float,
+                            "tip": tip_bloka,
+                            "preview": preview,
+                        }
+                    )
                     self._atomic_write(
                         hr_path,
                         json.dumps(hr_data, ensure_ascii=False, indent=2),
@@ -662,6 +761,7 @@ async def _quality_scoring(
             gc.collect()
             try:
                 import json as _json
+
                 qs_path = self.checkpoint_dir / "quality_scores.json"
 
                 # FIX: MERGE umjesto overwrite — čuvaj postojeće ocjene
@@ -694,8 +794,10 @@ async def _quality_scoring(
 
 # ── Glavni AI pipeline ────────────────────────────────────────────────────────
 
-async def _posalji_po_paragrafima(self, chunk, chunk_idx, file_name,
-                                   fusion_sys, tip_bloka):
+
+async def _posalji_po_paragrafima(
+    self, chunk, chunk_idx, file_name, fusion_sys, tip_bloka
+):
     """
     Kad Gemini blokira cijeli chunk (PROHIBITED_CONTENT / CONTENT_FILTER),
     pokusaj svaki paragraf zasebno. Toxicne paragrafe markiraj (sa originalom
@@ -711,10 +813,10 @@ async def _posalji_po_paragrafima(self, chunk, chunk_idx, file_name,
         tekst = soup.get_text().strip()
         if not tekst:
             return None, 0
-        recenice = re.split(r'(?<=[.!?])\s+', tekst)
+        recenice = re.split(r"(?<=[.!?])\s+", tekst)
         if len(recenice) < 2:
             return None, 0
-        dijelovi = [" ".join(recenice[i:i+3]) for i in range(0, len(recenice), 3)]
+        dijelovi = [" ".join(recenice[i : i + 3]) for i in range(0, len(recenice), 3)]
         paras_iter = [(None, d) for d in dijelovi]
         is_html = False
     else:
@@ -727,20 +829,22 @@ async def _posalji_po_paragrafima(self, chunk, chunk_idx, file_name,
     for i, (_, p_html) in enumerate(paras_iter):
         raw, prov = await self._call_ai_engine(
             f"Engleski tekst za prevod:\n{p_html}",
-            chunk_idx, uloga="PREVODILAC",
-            filename=file_name, sys_override=fusion_sys,
+            chunk_idx,
+            uloga="PREVODILAC",
+            filename=file_name,
+            sys_override=fusion_sys,
             tip_bloka=tip_bloka,
         )
         if prov == "CONTENT_FILTER" or not raw:
             original_esc = p_html.replace("--", "- -")
             if is_html:
                 rezultati.append(
-                    f"<p>[[MANUAL: chunk {chunk_idx}, dio {i+1}]]"
+                    f"<p>[[MANUAL: chunk {chunk_idx}, dio {i + 1}]]"
                     f"<!-- EN: {original_esc} --></p>"
                 )
             else:
                 rezultati.append(
-                    f"[[MANUAL: chunk {chunk_idx}, dio {i+1}]]"
+                    f"[[MANUAL: chunk {chunk_idx}, dio {i + 1}]]"
                     f"<!-- EN: {original_esc} -->"
                 )
             markirano += 1
@@ -774,7 +878,9 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     # ── Cache provjera ───────────────────────────────────────────────────────
     if not force_reprocess:
-        cached_final = _chk_read(self, file_name, chunk_idx, chunk_for_hash=chunk, glosar_hash=glosar_hash)
+        cached_final = _chk_read(
+            self, file_name, chunk_idx, chunk_for_hash=chunk, glosar_hash=glosar_hash
+        )
         if cached_final and _detektuj_en_ostatke(cached_final) < 0.08:
             qs = self.shared_stats.get("quality_scores", {})
             stem_key = f"{file_name}_blok_{chunk_idx}"
@@ -786,13 +892,26 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     # Blok nema pohranjenu ocjenu — scoruj keširani sadržaj
                     tip_bloka_c = detektuj_tip_bloka(chunk)
                     await _quality_scoring(
-                        self, cached_final, chunk, chunk_idx, file_name,
-                        tip_bloka_c, "DATABASE",
+                        self,
+                        cached_final,
+                        chunk,
+                        chunk_idx,
+                        file_name,
+                        tip_bloka_c,
+                        "DATABASE",
                         tip_ocjenjivanja="opci",
                     )
-                    new_qs_val = self.shared_stats.get("quality_scores", {}).get(stem_key)
-                    cached_score = _norm_score(new_qs_val) if new_qs_val is not None else None
-                score_info = f"score={cached_score:.1f}" if cached_score is not None else "score=?"
+                    new_qs_val = self.shared_stats.get("quality_scores", {}).get(
+                        stem_key
+                    )
+                    cached_score = (
+                        _norm_score(new_qs_val) if new_qs_val is not None else None
+                    )
+                score_info = (
+                    f"score={cached_score:.1f}"
+                    if cached_score is not None
+                    else "score=?"
+                )
                 self.log(
                     f"[{file_name}] Blok {chunk_idx}: 💾 Učitan iz cache-a ({score_info}).",
                     "tech",
@@ -820,26 +939,46 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     # LEKTURA mod
     # ════════════════════════════════════════════════════════════════════════
     if knjiga_mode == "LEKTURA":
-
         if not force_reprocess:
-            cached_lek = _chk_read(self, file_name, chunk_idx, "lektura", chunk_for_hash=chunk, glosar_hash=glosar_hash)
+            cached_lek = _chk_read(
+                self,
+                file_name,
+                chunk_idx,
+                "lektura",
+                chunk_for_hash=chunk,
+                glosar_hash=glosar_hash,
+            )
             if cached_lek:
                 if not _chk_path(self, file_name, chunk_idx).exists():
-                    _chk_write(self, file_name, chunk_idx, cached_lek, chunk_for_hash=chunk)
+                    _chk_write(
+                        self, file_name, chunk_idx, cached_lek, chunk_for_hash=chunk
+                    )
                 qs_l = self.shared_stats.get("quality_scores", {})
                 stem_key_l = f"{file_name}_blok_{chunk_idx}"
                 raw_val_l = qs_l.get(stem_key_l, None)
-                cached_score_l = _norm_score(raw_val_l) if raw_val_l is not None else None
+                cached_score_l = (
+                    _norm_score(raw_val_l) if raw_val_l is not None else None
+                )
                 if cached_score_l is None:
                     # Blok nema pohranjenu ocjenu — scoruj keširani sadržaj
                     tip_bloka_l = detektuj_tip_bloka(chunk)
                     await _quality_scoring(
-                        self, cached_lek, chunk, chunk_idx, file_name,
-                        tip_bloka_l, "DATABASE/LEKTURA", tip_ocjenjivanja="lektura",
+                        self,
+                        cached_lek,
+                        chunk,
+                        chunk_idx,
+                        file_name,
+                        tip_bloka_l,
+                        "DATABASE/LEKTURA",
+                        tip_ocjenjivanja="lektura",
                         prevodilac_provider="DATABASE/LEKTURA",
                     )
-                    new_qs_val_l = self.shared_stats.get("quality_scores", {}).get(stem_key_l)
-                    cached_score_l = _norm_score(new_qs_val_l) if new_qs_val_l is not None else None
+                    new_qs_val_l = self.shared_stats.get("quality_scores", {}).get(
+                        stem_key_l
+                    )
+                    cached_score_l = (
+                        _norm_score(new_qs_val_l) if new_qs_val_l is not None else None
+                    )
                 if cached_score_l is not None and cached_score_l < _CACHE_ACCEPT_SCORE:
                     self.log(
                         f"[{file_name}] Blok {chunk_idx}: ♻️ Lektura cache ignorisan "
@@ -847,7 +986,11 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                         "warning",
                     )
                 else:
-                    score_info_l = f"score={cached_score_l:.1f}" if cached_score_l is not None else "score=?"
+                    score_info_l = (
+                        f"score={cached_score_l:.1f}"
+                        if cached_score_l is not None
+                        else "score=?"
+                    )
                     self.log(
                         f"[{file_name}] Blok {chunk_idx}: 💾 Lektura učitana iz cache-a ({score_info_l}).",
                         "tech",
@@ -870,8 +1013,12 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         )
 
         raw_l, prov_l = await self._call_ai_engine(
-            p_lek, chunk_idx, uloga="LEKTOR",
-            filename=file_name, sys_override=lek_sys, tip_bloka=tip_bloka,
+            p_lek,
+            chunk_idx,
+            uloga="LEKTOR",
+            filename=file_name,
+            sys_override=lek_sys,
+            tip_bloka=tip_bloka,
         )
 
         if raw_l:
@@ -901,8 +1048,11 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         # ── KOREKTOR pass (temp 0.15) ─────────────────────────────────────────
         pre_korektor_l = finalno
         raw_kor_l, prov_kor_l = await self._call_ai_engine(
-            finalno, chunk_idx, uloga="KOREKTOR",
-            filename=file_name, tip_bloka=tip_bloka,
+            finalno,
+            chunk_idx,
+            uloga="KOREKTOR",
+            filename=file_name,
+            tip_bloka=tip_bloka,
         )
         if raw_kor_l:
             kor_l = _smart_extract(raw_kor_l)
@@ -933,18 +1083,44 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             self.chunk_skips += 1
             return None, "TRUNCATED"
 
-        _chk_write(self, file_name, chunk_idx, finalno, "lektura", chunk_for_hash=chunk, glosar_hash=glosar_hash, model_hash=prov_l)
-        _chk_write(self, file_name, chunk_idx, finalno, chunk_for_hash=chunk, glosar_hash=glosar_hash, model_hash=prov_l)
+        _chk_write(
+            self,
+            file_name,
+            chunk_idx,
+            finalno,
+            "lektura",
+            chunk_for_hash=chunk,
+            glosar_hash=glosar_hash,
+            model_hash=prov_l,
+        )
+        _chk_write(
+            self,
+            file_name,
+            chunk_idx,
+            finalno,
+            chunk_for_hash=chunk,
+            glosar_hash=glosar_hash,
+            model_hash=prov_l,
+        )
 
         self.global_done_chunks += 1
         self.stvarno_prevedeno_u_sesiji += 1
         self.shared_stats["stvarno_prevedeno"] = self.stvarno_prevedeno_u_sesiji
         gc.collect()
-        self.log(f"[{file_name}] Blok {chunk_idx}: ✍️ HR lektura ({prov_l}→{prov_kor_l})", "tech")
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: ✍️ HR lektura ({prov_l}→{prov_kor_l})",
+            "tech",
+        )
 
         await _quality_scoring(
-            self, finalno, chunk, chunk_idx, file_name,
-            tip_bloka, f"LEKTURA/{prov_l}", tip_ocjenjivanja="lektura",
+            self,
+            finalno,
+            chunk,
+            chunk_idx,
+            file_name,
+            tip_bloka,
+            f"LEKTURA/{prov_l}",
+            tip_ocjenjivanja="lektura",
             prevodilac_provider=prov_l,
         )
         return finalno, f"LEKTURA/{prov_l}→{prov_kor_l}"
@@ -955,7 +1131,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     sirovo_cached = None
     if not force_reprocess:
-        sirovo_cached = _chk_read(self, file_name, chunk_idx, "prevod", chunk_for_hash=chunk, glosar_hash=glosar_hash)
+        sirovo_cached = _chk_read(
+            self,
+            file_name,
+            chunk_idx,
+            "prevod",
+            chunk_for_hash=chunk,
+            glosar_hash=glosar_hash,
+        )
         if sirovo_cached:
             self.log(
                 f"[{file_name}] Blok {chunk_idx}: ♻️ Sirovi prijevod iz cache-a — nastavljam od lektora.",
@@ -980,8 +1163,12 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 pass
         p_fusion = f"Engleski tekst za prevod:\n{chunk}"
         raw_fusion, prov1 = await self._call_ai_engine(
-            p_fusion, chunk_idx, uloga="PREVODILAC",
-            filename=file_name, sys_override=fusion_sys, tip_bloka=tip_bloka,
+            p_fusion,
+            chunk_idx,
+            uloga="PREVODILAC",
+            filename=file_name,
+            sys_override=fusion_sys,
+            tip_bloka=tip_bloka,
         )
         if prov1 == "CONTENT_FILTER":
             self.log(
@@ -990,7 +1177,12 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 "warning",
             )
             bisekt, markirano = await _posalji_po_paragrafima(
-                self, chunk, chunk_idx, file_name, fusion_sys, tip_bloka,
+                self,
+                chunk,
+                chunk_idx,
+                file_name,
+                fusion_sys,
+                tip_bloka,
             )
             if bisekt:
                 raw_fusion = bisekt
@@ -1020,16 +1212,38 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     "error",
                 )
                 self.chunk_skips += 1
-                _chk_write(self, file_name, chunk_idx, chunk, "prevod",
-                           chunk_for_hash=chunk, glosar_hash=glosar_hash)
-                _chk_write(self, file_name, chunk_idx, marker, chunk_for_hash=chunk,
-                           glosar_hash=glosar_hash)
+                _chk_write(
+                    self,
+                    file_name,
+                    chunk_idx,
+                    chunk,
+                    "prevod",
+                    chunk_for_hash=chunk,
+                    glosar_hash=glosar_hash,
+                )
+                _chk_write(
+                    self,
+                    file_name,
+                    chunk_idx,
+                    marker,
+                    chunk_for_hash=chunk,
+                    glosar_hash=glosar_hash,
+                )
                 return marker, "ALL_FAILED"
             self.chunk_skips += 1
             return None, "N/A"
 
         sirovo = _agresivno_cisti(_smart_extract(raw_fusion))
-        _chk_write(self, file_name, chunk_idx, sirovo, "prevod", chunk_for_hash=chunk, glosar_hash=glosar_hash, model_hash=prov1)
+        _chk_write(
+            self,
+            file_name,
+            chunk_idx,
+            sirovo,
+            "prevod",
+            chunk_for_hash=chunk,
+            glosar_hash=glosar_hash,
+            model_hash=prov1,
+        )
 
     lek_sys = self._get_lektor_prompt(
         prev_kraj=prev_ctx,
@@ -1043,8 +1257,12 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         f"Profesionalno lektoriraj na hrvatski."
     )
     raw_l, prov2 = await self._call_ai_engine(
-        p_lek, chunk_idx, uloga="LEKTOR",
-        filename=file_name, sys_override=lek_sys, tip_bloka=tip_bloka,
+        p_lek,
+        chunk_idx,
+        uloga="LEKTOR",
+        filename=file_name,
+        sys_override=lek_sys,
+        tip_bloka=tip_bloka,
     )
     finalno = _smart_extract(raw_l) if raw_l else sirovo
     if not finalno:
@@ -1052,17 +1270,34 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     if _detektuj_en_ostatke(finalno) > 0.10:
         spas, _ = await _spasi_od_sirovog(
-            self, sirovo, chunk, chunk_idx, file_name,
-            prev_ctx, rel_glosar, "en>15%", tip_bloka,
+            self,
+            sirovo,
+            chunk,
+            chunk_idx,
+            file_name,
+            prev_ctx,
+            rel_glosar,
+            "en>15%",
+            tip_bloka,
         )
         if spas:
             finalno = spas
 
     if _detektuj_halucinaciju(chunk, finalno):
-        self.log(f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju — pokušavam rescue", "warning")
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: ⚠️ Sumnja na halucinaciju — pokušavam rescue",
+            "warning",
+        )
         spas_hal, _ = await _spasi_od_sirovog(
-            self, sirovo, chunk, chunk_idx, file_name,
-            prev_ctx, rel_glosar, "halucinacija", tip_bloka,
+            self,
+            sirovo,
+            chunk,
+            chunk_idx,
+            file_name,
+            prev_ctx,
+            rel_glosar,
+            "halucinacija",
+            tip_bloka,
         )
         if spas_hal:
             finalno = spas_hal
@@ -1072,10 +1307,19 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             "warning",
         )
         spas_gubitak, _ = await _spasi_od_sirovog(
-            self, sirovo, chunk, chunk_idx, file_name,
-            prev_ctx, rel_glosar, "gubitak teksta", tip_bloka,
+            self,
+            sirovo,
+            chunk,
+            chunk_idx,
+            file_name,
+            prev_ctx,
+            rel_glosar,
+            "gubitak teksta",
+            tip_bloka,
         )
-        if spas_gubitak and not _je_sumnjiv_gubitak_teksta(chunk, spas_gubitak, uloga="PREVODILAC"):
+        if spas_gubitak and not _je_sumnjiv_gubitak_teksta(
+            chunk, spas_gubitak, uloga="PREVODILAC"
+        ):
             finalno = spas_gubitak
         else:
             finalno = sirovo
@@ -1084,8 +1328,8 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     # V1.0: Skip Oracle — preskoči korektor ako je lektor jedva išta mijenjao
     pre_korektor = finalno
     skip_kor = False
-    prov3 = "N/A"      # BUG #1/#2 fix: inicijalizacija prije uvjetnih blokova
-    raw_kor = None     # BUG #1/#2 fix: spriječava UnboundLocalError pri exceptu
+    prov3 = "N/A"  # BUG #1/#2 fix: inicijalizacija prije uvjetnih blokova
+    raw_kor = None  # BUG #1/#2 fix: spriječava UnboundLocalError pri exceptu
     if _SKIP_ORACLE_OK and moze_skipovati_korektor:
         try:
             prevod_score = self.shared_stats.get("quality_scores", {}).get(
@@ -1101,11 +1345,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 prov3 = "SKIP_ORACLE"
         except Exception:
             pass
-    
+
     if not skip_kor:
         raw_kor, prov3 = await self._call_ai_engine(
-            finalno, chunk_idx, uloga="KOREKTOR",
-            filename=file_name, tip_bloka=tip_bloka,
+            finalno,
+            chunk_idx,
+            uloga="KOREKTOR",
+            filename=file_name,
+            tip_bloka=tip_bloka,
         )
     if not skip_kor and raw_kor:
         kor = _smart_extract(raw_kor)
@@ -1137,7 +1384,15 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         self.chunk_skips += 1
         return None, "TRUNCATED"
 
-    _chk_write(self, file_name, chunk_idx, finalno, chunk_for_hash=chunk, glosar_hash=glosar_hash, model_hash=prov1)
+    _chk_write(
+        self,
+        file_name,
+        chunk_idx,
+        finalno,
+        chunk_for_hash=chunk,
+        glosar_hash=glosar_hash,
+        model_hash=prov1,
+    )
     try:
         _chk_path(self, file_name, chunk_idx, "prevod").unlink(missing_ok=True)
     except Exception:
@@ -1149,8 +1404,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     prov_label = f"{prov1}→{prov2}→{prov3}"
     await _quality_scoring(
-        self, finalno, chunk, chunk_idx, file_name,
-        tip_bloka, prov_label, tip_ocjenjivanja="prevod",
+        self,
+        finalno,
+        chunk,
+        chunk_idx,
+        file_name,
+        tip_bloka,
+        prov_label,
+        tip_ocjenjivanja="prevod",
         prevodilac_provider=prov1,
     )
 
@@ -1187,6 +1448,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
 # ── Retry wrapper ─────────────────────────────────────────────────────────────
 
+
 async def process_chunk_with_retry(
     self, chunk, prev_ctx, next_ctx, chunk_idx, file_name, max_retries=3
 ):
@@ -1196,16 +1458,15 @@ async def process_chunk_with_retry(
     pokreće se u executor-u da ne blokira event loop).
     """
     if USE_WORKERS_V2 and _V2_DOSTUPAN:
-        self.log(
-            f"[{file_name}] Blok {chunk_idx}: 🚀 V10.4 workers_v2 aktivan", "tech"
-        )
+        self.log(f"[{file_name}] Blok {chunk_idx}: 🚀 V10.4 workers_v2 aktivan", "tech")
         try:
             tip_bloka = detektuj_tip_bloka(chunk)
             chapter_summary = self._get_chapter_summary_for_lektor(file_name)
 
             worker = WorkerV2(
-                uloga="prevodilac" if getattr(self, "knjiga_mode", "PREVOD") == "PREVOD"
-                      else "lektor",
+                uloga="prevodilac"
+                if getattr(self, "knjiga_mode", "PREVOD") == "PREVOD"
+                else "lektor",
                 tip_bloka=tip_bloka,
                 book_context=getattr(self, "book_context", None),
                 chapter_summary=chapter_summary,
@@ -1214,15 +1475,12 @@ async def process_chunk_with_retry(
             # WorkerV2.obradi_chunk je sinkron — pokreni u thread pool-u
             # BUG #6 fix: get_event_loop() deprecated u Python 3.10+
             rezultat = await asyncio.get_running_loop().run_in_executor(
-                None,
-                lambda: worker.obradi_chunk(chunk)
+                None, lambda: worker.obradi_chunk(chunk)
             )
 
             if rezultat and rezultat.get("success") and rezultat.get("tekst"):
                 tekst = rezultat["tekst"]
-                engine_label = (
-                    f"V2/{rezultat.get('provider','?')}/{rezultat.get('model_ime','?')}"
-                )
+                engine_label = f"V2/{rezultat.get('provider', '?')}/{rezultat.get('model_ime', '?')}"
                 if not hasattr(self, "_v2_engine_stats"):
                     self._v2_engine_stats = {}
                 self._v2_engine_stats[f"{file_name}_blok_{chunk_idx}"] = engine_label
@@ -1252,8 +1510,13 @@ async def process_chunk_with_retry(
                 # Ako AI scorer padne, fallback na V2 heuristicki.
                 try:
                     await _quality_scoring(
-                        self, tekst, chunk, chunk_idx, file_name,
-                        tip_bloka, engine_label,
+                        self,
+                        tekst,
+                        chunk,
+                        chunk_idx,
+                        file_name,
+                        tip_bloka,
+                        engine_label,
                         tip_ocjenjivanja="prevod",
                         prevodilac_provider=engine_label,
                     )

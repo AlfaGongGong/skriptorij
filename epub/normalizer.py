@@ -17,6 +17,7 @@ run_epub_styler pozove _add_chapter_ornament()/_add_dropcap().
 """
 
 import re
+
 from bs4 import BeautifulSoup, NavigableString
 
 
@@ -73,27 +74,26 @@ def _strip_booklyfi_vijenac(soup: BeautifulSoup) -> None:
     for tag in soup.find_all(["img", "p"], class_="booklyfi-vijenac"):
         tag.decompose()
 
+
 # ═══════════════════════════════════════════════════════════════════════════
 # POTPUNI STRIP — svaka knjiga izlazi identično bez obzira na ulaz
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-
 def _normalize_html(soup):
     """
     Normalizuje HTML u jedinstvenu strukturu (Calibre-style).
-    
+
     SVE knjige, bez obzira na izvor, izlaze sa:
       - <p> za tekst (ne <div>)
       - <h1>-<h3> za naslove (ne <h4>-<h6>)
       - <em>/<i>, <strong>/<b> za naglašavanje
       - <br> za prelom reda
       - Bez <font>, <center>, <table> layout
-    
+
     Poziva se PRIJE _strip_everything.
     """
-    from bs4 import NavigableString
-    
+
     # ── 1. <div> sa tekstom → <p> ──
     for div in soup.find_all("div"):
         # Preskoči ako je strukturni wrapper (sadrži <div>/<p>/<ul>/<ol>)
@@ -107,11 +107,11 @@ def _normalize_html(soup):
         # Ukloni klase (Calibre klase)
         if div.get("class"):
             del div["class"]
-    
+
     # ── 2. <h4>-<h6> → <h3> ──
     for h in soup.find_all(["h4", "h5", "h6"]):
         h.name = "h3"
-    
+
     # ── 3. <font> → tekst sa <em>/<strong> ako treba ──
     for font in soup.find_all("font"):
         # Ako ima color/size, pretvori u <span style>
@@ -120,7 +120,7 @@ def _normalize_html(soup):
             style_parts.append(f"color:{font['color']}")
         if font.get("face"):
             style_parts.append(f"font-family:{font['face']}")
-        
+
         if style_parts:
             span = soup.new_tag("span")
             span["style"] = ";".join(style_parts)
@@ -129,7 +129,7 @@ def _normalize_html(soup):
                 span.append(child)
         else:
             font.unwrap()  # <font> bez stila → samo tekst
-    
+
     # ── 4. <center> → <p style="text-align:center"> ──
     for c in soup.find_all("center"):
         p = soup.new_tag("p")
@@ -137,7 +137,7 @@ def _normalize_html(soup):
         for child in list(c.children):
             p.append(child)
         c.replace_with(p)
-    
+
     # ── 5. <table> layout → <p> ──
     for table in soup.find_all("table"):
         rows = table.find_all("tr")
@@ -147,60 +147,57 @@ def _normalize_html(soup):
             p = soup.new_tag("p")
             p.string = table.get_text(" ", strip=True)
             table.replace_with(p)
-    
+
     # ── 6. <span> bez stila/klase → unwrap ──
     for span in soup.find_all("span"):
         if not span.get("style") and not span.get("class") and not span.get("id"):
             span.unwrap()
-    
+
     # ── 7. <b> → <strong>, <i> → <em> (semantički) ──
     for b in soup.find_all("b"):
         b.name = "strong"
     for i in soup.find_all("i"):
         i.name = "em"
-    
+
     # ── 8. Deduplikacija duplih slova na početku riječi (AAutorska → Autorska) ──
     import re as _re
+
     for text_node in soup.find_all(string=True):
         if text_node.parent and text_node.parent.name in ("script", "style"):
             continue
         original = str(text_node)
         # Nađi riječi koje počinju sa 2+ istih slova
-        new_text = _re.sub(
-            r'\b([A-ZŠĐČĆŽ])\1+([a-zšđčćž])',
-            r'\1\2',
-            original
-        )
+        new_text = _re.sub(r"\b([A-ZŠĐČĆŽ])\1+([a-zšđčćž])", r"\1\2", original)
         if new_text != original:
             text_node.replace_with(new_text)
-    
+
     # ── 8. <u>, <s>, <strike> → ukloni (bez stila) ──
     for u in soup.find_all(["u", "s", "strike", "del", "ins"]):
         u.unwrap()
-    
+
     return soup
-
-
 
 
 def _ocisti_json_artefakte(html: str) -> str:
     """Cisti JSON artefakte iz AI odgovora."""
     # Markdown code fence
-    html = re.sub(r'```json\s*', '', html)
-    html = re.sub(r'```\s*', '', html)
+    html = re.sub(r"```json\s*", "", html)
+    html = re.sub(r"```\s*", "", html)
     # JSON omotaci
     html = re.sub(
         r'\{\s*"(?:tekst|text|translation|content|polished|result|html)"\s*:\s*"',
-        '', html
+        "",
+        html,
     )
-    html = re.sub(r'"\s*\}\s*$', '', html, flags=re.MULTILINE)
+    html = re.sub(r'"\s*\}\s*$', "", html, flags=re.MULTILINE)
     # Escape sekvence
-    html = html.replace('\\n', '\n')
+    html = html.replace("\\n", "\n")
     html = html.replace('\\"', '"')
-    html = html.replace('\\/', '/')
+    html = html.replace("\\/", "/")
     # Samostalne viticaste zagrade
-    html = re.sub(r'^\s*[\{\}]\s*$', '', html, flags=re.MULTILINE)
+    html = re.sub(r"^\s*[\{\}]\s*$", "", html, flags=re.MULTILINE)
     return html
+
 
 def _strip_everything(soup: BeautifulSoup, sacuvaj_tekst: bool = True) -> dict:
     """
@@ -294,7 +291,25 @@ def _strip_everything(soup: BeautifulSoup, sacuvaj_tekst: bool = True) -> dict:
             continue
         # Ako sadrži samo blok elemente — unwrap
         sadrzi_samo_blok = all(
-            (not hasattr(c, "name")) or c.name in ("p", "h1", "h2", "h3", "h4", "h5", "h6", "br", "section", "blockquote", "ol", "ul", "li", "a", "nav")
+            (not hasattr(c, "name"))
+            or c.name
+            in (
+                "p",
+                "h1",
+                "h2",
+                "h3",
+                "h4",
+                "h5",
+                "h6",
+                "br",
+                "section",
+                "blockquote",
+                "ol",
+                "ul",
+                "li",
+                "a",
+                "nav",
+            )
             for c in div.children
         )
         if sadrzi_samo_blok:
@@ -334,11 +349,12 @@ def _strip_everything(soup: BeautifulSoup, sacuvaj_tekst: bool = True) -> dict:
             if body.get(attr):
                 del body[attr]
 
-
     # ─── 11. Obrisi prazne <p>*</p> i <p> </p> ───────────────────
     for p in soup.find_all("p"):
         tekst = p.get_text(strip=True)
-        if tekst in ("*", "", "\u00a0") or (len(tekst) <= 2 and tekst.strip("* ") == ""):
+        if tekst in ("*", "", "\u00a0") or (
+            len(tekst) <= 2 and tekst.strip("* ") == ""
+        ):
             p.decompose()
             stats.setdefault("prazne_p_obrisane", 0)
             stats["prazne_p_obrisane"] += 1
@@ -367,5 +383,3 @@ def _strip_everything(soup: BeautifulSoup, sacuvaj_tekst: bool = True) -> dict:
             stats["span_u_prvi_obrisan"] += 1
 
     return stats
-
-

@@ -19,19 +19,19 @@ def get_url(prov):
         raise ValueError(f"{prov_upper} mora koristiti funkciju get_gemini_url(model)")
 
     urls = {
-        "GROQ":        "https://api.groq.com/openai/v1/chat/completions",
-        "CEREBRAS":    "https://api.cerebras.ai/v1/chat/completions",
-        "MISTRAL":     "https://api.mistral.ai/v1/chat/completions",
-        "SAMBANOVA":   "https://api.sambanova.ai/v1/chat/completions",
-        "TOGETHER":    "https://api.together.xyz/v1/chat/completions",
-        "OPENROUTER":  "https://openrouter.ai/api/v1/chat/completions",
-        "COHERE":      "https://api.cohere.com/v2/chat",
-        "GITHUB":      "https://models.github.ai/inference/chat/completions",
-        "FIREWORKS":   "https://api.fireworks.ai/inference/v1/chat/completions",
-        "CHUTES":      "https://llm.chutes.ai/v1/chat/completions",
+        "GROQ": "https://api.groq.com/openai/v1/chat/completions",
+        "CEREBRAS": "https://api.cerebras.ai/v1/chat/completions",
+        "MISTRAL": "https://api.mistral.ai/v1/chat/completions",
+        "SAMBANOVA": "https://api.sambanova.ai/v1/chat/completions",
+        "TOGETHER": "https://api.together.xyz/v1/chat/completions",
+        "OPENROUTER": "https://openrouter.ai/api/v1/chat/completions",
+        "COHERE": "https://api.cohere.com/v2/chat",
+        "GITHUB": "https://models.github.ai/inference/chat/completions",
+        "FIREWORKS": "https://api.fireworks.ai/inference/v1/chat/completions",
+        "CHUTES": "https://llm.chutes.ai/v1/chat/completions",
         "HUGGINGFACE": "https://router.huggingface.co/v1/chat/completions",
-        "KLUSTER":     "https://api.kluster.ai/v1/chat/completions",
-        "CLOUDFLARE":  f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions",
-        "NVIDIA":      "https://integrate.api.nvidia.com/v1/chat/completions",
+        "KLUSTER": "https://api.kluster.ai/v1/chat/completions",
+        "CLOUDFLARE": f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions",
+        "NVIDIA": "https://integrate.api.nvidia.com/v1/chat/completions",
     }
     return urls.get(prov_upper, urls["GROQ"])

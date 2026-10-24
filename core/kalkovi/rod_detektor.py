@@ -24,6 +24,7 @@ Korištenje:
     tekst, n = detektor.primijeni(tekst, knjiga_id="moja_knjiga",
                                    glosar_rod={"Marija": "Ž", "Ivan": "M"})
 """
+
 from __future__ import annotations
 
 import json
@@ -55,62 +56,119 @@ GPR_M_Z: dict[str, str] = {
     # biti
     "bio": "bila",
     # ići i složenice
-    "išao": "išla", "otišao": "otišla", "prišao": "prišla",
-    "ušao": "ušla", "izašao": "izašla", "prošao": "prošla",
-    "sišao": "sišla", "dočekao": "dočekala", "došao": "došla",
-    "našao": "našla", "pronašao": "pronašla",
+    "išao": "išla",
+    "otišao": "otišla",
+    "prišao": "prišla",
+    "ušao": "ušla",
+    "izašao": "izašla",
+    "prošao": "prošla",
+    "sišao": "sišla",
+    "dočekao": "dočekala",
+    "došao": "došla",
+    "našao": "našla",
+    "pronašao": "pronašla",
     # reći/govoriti
-    "rekao": "rekla", "kazao": "kazala", "govorio": "govorila",
-    "progovorio": "progovorila", "odgovorio": "odgovorila",
+    "rekao": "rekla",
+    "kazao": "kazala",
+    "govorio": "govorila",
+    "progovorio": "progovorila",
+    "odgovorio": "odgovorila",
     # vidjeti/gledati
-    "vidio": "vidjela", "gledao": "gledala", "pogledao": "pogledala",
-    "ugledao": "ugledala", "primijetio": "primijetila",
+    "vidio": "vidjela",
+    "gledao": "gledala",
+    "pogledao": "pogledala",
+    "ugledao": "ugledala",
+    "primijetio": "primijetila",
     # čuti
     "čuo": "čula",
     # modalci
-    "htio": "htjela", "mogao": "mogla", "morao": "morala",
-    "smio": "smjela", "znao": "znala", "trebao": "trebala",
+    "htio": "htjela",
+    "mogao": "mogla",
+    "morao": "morala",
+    "smio": "smjela",
+    "znao": "znala",
+    "trebao": "trebala",
     # imati/dati/uzeti
-    "imao": "imala", "dao": "dala", "uzeo": "uzela",
+    "imao": "imala",
+    "dao": "dala",
+    "uzeo": "uzela",
     # sjesti/ležati/ustati/stati/stajati
-    "sjeo": "sjela", "legao": "legla", "ustao": "ustala",
-    "stao": "stala", "sjedio": "sjedila", "stajao": "stajala",
+    "sjeo": "sjela",
+    "legao": "legla",
+    "ustao": "ustala",
+    "stao": "stala",
+    "sjedio": "sjedila",
+    "stajao": "stajala",
     # kretanje
-    "krenuo": "krenula", "okrenuo": "okrenula", "trčao": "trčala",
-    "hodao": "hodala", "bježao": "bježala", "pobjegao": "pobjegla",
+    "krenuo": "krenula",
+    "okrenuo": "okrenula",
+    "trčao": "trčala",
+    "hodao": "hodala",
+    "bježao": "bježala",
+    "pobjegao": "pobjegla",
     # pasti/doći/nastaviti
-    "pao": "pala", "počeo": "počela", "prestao": "prestala",
-    "nastavio": "nastavila", "vratio": "vratila", "ostao": "ostala",
+    "pao": "pala",
+    "počeo": "počela",
+    "prestao": "prestala",
+    "nastavio": "nastavila",
+    "vratio": "vratila",
+    "ostao": "ostala",
     # misliti/osjećati/razumjeti
-    "mislio": "mislila", "osjetio": "osjetila", "osjećao": "osjećala",
-    "razumio": "razumjela", "shvatio": "shvatila", "pomislio": "pomislila",
-    "sjetio": "sjetila", "zaboravio": "zaboravila",
+    "mislio": "mislila",
+    "osjetio": "osjetila",
+    "osjećao": "osjećala",
+    "razumio": "razumjela",
+    "shvatio": "shvatila",
+    "pomislio": "pomislila",
+    "sjetio": "sjetila",
+    "zaboravio": "zaboravila",
     # raditi/napraviti
-    "radio": "radila", "uradio": "uradila", "napravio": "napravila",
-    "odlučio": "odlučila", "pokušao": "pokušala",
+    "radio": "radila",
+    "uradio": "uradila",
+    "napravio": "napravila",
+    "odlučio": "odlučila",
+    "pokušao": "pokušala",
     # dati/uzimati
-    "ponudio": "ponudila", "prihvatio": "prihvatila",
-    "odbio": "odbila", "zamolio": "zamolila", "pozvao": "pozvala",
-    "zvao": "zvala", "nazvao": "nazvala",
+    "ponudio": "ponudila",
+    "prihvatio": "prihvatila",
+    "odbio": "odbila",
+    "zamolio": "zamolila",
+    "pozvao": "pozvala",
+    "zvao": "zvala",
+    "nazvao": "nazvala",
     # nositi/nosio
-    "nosio": "nosila", "tražio": "tražila",
+    "nosio": "nosila",
+    "tražio": "tražila",
     # geste i emocije
-    "klimnuo": "klimnula", "slegnuo": "slegnula",
-    "osmjehnuo": "osmjehnula", "nasmijao": "nasmijala",
-    "smijao": "smijala", "plakao": "plakala", "vikao": "vikala",
+    "klimnuo": "klimnula",
+    "slegnuo": "slegnula",
+    "osmjehnuo": "osmjehnula",
+    "nasmijao": "nasmijala",
+    "smijao": "smijala",
+    "plakao": "plakala",
+    "vikao": "vikala",
     "šaputao": "šaputala",
     # otvoriti/zatvoriti
-    "otvorio": "otvorila", "zatvorio": "zatvorila",
-    "spustio": "spustila", "podigao": "podigla",
+    "otvorio": "otvorila",
+    "zatvorio": "zatvorila",
+    "spustio": "spustila",
+    "podigao": "podigla",
     # čitati/pisati/pjevati/spavati
-    "čitao": "čitala", "pisao": "pisala", "pjevao": "pjevala",
+    "čitao": "čitala",
+    "pisao": "pisala",
+    "pjevao": "pjevala",
     "spavao": "spavala",
     # jesti/piti
-    "jeo": "jela", "pio": "pila",
+    "jeo": "jela",
+    "pio": "pila",
     # posjetiti/sjetiti/dobiti/izgubiti
-    "posjetio": "posjetila", "dobio": "dobila", "izgubio": "izgubila",
+    "posjetio": "posjetila",
+    "dobio": "dobila",
+    "izgubio": "izgubila",
     # pričati/pitati/čekati
-    "pričao": "pričala", "pitao": "pitala", "čekao": "čekala",
+    "pričao": "pričala",
+    "pitao": "pitala",
+    "čekao": "čekala",
 }
 
 # Reverse: ženski → muški
@@ -161,29 +219,149 @@ _TITULA_M_RE = re.compile(
 # Zaustavne riječi — vlastita imena koja zapravo nisu (homonimi, čestice,
 # zamjenice i prilozi koji na početku rečenice dobiju veliko slovo i lako
 # upadnu u "Ime je GPR" / "GPR je Ime" obrazac).
-_ZAUSTAVI = frozenset({
-    "Ali", "Jer", "Dok", "Kad", "Kada", "Što", "Koji", "Koja", "Koje", "Koju",
-    "Ovaj", "Ova", "Ovo", "Taj", "Ta", "To", "Onaj", "Ona", "Ono",
-    "Jedan", "Jedna", "Jedno", "Neko", "Neka", "Neki", "Neka", "Netko", "Nešto",
-    "Ovdje", "Tamo", "Ondje", "Tu", "Gdje", "Kuda", "Odakle", "Kamo",
-    "Ili", "Nego", "Dakle", "Naime", "Zato", "Stoga", "Zbog",
-    "Ipak", "Međutim", "Također", "Tek", "Već", "Baš", "Samo", "Čak",
-    "Sve", "Svi", "Svaki", "Svaka", "Svako", "Svugdje", "Nikad", "Nikada",
-    "Nije", "Nema", "Jest", "Jesu",
-    "Bio", "Bila", "Bili", "Bile", "Rekao", "Rekla", "Otišao", "Otišla",
-    "Sada", "Sad", "Nekad", "Nekada", "Odmah", "Uskoro", "Konačno", "Napokon",
-    "Doista", "Zaista", "Uistinu", "Valjda", "Možda", "Vjerovatno", "Sigurno",
-    "Tako", "Ovako", "Onako", "Otkako", "Otkad", "Dotad", "Dotle",
-    "Tko", "Ko", "Šta", "Ako", "Kako", "Zašto", "Kolika", "Koliko",
-    "Da", "Ne", "Ni", "Niti", "Pa", "A", "I", "Te",
-    "Prvi", "Prva", "Prvo", "Drugi", "Druga", "Drugo", "Treći", "Treća", "Treće",
-    "Posljednji", "Posljednja", "Posljednje", "Svaki", "Ostali", "Ostala", "Ostalo",
-    "Ništa", "Nitko", "Niko", "Svatko", "Svako", "Ponovno", "Opet", "Iznova",
-    "Naravno", "Očito", "Očigledno", "Nažalost", "Srećom",
-})
+_ZAUSTAVI = frozenset(
+    {
+        "Ali",
+        "Jer",
+        "Dok",
+        "Kad",
+        "Kada",
+        "Što",
+        "Koji",
+        "Koja",
+        "Koje",
+        "Koju",
+        "Ovaj",
+        "Ova",
+        "Ovo",
+        "Taj",
+        "Ta",
+        "To",
+        "Onaj",
+        "Ona",
+        "Ono",
+        "Jedan",
+        "Jedna",
+        "Jedno",
+        "Neko",
+        "Neka",
+        "Neki",
+        "Netko",
+        "Nešto",
+        "Ovdje",
+        "Tamo",
+        "Ondje",
+        "Tu",
+        "Gdje",
+        "Kuda",
+        "Odakle",
+        "Kamo",
+        "Ili",
+        "Nego",
+        "Dakle",
+        "Naime",
+        "Zato",
+        "Stoga",
+        "Zbog",
+        "Ipak",
+        "Međutim",
+        "Također",
+        "Tek",
+        "Već",
+        "Baš",
+        "Samo",
+        "Čak",
+        "Sve",
+        "Svi",
+        "Svaki",
+        "Svaka",
+        "Svako",
+        "Svugdje",
+        "Nikad",
+        "Nikada",
+        "Nije",
+        "Nema",
+        "Jest",
+        "Jesu",
+        "Bio",
+        "Bila",
+        "Bili",
+        "Bile",
+        "Rekao",
+        "Rekla",
+        "Otišao",
+        "Otišla",
+        "Sada",
+        "Sad",
+        "Nekad",
+        "Nekada",
+        "Odmah",
+        "Uskoro",
+        "Konačno",
+        "Napokon",
+        "Doista",
+        "Zaista",
+        "Uistinu",
+        "Valjda",
+        "Možda",
+        "Vjerovatno",
+        "Sigurno",
+        "Tako",
+        "Ovako",
+        "Onako",
+        "Otkako",
+        "Otkad",
+        "Dotad",
+        "Dotle",
+        "Tko",
+        "Ko",
+        "Šta",
+        "Ako",
+        "Kako",
+        "Zašto",
+        "Kolika",
+        "Koliko",
+        "Da",
+        "Ne",
+        "Ni",
+        "Niti",
+        "Pa",
+        "A",
+        "I",
+        "Te",
+        "Prvi",
+        "Prva",
+        "Prvo",
+        "Drugi",
+        "Druga",
+        "Drugo",
+        "Treći",
+        "Treća",
+        "Treće",
+        "Posljednji",
+        "Posljednja",
+        "Posljednje",
+        "Ostali",
+        "Ostala",
+        "Ostalo",
+        "Ništa",
+        "Nitko",
+        "Niko",
+        "Svatko",
+        "Ponovno",
+        "Opet",
+        "Iznova",
+        "Naravno",
+        "Očito",
+        "Očigledno",
+        "Nažalost",
+        "Srećom",
+    }
+)
 
 
 # ── Karantena upis ────────────────────────────────────────────────────────────
+
 
 def _zapisi_rod_gresku(ime: str, gpr_greska: str, kontekst: str, knjiga: str) -> None:
     """Upisuje rod_mijesanje u karantena DB (fail-safe)."""
@@ -241,6 +419,7 @@ def _zapisi_rod_gresku(ime: str, gpr_greska: str, kontekst: str, knjiga: str) ->
 
 # ── Registar per-knjiga ────────────────────────────────────────────────────────
 
+
 class _RodRegistar:
     """
     Per-knjiga evidencija lika → rod.
@@ -284,9 +463,7 @@ class _RodRegistar:
         if ime in _ZAUSTAVI or len(ime) < 2:
             return
         with self._lock:
-            entry = self._data.setdefault(
-                ime, {"rod": None, "clue_m": 0, "clue_z": 0}
-            )
+            entry = self._data.setdefault(ime, {"rod": None, "clue_m": 0, "clue_z": 0})
             if rod == "M":
                 entry["clue_m"] = entry.get("clue_m", 0) + 1
             elif rod == "Ž":
@@ -299,10 +476,14 @@ class _RodRegistar:
                 _z = entry["clue_z"]
                 if _m >= MIN_CLUE and (_m - _z) >= MIN_CLUE_DIFF:
                     entry["rod"] = "M"
-                    log.debug(f"[rod_detektor] '{ime}' registriran kao M (clue_m={entry['clue_m']})")
+                    log.debug(
+                        f"[rod_detektor] '{ime}' registriran kao M (clue_m={entry['clue_m']})"
+                    )
                 elif _z >= MIN_CLUE and (_z - _m) >= MIN_CLUE_DIFF:
                     entry["rod"] = "Ž"
-                    log.debug(f"[rod_detektor] '{ime}' registriran kao Ž (clue_z={entry['clue_z']})")
+                    log.debug(
+                        f"[rod_detektor] '{ime}' registriran kao Ž (clue_z={entry['clue_z']})"
+                    )
 
     def dodaj_iz_glosara(self, glosar_rod: dict[str, str]) -> None:
         """Inicijalizira registar iz book_context glosara (visoka pouzdanost)."""
@@ -318,16 +499,14 @@ class _RodRegistar:
                     kljucni_clue = "clue_m" if rod == "M" else "clue_z"
                     entry[kljucni_clue] = max(entry.get(kljucni_clue, 0), MIN_CLUE)
 
-    def rod_za(self, ime: str) -> Optional[str]:
+    def rod_za(self, ime: str) -> str | None:
         """Vraća 'M', 'Ž', ili None ako rod nije poznat."""
         return self._data.get(ime, {}).get("rod")
 
     def svi_poznati(self) -> dict[str, str]:
         """Vraća {ime: rod} za sve poznate likove."""
         return {
-            ime: v["rod"]
-            for ime, v in self._data.items()
-            if v.get("rod") in ("M", "Ž")
+            ime: v["rod"] for ime, v in self._data.items() if v.get("rod") in ("M", "Ž")
         }
 
     def statistika(self) -> dict:
@@ -341,6 +520,7 @@ class _RodRegistar:
 
 
 # ── Korekcija — zamjena pogrešnog GPR-a ──────────────────────────────────────
+
 
 def _sacuvaj_velicinu(original: str, zamjena: str) -> str:
     """Prilagodi veliko/malo početno slovo zamjene prema originalu."""
@@ -371,9 +551,9 @@ def _koriguj_chunk(
 
         # Odaberi par: tražimo pogrešan rod, zamjenjujemo ispravnim
         if rod == "Ž":
-            pogresni = GPR_M_Z   # muška forma = pogrešna za ženski lik
+            pogresni = GPR_M_Z  # muška forma = pogrešna za ženski lik
         else:
-            pogresni = GPR_Z_M   # ženska forma = pogrešna za muški lik
+            pogresni = GPR_Z_M  # ženska forma = pogrešna za muški lik
 
         ime_esc = re.escape(ime)
 
@@ -384,17 +564,21 @@ def _koriguj_chunk(
                 re.UNICODE | re.IGNORECASE,
             )
             if pat_fwd.search(tekst):
+
                 def _zamijeni_fwd(m, pf=pogresna_forma, iz=ispravna_forma):
                     match_pf = re.search(re.escape(pf), m.group(0), re.IGNORECASE)
                     if not match_pf:
                         return m.group(0)
-                    return m.group(0).replace(match_pf.group(0), _sacuvaj_velicinu(match_pf.group(0), iz), 1)
+                    return m.group(0).replace(
+                        match_pf.group(0), _sacuvaj_velicinu(match_pf.group(0), iz), 1
+                    )
 
                 novi_tekst = pat_fwd.sub(_zamijeni_fwd, tekst)
                 if novi_tekst != tekst:
                     n_ukupno += 1
                     _zapisi_rod_gresku(
-                        ime, pogresna_forma,
+                        ime,
+                        pogresna_forma,
                         f"[{rod}] {ime} je {pogresna_forma} → {ispravna_forma}",
                         knjiga_id,
                     )
@@ -406,17 +590,21 @@ def _koriguj_chunk(
                 re.UNICODE | re.IGNORECASE,
             )
             if pat_bwd.search(tekst):
+
                 def _zamijeni_bwd(m, pf=pogresna_forma, iz=ispravna_forma):
                     match_pf = re.search(re.escape(pf), m.group(0), re.IGNORECASE)
                     if not match_pf:
                         return m.group(0)
-                    return m.group(0).replace(match_pf.group(0), _sacuvaj_velicinu(match_pf.group(0), iz), 1)
+                    return m.group(0).replace(
+                        match_pf.group(0), _sacuvaj_velicinu(match_pf.group(0), iz), 1
+                    )
 
                 novi_tekst = pat_bwd.sub(_zamijeni_bwd, tekst)
                 if novi_tekst != tekst:
                     n_ukupno += 1
                     _zapisi_rod_gresku(
-                        ime, pogresna_forma,
+                        ime,
+                        pogresna_forma,
                         f"[{rod}] {pogresna_forma} je {ime} → {ispravna_forma} je {ime}",
                         knjiga_id,
                     )
@@ -426,6 +614,7 @@ def _koriguj_chunk(
 
 
 # ── Detekcija clue-ova iz teksta ──────────────────────────────────────────────
+
 
 def _detektuj_clue_ove(tekst: str, registar: _RodRegistar) -> None:
     """Skenira tekst i ažurira rod_registar s novim clue-ovima."""
@@ -449,6 +638,7 @@ def _detektuj_clue_ove(tekst: str, registar: _RodRegistar) -> None:
 
 
 # ── Glavna klasa ──────────────────────────────────────────────────────────────
+
 
 class RodDetektor:
     """
@@ -477,7 +667,7 @@ class RodDetektor:
         self,
         tekst: str,
         knjiga_id: str = "",
-        glosar_rod: Optional[dict[str, str]] = None,
+        glosar_rod: dict[str, str] | None = None,
     ) -> tuple[str, int]:
         """
         Glavna metoda — detektuje i ispravlja rod u jednom chunku.
@@ -518,7 +708,7 @@ class RodDetektor:
         self,
         chk_fajlovi: list[Path],
         knjiga_id: str = "",
-        glosar_rod: Optional[dict[str, str]] = None,
+        glosar_rod: dict[str, str] | None = None,
         log_fn=None,
     ) -> dict:
         """
@@ -535,6 +725,7 @@ class RodDetektor:
             {"obradjeno": int, "korigovano": int, "korekcija_ukupno": int,
              "po_fajlu": {stem: int}}
         """
+
         def _log(msg, nivo="info"):
             if log_fn:
                 log_fn(msg, nivo)
@@ -572,13 +763,16 @@ class RodDetektor:
         poznati = registar.svi_poznati()
         _log(
             f"[rod_detektor] Registar: {len(poznati)} likova s poznatim rodom "
-            f"({sum(1 for r in poznati.values() if r=='M')} M / "
-            f"{sum(1 for r in poznati.values() if r=='Ž')} Ž)",
+            f"({sum(1 for r in poznati.values() if r == 'M')} M / "
+            f"{sum(1 for r in poznati.values() if r == 'Ž')} Ž)",
             "system",
         )
 
         if not poznati:
-            _log("ℹ️ [rod_detektor] Nijedan lik s poznatim rodom — korekcija preskočena", "tech")
+            _log(
+                "ℹ️ [rod_detektor] Nijedan lik s poznatim rodom — korekcija preskočena",
+                "tech",
+            )
             return statistika
 
         # Druga prolaznica — korekcija
@@ -595,9 +789,7 @@ class RodDetektor:
                     statistika["korigovano"] += 1
                     statistika["korekcija_ukupno"] += n
                     statistika["po_fajlu"][chk.stem] = n
-                    _log(
-                        f"[rod_detektor] ✅ {chk.name}: {n} rod korekcija", "tech"
-                    )
+                    _log(f"[rod_detektor] ✅ {chk.name}: {n} rod korekcija", "tech")
             except Exception as e:
                 log.warning(f"[rod_detektor] Greška u {chk.name}: {e}")
 

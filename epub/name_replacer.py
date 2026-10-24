@@ -31,15 +31,15 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
-import zipfile
 import shutil
 import tempfile
 import time
+import zipfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Optional
-from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,7 @@ _PROPER_NOUN_RE = re.compile(
 # ---------------------------------------------------------------------------
 # Pomoćne funkcije
 # ---------------------------------------------------------------------------
+
 
 def _strip_html(html: str) -> str:
     """Vraća čist tekst bez HTML tagova."""
@@ -118,6 +119,7 @@ def _word_boundary_replace(text: str, pattern: str, replacement: str) -> str:
             # Tekst — primijeni zamjenu uz casing
             def _sub(m):
                 return _preserve_case(m.group(0), replacement)
+
             result.append(rx.sub(_sub, part))
     return "".join(result)
 
@@ -125,6 +127,7 @@ def _word_boundary_replace(text: str, pattern: str, replacement: str) -> str:
 # ---------------------------------------------------------------------------
 # EPUB čitanje / pisanje
 # ---------------------------------------------------------------------------
+
 
 def _read_epub_html_files(epub_path: Path) -> dict[str, str]:
     """
@@ -149,7 +152,7 @@ def _read_epub_html_files(epub_path: Path) -> dict[str, str]:
 def _write_epub_with_replacements(
     epub_path: Path,
     modified_files: dict[str, str],
-    output_path: Optional[Path] = None,
+    output_path: Path | None = None,
 ) -> Path:
     """
     Piše novi EPUB s modificiranim HTML fajlovima.
@@ -159,8 +162,10 @@ def _write_epub_with_replacements(
     # Radimo na temp fajlu pa atomski premještamo
     tmp_fd, tmp_path = tempfile.mkstemp(suffix=".epub.tmp", dir=epub_path.parent)
     try:
-        with zipfile.ZipFile(epub_path, "r") as src, \
-             zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as dst:
+        with (
+            zipfile.ZipFile(epub_path, "r") as src,
+            zipfile.ZipFile(tmp_path, "w", zipfile.ZIP_DEFLATED) as dst,
+        ):
             for item in src.infolist():
                 if item.filename in modified_files:
                     dst.writestr(item, modified_files[item.filename].encode("utf-8"))
@@ -181,6 +186,7 @@ def _write_epub_with_replacements(
 # ---------------------------------------------------------------------------
 # Skupljanje kandidata
 # ---------------------------------------------------------------------------
+
 
 def _collect_entity_candidates(html_files: dict[str, str]) -> dict[str, int]:
     """
@@ -255,6 +261,7 @@ def _group_by_similarity(candidates: dict[str, int]) -> list[list[str]]:
 # AI analiza
 # ---------------------------------------------------------------------------
 
+
 def _build_ai_prompt(groups: list[list[str]], full_text_sample: str) -> str:
     """
     Gradi prompt za AI koji će odrediti kanonsku formu i sve varijante.
@@ -266,12 +273,14 @@ def _build_ai_prompt(groups: list[list[str]], full_text_sample: str) -> str:
     # Uzmemo sample teksta (prvih ~2000 znakova čistog teksta)
     sample = full_text_sample[:2000].strip()
 
-    return f"""Ti si ekspert za književni prijevod na hrvatski jezik.
+    return """Ti si ekspert za književni prijevod na hrvatski jezik.
 
 Analziraš EPUB knjigu i trebaš normalizovati vlastita imena i nazive entiteta.
 
 KONTEKST KNJIGE (uzorak teksta):
 """
+
+
 {sample}
 """
 
@@ -322,6 +331,7 @@ def _call_ai_for_replacements(
 
     try:
         import asyncio
+
         from network.provider_router import call_provider
 
         async def _async_call():
@@ -358,6 +368,7 @@ def _call_ai_for_replacements(
 # ---------------------------------------------------------------------------
 # Primjena zamjena
 # ---------------------------------------------------------------------------
+
 
 def _apply_replacements_to_html(
     html: str,
@@ -403,6 +414,7 @@ def _build_replacement_pairs(
 # .epub.replacement fajl
 # ---------------------------------------------------------------------------
 
+
 def _write_replacement_file(
     epub_path: Path,
     all_pairs: list[tuple[str, str]],
@@ -427,6 +439,7 @@ def _write_replacement_file(
 
     # Grupiši po kanonskoj formi za preglednost
     from collections import defaultdict
+
     by_canonical: dict[str, list] = defaultdict(list)
     napomene: dict[str, str] = {}
     for item in ai_results:
@@ -454,6 +467,7 @@ def _write_replacement_file(
 # ---------------------------------------------------------------------------
 # Javno API
 # ---------------------------------------------------------------------------
+
 
 def run_name_replacer(
     epub_path: str | Path,
@@ -517,10 +531,16 @@ def run_name_replacer(
     # ── Korak 2: Skupljanje kandidata ────────────────────────────────────
     _log("🔎 Skeniram vlastita imena i entitete...", "tech")
     candidates = _collect_entity_candidates(html_files)
-    _log(f"   → {len(candidates)} kandidata pronađeno (min. {_MIN_OCCURRENCES}× pojava)", "tech")
+    _log(
+        f"   → {len(candidates)} kandidata pronađeno (min. {_MIN_OCCURRENCES}× pojava)",
+        "tech",
+    )
 
     if not candidates:
-        _log("ℹ️ Nema dovoljno kandidata za analizu — EPUB je vjerovatno konzistentan", "info")
+        _log(
+            "ℹ️ Nema dovoljno kandidata za analizu — EPUB je vjerovatno konzistentan",
+            "info",
+        )
         result["ok"] = True
         return result
 
@@ -552,6 +572,7 @@ def run_name_replacer(
         try:
             from api_fleet import FleetManager
             from config.settings import CONFIG_PATH
+
             fleet = FleetManager(config_path=CONFIG_PATH)
         except Exception as e:
             result["error"] = f"Fleet ne može biti inicijaliziran: {e}"
@@ -562,14 +583,19 @@ def run_name_replacer(
     for batch_start in range(0, len(multi_groups), _MAX_ENTITIES_PER_PROMPT):
         batch = multi_groups[batch_start : batch_start + _MAX_ENTITIES_PER_PROMPT]
         batch_num = batch_start // _MAX_ENTITIES_PER_PROMPT + 1
-        total_batches = (len(multi_groups) + _MAX_ENTITIES_PER_PROMPT - 1) // _MAX_ENTITIES_PER_PROMPT
+        total_batches = (
+            len(multi_groups) + _MAX_ENTITIES_PER_PROMPT - 1
+        ) // _MAX_ENTITIES_PER_PROMPT
         _log(f"   → Batch {batch_num}/{total_batches}: {len(batch)} grupa...", "tech")
 
         batch_results = _call_ai_for_replacements(batch, full_text_sample, fleet)
         all_ai_results.extend(batch_results)
         _log(f"   → Batch {batch_num}: {len(batch_results)} zamjena dobijeno", "tech")
 
-    _log(f"✅ AI analiza završena: {len(all_ai_results)} entiteta za normalizaciju", "success")
+    _log(
+        f"✅ AI analiza završena: {len(all_ai_results)} entiteta za normalizaciju",
+        "success",
+    )
 
     if not all_ai_results:
         _log("ℹ️ AI nije pronašao zamjene — tekst je konzistentan", "info")
@@ -578,7 +604,10 @@ def run_name_replacer(
 
     # ── Korak 5: Primjena zamjena ────────────────────────────────────────
     replacement_pairs = _build_replacement_pairs(all_ai_results)
-    _log(f"📝 Primjenjujem {len(replacement_pairs)} zamjena na {len(html_files)} fajlova...", "system")
+    _log(
+        f"📝 Primjenjujem {len(replacement_pairs)} zamjena na {len(html_files)} fajlova...",
+        "system",
+    )
 
     modified_files = {}
     total_applied_set = set()
@@ -591,7 +620,10 @@ def run_name_replacer(
                 total_applied_set.add(pair)
 
     applied_pairs = list(total_applied_set)
-    _log(f"   → {len(applied_pairs)} jedinstvenih zamjena primijenjeno u {len(modified_files)} fajlova", "success")
+    _log(
+        f"   → {len(applied_pairs)} jedinstvenih zamjena primijenjeno u {len(modified_files)} fajlova",
+        "success",
+    )
 
     # ── Korak 6: Pisanje .epub.replacement fajla ─────────────────────────
     stats = {
@@ -606,16 +638,21 @@ def run_name_replacer(
     if modified_files:
         out = Path(output_path) if output_path else None
         written = _write_epub_with_replacements(epub_path, modified_files, out)
-        _log(f"✅ EPUB ažuriran: {written.name} ({len(modified_files)} fajlova izmijenjeno)", "success")
+        _log(
+            f"✅ EPUB ažuriran: {written.name} ({len(modified_files)} fajlova izmijenjeno)",
+            "success",
+        )
     else:
         _log("ℹ️ EPUB nije mijenjana — sve varijante već konzistentne", "info")
 
-    result.update({
-        "ok": True,
-        "replacement_file": str(rep_path),
-        "replacements_applied": len(applied_pairs),
-        "pairs": applied_pairs,
-    })
+    result.update(
+        {
+            "ok": True,
+            "replacement_file": str(rep_path),
+            "replacements_applied": len(applied_pairs),
+            "pairs": applied_pairs,
+        }
+    )
 
     _log(
         f"🎉 Name Replacer završen: {len(applied_pairs)} zamjena / {len(candidates)} entiteta",
@@ -629,8 +666,8 @@ def run_name_replacer(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import sys
     import logging
+    import sys
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
@@ -644,15 +681,19 @@ if __name__ == "__main__":
 
     def cli_log(msg, atype="info"):
         icons = {
-            "system": "🔷", "success": "✅", "error": "❌",
-            "warning": "⚠️", "tech": "  ·", "info": "ℹ️",
+            "system": "🔷",
+            "success": "✅",
+            "error": "❌",
+            "warning": "⚠️",
+            "tech": "  ·",
+            "info": "ℹ️",
         }
         print(f"{icons.get(atype, '')} {msg}")
 
     res = run_name_replacer(epub_in, output_path=epub_out, log_callback=cli_log)
 
     if res["ok"]:
-        print(f"\n✅ Gotovo!")
+        print("\n✅ Gotovo!")
         print(f"   EPUB:              {res['epub_path']}")
         print(f"   Replacement fajl:  {res['replacement_file']}")
         print(f"   Entiteta:          {res['entities_found']}")

@@ -1,6 +1,4 @@
-import json as _json_b8
 import time
-
 
 """
 utils/logging.py — Audit log builder za Booklyfi
@@ -16,9 +14,9 @@ Tipovi poruka:
   accordion → sirovi HTML (za složene prikaze)
 """
 
-from datetime import datetime
 import logging as _stdlib_logging
 import re
+from datetime import datetime
 
 _AUDIT_FILE_LOGGER = _stdlib_logging.getLogger("skriptorij.audit")
 
@@ -29,20 +27,46 @@ MAX_AUDIT_LINES = 500
 # razumljiviju recenicu za UI. Original poruka NIKAD ne nestaje - ide
 # u en_text (postojeci pod-linija mehanizam) i i dalje u file logger.
 _FRIENDLY_PATTERNS = [
-    (re.compile(r"^\[?([A-Z]+)\]?.*prazan odgovor.*"),
-     lambda m: f"\u21bb {m.group(1)} nije vratio potpun odgovor, pokusavam ponovo s vise prostora za tekst"),
-    (re.compile(r"tpm_gate"),
-     lambda m: "\u23f3 Kratka pauza zbog ogranicenja brzine servisa, nastavljam za par sekundi"),
-    (re.compile(r"^([A-Z]+).*\u2192.*\b(429|500|503)\b"),
-     lambda m: f"\u26a0\ufe0f {m.group(1)} trenutno ne odgovara kako treba, prebacujem se na sljedeci servis"),
-    (re.compile(r"Svi provideri iscrpljeni za blok (\d+)"),
-     lambda m: f"\u274c Nijedan servis nije uspio obraditi dio {m.group(1)} \u2014 pokusacu ponovo kasnije"),
-    (re.compile(r"Sumnja na halucinaciju"),
-     lambda m: "\U0001f50e Provjeravam ispravnost prevoda, trazim bolju verziju"),
-    (re.compile(r"^\[([A-Z]+)\] HTTP 429"),
-     lambda m: f"\u23f3 {m.group(1)} je privremeno zauzet, cekam kratko pa nastavljam"),
-    (re.compile(r"^\[([A-Z]+)\] Mrezna greska|^\[([A-Z]+)\] Mrežna greška"),
-     lambda m: f"\U0001f50c Prekid veze sa {m.group(1) or m.group(2)}, pokusavam ponovo"),
+    (
+        re.compile(r"^\[?([A-Z]+)\]?.*prazan odgovor.*"),
+        lambda m: (
+            f"\u21bb {m.group(1)} nije vratio potpun odgovor, pokusavam ponovo s vise prostora za tekst"
+        ),
+    ),
+    (
+        re.compile(r"tpm_gate"),
+        lambda m: (
+            "\u23f3 Kratka pauza zbog ogranicenja brzine servisa, nastavljam za par sekundi"
+        ),
+    ),
+    (
+        re.compile(r"^([A-Z]+).*\u2192.*\b(429|500|503)\b"),
+        lambda m: (
+            f"\u26a0\ufe0f {m.group(1)} trenutno ne odgovara kako treba, prebacujem se na sljedeci servis"
+        ),
+    ),
+    (
+        re.compile(r"Svi provideri iscrpljeni za blok (\d+)"),
+        lambda m: (
+            f"\u274c Nijedan servis nije uspio obraditi dio {m.group(1)} \u2014 pokusacu ponovo kasnije"
+        ),
+    ),
+    (
+        re.compile(r"Sumnja na halucinaciju"),
+        lambda m: "\U0001f50e Provjeravam ispravnost prevoda, trazim bolju verziju",
+    ),
+    (
+        re.compile(r"^\[([A-Z]+)\] HTTP 429"),
+        lambda m: (
+            f"\u23f3 {m.group(1)} je privremeno zauzet, cekam kratko pa nastavljam"
+        ),
+    ),
+    (
+        re.compile(r"^\[([A-Z]+)\] Mrezna greska|^\[([A-Z]+)\] Mrežna greška"),
+        lambda m: (
+            f"\U0001f50c Prekid veze sa {m.group(1) or m.group(2)}, pokusavam ponovo"
+        ),
+    ),
 ]
 
 
@@ -58,7 +82,9 @@ def _simplify_message(msg: str):
     return msg, ""
 
 
-def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=None) -> None:
+def add_audit(
+    msg: str, atype: str = "info", en_text: str = "", shared_stats=None
+) -> None:
     """
     Dodaje entry u audit log i ažurira shared_stats["live_audit"].
 
@@ -68,7 +94,6 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
         en_text     — opcionalni dodatni tekst (npr. EN izvornik)
         shared_stats — dict koji se dijeli s pollingom (live_audit ključ)
     """
-
 
     global audit_logs
 
@@ -165,6 +190,7 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
     if shared_stats is not None:
         # Dedupe — modul-level _AUDIT_LAST (NE u SHARED_STATS — jsonify ne moze tuple kljuceve)
         import threading as _threading
+
         global _AUDIT_LAST, _AUDIT_LAST_LOCK
         if "_AUDIT_LAST" not in globals():
             _AUDIT_LAST = {}
@@ -175,8 +201,7 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
             _now_ts = time.time()
             _key = (atype, msg[:120])
             _prev = _AUDIT_LAST.get(_key, {})
-            if (_prev.get("ts", 0) > _now_ts - 2.0
-                    and _prev.get("nivo") == atype):
+            if _prev.get("ts", 0) > _now_ts - 2.0 and _prev.get("nivo") == atype:
                 _prev["count"] = _prev.get("count", 1) + 1
                 _prev["ts"] = _now_ts
                 _AUDIT_LAST[_key] = _prev
@@ -195,15 +220,18 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
             shared_stats["audit_next_id"] = 1
         _eid = shared_stats["audit_next_id"]
         shared_stats["audit_next_id"] = _eid + 1
-        shared_stats["audit_events"].append({
-            "id": _eid,
-            "nivo": atype,
-            "tekst": msg,
-            "sub": en_text,
-            "ts": ts,
-        })
+        shared_stats["audit_events"].append(
+            {
+                "id": _eid,
+                "nivo": atype,
+                "tekst": msg,
+                "sub": en_text,
+                "ts": ts,
+            }
+        )
         if len(shared_stats["audit_events"]) > 500:
             shared_stats["audit_events"] = shared_stats["audit_events"][-500:]
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # B8-lite (2026-10-24): strukturirano JSON logiranje.
@@ -230,6 +258,7 @@ def add_structured(nivo: str, modul: str, event: str, **kwargs):
                        latency_ms=1500)
     """
     import time as _t_b8
+
     entry = {
         "ts": round(_t_b8.time(), 3),
         "nivo": nivo,
@@ -248,7 +277,9 @@ def add_structured(nivo: str, modul: str, event: str, **kwargs):
         try:
             msg = "[" + modul + "] " + event
             if kwargs:
-                msg += " | " + " ".join(f"{k}={v}" for k, v in kwargs.items() if v is not None)
+                msg += " | " + " ".join(
+                    f"{k}={v}" for k, v in kwargs.items() if v is not None
+                )
             _logger_func = {
                 "info": logger.info,
                 "warning": logger.warning,
@@ -262,6 +293,7 @@ def add_structured(nivo: str, modul: str, event: str, **kwargs):
     # (config.settings.SHARED_STATS — pravi objekat, ne utils.shared_state)
     try:
         from config.settings import SHARED_STATS
+
         if "audit_events" not in SHARED_STATS:
             SHARED_STATS["audit_events"] = []
         if "audit_next_id" not in SHARED_STATS:

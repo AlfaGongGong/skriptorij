@@ -16,7 +16,6 @@ Primjer:
 
 from typing import Optional
 
-
 # Uloga -> zahtevi koje model mora da ispuni
 # min_rpd: minimum RPD-a
 # prefer_size: "lite" (brži, jeftiniji) ili "full" (kvalitetniji)
@@ -96,7 +95,7 @@ DEFAULT_REQ = {
 }
 
 
-def pick_model_for_role(role: str, available_models: list[dict]) -> Optional[str]:
+def pick_model_for_role(role: str, available_models: list[dict]) -> str | None:
     """
     Bira najbolji model za datu ulogu iz liste.
 

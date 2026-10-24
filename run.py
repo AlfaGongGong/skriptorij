@@ -5,17 +5,23 @@
 #
 #      unutar async konteksta — bez nested asyncio.run()
 
-import json
-import zipfile
-import shutil
 import asyncio
+import json
+import shutil
 import sys
+import zipfile
 from pathlib import Path
+
 from bs4 import BeautifulSoup
 
 from core.engine import SkriptorijAllInOne
+from epub.parser import (
+    _ocisti_epub_html,
+    _strip_json_artifacts_from_html,
+    _ukloni_inline_stilove,
+    _zamijeni_epub_css,
+)
 from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
-from epub.parser import _ocisti_epub_html, _ukloni_inline_stilove, _zamijeni_epub_css, _strip_json_artifacts_from_html
 
 try:
     import mobi
@@ -48,6 +54,7 @@ def _save_book_analysis(engine, mode: str) -> None:
     """2026-10-23: upisi knjiga_mode u book_analysis.json za sledeci restart."""
     try:
         import json
+
         ba_path = engine.checkpoint_dir / "book_analysis.json"
         existing = {}
         if ba_path.exists():
@@ -106,6 +113,7 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
         saved_mode = None
         try:
             import json as _json
+
             ba_path = engine.checkpoint_dir / "book_analysis.json"
             if ba_path.exists():
                 ba = _json.loads(ba_path.read_text("utf-8"))
@@ -115,11 +123,13 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
 
         if saved_mode in ("PREVOD", "LEKTURA"):
             # 2026-10-23 FIX: override PREVOD ako filename sadrzi PREVEDENO
-            book_name = engine.book_path.name.upper() if hasattr(engine, "book_path") else ""
+            book_name = (
+                engine.book_path.name.upper() if hasattr(engine, "book_path") else ""
+            )
             if saved_mode == "PREVOD" and "PREVEDENO" in book_name:
                 engine.log(
-                    f"💾 Nastavak sesije: saved_mode='PREVOD' ali filename "
-                    f"sadrzi 'PREVEDENO' → override na LEKTURA",
+                    "💾 Nastavak sesije: saved_mode='PREVOD' ali filename "
+                    "sadrzi 'PREVEDENO' → override na LEKTURA",
                     "warning",
                 )
                 _save_book_analysis(engine, "LEKTURA")
@@ -132,7 +142,9 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
             return saved_mode
         else:
             # 2026-10-23 FIX: filename heuristika umesto default PREVOD
-            book_name = engine.book_path.name.upper() if hasattr(engine, "book_path") else ""
+            book_name = (
+                engine.book_path.name.upper() if hasattr(engine, "book_path") else ""
+            )
             if "PREVEDENO" in book_name:
                 engine.log(
                     f"💾 Nastavak sesije: {chk_count} checkpointa — "
@@ -200,18 +212,18 @@ def _pametni_reset_cachea(engine, scores: dict, sharedstats):
     # → _pametni_reset_cachea ih opet pobriše iz memorije → blokovi bez ocjene.
     try:
         import json as _json
+
         qs_path = engine.checkpoint_dir / "quality_scores.json"
         trenutni_qs = sharedstats.get("quality_scores", {})
         if qs_path.exists() and trenutni_qs:
             tmp = qs_path.with_suffix(".tmp")
             tmp.write_text(
-                _json.dumps(trenutni_qs, ensure_ascii=False, indent=2),
-                encoding="utf-8"
+                _json.dumps(trenutni_qs, ensure_ascii=False, indent=2), encoding="utf-8"
             )
             tmp.replace(qs_path)
             engine.log(
                 f"💾 Quality scores ažurirani na disku: {len(trenutni_qs)} blokova ostalo",
-                "tech"
+                "tech",
             )
     except Exception as _e:
         engine.log(f"⚠️ Quality scores writeback pao: {_e}", "warning")
@@ -232,8 +244,8 @@ def _obrada_karantene_kraj_knjige(engine) -> None:
     3. Ako su novi kalkovi promovirani, hot-reload kalkovi_engine
     """
     try:
-        from core.kalkovi.dinamicki_validator import DinamickiValidator
         from core.kalkovi.dinamicki_promoter import DinamickiPromoter
+        from core.kalkovi.dinamicki_validator import DinamickiValidator
 
         validator = DinamickiValidator()
         rez_val = validator.provjeri_sve_kandidate(dry_run=False)
@@ -249,6 +261,7 @@ def _obrada_karantene_kraj_knjige(engine) -> None:
             # Hot-reload kalkovi_engine s novim patternima
             try:
                 from core.kalkovi import reload_dinamicki_kalkove
+
                 n_ukupno = reload_dinamicki_kalkove()
                 engine.log(
                     f"🔄 Kalkovi karantena: {n_prom} novih patterna promovirano — "
@@ -351,13 +364,35 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
 
     # Tehnicke stranice se NE obradjuju (ne prevode se, ne lektiraju)
     TEHNICKE = (
-        "container.xml", "toc.ncx", "content.opf", "mimetype",
-        "cover", "titlepage", "copyright", "colophon",
-        "toc", "sadrzaj", "nav", "abouttheauthor", "about-author",
-        "ad-card", "adcard", "acknowledgements", "acknowledgments",
-        "appendix", "newsletter", "praise", "teaser",
-        "dedication", "posveta", "welcome", "dobrodosli",
-        "preface", "predgovor", "intro", "uvod",
+        "container.xml",
+        "toc.ncx",
+        "content.opf",
+        "mimetype",
+        "cover",
+        "titlepage",
+        "copyright",
+        "colophon",
+        "toc",
+        "sadrzaj",
+        "nav",
+        "abouttheauthor",
+        "about-author",
+        "ad-card",
+        "adcard",
+        "acknowledgements",
+        "acknowledgments",
+        "appendix",
+        "newsletter",
+        "praise",
+        "teaser",
+        "dedication",
+        "posveta",
+        "welcome",
+        "dobrodosli",
+        "preface",
+        "predgovor",
+        "intro",
+        "uvod",
     )
 
     def _je_tehnicka_stranica(f):
@@ -378,11 +413,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
         return False
 
     engine.html_files = sorted(
-        [
-            f
-            for f in engine.work_dir.rglob("*")
-            if not _je_tehnicka_stranica(f)
-        ],
+        [f for f in engine.work_dir.rglob("*") if not _je_tehnicka_stranica(f)],
         key=natural_sort_key,
     )
 
@@ -392,9 +423,8 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
     # ga prepisati svježim EN tekstom iz EPUB-a.
     # Za MOBI uvijek radimo svježu ekstrakciju (nema inkrementalnog nastavka).
     # Za EPUB/ostalo: svježe samo ako existing_html bio prazan prije ekstrakcije.
-    epub_svjeze_ekstraktovan = (
-        engine.book_path.suffix.lower() == ".mobi"
-        or not bool(existing_html)
+    epub_svjeze_ekstraktovan = engine.book_path.suffix.lower() == ".mobi" or not bool(
+        existing_html
     )
     if epub_svjeze_ekstraktovan:
         _ukloni_inline_stilove(engine.html_files, engine.log)
@@ -446,8 +476,8 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             "🔁 AUTO-RETRO: pokrecemo retroaktivnu re-lekturu samo lošich blokova",
             "system",
         )
-        from processing.retro import retroaktivna_relektura_v10
         from core.quality import _QUALITY_RESCUE_THRESHOLD
+        from processing.retro import retroaktivna_relektura_v10
 
         async def _retro_pa_nastavi():
             await retroaktivna_relektura_v10(
@@ -524,7 +554,6 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 except Exception as e:
                     engine.log(f"⚠️ Glosar update pao: {e}", "warning")
 
-
     asyncio.run(main_loop())
 
     # ── Finalizacija ──────────────────────────────────────────────────────
@@ -585,8 +614,9 @@ def _auto_stilizuj(engine):
     Ne prekida finalizaciju ako stilizacija padne.
     """
     try:
-        from epub.styler import run_epub_styler
         from pathlib import Path
+
+        from epub.styler import run_epub_styler
 
         output_file = engine.shared_stats.get("output_file")
         if not output_file:

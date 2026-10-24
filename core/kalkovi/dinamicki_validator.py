@@ -5,8 +5,8 @@ Schema: kandidat → na_cekanju → potvrđen | odbijen
 """
 
 import json
-import sqlite3
 import logging
+import sqlite3
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -15,8 +15,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DB_PATH = BASE_DIR / "data" / "kalkovi_karantena.db"
 
 # Pragovi za automatsku promociju
-MIN_POJAVLJIVANJA = 5       # Minimum puta viđen
-MAX_AVG_SCORE = 8.2         # Prosječni quality score mora biti ispod ovoga
+MIN_POJAVLJIVANJA = 5  # Minimum puta viđen
+MAX_AVG_SCORE = 8.2  # Prosječni quality score mora biti ispod ovoga
 MIN_KNJIGA_RAZNOLIKOST = 2  # Mora se pojaviti u bar 2 različite knjige
 
 
@@ -43,13 +43,21 @@ class DinamickiValidator:
         """Dodaje kolone ako ne postoje (migracija)."""
         with sqlite3.connect(self.db_path) as conn:
             # Dodaj kolone za validaciju ako ne postoje
-            kolonе = [r[1] for r in conn.execute("PRAGMA table_info(kandidati)").fetchall()]
-            if 'knjige_set' not in kolonе:
-                conn.execute("ALTER TABLE kandidati ADD COLUMN knjige_set TEXT DEFAULT '[]'")
-            if 'rollback_count' not in kolonе:
-                conn.execute("ALTER TABLE kandidati ADD COLUMN rollback_count INTEGER DEFAULT 0")
-            if 'validator_napomena' not in kolonе:
-                conn.execute("ALTER TABLE kandidati ADD COLUMN validator_napomena TEXT DEFAULT ''")
+            kolonе = [
+                r[1] for r in conn.execute("PRAGMA table_info(kandidati)").fetchall()
+            ]
+            if "knjige_set" not in kolonе:
+                conn.execute(
+                    "ALTER TABLE kandidati ADD COLUMN knjige_set TEXT DEFAULT '[]'"
+                )
+            if "rollback_count" not in kolonе:
+                conn.execute(
+                    "ALTER TABLE kandidati ADD COLUMN rollback_count INTEGER DEFAULT 0"
+                )
+            if "validator_napomena" not in kolonе:
+                conn.execute(
+                    "ALTER TABLE kandidati ADD COLUMN validator_napomena TEXT DEFAULT ''"
+                )
             conn.commit()
 
     def azuriraj_knjige(self, pattern: str, tip: str, knjiga: str):
@@ -59,18 +67,18 @@ class DinamickiValidator:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
                 "SELECT knjige_set FROM kandidati WHERE pattern=? AND tip=?",
-                (pattern, tip)
+                (pattern, tip),
             ).fetchone()
             if row:
                 try:
-                    knjige = json.loads(row[0] or '[]')
+                    knjige = json.loads(row[0] or "[]")
                 except Exception:
                     knjige = []
                 if knjiga not in knjige:
                     knjige.append(knjiga)
                     conn.execute(
                         "UPDATE kandidati SET knjige_set=? WHERE pattern=? AND tip=?",
-                        (json.dumps(knjige), pattern, tip)
+                        (json.dumps(knjige), pattern, tip),
                     )
                     conn.commit()
 
@@ -78,9 +86,9 @@ class DinamickiValidator:
         """
         Vraća (treba_promovirati: bool, razlog: str).
         """
-        pojavljivanja = row['broj_pojavljivanja']
-        avg_score = row['avg_score']
-        knjige = json.loads(row.get('knjige_set') or '[]')
+        pojavljivanja = row["broj_pojavljivanja"]
+        avg_score = row["avg_score"]
+        knjige = json.loads(row.get("knjige_set") or "[]")
         raznolikost = len(set(knjige))
 
         # Odbij ako je avg score visok — pattern nije problem
@@ -89,15 +97,20 @@ class DinamickiValidator:
 
         # Odbij ako nema dovoljno podataka
         if pojavljivanja < MIN_POJAVLJIVANJA:
-            return False, f"premalo pojavljivanja ({pojavljivanja} < {MIN_POJAVLJIVANJA})"
+            return (
+                False,
+                f"premalo pojavljivanja ({pojavljivanja} < {MIN_POJAVLJIVANJA})",
+            )
 
         if raznolikost < MIN_KNJIGA_RAZNOLIKOST:
             return False, f"samo u {raznolikost} knjig(a) — premalo raznolikosti"
 
         # Promovira ako: dosta puta, u više knjiga, niski avg score
-        if (pojavljivanja >= MIN_POJAVLJIVANJA and
-                raznolikost >= MIN_KNJIGA_RAZNOLIKOST and
-                avg_score <= MAX_AVG_SCORE):
+        if (
+            pojavljivanja >= MIN_POJAVLJIVANJA
+            and raznolikost >= MIN_KNJIGA_RAZNOLIKOST
+            and avg_score <= MAX_AVG_SCORE
+        ):
             return True, (
                 f"pojavljivanja={pojavljivanja}, "
                 f"knjige={raznolikost}, "
@@ -134,42 +147,55 @@ class DinamickiValidator:
 
                 # Nikad ne promoviraj book-specifične tipove globalno
                 if rdict.get("tip") in NIKAD_PROMOVISATI_TIPOVI:
-                    rezultat['cekati'].append(rdict['pattern'])
+                    rezultat["cekati"].append(rdict["pattern"])
                     continue
 
                 treba, razlog = self._ocijeni_kandidata(rdict)
 
                 if treba:
-                    rezultat['promovirati'].append({
-                        "id": rdict['id'],
-                        "pattern": rdict['pattern'],
-                        "tip": rdict['tip'],
-                        "razlog": razlog
-                    })
+                    rezultat["promovirati"].append(
+                        {
+                            "id": rdict["id"],
+                            "pattern": rdict["pattern"],
+                            "tip": rdict["tip"],
+                            "razlog": razlog,
+                        }
+                    )
                     if not dry_run:
-                        conn.execute("""
+                        conn.execute(
+                            """
                             UPDATE kandidati
                             SET status='na_cekanju',
                                 validator_napomena=?,
                                 datum_zadnjeg=datetime('now')
                             WHERE id=?
-                        """, (razlog, rdict['id']))
-                elif rdict['broj_pojavljivanja'] >= MIN_POJAVLJIVANJA and float(rdict['avg_score']) > 8.8:
-                    rezultat['odbiti'].append({
-                        "id": rdict['id'],
-                        "pattern": rdict['pattern'],
-                        "razlog": razlog
-                    })
+                        """,
+                            (razlog, rdict["id"]),
+                        )
+                elif (
+                    rdict["broj_pojavljivanja"] >= MIN_POJAVLJIVANJA
+                    and float(rdict["avg_score"]) > 8.8
+                ):
+                    rezultat["odbiti"].append(
+                        {
+                            "id": rdict["id"],
+                            "pattern": rdict["pattern"],
+                            "razlog": razlog,
+                        }
+                    )
                     if not dry_run:
-                        conn.execute("""
+                        conn.execute(
+                            """
                             UPDATE kandidati
                             SET status='odbijen',
                                 validator_napomena=?,
                                 datum_zadnjeg=datetime('now')
                             WHERE id=?
-                        """, (razlog, rdict['id']))
+                        """,
+                            (razlog, rdict["id"]),
+                        )
                 else:
-                    rezultat['cekati'].append(rdict['pattern'])
+                    rezultat["cekati"].append(rdict["pattern"])
 
             if not dry_run:
                 conn.commit()
@@ -193,13 +219,16 @@ class DinamickiValidator:
 
     def rucna_potvrda(self, pattern: str, tip: str, potvrdi: bool, napomena: str = ""):
         """Ručna potvrda ili odbijanje kandidata."""
-        novi_status = 'potvrden' if potvrdi else 'odbijen'
+        novi_status = "potvrden" if potvrdi else "odbijen"
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE kandidati
                 SET status=?, validator_napomena=?, datum_zadnjeg=datetime('now')
                 WHERE pattern=? AND tip=?
-            """, (novi_status, napomena, pattern, tip))
+            """,
+                (novi_status, napomena, pattern, tip),
+            )
             conn.commit()
         log.info(f"Kandidat '{pattern}' ({tip}) → {novi_status}")
 

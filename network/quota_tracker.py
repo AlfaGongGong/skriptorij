@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 def _get_cooldown_429_s(provider: str) -> float:
     try:
         from config.ai_config import get_cooldown_429
+
         return get_cooldown_429(provider)
     except Exception:
         return 15.0
@@ -54,7 +55,9 @@ class KeyQuota:
                 return False, f"cooldown {remaining:.0f}s ({self._cooldown_reason})"
             if self.tpm_safe > 0:
                 cutoff = now - 60.0
-                self._tpm_window = [(t, tok) for t, tok in self._tpm_window if t >= cutoff]
+                self._tpm_window = [
+                    (t, tok) for t, tok in self._tpm_window if t >= cutoff
+                ]
                 used = sum(tok for _, tok in self._tpm_window)
                 if used >= self.tpm_safe:
                     # FIX #5: čekaj dok dovoljno tokena ne istekne iz prozora,
@@ -69,7 +72,10 @@ class KeyQuota:
                         if freed >= needed:
                             break
                     wait = max(0.0, wait_until - now)
-                    return False, f"tpm_gate cekaj {wait:.0f}s ({used:.0f}/{self.tpm_safe:.0f} tok u zadnjih 60 sekundi)"
+                    return (
+                        False,
+                        f"tpm_gate cekaj {wait:.0f}s ({used:.0f}/{self.tpm_safe:.0f} tok u zadnjih 60 sekundi)",
+                    )
             return True, ""
 
     def record_request(self):
@@ -87,11 +93,15 @@ class KeyQuota:
                 now = time.time()
                 self._tpm_window.append((now, tokens))
                 cutoff = now - 60.0
-                self._tpm_window = [(t, tok) for t, tok in self._tpm_window if t >= cutoff]
+                self._tpm_window = [
+                    (t, tok) for t, tok in self._tpm_window if t >= cutoff
+                ]
                 self._tpd_window.append((now, tokens))
-                self._tpd_window = [(t, tok) for t, tok in self._tpd_window if now - t < 86400.0]
+                self._tpd_window = [
+                    (t, tok) for t, tok in self._tpd_window if now - t < 86400.0
+                ]
 
-    def record_error(self, status_code: int, retry_after: Optional[float] = None):
+    def record_error(self, status_code: int, retry_after: float | None = None):
         with self._lock:
             self.errors[status_code] = self.errors.get(status_code, 0) + 1
 
@@ -103,25 +113,36 @@ class KeyQuota:
                     self._set_cooldown(86400.0, f"ključ nevažeći ({status_code})")
                     logger.warning(
                         "[QuotaTracker] %s ...%s → %d (×%d) — ključ blacklistiran 24h",
-                        self.provider, self.key[-4:], status_code, self._consecutive_401,
+                        self.provider,
+                        self.key[-4:],
+                        status_code,
+                        self._consecutive_401,
                     )
                 else:
-                    self._set_cooldown(300.0, f"401 privremeni cooldown (pokušaj {self._consecutive_401}/2)")
+                    self._set_cooldown(
+                        300.0,
+                        f"401 privremeni cooldown (pokušaj {self._consecutive_401}/2)",
+                    )
                     logger.warning(
                         "[QuotaTracker] %s ...%s → %d — kratki cooldown 5min (pokušaj %d/2)",
-                        self.provider, self.key[-4:], status_code, self._consecutive_401,
+                        self.provider,
+                        self.key[-4:],
+                        status_code,
+                        self._consecutive_401,
                     )
 
             elif status_code == 503:
                 # FIX 2026-09-26: 503 je server-side — samo provider-level cooldown
                 try:
                     from network.quota_tracker import quota_tracker as _qt
+
                     _qt.set_provider_cooldown(self.provider, 10.0, "503 server")
                 except Exception:
                     pass
                 logger.warning(
                     "[QuotaTracker] %s ...%s → 503 (server) — provider cooldown 10s",
-                    self.provider, self.key[-4:],
+                    self.provider,
+                    self.key[-4:],
                 )
 
             elif status_code == 429:
@@ -130,14 +151,19 @@ class KeyQuota:
                     reason = "RPD kvota (dnevni limit)"
                     logger.warning(
                         "[QuotaTracker] %s ...%s → RPD EXHAUSTED — cooldown %.0fs (%.1fh)",
-                        self.provider, self.key[-4:], cooldown_s, cooldown_s / 3600,
+                        self.provider,
+                        self.key[-4:],
+                        cooldown_s,
+                        cooldown_s / 3600,
                     )
                 elif retry_after and retry_after > 60:
                     cooldown_s = min(float(retry_after), 86400.0)
                     reason = "429 dugi cooldown"
                     logger.warning(
                         "[QuotaTracker] %s ...%s → 429 dugi cooldown %.0fs",
-                        self.provider, self.key[-4:], cooldown_s,
+                        self.provider,
+                        self.key[-4:],
+                        cooldown_s,
                     )
                 elif retry_after and retry_after > 0:
                     cooldown_s = min(float(retry_after), 120.0)
@@ -147,7 +173,9 @@ class KeyQuota:
                     reason = f"RPM 429 (profil {cooldown_s:.0f}s)"
                     logger.info(
                         "[QuotaTracker] %s ...%s → 429 bez Retry-After — cooldown: %.0fs",
-                        self.provider, self.key[-4:], cooldown_s,
+                        self.provider,
+                        self.key[-4:],
+                        cooldown_s,
                     )
                 self._set_cooldown(cooldown_s, reason)
 
@@ -183,7 +211,9 @@ class KeyQuota:
     def current_tpd(self) -> int:
         with self._lock:
             now = time.time()
-            self._tpd_window = [(t, tok) for t, tok in self._tpd_window if now - t < 86400.0]
+            self._tpd_window = [
+                (t, tok) for t, tok in self._tpd_window if now - t < 86400.0
+            ]
             return sum(tok for _, tok in self._tpd_window)
 
     def to_status_dict(self) -> dict:
@@ -192,7 +222,9 @@ class KeyQuota:
             cd = max(0.0, self._cooldown_until - now)
             self._rpm_window = [t for t in self._rpm_window if now - t < 60.0]
             self._rpd_window = [t for t in self._rpd_window if now - t < 86400.0]
-            self._tpd_window = [(t, tok) for t, tok in self._tpd_window if now - t < 86400.0]
+            self._tpd_window = [
+                (t, tok) for t, tok in self._tpd_window if now - t < 86400.0
+            ]
             return {
                 "key_masked": self.key[-4:] if len(self.key) > 4 else "***",
                 "provider": self.provider,
@@ -216,7 +248,14 @@ class ProviderQuota:
         self._provider_cooldown_until: float = 0.0
         self._provider_cooldown_reason: str = ""
 
-    def add_key(self, key: str, rpm_safe: int = 0, rpd_safe: int = 0, min_gap_s: float = 2.0, tpm_safe: float = 0.0) -> KeyQuota:
+    def add_key(
+        self,
+        key: str,
+        rpm_safe: int = 0,
+        rpd_safe: int = 0,
+        min_gap_s: float = 2.0,
+        tpm_safe: float = 0.0,
+    ) -> KeyQuota:
         with self._lock:
             if key not in self._keys:
                 kq = KeyQuota(key, self.provider)
@@ -227,7 +266,7 @@ class ProviderQuota:
                 self._keys[key] = kq
             return self._keys[key]
 
-    def get_key(self, key: str) -> Optional[KeyQuota]:
+    def get_key(self, key: str) -> KeyQuota | None:
         with self._lock:
             return self._keys.get(key)
 
@@ -277,7 +316,15 @@ class QuotaTracker:
         self._lock = threading.Lock()
         self._providers: dict[str, ProviderQuota] = {}
 
-    def register_key(self, provider: str, key: str, rpm_safe: int = 15, rpd_safe: int = 1000, min_gap_s: float = 2.0, tpm_safe: float = 0.0):
+    def register_key(
+        self,
+        provider: str,
+        key: str,
+        rpm_safe: int = 15,
+        rpd_safe: int = 1000,
+        min_gap_s: float = 2.0,
+        tpm_safe: float = 0.0,
+    ):
         prov = provider.upper()
         with self._lock:
             if prov not in self._providers:
@@ -294,7 +341,8 @@ class QuotaTracker:
         except ImportError:
             _get_tpm_safe = lambda p: 0.0  # noqa: E731
         try:
-            from config.ai_config import get_rpm_safe as _get_rpm_safe, get_rpd_safe as _get_rpd_safe
+            from config.ai_config import get_rpd_safe as _get_rpd_safe
+            from config.ai_config import get_rpm_safe as _get_rpm_safe
         except ImportError:
             _get_rpm_safe = lambda p: 0
             _get_rpd_safe = lambda p: 0
@@ -306,13 +354,27 @@ class QuotaTracker:
             rpm_s = _get_rpm_safe(prov_u)
             rpd_s = _get_rpd_safe(prov_u)
             for ks in key_states:
-                self.register_key(prov_u, ks.key, rpm_safe=rpm_s, rpd_safe=rpd_s, min_gap_s=gap, tpm_safe=tpm)
+                self.register_key(
+                    prov_u,
+                    ks.key,
+                    rpm_safe=rpm_s,
+                    rpd_safe=rpd_s,
+                    min_gap_s=gap,
+                    tpm_safe=tpm,
+                )
                 if prov_u == "GEMINI":
                     gemma_gap = _get_min_gap("GEMMA")
                     gemma_tpm = _get_tpm_safe("GEMMA")
                     gemma_rpm = _get_rpm_safe("GEMMA")
                     gemma_rpd = _get_rpd_safe("GEMMA")
-                    self.register_key("GEMMA", ks.key, rpm_safe=gemma_rpm, rpd_safe=gemma_rpd, min_gap_s=gemma_gap, tpm_safe=gemma_tpm)
+                    self.register_key(
+                        "GEMMA",
+                        ks.key,
+                        rpm_safe=gemma_rpm,
+                        rpd_safe=gemma_rpd,
+                        min_gap_s=gemma_gap,
+                        tpm_safe=gemma_tpm,
+                    )
         logger.info("QuotaTracker inicijaliziran: %d provajdera", len(fleet))
         self._restore_cooldowns()
 
@@ -320,7 +382,7 @@ class QuotaTracker:
         try:
             if not os.path.exists(self._PERSIST_PATH):
                 return
-            with open(self._PERSIST_PATH, "r", encoding="utf-8") as f:
+            with open(self._PERSIST_PATH, encoding="utf-8") as f:
                 data = json.load(f)
             now = time.time()
             restored = 0
@@ -336,7 +398,9 @@ class QuotaTracker:
                             kq.set_cooldown_external(remaining, reason)
                             restored += 1
             if restored:
-                logger.info("[QuotaTracker] Obnovljeno %d cooldown(a) s diska", restored)
+                logger.info(
+                    "[QuotaTracker] Obnovljeno %d cooldown(a) s diska", restored
+                )
         except Exception as e:
             logger.warning("[QuotaTracker] Nije moguće obnoviti cooldown stanje: %s", e)
 
@@ -357,12 +421,17 @@ class QuotaTracker:
                         # (bili su in-memory, resetovali se na restart)
                         _rpm = [t for t in kq._rpm_window if now - t < 60.0]
                         _rpd = [t for t in kq._rpd_window if now - t < 86400.0]
-                        _tpd = [(t, tok) for t, tok in kq._tpd_window if now - t < 86400.0]
+                        _tpd = [
+                            (t, tok) for t, tok in kq._tpd_window if now - t < 86400.0
+                        ]
                         if _rpm or _rpd or _tpd:
-                            entry = data.setdefault(prov, {}).setdefault(key, {
-                                "cooldown_until": 0,
-                                "cooldown_reason": "",
-                            })
+                            entry = data.setdefault(prov, {}).setdefault(
+                                key,
+                                {
+                                    "cooldown_until": 0,
+                                    "cooldown_reason": "",
+                                },
+                            )
                             entry["rpm_window"] = _rpm
                             entry["rpd_window"] = _rpd
                             entry["tpd_window"] = _tpd
@@ -378,8 +447,15 @@ class QuotaTracker:
         if kq:
             kq.record_request()
 
-    def record_response(self, provider: str, key: str, status_code: int,
-                        tokens: int = 0, retry_after=None, headers=None):
+    def record_response(
+        self,
+        provider: str,
+        key: str,
+        status_code: int,
+        tokens: int = 0,
+        retry_after=None,
+        headers=None,
+    ):
         # BUG #7 fix: jedan lookup umjesto dva — thread-safer, bez duplog _get_provider
         pq = self._get_provider(provider.upper())
         kq = pq.get_key(key) if pq else None
@@ -415,14 +491,16 @@ class QuotaTracker:
             pq.set_provider_cooldown(seconds, reason)
             self._persist_cooldowns()
 
-    def set_key_cooldown(self, provider: str, key: str, seconds: float, reason: str = ""):
+    def set_key_cooldown(
+        self, provider: str, key: str, seconds: float, reason: str = ""
+    ):
         pq = self._get_provider(provider.upper())
         kq = pq.get_key(key) if pq else None
         if kq:
             kq.set_cooldown_external(seconds, reason)
             self._persist_cooldowns()
 
-    def get_provider_status(self, provider: str) -> Optional[dict]:
+    def get_provider_status(self, provider: str) -> dict | None:
         pq = self._get_provider(provider.upper())
         return pq.get_status_summary() if pq else None
 
@@ -431,7 +509,7 @@ class QuotaTracker:
         try:
             if not self._PERSIST_PATH.exists():
                 return
-            with open(self._PERSIST_PATH, "r", encoding="utf-8") as f:
+            with open(self._PERSIST_PATH, encoding="utf-8") as f:
                 data = json.load(f)
             prov = kq.provider
             if prov not in data:
@@ -445,11 +523,13 @@ class QuotaTracker:
             if "rpd_window" in entry:
                 kq._rpd_window = [t for t in entry["rpd_window"] if now - t < 86400.0]
             if "tpd_window" in entry:
-                kq._tpd_window = [(t, tok) for t, tok in entry["tpd_window"] if now - t < 86400.0]
+                kq._tpd_window = [
+                    (t, tok) for t, tok in entry["tpd_window"] if now - t < 86400.0
+                ]
         except Exception as e:
             logger.debug("[QuotaTracker] Ucitavanje windows-a palo: %s", e)
 
-    def _get_provider(self, prov: str) -> Optional[ProviderQuota]:
+    def _get_provider(self, prov: str) -> ProviderQuota | None:
         with self._lock:
             return self._providers.get(prov)
 

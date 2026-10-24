@@ -1,6 +1,5 @@
-
-
 """Konfiguracija logginga za Skriptorij."""
+
 import logging
 import sys
 
@@ -23,18 +22,21 @@ def configure_logging(level: int = logging.INFO) -> None:
     if not root.handlers:
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(level)
-        handler.setFormatter(logging.Formatter(
-            "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
-            datefmt="%H:%M:%S",
-        ))
+        handler.setFormatter(
+            logging.Formatter(
+                "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
+                datefmt="%H:%M:%S",
+            )
+        )
         root.addHandler(handler)
 
     # Dedicirani handler koji uvijek ispisuje ERROR i CRITICAL u terminal
     class _CriticalTerminalHandler(logging.StreamHandler):
         """Ispisuje ERROR/CRITICAL poruke direktno u terminal (stdout)."""
+
         COLORS = {
             logging.CRITICAL: "\x1b[1;97;41m",  # bijelo na crvenom
-            logging.ERROR:    "\x1b[1;91m",       # svijetlocrveno
+            logging.ERROR: "\x1b[1;91m",  # svijetlocrveno
         }
         RESET = "\x1b[0m"
 
@@ -50,10 +52,12 @@ def configure_logging(level: int = logging.INFO) -> None:
 
     crit_handler = _CriticalTerminalHandler(sys.stdout)
     crit_handler.setLevel(logging.ERROR)
-    crit_handler.setFormatter(logging.Formatter(
-        "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
-        datefmt="%H:%M:%S",
-    ))
+    crit_handler.setFormatter(
+        logging.Formatter(
+            "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
+            datefmt="%H:%M:%S",
+        )
+    )
     # Dodaj samo ako već nema identičan handler (izbjegni duplikate pri reload-u)
     existing_types = [type(h).__name__ for h in root.handlers]
     if "_CriticalTerminalHandler" not in existing_types:
@@ -64,10 +68,11 @@ def configure_logging(level: int = logging.INFO) -> None:
     # DailyFileHandler na root logger koji hvata SVE module.
     try:
         from config.system_logger import syslog  # noqa: F401 — inicijalizacija
-        syslog.info("[logging_config] File logging aktivan → logs/sistem_DD-MM-YYYY.log")
+
+        syslog.info(
+            "[logging_config] File logging aktivan → logs/sistem_DD-MM-YYYY.log"
+        )
     except Exception as exc:
         logging.getLogger(__name__).warning(
             "[logging_config] Nije moguće inicijalizirati file logger: %s", exc
         )
-
-

@@ -16,14 +16,15 @@ Primjeri:
 """
 
 from __future__ import annotations
+
 import logging
 import re
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 try:
     from .glagoli_mapa import dobij_glagol, dobij_modal_lice
+
     _MAPA_OK = True
 except ImportError:
     _MAPA_OK = False
@@ -32,19 +33,18 @@ except ImportError:
 
 # Regex: (modal) da (glagol)
 _DA_PATTERN = re.compile(
-    r'\b([a-zA-ZčćžšđČĆŽŠĐ]+)\s+da\s+([a-zA-ZčćžšđČĆŽŠĐ]+)\b',
-    re.UNICODE
+    r"\b([a-zA-ZčćžšđČĆŽŠĐ]+)\s+da\s+([a-zA-ZčćžšđČĆŽŠĐ]+)\b", re.UNICODE
 )
 
 
 def konjuguj(tekst: str, agresivno: bool = False) -> tuple[str, int]:
     """
     Pretvara "modal + da + glagol" u "modal + infinitiv" kad su ista lica.
-    
+
     Args:
         tekst:      HTML ili plain tekst
         agresivno:  Ako True, mijenjaj i kad su različita lica (nije sigurno!)
-    
+
     Returns:
         (novi_tekst, broj_zamjena)
     """
@@ -53,11 +53,11 @@ def konjuguj(tekst: str, agresivno: bool = False) -> tuple[str, int]:
 
     # Zaštita HTML tagova — ne diraj atribute
     # Jednostavan pristup: radi na segmentima između HTML tagova
-    delovi = re.split(r'(<[^>]+>)', tekst)
+    delovi = re.split(r"(<[^>]+>)", tekst)
     broj_zamjena = 0
 
     for i, deo in enumerate(delovi):
-        if deo.startswith('<'):
+        if deo.startswith("<"):
             continue  # HTML tag — preskoči
 
         novi_deo, n = _konjuguj_segment(deo, agresivno)
@@ -118,9 +118,9 @@ if __name__ == "__main__":
         "Mogu da idem kući",
         "Ne mogu da vjerujem",
         "Morao je da ode",
-        "želiš da radim",      # različita lica — ne mijenjaj
-        "želimo da idu",       # različita lica — ne mijenjaj
-        "Želim da ti pomognem", # 1sg + 2sg — ne mijenjaj
+        "želiš da radim",  # različita lica — ne mijenjaj
+        "želimo da idu",  # različita lica — ne mijenjaj
+        "Želim da ti pomognem",  # 1sg + 2sg — ne mijenjaj
     ]
 
     print("Test da_konjugator:")

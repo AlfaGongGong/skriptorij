@@ -17,11 +17,12 @@
 
 import re
 import warnings
+
 from bs4 import XMLParsedAsHTMLWarning
+
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 from bs4 import BeautifulSoup, NavigableString, Tag
-
 
 # Regex za granicu rečenice: iza . ! ? … slijedi razmak ili kraj
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?\u2026])\s+")
@@ -145,7 +146,9 @@ def _split_p_tag(p_tag: Tag, max_words: int) -> list:
         return [str(p_tag)]
 
     # Ako <p> ima samo tekst — reži po rečenicama
-    if len(list(p_tag.children)) == 1 and isinstance(list(p_tag.children)[0], NavigableString):
+    if len(list(p_tag.children)) == 1 and isinstance(
+        list(p_tag.children)[0], NavigableString
+    ):
         text = str(list(p_tag.children)[0])
         dijelovi = _split_text_by_sentences(text, max_words)
         return [open_tag + d + close_tag for d in dijelovi]
@@ -177,7 +180,10 @@ def _split_p_tag(p_tag: Tag, max_words: int) -> list:
                 sentences = [text]
             for s in sentences:
                 w = len(s.split())
-                if trenutni_trenutni_rijeci > 0 and trenutni_trenutni_rijeci + w > max_words:
+                if (
+                    trenutni_trenutni_rijeci > 0
+                    and trenutni_trenutni_rijeci + w > max_words
+                ):
                     flush()
                 trenutni_dijelovi.append(s + " " if not s.endswith(" ") else s)
                 trenutni_trenutni_rijeci += w
@@ -185,7 +191,10 @@ def _split_p_tag(p_tag: Tag, max_words: int) -> list:
             # Tag (<em>, <i>, <b>) — dodaj u trenutni dio
             s = str(child)
             w = _word_count(child)
-            if trenutni_trenutni_rijeci > 0 and trenutni_trenutni_rijeci + w > max_words:
+            if (
+                trenutni_trenutni_rijeci > 0
+                and trenutni_trenutni_rijeci + w > max_words
+            ):
                 flush()
             trenutni_dijelovi.append(s)
             trenutni_trenutni_rijeci += w
@@ -283,6 +292,14 @@ def get_context_window(checkpoint_dir, chunks: list, idx: int, file_name: str) -
     """
     Vraća (prev_ctx, next_ctx) — BEZ TEKSTA (samo oznaka).
     """
-    prev_ctx = "Prethodni blok postoji. Nastavi stil i ton." if idx > 0 else "Ovo je prvi blok poglavlja."
-    next_ctx = "Sljedeći blok postoji." if idx < len(chunks) - 1 else "Ovo je zadnji blok poglavlja."
+    prev_ctx = (
+        "Prethodni blok postoji. Nastavi stil i ton."
+        if idx > 0
+        else "Ovo je prvi blok poglavlja."
+    )
+    next_ctx = (
+        "Sljedeći blok postoji."
+        if idx < len(chunks) - 1
+        else "Ovo je zadnji blok poglavlja."
+    )
     return prev_ctx, next_ctx

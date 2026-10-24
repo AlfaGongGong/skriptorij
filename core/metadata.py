@@ -25,13 +25,12 @@ BooklyFi metapodaci:
 
 Verzija: 1.0
 """
+
 from __future__ import annotations
 
 import hashlib
 import re
 import uuid
-import zipfile
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -44,6 +43,7 @@ BOOKLYFI_LANG = "hr"
 # ═══════════════════════════════════════════════════════════
 # POMOĆNE
 # ═══════════════════════════════════════════════════════════
+
 
 def _clean_text(t: str) -> str:
     """Uklanja HTML tagove iz teksta."""
@@ -83,15 +83,16 @@ def _clean_title(title: str) -> str:
 # GLAVNA FUNKCIJA
 # ═══════════════════════════════════════════════════════════
 
+
 def standardizuj_metapodatke(
     files: dict,
     opf_path: str,
-    epub_path: Optional[str] = None,
-    translated_at: Optional[str] = None,
-    stylized_at: Optional[str] = None,
-    glossary_id: Optional[str] = None,
-    quality_score: Optional[float] = None,
-    pipeline_version: Optional[str] = None,
+    epub_path: str | None = None,
+    translated_at: str | None = None,
+    stylized_at: str | None = None,
+    glossary_id: str | None = None,
+    quality_score: float | None = None,
+    pipeline_version: str | None = None,
 ) -> dict:
     """
     Standardizuje metapodatke u OPF fajlu.
@@ -277,8 +278,16 @@ def provjeri_metapodatke(files: dict, opf_path: str) -> dict:
         return {"ok": False}
 
     rezultat = {"ok": True, "polja": {}}
-    for tag in ["dc:title", "dc:creator", "dc:language", "dc:identifier",
-                "dc:date", "dc:publisher", "dc:description", "dc:subject"]:
+    for tag in [
+        "dc:title",
+        "dc:creator",
+        "dc:language",
+        "dc:identifier",
+        "dc:date",
+        "dc:publisher",
+        "dc:description",
+        "dc:subject",
+    ]:
         el = metadata.find(tag)
         rezultat["polja"][tag] = el.get_text(strip=True) if el else None
 

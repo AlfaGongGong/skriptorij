@@ -1,8 +1,10 @@
 """api/routes/monitor.py — Real-time praćenje stanja ključeva."""
-from flask import Blueprint, jsonify, request
-from datetime import datetime, timezone
+
 import time
-from pathlib import Path
+from datetime import UTC, datetime, timezone
+
+from flask import Blueprint, jsonify, request
+
 from config.settings import SHARED_STATS
 
 bp = Blueprint("monitor", __name__)
@@ -10,6 +12,7 @@ bp = Blueprint("monitor", __name__)
 
 def _fleet():
     from api_fleet import get_active_fleet
+
     return get_active_fleet()
 
 
@@ -17,13 +20,15 @@ def _fleet():
 def status():
     fleet = _fleet()
     if fleet is None:
-        return jsonify({
-            "status": "INICIJALIZACIJA",
-            "message": "FleetManager nije registrovan (engine se još pokreće)",
-            "providers": {},
-        })
+        return jsonify(
+            {
+                "status": "INICIJALIZACIJA",
+                "message": "FleetManager nije registrovan (engine se još pokreće)",
+                "providers": {},
+            }
+        )
     now = time.time()
-    utc = datetime.now(timezone.utc)
+    utc = datetime.now(UTC)
     ponoc = utc.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() + 86400
 
     # QuotaTracker
@@ -65,8 +70,11 @@ def status():
                 "calls_failed": getattr(ks, "calls_failed", 0),
                 "total_requests": getattr(ks, "total_requests", 0),
                 "last_used_ago": round(now - getattr(ks, "last_used", 0.0), 1)
-                    if getattr(ks, "last_used", 0.0) else None,
-                "cooldown_left": round(max(0, getattr(ks, "cooldown_until", 0.0) - now), 1),
+                if getattr(ks, "last_used", 0.0)
+                else None,
+                "cooldown_left": round(
+                    max(0, getattr(ks, "cooldown_until", 0.0) - now), 1
+                ),
                 "cooldown_reason": getattr(ks, "cooldown_reason", None),
             }
             if qt:
@@ -105,8 +113,10 @@ def reset_key():
             if hasattr(ks, "cooldown_reason"):
                 ks.cooldown_reason = None
             if qt:
-                try: qt.reset(prov, k)
-                except Exception: pass
+                try:
+                    qt.reset(prov, k)
+                except Exception:
+                    pass
             hit += 1
     return jsonify({"ok": True, "reset": hit})
 
@@ -118,8 +128,10 @@ def audit():
     events = SHARED_STATS.get("audit_events", [])
     next_id = SHARED_STATS.get("audit_next_id", 1)
     filtered = [e for e in events if e.get("id", 0) > since]
-    return jsonify({
-        "events": filtered,
-        "next_id": next_id,
-        "since": since,
-    })
+    return jsonify(
+        {
+            "events": filtered,
+            "next_id": next_id,
+            "since": since,
+        }
+    )

@@ -1,18 +1,18 @@
+import json
+import logging
 import os
 import signal
 import sys
 import threading
 import time
-import logging
-import webbrowser
 import traceback
-import json
+import webbrowser
 from pathlib import Path
 
 # Uvoz fabrike aplikacije i dijeljenog stanja
 from app import app
-from config.settings import PORT, SHARED_STATS, SHARED_CONTROLS
 from config.logging_config import configure_logging
+from config.settings import PORT, SHARED_CONTROLS, SHARED_STATS
 
 # ── Putanje ──────────────────────────────────────────────────────────────────
 # Prilagodi ako su tvoje putanje drugačije
@@ -20,21 +20,22 @@ _BASE = Path(__file__).parent
 # Koristi apsolutne putanje iz config/settings.py
 try:
     from config.settings import INPUT_DIR as _CFG_INPUT_DIR
+
     PROJECTS_ROOT = str(_CFG_INPUT_DIR)
-    INPUT_DIR     = str(_CFG_INPUT_DIR)
+    INPUT_DIR = str(_CFG_INPUT_DIR)
 except ImportError:
     PROJECTS_ROOT = os.environ.get("PROJECTS_ROOT", str(_BASE / "projects"))
-    INPUT_DIR     = os.environ.get("INPUT_DIR",     str(_BASE / "data"))
+    INPUT_DIR = os.environ.get("INPUT_DIR", str(_BASE / "data"))
 
 _INTRO_LOADED = True
 
 # ANSI boje
-_GREEN  = "\x1b[1;92m"
-_RED    = "\x1b[1;91m"
-_BRED   = "\x1b[1;97;41m"
+_GREEN = "\x1b[1;92m"
+_RED = "\x1b[1;91m"
+_BRED = "\x1b[1;97;41m"
 _YELLOW = "\x1b[1;93m"
-_CYAN   = "\x1b[1;96m"
-_RESET  = "\x1b[0m"
+_CYAN = "\x1b[1;96m"
+_RESET = "\x1b[0m"
 
 _AUDIT_INTERVAL = 300  # sekundi (5 minuta)
 
@@ -44,8 +45,8 @@ _AUDIT_INTERVAL = 300  # sekundi (5 minuta)
 # ============================================================================
 def _flask_audit_loop(port: int) -> None:
     """Svakih 5 minuta provjerava dostupnost Flask servera."""
-    import urllib.request
     import urllib.error
+    import urllib.request
 
     url = f"http://127.0.0.1:{port}/api/status"
     time.sleep(15)
@@ -54,9 +55,9 @@ def _flask_audit_loop(port: int) -> None:
         ts = time.strftime("%H:%M:%S")
         try:
             with urllib.request.urlopen(url, timeout=5) as resp:
-                code   = resp.getcode()
+                code = resp.getcode()
                 status = SHARED_STATS.get("status", "?")
-                pct    = SHARED_STATS.get("pct", 0)
+                pct = SHARED_STATS.get("pct", 0)
                 engine = SHARED_STATS.get("active_engine", "---")
                 sys.stdout.write(
                     f"{_GREEN}[AUDIT {ts}] ✅ Flask OK (HTTP {code}) | "
@@ -111,14 +112,18 @@ def _kill_previous_instance() -> None:
         _PID_FILE.unlink(missing_ok=True)
         return
 
-    print(f"{_YELLOW}[BOOKLYFI]{_RESET} Zatečena živa instanca (PID {old_pid}) — gasim je...")
+    print(
+        f"{_YELLOW}[BOOKLYFI]{_RESET} Zatečena živa instanca (PID {old_pid}) — gasim je..."
+    )
     try:
         os.kill(old_pid, signal.SIGTERM)
     except ProcessLookupError:
         _PID_FILE.unlink(missing_ok=True)
         return
     except PermissionError:
-        print(f"{_RED}[BOOKLYFI]{_RESET} Nemam dozvolu da ugasim PID {old_pid} — nastavljam, moguć je konflikt na portu.")
+        print(
+            f"{_RED}[BOOKLYFI]{_RESET} Nemam dozvolu da ugasim PID {old_pid} — nastavljam, moguć je konflikt na portu."
+        )
         return
 
     for _ in range(20):  # do ~5 sekundi
@@ -155,8 +160,10 @@ def _remove_pid_file() -> None:
 # ============================================================================
 def _graceful_shutdown(signum, frame):
     SHARED_CONTROLS["stop"] = True
-    SHARED_STATS["status"]  = "ZAUSTAVLJENO"
-    print(f"\n{_YELLOW}[SHUTDOWN] Signal primljen — čekam završetak tekuće obrade...{_RESET}")
+    SHARED_STATS["status"] = "ZAUSTAVLJENO"
+    print(
+        f"\n{_YELLOW}[SHUTDOWN] Signal primljen — čekam završetak tekuće obrade...{_RESET}"
+    )
     _remove_pid_file()
     sys.exit(0)
 
@@ -177,12 +184,13 @@ def _resolve_book() -> str:
             pass
     return book
 
+
 if __name__ == "__main__":
     configure_logging(logging.ERROR)
     os.system("clear" if os.name == "posix" else "cls")
 
     signal.signal(signal.SIGTERM, _graceful_shutdown)
-    signal.signal(signal.SIGINT,  _graceful_shutdown)
+    signal.signal(signal.SIGINT, _graceful_shutdown)
 
     _kill_previous_instance()
     _write_pid_file()
@@ -203,10 +211,14 @@ if __name__ == "__main__":
             if os.path.exists(TERMUX_OPEN):
                 rc = os.system(f"{TERMUX_OPEN} {url} > /dev/null 2>&1")
                 if rc != 0:
-                    print(f"{_YELLOW}[BOOKLYFI]{_RESET} termux-open-url exit {rc} — otvori ručno: {url}")
+                    print(
+                        f"{_YELLOW}[BOOKLYFI]{_RESET} termux-open-url exit {rc} — otvori ručno: {url}"
+                    )
             else:
                 if not webbrowser.open(url):
-                    print(f"{_YELLOW}[BOOKLYFI]{_RESET} Browser se nije otvorio — otvori ručno: {url}")
+                    print(
+                        f"{_YELLOW}[BOOKLYFI]{_RESET} Browser se nije otvorio — otvori ručno: {url}"
+                    )
         except Exception:
             pass
 
@@ -220,7 +232,9 @@ if __name__ == "__main__":
     ).start()
 
     try:
-        app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False, threaded=True)
+        app.run(
+            host="0.0.0.0", port=PORT, debug=False, use_reloader=False, threaded=True
+        )
     except Exception as exc:
         sys.stdout.write(
             f"{_BRED}[KRITIČNA GREŠKA] Flask se nije pokrenuo: "

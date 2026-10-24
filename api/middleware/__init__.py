@@ -1,6 +1,5 @@
-
-
 """Middleware paket — error handlers."""
+
 import logging
 import sys
 
@@ -9,10 +8,10 @@ from flask import Flask
 logger = logging.getLogger(__name__)
 
 # ANSI boje za terminal
-_RED    = "\x1b[1;91m"
-_BRED   = "\x1b[1;97;41m"
+_RED = "\x1b[1;91m"
+_BRED = "\x1b[1;97;41m"
 _YELLOW = "\x1b[1;93m"
-_RESET  = "\x1b[0m"
+_RESET = "\x1b[0m"
 
 
 def _print_critical(prefix: str, msg: str, color: str = _RED) -> None:
@@ -56,6 +55,3 @@ def register_error_handlers(app: Flask) -> None:
         )
         logger.exception("Neuhvaćena iznimka: %s", e)
         return jsonify({"error": "Interna serverska greška"}), 500
-
-
-

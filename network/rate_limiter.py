@@ -80,6 +80,7 @@ def _provider_global_rpm_gap(prov: str) -> float:
     """Razmak između bilo koja dva poziva na globalno-limitiran provajder (sekunde)."""
     try:
         from config.ai_config import get_rpm_safe
+
         rpm = get_rpm_safe(prov)
         if rpm > 0:
             return 60.0 / rpm
@@ -258,10 +259,10 @@ _PROVIDER_SEMAPHORES: dict[str, _threading.Semaphore] = {}
 _PROVIDER_SEMAPHORES_LOCK = _threading.Lock()
 MAX_CONCURRENT_PER_PROVIDER = 2  # default
 _PROVIDER_MAX_CONCURRENT = {
-    "GEMMA":     10,
-    "GEMINI":    8,
-    "GROQ":      4,
-    "NVIDIA":    2,
+    "GEMMA": 10,
+    "GEMINI": 8,
+    "GROQ": 4,
+    "NVIDIA": 2,
     "CLOUDFLARE": 2,
 }
 

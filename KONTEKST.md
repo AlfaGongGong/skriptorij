@@ -604,4 +604,60 @@ Status svih tačaka iz tehničke revizije. Detalji u git logu (od `6fe627b` naov
 
 ---
 
+---
+
+## FAZA 6 (2026-10-24) — alati za cistocu projekta
+
+### Sta je dodato
+
+**`tools/cistoca.sh`** — read-only skeniranje projekta (ili `--fix` sa backup-om).
+Sekcije: pokvareno (sintaksa, importi, ruff, JSON, shellcheck, mypy, testovi),
+ne koristi se (vulture, orfani, deptry, zakomentirano), duplo (pylint, AST,
+md5), smece, sigurnost (bandit, tajne), kvalitet (debug, print, TODO, imena
+modela, radon, stil, format), struktura (gitignore, requirements, README).
+Rezultat: `cistoca_izvjestaj.txt`. Nista ne menja bez `--fix`.
+Sa `--fix`: backup u `.cistoca/backup_TIMESTAMP.tar.gz`, karantina u
+`.cistoca/karantina_TIMESTAMP/`, automatski rollback ako sintaksa pukne.
+
+**`tools/popravi_projekat.sh`** — automatske popravke:
+1. Karantina `.bak*`, `.corrupt*`, `_RECOVERED`, praznih fajlova (60 fajlova)
+2. Brise `__pycache__/` (17 foldera)
+3. `pyproject.toml` sa `testpaths=["tests"]` (resava INTERNALERROR pri collectu)
+4. JSON — odbacuje visak iza prvog JSON objekta
+5. F821 — dodaje `import X` za stdlib nedostajuce (`os`, `re`, ...)
+6. F401 — brise neiskoristene importe (cuva re-export u `__init__.py`)
+7. Ruff sigurne autopopravke + format
+8. Tajne u kodu — chmod 600, dodaje u `.gitignore`, upozorava za rotaciju
+9. `.env.example` iz `.env` (bez vrednosti)
+10. `requirements.txt` — dodaje zavisnosti, `requirements.lock.txt` iz `pip freeze`
+11. `README.md` kostur ako ne postoji
+12. `RUCNO_ZA_POPRAVITI.md` — 30 mesta sa kontekstom koda
+
+Sigurnost: backup pre svega, automatski rollback ako sintaksa ili F821 puknu.
+
+### Rezultat na projektu (2026-10-24)
+
+- **128 fajlova promenjeno**, ~8967 insertions, ~4735 deletions (ruff format + F401)
+- **60 fajlova u karantinu**: `.bak_*`, `.corrupt*`, `_RECOVERED`, prazni
+- **1 fajl obrisan iz koda**: `core/dynamic_few_shot.py` (orfan, nema referenci)
+- **3 fajla sa tajnama** chmod 600: `api_state.json`, `dev_api.json`, `quota_cooldowns.json`
+- **requirements.txt** +3: `Werkzeug>=3.1.8`, `mobi>=0.4.1`, `httpx>=0.28.1`
+- **Testovi posle: svi prolaze** (94 unit/integration + 8 golden)
+- F821 (nedefinisana imena): 23 → 19 (4 resena automatski, 19 u RUCNO_ZA_POPRAVITI.md)
+
+### Napomene
+
+- Oba skripta pretpostavljaju venv u `venv/` (koriste `venv/bin/python`)
+- `--bez-instalacije` preskace `pip install` alata
+- `--dir /put/do/projekta` radi nad drugim projektom
+- `pyproject.toml` automatski `testpaths=["tests"]` — resava INTERNALERROR
+
+### Otvoreno
+
+- `RUCNO_ZA_POPRAVITI.md` — 30 mesta sa kontekstom koda, treba ljudska odluka
+- `classla` u `requirements.txt` — nije instaliran paket, ali se uvozi (mozda treba `pip install classla`)
+- `skriptorij` u `requirements.txt` — self-import, ignorisi
+
+---
+
 KRAJ KONTEKSTA

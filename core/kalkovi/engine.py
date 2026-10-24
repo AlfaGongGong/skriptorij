@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # Interni tip za kompajlirani pattern
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _KompajliraniPattern:
     izvorni_pattern: str
@@ -48,7 +49,8 @@ _HTML_TAG_RE = re.compile(r"<[^>]+>", re.UNICODE)
 # Whitelist: zaštita vlastitih imena iz glosara
 # ---------------------------------------------------------------------------
 
-def _izgradi_whitelist_re(glosar: dict) -> Optional[re.Pattern]:
+
+def _izgradi_whitelist_re(glosar: dict) -> re.Pattern | None:
     """
     Prima glosar {originalni_termin: prijevod} ili {termin: None}.
     Vraća kompajlirani pattern koji matchuje sve termine koje treba zaštititi,
@@ -60,13 +62,14 @@ def _izgradi_whitelist_re(glosar: dict) -> Optional[re.Pattern]:
     escaped = [re.escape(t) for t in termini if t.strip()]
     if not escaped:
         return None
-    return re.compile(r"(?<!\w)(?:" + "|".join(escaped) + r")(?!\w)",
-                      re.IGNORECASE | re.UNICODE)
+    return re.compile(
+        r"(?<!\w)(?:" + "|".join(escaped) + r")(?!\w)", re.IGNORECASE | re.UNICODE
+    )
 
 
 def _zamijeni_s_whitelistom(
     tekst: str,
-    whitelist_re: Optional[re.Pattern],
+    whitelist_re: re.Pattern | None,
     compiled_patterns: list[_KompajliraniPattern],
 ) -> tuple[str, int]:
     """
@@ -117,6 +120,7 @@ def _zamijeni_s_whitelistom(
 # Glavni engine
 # ---------------------------------------------------------------------------
 
+
 class KalkoviEngine:
     """
     Singleton-like engine koji kompajlira SVE_LISTE jednom pri instanciranju.
@@ -164,9 +168,7 @@ class KalkoviEngine:
                 if self._html_safe and _HTML_LOOKAHEAD not in pattern_str:
                     finalni_pattern = pattern_str + _HTML_LOOKAHEAD
 
-                compiled = re.compile(
-                    finalni_pattern, re.IGNORECASE | re.UNICODE
-                )
+                compiled = re.compile(finalni_pattern, re.IGNORECASE | re.UNICODE)
                 self._compiled.append(
                     _KompajliraniPattern(
                         izvorni_pattern=pattern_str,
@@ -197,7 +199,7 @@ class KalkoviEngine:
     def primijeni(
         self,
         tekst: str,
-        glosar: Optional[dict] = None,
+        glosar: dict | None = None,
         blok_id: str = "",
     ) -> tuple[str, int]:
         """
@@ -259,7 +261,9 @@ class KalkoviEngine:
         """
         logger.info("[kalkovi] Hot-reload: rekompajliram %d patterna ...", len(liste))
         self._kompajliraj(liste)
-        logger.info("[kalkovi] Hot-reload završen: %d patterna aktivno.", len(self._compiled))
+        logger.info(
+            "[kalkovi] Hot-reload završen: %d patterna aktivno.", len(self._compiled)
+        )
 
     @property
     def broj_patterna(self) -> int:
@@ -284,6 +288,7 @@ class KalkoviEngine:
 # Gotova instanca — importira se u pipeline.py / text_utils.py
 # ---------------------------------------------------------------------------
 
+
 def _inicijaliziraj_engine() -> KalkoviEngine:
     """
     Kreira gotovu instancu pri importu modula.
@@ -291,6 +296,7 @@ def _inicijaliziraj_engine() -> KalkoviEngine:
     """
     try:
         from core.kalkovi import SVE_LISTE  # noqa: PLC0415
+
         return KalkoviEngine(SVE_LISTE)
     except Exception as exc:  # noqa: BLE001
         logger.error(
@@ -313,7 +319,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
     if len(sys.argv) < 2:
-        print("Upotreba: python3 -m core.kalkovi.engine \"tekst za test\"")
+        print('Upotreba: python3 -m core.kalkovi.engine "tekst za test"')
         sys.exit(1)
 
     ulaz = sys.argv[1]
@@ -322,6 +328,7 @@ if __name__ == "__main__":
     print(f"Izlaz: {izlaz}")
     print(f"Zamjena: {n}")
     print(f"Patterna u engineu: {kalkovi_engine.broj_patterna}")
+
 
 # ── HTML-safe wrapper za text_utils kompatibilnost ─────────────────────────
 def primijeni_html_safe(tekst, glosar=None):

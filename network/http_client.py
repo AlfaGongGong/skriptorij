@@ -27,11 +27,14 @@
 import asyncio
 import logging
 import random
-import requests
+
 # 2026-10-24 B2a: jedan HTTP klijent — shared Session sa connection pooling-om.
 # api_call (sync) i _async_http_post (async, kroz asyncio.to_thread) koriste istu sesiju.
 # Ustedi TCP/TLS handshake po pozivu (~50-200ms po pozivu preko mreze).
 import threading as _threading
+
+import requests
+
 _HTTP_SESSION_LOCK = _threading.Lock()
 _HTTP_SESSION = None
 
@@ -44,12 +47,22 @@ def _get_http_session():
             if _HTTP_SESSION is None:
                 _HTTP_SESSION = requests.Session()
                 # Connection pooling — prilagodjeno za ~12 kljuceva x 4 paralelna poziva
-                _HTTP_SESSION.mount("https://", requests.adapters.HTTPAdapter(
-                    pool_connections=20, pool_maxsize=40, max_retries=0,
-                ))
-                _HTTP_SESSION.mount("http://", requests.adapters.HTTPAdapter(
-                    pool_connections=10, pool_maxsize=20, max_retries=0,
-                ))
+                _HTTP_SESSION.mount(
+                    "https://",
+                    requests.adapters.HTTPAdapter(
+                        pool_connections=20,
+                        pool_maxsize=40,
+                        max_retries=0,
+                    ),
+                )
+                _HTTP_SESSION.mount(
+                    "http://",
+                    requests.adapters.HTTPAdapter(
+                        pool_connections=10,
+                        pool_maxsize=20,
+                        max_retries=0,
+                    ),
+                )
     return _HTTP_SESSION
 
 
@@ -57,12 +70,14 @@ import threading
 
 from config.ai_config import (
     GEMMA_MODEL_POOL as _GEMMA_MODEL_POOL_FALLBACK,
+)
+from config.ai_config import (
     GOOGLE_MODEL_POOL as _GOOGLE_MODEL_POOL_FALLBACK,
 )
 from network.rate_limiter import (
     acquire_key,
-    release_key,
     register_provider_runtime_limits,
+    release_key,
 )
 
 logger = logging.getLogger(__name__)
@@ -137,8 +152,6 @@ def _get_timeout_for_provider(prov_upper: str, default: int = 120) -> int:
 class ContentFilterError(Exception):
     """Chunk blokiran content filterom (Azure/GitHub) — treba preskočiti chunk, ne mijenjati ključ."""
 
-    pass
-
 
 # ── Proxy — trenutno isključen ────────────────────────────────────────────────
 # ── Proxy rotacija (Webshare format: IP:PORT:USER:PASS) ─────────────────────
@@ -155,6 +168,7 @@ def _load_proxies() -> list[dict]:
     try:
         import json
         from pathlib import Path as _P
+
         cfg = _P("/root/skriptorij/dev_api.json")
         if not cfg.exists():
             return []
@@ -315,17 +329,22 @@ def _extract_gemini_native(data: dict) -> str | None:
                 if ratings:
                     logger.warning(
                         "[GEMINI] Sadrzaj blokiran: %s | safety: %s",
-                        fb.get("blockReason"), ratings,
+                        fb.get("blockReason"),
+                        ratings,
                     )
                 else:
-                    logger.warning("[GEMINI] Sadrzaj blokiran: %s", fb.get("blockReason"))
+                    logger.warning(
+                        "[GEMINI] Sadrzaj blokiran: %s", fb.get("blockReason")
+                    )
             return None
         cand = candidates[0]
         finish = cand.get("finishReason", "")
         if finish == "SAFETY":
             ratings = _safety_summary(data)
             if ratings:
-                logger.warning("[GEMINI] Odgovor blokiran (SAFETY) | safety: %s", ratings)
+                logger.warning(
+                    "[GEMINI] Odgovor blokiran (SAFETY) | safety: %s", ratings
+                )
             else:
                 logger.warning("[GEMINI] Odgovor blokiran (SAFETY filter)")
             return None
@@ -337,9 +356,22 @@ def _extract_gemini_native(data: dict) -> str | None:
         ).strip()
         # 2026-10-23: ukloni <thinking> i <|thinking|> blokove (qwen/llama)
         import re as _re_t
-        text = _re_t.sub(r'<thinking>.*?</thinking>', '', text, flags=_re_t.DOTALL | _re_t.IGNORECASE)
-        text = _re_t.sub(r'<\|thinking\|>.*?<\|/thinking\|>', '', text, flags=_re_t.DOTALL | _re_t.IGNORECASE)
-        text = _re_t.sub(r'<\|channel\|>thought.*?<\|/channel\|>', '', text, flags=_re_t.DOTALL | _re_t.IGNORECASE)
+
+        text = _re_t.sub(
+            r"<thinking>.*?</thinking>", "", text, flags=_re_t.DOTALL | _re_t.IGNORECASE
+        )
+        text = _re_t.sub(
+            r"<\|thinking\|>.*?<\|/thinking\|>",
+            "",
+            text,
+            flags=_re_t.DOTALL | _re_t.IGNORECASE,
+        )
+        text = _re_t.sub(
+            r"<\|channel\|>thought.*?<\|/channel\|>",
+            "",
+            text,
+            flags=_re_t.DOTALL | _re_t.IGNORECASE,
+        )
         text = text.strip()
         return text or None
     except (KeyError, IndexError, TypeError):
@@ -353,14 +385,14 @@ def _safety_summary(data: dict) -> str:
     ili '' ako nema safetyRatings."""
     out = []
     fb = data.get("promptFeedback") or {}
-    for r in (fb.get("safetyRatings") or []):
+    for r in fb.get("safetyRatings") or []:
         cat = r.get("category", "?")
         prob = r.get("probability", "?")
         blocked = " BLOCKED" if r.get("blocked") else ""
         out.append(f"{cat}=PROB({prob}){blocked}")
     cands = data.get("candidates") or []
     if cands:
-        for r in (cands[0].get("safetyRatings") or []):
+        for r in cands[0].get("safetyRatings") or []:
             cat = r.get("category", "?")
             prob = r.get("probability", "?")
             blocked = " BLOCKED" if r.get("blocked") else ""
@@ -625,15 +657,18 @@ async def _async_http_post(
                 try:
                     _body = resp.json()
                     _status = (_body.get("error") or {}).get("status", "")
-                    _is_high_demand = (_status == "UNAVAILABLE")
+                    _is_high_demand = _status == "UNAVAILABLE"
                 except Exception:
                     pass
 
             if _is_high_demand:
                 try:
                     from network.quota_tracker import quota_tracker as _qt
+
                     _qt.set_key_cooldown(
-                        prov_upper, key, 5.0,
+                        prov_upper,
+                        key,
+                        5.0,
                         "503 high demand (kratki backoff)",
                     )
                 except Exception:
@@ -648,8 +683,11 @@ async def _async_http_post(
             else:
                 try:
                     from network.quota_tracker import quota_tracker as _qt
+
                     _qt.set_key_cooldown(
-                        prov_upper, key, 30.0,
+                        prov_upper,
+                        key,
+                        30.0,
                         f"{resp.status_code} server greska",
                     )
                 except Exception:
@@ -753,6 +791,7 @@ async def _call_gemini_with_full_rotation(
 
     _failed_keys = 0
     import time as _time_gt
+
     _gemini_start_ts = _time_gt.time()
     _GEMINI_MAX_TOTAL_S = 30.0
     for ks in keys_list:
@@ -819,7 +858,9 @@ async def _call_gemini_with_full_rotation(
                 if content:
                     return content, f"GEMINI-{current_model}"
                 reason = _diagnose_empty_gemini_response(data)
-                self.log(f"[GEMINI] {current_model} prazan odgovor — {reason}", "warning")
+                self.log(
+                    f"[GEMINI] {current_model} prazan odgovor — {reason}", "warning"
+                )
 
                 # FIX: PROHIBITED_CONTENT je sadržajna zabrana koju
                 # safetySettings ne pokriva (BLOCK_NONE vrijedi samo za 4
@@ -839,45 +880,54 @@ async def _call_gemini_with_full_rotation(
                     )
                     if ctx_res:
                         self.log(
-                            f"[GEMINI] Uspjeh s kontekstom — vraćam rezultat",
+                            "[GEMINI] Uspjeh s kontekstom — vraćam rezultat",
                             "warning",
                         )
                         return ctx_res, f"GEMINI-{current_model}-kontekst"
 
                     # FALLBACK 2: Gemma (odvojen pool ključeva)
                     self.log(
-                        f"[GEMINI] Kontekst nije pomogao — prelazim na Gemma",
+                        "[GEMINI] Kontekst nije pomogao — prelazim na Gemma",
                         "warning",
                     )
                     gemma_content, gemma_engine = await _call_gemma_with_rotation(
-                        self, sys_content, user_prompt, opt_temp, max_tokens,
+                        self,
+                        sys_content,
+                        user_prompt,
+                        opt_temp,
+                        max_tokens,
                     )
                     if gemma_content:
                         self.log(
-                            f"[GEMMA] Uspjeh — vraćam rezultat",
+                            "[GEMMA] Uspjeh — vraćam rezultat",
                             "warning",
                         )
                         return gemma_content, gemma_engine or "GEMMA"
 
                     # FALLBACK 3: Mistral (nezavisan od Google safety filtera)
                     self.log(
-                        f"[GEMINI→GEMMA] Nije uspio — prelazim na Mistral",
+                        "[GEMINI→GEMMA] Nije uspio — prelazim na Mistral",
                         "warning",
                     )
                     mistral_res, mistral_engine = await _call_single_provider(
-                        self, "MISTRAL", "mistral-small-latest",
-                        sys_content, user_prompt, opt_temp, max_tokens,
+                        self,
+                        "MISTRAL",
+                        "mistral-small-latest",
+                        sys_content,
+                        user_prompt,
+                        opt_temp,
+                        max_tokens,
                     )
                     if mistral_res:
                         self.log(
-                            f"[MISTRAL] Uspjeh — vraćam rezultat",
+                            "[MISTRAL] Uspjeh — vraćam rezultat",
                             "warning",
                         )
                         return mistral_res, mistral_engine or "MISTRAL"
 
                     # Svi fallback-ovi pali
                     self.log(
-                        f"[GEMINI] Svi fallback-ovi pali (kontekst, Gemma, Mistral) — odustajem",
+                        "[GEMINI] Svi fallback-ovi pali (kontekst, Gemma, Mistral) — odustajem",
                         "error",
                     )
                     return None, None
@@ -1032,7 +1082,9 @@ async def _call_gemma_with_rotation(
                 if content:
                     return content, f"GEMMA-{current_model}"
                 reason = _diagnose_empty_gemini_response(data)
-                self.log(f"[GEMMA] {current_model} prazan odgovor — {reason}", "warning")
+                self.log(
+                    f"[GEMMA] {current_model} prazan odgovor — {reason}", "warning"
+                )
 
                 # FIX: PROHIBITED_CONTENT je sadržajna zabrana koju
                 # safetySettings ne pokriva (BLOCK_NONE vrijedi samo za 4
@@ -1057,7 +1109,7 @@ async def _call_gemma_with_rotation(
                     # Mistral bio pozvan dvaput (jednom iz Gemma lanca,
                     # jednom iz Gemini lanca) u istoj sekundi.
                     self.log(
-                        f"[GEMMA] Kontekst nije pomogao — vraćam None (caller nastavlja)",
+                        "[GEMMA] Kontekst nije pomogao — vraćam None (caller nastavlja)",
                         "warning",
                     )
                     return None, None
@@ -1068,7 +1120,9 @@ async def _call_gemma_with_rotation(
                 # zahtjev na ISTOM modelu/kljucu sa vecim max_tokens.
                 if "MAX_TOKENS" in reason:
                     consecutive_max_tokens_fails += 1
-                    boosted_tokens = min(max_tokens * 2, 4096)  # FIX: bilo *3/8192 — thinking troši sve
+                    boosted_tokens = min(
+                        max_tokens * 2, 4096
+                    )  # FIX: bilo *3/8192 — thinking troši sve
                     if boosted_tokens > max_tokens:
                         self.log(
                             f"[GEMMA] {current_model} MAX_TOKENS prazan — "
@@ -1076,17 +1130,28 @@ async def _call_gemma_with_rotation(
                             "warning",
                         )
                         boosted_payload = _build_gemini_native_payload(
-                            sys_content, user_prompt, opt_temp, boosted_tokens,
+                            sys_content,
+                            user_prompt,
+                            opt_temp,
+                            boosted_tokens,
                         )
                         boosted_data = await _async_http_post(
-                            self, url, headers, boosted_payload,
-                            "GEMMA", "GEMINI", key, _proxy=None,
+                            self,
+                            url,
+                            headers,
+                            boosted_payload,
+                            "GEMMA",
+                            "GEMINI",
+                            key,
+                            _proxy=None,
                         )
                         if boosted_data is not None:
                             boosted_content = _extract_gemini_native(boosted_data)
                             if boosted_content:
                                 return boosted_content, f"GEMMA-{current_model}"
-                            boosted_reason = _diagnose_empty_gemini_response(boosted_data)
+                            boosted_reason = _diagnose_empty_gemini_response(
+                                boosted_data
+                            )
                             self.log(
                                 f"[GEMMA] {current_model} i dalje prazan nakon "
                                 f"boost-a — {boosted_reason}",
@@ -1097,7 +1162,10 @@ async def _call_gemma_with_rotation(
 
                     # FIX 30.08.2026: circuit-breaker — vidi komentar uz
                     # _GEMMA_MAX_TOKENS_CIRCUIT_BREAKER na vrhu fajla.
-                    if consecutive_max_tokens_fails >= _GEMMA_MAX_TOKENS_CIRCUIT_BREAKER:
+                    if (
+                        consecutive_max_tokens_fails
+                        >= _GEMMA_MAX_TOKENS_CIRCUIT_BREAKER
+                    ):
                         self.log(
                             f"[GEMMA] {consecutive_max_tokens_fails} uzastopna "
                             f"MAX_TOKENS neuspjeha na ovom pozivu — odustajem od "
@@ -1155,7 +1223,12 @@ async def _call_single_provider(
             logger.warning("[CLOUDFLARE] nema dostupnog ključa u floti")
             return None, None
         return _call_cloudflare_native(
-            cf_key, model, sys_content, user_prompt, opt_temp, max_tokens,
+            cf_key,
+            model,
+            sys_content,
+            user_prompt,
+            opt_temp,
+            max_tokens,
         )
 
     await asyncio.sleep(random.uniform(0.3, 1.5))
@@ -1267,9 +1340,10 @@ def api_call(
     timeout: int = 180,
     proxy: dict | None = None,
 ) -> str | None:
-    from network.provider_urls import get_url, get_gemini_url
-    from network.rate_limiter import get_key_semaphore, get_provider_semaphore
     import time as _time
+
+    from network.provider_urls import get_gemini_url, get_url
+    from network.rate_limiter import get_key_semaphore, get_provider_semaphore
 
     prov_upper = provider.upper()
 
@@ -1282,7 +1356,8 @@ def api_call(
     if proxy and isinstance(proxy, dict):
         _purl = proxy.get("https") or proxy.get("http") or ""
         import re as _re_p
-        _m = _re_p.search(r'@([\d.]+):', _purl)
+
+        _m = _re_p.search(r"@([\d.]+):", _purl)
         _proxy_tag = _m.group(1) if _m else "?"
     _reasoning = "?"
     if prov_upper == "GEMINI":
@@ -1296,9 +1371,16 @@ def api_call(
 
     logger.info(
         "▶ API %s | model=%s | ključ=%s | proxy=%s | reasoning=%s | prompt=%dc (~%dt) | max_out=%d | temp=%.2f | timeout=%ds",
-        prov_upper, model, _kid, _proxy_tag, _reasoning,
-        len((system or "") + (user or "")), _in_tokens,
-        max_tokens, temperature, timeout,
+        prov_upper,
+        model,
+        _kid,
+        _proxy_tag,
+        _reasoning,
+        len((system or "") + (user or "")),
+        _in_tokens,
+        max_tokens,
+        temperature,
+        timeout,
     )
 
     if prov_upper in ("GEMINI", "GEMMA"):
@@ -1326,14 +1408,17 @@ def api_call(
         # (ne cekaj boost — boost daje samo 768 za 256 tokena, nedovoljno).
         _is_reasoning = (
             "gpt-oss" in (model or "").lower()
-            or "qwen3.8" in (model or "").lower() and "thinking" in (model or "").lower()
+            or "qwen3.8" in (model or "").lower()
+            and "thinking" in (model or "").lower()
         )
         _effective_max_tokens = max_tokens
         if prov_upper == "GROQ" and _is_reasoning:
             _effective_max_tokens = max(max_tokens, 6000)
             logger.info(
                 "[api_call] GROQ reasoning model %s — max_tokens %d → %d",
-                model, max_tokens, _effective_max_tokens,
+                model,
+                max_tokens,
+                _effective_max_tokens,
             )
 
         payload = {
@@ -1354,15 +1439,17 @@ def api_call(
     key_sem = get_key_semaphore(api_key)
     # čekanje (min_gap / cooldown) PRIJE semafora, da ne blokira druge workere
     try:
-        from network.quota_tracker import quota_tracker
         import re as _re
+
+        from network.quota_tracker import quota_tracker
 
         ok, reason = quota_tracker.is_key_available(prov_upper, api_key)
         if not ok:
             _m = _re.search(r"([\d.]+)s", reason)
             wait_s = min(float(_m.group(1)) if _m else 5.0, 60.0)
-            logger.debug("[api_call] %s ...%s cekanje %.1fs",
-                         prov_upper, api_key[-4:], wait_s)
+            logger.debug(
+                "[api_call] %s ...%s cekanje %.1fs", prov_upper, api_key[-4:], wait_s
+            )
             _time.sleep(wait_s)
     except Exception:
         pass
@@ -1378,14 +1465,19 @@ def api_call(
         _use_proxy = proxy if proxy is not None else _get_next_proxy()
         try:
             resp = _get_http_session().post(
-                url, json=payload, headers=headers, timeout=timeout,
+                url,
+                json=payload,
+                headers=headers,
+                timeout=timeout,
                 proxies=_use_proxy,
             )
         except requests.exceptions.Timeout:
             _dt = _time.time() - _t0
             logger.warning(
                 "◀ API %s | ❌ TIMEOUT nakon %.1fs | ključ=%s",
-                prov_upper, _dt, _kid,
+                prov_upper,
+                _dt,
+                _kid,
             )
             try:
                 # FIX: cooldown SAMO za prov_upper, ne križaj GEMINI↔GEMMA.
@@ -1400,7 +1492,10 @@ def api_call(
             _dt = _time.time() - _t0
             logger.warning(
                 "◀ API %s | ❌ MREŽNA GREŠKA nakon %.1fs | ključ=%s | %s",
-                prov_upper, _dt, _kid, str(e)[:120],
+                prov_upper,
+                _dt,
+                _kid,
+                str(e)[:120],
             )
             return None
 
@@ -1408,7 +1503,9 @@ def api_call(
             _dt = _time.time() - _t0
             logger.warning(
                 "◀ API %s | ⚠️ HTTP 429 nakon %.1fs | ključ=%s",
-                prov_upper, _dt, _kid,
+                prov_upper,
+                _dt,
+                _kid,
             )
             ra_raw = resp.headers.get("Retry-After") or resp.headers.get("retry-after")
             try:
@@ -1453,6 +1550,7 @@ def api_call(
 # tako da je odgovor uvijek OpenAI-compatible unutar .result.
 # ============================================================================
 
+
 def _call_cloudflare_native(
     key: str,
     model: str,
@@ -1469,6 +1567,7 @@ def _call_cloudflare_native(
     if not account_id:
         try:
             from config.settings import CLOUDFLARE_ACCOUNT_ID as _cf_id
+
             account_id = _cf_id.strip() if isinstance(_cf_id, str) else ""
         except Exception:
             account_id = ""
@@ -1502,7 +1601,9 @@ def _call_cloudflare_native(
         if r.status_code != 200:
             logger.warning(
                 "[CLOUDFLARE] ...%s -> HTTP %d: %s",
-                key[-4:], r.status_code, r.text[:200],
+                key[-4:],
+                r.status_code,
+                r.text[:200],
             )
             return None, None
 
@@ -1532,6 +1633,7 @@ def _call_cloudflare_native(
 # PROHIBITED_CONTENT fallback — Gemini → OpenRouter Nemotron
 # ═══════════════════════════════════════════════════════════════════
 
+
 def _je_prohibited_content(response_data) -> bool:
     """Provjeri je li Gemini blokirao sadržaj."""
     if not response_data:
@@ -1539,8 +1641,13 @@ def _je_prohibited_content(response_data) -> bool:
     try:
         # promptFeedback.blockReason
         pf = response_data.get("promptFeedback", {})
-        if pf.get("blockReason") in ("PROHIBITED_CONTENT", "SAFETY",
-                                       "OTHER", "RECITATION", "BLOCKLIST"):
+        if pf.get("blockReason") in (
+            "PROHIBITED_CONTENT",
+            "SAFETY",
+            "OTHER",
+            "RECITATION",
+            "BLOCKLIST",
+        ):
             return True
         # candidates.finishReason
         for c in response_data.get("candidates", []):
@@ -1550,14 +1657,19 @@ def _je_prohibited_content(response_data) -> bool:
     except Exception:
         pass
     return False
+
+
 def _posalji_na_gemini_s_kontekstom(system, user, max_tokens, timeout):
     from network.provider_urls import get_gemini_url
+
     """Pošalji Geminiju s kontekstom da je književna scena."""
     try:
-        import urllib.request as _ur, json as _json
+        import json as _json
+        import urllib.request as _ur
 
-        from api_fleet import get_active_fleet, FleetManager
+        from api_fleet import FleetManager, get_active_fleet
         from config.settings import CONFIG_PATH
+
         fleet = get_active_fleet()
         if not fleet:
             fleet = FleetManager(config_path=CONFIG_PATH)
@@ -1584,10 +1696,22 @@ def _posalji_na_gemini_s_kontekstom(system, user, max_tokens, timeout):
                 "maxOutputTokens": min(max_tokens, 4000),
             },
             "safetySettings": [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+                {
+                    "category": "HARM_CATEGORY_HARASSMENT",
+                    "threshold": "BLOCK_ONLY_HIGH",
+                },
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH",
+                    "threshold": "BLOCK_ONLY_HIGH",
+                },
+                {
+                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "threshold": "BLOCK_ONLY_HIGH",
+                },
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_ONLY_HIGH",
+                },
             ],
         }
 

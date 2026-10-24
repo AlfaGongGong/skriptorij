@@ -1,17 +1,20 @@
 """
 core/kalkovi/__init__.py
 """
-from .kalkovi_da import KALKOVI as _DA
-from .ekavizmi import EKAVIZMI as _EKAVIZMI
-from core.kalkovi.pleonazmi import PLEONAZMI
+
 from core.kalkovi.dijalog import DIJALOG
 from core.kalkovi.glagoli import GLAGOLI
+from core.kalkovi.pleonazmi import PLEONAZMI
+
+from .ekavizmi import EKAVIZMI as _EKAVIZMI
+from .kalkovi_da import KALKOVI as _DA
 
 # Dinamički promovirani kalkovi (iz karantene)
 try:
     from core.kalkovi.dinamicki_lista import DINAMICKI_KALKOVI as _DINAMICKI
 except Exception:
     _DINAMICKI = []
+
 
 # FIX 2026-09-25: filtriraj SVE_LISTE — ukloni entry-e koji nisu tuple/list 2+
 def _filtriraj(lista):
@@ -26,6 +29,7 @@ def _filtriraj(lista):
             # String je pattern bez zamjene (rijetko korisno) — preskoči
             continue
     return out
+
 
 SVE_LISTE = (
     _filtriraj(_DA)
@@ -55,6 +59,7 @@ def reload_dinamicki_kalkove() -> int:
     Vraća ukupan broj aktivnih patterna.
     """
     import sys
+
     global _DINAMICKI, SVE_LISTE
 
     mod_name = "core.kalkovi.dinamicki_lista"
@@ -63,6 +68,7 @@ def reload_dinamicki_kalkove() -> int:
 
     try:
         from core.kalkovi.dinamicki_lista import DINAMICKI_KALKOVI as _new_din
+
         _DINAMICKI = _new_din
     except Exception:
         _DINAMICKI = []
@@ -71,24 +77,30 @@ def reload_dinamicki_kalkove() -> int:
 
     try:
         from core.kalkovi.engine import kalkovi_engine
+
         kalkovi_engine.reload(SVE_LISTE)
     except Exception:
         pass
 
     return len(SVE_LISTE)
 
+
 # ── Morfologija blacklist (Korak 3) ────────────────────────────────────────
 try:
     from core.kalkovi.morfologija_blacklist import (
         BLACKLIST_PROMPT_BLOK,
-        HALUCIRANI_OBLICI,
         HALUCINACIJA_WHITELIST,
+        HALUCIRANI_OBLICI,
         skeniraj_halucinacije,
     )
+
     _MORFOLOGIJA_BLACKLIST_DOSTUPNA = True
 except ImportError:
     BLACKLIST_PROMPT_BLOK = ""
     HALUCIRANI_OBLICI = {}
     HALUCINACIJA_WHITELIST = set()
-    def skeniraj_halucinacije(tekst): return []
+
+    def skeniraj_halucinacije(tekst):
+        return []
+
     _MORFOLOGIJA_BLACKLIST_DOSTUPNA = False

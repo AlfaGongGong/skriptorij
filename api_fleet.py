@@ -17,13 +17,11 @@
 
 import json
 import logging
-import time
-import math
 import threading
+import time
 from pathlib import Path
 
 from config.system_logger import syslog
-from config.ai_config import GOOGLE_MODEL_POOL, get_google_model_for_key, get_next_google_model
 from network.quota_tracker import quota_tracker
 
 logger = logging.getLogger(__name__)
@@ -49,29 +47,47 @@ try:
 except ImportError:
     # Fallback ako ai_config ne radi
     ROLE_PREFERRED_PROVIDERS = {
-        "LEKTOR":    ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "TOGETHER", "CHUTES", "GITHUB"],
-        "KOREKTOR":  ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "GITHUB"],
-        "PREVODILAC":["GROQ", "CEREBRAS", "SAMBANOVA", "GEMINI", "MISTRAL", "GITHUB"],
+        "LEKTOR": [
+            "GEMINI",
+            "MISTRAL",
+            "COHERE",
+            "SAMBANOVA",
+            "TOGETHER",
+            "CHUTES",
+            "GITHUB",
+        ],
+        "KOREKTOR": ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "GITHUB"],
+        "PREVODILAC": ["GROQ", "CEREBRAS", "SAMBANOVA", "GEMINI", "MISTRAL", "GITHUB"],
         "VALIDATOR": ["GROQ", "CEREBRAS", "GEMINI", "MISTRAL", "GITHUB"],
-        "ANALIZA":   ["GEMINI", "GROQ", "CEREBRAS", "TOGETHER", "GITHUB"],
-        "GUARDIAN":  ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GITHUB"],
-        "POLISH":    ["GEMINI", "MISTRAL", "COHERE", "TOGETHER", "GITHUB"],
-        "SCORER":    ["GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
+        "ANALIZA": ["GEMINI", "GROQ", "CEREBRAS", "TOGETHER", "GITHUB"],
+        "GUARDIAN": ["GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "GITHUB"],
+        "POLISH": ["GEMINI", "MISTRAL", "COHERE", "TOGETHER", "GITHUB"],
+        "SCORER": ["GEMINI", "MISTRAL", "OPENROUTER", "GITHUB"],
     }
 
 PROVIDER_ORDER = [
-    "GEMINI", "MISTRAL", "COHERE", "SAMBANOVA", "TOGETHER",
-    "FIREWORKS", "CHUTES", "GROQ", "CEREBRAS",
-    "HUGGINGFACE", "KLUSTER", "OPENROUTER", "GITHUB", "GEMMA",
+    "GEMINI",
+    "MISTRAL",
+    "COHERE",
+    "SAMBANOVA",
+    "TOGETHER",
+    "FIREWORKS",
+    "CHUTES",
+    "GROQ",
+    "CEREBRAS",
+    "HUGGINGFACE",
+    "KLUSTER",
+    "OPENROUTER",
+    "GITHUB",
+    "GEMMA",
 ]
-
 
 
 def _check_body_content(provider: str, body) -> tuple:
     """
     FIX: Provjeri je li 200 OK odgovor STVARNO koristan.
     Vraća (is_valid: bool, reason: str).
-    
+
     GEMMA/GEMINI vraćaju 200 s:
       - prazan content (content=null, reasoning_content popunjen) — reasoning model
       - finishReason=PROHIBITED_CONTENT — safety filter
@@ -79,9 +95,9 @@ def _check_body_content(provider: str, body) -> tuple:
     """
     if not isinstance(body, dict):
         return True, ""  # ne možemo provjeriti, tretiraj kao OK
-    
+
     prov_u = provider.upper()
-    
+
     # Gemini/GEMMA native format
     if prov_u in ("GEMINI", "GEMMA"):
         candidates = body.get("candidates", [])
@@ -104,7 +120,7 @@ def _check_body_content(provider: str, body) -> tuple:
         if finish == "MAX_TOKENS":
             return False, "MAX_TOKENS (odrezano)"
         return True, ""
-    
+
     # OpenAI-compat format (GROQ, NVIDIA, CLOUDFLARE, MISTRAL, ...)
     choices = body.get("choices", [])
     if not choices:
@@ -115,17 +131,17 @@ def _check_body_content(provider: str, body) -> tuple:
         return False, "content_filter"
     msg = choice.get("message", {})
     content = msg.get("content") if isinstance(msg, dict) else None
-    
+
     # Reasoning modeli (muse-glimmer, nemotron): content=null, reasoning_content popunjen
     if not content or not str(content).strip():
         reasoning = msg.get("reasoning_content") if isinstance(msg, dict) else None
         if reasoning:
             return False, "reasoning-only (content=null)"
         return False, "prazan content"
-    
+
     if finish == "length":
         return False, "length (odrezano)"
-    
+
     return True, ""
 
 
@@ -133,16 +149,18 @@ class KeyState:
     """Stanje jednog API ključa — sadrži samo pozivne brojače."""
 
     def __init__(self, key: str, provider: str, saved: dict = None):
-        self.key      = key
+        self.key = key
         self.provider = provider.upper()
         s = saved or {}
 
-        self.total_requests: int   = 0  # FIX: pozivi se ne cuvaju izmedju sesija, uvijek 0 na startu
-        self.last_used:      float = s.get("last_used", 0.0)
+        self.total_requests: int = (
+            0  # FIX: pozivi se ne cuvaju izmedju sesija, uvijek 0 na startu
+        )
+        self.last_used: float = s.get("last_used", 0.0)
 
-        self.calls_ok:       int  = s.get("calls_ok", 0)
+        self.calls_ok: int = s.get("calls_ok", 0)
         self._last_503_time: float = 0.0  # FIX sve_fix: zadnji 503 timestamp
-        self.calls_failed:   int  = s.get("calls_failed", 0)
+        self.calls_failed: int = s.get("calls_failed", 0)
         self.calls_rejected: dict = {
             int(k): int(v)
             for k, v in s.get("calls_rejected", {}).items()
@@ -155,7 +173,9 @@ class KeyState:
         if not ok:
             logger.debug(
                 "[FleetManager] %s ...%s nedostupan: %s",
-                self.provider, self.key[-4:], reason,
+                self.provider,
+                self.key[-4:],
+                reason,
             )
         return ok
 
@@ -182,29 +202,29 @@ class KeyState:
     def to_dict(self) -> dict:
         return {
             "total_requests": self.total_requests,
-            "last_used":      self.last_used,
-            "calls_ok":       self.calls_ok,
-            "calls_failed":   self.calls_failed,
+            "last_used": self.last_used,
+            "calls_ok": self.calls_ok,
+            "calls_failed": self.calls_failed,
             "calls_rejected": {str(k): v for k, v in self.calls_rejected.items()},
         }
 
     def to_ui_dict(self) -> dict:
         qi = self.quota_info()
         return {
-            "key":            self.masked,
-            "masked":         self.masked,
-            "available":      self.available,
-            "success_rate":   self.success_rate,
-            "calls_ok":       self.calls_ok,
-            "calls_failed":   self.calls_failed,
+            "key": self.masked,
+            "masked": self.masked,
+            "available": self.available,
+            "success_rate": self.success_rate,
+            "calls_ok": self.calls_ok,
+            "calls_failed": self.calls_failed,
             "calls_rejected": {str(k): v for k, v in self.calls_rejected.items()},
             "total_requests": self.total_requests,
-            "rpm":            qi.get("rpm_current", 0),
-            "rpm_safe":       qi.get("rpm_safe", 0),
-            "rpd":            qi.get("rpd_current", 0),
-            "rpd_safe":       qi.get("rpd_safe", 0),
-            "tpd":            qi.get("tpd_current", 0),
-            "cooldown_s":     qi.get("cooldown_s", 0.0),
+            "rpm": qi.get("rpm_current", 0),
+            "rpm_safe": qi.get("rpm_safe", 0),
+            "rpd": qi.get("rpd_current", 0),
+            "rpd_safe": qi.get("rpd_safe", 0),
+            "tpd": qi.get("tpd_current", 0),
+            "cooldown_s": qi.get("cooldown_s", 0.0),
             "cooldown_reason": qi.get("cooldown_reason", ""),
         }
 
@@ -214,8 +234,8 @@ class FleetManager:
 
     def __init__(self, config_path="dev_api.json", state_path="api_state.json"):
         self.config_path = Path(config_path)
-        self.state_path  = Path(state_path)
-        self.lock        = threading.Lock()
+        self.state_path = Path(state_path)
+        self.lock = threading.Lock()
         self.fleet: dict = {}
         self.resolved_models: dict = {}
         self._rr_index: dict = {}
@@ -234,11 +254,17 @@ class FleetManager:
             raw = json.loads(self.config_path.read_text("utf-8"))
             logger.debug("[FleetManager] Konfiguracija učitana iz %s", self.config_path)
         except Exception as e:
-            logger.warning("[FleetManager] Nije moguće učitati konfiguraciju (%s): %s — flota prazna", self.config_path, e)
+            logger.warning(
+                "[FleetManager] Nije moguće učitati konfiguraciju (%s): %s — flota prazna",
+                self.config_path,
+                e,
+            )
             raw = {}
         try:
             saved = json.loads(self.state_path.read_text("utf-8"))
-            logger.debug("[FleetManager] Stanje ključeva učitano iz %s", self.state_path)
+            logger.debug(
+                "[FleetManager] Stanje ključeva učitano iz %s", self.state_path
+            )
         except Exception:
             saved = {}
 
@@ -247,6 +273,7 @@ class FleetManager:
         # Fallback: ako GEMMA nema vlastite ključeve, koristi GEMINI
         # (backward compat za stare konfiguracije bez odvojenog GEMMA poola).
         if "GEMINI" in raw:
+
             def _as_key_list(v):
                 if isinstance(v, list):
                     return [k for k in v if isinstance(k, str) and k.strip()]
@@ -263,13 +290,14 @@ class FleetManager:
                 return []
 
             _gemini_list = _as_key_list(raw["GEMINI"])
-            _gemma_list  = _as_key_list(raw.get("GEMMA"))
+            _gemma_list = _as_key_list(raw.get("GEMMA"))
             if _gemma_list:
                 # GEMMA ima svoj pool — koristi samo njega
                 raw["GEMMA"] = _gemma_list
                 logger.debug(
                     "[FleetManager] GEMMA pool: %d vlastitih ključeva (odvojeno od GEMINI %d)",
-                    len(_gemma_list), len(_gemini_list),
+                    len(_gemma_list),
+                    len(_gemini_list),
                 )
             else:
                 # Backward compat: GEMMA nema svoje ključeve → dijeli GEMINI
@@ -286,7 +314,7 @@ class FleetManager:
             prov_u = prov.upper()
             if prov_u in {"EPUB_BACKGROUND", "PROXIES", "PROXIES_OFF"}:
                 continue
-            self.fleet[prov_u]    = []
+            self.fleet[prov_u] = []
             self._rr_index[prov_u] = 0
 
             key_list = []
@@ -306,27 +334,34 @@ class FleetManager:
                 self.fleet[prov_u].append(
                     KeyState(k_str, prov_u, prov_saved.get(k_str))
                 )
-            logger.info("[FleetManager] %s: %d ključ(a) učitan(o)", prov_u, len(key_list))
-            syslog.info("[FleetManager] %s: %d ključ(a) učitan(o)", prov_u, len(key_list))
+            logger.info(
+                "[FleetManager] %s: %d ključ(a) učitan(o)", prov_u, len(key_list)
+            )
+            syslog.info(
+                "[FleetManager] %s: %d ključ(a) učitan(o)", prov_u, len(key_list)
+            )
 
         quota_tracker.initialize_from_fleet(self.fleet)
         syslog.info("[FleetManager] QuotaTracker inicijaliziran iz flote")
 
     def _resolve_models(self):
         from network.model_discovery import FALLBACK_MODELS
+
         self.resolved_models = dict(FALLBACK_MODELS)
 
     def _save_state(self):
         with self._save_lock:
             self._dirty = True
-            now     = time.time()
+            now = time.time()
             elapsed = now - self._last_save_time
             if elapsed >= _STATE_DEBOUNCE_INTERVAL:
                 self._flush_state()
             else:
                 if self._debounce_timer is None or not self._debounce_timer.is_alive():
                     remaining = _STATE_DEBOUNCE_INTERVAL - elapsed
-                    self._debounce_timer = threading.Timer(remaining, self._flush_state_safe)
+                    self._debounce_timer = threading.Timer(
+                        remaining, self._flush_state_safe
+                    )
                     self._debounce_timer.daemon = True
                     self._debounce_timer.start()
 
@@ -334,8 +369,7 @@ class FleetManager:
         if not self._dirty:
             return
         state = {
-            p: {ks.key: ks.to_dict() for ks in keys}
-            for p, keys in self.fleet.items()
+            p: {ks.key: ks.to_dict() for ks in keys} for p, keys in self.fleet.items()
         }
         try:
             self.state_path.write_text(
@@ -345,7 +379,9 @@ class FleetManager:
             self._dirty = False
             logger.debug("[FleetManager] Stanje flushed u %s", self.state_path)
         except Exception as e:
-            logger.error("[FleetManager] Nije moguće snimiti stanje u %s: %s", self.state_path, e)
+            logger.error(
+                "[FleetManager] Nije moguće snimiti stanje u %s: %s", self.state_path, e
+            )
 
     def _flush_state_safe(self):
         with self._save_lock:
@@ -366,8 +402,8 @@ class FleetManager:
     def get_active_model(self, provider_upper: str, static_fallback: str = "") -> str:
         from network.model_discovery import (
             get_cached_model,
-            get_dead_models,
             get_cached_model_list,
+            get_dead_models,
             trigger_rediscover_background,
         )
 
@@ -388,6 +424,7 @@ class FleetManager:
         if not fallback:
             try:
                 from config.ai_config import MODEL_MAP as _MM
+
                 fallback = _MM.get(prov, "")
             except Exception:
                 pass
@@ -413,14 +450,13 @@ class FleetManager:
             keys = self.fleet.get(prov_u, [])
             if not keys:
                 # FIX 2026-09-26: DEBUG umjesto WARNING
-                logger.debug("[FleetManager] get_best_key(%s): nema ključeva u floti", prov_u)
+                logger.debug(
+                    "[FleetManager] get_best_key(%s): nema ključeva u floti", prov_u
+                )
                 return None
 
             # FIX #6: 503 filter unutar lock-a
-            keys = [
-                k for k in keys
-                if (now - getattr(k, "_last_503_time", 0)) >= 60.0
-            ]
+            keys = [k for k in keys if (now - getattr(k, "_last_503_time", 0)) >= 60.0]
             if not keys:
                 logger.warning(
                     "[FleetManager] %s: svi ključevi 503-hladni (<60s)", prov_u
@@ -435,11 +471,13 @@ class FleetManager:
                     reasons.append(f"...{ks.key[-4:]}: {reason}")
                 syslog.warning(
                     "[FleetManager] %s: svi ključevi nedostupni — %s",
-                    prov_u, " | ".join(reasons),
+                    prov_u,
+                    " | ".join(reasons),
                 )
                 logger.warning(
                     "[FleetManager] get_best_key(%s): svi ključevi nedostupni (%d ključ(a))",
-                    prov_u, len(keys),
+                    prov_u,
+                    len(keys),
                 )
                 return None
 
@@ -448,17 +486,25 @@ class FleetManager:
             # Problem: kad available raste/pada (cooldown dolazi/odlazi) wraparound skoči
             # na isti ključ više puta uzastopno. Rješenje: rr je monotoni brojač,
             # biramo available[rr % len(available)] i inkrementujemo za 1.
-            rr  = self._rr_index.get(prov_u, 0)
+            rr = self._rr_index.get(prov_u, 0)
             idx = rr % len(available)
             chosen = available[idx]
             self._rr_index[prov_u] = rr + 1
             logger.debug(
                 "[FleetManager] get_best_key(%s): odabran ...%s (success_rate=%.2f, %d/%d dostupno)",
-                prov_u, chosen.key[-4:], chosen.success_rate, len(available), len(keys),
+                prov_u,
+                chosen.key[-4:],
+                chosen.success_rate,
+                len(available),
+                len(keys),
             )
             syslog.debug(
                 "[FleetManager] get_best_key(%s): odabran ...%s (sr=%.2f, %d/%d dostupno)",
-                prov_u, chosen.key[-4:], chosen.success_rate, len(available), len(keys),
+                prov_u,
+                chosen.key[-4:],
+                chosen.success_rate,
+                len(available),
+                len(keys),
             )
             return chosen.key
 
@@ -467,17 +513,19 @@ class FleetManager:
         # u 90 min za SAMBANOVA/MISTRAL koji uopće nemaju ključeve u dev_api.json).
         preferred = ROLE_PREFERRED_PROVIDERS.get(role.upper(), PROVIDER_ORDER)
         with self.lock:
-            available_provs = {
-                p.upper() for p, keys in self.fleet.items() if keys
-            }
+            available_provs = {p.upper() for p, keys in self.fleet.items() if keys}
         # Filtriraj na providere koji imaju ključeve
         for prov in preferred:
             if prov.upper() not in available_provs:
                 continue
             key = self.get_best_key(prov)
             if key:
-                logger.debug("[FleetManager] get_best_key_for_role(%s): odabran %s ...%s",
-                             role, prov, key[-4:])
+                logger.debug(
+                    "[FleetManager] get_best_key_for_role(%s): odabran %s ...%s",
+                    role,
+                    prov,
+                    key[-4:],
+                )
                 return prov, key
         for prov in PROVIDER_ORDER:
             if prov.upper() not in available_provs:
@@ -485,8 +533,12 @@ class FleetManager:
             if prov not in preferred:
                 key = self.get_best_key(prov)
                 if key:
-                    logger.debug("[FleetManager] get_best_key_for_role(%s) fallback: %s ...%s",
-                                 role, prov, key[-4:])
+                    logger.debug(
+                        "[FleetManager] get_best_key_for_role(%s) fallback: %s ...%s",
+                        role,
+                        prov,
+                        key[-4:],
+                    )
                     return prov, key
         logger.warning(
             "[FleetManager] get_best_key_for_role(%s): nema dostupnih ključeva",
@@ -520,8 +572,9 @@ class FleetManager:
                 ks.calls_failed += 1
                 return
 
-
-    def record_usage(self, provider: str, key: str, req_count: int = 1, success: bool = True):
+    def record_usage(
+        self, provider: str, key: str, req_count: int = 1, success: bool = True
+    ):
         prov_u = provider.upper()
         with self.lock:
             ks = self._find_key(prov_u, key)
@@ -541,7 +594,9 @@ class FleetManager:
                 ks.calls_failed += 1
         self._save_state()
 
-    def analyze_response(self, provider: str, key: str, status_code: int, headers, body=None):
+    def analyze_response(
+        self, provider: str, key: str, status_code: int, headers, body=None
+    ):
         """
         Ažurira pozivne brojače ključa prema HTTP status kodu.
         Poziva QuotaTracker koji upravlja cooldown-om i kvotama.
@@ -558,8 +613,8 @@ class FleetManager:
                 tokens = int(usage.get("total_tokens", 0) or 0)
                 if tokens == 0:
                     tokens = int(
-                        (usage.get("prompt_tokens") or 0) +
-                        (usage.get("completion_tokens") or 0)
+                        (usage.get("prompt_tokens") or 0)
+                        + (usage.get("completion_tokens") or 0)
                     )
             if tokens == 0:
                 # Gemini native API
@@ -593,7 +648,9 @@ class FleetManager:
                         # bez eksplicitne RPD oznake u message-u. Ovo je dovelo do
                         # 2x 12h blokade svih kljuceva 23.10.2026.
                         if _retry_val > 3600:
-                            _err_msg_check = str(body.get("error", {}).get("message", "")).lower()
+                            _err_msg_check = str(
+                                body.get("error", {}).get("message", "")
+                            ).lower()
                             _is_rpd_hint = (
                                 "rpd" in _err_msg_check
                                 or "per day" in _err_msg_check
@@ -605,20 +662,27 @@ class FleetManager:
                                 logger.warning(
                                     "[FleetManager] %s ...%s retryDelay %.0fs "
                                     "(RPD eksplicitno) — cooldown %.1fh",
-                                    prov_u, key[-4:], _retry_val, _retry_val / 3600,
+                                    prov_u,
+                                    key[-4:],
+                                    _retry_val,
+                                    _retry_val / 3600,
                                 )
                             else:
                                 retry_after = 60.0
                                 logger.warning(
                                     "[FleetManager] %s ...%s retryDelay %.0fs "
                                     "(>1h, nije RPD) — RPM 60s (sprecena 10h blokada)",
-                                    prov_u, key[-4:], _retry_val,
+                                    prov_u,
+                                    key[-4:],
+                                    _retry_val,
                                 )
                         else:
                             retry_after = _retry_val
                             logger.info(
                                 "[FleetManager] %s ...%s retryDelay iz body-a: %.0fs",
-                                prov_u, key[-4:], retry_after,
+                                prov_u,
+                                key[-4:],
+                                retry_after,
                             )
                         break
             except Exception:
@@ -632,8 +696,8 @@ class FleetManager:
             # RPD SAMO ako Google eksplicitno kaze "rpd", "daily", "per day",
             # ili retry_after > 3600 (1h).
             if retry_after is None:
-                err_msg    = str(body.get("error", {}).get("message", "")).lower()
-                err_status = str(body.get("error", {}).get("status",  "").lower())
+                err_msg = str(body.get("error", {}).get("message", "")).lower()
+                err_status = str(body.get("error", {}).get("status", "").lower())
                 if "resource_exhausted" in err_status or "quota" in err_msg:
                     # Eksplicitna RPD detekcija
                     _is_explicit_rpd = (
@@ -645,7 +709,8 @@ class FleetManager:
                     if _is_explicit_rpd:
                         # Google je rekao RPD — cooldown do ponoci UTC
                         import datetime
-                        utc_now  = datetime.datetime.utcnow()
+
+                        utc_now = datetime.datetime.utcnow()
                         midnight = (utc_now + datetime.timedelta(days=1)).replace(
                             hour=0, minute=0, second=0, microsecond=0
                         )
@@ -653,12 +718,15 @@ class FleetManager:
                         logger.warning(
                             "[FleetManager] %s ...%s RPD iscrpljen (eksplicitno) "
                             "— cooldown do ponoci UTC %.1fh",
-                            prov_u, key[-4:], retry_after / 3600,
+                            prov_u,
+                            key[-4:],
+                            retry_after / 3600,
                         )
                         syslog.warning(
-                            "[FleetManager] %s ...%s RPD iscrpljen "
-                            "— cooldown %.1fh",
-                            prov_u, key[-4:], retry_after / 3600,
+                            "[FleetManager] %s ...%s RPD iscrpljen — cooldown %.1fh",
+                            prov_u,
+                            key[-4:],
+                            retry_after / 3600,
                         )
                     else:
                         # Nije eksplicitno RPD — uvek RPM 60s
@@ -666,7 +734,8 @@ class FleetManager:
                         logger.info(
                             "[FleetManager] %s ...%s 429 bez RPD oznake "
                             "— RPM cooldown 60s",
-                            prov_u, key[-4:],
+                            prov_u,
+                            key[-4:],
                         )
 
                 # FIX 21.05.2026: RATE_LIMIT_EXCEEDED (RPM 429) — nema retryDelay ni header.
@@ -675,18 +744,23 @@ class FleetManager:
                 elif "rate_limit_exceeded" in err_status or "rate limit" in err_msg:
                     try:
                         from config.ai_config import get_cooldown_429
+
                         retry_after = get_cooldown_429(prov_u)
                     except Exception:
                         retry_after = 15.0
                     logger.info(
                         "[FleetManager] %s ...%s RATE_LIMIT_EXCEEDED bez retryDelay "
                         "— cooldown iz profila: %.0fs",
-                        prov_u, key[-4:], retry_after,
+                        prov_u,
+                        key[-4:],
+                        retry_after,
                     )
                     syslog.warning(
                         "[FleetManager] %s ...%s RPM 429 RATE_LIMIT_EXCEEDED "
                         "— cooldown %.0fs",
-                        prov_u, key[-4:], retry_after,
+                        prov_u,
+                        key[-4:],
+                        retry_after,
                     )
 
         # QuotaTracker — cooldown, kvote, tokeni
@@ -718,23 +792,34 @@ class FleetManager:
                     ks.last_used = time.time()
                     logger.warning(
                         "[FleetManager] %s ...%s → 200 ali nevalidan: %s (failed=%d)",
-                        prov_u, key[-4:], _reason, ks.calls_failed,
+                        prov_u,
+                        key[-4:],
+                        _reason,
+                        ks.calls_failed,
                     )
                     syslog.warning(
                         "[FleetManager] %s ...%s → 200 ali nevalidan: %s",
-                        prov_u, key[-4:], _reason,
+                        prov_u,
+                        key[-4:],
+                        _reason,
                     )
                     try:
                         # (globalni import vec postoji)
                         # FIX #8: ispravni pozivi — set_key_cooldown postoji,
                         # record_error na QuotaTracker ne postoji.
                         # 2026-10-24 FIX A: MAX_TOKENS/length ne cooldownira kljuc
-                        _is_trunc = "MAX_TOKENS" in _reason or "length" in _reason.lower() or "truncat" in _reason.lower()
+                        _is_trunc = (
+                            "MAX_TOKENS" in _reason
+                            or "length" in _reason.lower()
+                            or "truncat" in _reason.lower()
+                        )
                         if not _is_trunc:
                             quota_tracker.set_key_cooldown(prov_u, key, 90.0, _reason)
                         logger.debug(
                             "[FleetManager] %s ...%s nevalidan 200 — cooldown 90s (%s)",
-                            prov_u, key[-4:], _reason,
+                            prov_u,
+                            key[-4:],
+                            _reason,
                         )
                     except Exception as e:
                         logger.debug(
@@ -744,32 +829,52 @@ class FleetManager:
                     ks.calls_ok += 1
                     logger.debug(
                         "[FleetManager] %s ...%s → 200 OK (ok=%d, tokeni=%d)",
-                        prov_u, key[-4:], ks.calls_ok, tokens,
+                        prov_u,
+                        key[-4:],
+                        ks.calls_ok,
+                        tokens,
                     )
                     syslog.debug(
                         "[FleetManager] %s ...%s → 200 OK (ok=%d, tokeni=%d)",
-                        prov_u, key[-4:], ks.calls_ok, tokens,
+                        prov_u,
+                        key[-4:],
+                        ks.calls_ok,
+                        tokens,
                     )
             elif status_code >= 500:
                 ks.calls_failed += 1
                 logger.warning(
                     "[FleetManager] %s ...%s → %d server error (failed=%d)",
-                    prov_u, key[-4:], status_code, ks.calls_failed,
+                    prov_u,
+                    key[-4:],
+                    status_code,
+                    ks.calls_failed,
                 )
                 syslog.warning(
                     "[FleetManager] %s ...%s → %d server error (failed=%d)",
-                    prov_u, key[-4:], status_code, ks.calls_failed,
+                    prov_u,
+                    key[-4:],
+                    status_code,
+                    ks.calls_failed,
                 )
             elif status_code >= 400:
-                ks.calls_rejected[status_code] = ks.calls_rejected.get(status_code, 0) + 1
+                ks.calls_rejected[status_code] = (
+                    ks.calls_rejected.get(status_code, 0) + 1
+                )
                 logger.warning(
                     "[FleetManager] %s ...%s → %d odbijen (rejected[%d]=%d)",
-                    prov_u, key[-4:], status_code, status_code,
+                    prov_u,
+                    key[-4:],
+                    status_code,
+                    status_code,
                     ks.calls_rejected[status_code],
                 )
                 syslog.warning(
                     "[FleetManager] %s ...%s → %d odbijen (rejected[%d]=%d, retry_after=%s)",
-                    prov_u, key[-4:], status_code, status_code,
+                    prov_u,
+                    key[-4:],
+                    status_code,
+                    status_code,
                     ks.calls_rejected[status_code],
                     f"{retry_after:.0f}s" if retry_after else "n/a",
                 )
@@ -781,8 +886,8 @@ class FleetManager:
             summary = {}
             for prov, keys in self.fleet.items():
                 summary[prov] = {
-                    "total":        len(keys),
-                    "calls_ok":     sum(k.calls_ok for k in keys),
+                    "total": len(keys),
+                    "calls_ok": sum(k.calls_ok for k in keys),
                     "calls_failed": sum(k.calls_failed for k in keys),
                 }
         return summary
@@ -790,7 +895,11 @@ class FleetManager:
     @staticmethod
     def _prov_ui_entry(keys: list) -> dict:
         ui_keys = [ks.to_ui_dict() for ks in keys]
-        sr = round(sum(k["success_rate"] for k in ui_keys) / len(ui_keys), 4) if ui_keys else 1.0
+        sr = (
+            round(sum(k["success_rate"] for k in ui_keys) / len(ui_keys), 4)
+            if ui_keys
+            else 1.0
+        )
         return {"total": len(keys), "success_rate": sr, "keys": ui_keys}
 
     def get_fleet_ui(self) -> dict:
@@ -810,15 +919,10 @@ class FleetManager:
         # PROBLEM #2 fix: broji samo dostupne ključeve (available=True),
         # ne sve — ključevi u cooldownu ne smiju utjecati na window_size
         with self.lock:
-            return sum(
-                1 for keys in self.fleet.values()
-                for ks in keys if ks.available
-            )
+            return sum(1 for keys in self.fleet.values() for ks in keys if ks.available)
 
     def _find_key(self, prov_u: str, key_str: str):
         for ks in self.fleet.get(prov_u, []):
             if ks.key == key_str:
                 return ks
         return None
-
-

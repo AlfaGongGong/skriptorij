@@ -1,17 +1,25 @@
-import os
 import json
+import os
 import re
-import time
 import threading
+import time
 import traceback
-import requests
 from pathlib import Path
+
+import requests
 from flask import (
-    Flask, make_response, redirect, render_template,
-    request, jsonify, send_file,
+    Flask,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    send_file,
 )
+
 from api_fleet import FleetManager
 from utils.file_utils import secure_filename as _secure_filename
+
 
 def _rebuild_epub(eng, shared_stats: dict, shared_controls: dict) -> None:
     """
@@ -19,6 +27,7 @@ def _rebuild_epub(eng, shared_stats: dict, shared_controls: dict) -> None:
     Poziva se iz RETRO i REBUILD_EPUB modova.
     """
     from epub.packager import finalize
+
     try:
         eng.buildlive_epub()
     except Exception:
@@ -36,16 +45,18 @@ _fleet_fallback = FleetManager(config_path=_CONFIG_PATH)
 
 # FIX: Registruj fleet kao aktivan — bez ovoga _reload_active_fleet() ne radi,
 # pa dodavanje/brisanje ključeva kroz UI ne osvježava prikaz flote.
+import logging
+
 from api_fleet import register_active_fleet
 
-import logging
 logger = logging.getLogger("booklyfi.app")
 register_active_fleet(_fleet_fallback)
 
 # Pokreni background discovery modela ODMAH pri startu servera,
 # ne cekaj prvi SkriptorijAllInOne init. Tako kes bude pun prije obrade.
 try:
-    from network.model_discovery import start_background_discovery, prime_cache_sync
+    from network.model_discovery import prime_cache_sync, start_background_discovery
+
     # Sinhrono popuni cache PRIJE background thread-a (10s po provajderu max)
     prime_cache_sync(_fleet_fallback.fleet)
     start_background_discovery(_fleet_fallback.fleet)
@@ -56,28 +67,41 @@ except Exception as _e:
 
 def _get_fleet() -> FleetManager:
     import api_fleet as _af
+
     return _af._active_fleet if _af._active_fleet is not None else _fleet_fallback
 
 
 # ── Shared state ─────────────────────────────────────────────────────────────
 try:
     from config.settings import (
-        SHARED_STATS, SHARED_CONTROLS,
-        INPUT_DIR, OUTPUT_DIR, SERVER_RUN_ID,
         CHECKPOINT_BASE_DIR,
+        INPUT_DIR,
+        OUTPUT_DIR,
+        SERVER_RUN_ID,
+        SHARED_CONTROLS,
+        SHARED_STATS,
     )
 except ImportError:
-    INPUT_DIR  = Path("data")
+    INPUT_DIR = Path("data")
     OUTPUT_DIR = Path("data")
     SERVER_RUN_ID = "dev"
     CHECKPOINT_BASE_DIR = Path("data/_checkpoints")
     SHARED_STATS: dict = {
-        "status": "IDLE", "pct": 0, "ok": "0 / 0", "skipped": 0,
-        "current_file": "", "active_engine": "---",
+        "status": "IDLE",
+        "pct": 0,
+        "ok": "0 / 0",
+        "skipped": 0,
+        "current_file": "",
+        "active_engine": "---",
         "fleet_active": 0,
-        "live_audit": "", "output_file": "", "output_dir": "data",
-        "est": "--:--:--", "quality_scores": {}, "glosar_problemi": {},
-        "knjiga_mode": None, "knjiga_mode_info": "",
+        "live_audit": "",
+        "output_file": "",
+        "output_dir": "data",
+        "est": "--:--:--",
+        "quality_scores": {},
+        "glosar_problemi": {},
+        "knjiga_mode": None,
+        "knjiga_mode_info": "",
     }
     SHARED_CONTROLS: dict = {"stop": False, "pause": False, "reset": False}
 
@@ -89,17 +113,20 @@ _MAX_PING_ERROR_LEN = 120
 
 # ── Pomoćne ──────────────────────────────────────────────────────────────────
 
+
 def _list_books() -> list[dict]:
     base = Path(INPUT_DIR)
     exts = {".epub", ".mobi"}
     books = []
     for p in sorted(base.glob("*")):
         if p.suffix.lower() in exts and not p.name.startswith("(LIVE)"):
-            books.append({
-                "name": p.name,
-                "path": str(p),
-                "size_bytes": p.stat().st_size,
-            })
+            books.append(
+                {
+                    "name": p.name,
+                    "path": str(p),
+                    "size_bytes": p.stat().st_size,
+                }
+            )
     return books
 
 
@@ -137,7 +164,11 @@ def _get_checkpoint_count(book_path: Path) -> tuple[int, Path | None]:
         work_dir = CHECKPOINT_BASE_DIR / f"_skr_{stem}"
         if work_dir.exists():
             checkpoint_dir = work_dir / "checkpoints"
-            count = len(list(checkpoint_dir.glob("*.chk"))) if checkpoint_dir.exists() else 0
+            count = (
+                len(list(checkpoint_dir.glob("*.chk")))
+                if checkpoint_dir.exists()
+                else 0
+            )
             return count, checkpoint_dir
 
     # Fuzzy
@@ -145,7 +176,9 @@ def _get_checkpoint_count(book_path: Path) -> tuple[int, Path | None]:
     if candidates:
         work_dir = candidates[0]
         checkpoint_dir = work_dir / "checkpoints"
-        count = len(list(checkpoint_dir.glob("*.chk"))) if checkpoint_dir.exists() else 0
+        count = (
+            len(list(checkpoint_dir.glob("*.chk"))) if checkpoint_dir.exists() else 0
+        )
         return count, checkpoint_dir
 
     return 0, None
@@ -154,11 +187,13 @@ def _get_checkpoint_count(book_path: Path) -> tuple[int, Path | None]:
 def _obrisi_checkpoint_i_kes(book: str) -> dict:
     """Briše cijeli _skr_ direktorij za datu knjigu."""
     from utils.checkpoint_cleaner import full_reset
+
     stem = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(book).stem)
     return full_reset(stem)
 
 
 # ── App factory ───────────────────────────────────────────────────────────────
+
 
 def create_app() -> Flask:
     os.makedirs(INPUT_DIR, exist_ok=True)
@@ -232,10 +267,14 @@ def create_app() -> Flask:
             try:
                 raw = json.loads(Path("dev_api.json").read_text("utf-8"))
                 has_keys = {
-                    prov.upper() for prov, v in raw.items()
+                    prov.upper()
+                    for prov, v in raw.items()
                     if prov.upper() not in {"EPUB_BACKGROUND", "PROXIES", "PROXIES_OFF"}
                     and (
-                        (isinstance(v, list) and any(k.strip() for k in v if isinstance(k, str)))
+                        (
+                            isinstance(v, list)
+                            and any(k.strip() for k in v if isinstance(k, str))
+                        )
                         or (isinstance(v, dict) and v)
                     )
                 }
@@ -243,9 +282,19 @@ def create_app() -> Flask:
                     models.append("V10_TURBO")
                     models.append("V8_TURBO")
                     for prov in [
-                        "GEMINI", "GROQ", "CEREBRAS", "MISTRAL", "SAMBANOVA",
-                        "TOGETHER", "OPENROUTER", "COHERE", "CHUTES",
-                        "HUGGINGFACE", "KLUSTER", "FIREWORKS", "GEMMA",
+                        "GEMINI",
+                        "GROQ",
+                        "CEREBRAS",
+                        "MISTRAL",
+                        "SAMBANOVA",
+                        "TOGETHER",
+                        "OPENROUTER",
+                        "COHERE",
+                        "CHUTES",
+                        "HUGGINGFACE",
+                        "KLUSTER",
+                        "FIREWORKS",
+                        "GEMMA",
                     ]:
                         if prov in has_keys:
                             models.append(prov)
@@ -272,22 +321,28 @@ def create_app() -> Flask:
                 elif not _book:
                     # Probaj iz live_audit
                     import re as _re
+
                     _la = SHARED_STATS.get("live_audit", "")
                     _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
                     if _m:
                         _name = _m.group(1)
-                        _name = _re.sub(r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE)
+                        _name = _re.sub(
+                            r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE
+                        )
                         _name = _re.sub(r"--.*$", "", _name).replace("_", " ").strip()
                         if _name:
                             SHARED_STATS["book_name"] = _name
                 elif _book.endswith(".html"):
                     # Izvuci iz live_audit
                     import re as _re
+
                     _la = SHARED_STATS.get("live_audit", "")
                     _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
                     if _m:
                         _name = _m.group(1)
-                        _name = _re.sub(r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE)
+                        _name = _re.sub(
+                            r"_[a-f0-9]{20,}", "", _name, flags=_re.IGNORECASE
+                        )
                         _name = _re.sub(r"--.*$", "", _name).replace("_", " ").strip()
                         if _name:
                             SHARED_STATS["book_name"] = _name
@@ -314,6 +369,7 @@ def create_app() -> Flask:
             if not book_name and current_file:
                 if current_file.endswith(".html") or current_file.endswith(".xhtml"):
                     import re as _re
+
                     _la = SHARED_STATS.get("live_audit", "")
                     _m = _re.search(r"Engine inicijaliziran:\s*([^\s<]+\.epub)", _la)
                     if _m:
@@ -321,14 +377,16 @@ def create_app() -> Flask:
                 else:
                     book_name = current_file
 
-            return jsonify({
-                **SHARED_STATS,
-                "book_name":       book_name,
-                "current_file":    current_file,
-                "quality_scores":  normalized_qs,
-                "fleet_active":    total_keys,
-                "output_dir":      str(OUTPUT_DIR),
-            })
+            return jsonify(
+                {
+                    **SHARED_STATS,
+                    "book_name": book_name,
+                    "current_file": current_file,
+                    "quality_scores": normalized_qs,
+                    "fleet_active": total_keys,
+                    "output_dir": str(OUTPUT_DIR),
+                }
+            )
         except Exception as e:
             return jsonify({**SHARED_STATS, "error": str(e)}), 500
 
@@ -344,16 +402,17 @@ def create_app() -> Flask:
                 return jsonify({"count": 0})
 
             book_path = (
-                Path(book) if Path(book).is_absolute()
-                else Path(INPUT_DIR) / book
+                Path(book) if Path(book).is_absolute() else Path(INPUT_DIR) / book
             )
             count, checkpoint_dir = _get_checkpoint_count(book_path)
 
-            return jsonify({
-                "count": count,
-                "book": book_path.stem,
-                "checkpoint_dir": str(checkpoint_dir) if checkpoint_dir else None,
-            })
+            return jsonify(
+                {
+                    "count": count,
+                    "book": book_path.stem,
+                    "checkpoint_dir": str(checkpoint_dir) if checkpoint_dir else None,
+                }
+            )
         except Exception as e:
             return jsonify({"count": 0, "error": str(e)}), 200
 
@@ -390,26 +449,34 @@ def create_app() -> Flask:
         prosjek = round(sum(vals) / len(vals), 2) if vals else None
         losi = {k: v for k, v in scores.items() if v < 6.5}
 
-        return jsonify({
-            "scores": scores,
-            "loši_blokovi": losi,
-            "statistike": {
-                "prosječan": prosjek,
-                "ukupno": len(scores),
-                "loših": len(losi),
-            },
-            "glosar_problemi": SHARED_STATS.get("glosar_problemi", {}),
-        })
+        return jsonify(
+            {
+                "scores": scores,
+                "loši_blokovi": losi,
+                "statistike": {
+                    "prosječan": prosjek,
+                    "ukupno": len(scores),
+                    "loših": len(losi),
+                },
+                "glosar_problemi": SHARED_STATS.get("glosar_problemi", {}),
+            }
+        )
 
     @app.route("/api/quality_scores")
     def api_quality_scores():
         try:
             # ?book= param — ako je dat, vrati podatke za tu knjigu
             from flask import request as _req_qs
+
             _book_req = _req_qs.args.get("book", "").strip()
             if _book_req:
                 _clean_qs = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(_book_req).stem)
-                _qs_path = CHECKPOINT_BASE_DIR / f"_skr_{_clean_qs}" / "checkpoints" / "quality_scores.json"
+                _qs_path = (
+                    CHECKPOINT_BASE_DIR
+                    / f"_skr_{_clean_qs}"
+                    / "checkpoints"
+                    / "quality_scores.json"
+                )
                 if _qs_path.exists():
                     scores_raw = json.loads(_qs_path.read_text("utf-8"))
                 else:
@@ -422,7 +489,12 @@ def create_app() -> Flask:
                     output_file = SHARED_STATS.get("output_file", "")
                     if output_file:
                         stem = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(output_file).stem)
-                        qs_candidate = CHECKPOINT_BASE_DIR / f"_skr_{stem}" / "checkpoints" / "quality_scores.json"
+                        qs_candidate = (
+                            CHECKPOINT_BASE_DIR
+                            / f"_skr_{stem}"
+                            / "checkpoints"
+                            / "quality_scores.json"
+                        )
                         if qs_candidate.exists():
                             scores_raw = json.loads(qs_candidate.read_text("utf-8"))
 
@@ -433,7 +505,9 @@ def create_app() -> Flask:
                             reverse=True,
                         )
                         if skr_dirs:
-                            qs_file = skr_dirs[0] / "checkpoints" / "quality_scores.json"
+                            qs_file = (
+                                skr_dirs[0] / "checkpoints" / "quality_scores.json"
+                            )
                             if qs_file.exists():
                                 scores_raw = json.loads(qs_file.read_text("utf-8"))
                 except Exception:
@@ -447,18 +521,23 @@ def create_app() -> Flask:
                     scores[k] = float(v["score"])
 
             if not scores:
-                return jsonify({
-                    "scores": {}, "by_file": {}, "has_data": False, "summary": {},
-                    "message": "Nema quality scores podataka. Pokreni obradu prvo."
-                })
+                return jsonify(
+                    {
+                        "scores": {},
+                        "by_file": {},
+                        "has_data": False,
+                        "summary": {},
+                        "message": "Nema quality scores podataka. Pokreni obradu prvo.",
+                    }
+                )
 
             vals = list(scores.values())
             n = len(vals)
             excellent = sum(1 for v in vals if v >= 8.5)
-            good      = sum(1 for v in vals if 6.5 <= v < 8.5)
-            poor      = sum(1 for v in vals if 4.0 <= v < 6.5)
-            critical  = sum(1 for v in vals if v < 4.0)
-            avg       = round(sum(vals) / n, 2)
+            good = sum(1 for v in vals if 6.5 <= v < 8.5)
+            poor = sum(1 for v in vals if 4.0 <= v < 6.5)
+            critical = sum(1 for v in vals if v < 4.0)
+            avg = round(sum(vals) / n, 2)
 
             by_file: dict = {}
             for stem, score in sorted(scores.items()):
@@ -472,7 +551,9 @@ def create_app() -> Flask:
 
             for fn in by_file:
                 cnt = by_file[fn]["count"]
-                by_file[fn]["avg"] = round(by_file[fn]["total"] / cnt, 2) if cnt else 0.0
+                by_file[fn]["avg"] = (
+                    round(by_file[fn]["total"] / cnt, 2) if cnt else 0.0
+                )
                 del by_file[fn]["total"]
 
             # F3c: metrike iz quality_metrics.json (deterministicki brojaci)
@@ -482,12 +563,22 @@ def create_app() -> Flask:
                 _mp = None
                 if _book_req:
                     _clean_m = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(_book_req).stem)
-                    _mp_c = CHECKPOINT_BASE_DIR / f"_skr_{_clean_m}" / "checkpoints" / "quality_metrics.json"
+                    _mp_c = (
+                        CHECKPOINT_BASE_DIR
+                        / f"_skr_{_clean_m}"
+                        / "checkpoints"
+                        / "quality_metrics.json"
+                    )
                     if _mp_c.exists():
                         _mp = _mp_c
                 if _mp is None and output_file:
                     _stem_m = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(output_file).stem)
-                    _mp_c = CHECKPOINT_BASE_DIR / f"_skr_{_stem_m}" / "checkpoints" / "quality_metrics.json"
+                    _mp_c = (
+                        CHECKPOINT_BASE_DIR
+                        / f"_skr_{_stem_m}"
+                        / "checkpoints"
+                        / "quality_metrics.json"
+                    )
                     if _mp_c.exists():
                         _mp = _mp_c
                 if _mp is None:
@@ -509,20 +600,27 @@ def create_app() -> Flask:
             except Exception:
                 metrics_data = {}
 
-            return jsonify({
-                "scores":   scores,
-                "by_file":  by_file,
-                "has_data": True,
-                "summary":  {
-                    "avg": avg, "min": round(min(vals), 1), "max": round(max(vals), 1),
-                    "total": n, "excellent": excellent, "good": good,
-                    "poor": poor, "critical": critical,
-                    "pct_print_ready": round((excellent / n) * 100, 1),
-                },
-                "losi_blokovi": {k: v for k, v in scores.items() if v < 6.5},
-                "metrics": metrics_data,
-                "metrics_summary": metrics_summary,
-            })
+            return jsonify(
+                {
+                    "scores": scores,
+                    "by_file": by_file,
+                    "has_data": True,
+                    "summary": {
+                        "avg": avg,
+                        "min": round(min(vals), 1),
+                        "max": round(max(vals), 1),
+                        "total": n,
+                        "excellent": excellent,
+                        "good": good,
+                        "poor": poor,
+                        "critical": critical,
+                        "pct_print_ready": round((excellent / n) * 100, 1),
+                    },
+                    "losi_blokovi": {k: v for k, v in scores.items() if v < 6.5},
+                    "metrics": metrics_data,
+                    "metrics_summary": metrics_summary,
+                }
+            )
         except Exception as e:
             return jsonify({"error": str(e), "has_data": False}), 500
 
@@ -535,11 +633,15 @@ def create_app() -> Flask:
         try:
             qs = SHARED_STATS.get("quality_scores", {})
             if not qs:
-                return jsonify({"ok": False, "error": "Nema quality scores u memoriji."}), 400
+                return jsonify(
+                    {"ok": False, "error": "Nema quality scores u memoriji."}
+                ), 400
 
             current_file = SHARED_STATS.get("current_file", "")
             if not current_file:
-                return jsonify({"ok": False, "error": "Nije poznata aktivna knjiga."}), 400
+                return jsonify(
+                    {"ok": False, "error": "Nije poznata aktivna knjiga."}
+                ), 400
 
             stem = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(current_file).stem)
             qs_dir = CHECKPOINT_BASE_DIR / f"_skr_{stem}" / "checkpoints"
@@ -564,8 +666,7 @@ def create_app() -> Flask:
                     normalized[k] = float(v["score"])
 
             qs_path.write_text(
-                json.dumps(normalized, ensure_ascii=False, indent=2),
-                encoding="utf-8"
+                json.dumps(normalized, ensure_ascii=False, indent=2), encoding="utf-8"
             )
             return jsonify({"ok": True, "saved": len(normalized), "path": str(qs_path)})
         except Exception as e:
@@ -579,8 +680,8 @@ def create_app() -> Flask:
     def api_start():
         global _engine_thread
         try:
-            data  = request.get_json(force=True) or {}
-            book  = data.get("book",  "").strip()
+            data = request.get_json(force=True) or {}
+            book = data.get("book", "").strip()
             model = data.get("model", "V10_TURBO").strip()
             # mode parametar se ignorira — engine sam detektuje
 
@@ -588,8 +689,7 @@ def create_app() -> Flask:
                 return jsonify({"error": "Nedostaje 'book' parametar"}), 400
 
             book_path = (
-                Path(book) if Path(book).is_absolute()
-                else Path(INPUT_DIR) / book
+                Path(book) if Path(book).is_absolute() else Path(INPUT_DIR) / book
             )
             if not book_path.exists():
                 found = list(Path(INPUT_DIR).glob(f"**/{book_path.name}"))
@@ -597,35 +697,56 @@ def create_app() -> Flask:
                     return jsonify({"error": f"Knjiga nije pronađena: {book}"}), 404
                 book_path = found[0]
 
-            if SHARED_STATS.get("status", "IDLE") not in ("IDLE", "ZAUSTAVLJENO", "GREŠKA", "ZAVRŠENO"):
+            if SHARED_STATS.get("status", "IDLE") not in (
+                "IDLE",
+                "ZAUSTAVLJENO",
+                "GREŠKA",
+                "ZAVRŠENO",
+            ):
                 if _engine_thread and _engine_thread.is_alive():
-                    return jsonify({"error": "Obrada je već u toku. Zaustavi je prvo."}), 409
+                    return jsonify(
+                        {"error": "Obrada je već u toku. Zaustavi je prvo."}
+                    ), 409
 
-            SHARED_CONTROLS["stop"]  = False
+            SHARED_CONTROLS["stop"] = False
             SHARED_CONTROLS["pause"] = False
 
             chk_count, _ = _get_checkpoint_count(book_path)
             has_checkpoints = chk_count > 0
 
-            SHARED_STATS.update({
-                "status":          "POKRETANJE...",
-                "pct":             SHARED_STATS.get("pct", 0) if has_checkpoints else 0,
-                "ok":              SHARED_STATS.get("ok", "0 / 0") if has_checkpoints else "0 / 0",
-                "skipped":         0,
-                "current_file":    "",
-                "active_engine":   model,
-                "live_audit":      "💾 Nastavljam od checkpointa..." if has_checkpoints else "",
-                "output_file":     SHARED_STATS.get("output_file") if has_checkpoints else "",
-                "output_dir":      str(OUTPUT_DIR),
-                "est":             "--:--:--",
-                "quality_scores":  SHARED_STATS.get("quality_scores", {}) if has_checkpoints else {},
-                "glosar_problemi": {},
-                # BUG #3 FIX: Ne resetovati knjiga_mode na None pri restartu kad
-                # postoje checkpointi — engine ga ionako setuje čim detektuje mode,
-                # ali frontend ga prikazuje odmah i None uzrokuje vizuelni reset.
-                "knjiga_mode":     SHARED_STATS.get("knjiga_mode") if has_checkpoints else None,
-                "knjiga_mode_info": SHARED_STATS.get("knjiga_mode_info", "") if has_checkpoints else "",
-            })
+            SHARED_STATS.update(
+                {
+                    "status": "POKRETANJE...",
+                    "pct": SHARED_STATS.get("pct", 0) if has_checkpoints else 0,
+                    "ok": SHARED_STATS.get("ok", "0 / 0")
+                    if has_checkpoints
+                    else "0 / 0",
+                    "skipped": 0,
+                    "current_file": "",
+                    "active_engine": model,
+                    "live_audit": "💾 Nastavljam od checkpointa..."
+                    if has_checkpoints
+                    else "",
+                    "output_file": SHARED_STATS.get("output_file")
+                    if has_checkpoints
+                    else "",
+                    "output_dir": str(OUTPUT_DIR),
+                    "est": "--:--:--",
+                    "quality_scores": SHARED_STATS.get("quality_scores", {})
+                    if has_checkpoints
+                    else {},
+                    "glosar_problemi": {},
+                    # BUG #3 FIX: Ne resetovati knjiga_mode na None pri restartu kad
+                    # postoje checkpointi — engine ga ionako setuje čim detektuje mode,
+                    # ali frontend ga prikazuje odmah i None uzrokuje vizuelni reset.
+                    "knjiga_mode": SHARED_STATS.get("knjiga_mode")
+                    if has_checkpoints
+                    else None,
+                    "knjiga_mode_info": SHARED_STATS.get("knjiga_mode_info", "")
+                    if has_checkpoints
+                    else "",
+                }
+            )
 
             mode = data.get("tool", data.get("mode", "")).strip().upper()
 
@@ -633,23 +754,34 @@ def create_app() -> Flask:
                 # ── A FIX: RETRO_ONLY — samo loši blokovi, ne cijela obrada ──
                 if mode == "RETRO_ONLY":
                     import asyncio as _asyncio
+
                     from core.engine import SkriptorijAllInOne
-                    from processing.retro import retroaktivna_relektura_v10
                     from core.quality import _QUALITY_RESCUE_THRESHOLD
+                    from processing.retro import retroaktivna_relektura_v10
+
                     try:
-                        eng = SkriptorijAllInOne(str(book_path), model, SHARED_STATS, SHARED_CONTROLS)
+                        eng = SkriptorijAllInOne(
+                            str(book_path), model, SHARED_STATS, SHARED_CONTROLS
+                        )
                         import json as _j
+
                         qs_path = eng.checkpoint_dir / "quality_scores.json"
                         if qs_path.exists():
                             try:
-                                SHARED_STATS["quality_scores"] = _j.loads(qs_path.read_text("utf-8"))
+                                SHARED_STATS["quality_scores"] = _j.loads(
+                                    qs_path.read_text("utf-8")
+                                )
                             except Exception:
                                 pass
                         SHARED_STATS["status"] = "RETRO: samo loši blokovi..."
-                        _asyncio.run(retroaktivna_relektura_v10(
-                            eng, force=False, only_bad=True,
-                            bad_threshold=_QUALITY_RESCUE_THRESHOLD
-                        ))
+                        _asyncio.run(
+                            retroaktivna_relektura_v10(
+                                eng,
+                                force=False,
+                                only_bad=True,
+                                bad_threshold=_QUALITY_RESCUE_THRESHOLD,
+                            )
+                        )
                         # Nakon retro — mark_for_review + rebuild
                         _asyncio.run(eng.mark_for_review())
                         _rebuild_epub(eng, SHARED_STATS, SHARED_CONTROLS)
@@ -657,6 +789,7 @@ def create_app() -> Flask:
                         SHARED_STATS["pct"] = 100
                     except Exception as exc:
                         import traceback as _tb
+
                         SHARED_STATS["status"] = f"RETRO GREŠKA: {exc}"
                         SHARED_STATS["live_audit"] = (
                             SHARED_STATS.get("live_audit", "") + _tb.format_exc()
@@ -666,29 +799,35 @@ def create_app() -> Flask:
                 # ── B FIX: REBUILD_EPUB — samo rebuild, bez ikakve AI obrade ──
                 if mode == "REBUILD_EPUB":
                     from core.engine import SkriptorijAllInOne
+
                     try:
-                        eng = SkriptorijAllInOne(str(book_path), model, SHARED_STATS, SHARED_CONTROLS)
+                        eng = SkriptorijAllInOne(
+                            str(book_path), model, SHARED_STATS, SHARED_CONTROLS
+                        )
                         SHARED_STATS["status"] = "REBUILD EPUB-a..."
                         _rebuild_epub(eng, SHARED_STATS, SHARED_CONTROLS)
                         SHARED_STATS["status"] = "ZAVRŠENO (REBUILD)"
                         SHARED_STATS["pct"] = 100
                     except Exception as exc:
                         import traceback as _tb
+
                         SHARED_STATS["status"] = f"REBUILD GREŠKA: {exc}"
                     return
-
 
                 try:
                     if mode == "TTS":
                         from tts import start_from_master as start_tts_from_master
+
                         start_tts_from_master(
                             str(book_path), model, SHARED_STATS, SHARED_CONTROLS
                         )
 
                     elif mode == "RETRO":
                         import asyncio
+
                         from core.engine import SkriptorijAllInOne
                         from processing.retro import retroaktivna_relektura_v10
+
                         engine = SkriptorijAllInOne(
                             str(book_path), model, SHARED_STATS, SHARED_CONTROLS
                         )
@@ -699,22 +838,29 @@ def create_app() -> Flask:
                         try:
                             import json as _json
                             from pathlib import Path as _P
+
                             _qs = _P(engine.checkpoint_dir) / "quality_scores.json"
                             if _qs.exists():
                                 _scores = _json.loads(_qs.read_text("utf-8"))
-                                _total = len(list(_P(engine.checkpoint_dir).glob("*.chk")))
+                                _total = len(
+                                    list(_P(engine.checkpoint_dir).glob("*.chk"))
+                                )
                                 _done = len(_scores)
-                                SHARED_STATS["pct"] = min(99, int(_done / max(_total, 1) * 100))
+                                SHARED_STATS["pct"] = min(
+                                    99, int(_done / max(_total, 1) * 100)
+                                )
                             else:
                                 SHARED_STATS["pct"] = 0
                         except Exception:
                             SHARED_STATS["pct"] = 0
-                        asyncio.run(retroaktivna_relektura_v10(
-                            engine,
-                            force=False,
-                            only_bad=True,
-                            bad_threshold=6.5,
-                        ))
+                        asyncio.run(
+                            retroaktivna_relektura_v10(
+                                engine,
+                                force=False,
+                                only_bad=True,
+                                bad_threshold=6.5,
+                            )
+                        )
                         SHARED_STATS["status"] = "ZAVRŠENO (RETRO)"
                         SHARED_STATS["pct"] = 100
 
@@ -722,6 +868,7 @@ def create_app() -> Flask:
                         # ── Selektivna relektura označenih blokova ────────────
                         import asyncio
                         import json as _json
+
                         from core.engine import SkriptorijAllInOne
                         from processing.retro import retroaktivna_relektura_v10
 
@@ -751,14 +898,20 @@ def create_app() -> Flask:
                                             loaded[k] = float(v["score"])
                                         else:
                                             SHARED_STATS.setdefault("live_audit", "")
-                                            SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: neočekivani tip ocjene za {k}: {type(v).__name__}"
+                                            SHARED_STATS["live_audit"] += (
+                                                f"\n⚠️ REFIX: neočekivani tip ocjene za {k}: {type(v).__name__}"
+                                            )
                                     except (TypeError, ValueError) as _e:
                                         SHARED_STATS.setdefault("live_audit", "")
-                                        SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: ne mogu pretvoriti ocjenu za {k}: {_e}"
+                                        SHARED_STATS["live_audit"] += (
+                                            f"\n⚠️ REFIX: ne mogu pretvoriti ocjenu za {k}: {_e}"
+                                        )
                                 SHARED_STATS["quality_scores"] = loaded
                             except Exception as _load_err:
                                 SHARED_STATS.setdefault("live_audit", "")
-                                SHARED_STATS["live_audit"] += f"\n⚠️ REFIX: greška pri učitavanju quality_scores.json: {_load_err}"
+                                SHARED_STATS["live_audit"] += (
+                                    f"\n⚠️ REFIX: greška pri učitavanju quality_scores.json: {_load_err}"
+                                )
 
                         # Inicijaliziraj praćenje relekture
                         SHARED_STATS["refix_active"] = True
@@ -766,24 +919,27 @@ def create_app() -> Flask:
 
                         n = len(stems)
                         engine.log(
-                            f"🔧 Selektivna relektura: {n} blokova → {stems[:5]}{'...' if n>5 else ''}",
-                            "system"
+                            f"🔧 Selektivna relektura: {n} blokova → {stems[:5]}{'...' if n > 5 else ''}",
+                            "system",
                         )
 
                         # stems_whitelist filtrira samo označene blokove (patch u retro.py)
-                        asyncio.run(retroaktivna_relektura_v10(
-                            engine,
-                            stems_whitelist=stems,
-                        ))
+                        asyncio.run(
+                            retroaktivna_relektura_v10(
+                                engine,
+                                stems_whitelist=stems,
+                            )
+                        )
 
                         SHARED_CONTROLS.pop("refix_stems", None)
-                        SHARED_CONTROLS.pop("refix_book",  None)
+                        SHARED_CONTROLS.pop("refix_book", None)
                         SHARED_STATS["refix_active"] = False
                         SHARED_STATS["status"] = f"ZAVRŠENO (REFIX {n} blokova)"
                         SHARED_STATS["pct"] = 100
 
                     else:
                         from run import start_skriptorij_from_master
+
                         start_skriptorij_from_master(
                             str(book_path), model, SHARED_STATS, SHARED_CONTROLS
                         )
@@ -797,12 +953,14 @@ def create_app() -> Flask:
             )
             _engine_thread.start()
 
-            return jsonify({
-                "ok":    True,
-                "book":  book_path.name,
-                "model": model,
-                "mode":  "AUTO",
-            })
+            return jsonify(
+                {
+                    "ok": True,
+                    "book": book_path.name,
+                    "model": model,
+                    "mode": "AUTO",
+                }
+            )
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -822,11 +980,11 @@ def create_app() -> Flask:
                 SHARED_CONTROLS["pause"] = False
                 SHARED_STATS["status"] = "OBRADA U TOKU..."
             elif action == "stop":
-                SHARED_CONTROLS["stop"]  = True
+                SHARED_CONTROLS["stop"] = True
                 SHARED_CONTROLS["pause"] = False
-                SHARED_STATS["status"]   = "ZAUSTAVLJENO"
+                SHARED_STATS["status"] = "ZAUSTAVLJENO"
             elif action == "reset":
-                SHARED_CONTROLS["stop"]  = True
+                SHARED_CONTROLS["stop"] = True
                 SHARED_CONTROLS["pause"] = False
                 SHARED_CONTROLS["reset"] = True
 
@@ -835,13 +993,22 @@ def create_app() -> Flask:
                 if active_book:
                     reset_result = _obrisi_checkpoint_i_kes(active_book)
 
-                SHARED_STATS.update({
-                    "status": "IDLE", "pct": 0, "ok": "0 / 0",
-                    "skipped": 0, "current_file": "", "active_engine": "---",
-                    "live_audit": "", "output_file": "",
-                    "quality_scores": {}, "glosar_problemi": {},
-                    "knjiga_mode": None, "knjiga_mode_info": "",
-                })
+                SHARED_STATS.update(
+                    {
+                        "status": "IDLE",
+                        "pct": 0,
+                        "ok": "0 / 0",
+                        "skipped": 0,
+                        "current_file": "",
+                        "active_engine": "---",
+                        "live_audit": "",
+                        "output_file": "",
+                        "quality_scores": {},
+                        "glosar_problemi": {},
+                        "knjiga_mode": None,
+                        "knjiga_mode_info": "",
+                    }
+                )
                 return jsonify({"ok": True, "action": action, "reset": reset_result})
             else:
                 return jsonify({"error": f"Nepoznata akcija: {action}"}), 400
@@ -867,31 +1034,35 @@ def create_app() -> Flask:
             if not book:
                 return jsonify({"error": "Nedostaje parametar 'book'"}), 400
 
-            SHARED_CONTROLS["stop"]  = True
+            SHARED_CONTROLS["stop"] = True
             SHARED_CONTROLS["pause"] = False
             SHARED_CONTROLS["reset"] = True
 
             reset_result = _obrisi_checkpoint_i_kes(book)
 
-            SHARED_STATS.update({
-                "status":       "IDLE",
-                "pct":          0,
-                "ok":           "0 / 0",
-                "skipped":      0,
-                "current_file": "",
-                "active_engine": "---",
-                "live_audit":   "Sistem u potpunosti resetovan.\n",
-                "output_file":  "",
-                "quality_scores": {},
-                "glosar_problemi": {},
-                "knjiga_mode":  None,
-                "knjiga_mode_info": "",
-            })
-            return jsonify({
-                "ok":    reset_result.get("ok", False),
-                "book":  book,
-                "reset": reset_result,
-            })
+            SHARED_STATS.update(
+                {
+                    "status": "IDLE",
+                    "pct": 0,
+                    "ok": "0 / 0",
+                    "skipped": 0,
+                    "current_file": "",
+                    "active_engine": "---",
+                    "live_audit": "Sistem u potpunosti resetovan.\n",
+                    "output_file": "",
+                    "quality_scores": {},
+                    "glosar_problemi": {},
+                    "knjiga_mode": None,
+                    "knjiga_mode_info": "",
+                }
+            )
+            return jsonify(
+                {
+                    "ok": reset_result.get("ok", False),
+                    "book": book,
+                    "reset": reset_result,
+                }
+            )
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -915,10 +1086,10 @@ def create_app() -> Flask:
     def api_keys_add(provider):
         try:
             data = request.get_json(force=True) or {}
-            key  = data.get("key", "").strip()
+            key = data.get("key", "").strip()
             if not key or len(key) < 8:
                 return jsonify({"error": "Ključ je prekratak (min 8 znakova)"}), 400
-            prov_u   = provider.upper()
+            prov_u = provider.upper()
             cfg_path = Path(_CONFIG_PATH)
             try:
                 cfg = json.loads(cfg_path.read_text("utf-8"))
@@ -930,7 +1101,7 @@ def create_app() -> Flask:
                 if key not in cfg[prov_u]:
                     cfg[prov_u].append(key)
             elif isinstance(cfg[prov_u], dict):
-                cfg[prov_u][f"key_{len(cfg[prov_u])+1}"] = key
+                cfg[prov_u][f"key_{len(cfg[prov_u]) + 1}"] = key
             cfg_path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), "utf-8")
             _get_fleet().reload()
             return jsonify({"ok": True, "provider": prov_u})
@@ -940,9 +1111,9 @@ def create_app() -> Flask:
     @app.route("/api/keys/<provider>/<int:index>", methods=["DELETE"])
     def api_keys_delete(provider, index):
         try:
-            prov_u   = provider.upper()
+            prov_u = provider.upper()
             cfg_path = Path(_CONFIG_PATH)
-            cfg      = json.loads(cfg_path.read_text("utf-8"))
+            cfg = json.loads(cfg_path.read_text("utf-8"))
             if prov_u not in cfg or not isinstance(cfg[prov_u], list):
                 return jsonify({"error": "Provajder nije pronađen"}), 404
             if index >= len(cfg[prov_u]):
@@ -957,7 +1128,7 @@ def create_app() -> Flask:
     @app.route("/api/keys/<provider>/<int:index>/ping", methods=["POST"])
     def api_keys_ping(provider, index):
         try:
-            from config.ai_config import MODEL_MAP, GOOGLE_MODEL_POOL, get_gemini_url
+            from config.ai_config import GOOGLE_MODEL_POOL, MODEL_MAP, get_gemini_url
             from network.provider_urls import get_url as _get_provider_url
 
             prov_u = re.sub(r"[^A-Z0-9_]", "", provider.upper())
@@ -1020,44 +1191,58 @@ def create_app() -> Flask:
                 try:
                     body = resp.json()
                     err = (
-                        body.get("error", {}).get("message", str(body))[:_MAX_PING_ERROR_LEN]
+                        body.get("error", {}).get("message", str(body))[
+                            :_MAX_PING_ERROR_LEN
+                        ]
                         if isinstance(body, dict)
                         else str(body)[:_MAX_PING_ERROR_LEN]
                     )
                 except Exception:
                     err = "Rate limit"
-                return jsonify({
-                    "ok": False,
-                    "latency_ms": latency,
-                    "status_code": sc,
-                    "error": f"429 Rate limit — {err}",
-                })
+                return jsonify(
+                    {
+                        "ok": False,
+                        "latency_ms": latency,
+                        "status_code": sc,
+                        "error": f"429 Rate limit — {err}",
+                    }
+                )
             if sc in (401, 403):
-                return jsonify({
-                    "ok": False,
-                    "latency_ms": latency,
-                    "status_code": sc,
-                    "error": "Ključ nevažeći (401/403)",
-                })
+                return jsonify(
+                    {
+                        "ok": False,
+                        "latency_ms": latency,
+                        "status_code": sc,
+                        "error": "Ključ nevažeći (401/403)",
+                    }
+                )
 
             try:
                 err = str(resp.json())[:_MAX_PING_ERROR_LEN]
             except Exception:
                 err = (resp.text or "")[:_MAX_PING_ERROR_LEN]
-            return jsonify({
-                "ok": False,
-                "latency_ms": latency,
-                "status_code": sc,
-                "error": err or f"HTTP {sc}",
-            })
+            return jsonify(
+                {
+                    "ok": False,
+                    "latency_ms": latency,
+                    "status_code": sc,
+                    "error": err or f"HTTP {sc}",
+                }
+            )
         except requests.exceptions.Timeout:
-            elapsed_ms = int((time.time() - t0) * 1000) if "t0" in locals() else (_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT) * 1000
-            return jsonify({
-                "ok": False,
-                "latency_ms": elapsed_ms,
-                "status_code": 0,
-                "error": f"Timeout ({_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT}s)",
-            })
+            elapsed_ms = (
+                int((time.time() - t0) * 1000)
+                if "t0" in locals()
+                else (_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT) * 1000
+            )
+            return jsonify(
+                {
+                    "ok": False,
+                    "latency_ms": elapsed_ms,
+                    "status_code": 0,
+                    "error": f"Timeout ({_PING_CONNECT_TIMEOUT + _PING_READ_TIMEOUT}s)",
+                }
+            )
         except FileNotFoundError:
             return jsonify({"error": "Konfiguracija nije pronađena"}), 404
         except Exception:
@@ -1077,10 +1262,10 @@ def create_app() -> Flask:
         """
         _VALID_RENEWAL_MODES = {"rpm_reset", "rpd_reset", "full_reset", "unban"}
         _RENEWAL_LABELS = {
-            "rpm_reset":  "Minutni RPM cooldown resetovan",
-            "rpd_reset":  "Dnevna kvota resetovana (provider ponoćni reset)",
+            "rpm_reset": "Minutni RPM cooldown resetovan",
+            "rpd_reset": "Dnevna kvota resetovana (provider ponoćni reset)",
             "full_reset": "Potpuni reset ključa (regenerisan ili operatorski)",
-            "unban":      "Ključ odbanovan (provider reaktivirao nalog)",
+            "unban": "Ključ odbanovan (provider reaktivirao nalog)",
         }
         try:
             prov_u = re.sub(r"[^A-Z0-9_]", "", provider.upper())
@@ -1089,10 +1274,12 @@ def create_app() -> Flask:
             data = request.get_json(silent=True) or {}
             mode = data.get("mode", "").strip().lower()
             if mode not in _VALID_RENEWAL_MODES:
-                return jsonify({
-                    "error": f"Neispravan mode '{mode}'. Dozvoljeni: {', '.join(sorted(_VALID_RENEWAL_MODES))}",
-                    "valid_modes": sorted(_VALID_RENEWAL_MODES),
-                }), 400
+                return jsonify(
+                    {
+                        "error": f"Neispravan mode '{mode}'. Dozvoljeni: {', '.join(sorted(_VALID_RENEWAL_MODES))}",
+                        "valid_modes": sorted(_VALID_RENEWAL_MODES),
+                    }
+                ), 400
             cfg = json.loads(Path(_CONFIG_PATH).read_text("utf-8"))
             raw = cfg.get(prov_u)
             if raw is None:
@@ -1104,6 +1291,7 @@ def create_app() -> Flask:
             if not key:
                 return jsonify({"error": "Prazan ključ"}), 400
             from network.key_renewal import renew_key
+
             result = renew_key(prov_u, key, mode)
             result["mode_label"] = _RENEWAL_LABELS.get(mode, mode)
             return jsonify(result), 200 if result["ok"] else 500
@@ -1121,9 +1309,9 @@ def create_app() -> Flask:
         """
         _BATCH_MODES = {"rpd_reset", "full_reset", "unban"}
         _RENEWAL_LABELS = {
-            "rpd_reset":  "Dnevna kvota resetovana (provider ponoćni reset)",
+            "rpd_reset": "Dnevna kvota resetovana (provider ponoćni reset)",
             "full_reset": "Potpuni reset svih ključeva",
-            "unban":      "Svi ključevi odbanovani",
+            "unban": "Svi ključevi odbanovani",
         }
         try:
             prov_u = re.sub(r"[^A-Z0-9_]", "", provider.upper())
@@ -1132,14 +1320,19 @@ def create_app() -> Flask:
             data = request.get_json(silent=True) or {}
             mode = data.get("mode", "").strip().lower()
             if mode not in _BATCH_MODES:
-                return jsonify({
-                    "error": f"Neispravan mode '{mode}'. Za renew_all dozvoljeni: {', '.join(sorted(_BATCH_MODES))}",
-                    "valid_modes": sorted(_BATCH_MODES),
-                }), 400
+                return jsonify(
+                    {
+                        "error": f"Neispravan mode '{mode}'. Za renew_all dozvoljeni: {', '.join(sorted(_BATCH_MODES))}",
+                        "valid_modes": sorted(_BATCH_MODES),
+                    }
+                ), 400
             from network.key_renewal import renew_provider
+
             result = renew_provider(prov_u, mode)
             result["mode_label"] = _RENEWAL_LABELS.get(mode, mode)
-            status = 200 if result["ok"] else (207 if result.get("success", 0) > 0 else 500)
+            status = (
+                200 if result["ok"] else (207 if result.get("success", 0) > 0 else 500)
+            )
             return jsonify(result), status
         except Exception:
             logger.exception("[api_keys_renew_all] Greška")
@@ -1157,11 +1350,10 @@ def create_app() -> Flask:
             if not raw or not isinstance(raw, dict):
                 return jsonify({})
             return jsonify(raw)
-        except Exception as e:
+        except Exception:
             logger.exception("[api_fleet] Greška pri dohvaćanju flote")
             # Vraćamo prazan dict, NE {"error": "..."} — renderFleet ne zna obraditi error key
             return jsonify({}), 200
-
 
     # ═════════════════════════════════════════════════════════════════════════
     # DOWNLOAD
@@ -1227,7 +1419,12 @@ def create_app() -> Flask:
             current_file = SHARED_STATS.get("current_file", "")
             if current_file:
                 stem = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(current_file).stem)
-                candidate = CHECKPOINT_BASE_DIR / f"_skr_{stem}" / "checkpoints" / "human_review.json"
+                candidate = (
+                    CHECKPOINT_BASE_DIR
+                    / f"_skr_{stem}"
+                    / "checkpoints"
+                    / "human_review.json"
+                )
                 if candidate.exists():
                     review_path = candidate
 
@@ -1260,7 +1457,9 @@ def create_app() -> Flask:
                 file_val = item.get("file", "")
                 stem_val = item.get("stem", "")
                 if not stem_val and file_val:
-                    item["stem"] = file_val[:-4] if file_val.endswith(".chk") else file_val
+                    item["stem"] = (
+                        file_val[:-4] if file_val.endswith(".chk") else file_val
+                    )
                 if not file_val and stem_val:
                     item["file"] = stem_val + ".chk"
 
@@ -1277,7 +1476,9 @@ def create_app() -> Flask:
                     if score is not None and score < threshold:
                         filtered.append(item)
                     # Heuristic blokove prikaži samo ako nemaju dobar score
-                    elif severity == "heuristic" and (score is None or score < threshold):
+                    elif severity == "heuristic" and (
+                        score is None or score < threshold
+                    ):
                         filtered.append(item)
                 items = filtered
 
@@ -1289,7 +1490,9 @@ def create_app() -> Flask:
             # Vraćamo direktno array — frontend radi items.map() bez .items property
             return jsonify(items)
         except Exception as e:
-            return jsonify({"error": str(e)}), 500  # 500 sa errorom je ok, frontend ga hvata
+            return jsonify(
+                {"error": str(e)}
+            ), 500  # 500 sa errorom je ok, frontend ga hvata
 
     @app.route("/api/review/mark", methods=["POST"])
     def api_review_mark():
@@ -1299,23 +1502,27 @@ def create_app() -> Flask:
         Nakon ovoga pokreni /api/start s tool=REFIX.
         """
         try:
-            data  = request.get_json(force=True) or {}
+            data = request.get_json(force=True) or {}
             stems = data.get("stems", [])
-            book  = data.get("book", "").strip()
+            book = data.get("book", "").strip()
 
             if not isinstance(stems, list) or not stems:
-                return jsonify({"error": "Nedostaje 'stems' lista (mora biti neprazan niz)"}), 400
+                return jsonify(
+                    {"error": "Nedostaje 'stems' lista (mora biti neprazan niz)"}
+                ), 400
 
             SHARED_CONTROLS["refix_stems"] = [str(s) for s in stems]
             if book:
                 SHARED_CONTROLS["refix_book"] = book
 
-            return jsonify({
-                "ok": True,
-                "marked": len(stems),
-                "stems": stems,
-                "book": book or SHARED_CONTROLS.get("refix_book", ""),
-            })
+            return jsonify(
+                {
+                    "ok": True,
+                    "marked": len(stems),
+                    "stems": stems,
+                    "book": book or SHARED_CONTROLS.get("refix_book", ""),
+                }
+            )
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -1324,7 +1531,7 @@ def create_app() -> Flask:
         """Briše označene stemove iz SHARED_CONTROLS (nakon završenog REFIX-a)."""
         try:
             SHARED_CONTROLS.pop("refix_stems", None)
-            SHARED_CONTROLS.pop("refix_book",  None)
+            SHARED_CONTROLS.pop("refix_book", None)
             return jsonify({"ok": True})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -1349,7 +1556,12 @@ def create_app() -> Flask:
         current_file = SHARED_STATS.get("current_file", "")
         if current_file:
             book_stem = re.sub(r"[^a-zA-Z0-9_\-]", "", Path(current_file).stem)
-            candidate = CHECKPOINT_BASE_DIR / f"_skr_{book_stem}" / "checkpoints" / f"{clean}.chk"
+            candidate = (
+                CHECKPOINT_BASE_DIR
+                / f"_skr_{book_stem}"
+                / "checkpoints"
+                / f"{clean}.chk"
+            )
             if candidate.exists():
                 return candidate
 
@@ -1375,7 +1587,9 @@ def create_app() -> Flask:
         try:
             chk_path = _find_chk_path(stem)
             if chk_path is None:
-                return jsonify({"error": f"Chunk nije pronađen: {stem}", "text": ""}), 404
+                return jsonify(
+                    {"error": f"Chunk nije pronađen: {stem}", "text": ""}
+                ), 404
 
             raw = chk_path.read_text("utf-8", errors="replace")
 
@@ -1395,11 +1609,13 @@ def create_app() -> Flask:
             except (json.JSONDecodeError, ValueError):
                 pass  # plain tekst, OK
 
-            return jsonify({
-                "stem": stem,
-                "text": text,
-                "path": str(chk_path),
-            })
+            return jsonify(
+                {
+                    "stem": stem,
+                    "text": text,
+                    "path": str(chk_path),
+                }
+            )
         except Exception as e:
             return jsonify({"error": str(e), "text": ""}), 500
 
@@ -1458,9 +1674,13 @@ def create_app() -> Flask:
             try:
                 import json as _json
                 from datetime import datetime as _dt
-                book = SHARED_STATS.get("current_file", "") or SHARED_STATS.get("output_file", "")
+
+                book = SHARED_STATS.get("current_file", "") or SHARED_STATS.get(
+                    "output_file", ""
+                )
                 if book:
                     import re as _re
+
                     clean = _re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
                     # Koristi isti direktorij gdje je .chk fajl
                     qs_dir = chk_path.parent
@@ -1493,11 +1713,11 @@ def create_app() -> Flask:
                         }
                         meta_path.write_text(
                             json.dumps(meta, indent=2, ensure_ascii=False),
-                            encoding="utf-8"
+                            encoding="utf-8",
                         )
                         qs_path.write_text(
                             _json.dumps(scores, indent=2, ensure_ascii=False),
-                            encoding="utf-8"
+                            encoding="utf-8",
                         )
                         print(f"[review] Ručna izmjena {stem} — ocjena 10.0 upisana")
             except Exception as _e:
@@ -1509,7 +1729,9 @@ def create_app() -> Flask:
                     SHARED_STATS["quality_scores"] = {}
                 SHARED_STATS["quality_scores"][stem] = 10.0
                 # FIX: ne diraj pct ovdje — pusti glavni proces da ga računa
-                print(f"[review] SHARED_STATS ažuriran: {stem} = 10.0, pct = {SHARED_STATS['pct']}%")
+                print(
+                    f"[review] SHARED_STATS ažuriran: {stem} = 10.0, pct = {SHARED_STATS['pct']}%"
+                )
             except Exception as _e:
                 print(f"[review] Ne mogu ažurirati SHARED_STATS: {_e}")
 
@@ -1523,25 +1745,37 @@ def create_app() -> Flask:
                         if len(novi_hr) != len(hr_data):
                             hr_path.write_text(
                                 json.dumps(novi_hr, ensure_ascii=False, indent=2),
-                                encoding="utf-8"
+                                encoding="utf-8",
                             )
-                            print(f"[review] Uklonjen {stem} iz human_review.json ({len(hr_data)} → {len(novi_hr)})")
+                            print(
+                                f"[review] Uklonjen {stem} iz human_review.json ({len(hr_data)} → {len(novi_hr)})"
+                            )
             except Exception as _e:
                 print(f"[review] Ne mogu ažurirati human_review.json: {_e}")
 
-            return jsonify({"ok": True, "stem": stem, "path": str(chk_path), "score": 10.0, "source": "human"})
+            return jsonify(
+                {
+                    "ok": True,
+                    "stem": stem,
+                    "path": str(chk_path),
+                    "score": 10.0,
+                    "source": "human",
+                }
+            )
         except Exception as e:
             return jsonify({"error": str(e)}), 500
-
 
     @app.route("/api/epub_preview", methods=["GET"])
     def epub_preview():
         """Plain text iz .chk fajlova aktivne knjige."""
-        from flask import Response
         import json as _json
 
+        from flask import Response
+
         try:
-            book = SHARED_STATS.get("current_file", "") or SHARED_STATS.get("output_file", "")
+            book = SHARED_STATS.get("current_file", "") or SHARED_STATS.get(
+                "output_file", ""
+            )
 
             if not book:
                 lbp = Path(INPUT_DIR) / "last_book.json"
@@ -1560,7 +1794,8 @@ def create_app() -> Flask:
             if not chk_dir.exists():
                 candidates = sorted(
                     CHECKPOINT_BASE_DIR.glob(f"_skr_{clean[:10]}*"),
-                    key=lambda p: p.stat().st_mtime, reverse=True
+                    key=lambda p: p.stat().st_mtime,
+                    reverse=True,
                 )
                 if candidates:
                     chk_dir = candidates[0] / "checkpoints"
@@ -1568,21 +1803,27 @@ def create_app() -> Flask:
             if not chk_dir.exists():
                 svi = sorted(
                     CHECKPOINT_BASE_DIR.glob("_skr_*"),
-                    key=lambda p: p.stat().st_mtime, reverse=True
+                    key=lambda p: p.stat().st_mtime,
+                    reverse=True,
                 )
                 if svi:
                     chk_dir = svi[0] / "checkpoints"
 
             if not chk_dir.exists():
-                return Response("Nema checkpointa za ovu knjigu.", mimetype="text/plain")
+                return Response(
+                    "Nema checkpointa za ovu knjigu.", mimetype="text/plain"
+                )
 
             chk_files = sorted(
-                f for f in chk_dir.glob("*.chk")
+                f
+                for f in chk_dir.glob("*.chk")
                 if not any(f.name.endswith(s) for s in (".prevod.chk", ".lektura.chk"))
             )
 
             if not chk_files:
-                return Response("Obrada u toku — nema jos sacuvanih blokova.", mimetype="text/plain")
+                return Response(
+                    "Obrada u toku — nema jos sacuvanih blokova.", mimetype="text/plain"
+                )
 
             dijelovi = []
             for chk in chk_files:
@@ -1600,7 +1841,6 @@ def create_app() -> Flask:
 
         except Exception as e:
             return Response(f"Greska: {e}", mimetype="text/plain")
-
 
     # ═════════════════════════════════════════════════════════════════════════
     # EPUB TEXT / PLAIN — za Revizija tab (B3 FIX)
@@ -1621,13 +1861,16 @@ def create_app() -> Flask:
             if not chk_dir.exists():
                 candidates = sorted(
                     CHECKPOINT_BASE_DIR.glob(f"_skr_{clean[:10]}*"),
-                    key=lambda p: p.stat().st_mtime, reverse=True
+                    key=lambda p: p.stat().st_mtime,
+                    reverse=True,
                 )
                 if candidates:
                     chk_dir = candidates[0] / "checkpoints"
 
             if not chk_dir.exists():
-                return jsonify({"error": f"Nema checkpointa za: {book}", "blocks": []}), 404
+                return jsonify(
+                    {"error": f"Nema checkpointa za: {book}", "blocks": []}
+                ), 404
 
             # Učitaj quality scores (normalizuj dict→float ako treba)
             scores = {}
@@ -1654,12 +1897,15 @@ def create_app() -> Flask:
 
             # Finalni .chk fajlovi (ne međukoraci)
             chk_files = sorted(
-                f for f in chk_dir.glob("*.chk")
+                f
+                for f in chk_dir.glob("*.chk")
                 if not any(f.name.endswith(s) for s in (".prevod.chk", ".lektura.chk"))
             )
 
             if not chk_files:
-                return jsonify({"blocks": [], "total": 0, "message": "Nema finalnih blokova."})
+                return jsonify(
+                    {"blocks": [], "total": 0, "message": "Nema finalnih blokova."}
+                )
 
             blocks = []
             for chk in chk_files:
@@ -1680,11 +1926,13 @@ def create_app() -> Flask:
                     except (json.JSONDecodeError, ValueError):
                         pass
                     score = scores.get(chk.stem, None)
-                    blocks.append({
-                        "stem":  chk.stem,
-                        "text":  text.strip(),
-                        "score": round(score, 1) if score is not None else None,
-                    })
+                    blocks.append(
+                        {
+                            "stem": chk.stem,
+                            "text": text.strip(),
+                            "score": round(score, 1) if score is not None else None,
+                        }
+                    )
                 except Exception:
                     continue
 
@@ -1692,7 +1940,6 @@ def create_app() -> Flask:
 
         except Exception as e:
             return jsonify({"error": str(e), "blocks": []}), 500
-
 
     @app.route("/api/epub_plain/<path:book>")
     def api_epub_plain(book):
@@ -1709,13 +1956,16 @@ def create_app() -> Flask:
             if not chk_dir.exists():
                 candidates = sorted(
                     CHECKPOINT_BASE_DIR.glob(f"_skr_{clean[:10]}*"),
-                    key=lambda p: p.stat().st_mtime, reverse=True
+                    key=lambda p: p.stat().st_mtime,
+                    reverse=True,
                 )
                 if candidates:
                     chk_dir = candidates[0] / "checkpoints"
 
             if not chk_dir.exists():
-                return jsonify({"error": f"Nema checkpointa za: {book}", "blocks": []}), 404
+                return jsonify(
+                    {"error": f"Nema checkpointa za: {book}", "blocks": []}
+                ), 404
 
             scores = {}
             qs_path = chk_dir / "quality_scores.json"
@@ -1739,12 +1989,15 @@ def create_app() -> Flask:
                         scores[k] = float(v)
 
             chk_files = sorted(
-                f for f in chk_dir.glob("*.chk")
+                f
+                for f in chk_dir.glob("*.chk")
                 if not any(f.name.endswith(s) for s in (".prevod.chk", ".lektura.chk"))
             )
 
             if not chk_files:
-                return jsonify({"blocks": [], "total": 0, "message": "Nema finalnih blokova."})
+                return jsonify(
+                    {"blocks": [], "total": 0, "message": "Nema finalnih blokova."}
+                )
 
             blocks = []
             for chk in chk_files:
@@ -1763,15 +2016,19 @@ def create_app() -> Flask:
                     except (json.JSONDecodeError, ValueError):
                         pass
                     try:
-                        plain = _BS(raw, "html.parser").get_text(separator=" ", strip=True)
+                        plain = _BS(raw, "html.parser").get_text(
+                            separator=" ", strip=True
+                        )
                     except Exception:
                         plain = re.sub(r"<[^>]+>", " ", raw).strip()
                     score = scores.get(chk.stem, None)
-                    blocks.append({
-                        "stem":  chk.stem,
-                        "text":  plain,
-                        "score": round(score, 1) if score is not None else None,
-                    })
+                    blocks.append(
+                        {
+                            "stem": chk.stem,
+                            "text": plain,
+                            "score": round(score, 1) if score is not None else None,
+                        }
+                    )
                 except Exception:
                     continue
 
@@ -1782,7 +2039,9 @@ def create_app() -> Flask:
 
     @app.route("/api/fix/bad_blocks", methods=["POST"])
     def api_fix_bad_blocks():
-        import threading, asyncio
+        import asyncio
+        import threading
+
         data = request.get_json(silent=True) or {}
         book = data.get("book") or SHARED_STATS.get("current_file", "")
         threshold = float(data.get("threshold", 11.0))
@@ -1793,31 +2052,54 @@ def create_app() -> Flask:
         if not Path(full_path).exists():
             return jsonify({"error": f"Knjiga nije pronađena: {book}"}), 404
         SHARED_CONTROLS.update({"pause": False, "stop": False, "reset": False})
-        SHARED_STATS.update({"status": "AI RE-LEKTURA BLOKA...", "current_file": book, "pct": 0})
+        SHARED_STATS.update(
+            {"status": "AI RE-LEKTURA BLOKA...", "current_file": book, "pct": 0}
+        )
+
         def _run():
             try:
                 from core.engine import SkriptorijAllInOne
                 from processing.retro import retroaktivna_relektura_v10
-                engine = SkriptorijAllInOne(full_path, model, SHARED_STATS, SHARED_CONTROLS)
-                asyncio.run(retroaktivna_relektura_v10(engine, force=False, only_bad=True, bad_threshold=threshold))
+
+                engine = SkriptorijAllInOne(
+                    full_path, model, SHARED_STATS, SHARED_CONTROLS
+                )
+                asyncio.run(
+                    retroaktivna_relektura_v10(
+                        engine, force=False, only_bad=True, bad_threshold=threshold
+                    )
+                )
                 SHARED_STATS.update({"status": "ZAVRŠENO", "pct": 100})
             except Exception as exc:
                 import traceback
+
                 SHARED_STATS["status"] = f"GREŠKA: {exc}"
-                SHARED_STATS["live_audit"] = SHARED_STATS.get("live_audit", "") + f"\n[ERROR] {traceback.format_exc()}"
+                SHARED_STATS["live_audit"] = (
+                    SHARED_STATS.get("live_audit", "")
+                    + f"\n[ERROR] {traceback.format_exc()}"
+                )
+
         threading.Thread(target=_run, daemon=True).start()
         return jsonify({"status": "started", "book": book, "threshold": threshold})
 
     from api.routes.qualities import style_epub_endpoint, style_epub_preview_css
+
     app.add_url_rule("/api/style_epub", view_func=style_epub_endpoint, methods=["POST"])
-    app.add_url_rule("/api/style_epub/preview_css", view_func=style_epub_preview_css, methods=["GET"])
+    app.add_url_rule(
+        "/api/style_epub/preview_css", view_func=style_epub_preview_css, methods=["GET"]
+    )
 
     from api.file_browser import api_browse_files, api_upload_from_path
+
     app.add_url_rule("/api/browse_files", view_func=api_browse_files, methods=["POST"])
-    app.add_url_rule("/api/upload_from_path", view_func=api_upload_from_path, methods=["POST"])
+    app.add_url_rule(
+        "/api/upload_from_path", view_func=api_upload_from_path, methods=["POST"]
+    )
     from api.routes.monitor import bp as monitor_bp
+
     app.register_blueprint(monitor_bp)
 
     return app
+
 
 app = create_app()

@@ -37,16 +37,49 @@ SUMMARY_MAX_TOKENS = 200
 
 # ── Deklinacijski predlošci za vlastita imena ──────────────────────────────
 _MUSKI_NASTAVCI = [
-    ("",    lambda n: [n, n+"a", n+"u", n+"a", n, n+"om", n+"u"]),
-    ("o",   lambda n: [n, n[:-1]+"a", n[:-1]+"u", n[:-1]+"a", n, n[:-1]+"om", n[:-1]+"u"]),
-    ("e",   lambda n: [n, n+"a", n+"u", n+"a", n, n+"om", n+"u"]),
-    ("i",   lambda n: [n, n+"ja", n+"ju", n+"ja", n, n+"jem", n+"ju"]),
+    ("", lambda n: [n, n + "a", n + "u", n + "a", n, n + "om", n + "u"]),
+    (
+        "o",
+        lambda n: [
+            n,
+            n[:-1] + "a",
+            n[:-1] + "u",
+            n[:-1] + "a",
+            n,
+            n[:-1] + "om",
+            n[:-1] + "u",
+        ],
+    ),
+    ("e", lambda n: [n, n + "a", n + "u", n + "a", n, n + "om", n + "u"]),
+    ("i", lambda n: [n, n + "ja", n + "ju", n + "ja", n, n + "jem", n + "ju"]),
 ]
 
 _ZENSKI_NASTAVCI = [
-    ("a",   lambda n: [n, n[:-1]+"e", n[:-1]+"i", n[:-1]+"u", n, n[:-1]+"om", n[:-1]+"i"]),
-    ("e",   lambda n: [n, n+"s" if n.endswith("e") else n[:-1]+"e", n, n[:-1]+"u", n, n+"om", n]),
-    ("y",   lambda n: [n]*7),
+    (
+        "a",
+        lambda n: [
+            n,
+            n[:-1] + "e",
+            n[:-1] + "i",
+            n[:-1] + "u",
+            n,
+            n[:-1] + "om",
+            n[:-1] + "i",
+        ],
+    ),
+    (
+        "e",
+        lambda n: [
+            n,
+            n + "s" if n.endswith("e") else n[:-1] + "e",
+            n,
+            n[:-1] + "u",
+            n,
+            n + "om",
+            n,
+        ],
+    ),
+    ("y", lambda n: [n] * 7),
 ]
 
 PADEZI = ["N", "G", "D", "A", "V", "I", "L"]
@@ -74,7 +107,7 @@ def _dekliniraj_ime(ime: str, rod: str = "auto") -> dict[str, str]:
                     break
                 except Exception:
                     continue
-    
+
     if oblici is None:
         for nastavak, fn in _MUSKI_NASTAVCI:
             if nastavak == "" or ime.lower().endswith(nastavak):
@@ -108,6 +141,7 @@ def _normaliziraj_glosar_entry(ime: str, rod: str = "auto") -> dict:
 @dataclass
 class PoglavljeKontekst:
     """Kontekst jednog poglavlja."""
+
     broj: int
     naslov: str = ""
     summary: str = ""
@@ -122,15 +156,16 @@ class BookContext:
     Glavni kontekst objekt za jednu knjigu.
     Perzistira u analysis/cache/{knjiga_id}_context.json.
     """
+
     knjiga_id: str
     naslov_knjige: str = ""
     autor: str = ""
-    api_key: Optional[str] = None
+    api_key: str | None = None
 
     _glosar: dict = field(default_factory=dict)
     _poglavlja: dict = field(default_factory=dict)
     _few_shot_primjeri: list[dict] = field(default_factory=list)
-    _cache_path: Optional[Path] = field(default=None, init=False)
+    _cache_path: Path | None = field(default=None, init=False)
 
     def __post_init__(self):
         if self.api_key is None:
@@ -178,8 +213,7 @@ class BookContext:
                 },
             }
             self._cache_path.write_text(
-                json.dumps(data, ensure_ascii=False, indent=2),
-                encoding="utf-8"
+                json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
             )
         except Exception as e:
             logger.warning(f"[book_context] Cache spremanje neuspješno: {e}")
@@ -203,28 +237,48 @@ class BookContext:
             else:
                 self.dodaj_lik(entry)
 
-    def autodetektiraj_likove(self, tekst: str, min_pojavljivanja: int = 3) -> list[str]:
+    def autodetektiraj_likove(
+        self, tekst: str, min_pojavljivanja: int = 3
+    ) -> list[str]:
         """
         Heuristička detekcija vlastitih imena iz teksta.
         Traži rijeci s velikim početnim slovom koje se ponavljaju.
         """
-        pattern = re.compile(r'(?<![.!?]\s)(?<!\n)\b([A-ZČĆŠĐŽА-Я][a-zčćšđžа-я]{2,})\b')
+        pattern = re.compile(r"(?<![.!?]\s)(?<!\n)\b([A-ZČĆŠĐŽА-Я][a-zčćšđžа-я]{2,})\b")
         kandidati = {}
         for m in pattern.finditer(tekst):
             ime = m.group(1)
             if ime.lower() in {
-                "ali", "jer", "dok", "kad", "što", "koji", "koja",
-                "koje", "ovaj", "ova", "ovo", "taj", "ta", "to",
-                "jedan", "jedna", "jedne", "ovdje", "tamo", "gdje",
+                "ali",
+                "jer",
+                "dok",
+                "kad",
+                "što",
+                "koji",
+                "koja",
+                "koje",
+                "ovaj",
+                "ova",
+                "ovo",
+                "taj",
+                "ta",
+                "to",
+                "jedan",
+                "jedna",
+                "jedne",
+                "ovdje",
+                "tamo",
+                "gdje",
             }:
                 continue
             kandidati[ime] = kandidati.get(ime, 0) + 1
 
         pronadeni = [
-            ime for ime, count in kandidati.items()
-            if count >= min_pojavljivanja
+            ime for ime, count in kandidati.items() if count >= min_pojavljivanja
         ]
-        logger.info(f"[book_context] Autodetektirano {len(pronadeni)} potencijalnih likova")
+        logger.info(
+            f"[book_context] Autodetektirano {len(pronadeni)} potencijalnih likova"
+        )
         return pronadeni
 
     def glosar_prompt_blok(self, max_likova: int = 20) -> str:
@@ -239,10 +293,7 @@ class BookContext:
 
         for ime, entry in za_prikaz:
             padeži = entry.get("padeži", {})
-            oblici = [
-                f"{p}:{o}" for p, o in padeži.items()
-                if o != ime
-            ]
+            oblici = [f"{p}:{o}" for p, o in padeži.items() if o != ime]
             if oblici:
                 linija = f"- {ime}: " + ", ".join(oblici)
             else:
@@ -290,7 +341,7 @@ class BookContext:
         self._engine = engine
         logger.debug("[book_context] Engine postavljen — koristim fleet za AI pozive")
 
-    def _dohvati_api_key(self) -> Optional[str]:
+    def _dohvati_api_key(self) -> str | None:
         """Dohvaća API ključ: iz fleeta ako je engine postavljen, inače direktno."""
         fleet = getattr(self._engine, "fleet", None) if self._engine else None
         if fleet is not None:
@@ -383,8 +434,7 @@ class BookContext:
         }
         # Izbjegni duplikate (isti originalni tekst)
         self._few_shot_primjeri = [
-            p for p in self._few_shot_primjeri
-            if p["originalni"] != entry["originalni"]
+            p for p in self._few_shot_primjeri if p["originalni"] != entry["originalni"]
         ]
         self._few_shot_primjeri.append(entry)
         # Čuvaj top-20 po score-u (ne zadnje po redoslijedu)
@@ -415,16 +465,21 @@ class BookContext:
         try:
             quality_scores = json.loads(qs_path.read_text(encoding="utf-8"))
         except Exception as e:
-            logger.warning(f"[book_context] few_shot: greška pri čitanju quality_scores: {e}")
+            logger.warning(
+                f"[book_context] few_shot: greška pri čitanju quality_scores: {e}"
+            )
             return 0
 
         # Sortiraj po score desc, filtriraj iznad praga
         kandidati = sorted(
-            [(stem, score) for stem, score in quality_scores.items()
-             if isinstance(score, (int, float)) and score >= min_score],
+            [
+                (stem, score)
+                for stem, score in quality_scores.items()
+                if isinstance(score, (int, float)) and score >= min_score
+            ],
             key=lambda x: x[1],
             reverse=True,
-        )[:max_primjera * 3]  # uzmi više kandidata jer neki .chk mogu nedostajati
+        )[: max_primjera * 3]  # uzmi više kandidata jer neki .chk mogu nedostajati
 
         dodano = 0
         for stem_key, score in kandidati:
@@ -437,7 +492,9 @@ class BookContext:
                 continue
 
             try:
-                prevedeni = chk_file.read_text(encoding="utf-8", errors="ignore").strip()
+                prevedeni = chk_file.read_text(
+                    encoding="utf-8", errors="ignore"
+                ).strip()
                 if not prevedeni or len(prevedeni) < 30:
                     continue
 
@@ -462,7 +519,9 @@ class BookContext:
                 continue
 
         if dodano:
-            logger.info(f"[book_context] Dinamički few-shot: dodano {dodano} primjera (min_score={min_score})")
+            logger.info(
+                f"[book_context] Dinamički few-shot: dodano {dodano} primjera (min_score={min_score})"
+            )
 
         return dodano
 
@@ -514,7 +573,7 @@ class BookContext:
         return "\n".join(linije).strip()
 
     # ── Kompletni kontekst prompt blok ─────────────────────────────────────
-    def kontekst_prompt_blok(self, broj_poglavlja: Optional[int] = None) -> str:
+    def kontekst_prompt_blok(self, broj_poglavlja: int | None = None) -> str:
         """Kreira kompletni kontekst blok za injektiranje u chunk prompt."""
         dijelovi = []
 
@@ -536,26 +595,25 @@ class BookContext:
 
         return "\n\n".join(dijelovi)
 
-    
     def get(self, key, default=None):
         """Dictionary-compatible get za backward kompatibilnost."""
-        if key == 'glosar' or key == 'glossary':
+        if key == "glosar" or key == "glossary":
             return self._glosar
-        if key == 'poglavlja' or key == 'chapters':
+        if key == "poglavlja" or key == "chapters":
             return self._poglavlja
-        if key == 'few_shot' or key == 'few_shot_primjeri':
+        if key == "few_shot" or key == "few_shot_primjeri":
             return self._few_shot_primjeri
         if hasattr(self, key):
             return getattr(self, key)
         return default
-    
+
     def __getitem__(self, key):
         """Dictionary-style access."""
         result = self.get(key)
         if result is None:
             raise KeyError(key)
         return result
-    
+
     def __contains__(self, key):
         """Za 'in' operator."""
         return self.get(key) is not None
@@ -575,13 +633,15 @@ if __name__ == "__main__":
 
     ctx = BookContext(knjiga_id="test_knjiga")
 
-    ctx.dodaj_likove_bulk([
-        ("Takeshi", "M"),
-        ("Ana", "Ž"),
-        ("Sarah", "Ž"),
-        "Bancroft",
-        "Miriam",
-    ])
+    ctx.dodaj_likove_bulk(
+        [
+            ("Takeshi", "M"),
+            ("Ana", "Ž"),
+            ("Sarah", "Ž"),
+            "Bancroft",
+            "Miriam",
+        ]
+    )
 
     print("Glosar prompt blok:")
     print(ctx.glosar_prompt_blok())
@@ -599,7 +659,7 @@ if __name__ == "__main__":
     ctx.dodaj_few_shot(
         "He walked slowly through the empty streets.",
         "Hodao je polako kroz prazne ulice.",
-        "Prirodan prijevod, bez kalkova"
+        "Prirodan prijevod, bez kalkova",
     )
     print("Few-shot prompt blok:")
     print(ctx.few_shot_prompt_blok())
@@ -607,41 +667,50 @@ if __name__ == "__main__":
 
     print(f"Objekt: {ctx}")
 
+
 # ── BookContextManager — kompatibilnost sa core/engine.py ──────────────────
 class BookContextManager:
     """
     Kompatibilni wrapper oko BookContext za core/engine.py.
     """
+
     def __init__(self, checkpoint_dir, log_func=None):
         import logging
+
         self.checkpoint_dir = checkpoint_dir
         self.log = log_func or (lambda msg, level="info": logging.info(msg))
-        self.book_context = BookContext(knjiga_id=str(checkpoint_dir.name) if checkpoint_dir else "default")
+        self.book_context = BookContext(
+            knjiga_id=str(checkpoint_dir.name) if checkpoint_dir else "default"
+        )
         self._glosar = {}
-        self._cache_file = checkpoint_dir / "book_context_cache.json" if checkpoint_dir else None
+        self._cache_file = (
+            checkpoint_dir / "book_context_cache.json" if checkpoint_dir else None
+        )
         self._ucitaj_cache()
-    
+
     def _ucitaj_cache(self):
         if self._cache_file and self._cache_file.exists():
             try:
                 import json
+
                 data = json.loads(self._cache_file.read_text("utf-8"))
                 self._glosar = data.get("glosar", {})
             except Exception:
                 pass
-    
+
     def _spremi_cache(self):
         if self._cache_file:
             try:
                 import json
+
                 self._cache_file.parent.mkdir(parents=True, exist_ok=True)
                 self._cache_file.write_text(
                     json.dumps({"glosar": self._glosar}, ensure_ascii=False, indent=2),
-                    encoding="utf-8"
+                    encoding="utf-8",
                 )
             except Exception:
                 pass
-    
+
     def build_glosar_tekst(self):
         """Vraća glosar kao tekst za prompt injection.
 
@@ -654,10 +723,15 @@ class BookContextManager:
         try:
             import json as _json
             from pathlib import Path as _P
+
             # Pokusaj iz knjiga_id
             kid = getattr(self, "knjiga_id", None)
             if not kid:
-                kid = getattr(self.book_context, "knjiga_id", None) if hasattr(self, "book_context") else None
+                kid = (
+                    getattr(self.book_context, "knjiga_id", None)
+                    if hasattr(self, "book_context")
+                    else None
+                )
             if kid:
                 kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (kid + ".json")
                 if kanon_path.exists():
@@ -671,7 +745,9 @@ class BookContextManager:
                         if hr and hr != en:
                             linije.append("- " + en + " -> " + hr + " [" + kat + "]")
                         else:
-                            linije.append("- " + en + " (OSTAVI KAKO JEST) [" + kat + "]")
+                            linije.append(
+                                "- " + en + " (OSTAVI KAKO JEST) [" + kat + "]"
+                            )
                     if linije:
                         return "\n".join(linije)
         except Exception:
@@ -692,28 +768,27 @@ class BookContextManager:
                 else:
                     linije.append(ime)
         return "\n".join(linije) if linije else ""
-    
+
     def dodaj_u_glosar(self, ime, varijante=None):
         """Dodaje vlastito ime u glosar."""
         if ime not in self._glosar:
             self._glosar[ime] = varijante or []
             self._spremi_cache()
-    
+
     def glosar_za_prompt(self, max_likova=20):
         """Vraća glosar za prompt injection (isti kao build_glosar_tekst)."""
         return self.build_glosar_tekst()
-    
+
     def dodaj_kontekst(self, poglavlje, summary):
         """Dodaje chapter summary."""
-        if hasattr(self.book_context, '_poglavlja'):
-            self.book_context._poglavlja[poglavlje] = type('obj', (object,), {
-                'summary': summary,
-                'broj': poglavlje
-            })()
-    
+        if hasattr(self.book_context, "_poglavlja"):
+            self.book_context._poglavlja[poglavlje] = type(
+                "obj", (object,), {"summary": summary, "broj": poglavlje}
+            )()
+
     def kontekst_za_poglavlje(self, poglavlje):
         """Vraća summary za dato poglavlje."""
-        if hasattr(self.book_context, '_poglavlja'):
+        if hasattr(self.book_context, "_poglavlja"):
             pog = self.book_context._poglavlja.get(poglavlje)
             return pog.summary if pog else ""
         return ""
@@ -726,8 +801,9 @@ async def analiziraj_knjigu(engine, book_path):
     1. Analiza autorovog stila pisanja (autor_analiza.py)
     2. (Rezervirano) Popuna glosara
     """
-    import logging
     import asyncio
+    import logging
+
     logging.info(f"[book_context] Analiza knjige: {book_path}")
 
     # ─── ANALIZA AUTOROVOG STILA ───
@@ -766,19 +842,22 @@ async def analiziraj_knjigu(engine, book_path):
     except Exception as e:
         logging.warning(f"[autor-analiza] Greška: {e}")
         import traceback
+
         logging.debug(traceback.format_exc())
 
 
 async def _inkrementalna_analiza_glosara(engine, poglavlje_tekst, poglavlje_ime):
     """Inkrementalno dodaje likove u glosar."""
-    import logging
     import asyncio
-    if hasattr(engine, 'context_mgr'):
-        if hasattr(engine.context_mgr.book_context, 'autodetektiraj_likove'):
+    import logging
+
+    if hasattr(engine, "context_mgr"):
+        if hasattr(engine.context_mgr.book_context, "autodetektiraj_likove"):
             # Trči u thread poolu
             likovi = await asyncio.to_thread(
                 engine.context_mgr.book_context.autodetektiraj_likove,
-                poglavlje_tekst, min_pojavljivanja=2
+                poglavlje_tekst,
+                min_pojavljivanja=2,
             )
             for lik in likovi:
                 engine.context_mgr.dodaj_u_glosar(lik)
@@ -787,9 +866,12 @@ async def _inkrementalna_analiza_glosara(engine, poglavlje_tekst, poglavlje_ime)
 
 async def _generiraj_chapter_summary(engine, file_name, file_content):
     """Generira summary poglavlja."""
-    import logging
     import asyncio
-    if hasattr(engine, 'context_mgr') and hasattr(engine.context_mgr.book_context, 'dodaj_poglavlje'):
+    import logging
+
+    if hasattr(engine, "context_mgr") and hasattr(
+        engine.context_mgr.book_context, "dodaj_poglavlje"
+    ):
         try:
             # Trči u thread poolu da ne blokira event loop
             await asyncio.to_thread(
@@ -797,7 +879,7 @@ async def _generiraj_chapter_summary(engine, file_name, file_content):
                 broj=hash(file_name) % 10000,
                 tekst=file_content[:5000],
                 naslov=file_name,
-                generiraj_summary=False
+                generiraj_summary=False,
             )
         except Exception as e:
             logging.warning(f"[book_context] Summary greška: {e}")

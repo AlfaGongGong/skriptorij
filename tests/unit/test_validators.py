@@ -1,8 +1,7 @@
-
-
 """Unit testovi za utils.file_utils."""
-import sys
+
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
@@ -37,6 +36,3 @@ def test_secure_filename_special_chars():
     assert "(" not in result
     assert ")" not in result
     assert result.endswith(".epub")
-
-
-

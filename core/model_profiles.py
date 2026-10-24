@@ -6,27 +6,27 @@ i anti-patterne karakteristične za taj model.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from config.ai_config import AI_MODEL_STRINGS, MODEL_MAP
 
 
 @dataclass
 class ModelProfile:
-    ime: str                          # interni identifikator
-    provider: str                     # gemini / groq / cerebras / mistral / cohere / sambanova / openrouter / chutes
-    api_model_string: str             # stvarni string za API poziv
-    anti_patterne: List[str]          # regex patterne karakteristični za ovaj model
+    ime: str  # interni identifikator
+    provider: str  # gemini / groq / cerebras / mistral / cohere / sambanova / openrouter / chutes
+    api_model_string: str  # stvarni string za API poziv
+    anti_patterne: list[str]  # regex patterne karakteristični za ovaj model
 
     # Rate limits (opcionalni — novi modeli ih možda ne znaju unaprijed)
     rpm_limit: int = 0
     rpd_limit: int = 0
 
     # Snage/slabosti/uloge (opcionalni za nove profile koji ih ne definiraju)
-    snage: List[str] = field(default_factory=list)
-    slabosti: List[str] = field(default_factory=list)
-    preferred_roles: List[str] = field(default_factory=list)
-    blacklisted_roles: List[str] = field(default_factory=list)
+    snage: list[str] = field(default_factory=list)
+    slabosti: list[str] = field(default_factory=list)
+    preferred_roles: list[str] = field(default_factory=list)
+    blacklisted_roles: list[str] = field(default_factory=list)
 
     # STARI sistem temperatura (flat polja) — koriste stariji profili
     temp_prevodilac: float = 0.75
@@ -37,22 +37,21 @@ class ModelProfile:
 
     # NOVI sistem temperatura (dict po ulozi) — koriste novi Gemini profili
     # Ako je popunjen, ima prioritet nad flat poljima u get_temp() / get_max_tokens()
-    temperatura_po_ulozi: Dict[str, float] = field(default_factory=dict)
-    max_tokens_po_ulozi: Dict[str, int] = field(default_factory=dict)
+    temperatura_po_ulozi: dict[str, float] = field(default_factory=dict)
+    max_tokens_po_ulozi: dict[str, int] = field(default_factory=dict)
 
     # Dodatna polja novih profila
-    visok_rizik: bool = False         # True = model često halucinira, obavezan validator
-    empirijski_score: float = 0.0    # prosječni quality score iz QA analize (0–10)
+    visok_rizik: bool = False  # True = model često halucinira, obavezan validator
+    empirijski_score: float = 0.0  # prosječni quality score iz QA analize (0–10)
 
-    notes: str = ""                   # slobodne napomene
+    notes: str = ""  # slobodne napomene
 
 
 # ─────────────────────────────────────────────────────────────
 # PROFILI — definirani empirijski iz QA analize
 # ─────────────────────────────────────────────────────────────
 
-PROFILI: Dict[str, ModelProfile] = {
-
+PROFILI: dict[str, ModelProfile] = {
     "gemini_25_flash": ModelProfile(
         ime="gemini_25_flash",
         provider="gemini",
@@ -91,7 +90,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=2048,
         notes="Primarni model za kvalitetne prolaze. Sklon meta-komentarima — anti_meta patch obavezan.",
     ),
-
     # Backward-compatible profile key retained so older references keep working,
     # but the actual API target is now the stable replacement model.
     "gemini_20_flash": ModelProfile(
@@ -127,7 +125,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=2048,
         notes="Kompatibilni profil sada koristi stable gemini-3.5-flash nakon gašenja gemini-2.0-flash.",
     ),
-
     "gemini_3_flash": ModelProfile(
         ime="gemini_3_flash",
         provider="gemini",
@@ -142,7 +139,6 @@ PROFILI: Dict[str, ModelProfile] = {
         empirijski_score=8.4,
         notes="Gemini 3 Flash — nezavisni RPM/RPD od 2.5 Flash. RPM=5, RPD=20.",
     ),
-
     "gemini_31_flash_lite": ModelProfile(
         ime="gemini_31_flash_lite",
         provider="gemini",
@@ -157,7 +153,6 @@ PROFILI: Dict[str, ModelProfile] = {
         empirijski_score=8.1,
         notes="Gemini 3.1 Flash Lite — RPM=15, RPD=500. Najveći besplatni RPD od svih Flash modela.",
     ),
-
     "gemini_25_flash_lite": ModelProfile(
         ime="gemini_25_flash_lite",
         provider="gemini",
@@ -172,7 +167,6 @@ PROFILI: Dict[str, ModelProfile] = {
         empirijski_score=8.0,
         notes="Gemini 2.5 Flash Lite — RPM=10, RPD=20. Nezavisan limit od 2.5 Flash.",
     ),
-
     "gemma4_26b": ModelProfile(
         ime="gemma4_26b",
         provider="gemini",
@@ -188,7 +182,6 @@ PROFILI: Dict[str, ModelProfile] = {
         empirijski_score=7.8,
         notes="Gemma 4 26B — RPM=15, RPD=1500. Dobar za lektor prolaz.",
     ),
-
     "gemma4_31b": ModelProfile(
         ime="gemma4_31b",
         provider="gemini",
@@ -204,7 +197,6 @@ PROFILI: Dict[str, ModelProfile] = {
         empirijski_score=8.0,
         notes="Gemma 4 31B — RPM=15, RPD=1500. Najjači Gemma model.",
     ),
-
     "gemma3_27b": ModelProfile(
         ime="gemma3_27b",
         provider="gemini",
@@ -230,9 +222,16 @@ PROFILI: Dict[str, ModelProfile] = {
         # Profil ostaje kao historijski zapis, ali se model nikad ne smije odabrati.
         preferred_roles=[],
         blacklisted_roles=[
-            "lektor", "prevodilac", "validator", "korektor",
-            "guardian", "polish", "analiza", "chapter_summary",
-            "glosar_update", "scorer",
+            "lektor",
+            "prevodilac",
+            "validator",
+            "korektor",
+            "guardian",
+            "polish",
+            "analiza",
+            "chapter_summary",
+            "glosar_update",
+            "scorer",
         ],
         temp_prevodilac=0.78,
         temp_lektor=0.70,
@@ -240,7 +239,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=1800,
         notes="DEAD MODEL: gemma-3-27b-it vratio HTTP 404 od maja 2026. Ne koristiti.",
     ),
-
     "llama33_70b_groq": ModelProfile(
         ime="llama33_70b_groq",
         provider="groq",
@@ -262,7 +260,7 @@ PROFILI: Dict[str, ModelProfile] = {
             r"\bneverovatno?\b",
             r"\bposeduje\b",
             r"\bposedujem\b",
-            r"\bvideo\b(?!\s+\w+\s+\w)",   # ekavski "video" umjesto "vidio"
+            r"\bvideo\b(?!\s+\w+\s+\w)",  # ekavski "video" umjesto "vidio"
             r"\bsreo\b",
             r"\bneo\b",
             r"\bpeo\b",
@@ -276,7 +274,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=1800,
         notes="OBAVEZAN anti_srbizmi patch u promptu. Kalkovi engine hvata većinu, ali prompt patch smanjuje učestalost.",
     ),
-
     "llama31_70b_cerebras": ModelProfile(
         ime="llama31_70b_cerebras",
         provider="cerebras",
@@ -313,7 +310,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=1600,
         notes="Koristiti samo za volume obradu. Kalkovi engine + morfo_validator OBAVEZNI nakon ovog modela.",
     ),
-
     "mistral_large": ModelProfile(
         ime="mistral_large",
         provider="mistral",
@@ -343,7 +339,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=2048,
         notes="Dobar lektor. Treba vary_syntax patch jer je monoton.",
     ),
-
     "mistral_nemo": ModelProfile(
         ime="mistral_nemo",
         provider="mistral",
@@ -368,7 +363,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=1800,
         notes="Backup za mistral_large.",
     ),
-
     "command_r_plus_cohere": ModelProfile(
         ime="command_r_plus_cohere",
         provider="cohere",
@@ -397,7 +391,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=2048,
         notes="Treba vary_syntax patch. Solidan backup model.",
     ),
-
     "llama_sambanova": ModelProfile(
         ime="llama_sambanova",
         provider="sambanova",
@@ -425,7 +418,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=1800,
         notes="Anti_literal patch obavezan.",
     ),
-
     "deepseek_openrouter": ModelProfile(
         ime="deepseek_openrouter",
         provider="openrouter",
@@ -452,7 +444,6 @@ PROFILI: Dict[str, ModelProfile] = {
         max_tokens_chunk=2048,
         notes="Koristiti za tehničku SF literaturu.",
     ),
-
     "qwen_chutes": ModelProfile(
         ime="qwen_chutes",
         provider="chutes",
@@ -498,17 +489,29 @@ PROFILI["groq"] = ModelProfile(
     ime="groq",
     provider="groq",
     api_model_string=MODEL_MAP.get("GROQ", ""),
-    rpm_limit=30, rpd_limit=14400,
+    rpm_limit=30,
+    rpd_limit=14400,
     snage=["brz", "visoki rpm limit", "dobar za masovnu obradu"],
-    slabosti=["sistematski srbizmi/ekavizmi", "morfološke halucinacije", "doslovan prijevod idioma"],
+    slabosti=[
+        "sistematski srbizmi/ekavizmi",
+        "morfološke halucinacije",
+        "doslovan prijevod idioma",
+    ],
     anti_patterne=[
-        r"\bneverovatno?\b", r"\bposeduje\b", r"\bposedujem\b",
-        r"\bvideo\b(?!\s+\w+\s+\w)", r"\bsreo\b", r"\bneo\b", r"\bpeo\b",
+        r"\bneverovatno?\b",
+        r"\bposeduje\b",
+        r"\bposedujem\b",
+        r"\bvideo\b(?!\s+\w+\s+\w)",
+        r"\bsreo\b",
+        r"\bneo\b",
+        r"\bpeo\b",
         r"^Naravno[,!]?\s",
     ],
     preferred_roles=["prevodilac"],
     blacklisted_roles=["validator", "chapter_summary"],
-    temp_prevodilac=0.65, temp_lektor=0.60, temp_validator=0.30,
+    temp_prevodilac=0.65,
+    temp_lektor=0.60,
+    temp_validator=0.30,
     max_tokens_chunk=1800,
     notes="Provider-level profil za GROQ. Model iz discovery-ja.",
 )
@@ -517,17 +520,24 @@ PROFILI["mistral"] = ModelProfile(
     ime="mistral",
     provider="mistral",
     api_model_string=MODEL_MAP.get("MISTRAL", ""),
-    rpm_limit=5, rpd_limit=14400,
+    rpm_limit=5,
+    rpd_limit=14400,
     snage=["dobar književni stil", "razumije kontekst"],
     slabosti=["sklon meta-komentarima", "markdown blokovi"],
     anti_patterne=[
-        r"^Naravno[,!]?\s", r"^Evo\s", r"^Svakako[,!]?\s",
-        r"```[\w]*\n", r"\n```",
-        r"^\*\*Prijevod\*\*", r"^\*\*Napomena\*\*",
+        r"^Naravno[,!]?\s",
+        r"^Evo\s",
+        r"^Svakako[,!]?\s",
+        r"```[\w]*\n",
+        r"\n```",
+        r"^\*\*Prijevod\*\*",
+        r"^\*\*Napomena\*\*",
     ],
     preferred_roles=["prevodilac", "lektor", "validator"],
     blacklisted_roles=[],
-    temp_prevodilac=0.55, temp_lektor=0.60, temp_validator=0.30,
+    temp_prevodilac=0.55,
+    temp_lektor=0.60,
+    temp_validator=0.30,
     max_tokens_chunk=2048,
     notes="Provider-level profil za MISTRAL. Model iz discovery-ja.",
 )
@@ -536,18 +546,26 @@ PROFILI["gemini"] = ModelProfile(
     ime="gemini",
     provider="gemini",
     api_model_string=MODEL_MAP.get("GEMINI", ""),
-    rpm_limit=15, rpd_limit=500,
+    rpm_limit=15,
+    rpd_limit=500,
     snage=["književni stil", "HR morfologija", "dugi kontekst", "razumijevanje idioma"],
     slabosti=["meta-komentari", "markdown blokovi", "predugi odgovori", "anglicizmi"],
     anti_patterne=[
-        r"^Naravno[,!]?\s", r"^Evo\s(prijevoda|mog|rezultata)", r"^Svakako[,!]?\s",
-        r"```[\w]*\n", r"\n```",
-        r"^\*\*Prijevod\*\*", r"^\*\*Napomena\*\*",
-        r"Nadam se da", r"Slobodno pitajte",
+        r"^Naravno[,!]?\s",
+        r"^Evo\s(prijevoda|mog|rezultata)",
+        r"^Svakako[,!]?\s",
+        r"```[\w]*\n",
+        r"\n```",
+        r"^\*\*Prijevod\*\*",
+        r"^\*\*Napomena\*\*",
+        r"Nadam se da",
+        r"Slobodno pitajte",
     ],
     preferred_roles=["prevodilac", "lektor", "validator", "chapter_summary"],
     blacklisted_roles=[],
-    temp_prevodilac=0.72, temp_lektor=0.65, temp_validator=0.30,
+    temp_prevodilac=0.72,
+    temp_lektor=0.65,
+    temp_validator=0.30,
     max_tokens_chunk=2048,
     notes="Provider-level profil za GEMINI. Model iz discovery-ja.",
 )
@@ -556,16 +574,21 @@ PROFILI["gemma"] = ModelProfile(
     ime="gemma",
     provider="gemma",
     api_model_string=MODEL_MAP.get("GEMMA", ""),
-    rpm_limit=15, rpd_limit=1500,
+    rpm_limit=15,
+    rpd_limit=1500,
     snage=["thinking model", "visoki RPD"],
     slabosti=["troši tokene na reasoning", "meta-komentari"],
     anti_patterne=[
-        r"^Naravno[,!]?\s", r"^Evo\s",
-        r"```[\w]*\n", r"\n```",
+        r"^Naravno[,!]?\s",
+        r"^Evo\s",
+        r"```[\w]*\n",
+        r"\n```",
     ],
     preferred_roles=["prevodilac", "lektor"],
     blacklisted_roles=[],
-    temp_prevodilac=0.55, temp_lektor=0.60, temp_validator=0.30,
+    temp_prevodilac=0.55,
+    temp_lektor=0.60,
+    temp_validator=0.30,
     max_tokens_chunk=2048,
     notes="Provider-level profil za GEMMA. Model iz discovery-ja. Thinking model — min 2000 tokens.",
 )
@@ -574,16 +597,21 @@ PROFILI["nvidia"] = ModelProfile(
     ime="nvidia",
     provider="nvidia",
     api_model_string=MODEL_MAP.get("NVIDIA", ""),
-    rpm_limit=0, rpd_limit=0,
+    rpm_limit=0,
+    rpd_limit=0,
     snage=["veliki modeli", "dobar kontekst"],
     slabosti=["srbizmi", "meta-komentari"],
     anti_patterne=[
-        r"^Naravno[,!]?\s", r"^Evo\s",
-        r"\bneverovatno?\b", r"\bposeduje\b",
+        r"^Naravno[,!]?\s",
+        r"^Evo\s",
+        r"\bneverovatno?\b",
+        r"\bposeduje\b",
     ],
     preferred_roles=["prevodilac", "lektor", "validator"],
     blacklisted_roles=[],
-    temp_prevodilac=0.55, temp_lektor=0.60, temp_validator=0.30,
+    temp_prevodilac=0.55,
+    temp_lektor=0.60,
+    temp_validator=0.30,
     max_tokens_chunk=2048,
     notes="Provider-level profil za NVIDIA. Model iz discovery-ja.",
 )
@@ -592,16 +620,20 @@ PROFILI["cloudflare"] = ModelProfile(
     ime="cloudflare",
     provider="cloudflare",
     api_model_string=MODEL_MAP.get("CLOUDFLARE", ""),
-    rpm_limit=30, rpd_limit=10000,
+    rpm_limit=30,
+    rpd_limit=10000,
     snage=["besplatan tier", "visoki limit"],
     slabosti=["manji modeli", "generički stil"],
     anti_patterne=[
-        r"^Naravno[,!]?\s", r"^Evo\s",
+        r"^Naravno[,!]?\s",
+        r"^Evo\s",
         r"```[\w]*\n",
     ],
     preferred_roles=["prevodilac", "lektor"],
     blacklisted_roles=[],
-    temp_prevodilac=0.60, temp_lektor=0.60, temp_validator=0.30,
+    temp_prevodilac=0.60,
+    temp_lektor=0.60,
+    temp_validator=0.30,
     max_tokens_chunk=2048,
     notes="Provider-level profil za CLOUDFLARE. Model iz discovery-ja.",
 )
@@ -609,10 +641,10 @@ PROFILI["cloudflare"] = ModelProfile(
 # ── Aliasi: stari model-specific kljucevi pokazuju na provider profile ──
 _ALIASI = {
     "llama33_70b_groq": "groq",
-    "llama31_70b_cerebras": None,   # CEREBRAS jos nema provider profil — ostaje star
-    "qwen_chutes": None,             # CHUTES jos nema — ostaje star
-    "llama_sambanova": None,         # SAMBANOVA jos nema — ostaje star
-    "deepseek_openrouter": None,     # OPENROUTER jos nema — ostaje star
+    "llama31_70b_cerebras": None,  # CEREBRAS jos nema provider profil — ostaje star
+    "qwen_chutes": None,  # CHUTES jos nema — ostaje star
+    "llama_sambanova": None,  # SAMBANOVA jos nema — ostaje star
+    "deepseek_openrouter": None,  # OPENROUTER jos nema — ostaje star
     "mistral_large": "mistral",
     "mistral_nemo": "mistral",
     "gemini_25_flash": "gemini",
@@ -629,13 +661,14 @@ for _old, _new in _ALIASI.items():
         PROFILI[_old] = PROFILI[_new]
 
 
-def _provider_fallback_profil(ime: str) -> Optional[ModelProfile]:
+def _provider_fallback_profil(ime: str) -> ModelProfile | None:
     """
     2026-10-23: ako tacan model_ime nije u PROFILI, probaj provajder.
     npr. 'gemini-4-flash-lite' -> get_provider_for_model() -> 'GEMINI' -> PROFILI['gemini']
     """
     try:
         from config.ai_config import get_provider_for_model
+
         prov = get_provider_for_model(ime)
         if prov:
             # PROFILI kljucevi su lower-case (gemini, gemma, groq, mistral...)
@@ -645,21 +678,21 @@ def _provider_fallback_profil(ime: str) -> Optional[ModelProfile]:
     return None
 
 
-def get_profil(ime: str) -> Optional[ModelProfile]:
+def get_profil(ime: str) -> ModelProfile | None:
     """Vraća ModelProfile za dati identifikator. None ako nije pronađen."""
     return PROFILI.get(ime)
 
 
-def get_profili_za_ulogu(uloga: str) -> List[ModelProfile]:
+def get_profili_za_ulogu(uloga: str) -> list[ModelProfile]:
     """Vraća sve profile koji podržavaju danu ulogu (nisu blacklisted)."""
     return [
-        p for p in PROFILI.values()
-        if uloga in p.preferred_roles
-        and uloga not in p.blacklisted_roles
+        p
+        for p in PROFILI.values()
+        if uloga in p.preferred_roles and uloga not in p.blacklisted_roles
     ]
 
 
-def get_anti_patterne(ime: str) -> List[str]:
+def get_anti_patterne(ime: str) -> list[str]:
     """Vraća listu regex anti-patterna za dati model."""
     p = PROFILI.get(ime) or _provider_fallback_profil(ime)
     return p.anti_patterne if p else []
@@ -675,7 +708,9 @@ def get_temp(ime: str, uloga: str) -> float:
         return 0.75
     # Novi sistem — dict po ulozi ima prioritet
     if p.temperatura_po_ulozi:
-        return p.temperatura_po_ulozi.get(uloga, p.temperatura_po_ulozi.get("prevodilac", 0.75))
+        return p.temperatura_po_ulozi.get(
+            uloga, p.temperatura_po_ulozi.get("prevodilac", 0.75)
+        )
     # Stari sistem — flat polja
     mapping = {
         "prevodilac": p.temp_prevodilac,
@@ -695,7 +730,9 @@ def get_max_tokens(ime: str, uloga: str = "prevodilac") -> int:
         return 2048
     # Novi sistem — dict po ulozi ima prioritet
     if p.max_tokens_po_ulozi:
-        return p.max_tokens_po_ulozi.get(uloga, p.max_tokens_po_ulozi.get("prevodilac", 2048))
+        return p.max_tokens_po_ulozi.get(
+            uloga, p.max_tokens_po_ulozi.get("prevodilac", 2048)
+        )
     # Stari sistem — flat polja
     if uloga == "validator":
         return p.max_tokens_validator
@@ -705,4 +742,6 @@ def get_max_tokens(ime: str, uloga: str = "prevodilac") -> int:
 if __name__ == "__main__":
     print(f"Učitano profila: {len(PROFILI)}")
     for ime, p in PROFILI.items():
-        print(f"  {ime:30s} provider={p.provider:12s} rpm={p.rpm_limit:4d} temp_prev={p.temp_prevodilac}")
+        print(
+            f"  {ime:30s} provider={p.provider:12s} rpm={p.rpm_limit:4d} temp_prev={p.temp_prevodilac}"
+        )

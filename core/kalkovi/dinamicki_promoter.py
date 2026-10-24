@@ -3,11 +3,11 @@ Korak 11c — Promoter i feedback loop zaštita
 Promovira potvrđene kalkove u aktivnu listu + rollback zaštita.
 """
 
+import logging
 import re
 import sqlite3
-import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -40,12 +40,15 @@ class DinamickiPromoter:
 
     def _provjeri_korelaciju(self, pattern: str) -> tuple:
         with sqlite3.connect(self.db_path) as conn:
-            row = conn.execute("""
+            row = conn.execute(
+                """
                 SELECT CASE WHEN broj_pojavljivanja > 0
                             THEN ukupan_score / broj_pojavljivanja
                             ELSE 0 END as avg_score
                 FROM kandidati WHERE pattern=?
-            """, (pattern,)).fetchone()
+            """,
+                (pattern,),
+            ).fetchone()
         avg = row[0] if row else 0.0
         if avg < 7.5:
             return avg, "los_score"
@@ -61,8 +64,8 @@ class DinamickiPromoter:
     def _ucitaj_dinamicki_listu(self) -> list:
         if not DINAMICKI_LISTA_PATH.exists():
             return []
-        content = DINAMICKI_LISTA_PATH.read_text(encoding='utf-8')
-        match = re.search(r'DINAMICKI_KALKOVI\s*=\s*\[(.*?)\]', content, re.DOTALL)
+        content = DINAMICKI_LISTA_PATH.read_text(encoding="utf-8")
+        match = re.search(r"DINAMICKI_KALKOVI\s*=\s*\[(.*?)\]", content, re.DOTALL)
         if match:
             return match.group(1).strip().splitlines()
         return []
@@ -70,13 +73,11 @@ class DinamickiPromoter:
     def _spasi_dinamicki_listu(self, unosi: list):
         sadrzaj = (
             '"""\nDinamicki generirane liste kalkova.\n'
-            'Automatski azurirano od DinamickiPromoter-a.\n'
+            "Automatski azurirano od DinamickiPromoter-a.\n"
             f'Zadnje azuriranje: {datetime.now().strftime("%Y-%m-%d %H:%M")}\n"""\n\n'
-            'DINAMICKI_KALKOVI = [\n'
-            + "\n".join(unosi)
-            + "\n]\n"
+            "DINAMICKI_KALKOVI = [\n" + "\n".join(unosi) + "\n]\n"
         )
-        DINAMICKI_LISTA_PATH.write_text(sadrzaj, encoding='utf-8')
+        DINAMICKI_LISTA_PATH.write_text(sadrzaj, encoding="utf-8")
 
     def promoviraj(self, dry_run: bool = False) -> dict:
         kandidati = self._dohvati_potvrdjene()
@@ -85,68 +86,81 @@ class DinamickiPromoter:
         novi_unosi = list(postojeci_unosi)
 
         for k in kandidati:
-            pattern = k['pattern']
-            tip = k['tip']
+            pattern = k["pattern"]
+            tip = k["tip"]
             escaped = re.escape(pattern)
             if any(escaped in u or pattern in u for u in postojeci_unosi):
-                rezultat['preskocan'].append(pattern)
+                rezultat["preskocan"].append(pattern)
                 continue
 
             avg_score, ocjena = self._provjeri_korelaciju(pattern)
             if ocjena == "dobar_score_mozda_nije_kalk":
-                rezultat['odbijen_korelacija'].append({
-                    "pattern": pattern,
-                    "razlog": f"avg_score={avg_score:.2f}"
-                })
+                rezultat["odbijen_korelacija"].append(
+                    {"pattern": pattern, "razlog": f"avg_score={avg_score:.2f}"}
+                )
                 if not dry_run:
                     with sqlite3.connect(self.db_path) as conn:
                         conn.execute(
                             "UPDATE kandidati SET status='odbijen', validator_napomena=? WHERE pattern=?",
-                            (f"korelacija negativna: {avg_score:.2f}", pattern)
+                            (f"korelacija negativna: {avg_score:.2f}", pattern),
                         )
                         conn.commit()
                 continue
 
             novi_unos = self._generisi_python_unos(pattern, tip)
             novi_unosi.append(novi_unos)
-            rezultat['promoviran'].append({
-                "pattern": pattern, "tip": tip,
-                "avg_score": avg_score, "ocjena": ocjena
-            })
+            rezultat["promoviran"].append(
+                {
+                    "pattern": pattern,
+                    "tip": tip,
+                    "avg_score": avg_score,
+                    "ocjena": ocjena,
+                }
+            )
             if not dry_run:
                 with sqlite3.connect(self.db_path) as conn:
                     conn.execute(
                         "UPDATE kandidati SET status='aktivan', datum_zadnjeg=datetime('now') WHERE pattern=?",
-                        (pattern,)
+                        (pattern,),
                     )
                     conn.commit()
 
         if not dry_run and len(novi_unosi) != len(postojeci_unosi):
             self._spasi_dinamicki_listu(novi_unosi)
-            log.info(f"Dinamicka lista azurirana: +{len(rezultat['promoviran'])} patterna")
+            log.info(
+                f"Dinamicka lista azurirana: +{len(rezultat['promoviran'])} patterna"
+            )
 
         return rezultat
 
     def rollback_pattern(self, pattern: str, razlog: str = ""):
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 UPDATE kandidati
                 SET status='rollback',
                     rollback_count = rollback_count + 1,
                     validator_napomena = ?,
                     datum_zadnjeg = datetime('now')
                 WHERE pattern = ?
-            """, (f"rollback: {razlog}", pattern))
+            """,
+                (f"rollback: {razlog}", pattern),
+            )
             conn.commit()
         if DINAMICKI_LISTA_PATH.exists():
-            content = DINAMICKI_LISTA_PATH.read_text(encoding='utf-8')
+            content = DINAMICKI_LISTA_PATH.read_text(encoding="utf-8")
             escaped = re.escape(pattern)
-            linije = [l for l in content.splitlines()
-                      if pattern not in l and escaped not in l]
-            DINAMICKI_LISTA_PATH.write_text("\n".join(linije) + "\n", encoding='utf-8')
-            log.warning(f"Rollback: '{pattern}' uklonjen iz dinamicke liste. Razlog: {razlog}")
+            linije = [
+                l for l in content.splitlines() if pattern not in l and escaped not in l
+            ]
+            DINAMICKI_LISTA_PATH.write_text("\n".join(linije) + "\n", encoding="utf-8")
+            log.warning(
+                f"Rollback: '{pattern}' uklonjen iz dinamicke liste. Razlog: {razlog}"
+            )
 
-    def provjeri_score_pad(self, knjiga: str, score_prije: float, score_poslije: float) -> bool:
+    def provjeri_score_pad(
+        self, knjiga: str, score_prije: float, score_poslije: float
+    ) -> bool:
         pad = score_prije - score_poslije
         if pad > MAX_DOZVOLJENI_PAD_SCORE:
             with sqlite3.connect(self.db_path) as conn:
@@ -158,7 +172,7 @@ class DinamickiPromoter:
             if row:
                 self.rollback_pattern(
                     row[0],
-                    razlog=f"score pad {score_prije:.2f}->{score_poslije:.2f} u '{knjiga}'"
+                    razlog=f"score pad {score_prije:.2f}->{score_poslije:.2f} u '{knjiga}'",
                 )
                 return True
         return False

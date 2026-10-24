@@ -9,6 +9,7 @@ Upotreba:
 
 --json: ispisi rezultat kao JSON (za dalju obradu)
 """
+
 import argparse
 import json
 import sys
@@ -17,9 +18,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from core.replacements import load_moon_replacements, apply_to_html
+from core.replacements import apply_to_html, load_moon_replacements
 from core.replacements_learn import (
-    learn_from_fires, summarize, to_glosar_dict, to_kalkovi_list,
+    learn_from_fires,
+    summarize,
+    to_glosar_dict,
+    to_kalkovi_list,
 )
 
 
@@ -27,10 +31,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("epub", help="EPUB fajl")
     ap.add_argument("rules", help="Moon+ replacement fajl (.txt)")
-    ap.add_argument("--min-conf", type=float, default=0.7,
-                    help="Minimalna konfidenca za glosar (default 0.7)")
-    ap.add_argument("--min-conf-kalk", type=float, default=0.85,
-                    help="Minimalna konfidenca za kalkove (default 0.85)")
+    ap.add_argument(
+        "--min-conf",
+        type=float,
+        default=0.7,
+        help="Minimalna konfidenca za glosar (default 0.7)",
+    )
+    ap.add_argument(
+        "--min-conf-kalk",
+        type=float,
+        default=0.85,
+        help="Minimalna konfidenca za kalkove (default 0.85)",
+    )
     ap.add_argument("--json", action="store_true", help="Ispisi kao JSON")
     ap.add_argument("--top", type=int, default=10, help="Broj top kandidata")
     ap.add_argument("--verbose", "-v", action="store_true")
@@ -48,14 +60,14 @@ def main():
 
     # 1. Ucitaj pravila
     if not args.json:
-        print(f"═══ 1. Ucitavam pravila ═══")
+        print("═══ 1. Ucitavam pravila ═══")
     rules = load_moon_replacements(str(rules_path))
     if not args.json:
         print(f"  ✅ {len(rules)} pravila")
 
     # 2. Primeni na EPUB
     if not args.json:
-        print(f"\n═══ 2. Primenjujem na EPUB ═══")
+        print("\n═══ 2. Primenjujem na EPUB ═══")
     all_fires = []
     files_total = 0
     files_changed = 0
@@ -80,7 +92,7 @@ def main():
 
     # 3. Analiza
     if not args.json:
-        print(f"\n═══ 3. Analiza ═══")
+        print("\n═══ 3. Analiza ═══")
     result = learn_from_fires(all_fires, rules)
 
     glosar = to_glosar_dict(result, min_confidence=args.min_conf)
@@ -101,16 +113,24 @@ def main():
             "glosar": glosar,
             "kalkovi": kalkovi,
             "glosar_candidates_top": [
-                {"original": c.original, "prevod": c.prevod,
-                 "count": c.count, "confidence": round(c.confidence, 3),
-                 "source_line": c.source_line}
-                for c in result.glosar_candidates[:args.top]
+                {
+                    "original": c.original,
+                    "prevod": c.prevod,
+                    "count": c.count,
+                    "confidence": round(c.confidence, 3),
+                    "source_line": c.source_line,
+                }
+                for c in result.glosar_candidates[: args.top]
             ],
             "anti_pattern_candidates_top": [
-                {"pattern": c.pattern, "replacement": c.replacement,
-                 "count": c.count, "confidence": round(c.confidence, 3),
-                 "source_line": c.source_line}
-                for c in result.anti_pattern_candidates[:args.top]
+                {
+                    "pattern": c.pattern,
+                    "replacement": c.replacement,
+                    "count": c.count,
+                    "confidence": round(c.confidence, 3),
+                    "source_line": c.source_line,
+                }
+                for c in result.anti_pattern_candidates[: args.top]
             ],
             "unused_rules": [
                 {"search": u.search, "replace": u.replace, "source_line": u.source_line}
@@ -123,21 +143,23 @@ def main():
         print(summarize(result))
         print()
         print(f"═══ 4. Glosar (min_conf={args.min_conf}) — {len(glosar)} ═══")
-        for k, v in list(glosar.items())[:args.top]:
+        for k, v in list(glosar.items())[: args.top]:
             print(f"  {k:25} -> {v}")
         if len(glosar) > args.top:
             print(f"  ... i još {len(glosar) - args.top}")
 
         print()
         print(f"═══ 5. Kalkovi (min_conf={args.min_conf_kalk}) — {len(kalkovi)} ═══")
-        for item in kalkovi[:args.top]:
-            print(f"  {item['pattern'][:25]:25} -> {item['replacement'][:25]:25} "
-                  f"(conf={item['confidence']:.2f})")
+        for item in kalkovi[: args.top]:
+            print(
+                f"  {item['pattern'][:25]:25} -> {item['replacement'][:25]:25} "
+                f"(conf={item['confidence']:.2f})"
+            )
 
         if args.verbose and result.unused_rules:
             print()
             print(f"═══ 6. Neaktivna pravila ({len(result.unused_rules)}) ═══")
-            for u in result.unused_rules[:args.top]:
+            for u in result.unused_rules[: args.top]:
                 print(f"  [{u.source_line}] {u.search[:30]:30} -> {u.replace[:30]}")
 
     return 0

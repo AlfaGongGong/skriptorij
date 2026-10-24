@@ -1,4 +1,3 @@
-
 # epub/styling.py
 
 _EPUB_PAPER_CSS = """\

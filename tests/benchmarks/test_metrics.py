@@ -3,8 +3,12 @@ import pytest
 from core.metrics import compute_metrics
 
 KLJUCEVI = {
-    "ekavizmi_per_1000", "en_ostaci_per_1000", "duplikati",
-    "ratio_source_target", "tipografija_greske", "reci_ukupno",
+    "ekavizmi_per_1000",
+    "en_ostaci_per_1000",
+    "duplikati",
+    "ratio_source_target",
+    "tipografija_greske",
+    "reci_ukupno",
 }
 
 
@@ -196,4 +200,3 @@ def test_classify_ratio_review():
         "ratio_source_target": 0.45,
     }
     assert classify_metrics(m) == "REVIEW"
-

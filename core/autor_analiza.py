@@ -12,9 +12,9 @@ Analizira prvih N rečenica iz knjige i vraća stilski profil:
 
 Profil se ubacuje u PREVODILAC prompt kao dinamička instrukcija.
 """
-import re
+
 import json
-from collections import Counter
+import re
 from pathlib import Path
 
 
@@ -24,7 +24,7 @@ def analiziraj_tekst(tekst: str) -> dict:
         return {}
 
     # ─── 1. Rečenice ───
-    recenice = re.split(r'(?<=[.!?…])\s+', tekst)
+    recenice = re.split(r"(?<=[.!?…])\s+", tekst)
     recenice = [r.strip() for r in recenice if len(r.strip()) > 10]
 
     if not recenice:
@@ -43,46 +43,76 @@ def analiziraj_tekst(tekst: str) -> dict:
     # ─── 2. Dijalozi ───
     dijalozi = 0
     for r in recenice:
-        if r.startswith(('"', '„', '“', '—', '-', '–')):
+        if r.startswith(('"', "„", "“", "—", "-", "–")):
             dijalozi += 1
     omjer_dijaloga = dijalozi / len(recenice)
 
     # ─── 3. Vrijeme ───
     # Prošlo: "rekao", "otišao", "bio"; Sadašnje: "kaže", "ide", "je"
-    proslo = len(re.findall(r'\b\w+(ao|io|eo|la|lo|li|le)\b', tekst.lower()))
-    sadasnje = len(re.findall(r'\b\w+(am|aš|a|amo|ate|aju|im|iš|i|imo|ite|e)\b', tekst.lower()))
-    vrijeme = "prošlo" if proslo > sadasnje * 1.5 else ("sadašnje" if sadasnje > proslo * 1.5 else "miješano")
+    proslo = len(re.findall(r"\b\w+(ao|io|eo|la|lo|li|le)\b", tekst.lower()))
+    sadasnje = len(
+        re.findall(r"\b\w+(am|aš|a|amo|ate|aju|im|iš|i|imo|ite|e)\b", tekst.lower())
+    )
+    vrijeme = (
+        "prošlo"
+        if proslo > sadasnje * 1.5
+        else ("sadašnje" if sadasnje > proslo * 1.5 else "miješano")
+    )
 
     # ─── 4. Lice ───
-    prvo_lice = len(re.findall(r'\b(ja|mene|mi|nas|nama|moj|moja|moje)\b', tekst.lower()))
-    trece_lice = len(re.findall(r'\b(on|ona|ono|njega|nje|njima|njihov|njegov|njezin)\b', tekst.lower()))
-    lice = "prvo" if prvo_lice > trece_lice * 1.5 else ("treće" if trece_lice > prvo_lice * 1.5 else "miješano")
+    prvo_lice = len(
+        re.findall(r"\b(ja|mene|mi|nas|nama|moj|moja|moje)\b", tekst.lower())
+    )
+    trece_lice = len(
+        re.findall(
+            r"\b(on|ona|ono|njega|nje|njima|njihov|njegov|njezin)\b", tekst.lower()
+        )
+    )
+    lice = (
+        "prvo"
+        if prvo_lice > trece_lice * 1.5
+        else ("treće" if trece_lice > prvo_lice * 1.5 else "miješano")
+    )
 
     # ─── 5. Unutarnji monolog ───
     # Česti markeri: "mislio", "pomislio", "osjećao", "znao"
-    unutarnji = len(re.findall(
-        r'\b(mislio|mislila|pomislio|pomislila|osjećao|osjećala|znao|znala|'
-        r'želio|željela|nadala|nadao|bojao|bojala)\b', tekst.lower()
-    ))
+    unutarnji = len(
+        re.findall(
+            r"\b(mislio|mislila|pomislio|pomislila|osjećao|osjećala|znao|znala|"
+            r"želio|željela|nadala|nadao|bojao|bojala)\b",
+            tekst.lower(),
+        )
+    )
     ima_unutarnji = unutarnji > len(recenice) * 0.1
 
     # ─── 6. Tempo ───
     # Kratke rečenice + akcioni glagoli = brz tempo
-    akcioni_glagoli = len(re.findall(
-        r'\b(trčao|trčala|skočio|skočila|udario|udarila|ubio|ubila|'
-        r'povukao|povukla|jurnuo|jurnula|poletio|poletjela)\b', tekst.lower()
-    ))
-    brz_tempo = (kratke > len(recenice) * 0.4) or (akcioni_glagoli > len(recenice) * 0.05)
+    akcioni_glagoli = len(
+        re.findall(
+            r"\b(trčao|trčala|skočio|skočila|udario|udarila|ubio|ubila|"
+            r"povukao|povukla|jurnuo|jurnula|poletio|poletjela)\b",
+            tekst.lower(),
+        )
+    )
+    brz_tempo = (kratke > len(recenice) * 0.4) or (
+        akcioni_glagoli > len(recenice) * 0.05
+    )
 
     # ─── 7. Ton ───
-    tamni_markeri = len(re.findall(
-        r'\b(krv|smrt|ubio|ubila|mrtav|mrtva|rana|bol|tama|mrak|hladno|'
-        r'strah|uzas|jeza|grozno|lešina|krvav)\b', tekst.lower()
-    ))
-    svijetli_markeri = len(re.findall(
-        r'\b(smijeh|nasmijao|sretan|sreća|radost|ljubav|toplo|sunce|svjetlo|'
-        r'lijepo|krasno|nježno|nada)\b', tekst.lower()
-    ))
+    tamni_markeri = len(
+        re.findall(
+            r"\b(krv|smrt|ubio|ubila|mrtav|mrtva|rana|bol|tama|mrak|hladno|"
+            r"strah|uzas|jeza|grozno|lešina|krvav)\b",
+            tekst.lower(),
+        )
+    )
+    svijetli_markeri = len(
+        re.findall(
+            r"\b(smijeh|nasmijao|sretan|sreća|radost|ljubav|toplo|sunce|svjetlo|"
+            r"lijepo|krasno|nježno|nada)\b",
+            tekst.lower(),
+        )
+    )
     if tamni_markeri > svijetli_markeri * 2:
         ton = "mračan"
     elif svijetli_markeri > tamni_markeri * 2:
@@ -120,11 +150,13 @@ def napravi_prompt(profil: dict) -> str:
         return ""
 
     upute = []
-    upute.append(f"STIL AUTORA: {profil['stil']} (prosjek {profil['prosjek_rijeci']} riječi/rečenici).")
+    upute.append(
+        f"STIL AUTORA: {profil['stil']} (prosjek {profil['prosjek_rijeci']} riječi/rečenici)."
+    )
 
     if profil["omjer_dijaloga"] > 0.3:
         upute.append(
-            f"DIJALOG DOMINIRA ({int(profil['omjer_dijaloga']*100)}% rečenica). "
+            f"DIJALOG DOMINIRA ({int(profil['omjer_dijaloga'] * 100)}% rečenica). "
             "Pazi na prirodnost govora, koristi crticu — za dijalog."
         )
     elif profil["omjer_dijaloga"] < 0.1:
@@ -164,26 +196,30 @@ def analiziraj_knjigu(epub_path: str, max_znakova: int = 30000) -> dict:
     Uzima prvih max_znakova iz prvih 5 poglavlja.
     """
     import zipfile
+
     from bs4 import BeautifulSoup
 
     try:
         with zipfile.ZipFile(epub_path) as z:
             html_names = sorted(
-                n for n in z.namelist()
-                if n.lower().endswith(('.html', '.xhtml', '.htm'))
-                and not any(s in Path(n).name.lower()
-                            for s in ('toc', 'nav', 'cover', 'titlepage'))
+                n
+                for n in z.namelist()
+                if n.lower().endswith((".html", ".xhtml", ".htm"))
+                and not any(
+                    s in Path(n).name.lower()
+                    for s in ("toc", "nav", "cover", "titlepage")
+                )
             )
             tekst = ""
             for name in html_names:
                 try:
-                    html = z.read(name).decode('utf-8', errors='replace')
+                    html = z.read(name).decode("utf-8", errors="replace")
                 except Exception:
                     continue
-                soup = BeautifulSoup(html, 'html.parser')
-                body = soup.find('body')
+                soup = BeautifulSoup(html, "html.parser")
+                body = soup.find("body")
                 if body:
-                    tekst += body.get_text(' ', strip=True) + " "
+                    tekst += body.get_text(" ", strip=True) + " "
                 if len(tekst) > max_znakova:
                     break
     except Exception as e:
@@ -194,6 +230,7 @@ def analiziraj_knjigu(epub_path: str, max_znakova: int = 30000) -> dict:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Koristenje: python3 -m core.autor_analiza <knjiga.epub>")
         sys.exit(1)

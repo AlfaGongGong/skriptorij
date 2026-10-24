@@ -1,9 +1,8 @@
-
-
 """Rute za export izvještaja o prijevodu."""
+
 import os
 
-from flask import Blueprint, jsonify, Response
+from flask import Blueprint, Response, jsonify
 
 from config.settings import PROJECTS_ROOT, SHARED_STATS
 from utils.file_utils import secure_filename
@@ -45,6 +44,3 @@ def export_result(fmt):
             return jsonify({"error": f"Nepoznat format: {fmt}"}), 400
     except Exception:
         return jsonify({"error": "Greška pri generiranju izvještaja"}), 500
-
-
-

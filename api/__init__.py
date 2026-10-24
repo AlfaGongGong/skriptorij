@@ -8,9 +8,12 @@ Da aktivirate blueprintove, dodajte u create_app():
     register_blueprints(app)
 Ali pažnja — to će kreirati duplikat ruta s app.py rutama!
 """
+
 from flask import Flask
-from .routes import books, processing, fleet, keys, export_routes, control
+
 from api.routes.qualities import bp as quality_bp
+
+from .routes import books, control, export_routes, fleet, keys, processing
 
 
 def register_blueprints(app: Flask) -> None:
@@ -22,6 +25,3 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(keys.bp)
     app.register_blueprint(export_routes.bp)
     app.register_blueprint(control.bp)
-
-
-

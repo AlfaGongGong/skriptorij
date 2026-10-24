@@ -26,7 +26,6 @@ from datetime import datetime
 from logging.handlers import BaseRotatingHandler
 from pathlib import Path
 
-
 # ── Putanja do log direktorija ────────────────────────────────────────────────
 # logs/ direktorij u korijenu projekta (parent od config/)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -57,6 +56,7 @@ def _current_log_path() -> Path:
 # ============================================================================
 # DailyRotatingFileHandler — nova instanca fajla svakim danom
 # ============================================================================
+
 
 class DailyFileHandler(BaseRotatingHandler):
     """
@@ -122,7 +122,9 @@ def _initialize_system_logger() -> logging.Logger:
         # ── Dedicirani logger za sistem.log ───────────────────────────────────
         sys_logger = logging.getLogger("system")
         sys_logger.setLevel(logging.DEBUG)
-        sys_logger.propagate = False  # ne propagira na root — izbjegava duplikate u logu
+        sys_logger.propagate = (
+            False  # ne propagira na root — izbjegava duplikate u logu
+        )
 
         # File handler — jedan fajl po danu
         file_handler = DailyFileHandler(_LOG_DIR)
@@ -136,8 +138,7 @@ def _initialize_system_logger() -> logging.Logger:
 
         # Provjeri da nema duplikata (reload zaštita)
         existing_file_handlers = [
-            h for h in root_logger.handlers
-            if isinstance(h, DailyFileHandler)
+            h for h in root_logger.handlers if isinstance(h, DailyFileHandler)
         ]
         if not existing_file_handlers:
             root_file_handler = DailyFileHandler(_LOG_DIR)
@@ -151,16 +152,13 @@ def _initialize_system_logger() -> logging.Logger:
 
         # Upiši startup marker u log
         today = datetime.now().strftime(_FILE_DATE_FORMAT)
-        sys_logger.info(
-            "=" * 70
-        )
+        sys_logger.info("=" * 70)
         sys_logger.info(
             "SISTEM LOG INICIJALIZIRAN — %s — log dir: %s",
-            today, str(_LOG_DIR),
+            today,
+            str(_LOG_DIR),
         )
-        sys_logger.info(
-            "=" * 70
-        )
+        sys_logger.info("=" * 70)
 
         return sys_logger
 
@@ -170,6 +168,7 @@ syslog: logging.Logger = _initialize_system_logger()
 
 
 # ── Pomoćna funkcija za ostale module ────────────────────────────────────────
+
 
 def get_current_log_path() -> Path:
     """Vraća apsolutnu putanju do trenutnog log fajla."""

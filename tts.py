@@ -16,15 +16,16 @@ LOGIKA:
   5. Snima .ttsfilter fajl pored izlazne knjige (OUTPUT_DIR)
 """
 
-import re
 import asyncio
-import zipfile
+import re
 import shutil
+import zipfile
 from pathlib import Path
-from bs4 import BeautifulSoup
-from utils.logging import add_audit
-from config.settings import OUTPUT_DIR
 
+from bs4 import BeautifulSoup
+
+from config.settings import OUTPUT_DIR
+from utils.logging import add_audit
 
 # ── Hardkodirane zamjene: velika slova BS abecede → mala (za TTS) ─────────────
 _HARDKODIRANI = """A#->#a
@@ -74,13 +75,68 @@ _RIJEC_RE = re.compile(r"\b[A-ZČĆŽŠĐa-zčćžšđ][a-zA-ZčćžšđČĆŽŠ
 
 # Engleski prijedlozi/veznici koji zbune TTS (kratke engl. riječi)
 _ENGLESKI_KRATKI = {
-    "the", "a", "an", "in", "on", "at", "to", "of", "for", "with",
-    "from", "by", "or", "and", "but", "not", "is", "are", "was",
-    "were", "be", "been", "has", "have", "had", "do", "does", "did",
-    "will", "would", "can", "could", "should", "may", "might", "shall",
-    "no", "yes", "it", "he", "she", "we", "they", "you", "me", "my",
-    "his", "her", "its", "our", "their", "this", "that", "these",
-    "those", "what", "which", "who", "how", "when", "where", "why",
+    "the",
+    "a",
+    "an",
+    "in",
+    "on",
+    "at",
+    "to",
+    "of",
+    "for",
+    "with",
+    "from",
+    "by",
+    "or",
+    "and",
+    "but",
+    "not",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "has",
+    "have",
+    "had",
+    "do",
+    "does",
+    "did",
+    "will",
+    "would",
+    "can",
+    "could",
+    "should",
+    "may",
+    "might",
+    "shall",
+    "no",
+    "yes",
+    "it",
+    "he",
+    "she",
+    "we",
+    "they",
+    "you",
+    "me",
+    "my",
+    "his",
+    "her",
+    "its",
+    "our",
+    "their",
+    "this",
+    "that",
+    "these",
+    "those",
+    "what",
+    "which",
+    "who",
+    "how",
+    "when",
+    "where",
+    "why",
 }
 
 # Fonetizacija engleskih kratkih riječi → BS izgovor
@@ -180,9 +236,7 @@ def _regex_fonetizacija(rijeci: list[str]) -> dict[str, str]:
     return rezultat
 
 
-async def _ai_fonetizacija(
-    strane_rijeci: list[str], engine, log_fn
-) -> dict[str, str]:
+async def _ai_fonetizacija(strane_rijeci: list[str], engine, log_fn) -> dict[str, str]:
     """
     Šalje strane/nefonetizovane riječi AI modelu za fonetizaciju.
     AI vraća linije u formatu: original#->#fonetizovano
@@ -238,7 +292,10 @@ async def _ai_fonetizacija(
                 if orig and fonet and orig != fonet:
                     rezultat[orig] = fonet
 
-    log_fn(f"✅ TTS: AI fonetizirao {len(rezultat)} od {len(strane_rijeci)} stranih riječi.", "tech")
+    log_fn(
+        f"✅ TTS: AI fonetizirao {len(rezultat)} od {len(strane_rijeci)} stranih riječi.",
+        "tech",
+    )
     return rezultat
 
 
@@ -299,6 +356,7 @@ def start_from_master(
 
         # ── Pronađi HTML fajlove ─────────────────────────────────────────────
         from core.natural_sort import natural_sort_key
+
         html_files = sorted(
             [
                 f
@@ -343,7 +401,9 @@ def start_from_master(
 
         # ── Pronađi strane riječi ────────────────────────────────────────────
         strane_rijeci = _ekstraktuj_strane_rijeci(kompletan_tekst)
-        log(f"🔍 TTS: Pronađeno {len(strane_rijeci)} stranih/nepoznatih izraza.", "tech")
+        log(
+            f"🔍 TTS: Pronađeno {len(strane_rijeci)} stranih/nepoznatih izraza.", "tech"
+        )
 
         # Regex fonetizacija za poznate slučajeve
         fonetika = _regex_fonetizacija(strane_rijeci)
@@ -357,15 +417,22 @@ def start_from_master(
         if preostale:
             # Ograniči na max 200 riječi da izbjegnemo predugačak prompt
             batch = preostale[:200]
-            log(f"🤖 TTS: Šaljem {len(batch)} riječi na AI fonetizaciju (može potrajati)...", "tech")
+            log(
+                f"🤖 TTS: Šaljem {len(batch)} riječi na AI fonetizaciju (može potrajati)...",
+                "tech",
+            )
             shared_stats["status"] = f"TTS: AI fonetizacija ({len(batch)} riječi)..."
             try:
-                ai_fonetika = asyncio.run(
-                    _ai_fonetizacija(batch, engine, log)
+                ai_fonetika = asyncio.run(_ai_fonetizacija(batch, engine, log))
+                log(
+                    f"✅ TTS: AI fonetizirao {len(ai_fonetika)}/{len(batch)} riječi.",
+                    "success",
                 )
-                log(f"✅ TTS: AI fonetizirao {len(ai_fonetika)}/{len(batch)} riječi.", "success")
             except Exception as e:
-                log(f"⚠️ TTS AI fonetizacija nije uspjela: {e} — nastavljam bez AI.", "warning")
+                log(
+                    f"⚠️ TTS AI fonetizacija nije uspjela: {e} — nastavljam bez AI.",
+                    "warning",
+                )
 
         # Spoji regex + AI fonetiku
         fonetika.update(ai_fonetika)
@@ -391,10 +458,14 @@ def start_from_master(
         shared_stats["status"] = "ZAVRŠENO (TTS)"
         shared_stats["pct"] = 100
         shared_stats["output_file"] = str(output_path)
-        log(f"🔊 .ttsfilter generisan: {output_path.name} ({len(fonetika)} zamjena)", "success")
+        log(
+            f"🔊 .ttsfilter generisan: {output_path.name} ({len(fonetika)} zamjena)",
+            "success",
+        )
 
     except Exception as exc:
         import traceback
+
         shared_stats["status"] = f"GREŠKA (TTS): {type(exc).__name__}"
         add_audit(f"❌ TTS Greška: {exc}", "error", shared_stats=shared_stats)
         add_audit(traceback.format_exc()[-800:], "tech", shared_stats=shared_stats)
@@ -424,9 +495,9 @@ def _primijeni_checkpointe_na_html(
                 for f in checkpoint_dir.glob(f"{file_name}_blok_*.chk")
                 if not (f.stem.endswith(".prevod") or f.stem.endswith(".lektura"))
             ],
-            key=lambda f: int(m.group(1))
-            if (m := re.search(r"_blok_(\d+)", f.stem))
-            else 0,
+            key=lambda f: (
+                int(m.group(1)) if (m := re.search(r"_blok_(\d+)", f.stem)) else 0
+            ),
         )
 
         if not blok_fajlovi:

@@ -1,6 +1,5 @@
-
-
 """Rute za upravljanje API ključevima (CRUD)."""
+
 import json
 import logging
 import re
@@ -15,7 +14,7 @@ from network.provider_urls import get_url as _get_provider_url
 
 # Konstante za ping timeout
 _PING_CONNECT_TIMEOUT = 8
-_PING_READ_TIMEOUT    = 20
+_PING_READ_TIMEOUT = 20
 
 bp = Blueprint("keys", __name__)
 
@@ -26,6 +25,7 @@ def _reload_active_fleet() -> None:
     """Osvježava aktivni fleet iz diska ako postoji (tiho ignorira greške)."""
     try:
         from api_fleet import get_active_fleet
+
         fm = get_active_fleet()
         if fm is not None:
             fm.reload()
@@ -45,9 +45,7 @@ def list_keys():
             if prov.upper() in skip:
                 continue
             keys = val if isinstance(val, list) else val.get("keys", [])
-            result[prov] = [
-                f"...{k[-6:]}" if len(k) > 6 else "***" for k in keys if k
-            ]
+            result[prov] = [f"...{k[-6:]}" if len(k) > 6 else "***" for k in keys if k]
         return jsonify(result)
     except FileNotFoundError:
         logger.warning("[keys] Konfiguracijski fajl nije pronađen")
@@ -181,8 +179,12 @@ def ping_key(provider, idx):
 
     t0 = time.time()
     try:
-        resp = requests.post(url, headers=headers, json=payload,
-                             timeout=(_PING_CONNECT_TIMEOUT, _PING_READ_TIMEOUT))
+        resp = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=(_PING_CONNECT_TIMEOUT, _PING_READ_TIMEOUT),
+        )
         latency = int((time.time() - t0) * 1000)
         sc = resp.status_code
         if sc == 200:
@@ -190,25 +192,55 @@ def ping_key(provider, idx):
         elif sc == 429:
             try:
                 body = resp.json()
-                err = body.get("error", {}).get("message", str(body))[:120] if isinstance(body, dict) else str(body)[:120]
+                err = (
+                    body.get("error", {}).get("message", str(body))[:120]
+                    if isinstance(body, dict)
+                    else str(body)[:120]
+                )
             except Exception:
                 err = "Rate limit"
-            return jsonify({"ok": False, "latency_ms": latency, "status_code": sc,
-                            "error": f"429 Rate limit — {err}"})
+            return jsonify(
+                {
+                    "ok": False,
+                    "latency_ms": latency,
+                    "status_code": sc,
+                    "error": f"429 Rate limit — {err}",
+                }
+            )
         elif sc in (401, 403):
-            return jsonify({"ok": False, "latency_ms": latency, "status_code": sc,
-                            "error": "Ključ nevažeći (401/403)"})
+            return jsonify(
+                {
+                    "ok": False,
+                    "latency_ms": latency,
+                    "status_code": sc,
+                    "error": "Ključ nevažeći (401/403)",
+                }
+            )
         else:
             try:
                 err = str(resp.json())[:120]
             except Exception:
                 err = resp.text[:120]
-            return jsonify({"ok": False, "latency_ms": latency, "status_code": sc, "error": err})
+            return jsonify(
+                {"ok": False, "latency_ms": latency, "status_code": sc, "error": err}
+            )
     except requests.exceptions.Timeout:
         latency = int((time.time() - t0) * 1000)
-        return jsonify({"ok": False, "latency_ms": latency, "status_code": 0,
-                        "error": "Timeout (20s)"})
+        return jsonify(
+            {
+                "ok": False,
+                "latency_ms": latency,
+                "status_code": 0,
+                "error": "Timeout (20s)",
+            }
+        )
     except Exception:
         latency = int((time.time() - t0) * 1000)
-        return jsonify({"ok": False, "latency_ms": latency, "status_code": 0,
-                        "error": "Mrežna greška pri ping testu"})
+        return jsonify(
+            {
+                "ok": False,
+                "latency_ms": latency,
+                "status_code": 0,
+                "error": "Mrežna greška pri ping testu",
+            }
+        )

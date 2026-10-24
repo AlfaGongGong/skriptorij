@@ -9,14 +9,14 @@ IZMJENE (knjiga_mode patch + checkpoint putanja):
   - _detect_language() zadržan kao interni helper.
 """
 
-import re
 import json
+import re
 from pathlib import Path
 
-from api_fleet import FleetManager
-from utils.logging import add_audit
 from analysis.book_context import BookContextManager
+from api_fleet import FleetManager
 from config.settings import CHECKPOINT_BASE_DIR, OUTPUT_DIR
+from utils.logging import add_audit
 
 
 class SkriptorijAllInOne:
@@ -35,6 +35,7 @@ class SkriptorijAllInOne:
         self.fleet = FleetManager(config_path=_cfg)
         try:
             from api_fleet import register_active_fleet
+
             register_active_fleet(self.fleet)
         except Exception:
             pass
@@ -47,6 +48,7 @@ class SkriptorijAllInOne:
         # start_background_refresh: osvježava cache svakih sat vremena.
         try:
             from network.model_discovery import start_background_discovery
+
             # start_background_discovery ocekuje dict {provider: [KeyState, ...]}
             start_background_discovery(self.fleet.fleet)
         except Exception:
@@ -57,7 +59,7 @@ class SkriptorijAllInOne:
         # ── IZMJENA: work_dir i checkpoint_dir u CHECKPOINT_BASE_DIR ────────
         # Staro: self.book_path.parent / f"_skr_{self.clean_book_name}"
         # Novo:  CHECKPOINT_BASE_DIR  / f"_skr_{self.clean_book_name}"
-        self.work_dir       = CHECKPOINT_BASE_DIR / f"_skr_{self.clean_book_name}"
+        self.work_dir = CHECKPOINT_BASE_DIR / f"_skr_{self.clean_book_name}"
         self.checkpoint_dir = self.work_dir / "checkpoints"
 
         # out_path ostaje u OUTPUT_DIR (Moon+ Reader biblioteka)
@@ -114,7 +116,9 @@ class SkriptorijAllInOne:
                         "info",
                     )
             except Exception as _e:
-                self.log(f"⚠️ Greška pri učitavanju quality_scores.json: {_e}", "warning")
+                self.log(
+                    f"⚠️ Greška pri učitavanju quality_scores.json: {_e}", "warning"
+                )
         self.log(
             f"V10.2 Engine inicijaliziran: {self.book_path.name} [STANDARD mod] "
             f"| checkpoint: {self.checkpoint_dir}",
@@ -136,16 +140,16 @@ class SkriptorijAllInOne:
         """Atomicno pisanje fajla — piše u .tmp pa zamjenjuje originalni."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(path.suffix + '.tmp')
+        tmp = path.with_suffix(path.suffix + ".tmp")
         try:
-            tmp.write_text(content, encoding='utf-8')
+            tmp.write_text(content, encoding="utf-8")
             tmp.replace(path)
         except Exception as e:
             try:
                 tmp.unlink(missing_ok=True)
             except Exception:
                 pass
-            path.write_text(content, encoding='utf-8')
+            path.write_text(content, encoding="utf-8")
             self.log(f"[atomic_write] Fallback pisanje za {path.name}: {e}", "warning")
 
     # =========================================================================
@@ -159,7 +163,8 @@ class SkriptorijAllInOne:
         NAPOMENA: Za glavni pipeline koristi self.knjiga_mode (postavljeno jednom
                   za cijelu knjigu), ne ovaj metod.
         """
-        from core.text_utils import _detektuj_en_ostatke, _HR_DIACRITICALS
+        from core.text_utils import _HR_DIACRITICALS, _detektuj_en_ostatke
+
         cist = re.sub(r"<[^>]+>", "", text)
         if any(c in _HR_DIACRITICALS for c in cist):
             return "LEKTURA"
@@ -183,8 +188,9 @@ class SkriptorijAllInOne:
 
         Rezultat se sprema u self.knjiga_mode.
         """
-        from core.text_utils import _detektuj_en_ostatke, _HR_DIACRITICALS
         from bs4 import BeautifulSoup
+
+        from core.text_utils import _HR_DIACRITICALS, _detektuj_en_ostatke
 
         uzorak_fajlova = html_files[:n_files]
         if not uzorak_fajlova:
@@ -235,7 +241,7 @@ class SkriptorijAllInOne:
             f"🔍 Detekcija knjige: mod=<b>{mode}</b> "
             f"(HR dijakritika={hr_dijakritika_ratio:.2%}, EN ratio={en_ratio:.2%}, "
             f"fajlova analizirano={len(uzorak_fajlova)})",
-            "system"
+            "system",
         )
         # Spremi u shared_stats za UI prikaz
         self.shared_stats["knjiga_mode"] = mode
@@ -259,8 +265,11 @@ class SkriptorijAllInOne:
         try:
             import json as _json
             from pathlib import Path as _P
+
             knjiga_id = _P(self.book_path).stem
-            kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (knjiga_id + ".json")
+            kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (
+                knjiga_id + ".json"
+            )
             if not kanon_path.exists():
                 return ""
             data = _json.loads(kanon_path.read_text(encoding="utf-8"))
@@ -291,10 +300,11 @@ class SkriptorijAllInOne:
         try:
             import json as _json
             import re as _re
-            import zipfile as _zip
             import shutil as _sh
-            from pathlib import Path as _P
+            import zipfile as _zip
             from collections import Counter as _Counter
+            from pathlib import Path as _P
+
             from bs4 import BeautifulSoup as _BS
         except ImportError:
             return False
@@ -325,7 +335,12 @@ class SkriptorijAllInOne:
             self.log("Ekstrakcija pala: " + str(e), "warning")
             return False
 
-        from core.glosar_ekstrakcija import mehanicka_cistka, posalji_ai_batch, detektuj_jezik
+        from core.glosar_ekstrakcija import (
+            detektuj_jezik,
+            mehanicka_cistka,
+            posalji_ai_batch,
+        )
+
         jezik = detektuj_jezik(self.book_path)
         self.log("Jezik knjige: " + jezik, "system")
 
@@ -339,12 +354,14 @@ class SkriptorijAllInOne:
             try:
                 from api_fleet import FleetManager
                 from config.settings import CONFIG_PATH
+
                 fleet = FleetManager(config_path=CONFIG_PATH)
             except Exception:
                 return False
 
         # ─── AI obrada s timeoutom i progress logom ───
         import time as _time
+
         rezultati = {}
         termini = list(cisto.keys())
         ukupno_b = (len(termini) + 24) // 25
@@ -355,17 +372,33 @@ class SkriptorijAllInOne:
         for i in range(0, len(termini), 25):
             # Timeout
             if _time.time() - t_start > TIMEOUT_S:
-                self.log("Glosar timeout (" + str(TIMEOUT_S) + "s) — prekidam, nastavljam bez", "warning")
+                self.log(
+                    "Glosar timeout ("
+                    + str(TIMEOUT_S)
+                    + "s) — prekidam, nastavljam bez",
+                    "warning",
+                )
                 break
 
             # Ako 3 batcha zaredom vrate 0, odustani
             if neuspjesi_uzastopni >= 3:
-                self.log("Glosar: 3 neuspjesna batcha — odustajem od AI obrade", "warning")
+                self.log(
+                    "Glosar: 3 neuspjesna batcha — odustajem od AI obrade", "warning"
+                )
                 break
 
-            batch = termini[i:i+25]
+            batch = termini[i : i + 25]
             broj = i // 25 + 1
-            self.log("Glosar: batch " + str(broj) + "/" + str(ukupno_b) + " (" + str(len(batch)) + " termina)", "tech")
+            self.log(
+                "Glosar: batch "
+                + str(broj)
+                + "/"
+                + str(ukupno_b)
+                + " ("
+                + str(len(batch))
+                + " termina)",
+                "tech",
+            )
 
             try:
                 r = posalji_ai_batch(jezik, batch, fleet)
@@ -376,12 +409,33 @@ class SkriptorijAllInOne:
             if r:
                 rezultati.update(r)
                 neuspjesi_uzastopni = 0
-                self.log("Glosar: batch " + str(broj) + " OK (" + str(len(r)) + " rezultata)", "tech")
+                self.log(
+                    "Glosar: batch "
+                    + str(broj)
+                    + " OK ("
+                    + str(len(r))
+                    + " rezultata)",
+                    "tech",
+                )
             else:
                 neuspjesi_uzastopni += 1
-                self.log("Glosar: batch " + str(broj) + " prazan (neuspjeh " + str(neuspjesi_uzastopni) + "/3)", "warning")
+                self.log(
+                    "Glosar: batch "
+                    + str(broj)
+                    + " prazan (neuspjeh "
+                    + str(neuspjesi_uzastopni)
+                    + "/3)",
+                    "warning",
+                )
 
-        self.log("Glosar: " + str(len(rezultati)) + " od " + str(len(termini)) + " termina obrađeno", "system")
+        self.log(
+            "Glosar: "
+            + str(len(rezultati))
+            + " od "
+            + str(len(termini))
+            + " termina obrađeno",
+            "system",
+        )
 
         glosar = {"knjiga": knjiga_id, "jezik": jezik, "termini": {}}
         for ime, broj in cisto.items():
@@ -402,7 +456,14 @@ class SkriptorijAllInOne:
             _json.dumps(glosar, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-        self.log("Kanon sacuvan: " + kanon_path.name + " (" + str(len(glosar["termini"])) + ")", "system")
+        self.log(
+            "Kanon sacuvan: "
+            + kanon_path.name
+            + " ("
+            + str(len(glosar["termini"]))
+            + ")",
+            "system",
+        )
 
         try:
             dst = _P("/storage/emulated/0/Books/MoonReader/kanon") / kanon_path.name
@@ -412,7 +473,6 @@ class SkriptorijAllInOne:
             pass
 
         return True
-
 
     def _build_glosar_tekst(self):
         kanon = self._ucitaj_kanon_glosar()
@@ -454,8 +514,11 @@ class SkriptorijAllInOne:
     # PROMPT DELEGACIJA
     # =========================================================================
 
-    def _get_prevodilac_prompt(self, glosar_chunk="", prev_kraj="", tip_bloka="naracija"):
+    def _get_prevodilac_prompt(
+        self, glosar_chunk="", prev_kraj="", tip_bloka="naracija"
+    ):
         from core.prompts import get_prevodilac_prompt
+
         return get_prevodilac_prompt(
             self.book_context,
             glosar_chunk or self.glosar_tekst,
@@ -463,9 +526,15 @@ class SkriptorijAllInOne:
             tip_bloka=tip_bloka,
         )
 
-    def _get_lektor_prompt(self, prev_kraj="", glosar_injekcija="", chapter_summary="",
-                           tip_bloka="naracija"):
+    def _get_lektor_prompt(
+        self,
+        prev_kraj="",
+        glosar_injekcija="",
+        chapter_summary="",
+        tip_bloka="naracija",
+    ):
         from core.prompts import get_lektor_prompt
+
         return get_lektor_prompt(
             self.book_context,
             prev_kraj,
@@ -476,14 +545,17 @@ class SkriptorijAllInOne:
 
     def _get_korektor_prompt(self):
         from core.prompts import KOREKTOR_TEMPLATE
+
         return KOREKTOR_TEMPLATE
 
     def _get_guardian_prompt(self):
         from core.prompts import GUARDIAN_SYS
+
         return GUARDIAN_SYS
 
     def _get_polish_prompt(self, tip_bloka="naracija"):
         from core.prompts import get_polish_prompt
+
         return get_polish_prompt(self.book_context, tip_bloka)
 
     # =========================================================================
@@ -492,10 +564,12 @@ class SkriptorijAllInOne:
 
     def chunk_html(self, html_content: str, max_words=500) -> list:
         from core.chunking import chunk_html
+
         return chunk_html(html_content, max_words)
 
     def get_context_window(self, chunks, idx, file_name):
         from core.chunking import get_context_window
+
         return get_context_window(self.checkpoint_dir, chunks, idx, file_name)
 
     # =========================================================================
@@ -504,18 +578,22 @@ class SkriptorijAllInOne:
 
     def buildlive_epub(self):
         from epub.packager import buildlive_epub
+
         buildlive_epub(self)
 
     def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
         from epub.packager import apply_dropcap_and_toc
+
         apply_dropcap_and_toc(self, soup, html_file, samo_dropcap)
 
     def generate_ncx(self):
         from epub.packager import generate_ncx
+
         generate_ncx(self)
 
     def finalize(self):
         from epub.packager import finalize
+
         finalize(self)
 
     # =========================================================================
@@ -524,14 +602,17 @@ class SkriptorijAllInOne:
 
     async def _async_http_post(self, *args, **kwargs):
         from network.http_client import _async_http_post
+
         return await _async_http_post(self, *args, **kwargs)
 
     async def _call_single_provider(self, *args, **kwargs):
         from network.provider_router import _call_single_provider
+
         return await _call_single_provider(self, *args, **kwargs)
 
     async def _call_ai_engine(self, *args, **kwargs):
         from network.provider_router import _call_ai_engine
+
         return await _call_ai_engine(self, *args, **kwargs)
 
     # =========================================================================
@@ -540,10 +621,12 @@ class SkriptorijAllInOne:
 
     async def process_chunk_with_ai(self, *args, **kwargs):
         from processing.pipeline import process_chunk_with_ai
+
         return await process_chunk_with_ai(self, *args, **kwargs)
 
     async def process_single_file_worker(self, *args, **kwargs):
         from processing.workers import process_single_file_worker
+
         return await process_single_file_worker(self, *args, **kwargs)
 
     # =========================================================================
@@ -552,28 +635,32 @@ class SkriptorijAllInOne:
 
     async def analiziraj_knjigu(self, intro_text):
         from analysis.book_context import analiziraj_knjigu
+
         await analiziraj_knjigu(self, intro_text)
 
     async def _inkrementalna_analiza_glosara(self, poglavlje_tekst, poglavlje_ime):
         from analysis.book_context import _inkrementalna_analiza_glosara
+
         try:
             await _inkrementalna_analiza_glosara(self, poglavlje_tekst, poglavlje_ime)
         except Exception as e:
             import logging
+
             logging.warning(f"Glosar analiza preskočena: {e}")
 
     async def _generiraj_chapter_summary(self, file_name, file_content):
         from analysis.book_context import _generiraj_chapter_summary
+
         try:
             await _generiraj_chapter_summary(self, file_name, file_content)
         except Exception as e:
             import logging
+
             logging.warning(f"Chapter summary preskočen: {e}")
 
     # =========================================================================
     # RETRO RE-LEKTURA
     # =========================================================================
-
 
     # =========================================================================
     # CACHE MANAGEMENT — PATCH v1.0
@@ -587,6 +674,7 @@ class SkriptorijAllInOne:
         samo_losi=True  → briše samo fajlove čiji je score ispod threshold-a
         """
         from core.quality import _QUALITY_RESCUE_THRESHOLD
+
         threshold = threshold or _QUALITY_RESCUE_THRESHOLD
         chk_fajlovi = list(self.checkpoint_dir.glob("*.chk"))
 
@@ -626,9 +714,7 @@ class SkriptorijAllInOne:
                     obrisano += 1
                 except Exception:
                     pass
-            self.log(
-                f"🗑️ Kompletan cache obrisan: {obrisano} .chk fajlova.", "system"
-            )
+            self.log(f"🗑️ Kompletan cache obrisan: {obrisano} .chk fajlova.", "system")
 
         return obrisano
 
@@ -651,7 +737,9 @@ class SkriptorijAllInOne:
         """Postavi flag da pipeline ignorira cache za sve sljedeće blokove."""
         self._force_reprocess = aktivan
         if aktivan:
-            self.log("⚡ force_reprocess=True — cache se ignorira za sve blokove.", "system")
+            self.log(
+                "⚡ force_reprocess=True — cache se ignorira za sve blokove.", "system"
+            )
         else:
             self.log("💾 force_reprocess=False — cache se koristi normalno.", "system")
 
@@ -659,10 +747,12 @@ class SkriptorijAllInOne:
 
     async def send_to_fix(self, score_threshold: float = None):
         from processing.retro import send_to_fix
+
         return await send_to_fix(self, score_threshold or 6.5)
 
     async def retroaktivna_relektura_v10(self, *args, **kwargs):
         from processing.retro import retroaktivna_relektura_v10
+
         await retroaktivna_relektura_v10(self, *args, **kwargs)
 
     def retroaktivna_rod_korekcija(
@@ -680,6 +770,7 @@ class SkriptorijAllInOne:
             dict s statistikom: obradjeno, korigovano, korekcija_ukupno, po_fajlu
         """
         from processing.retro import retroaktivna_rod_korekcija
+
         return retroaktivna_rod_korekcija(
             self, samo_loše=samo_loše, bad_threshold=bad_threshold
         )

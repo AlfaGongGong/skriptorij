@@ -1,3 +1,5 @@
+import re
+
 # epub/packager.py
 import shutil
 import zipfile
@@ -13,6 +15,7 @@ except ImportError:
 # Pomoćna: efektivni OUTPUT_DIR (s fallbackom)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _get_output_dir() -> Path:
     """
     Vraća OUTPUT_DIR iz settings-a.
@@ -20,23 +23,28 @@ def _get_output_dir() -> Path:
     """
     try:
         from config.settings import OUTPUT_DIR
+
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         return OUTPUT_DIR
     except Exception:
         try:
             from config.settings import INPUT_DIR
+
             return INPUT_DIR
         except Exception:
             return Path("data")
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Live EPUB (u toku obrade)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def buildlive_epub(self):
     """Gradi privremeni live EPUB u INPUT_DIR za pregled u toku obrade."""
     try:
         from config.settings import INPUT_DIR
+
         live_dir = Path(INPUT_DIR)
     except Exception:
         live_dir = self.book_path.parent
@@ -50,9 +58,11 @@ def buildlive_epub(self):
     except Exception as e:
         self.log(f"⚠️ Live EPUB greška: {e}", "warning")
 
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Osnovni CSS & TOC
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
     """
@@ -67,6 +77,7 @@ def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
     Parametar samo_dropcap se ignoriše (dropcap radi Stil tab).
     """
     from epub.styling import _inject_epub_global_css
+
     _inject_epub_global_css(soup)
 
     rel_path = html_file.relative_to(self.work_dir)
@@ -86,7 +97,7 @@ def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
             para = first_p.get_text(strip=True)
             if len(para) >= 20:
                 # Prva rečenica (do . ! ?)
-                m_sent = re.match(r'^([^.!?]{10,90})[.!?]', para)
+                m_sent = re.match(r"^([^.!?]{10,90})[.!?]", para)
                 if m_sent:
                     candidate = m_sent.group(1).strip()
                     # Očisti vodeće navodnike/crtice
@@ -102,15 +113,12 @@ def apply_dropcap_and_toc(self, soup, html_file, samo_dropcap=False):
     # ── 3. Fallback na filename ──────────────────────────────────────────
     if not title:
         title = (
-            html_file.stem.replace("chapter", "Poglavlje ")
-            .replace("_", " ")
-            .title()
+            html_file.stem.replace("chapter", "Poglavlje ").replace("_", " ").title()
         )
 
     href = str(rel_path).replace("\\", "/")
     if not any(e[1] == href for e in self.toc_entries):
         self.toc_entries.append((title, href))
-
 
 
 def generate_ncx(self):
@@ -120,9 +128,7 @@ def generate_ncx(self):
     nav_points = ""
     for i, (title, href) in enumerate(self.toc_entries, 1):
         safe_title = (
-            title.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
+            title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         )
         nav_points += (
             f'    <navPoint id="nav{i}" playOrder="{i}">\n'
@@ -153,15 +159,16 @@ def generate_ncx(self):
         "tech",
     )
 
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FINALIZE — pakuje EPUB i kopira u MoonReader
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # FINALNI FIXEVI — dropcap, ornament, CSS, TOC, atributi
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def _finaliziraj_fix_epub(self):
     """
@@ -175,8 +182,8 @@ def _finaliziraj_fix_epub(self):
       - Popravi pokvarene atribute
     """
     import re as _re
+
     from bs4 import BeautifulSoup as _BS
-    from bs4 import NavigableString as _NS
 
     work_dir = self.work_dir
     if not work_dir.exists():
@@ -201,6 +208,7 @@ def _finaliziraj_fix_epub(self):
                 if "„" in tag or "“" in tag or "”" in tag:
                     tag = tag.replace("„", "").replace("“", "").replace("”", "")
                 return tag
+
             html = _re.sub(r"<[^>]+>", _clean_tag, html)
 
             soup = _BS(html, "html.parser")
@@ -218,10 +226,12 @@ def _finaliziraj_fix_epub(self):
                 if "src" in el.attrs:
                     src = el.attrs["src"]
                     if isinstance(src, str):
-                        novi = src.rstrip('/"\'')
-                        m = _re.search(r"\.(png|jpg|jpeg|gif|webp|svg)", novi, _re.IGNORECASE)
+                        novi = src.rstrip("/\"'")
+                        m = _re.search(
+                            r"\.(png|jpg|jpeg|gif|webp|svg)", novi, _re.IGNORECASE
+                        )
                         if m:
-                            novi = novi[:m.end()]
+                            novi = novi[: m.end()]
                         if novi != src and novi:
                             el.attrs["src"] = novi
 
@@ -270,7 +280,9 @@ def _finaliziraj_fix_epub(self):
                 rel_href = ("../" * depth) + "styles.css"
             except Exception:
                 rel_href = "styles.css"
-            link = soup.new_tag("link", rel="stylesheet", type="text/css", href=rel_href)
+            link = soup.new_tag(
+                "link", rel="stylesheet", type="text/css", href=rel_href
+            )
             head.append(link)
             out = str(soup)
             if not out.startswith("<?xml"):
@@ -364,34 +376,25 @@ def finalize(self):
         self.log("Finalni fixevi greska: " + str(_e), "warning")
 
     try:
-
-
         # ─── BooklyFi Metadata Standardizacija ───
 
         try:
-
-            from core.metadata import standardizuj_metapodatke
-
+            import shutil as _sh
+            from datetime import datetime as _dt
             from zipfile import ZipFile as _ZipF
 
-            from datetime import datetime as _dt
-
-            import shutil as _sh
-
+            from core.metadata import standardizuj_metapodatke
 
             # Učitaj sve fajlove iz upravo snimljenog EPUB-a
 
             with _ZipF(self.out_path) as _z:
-
                 _files = {n: _z.read(n) for n in _z.namelist() if not n.endswith("/")}
-
 
             # Nađi OPF
 
             _opf = next((n for n in _files if n.endswith(".opf")), None)
 
             if _opf:
-
                 # Prikupi kontekst
 
                 _translated_at = None
@@ -402,117 +405,89 @@ def finalize(self):
 
                 _glossary_id = None
 
-
                 # Iz shared_stats — quality score
 
                 try:
-
                     _ss = getattr(self, "shared_stats", None)
 
                     if _ss:
-
                         _qs = _ss.get("quality_scores", {})
 
                         if _qs:
-
-                            _vals = [v for v in _qs.values() if isinstance(v, (int, float))]
+                            _vals = [
+                                v for v in _qs.values() if isinstance(v, (int, float))
+                            ]
 
                             if _vals:
-
                                 _quality_score = sum(_vals) / len(_vals)
 
                         _mode = _ss.get("knjiga_mode")
 
                         if _mode:
-
                             # Ako je prevođeno — postavi translated_at
 
                             _translated_at = _dt.now().isoformat(timespec="seconds")
 
                 except Exception:
-
                     pass
-
 
                 # Glossary ID
 
                 try:
-
-                    _glosar_path = self.checkpoint_dir.parent / "data" / "kanon" / "knjige"
+                    _glosar_path = (
+                        self.checkpoint_dir.parent / "data" / "kanon" / "knjige"
+                    )
 
                     _knjiga_id = getattr(self, "clean_book_name", "")
 
                     if _knjiga_id and (_glosar_path / f"{_knjiga_id}.json").exists():
-
                         _glossary_id = _knjiga_id
 
                 except Exception:
-
                     pass
-
 
                 # Standardizuj
 
                 _stats = standardizuj_metapodatke(
-
                     files=_files,
-
                     opf_path=_opf,
-
                     epub_path=str(self.out_path),
-
                     translated_at=_translated_at,
-
                     stylized_at=_stylized_at,
-
                     glossary_id=_glossary_id,
-
                     quality_score=_quality_score,
-
                     pipeline_version=getattr(self, "model_name", "V10_TURBO"),
-
                 )
 
-
                 if _stats.get("ok"):
-
                     # Ponovo snimi EPUB sa ažuriranim OPF-om
 
                     _tmp = str(self.out_path) + ".meta.tmp"
 
                     with _ZipF(_tmp, "w") as _z:
-
                         if "mimetype" in _files:
-
-                            _z.writestr("mimetype", _files["mimetype"], compress_type=0)  # ZIP_STORED
+                            _z.writestr(
+                                "mimetype", _files["mimetype"], compress_type=0
+                            )  # ZIP_STORED
 
                         for _n, _d in _files.items():
-
                             if _n == "mimetype":
-
                                 continue
 
                             _z.writestr(_n, _d)
 
                     _sh.move(_tmp, str(self.out_path))
 
-
                     self.log(
-
                         f"📋 Metadata standardizovani ({_stats['booklyfi_meta_added']} booklyfi polja)",
-
-                        "tech"
-
+                        "tech",
                     )
 
         except Exception as _me:
-
             try:
-
                 self.log(f"⚠ Metadata greška: {_me}", "warning")
 
             except Exception:
-
                 pass
 
         with zipfile.ZipFile(self.out_path, "w", zipfile.ZIP_DEFLATED) as z:
@@ -562,6 +537,7 @@ def finalize(self):
     # ── 4. Obriši (LIVE) privremeni fajl ────────────────────────────────────
     try:
         from config.settings import INPUT_DIR
+
         live_epub = Path(INPUT_DIR) / f"(LIVE)_{self.clean_book_name}.epub"
     except Exception:
         live_epub = self.book_path.parent / f"(LIVE)_{self.clean_book_name}.epub"

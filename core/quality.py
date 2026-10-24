@@ -10,15 +10,17 @@ VERZIJA 2.0 — Realni sistem ocjenjivanja:
   - Posebna provjera: isti tekst prije/poslije relekture → penalizacija
   - Kompozitni score: heuristika (40%) + AI ocjena (60%)
 """
-import re
+
 import json
+import re
+
 from bs4 import BeautifulSoup
 
 # ─── Konstante ────────────────────────────────────────────────────────────────
 
 # Prag za retry — realno dostizan (AI scoreri max 9.2-9.3).
 # Score < 9.2 -> retry s feedbackom; score >= 9.2 -> OK, ne diraj.
-_QUALITY_RESCUE_THRESHOLD    = 9.2
+_QUALITY_RESCUE_THRESHOLD = 9.2
 
 # Prag za prihvatanje kesa — ne gubi revidirano pri restartu.
 # Score >= 7.5 ("dobar prevod") -> kes se prihvata. Score < 7.5 -> ponovo obradi.
@@ -28,21 +30,22 @@ _QUALITY_EXCELLENT_THRESHOLD = 8.5
 
 # Težine za EN kontaminaciju
 _EN_CONTAMINATION_WEIGHTS = {
-    "critical": 0.0,   # >20% engleskog → odmah 1–2
-    "high":     2.5,   # 10–20%
-    "medium":   4.5,   # 5–10%
-    "low":      6.5,   # 2–5%
+    "critical": 0.0,  # >20% engleskog → odmah 1–2
+    "high": 2.5,  # 10–20%
+    "medium": 4.5,  # 5–10%
+    "low": 6.5,  # 2–5%
 }
 
 # ─── Pomoćne funkcije ─────────────────────────────────────────────────────────
+
 
 def _strip_ai_json(text: str) -> str:
     """Uklanja ```json ... ``` ili ``` ... ``` wrappers iz AI odgovora."""
     if not text:
         return text
     t = text.strip()
-    t = re.sub(r'^```(?:json)?\s*', '', t, flags=re.IGNORECASE)
-    t = re.sub(r'\s*```\s*$', '', t)
+    t = re.sub(r"^```(?:json)?\s*", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\s*```\s*$", "", t)
     return t.strip()
 
 
@@ -118,25 +121,25 @@ def _izracunaj_heuristicki_score(tekst: str) -> tuple[float, list[str]]:
     # ── 3. Kalkovi i loše konstrukcije ──────────────────────────────────────
     KALKOVI = [
         # Srpski kalkovi
-        (r"\bbio je u stanju da\b",        0.8, "kalk: 'bio je u stanju da'"),
-        (r"\bnije bio u mogu[ćc]nosti\b",  0.8, "kalk: 'nije bio u mogućnosti'"),
-        (r"\buspio je da uradi\b",          0.8, "kalk: 'uspio je da uradi'"),
-        (r"\bpokušao je da\b",              0.3, "kalk: 'pokušao je da'"),
-        (r"\bu pogledu toga\b",             0.2, "kalk: 'u pogledu toga'"),
-        (r"\bod strane\s+\w+a\b",          0.4, "kalk: 'od strane X-a'"),
-        (r"\bpo pitanju\s+",               0.2, "kalk: 'po pitanju'"),
-        (r"\bu odnosu na to\b",            0.2, "kalk: 'u odnosu na to'"),
-        (r"\bkoristeći se\b",              0.2, "kalk: 'koristeći se'"),
-        (r"\bna taj način\b",              0.1, "kalk: 'na taj način'"),
-        (r"\bimati u vidu\b",              0.2, "kalk: 'imati u vidu'"),
-        (r"\buzeti u obzir to da\b",       0.2, "kalk: 'uzeti u obzir to da'"),
+        (r"\bbio je u stanju da\b", 0.8, "kalk: 'bio je u stanju da'"),
+        (r"\bnije bio u mogu[ćc]nosti\b", 0.8, "kalk: 'nije bio u mogućnosti'"),
+        (r"\buspio je da uradi\b", 0.8, "kalk: 'uspio je da uradi'"),
+        (r"\bpokušao je da\b", 0.3, "kalk: 'pokušao je da'"),
+        (r"\bu pogledu toga\b", 0.2, "kalk: 'u pogledu toga'"),
+        (r"\bod strane\s+\w+a\b", 0.4, "kalk: 'od strane X-a'"),
+        (r"\bpo pitanju\s+", 0.2, "kalk: 'po pitanju'"),
+        (r"\bu odnosu na to\b", 0.2, "kalk: 'u odnosu na to'"),
+        (r"\bkoristeći se\b", 0.2, "kalk: 'koristeći se'"),
+        (r"\bna taj način\b", 0.1, "kalk: 'na taj način'"),
+        (r"\bimati u vidu\b", 0.2, "kalk: 'imati u vidu'"),
+        (r"\buzeti u obzir to da\b", 0.2, "kalk: 'uzeti u obzir to da'"),
         # Engleski ostaci u tekstu
-        (r"\bin order to\b",               2.0, "eng: 'in order to'"),
-        (r"\bnevertheless\b",              2.0, "eng: 'nevertheless'"),
-        (r"\bhowever\b",                   2.0, "eng: 'however'"),
-        (r"\bmoreover\b",                  2.0, "eng: 'moreover'"),
-        (r"\bfurthermore\b",              2.0, "eng: 'furthermore'"),
-        (r"\bconsequently\b",             2.0, "eng: 'consequently'"),
+        (r"\bin order to\b", 2.0, "eng: 'in order to'"),
+        (r"\bnevertheless\b", 2.0, "eng: 'nevertheless'"),
+        (r"\bhowever\b", 2.0, "eng: 'however'"),
+        (r"\bmoreover\b", 2.0, "eng: 'moreover'"),
+        (r"\bfurthermore\b", 2.0, "eng: 'furthermore'"),
+        (r"\bconsequently\b", 2.0, "eng: 'consequently'"),
     ]
     text_lower = cist.lower()
     pronadeni_kalkovi = []
@@ -149,14 +152,32 @@ def _izracunaj_heuristicki_score(tekst: str) -> tuple[float, list[str]]:
 
     # ── 4. Dijalog bez em-crtice ─────────────────────────────────────────────
     # FIX 6: broji tipografske navodnike “”„ zajedno s ASCII "
-    navodnici = (cist.count('"')
-                 + cist.count('“') + cist.count('”')
-                 + cist.count('„') + cist.count('‘') + cist.count('’'))
-    em_crtice = cist.count('—')
-    dijalog_glagoli = any(g in text_lower for g in [
-        "reče", "rekla", "rekao", "upita", "odgovori", "viknu",
-        "šapnu", "nastavi", "doda", "uzviknu", "prošaputa", "promrmlja",
-    ])
+    navodnici = (
+        cist.count('"')
+        + cist.count("“")
+        + cist.count("”")
+        + cist.count("„")
+        + cist.count("‘")
+        + cist.count("’")
+    )
+    em_crtice = cist.count("—")
+    dijalog_glagoli = any(
+        g in text_lower
+        for g in [
+            "reče",
+            "rekla",
+            "rekao",
+            "upita",
+            "odgovori",
+            "viknu",
+            "šapnu",
+            "nastavi",
+            "doda",
+            "uzviknu",
+            "prošaputa",
+            "promrmlja",
+        ]
+    )
     if navodnici >= 4 and em_crtice == 0 and dijalog_glagoli:
         kazne += 1.5
         razlozi.append("Dijalog s navodnicima umjesto em-crtica")
@@ -168,7 +189,7 @@ def _izracunaj_heuristicki_score(tekst: str) -> tuple[float, list[str]]:
     rijeci = cist.split()
     if len(rijeci) > 20:
         # Provjeri da li se iste fraze ponavljaju više od 3 puta (halucinacija)
-        trigrami = [" ".join(rijeci[i:i+3]) for i in range(len(rijeci)-2)]
+        trigrami = [" ".join(rijeci[i : i + 3]) for i in range(len(rijeci) - 2)]
         max_ponavljanje = max((trigrami.count(t) for t in set(trigrami)), default=0)
         if max_ponavljanje > 4:
             kazne += 3.0
@@ -207,14 +228,14 @@ def _provjeri_nepromjenjenost(stari_tekst: str, novi_tekst: str) -> float:
     Koristi se za penalizaciju relekture koja ništa nije promijenila.
     """
     stari_hash = _ekstrahuj_cist_tekst(stari_tekst).strip()
-    novi_hash  = _ekstrahuj_cist_tekst(novi_tekst).strip()
+    novi_hash = _ekstrahuj_cist_tekst(novi_tekst).strip()
 
     if not stari_hash or not novi_hash:
         return 0.0
 
     # Poređenje na razini karaktera (Jaccard na bigramima)
     def bigrami(s):
-        return set(s[i:i+2] for i in range(len(s)-1))
+        return set(s[i : i + 2] for i in range(len(s) - 1))
 
     b1, b2 = bigrami(stari_hash), bigrami(novi_hash)
     if not b1 or not b2:
@@ -262,28 +283,61 @@ Vrati ISKLJUČIVO JSON bez objašnjenja:
 """
 
 
-
 # ── NON-PROSE DETEKCIJA (sadržaj, ne ime fajla) ───────────────────────────
 _NONPROSE_KEYWORDS = [
-    "copyright", "isbn", "cip -", "katalogizacija", "cataloguing",
-    "sva prava pridrzana", "sva prava pridržana", "all rights reserved",
-    "stampano u", "štampano u", "printed in", "first published",
-    "prvo izdanje", "o autoru", "about the author", "o autorica",
-    "biljeska o prijevodu", "bilješka o prijevodu", "napomena prevodioca",
-    "zahvalnice", "acknowledgements", "acknowledgments",
-    "posveta", "dedication", "epigraf",
-    "sadrzaj", "sadržaj", "table of contents", "kazalo",
-    "indeks", "index", "glosar pojmova", "glossary",
-    "bibliografija", "bibliography", "literatura",
-    "recenzija", "endorsement", "also by", "by the same author",
-    "o knjizi", "about this book", "about the book",
+    "copyright",
+    "isbn",
+    "cip -",
+    "katalogizacija",
+    "cataloguing",
+    "sva prava pridrzana",
+    "sva prava pridržana",
+    "all rights reserved",
+    "stampano u",
+    "štampano u",
+    "printed in",
+    "first published",
+    "prvo izdanje",
+    "o autoru",
+    "about the author",
+    "o autorica",
+    "biljeska o prijevodu",
+    "bilješka o prijevodu",
+    "napomena prevodioca",
+    "zahvalnice",
+    "acknowledgements",
+    "acknowledgments",
+    "posveta",
+    "dedication",
+    "epigraf",
+    "sadrzaj",
+    "sadržaj",
+    "table of contents",
+    "kazalo",
+    "indeks",
+    "index",
+    "glosar pojmova",
+    "glossary",
+    "bibliografija",
+    "bibliography",
+    "literatura",
+    "recenzija",
+    "endorsement",
+    "also by",
+    "by the same author",
+    "o knjizi",
+    "about this book",
+    "about the book",
 ]
+
 
 def _je_nonprose_blok(tekst: str) -> bool:
     """True ako je blok paratekst koji ne treba AI ocjenu."""
     import re as _re
+
     try:
         from bs4 import BeautifulSoup as _BS
+
         _has_bs4 = True
     except ImportError:
         _has_bs4 = False
@@ -293,18 +347,18 @@ def _je_nonprose_blok(tekst: str) -> bool:
         return True
 
     # 1. Čisto-slikovni blok
-    if _re.search(r'^\s*<(img|figure|svg)', t, _re.IGNORECASE):
+    if _re.search(r"^\s*<(img|figure|svg)", t, _re.IGNORECASE):
         return True
     # Blok koji sadrži SAMO sliku (img bez okolnog teksta)
-    if _re.search(r'<img', t, _re.IGNORECASE):
-        stripped = _re.sub(r'<[^>]+>', '', t).strip()
+    if _re.search(r"<img", t, _re.IGNORECASE):
+        stripped = _re.sub(r"<[^>]+>", "", t).strip()
         if len(stripped) < 10:
             return True
 
     # 2. TOC lista — niz linkova bez proze
     if _re.search(
-        r'(?is)<(ul|ol)[^>]*>(?:\s*<li[^>]*>\s*<a[^>]*>[^<]{1,120}</a>.*?</li>\s*){3,}</(?:ul|ol)>',
-        t
+        r"(?is)<(ul|ol)[^>]*>(?:\s*<li[^>]*>\s*<a[^>]*>[^<]{1,120}</a>.*?</li>\s*){3,}</(?:ul|ol)>",
+        t,
     ):
         return True
 
@@ -327,11 +381,12 @@ def _je_nonprose_blok(tekst: str) -> bool:
     # 5. Kratak blok bez rečenične strukture
     words = plain.split()
     if len(words) < 55:
-        has_sentence = bool(_re.search(r'[a-zA-Zšđžčć]{4,}.*[.,!?;]', plain))
+        has_sentence = bool(_re.search(r"[a-zA-Zšđžčć]{4,}.*[.,!?;]", plain))
         if not has_sentence:
             return True
 
     return False
+
 
 async def _scoruj_kvalitetu(
     tekst: str,
@@ -345,7 +400,7 @@ async def _scoruj_kvalitetu(
 ) -> float:
 
     # Auto-10 za non-prose blokove
-    if _je_nonprose_blok(tekst or ''):
+    if _je_nonprose_blok(tekst or ""):
         return 10.0
     """
     Ocjenjuje kvalitetu teksta — kombinacija heuristike i AI ocjene.
@@ -374,10 +429,10 @@ async def _scoruj_kvalitetu(
         cist = cist[:900]
 
         tip_prefix = {
-            "prevod":    "TIP: PRIJEVOD (EN->HR). Ocjeni sva 4 kriterija.\n",
-            "lektura":   "TIP: RELEKTURA (HR->HR). Ocjeni jezik/stil/tipografiju BEZ tacnosti.\n",
+            "prevod": "TIP: PRIJEVOD (EN->HR). Ocjeni sva 4 kriterija.\n",
+            "lektura": "TIP: RELEKTURA (HR->HR). Ocjeni jezik/stil/tipografiju BEZ tacnosti.\n",
             "relektura": "TIP: RELEKTURA (HR->HR). Ocjeni jezik/stil/tipografiju BEZ tacnosti.\n",
-            "opci":      "TIP: OPCI. Ocjeni sva 4 kriterija.\n",
+            "opci": "TIP: OPCI. Ocjeni sva 4 kriterija.\n",
         }.get(tip_ocjenjivanja, "TIP: OPCI.\n")
 
         prompt = f"{tip_prefix}TEKST ZA OCJENU:\n{cist}"
@@ -395,7 +450,10 @@ async def _scoruj_kvalitetu(
                 pass
 
             raw, _ = await self_obj._call_ai_engine(
-                prompt, chunk_idx, uloga="SCORER", filename=file_name,
+                prompt,
+                chunk_idx,
+                uloga="SCORER",
+                filename=file_name,
                 sys_override=scorer_sys_override,
             )
         elif engine_fn is not None:
@@ -418,17 +476,24 @@ async def _scoruj_kvalitetu(
                     if 1.0 <= raw_score <= 10.0:
                         ai_score = raw_score
                         # Debug: logiramo sumnjive "srednje" ocjene
-                        if 5.0 <= raw_score <= 5.9 and self_obj is not None and hasattr(self_obj, "log"):
+                        if (
+                            5.0 <= raw_score <= 5.9
+                            and self_obj is not None
+                            and hasattr(self_obj, "log")
+                        ):
                             self_obj.log(
                                 f"[scorer] ⚠️ Blok {chunk_idx}: AI vratio {raw_score} "
                                 f"(srednja zona — provjeri provider i rubrik)",
-                                "tech"
+                                "tech",
                             )
                     else:
                         kriteriji = obj.get("kriteriji", {})
                         if kriteriji:
-                            vrijednosti = [v for v in kriteriji.values()
-                                           if isinstance(v, (int, float))]
+                            vrijednosti = [
+                                v
+                                for v in kriteriji.values()
+                                if isinstance(v, (int, float))
+                            ]
                             if vrijednosti:
                                 ai_score = round(sum(vrijednosti) / len(vrijednosti), 1)
                 except (json.JSONDecodeError, ValueError):
@@ -439,7 +504,7 @@ async def _scoruj_kvalitetu(
             self_obj.log(
                 f"[scorer] AI ocjena nije dostupna za blok {chunk_idx}: "
                 f"{str(_scorer_exc)[:80]}",
-                "tech"
+                "tech",
             )
 
     # ── 4. Kompozitni score ───────────────────────────────────────────────────
@@ -456,6 +521,7 @@ async def _scoruj_kvalitetu(
     kompozitni -= relektura_kazna
     return round(max(1.0, min(10.0, kompozitni)), 1)
 
+
 async def _scoruj_batch(
     blokovi: list[tuple[str, str, int]],  # (tekst, file_name, chunk_idx)
     engine_fn,
@@ -467,14 +533,21 @@ async def _scoruj_batch(
     Vraća {stem: ocjena} dict. Nikad ne vraća None za pojedine blokove.
     """
     import asyncio
+
     results = {}
     tasks = []
     keys = []
     for tekst, file_name, chunk_idx in blokovi:
         stem = f"{file_name}_blok_{chunk_idx:04d}"
         tasks.append(
-            _scoruj_kvalitetu(tekst, engine_fn, chunk_idx, file_name,
-                              self_obj=self_obj, tip_ocjenjivanja=tip_ocjenjivanja)
+            _scoruj_kvalitetu(
+                tekst,
+                engine_fn,
+                chunk_idx,
+                file_name,
+                self_obj=self_obj,
+                tip_ocjenjivanja=tip_ocjenjivanja,
+            )
         )
         keys.append(stem)
 
@@ -490,7 +563,10 @@ async def _scoruj_batch(
 
 # ─── Javna sinhorna ocjena (za workers_v2 i ostale sinhroni korisnici) ────────
 
-def ocijeni_kvalitet(prijevod: str, original: str = "", tip_ocjenjivanja: str = "opci") -> float:
+
+def ocijeni_kvalitet(
+    prijevod: str, original: str = "", tip_ocjenjivanja: str = "opci"
+) -> float:
     """
     Brza heuristička ocjena kvaliteta — sinhorna, bez AI poziva.
     Koristi se u workers_v2.py i svuda gdje nije dostupan async kontekst.
@@ -501,6 +577,7 @@ def ocijeni_kvalitet(prijevod: str, original: str = "", tip_ocjenjivanja: str = 
 
 
 # ─── Summary statistika ───────────────────────────────────────────────────────
+
 
 def quality_summary(scores: dict) -> dict:
     """
@@ -533,22 +610,25 @@ def quality_summary(scores: dict) -> dict:
     vals = list(normalized.values())
     n = len(vals)
     excellent = sum(1 for v in vals if v >= _QUALITY_EXCELLENT_THRESHOLD)
-    good      = sum(1 for v in vals if _QUALITY_RESCUE_THRESHOLD <= v < _QUALITY_EXCELLENT_THRESHOLD)
-    poor      = sum(1 for v in vals if 4.0 <= v < _QUALITY_RESCUE_THRESHOLD)
-    critical  = sum(1 for v in vals if v < 4.0)
+    good = sum(
+        1 for v in vals if _QUALITY_RESCUE_THRESHOLD <= v < _QUALITY_EXCELLENT_THRESHOLD
+    )
+    poor = sum(1 for v in vals if 4.0 <= v < _QUALITY_RESCUE_THRESHOLD)
+    critical = sum(1 for v in vals if v < 4.0)
 
     return {
         "avg": round(sum(vals) / n, 2),
         "min": round(min(vals), 1),
         "max": round(max(vals), 1),
         "total": n,
-        "excellent": excellent,        # ≥8.5 — print-ready
-        "good": good,                  # 6.5–8.5 — solidno
-        "poor": poor,                  # 4.0–6.5 — treba retro
-        "critical": critical,          # <4.0 — kritično
+        "excellent": excellent,  # ≥8.5 — print-ready
+        "good": good,  # 6.5–8.5 — solidno
+        "poor": poor,  # 4.0–6.5 — treba retro
+        "critical": critical,  # <4.0 — kritično
         "pct_print_ready": round((excellent / n) * 100, 1),
         "has_data": True,
     }
+
 
 # ─────────────────────────────────────────────────────────────
 # SCORER TRACKER — preuzeto iz quality_scorer_v2.py
@@ -557,15 +637,15 @@ def quality_summary(scores: dict) -> dict:
 import threading as _threading
 
 _SCORER_PRIORITETI = {
-    "gemini":     ["groq", "cerebras", "mistral", "cohere"],
-    "groq":       ["gemini", "cerebras", "mistral"],
-    "cerebras":   ["gemini", "groq", "mistral"],
-    "mistral":    ["gemini", "groq", "cerebras"],
-    "cohere":     ["gemini", "groq", "mistral"],
-    "sambanova":  ["gemini", "groq", "cerebras"],
+    "gemini": ["groq", "cerebras", "mistral", "cohere"],
+    "groq": ["gemini", "cerebras", "mistral"],
+    "cerebras": ["gemini", "groq", "mistral"],
+    "mistral": ["gemini", "groq", "cerebras"],
+    "cohere": ["gemini", "groq", "mistral"],
+    "sambanova": ["gemini", "groq", "cerebras"],
     "openrouter": ["gemini", "groq", "mistral"],
-    "chutes":     ["gemini", "groq", "cerebras"],
-    "unknown":    ["gemini", "groq", "cerebras"],
+    "chutes": ["gemini", "groq", "cerebras"],
+    "unknown": ["gemini", "groq", "cerebras"],
 }
 
 
@@ -613,8 +693,16 @@ def _normaliziraj_provider(provider: str) -> str:
         parts = p.split("/")
         if len(parts) >= 2:
             return parts[1]
-    for known in ["gemini", "groq", "cerebras", "mistral", "cohere",
-                  "sambanova", "openrouter", "chutes"]:
+    for known in [
+        "gemini",
+        "groq",
+        "cerebras",
+        "mistral",
+        "cohere",
+        "sambanova",
+        "openrouter",
+        "chutes",
+    ]:
         if known in p:
             return known
     return "unknown"
@@ -663,7 +751,10 @@ def generiraj_report(knjiga_id: str, checkpoint_dir: str = None) -> dict:
     if checkpoint_dir is None:
         try:
             from config.settings import CHECKPOINT_BASE_DIR
-            checkpoint_dir = _P(CHECKPOINT_BASE_DIR) / ("_skr_" + knjiga_id) / "checkpoints"
+
+            checkpoint_dir = (
+                _P(CHECKPOINT_BASE_DIR) / ("_skr_" + knjiga_id) / "checkpoints"
+            )
         except Exception:
             return {"greska": "Nema checkpoint_dir"}
 
@@ -714,4 +805,3 @@ def generiraj_report(knjiga_id: str, checkpoint_dir: str = None) -> dict:
         "qa_flag": qa_flag_count,
         "proc_iz_prve": round(100 * iz_prve / ukupno, 1) if ukupno else 0,
     }
-

@@ -10,17 +10,18 @@ Format (Moon+):
 
 Apply samo na tekstualne cvorove HTML-a, ne na tagove/atribute/CSS/JS.
 """
+
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 
 @dataclass
 class Rule:
     search: str
     replace: str
-    mode: str            # "regex" | "literal"
+    mode: str  # "regex" | "literal"
     pattern: re.Pattern  # kompajlirana
     source_line: int
     original: str
@@ -30,12 +31,12 @@ class Rule:
 class Fire:
     rule: Rule
     count: int
-    context: str         # prvih 50 znakova tekstualnog cvora
+    context: str  # prvih 50 znakova tekstualnog cvora
 
 
-def load_moon_replacements(path: str) -> List[Rule]:
+def load_moon_replacements(path: str) -> list[Rule]:
     """Parsira Moon+ Text Replacement fajl."""
-    rules: List[Rule] = []
+    rules: list[Rule] = []
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"Fajl ne postoji: {path}")
@@ -79,32 +80,42 @@ def load_moon_replacements(path: str) -> List[Rule]:
             print(f"  ⚠️  linija {line_no}: regex greska ({e}) — preskacem: {raw[:60]}")
             continue
 
-        rules.append(Rule(
-            search=search, replace=replace_part, mode=mode,
-            pattern=pattern, source_line=line_no, original=raw,
-        ))
+        rules.append(
+            Rule(
+                search=search,
+                replace=replace_part,
+                mode=mode,
+                pattern=pattern,
+                source_line=line_no,
+                original=raw,
+            )
+        )
 
     return rules
 
 
-def apply_to_text(text: str, rules: List[Rule]) -> tuple[str, List[Fire]]:
+def apply_to_text(text: str, rules: list[Rule]) -> tuple[str, list[Fire]]:
     """Primijeni pravila na plain tekst. Vraca (novi_tekst, fires)."""
-    fires: List[Fire] = []
+    fires: list[Fire] = []
     for rule in rules:
+
         def repl(m):
             return rule.replace
 
         new_text, count = rule.pattern.subn(repl, text)
         if count > 0:
-            fires.append(Fire(
-                rule=rule, count=count,
-                context=text[:50].replace("\n", " "),
-            ))
+            fires.append(
+                Fire(
+                    rule=rule,
+                    count=count,
+                    context=text[:50].replace("\n", " "),
+                )
+            )
             text = new_text
     return text, fires
 
 
-def apply_to_html(html_bytes: bytes, rules: List[Rule]) -> tuple[bytes, List[Fire]]:
+def apply_to_html(html_bytes: bytes, rules: list[Rule]) -> tuple[bytes, list[Fire]]:
     """
     Primijeni pravila na HTML tekstualne cvorove.
     NE dira <style>, <script>, atribute, base64, XML deklaraciju.
@@ -113,8 +124,8 @@ def apply_to_html(html_bytes: bytes, rules: List[Rule]) -> tuple[bytes, List[Fir
     Koristi regex-based pristup (ne BeautifulSoup) — cuva originalnu
     XML strukturu sto je neophodno za EPUB (XHTML = XML).
     """
-    import uuid
     import re as _re
+    import uuid
 
     html = html_bytes.decode("utf-8", errors="strict")
 
@@ -124,21 +135,29 @@ def apply_to_html(html_bytes: bytes, rules: List[Rule]) -> tuple[bytes, List[Fir
 
     def _save_block(m):
         saved.append(m.group(0))
-        return f"{token_prefix}{len(saved)-1}___"
+        return f"{token_prefix}{len(saved) - 1}___"
 
-    html = _re.sub(r'<script\b[^>]*>.*?</script>', _save_block, html,
-                   flags=_re.DOTALL | _re.IGNORECASE)
-    html = _re.sub(r'<style\b[^>]*>.*?</style>', _save_block, html,
-                   flags=_re.DOTALL | _re.IGNORECASE)
+    html = _re.sub(
+        r"<script\b[^>]*>.*?</script>",
+        _save_block,
+        html,
+        flags=_re.DOTALL | _re.IGNORECASE,
+    )
+    html = _re.sub(
+        r"<style\b[^>]*>.*?</style>",
+        _save_block,
+        html,
+        flags=_re.DOTALL | _re.IGNORECASE,
+    )
 
     # 2. Iteriraj kroz tagove i tekst izmedju njih
-    all_fires: List[Fire] = []
-    parts: List[str] = []
+    all_fires: list[Fire] = []
+    parts: list[str] = []
     pos = 0
 
-    for tag_match in _re.finditer(r'<[^>]+>', html):
+    for tag_match in _re.finditer(r"<[^>]+>", html):
         # Tekst pre taga
-        text = html[pos:tag_match.start()]
+        text = html[pos : tag_match.start()]
         if text:
             new_text, fires = apply_to_text(text, rules)
             if fires:
@@ -165,7 +184,7 @@ def apply_to_html(html_bytes: bytes, rules: List[Rule]) -> tuple[bytes, List[Fir
     return result.encode("utf-8"), all_fires
 
 
-def summarize(fires: List[Fire], total_rules: int) -> str:
+def summarize(fires: list[Fire], total_rules: int) -> str:
     """Kratki sazetak za log."""
     if not fires:
         return f"0 fires od {total_rules} pravila"
