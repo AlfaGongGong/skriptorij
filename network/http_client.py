@@ -95,20 +95,6 @@ _BROWSER_UA = (
 )
 
 
-def _humanize_wait(provider):
-    """Čeka minimalni interval + jitter između 2 poziva prema istom provideru."""
-    pu = (provider or "").upper()
-    min_int = MIN_INTERVAL_PER_PROVIDER.get(pu, _DEFAULT_MIN_INTERVAL)
-    with _humanize_lock:
-        last = _last_call_ts.get(pu, 0.0)
-        now = _time_h.time()
-        elapsed = now - last
-        if elapsed < min_int:
-            wait = (min_int - elapsed) + _rand_h.uniform(0.2, 1.5)
-            _time_h.sleep(wait)
-        _last_call_ts[pu] = _time_h.time()
-
-
 def _build_headers(provider, api_key=None, extra=None):
     """Standardni headeri s browser UA."""
     h = {

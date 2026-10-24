@@ -439,7 +439,7 @@ def _qa_ai_ocjena(tekst, fleet):
             )
             _dt = time.time() - _t0
             if res:
-                self.log(
+                logger.info(
                     f"  ◀ QA {provider} ({model}) | {_dt:.1f}s | {len(res)}c", "tech"
                 )
             if not res:

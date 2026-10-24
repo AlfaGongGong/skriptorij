@@ -19,6 +19,7 @@ import re
 from datetime import datetime
 
 _AUDIT_FILE_LOGGER = _stdlib_logging.getLogger("skriptorij.audit")
+logger = _stdlib_logging.getLogger(__name__)
 
 audit_logs: list[str] = []
 MAX_AUDIT_LINES = 500
