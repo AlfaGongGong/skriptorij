@@ -514,7 +514,7 @@ async def _async_http_post(
                 await asyncio.sleep(1.5 * (attempt + 1))
                 try:
                     resp = await asyncio.to_thread(
-                        requests.post,
+                        _get_http_session().post,
                         url,
                         headers=headers,
                         json=json_payload,
