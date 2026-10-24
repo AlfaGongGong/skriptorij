@@ -1,3 +1,4 @@
+import json as _json_b8
 import time
 
 
@@ -202,5 +203,62 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
         if len(shared_stats["audit_events"]) > 500:
             shared_stats["audit_events"] = shared_stats["audit_events"][-500:]
 
+# ─────────────────────────────────────────────────────────────────────────────
+# B8-lite (2026-10-24): strukturirano JSON logiranje.
+# Postojeci logger.info/warning/error pozivi rade nepromenjeno (plain text).
+# Novi kod moze da koristi add_structured() za JSON dogadjaje.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_STRUCTURED_LOG = True
 
 
+def add_structured(nivo: str, modul: str, event: str, **kwargs):
+    """
+    Strukturirani JSON log u live_audit (i logger.info kao plain text fallback).
+
+    Args:
+        nivo: "info" | "warning" | "error" | "debug"
+        modul: "styler" | "pipeline" | "http_client" | "fleet" | "discovery" | ...
+        event: kratki naziv dogadjaja (npr. "gemini_503", "cache_miss")
+        **kwargs: dodatni kontekst (provider, key_mask, chunk_idx, latency_ms, ...)
+
+    Primer:
+        add_structured("warning", "http_client", "gemini_503",
+                       provider="GEMINI", key_mask="...Yxkg", chunk_idx=42,
+                       latency_ms=1500)
+    """
+    import time as _t_b8
+    entry = {
+        "ts": round(_t_b8.time(), 3),
+        "nivo": nivo,
+        "modul": modul,
+        "event": event,
+        **{k: v for k, v in kwargs.items() if v is not None},
+    }
+    # Plain text fallback (postojeci logger)
+    try:
+        msg = "[" + modul + "] " + event
+        if kwargs:
+            msg += " | " + " ".join(f"{k}={v}" for k, v in kwargs.items() if v is not None)
+        _logger_func = {
+            "info": logger.info,
+            "warning": logger.warning,
+            "error": logger.error,
+            "debug": logger.debug,
+        }.get(nivo, logger.info)
+        _logger_func(msg)
+    except Exception:
+        pass
+    # Strukturirani zapis (za buduce UI/analizu)
+    try:
+        # Ako postoji SHARED_STATS["live_audit_events"] — dodaj
+        from utils.shared_state import SHARED_STATS
+        if "_live_audit_events" not in SHARED_STATS:
+            SHARED_STATS["_live_audit_events"] = []
+        SHARED_STATS["_live_audit_events"].append(entry)
+        # Cap na 500
+        if len(SHARED_STATS["_live_audit_events"]) > 500:
+            SHARED_STATS["_live_audit_events"] = SHARED_STATS["_live_audit_events"][-500:]
+    except Exception:
+        pass
+    return entry
