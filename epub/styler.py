@@ -512,6 +512,74 @@ def _dodaj_dropcap(soup):
     return False
 
 
+def _ekstrahuj_zajednicke_slike(files: dict) -> list[str]:
+    """
+    2026-10-24 B7: dedup inline base64 slike u zajednicke PNG/JPG fajlove.
+    Zamena src="data:image/png;base64,XXX" sa relativnim putem do PNG-a.
+    Vraca listu novih putanja (za OPF manifest).
+    """
+    import hashlib as _hl_b7, base64 as _b64_b7, os as _os_b7
+
+    RX = re.compile(r'data:image/(png|jpeg|jpg);base64,([A-Za-z0-9+/=]+)')
+    EXT_MAP = {"png": "png", "jpeg": "jpg", "jpg": "jpg"}
+
+    unique: dict[str, bytes] = {}
+    b64_hash_ext: dict[str, tuple] = {}
+
+    for name, data in files.items():
+        if not name.endswith((".xhtml", ".html", ".htm")):
+            continue
+        try:
+            text = data.decode("utf-8", errors="strict")
+        except UnicodeDecodeError:
+            continue
+        for m in RX.finditer(text):
+            fmt = m.group(1).lower()
+            b64 = m.group(2)
+            if b64 in b64_hash_ext:
+                continue
+            try:
+                raw = _b64_b7.b64decode(b64, validate=False)
+            except Exception:
+                continue
+            h = _hl_b7.sha256(raw).hexdigest()[:16]
+            ext = EXT_MAP.get(fmt, "png")
+            unique[h] = raw
+            b64_hash_ext[b64] = (h, ext)
+
+    if not unique:
+        return []
+
+    new_paths: list[str] = []
+    for h, raw in unique.items():
+        ext = next((e for (hh, e) in b64_hash_ext.values() if hh == h), "png")
+        path = f"images/booklyfi-shared-{h}.{ext}"
+        if path not in files:
+            files[path] = raw
+            new_paths.append(path)
+
+    for name in list(files.keys()):
+        if not name.endswith((".xhtml", ".html", ".htm")):
+            continue
+        try:
+            text = files[name].decode("utf-8", errors="strict")
+        except UnicodeDecodeError:
+            continue
+        dirname = _os_b7.path.dirname(name) or "."
+
+        def _repl(m):
+            b64 = m.group(2)
+            h, ext = b64_hash_ext[b64]
+            png_path = f"images/booklyfi-shared-{h}.{ext}"
+            return _os_b7.path.relpath(png_path, dirname)
+
+        new_text = RX.sub(_repl, text)
+        if new_text != text:
+            files[name] = new_text.encode("utf-8")
+
+    return new_paths
+
+
 def run_epub_styler(epub_path, output_path=None, fleet=None,
                     log_callback=None, options=None):
     import html as _html
@@ -1278,6 +1346,22 @@ def run_epub_styler(epub_path, output_path=None, fleet=None,
 
     for ir in stag.find_all("itemref"):
         ir.decompose()
+    # 2026-10-24 B7: dedup base64 slike u zajednicke PNG pre OPF build
+    _shared_images = _ekstrahuj_zajednicke_slike(files)
+    if _shared_images:
+        _log("   -> %d zajednickih slika (dedup base64)" % len(_shared_images), "tech")
+
+    # 2026-10-24 B7: dodaj manifest items za zajednicke slike
+    if _shared_images:
+        for _png_path in _shared_images:
+            _ext = _png_path.rsplit(".", 1)[-1].lower()
+            _hash_part = _png_path.rsplit("/", 1)[-1].replace("booklyfi-shared-", "").rsplit(".", 1)[0]
+            ni = opf_soup.new_tag("item")
+            ni["id"] = "booklyfi-shared-" + _hash_part
+            ni["href"] = _png_path
+            ni["media-type"] = "image/jpeg" if _ext in ("jpg", "jpeg") else "image/png"
+            mtag.append(ni)
+
     for iid in ("booklyfi-naslovna", "booklyfi-impresum", "nav"):
         ir = opf_soup.new_tag("itemref"); ir["idref"] = iid
         stag.append(ir)
