@@ -273,16 +273,12 @@ def _build_ai_prompt(groups: list[list[str]], full_text_sample: str) -> str:
     # Uzmemo sample teksta (prvih ~2000 znakova čistog teksta)
     sample = full_text_sample[:2000].strip()
 
-    return """Ti si ekspert za književni prijevod na hrvatski jezik.
+    return f"""Ti si ekspert za književni prijevod na hrvatski jezik.
 
 Analziraš EPUB knjigu i trebaš normalizovati vlastita imena i nazive entiteta.
 
 KONTEKST KNJIGE (uzorak teksta):
-"""
-
-
 {sample}
-"""
 
 KANDIDATI ZA NORMALIZACIJU (grupe srodnih oblika):
 {groups_txt}
