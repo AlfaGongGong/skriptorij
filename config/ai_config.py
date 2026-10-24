@@ -59,7 +59,7 @@ MODEL_MAP = all_fallbacks()
 
 MORFO_VALIDATOR_MODEL = "gemini-3.1-flash-lite"
 
-GEMINI_BASE_URL = "https://booklyfi.jasenkobozinovic.workers.dev"
+# 2026-10-24 cleanup: GEMINI_BASE_URL (Cloudflare worker) uklonjen — mrtav od 2026-10
 GEMINI_DIRECT_BASE_URL = "https://generativelanguage.googleapis.com"
 
 

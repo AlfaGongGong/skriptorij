@@ -6,7 +6,6 @@
 #   FIX: dodani CLOUDFLARE (Workers AI, treba account_id) i NVIDIA (NIM)
 
 from config.ai_config import (
-    GEMINI_BASE_URL,
     GEMINI_DIRECT_BASE_URL,
     get_gemini_direct_url,
     get_gemini_url,
