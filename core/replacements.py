@@ -99,8 +99,8 @@ def apply_to_text(text: str, rules: list[Rule]) -> tuple[str, list[Fire]]:
     fires: list[Fire] = []
     for rule in rules:
 
-        def repl(m):
-            return rule.replace
+        def repl(m, _r=rule):
+            return _r.replace
 
         new_text, count = rule.pattern.subn(repl, text)
         if count > 0:

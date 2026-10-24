@@ -241,7 +241,7 @@ async def call_provider(
     svi_upper = {p.upper() for p in fleet.fleet.keys()}
     preferred = PROVIDER_PRIORITY.get(uloga, [])
     # FIX: filtriraj na providere koji imaju ključeve (izbjegni log spam)
-    has_keys = {p.upper() for p, keys in self.fleet.fleet.items() if keys}
+    has_keys = {p.upper() for p, keys in fleet.fleet.items() if keys}
     ordered = [p for p in preferred if p in svi_upper and p.upper() in has_keys]
     for p in svi_upper:
         if p.upper() in has_keys and p not in ordered:

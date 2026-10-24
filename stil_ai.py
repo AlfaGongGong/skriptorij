@@ -34,6 +34,10 @@ import warnings
 
 from bs4 import BeautifulSoup
 
+
+# 2026-10-24 RUN1: deduplikacija upozorenja 'nema ornamenta za scenu X'
+_UPOZORENO: set[str] = set()
+
 try:
     from bs4 import XMLParsedAsHTMLWarning
 

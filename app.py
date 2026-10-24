@@ -1681,7 +1681,7 @@ def create_app() -> Flask:
                 if book:
                     import re as _re
 
-                    clean = _re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
+                    _clean = _re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
                     # Koristi isti direktorij gdje je .chk fajl
                     qs_dir = chk_path.parent
                     qs_path = qs_dir / "quality_scores.json"

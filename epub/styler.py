@@ -605,11 +605,11 @@ def _ekstrahuj_zajednicke_slike(files: dict) -> list[str]:
             continue
         dirname = _os_b7.path.dirname(name) or "."
 
-        def _repl(m):
+        def _repl(m, _dirname=dirname):
             b64 = m.group(2)
             h, ext = b64_hash_ext[b64]
             png_path = f"images/booklyfi-shared-{h}.{ext}"
-            return _os_b7.path.relpath(png_path, dirname)
+            return _os_b7.path.relpath(png_path, _dirname)
 
         new_text = RX.sub(_repl, text)
         if new_text != text:

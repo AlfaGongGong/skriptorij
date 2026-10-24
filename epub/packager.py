@@ -192,7 +192,6 @@ def _finaliziraj_fix_epub(self):
     # Nadji OPF i images dir
     opf = next(work_dir.rglob("*.opf"), None)
     base_dir = opf.parent if opf else work_dir
-    images_dir = base_dir / "images"
 
     # 1. Ocisti atribute + stari spanovi + dropcap + ornament
     for ext in ("*.xhtml", "*.html", "*.htm"):

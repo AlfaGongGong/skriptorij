@@ -158,7 +158,7 @@ def _remove_pid_file() -> None:
 # ============================================================================
 # GRACEFUL SHUTDOWN
 # ============================================================================
-def _graceful_shutdown(signum, frame):
+def _graceful_shutdown(_signum, _frame):
     SHARED_CONTROLS["stop"] = True
     SHARED_STATS["status"] = "ZAUSTAVLJENO"
     print(

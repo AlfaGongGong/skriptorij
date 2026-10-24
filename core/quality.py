@@ -347,17 +347,17 @@ def _je_nonprose_blok(tekst: str) -> bool:
         return True
 
     # 1. Čisto-slikovni blok
-    if _re.search(r"^\s*<(img|figure|svg)", t, _re.IGNORECASE):
+    if _re.search(r"^\s*<(img|figure|svg)\b", t, _re.IGNORECASE):
         return True
     # Blok koji sadrži SAMO sliku (img bez okolnog teksta)
-    if _re.search(r"<img", t, _re.IGNORECASE):
+    if _re.search(r"<img\b", t, _re.IGNORECASE):
         stripped = _re.sub(r"<[^>]+>", "", t).strip()
         if len(stripped) < 10:
             return True
 
     # 2. TOC lista — niz linkova bez proze
     if _re.search(
-        r"(?is)<(ul|ol)[^>]*>(?:\s*<li[^>]*>\s*<a[^>]*>[^<]{1,120}</a>.*?</li>\s*){3,}</(?:ul|ol)>",
+        r"(?is)<(ul|ol)\b[^>]*>(?:\s*<li[^>]*>\s*<a\b[^>]*>[^<]{1,120}</a>.*?</li>\s*){3,}</(?:ul|ol)>",
         t,
     ):
         return True
