@@ -1,12 +1,12 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 29,
+    "clue_m": 34,
     "clue_z": 0
   },
   "Orso": {
     "rod": "M",
-    "clue_m": 37,
+    "clue_m": 40,
     "clue_z": 0
   },
   "Leo": {
@@ -41,7 +41,7 @@
   },
   "Hoff": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 8,
     "clue_z": 0
   },
   "Valbeck": {
@@ -66,7 +66,7 @@
   },
   "Zatim": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 2
   },
   "Visoko": {
@@ -166,12 +166,12 @@
   },
   "Tada": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 3
   },
   "Broad": {
     "rod": "M",
-    "clue_m": 23,
+    "clue_m": 24,
     "clue_z": 0
   },
   "Brock": {
@@ -181,17 +181,17 @@
   },
   "Heugen": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Palača": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "kancelar": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 8,
     "clue_z": 0
   },
   "Istina": {
@@ -201,17 +201,17 @@
   },
   "komornik": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Ritam": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Učinak": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Rikke": {
@@ -592,7 +592,7 @@
   "Vjerojatno": {
     "rod": "M",
     "clue_m": 2,
-    "clue_z": 0
+    "clue_z": 1
   },
   "Glaward": {
     "rod": null,
@@ -991,7 +991,7 @@
   },
   "Potom": {
     "rod": null,
-    "clue_m": 0,
+    "clue_m": 1,
     "clue_z": 1
   },
   "na": {
@@ -1017,7 +1017,7 @@
   "namjesnik": {
     "rod": null,
     "clue_m": 1,
-    "clue_z": 0
+    "clue_z": 1
   },
   "Dobit": {
     "rod": null,
@@ -1043,5 +1043,15 @@
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
+  },
+  "Sama": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Nekolicina": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
   }
 }
