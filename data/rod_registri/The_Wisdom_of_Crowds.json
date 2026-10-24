@@ -1,7 +1,7 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 28,
+    "clue_m": 29,
     "clue_z": 0
   },
   "Orso": {
@@ -57,7 +57,7 @@
   "Vick": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 25
+    "clue_z": 26
   },
   "Pike": {
     "rod": "M",
@@ -67,7 +67,7 @@
   "Zatim": {
     "rod": "M",
     "clue_m": 4,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Visoko": {
     "rod": "Ž",
@@ -81,7 +81,7 @@
   },
   "Oduvijek": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 11,
     "clue_z": 1
   },
   "Kurva": {
@@ -95,8 +95,8 @@
     "clue_z": 0
   },
   "Leeb": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Doors": {
@@ -111,7 +111,7 @@
   },
   "Shawley": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Gate": {
@@ -120,8 +120,8 @@
     "clue_z": 0
   },
   "Furnevelt": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Čovjek": {
@@ -136,8 +136,8 @@
   },
   "Jedva": {
     "rod": "Ž",
-    "clue_m": 3,
-    "clue_z": 5
+    "clue_m": 6,
+    "clue_z": 6
   },
   "Stalno": {
     "rod": null,
@@ -145,23 +145,23 @@
     "clue_z": 0
   },
   "Luk": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Parry": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Gore": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Ettenbeck": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Tada": {
@@ -740,8 +740,8 @@
     "clue_z": 1
   },
   "Smiler": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Još": {
@@ -1023,5 +1023,25 @@
     "rod": null,
     "clue_m": 0,
     "clue_z": 1
+  },
+  "Svijet": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Bludnica": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Kapija": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Dolje": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
   }
 }
