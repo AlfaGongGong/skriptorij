@@ -128,9 +128,7 @@ def _get_rod_detektor():
 
 # ── Privatni checkpoint helperi ───────────────────────────────────────────────
 
-_CHUNK_SHA_RX = re.compile(r"^<!--\s*chunk_sha:([a-f0-9]+)\s*-->\n?")
-
-
+_CHUNK_SHA_RX = re.compile(r"^<!--\s*chunk_sha:(?P<v2>v2:(?P<mh>[a-f0-9]+):(?P<gh>[a-f0-9]+):)?(?P<h>[a-f0-9]+)\s*-->\s*\n?")
 def _chk_path(self, file_name: str, chunk_idx: int, suffix: str = "") -> object:
     if suffix:
         return self.checkpoint_dir / f"{file_name}_blok_{chunk_idx}.{suffix}.chk"
@@ -138,7 +136,9 @@ def _chk_path(self, file_name: str, chunk_idx: int, suffix: str = "") -> object:
 
 
 def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
-              chunk_for_hash: str | None = None) -> str | None:
+              chunk_for_hash: str | None = None,
+              model_hash: str | None = None,
+              glosar_hash: str | None = None) -> str | None:
     from utils.checkpoint_cleaner import _je_placeholder, _ocisti_json_wrapper
     import hashlib as _hashlib
     p = _chk_path(self, file_name, chunk_idx, suffix)
@@ -148,9 +148,19 @@ def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
         tekst = p.read_text("utf-8", errors="ignore")
         m = _CHUNK_SHA_RX.match(tekst)
         if m:
-            stored = m.group(1)
+            # 2026-10-24 B4a: v2 format (model + glosar + chunk), v1 (samo chunk)
+            stored = m.group("h")
+            is_v2 = m.group("v2") is not None
             tekst = tekst[m.end():]
             if chunk_for_hash is not None:
+                if is_v2 and (model_hash is not None or glosar_hash is not None):
+                    stored_mh = m.group("mh") or ""
+                    stored_gh = m.group("gh") or ""
+                    _mh_expected = (model_hash or "")[:16]
+                    _gh_expected = (glosar_hash or "")[:16]
+                    if (model_hash is not None and stored_mh != _mh_expected) or \
+                       (glosar_hash is not None and stored_gh != _gh_expected):
+                        return None
                 expected = _hashlib.sha256(chunk_for_hash.encode("utf-8")).hexdigest()[:16]
                 if stored != expected:
                     return None
@@ -189,12 +199,19 @@ def _chk_read(self, file_name: str, chunk_idx: int, suffix: str = "",
 
 
 def _chk_write(self, file_name: str, chunk_idx: int, sadrzaj: str, suffix: str = "",
-               chunk_for_hash: str | None = None) -> None:
+               chunk_for_hash: str | None = None,
+               model_hash: str | None = None,
+               glosar_hash: str | None = None) -> None:
     import hashlib as _hashlib
     p = _chk_path(self, file_name, chunk_idx, suffix)
     if chunk_for_hash is not None:
         sha = _hashlib.sha256(chunk_for_hash.encode("utf-8")).hexdigest()[:16]
-        sadrzaj = "<!-- chunk_sha:" + sha + " -->\n" + sadrzaj
+        if model_hash is not None or glosar_hash is not None:
+            _mh = (model_hash or "")[:16]
+            _gh = (glosar_hash or "")[:16]
+            sadrzaj = "<!-- chunk_sha:v2:" + _mh + ":" + _gh + ":" + sha + " -->\n" + sadrzaj
+        else:
+            sadrzaj = "<!-- chunk_sha:" + sha + " -->\n" + sadrzaj
     self._atomic_write(p, sadrzaj)
 
 
