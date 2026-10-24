@@ -2277,8 +2277,7 @@ async function selectBadBlocks(tip) {
 
     let selectedCount = 0;
     pills.forEach(function (pill) {
-        const m = pill.textContent.match(/[\d.]+$/);
-        const score = m ? parseFloat(m[0]) : 10;
+        const score = parseFloat(pill.dataset.score || "10");
         const stem = pill.dataset.stem;
         let treba = false;
 
