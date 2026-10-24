@@ -1377,7 +1377,7 @@ def api_call(
         # FIX: proxy rotacija
         _use_proxy = proxy if proxy is not None else _get_next_proxy()
         try:
-            resp = requests.post(
+            resp = _get_http_session().post(
                 url, json=payload, headers=headers, timeout=timeout,
                 proxies=_use_proxy,
             )
@@ -1492,7 +1492,7 @@ def _call_cloudflare_native(
     }
 
     try:
-        r = requests.post(
+        r = _get_http_session().post(
             url,
             headers=_build_headers("CLOUDFLARE", key),
             json=payload,
