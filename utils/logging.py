@@ -245,20 +245,23 @@ def add_structured(nivo: str, modul: str, event: str, **kwargs):
         "event": event,
         **{k: v for k, v in kwargs.items() if v is not None},
     }
-    # Plain text fallback (postojeci logger)
-    try:
-        msg = "[" + modul + "] " + event
-        if kwargs:
-            msg += " | " + " ".join(f"{k}={v}" for k, v in kwargs.items() if v is not None)
-        _logger_func = {
-            "info": logger.info,
-            "warning": logger.warning,
-            "error": logger.error,
-            "debug": logger.debug,
-        }.get(nivo, logger.info)
-        _logger_func(msg)
-    except Exception:
-        pass
+    # Plain text fallback (postojeci logger) — SAMO za module koji nemaju vlastiti file logger
+    # 2026-10-24 C1: modul="audit" preskacemo — add_audit vec ima _AUDIT_FILE_LOGGER,
+    # a taj logger je kroz handler rekurzivno pozivao add_structured (5 eventa umesto 3).
+    if modul != "audit":
+        try:
+            msg = "[" + modul + "] " + event
+            if kwargs:
+                msg += " | " + " ".join(f"{k}={v}" for k, v in kwargs.items() if v is not None)
+            _logger_func = {
+                "info": logger.info,
+                "warning": logger.warning,
+                "error": logger.error,
+                "debug": logger.debug,
+            }.get(nivo, logger.info)
+            _logger_func(msg)
+        except Exception:
+            pass
     # 2026-10-24 C1: strukturirani zapis u SHARED_STATS["audit_events"]
     # (config.settings.SHARED_STATS — pravi objekat, ne utils.shared_state)
     try:
