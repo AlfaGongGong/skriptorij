@@ -404,7 +404,11 @@ def _qa_ai_ocjena(tekst, fleet):
     # Ogranici tekst na 2000 znakova
     tekst_skracen = tekst[:2000]
 
-    for provider in ["GEMINI", "GROQ", "MISTRAL", "NVIDIA", "CLOUDFLARE"]:
+    # 2026-10-24 B5-lite: PROVIDER_PRIORITY umesto hardkodovane liste (5 sekv.)
+    # Max 2 pokusaja — dalje je heuristic fallback
+    from config.ai_config import PROVIDER_PRIORITY
+    _scorer_order = PROVIDER_PRIORITY.get("SCORER", ["GROQ", "GEMINI"])
+    for provider in _scorer_order[:2]:
         try:
             key = fleet.get_best_key(provider)
             if not key:
