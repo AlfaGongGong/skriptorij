@@ -69,14 +69,6 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
         shared_stats — dict koji se dijeli s pollingom (live_audit ključ)
     """
 
-    # 2026-10-24 C1: dual-write JSON u SHARED_STATS["audit_events"]
-    # (delegira na add_structured; ne dira postojeci HTML live_audit string)
-    try:
-        _nivo_json = atype if atype in ("info", "warning", "error", "debug") else "info"
-        add_structured(_nivo_json, "audit", msg[:100],
-                       en_text=(en_text or "")[:200])
-    except Exception:
-        pass
 
     global audit_logs
 
@@ -243,7 +235,11 @@ def add_structured(nivo: str, modul: str, event: str, **kwargs):
         "nivo": nivo,
         "modul": modul,
         "event": event,
-        **{k: v for k, v in kwargs.items() if v is not None},
+        # 2026-10-24 C1: alias polja za UI kompatibilnost (monitor.py + main.js
+        # citaju 'tekst' i 'sub' iz add_audit schema-e)
+        "tekst": event,
+        "sub": kwargs.get("en_text") or "",
+        **{k: v for k, v in kwargs.items() if v is not None and k != "en_text"},
     }
     # Plain text fallback (postojeci logger) — SAMO za module koji nemaju vlastiti file logger
     # 2026-10-24 C1: modul="audit" preskacemo — add_audit vec ima _AUDIT_FILE_LOGGER,
