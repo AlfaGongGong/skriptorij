@@ -353,6 +353,19 @@ class QuotaTracker:
                                 "cooldown_until": until,
                                 "cooldown_reason": kq._cooldown_reason,
                             }
+                        # 2026-10-24 B3: perzistiraj RPM/RPD/TPD windows
+                        # (bili su in-memory, resetovali se na restart)
+                        _rpm = [t for t in kq._rpm_window if now - t < 60.0]
+                        _rpd = [t for t in kq._rpd_window if now - t < 86400.0]
+                        _tpd = [(t, tok) for t, tok in kq._tpd_window if now - t < 86400.0]
+                        if _rpm or _rpd or _tpd:
+                            entry = data.setdefault(prov, {}).setdefault(key, {
+                                "cooldown_until": 0,
+                                "cooldown_reason": "",
+                            })
+                            entry["rpm_window"] = _rpm
+                            entry["rpd_window"] = _rpd
+                            entry["tpd_window"] = _tpd
         try:
             with open(self._PERSIST_PATH, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
@@ -412,6 +425,29 @@ class QuotaTracker:
     def get_provider_status(self, provider: str) -> Optional[dict]:
         pq = self._get_provider(provider.upper())
         return pq.get_status_summary() if pq else None
+
+    def _load_windows_for_key(self, kq):
+        """2026-10-24 B3: uciti RPM/RPD/TPD windows iz quota_cooldowns.json (ako postoje)."""
+        try:
+            if not self._PERSIST_PATH.exists():
+                return
+            with open(self._PERSIST_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            prov = kq.provider
+            if prov not in data:
+                return
+            if kq.key not in data[prov]:
+                return
+            entry = data[prov][kq.key]
+            now = time.time()
+            if "rpm_window" in entry:
+                kq._rpm_window = [t for t in entry["rpm_window"] if now - t < 60.0]
+            if "rpd_window" in entry:
+                kq._rpd_window = [t for t in entry["rpd_window"] if now - t < 86400.0]
+            if "tpd_window" in entry:
+                kq._tpd_window = [(t, tok) for t, tok in entry["tpd_window"] if now - t < 86400.0]
+        except Exception as e:
+            logger.debug("[QuotaTracker] Ucitavanje windows-a palo: %s", e)
 
     def _get_provider(self, prov: str) -> Optional[ProviderQuota]:
         with self._lock:
