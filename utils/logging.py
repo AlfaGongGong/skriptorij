@@ -68,6 +68,16 @@ def add_audit(msg: str, atype: str = "info", en_text: str = "", shared_stats=Non
         en_text     — opcionalni dodatni tekst (npr. EN izvornik)
         shared_stats — dict koji se dijeli s pollingom (live_audit ključ)
     """
+
+    # 2026-10-24 C1: dual-write JSON u SHARED_STATS["audit_events"]
+    # (delegira na add_structured; ne dira postojeci HTML live_audit string)
+    try:
+        _nivo_json = atype if atype in ("info", "warning", "error", "debug") else "info"
+        add_structured(_nivo_json, "audit", msg[:100],
+                       en_text=(en_text or "")[:200])
+    except Exception:
+        pass
+
     global audit_logs
 
     # Spoji na pravi file logger da warning/critical/error audit poruke
@@ -249,16 +259,19 @@ def add_structured(nivo: str, modul: str, event: str, **kwargs):
         _logger_func(msg)
     except Exception:
         pass
-    # Strukturirani zapis (za buduce UI/analizu)
+    # 2026-10-24 C1: strukturirani zapis u SHARED_STATS["audit_events"]
+    # (config.settings.SHARED_STATS — pravi objekat, ne utils.shared_state)
     try:
-        # Ako postoji SHARED_STATS["live_audit_events"] — dodaj
-        from utils.shared_state import SHARED_STATS
-        if "_live_audit_events" not in SHARED_STATS:
-            SHARED_STATS["_live_audit_events"] = []
-        SHARED_STATS["_live_audit_events"].append(entry)
-        # Cap na 500
-        if len(SHARED_STATS["_live_audit_events"]) > 500:
-            SHARED_STATS["_live_audit_events"] = SHARED_STATS["_live_audit_events"][-500:]
+        from config.settings import SHARED_STATS
+        if "audit_events" not in SHARED_STATS:
+            SHARED_STATS["audit_events"] = []
+        if "audit_next_id" not in SHARED_STATS:
+            SHARED_STATS["audit_next_id"] = 1
+        entry["id"] = SHARED_STATS["audit_next_id"]
+        SHARED_STATS["audit_next_id"] += 1
+        SHARED_STATS["audit_events"].append(entry)
+        if len(SHARED_STATS["audit_events"]) > 1000:
+            SHARED_STATS["audit_events"] = SHARED_STATS["audit_events"][-1000:]
     except Exception:
         pass
     return entry
