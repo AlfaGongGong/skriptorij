@@ -129,6 +129,25 @@ def _get_rod_detektor():
 # ── Privatni checkpoint helperi ───────────────────────────────────────────────
 
 _CHUNK_SHA_RX = re.compile(r"^<!--\s*chunk_sha:(?P<v2>v2:(?P<mh>[a-f0-9]+):(?P<gh>[a-f0-9]+):)?(?P<h>[a-f0-9]+)\s*-->\s*\n?")
+
+def _hash_glosar(glosar) -> str:
+    """2026-10-24 B4b: hash glosara za keš validaciju.
+    Vraca "" ako je glosar prazan (konzistentno, ne None).
+    """
+    import hashlib as _hl, json as _json
+    if not glosar:
+        return ""
+    try:
+        if isinstance(glosar, dict):
+            canonical = _json.dumps(glosar, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+        elif isinstance(glosar, (list, tuple)):
+            canonical = _json.dumps(list(glosar), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+        else:
+            canonical = str(glosar)
+        return _hl.sha256(canonical.encode("utf-8")).hexdigest()[:16]
+    except Exception:
+        return ""
+
 def _chk_path(self, file_name: str, chunk_idx: int, suffix: str = "") -> object:
     if suffix:
         return self.checkpoint_dir / f"{file_name}_blok_{chunk_idx}.{suffix}.chk"
@@ -749,9 +768,13 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     """
     force_reprocess = getattr(self, "_force_reprocess", False)
 
+    # 2026-10-24 B4b: glosar_hash pre cache check-a (za keš validaciju po glosaru)
+    rel_glosar = self._extract_relevant_glossary(chunk)
+    glosar_hash = _hash_glosar(rel_glosar)
+
     # ── Cache provjera ───────────────────────────────────────────────────────
     if not force_reprocess:
-        cached_final = _chk_read(self, file_name, chunk_idx, chunk_for_hash=chunk)
+        cached_final = _chk_read(self, file_name, chunk_idx, chunk_for_hash=chunk, glosar_hash=glosar_hash)
         if cached_final and _detektuj_en_ostatke(cached_final) < 0.08:
             qs = self.shared_stats.get("quality_scores", {})
             stem_key = f"{file_name}_blok_{chunk_idx}"
@@ -789,7 +812,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     if knjiga_mode is None:
         knjiga_mode = self._detect_language(chunk)
 
-    rel_glosar = self._extract_relevant_glossary(chunk)
+    # 2026-10-24 B4b: rel_glosar je vec pomeren gore (pre cache check-a)
     tip_bloka = detektuj_tip_bloka(chunk)
     chapter_summary = self._get_chapter_summary_for_lektor(file_name)
 
@@ -799,7 +822,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     if knjiga_mode == "LEKTURA":
 
         if not force_reprocess:
-            cached_lek = _chk_read(self, file_name, chunk_idx, "lektura", chunk_for_hash=chunk)
+            cached_lek = _chk_read(self, file_name, chunk_idx, "lektura", chunk_for_hash=chunk, glosar_hash=glosar_hash)
             if cached_lek:
                 if not _chk_path(self, file_name, chunk_idx).exists():
                     _chk_write(self, file_name, chunk_idx, cached_lek, chunk_for_hash=chunk)
@@ -910,8 +933,8 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             self.chunk_skips += 1
             return None, "TRUNCATED"
 
-        _chk_write(self, file_name, chunk_idx, finalno, "lektura", chunk_for_hash=chunk)
-        _chk_write(self, file_name, chunk_idx, finalno, chunk_for_hash=chunk)
+        _chk_write(self, file_name, chunk_idx, finalno, "lektura", chunk_for_hash=chunk, glosar_hash=glosar_hash, model_hash=prov_l)
+        _chk_write(self, file_name, chunk_idx, finalno, chunk_for_hash=chunk, glosar_hash=glosar_hash, model_hash=prov_l)
 
         self.global_done_chunks += 1
         self.stvarno_prevedeno_u_sesiji += 1
@@ -932,7 +955,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
     sirovo_cached = None
     if not force_reprocess:
-        sirovo_cached = _chk_read(self, file_name, chunk_idx, "prevod", chunk_for_hash=chunk)
+        sirovo_cached = _chk_read(self, file_name, chunk_idx, "prevod", chunk_for_hash=chunk, glosar_hash=glosar_hash)
         if sirovo_cached:
             self.log(
                 f"[{file_name}] Blok {chunk_idx}: ♻️ Sirovi prijevod iz cache-a — nastavljam od lektora.",
@@ -998,14 +1021,15 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 )
                 self.chunk_skips += 1
                 _chk_write(self, file_name, chunk_idx, chunk, "prevod",
-                           chunk_for_hash=chunk)
-                _chk_write(self, file_name, chunk_idx, marker, chunk_for_hash=chunk)
+                           chunk_for_hash=chunk, glosar_hash=glosar_hash)
+                _chk_write(self, file_name, chunk_idx, marker, chunk_for_hash=chunk,
+                           glosar_hash=glosar_hash)
                 return marker, "ALL_FAILED"
             self.chunk_skips += 1
             return None, "N/A"
 
         sirovo = _agresivno_cisti(_smart_extract(raw_fusion))
-        _chk_write(self, file_name, chunk_idx, sirovo, "prevod", chunk_for_hash=chunk)
+        _chk_write(self, file_name, chunk_idx, sirovo, "prevod", chunk_for_hash=chunk, glosar_hash=glosar_hash, model_hash=prov1)
 
     lek_sys = self._get_lektor_prompt(
         prev_kraj=prev_ctx,
@@ -1113,7 +1137,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         self.chunk_skips += 1
         return None, "TRUNCATED"
 
-    _chk_write(self, file_name, chunk_idx, finalno, chunk_for_hash=chunk)
+    _chk_write(self, file_name, chunk_idx, finalno, chunk_for_hash=chunk, glosar_hash=glosar_hash, model_hash=prov1)
     try:
         _chk_path(self, file_name, chunk_idx, "prevod").unlink(missing_ok=True)
     except Exception:
