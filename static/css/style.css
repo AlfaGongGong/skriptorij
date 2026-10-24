@@ -3132,3 +3132,301 @@ details[open] .expert-section-chevron {
     font-size: 0.62rem;
     font-weight: 700;
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   FLEET TABELA — kompletna stilizacija (2026-10-24)
+   Prije ovoga: fq-table/fq-th/fq-td/fq-key-masked nisu imali
+   nikakav CSS → default browser stilizacija → sve se lepilo.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Details/Summary wrapper ─────────────────────────────── */
+.fq-details {
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.fq-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--bd);
+    min-height: 44px;
+}
+
+.fq-summary::-webkit-details-marker { display: none; }
+
+.fq-summary:hover { background: var(--bg-3); }
+
+.fq-chevron {
+    color: var(--tx-3);
+    font-size: 0.7rem;
+    transition: transform var(--t-fast);
+    width: 10px;
+    flex-shrink: 0;
+}
+
+.fq-prov-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    width: 22px;
+    text-align: center;
+}
+
+.fq-prov-name {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--tx-1);
+    text-decoration: none;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+
+a.fq-prov-name:hover { text-decoration: underline; }
+
+.fq-hbar {
+    flex: 1;
+    max-width: 100px;
+    min-width: 40px;
+    height: 4px;
+    background: var(--bg-3);
+    border-radius: 100px;
+    overflow: hidden;
+}
+
+.fq-prov-count {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--tx-3);
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.fq-prov-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 100px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.fq-badge-cool {
+    background: rgba(6, 182, 212, 0.15);
+    color: var(--accent-2);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.fq-badge-unavail {
+    background: rgba(244, 63, 94, 0.15);
+    color: var(--rose);
+    border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.fq-body {
+    padding: 0;
+    background: var(--bg-1);
+}
+
+.fq-empty {
+    padding: 12px;
+    text-align: center;
+    color: var(--tx-3);
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+}
+
+/* ── Table wrapper — omogući horizontalni scroll ─────────── */
+.fq-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg-3) transparent;
+}
+
+.fq-table-wrap::-webkit-scrollbar { height: 3px; }
+.fq-table-wrap::-webkit-scrollbar-track { background: transparent; }
+.fq-table-wrap::-webkit-scrollbar-thumb {
+    background: var(--bg-3);
+    border-radius: 2px;
+}
+
+/* ── Table ────────────────────────────────────────────────── */
+.fq-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    table-layout: fixed;
+}
+
+.fq-th {
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: var(--tx-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--bd);
+    white-space: nowrap;
+}
+
+.fq-row {
+    border-bottom: 1px solid var(--bd-soft);
+}
+
+.fq-row:last-child { border-bottom: none; }
+.fq-row:hover { background: var(--bg-2); }
+.fq-row-unavail { opacity: 0.6; }
+
+.fq-td {
+    padding: 6px;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--tx-2);
+}
+
+/* Fiksne širine kolona */
+.fq-th:nth-child(1), .fq-td-status  { width: 20px; text-align: center; }
+.fq-th:nth-child(2), .fq-td-key     { width: 22%; }
+.fq-th:nth-child(3), .fq-td-sr      { width: 16%; }
+.fq-th:nth-child(4), .fq-td-metric  { width: 12%; text-align: right; }
+.fq-th:nth-child(5)                 { width: 14%; text-align: right; }
+.fq-th:nth-child(6)                 { width: 10%; text-align: right; }
+.fq-th:nth-child(7), .fq-td-calls   { width: 12%; text-align: right; }
+.fq-th:nth-child(8), .fq-td-cool    { width: 14%; text-align: right; }
+
+/* ── Status dot ──────────────────────────────────────────── */
+.fq-status-dot {
+    font-size: 0.6rem;
+    display: inline-block;
+    width: 12px;
+}
+
+.key-status-ok   { color: var(--emerald); }
+.key-status-cool { color: var(--accent-2); }
+.key-status-err  { color: var(--rose); }
+
+/* ── Key display ─────────────────────────────────────────── */
+.fq-key-masked {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--tx-2);
+    font-size: 0.65rem;
+}
+
+/* ── SR% sa mini barom ───────────────────────────────────── */
+.fq-sr-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fq-sr-val {
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.fq-sr-val.good { color: var(--emerald); }
+.fq-sr-val.warn { color: var(--amber); }
+.fq-sr-val.low  { color: var(--rose); }
+
+.fq-srbar {
+    height: 3px;
+    background: var(--bg-3);
+    border-radius: 100px;
+    overflow: hidden;
+}
+
+.fleet-health-fill {
+    height: 100%;
+    border-radius: inherit;
+    transition: width var(--t-med);
+}
+
+.fleet-health-fill.good { background: var(--emerald); }
+.fleet-health-fill.warn { background: var(--amber); }
+.fleet-health-fill.low  { background: var(--rose); }
+
+/* ── Metric cells ────────────────────────────────────────── */
+.fq-td-metric { font-size: 0.65rem; }
+
+.fq-safe {
+    color: var(--tx-3);
+    font-size: 0.6rem;
+    margin-left: 1px;
+}
+
+.fq-none {
+    color: var(--tx-3);
+    opacity: 0.5;
+}
+
+.quota-ok   { color: var(--tx-2); }
+.quota-warn { color: var(--amber); font-weight: 700; }
+.quota-crit { color: var(--rose); font-weight: 700; }
+
+/* ── Pozivi ──────────────────────────────────────────────── */
+.fq-ok   { color: var(--emerald); }
+.fq-429  { color: var(--amber); margin-left: 2px; }
+.fq-5xx  { color: var(--rose); margin-left: 2px; }
+.fq-fail { color: var(--rose); margin-left: 2px; opacity: 0.7; }
+
+/* ── Cooldown ────────────────────────────────────────────── */
+.fq-cooldown {
+    display: inline-block;
+    padding: 1px 5px;
+    background: rgba(244, 63, 94, 0.15);
+    color: var(--rose);
+    border-radius: 100px;
+    font-weight: 700;
+    font-size: 0.6rem;
+    white-space: nowrap;
+}
+
+/* ── Mobile: progresivno skrivanje kolona ────────────────── */
+@media (max-width: 640px) {
+    /* Sakrij TPD (najmanje važan) */
+    .fq-table th:nth-child(6),
+    .fq-table td:nth-child(6) {
+        display: none;
+    }
+
+    /* Sakrij detalje poziva (429/5xx/fail) — samo ok count */
+    .fq-429, .fq-5xx, .fq-fail { display: none; }
+
+    /* Manji padding i font */
+    .fq-th, .fq-td { padding: 5px 4px; }
+    .fq-table { font-size: 0.64rem; }
+    .fq-key-masked { font-size: 0.6rem; }
+}
+
+@media (max-width: 400px) {
+    /* Sakrij SR% mini bar, ostavi samo broj */
+    .fq-srbar { display: none; }
+
+    /* Sakrij RPD tekst (ostaje RPM) */
+    .fq-table th:nth-child(5),
+    .fq-table td:nth-child(5) {
+        display: none;
+    }
+
+    .fq-table { font-size: 0.6rem; }
+    .fq-th { font-size: 0.54rem; }
+}
