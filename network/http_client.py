@@ -28,6 +28,31 @@ import asyncio
 import logging
 import random
 import requests
+# 2026-10-24 B2a: jedan HTTP klijent — shared Session sa connection pooling-om.
+# api_call (sync) i _async_http_post (async, kroz asyncio.to_thread) koriste istu sesiju.
+# Ustedi TCP/TLS handshake po pozivu (~50-200ms po pozivu preko mreze).
+import threading as _threading
+_HTTP_SESSION_LOCK = _threading.Lock()
+_HTTP_SESSION = None
+
+
+def _get_http_session():
+    """Vrati shared requests.Session (lazy init)."""
+    global _HTTP_SESSION
+    if _HTTP_SESSION is None:
+        with _HTTP_SESSION_LOCK:
+            if _HTTP_SESSION is None:
+                _HTTP_SESSION = requests.Session()
+                # Connection pooling — prilagodjeno za ~12 kljuceva x 4 paralelna poziva
+                _HTTP_SESSION.mount("https://", requests.adapters.HTTPAdapter(
+                    pool_connections=20, pool_maxsize=40, max_retries=0,
+                ))
+                _HTTP_SESSION.mount("http://", requests.adapters.HTTPAdapter(
+                    pool_connections=10, pool_maxsize=20, max_retries=0,
+                ))
+    return _HTTP_SESSION
+
+
 import threading
 
 from config.ai_config import (
@@ -457,7 +482,7 @@ async def _async_http_post(
         _read_timeout = _GEMINI_TIMEOUT if prov_upper in ("GEMINI", "GEMMA") else 20
         try:
             resp = await asyncio.to_thread(
-                requests.post,
+                _get_http_session().post,
                 url,
                 headers=headers,
                 json=json_payload,
