@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
     <link rel="manifest" href="/static/manifest.json" />
     <meta name="theme-color" content="#030711" />
-    <link rel="stylesheet" href="/static/css/style.css?v=1792858913" />
+    <link rel="stylesheet" href="/static/css/style.css?v=20261024a" />
 </head>
 <body>
     <div id="toast-container" aria-live="polite"></div>
@@ -336,13 +336,13 @@
                     <!-- Selection bar — selekcija po bojama/statusu -->
                     <div class="quality-select-bar" id="qs-select-bar">
                         <span class="qs-sel-label">Selektuj:</span>
-                        <button class="btn btn-sm" data-select="all" title="Svi blokovi">⊕ Sve</button>
-                        <button class="btn btn-sm" data-select="excellent" style="border-color:var(--emerald);color:var(--emerald)" title="Score ≥ 8.5">🌟 Odlično</button>
-                        <button class="btn btn-sm" data-select="good" style="border-color:var(--accent-2);color:var(--accent-2)" title="Score 6.5-8.5">✅ Dobro</button>
-                        <button class="btn btn-sm" data-select="poor" style="border-color:var(--amber);color:var(--amber)" title="Score 4.0-6.5">⚠ Loše</button>
-                        <button class="btn btn-sm" data-select="critical" style="border-color:var(--rose);color:var(--rose)" title="Score < 4.0">🔴 Kritično</button>
-                        <button class="btn btn-sm" data-select="human_review" style="border-color:var(--violet);color:var(--violet)" title="Blokovi iz human_review.json">👤 Human Review</button>
-                        <button class="btn btn-sm btn-outline" data-select="clear" title="Poništi selekciju" style="margin-left:auto">✕ Poništi</button>
+                        <button class="btn btn-sm" data-select="all" onclick="window._qsSelect && window._qsSelect('all')" title="Svi blokovi">⊕ Sve</button>
+                        <button class="btn btn-sm" data-select="excellent" onclick="window._qsSelect && window._qsSelect('excellent')" style="border-color:var(--emerald);color:var(--emerald)" title="Score ≥ 8.5">🌟 Odlično</button>
+                        <button class="btn btn-sm" data-select="good" onclick="window._qsSelect && window._qsSelect('good')" style="border-color:var(--accent-2);color:var(--accent-2)" title="Score 6.5-8.5">✅ Dobro</button>
+                        <button class="btn btn-sm" data-select="poor" onclick="window._qsSelect && window._qsSelect('poor')" style="border-color:var(--amber);color:var(--amber)" title="Score 4.0-6.5">⚠ Loše</button>
+                        <button class="btn btn-sm" data-select="critical" onclick="window._qsSelect && window._qsSelect('critical')" style="border-color:var(--rose);color:var(--rose)" title="Score < 4.0">🔴 Kritično</button>
+                        <button class="btn btn-sm" data-select="human_review" onclick="window._qsSelect && window._qsSelect('human_review')" style="border-color:var(--violet);color:var(--violet)" title="Blokovi iz human_review.json">👤 Human Review</button>
+                        <button class="btn btn-sm btn-outline" data-select="clear" onclick="window._qsSelect && window._qsSelect('clear')" title="Poništi selekciju" style="margin-left:auto">✕ Poništi</button>
                     </div>
 
                     <!-- F3d: deterministicke metrike (quality_metrics.json) -->
@@ -800,7 +800,7 @@
     })();
     </script>
 
-    <script src="/static/js/main.js?v=1791803042"></script>
+    <script src="/static/js/main.js?v=20261024a"></script>
     <script src="/static/js/heatmap.js?v=1791803042"></script>
     <script src="/static/js/ui/fleet.js?v=1791803042"></script>
 </body>

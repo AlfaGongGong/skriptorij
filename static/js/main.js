@@ -3854,3 +3854,13 @@ document.addEventListener("DOMContentLoaded", () => {
 window.selectBadBlocks = selectBadBlocks;
 window.clearMarkedBlocks = clearMarkedBlocks;
 window.sendMarkedForRefix = sendMarkedForRefix;
+
+// Inline onclick handler za selection bar (radi i ako event listener nije registrovan)
+window._qsSelect = function(tip) {
+    if (tip === "clear") {
+        window.clearMarkedBlocks();
+        document.querySelectorAll("#qs-select-bar [data-select]").forEach(b => b.classList.remove("active"));
+    } else {
+        window.selectBadBlocks(tip);
+    }
+};
