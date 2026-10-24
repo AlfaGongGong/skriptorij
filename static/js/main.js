@@ -2258,7 +2258,7 @@ function _updateRefixBar() {
 }
 
 async function selectBadBlocks(tip) {
-    const pills = document.querySelectorAll(".qs-block-pill[data-stem]");
+    const pills = document.querySelectorAll(".qh-cell[data-stem]");
 
     // human_review: fetch lista iz API-ja
     let humanReviewStems = null;
@@ -2292,6 +2292,7 @@ async function selectBadBlocks(tip) {
         if (treba) {
             _markedForReview.add(stem);
             pill.style.outline = "2px solid var(--amber)";
+            pill.style.transform = "scale(1.2)";
             selectedCount++;
         }
     });
@@ -2323,9 +2324,10 @@ async function selectBadBlocks(tip) {
 function clearMarkedBlocks() {
     _markedForReview.clear();
     document
-        .querySelectorAll(".qs-block-pill[data-stem]")
+        .querySelectorAll(".qh-cell[data-stem]")
         .forEach(function (el) {
             el.style.outline = "";
+            el.style.transform = "";
         });
     const poorBox = document.getElementById("qs-box-poor");
     const critBox = document.getElementById("qs-box-critical");
