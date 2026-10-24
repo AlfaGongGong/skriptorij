@@ -728,7 +728,10 @@ class FleetManager:
                         # (globalni import vec postoji)
                         # FIX #8: ispravni pozivi — set_key_cooldown postoji,
                         # record_error na QuotaTracker ne postoji.
-                        quota_tracker.set_key_cooldown(prov_u, key, 90.0, _reason)
+                        # 2026-10-24 FIX A: MAX_TOKENS/length ne cooldownira kljuc
+                        _is_trunc = "MAX_TOKENS" in _reason or "length" in _reason.lower() or "truncat" in _reason.lower()
+                        if not _is_trunc:
+                            quota_tracker.set_key_cooldown(prov_u, key, 90.0, _reason)
                         logger.debug(
                             "[FleetManager] %s ...%s nevalidan 200 — cooldown 90s (%s)",
                             prov_u, key[-4:], _reason,

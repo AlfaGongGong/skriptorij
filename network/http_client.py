@@ -291,7 +291,7 @@ def _build_gemini_native_payload(
         "contents": [{"role": "user", "parts": [{"text": combined}]}],
         "generationConfig": {
             "temperature": temperature,
-            "maxOutputTokens": min(max_tokens, 4000),
+            "maxOutputTokens": min(max_tokens, 8000),
         },
         "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
