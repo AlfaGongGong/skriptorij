@@ -1,7 +1,7 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 25,
+    "clue_m": 28,
     "clue_z": 0
   },
   "Orso": {
@@ -11,7 +11,7 @@
   },
   "Leo": {
     "rod": "M",
-    "clue_m": 38,
+    "clue_m": 40,
     "clue_z": 0
   },
   "guverner": {
@@ -22,7 +22,7 @@
   "Savine": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 68
+    "clue_z": 70
   },
   "Čvrsto": {
     "rod": "Ž",
@@ -30,9 +30,9 @@
     "clue_z": 2
   },
   "Budućnost": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Zuri": {
     "rod": "Ž",
@@ -41,23 +41,23 @@
   },
   "Hoff": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Valbeck": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "admiral": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Vick": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 22
+    "clue_z": 25
   },
   "Pike": {
     "rod": "M",
@@ -135,9 +135,9 @@
     "clue_z": 2
   },
   "Jedva": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 3,
-    "clue_z": 4
+    "clue_z": 5
   },
   "Stalno": {
     "rod": null,
@@ -795,9 +795,9 @@
     "clue_z": 0
   },
   "Barem": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Regent": {
     "rod": "Ž",
@@ -1013,5 +1013,15 @@
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
+  },
+  "namjesnik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Dobit": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
   }
 }
