@@ -111,7 +111,7 @@
   },
   "Shawley": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Gate": {
@@ -126,13 +126,13 @@
   },
   "Čovjek": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Lilott": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Jedva": {
     "rod": "Ž",
