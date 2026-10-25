@@ -704,6 +704,21 @@ MODEL_PATCHES: dict[str, dict[str, str]] = {
         ),
         "anti_english": ("Ne ubacuj engleske riječi ili fraze. Sve na hrvatskom."),
     },
+    "NVIDIA": {
+        "anti_meta": (
+            "VAŽNO: Ne počinji odgovor s 'Naravno', 'Evo prijevoda' ili sličnim uvodima. "
+            "Ne dodavaj napomene, komentare ili objašnjenja na kraju. "
+            "Odmah kreni s prijevodom/lekturom."
+        ),
+        "anti_markdown": (
+            "Ne koristiš markdown formatiranje. Vraćaš čisti HTML tekst, ništa drugo."
+        ),
+        "anti_srbizmi": (
+            "KRITIČNO: Pišeš ISKLJUČIVO hrvatskim jezikom — IJEKAVICA. "
+            "ZABRANJENI ekavski oblici: neverovatno (→nevjerojatno), "
+            "poseduje (→posjeduje), hteo (→htio), video (→vidio)."
+        ),
+    },
     "SAMBANOVA": {
         "anti_literal": (
             "Ne prevodiš idiome doslovno. "
