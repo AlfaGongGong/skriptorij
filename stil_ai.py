@@ -33,6 +33,7 @@ for _d in Path(SKRIPTORIJ_DIR).rglob("__pycache__"):
 import warnings
 
 from bs4 import BeautifulSoup
+import contextlib
 
 # 2026-10-24 RUN1: deduplikacija upozorenja 'nema ornamenta za scenu X'
 _UPOZORENO: set[str] = set()
@@ -1347,16 +1348,12 @@ def snimi_epub(src, files):
                 z.writestr(n, d, compress_type=zipfile.ZIP_DEFLATED)
         # Copymode samo ako izvor postoji
         if out.exists():
-            try:
+            with contextlib.suppress(Exception):
                 shutil.copymode(out, tmp)
-            except Exception:
-                pass
         os.replace(tmp, out)
     except Exception:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp)
-        except OSError:
-            pass
         raise
 
 
@@ -1421,10 +1418,8 @@ def obradi_poglavlje(html, naslov_ai, redni, ukupno, fname, res, log_callback=No
     _msg = f"[{redni:2d}/{ukupno}] {naslov[:45]:45s} | scena: {scena}"
     print(_msg)
     if log_callback:
-        try:
+        with contextlib.suppress(Exception):
             log_callback(_msg, "info")
-        except Exception:
-            pass
 
     # 5. Dijalog
     n_kand, n_zam, n_bez = klasificiraj_i_primijeni(soup)
@@ -1434,10 +1429,8 @@ def obradi_poglavlje(html, naslov_ai, redni, ukupno, fname, res, log_callback=No
         )
         print(_dmsg)
         if log_callback:
-            try:
+            with contextlib.suppress(Exception):
                 log_callback(_dmsg, "tech")
-            except Exception:
-                pass
 
     # 6. Ornament za scenu
     if not dodaj_ornament(soup, scena, res, fname) and scena not in _UPOZORENO:
@@ -1445,10 +1438,8 @@ def obradi_poglavlje(html, naslov_ai, redni, ukupno, fname, res, log_callback=No
         _omsg = f"      UPOZORENJE: nema ornamenta za scenu '{scena}'"
         print(_omsg)
         if log_callback:
-            try:
+            with contextlib.suppress(Exception):
                 log_callback(_omsg, "warning")
-            except Exception:
-                pass
 
     # 7. Naslov (h1) — SAMO ako već ne postoji
     if not soup.find("h1"):
@@ -1482,10 +1473,8 @@ def stilizuj_epub(epub_path, output_path=None, log_callback=None):
 
     def _log(msg, tip="info"):
         if log_callback:
-            try:
+            with contextlib.suppress(Exception):
                 log_callback(msg, tip)
-            except Exception:
-                pass
         print(f"  [{tip}] {msg}")
 
     rezultat = {

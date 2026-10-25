@@ -13,6 +13,7 @@ from pathlib import Path
 from app import app
 from config.logging_config import configure_logging
 from config.settings import PORT, SHARED_CONTROLS, SHARED_STATS
+import contextlib
 
 # ── Putanje ──────────────────────────────────────────────────────────────────
 # Prilagodi ako su tvoje putanje drugačije
@@ -142,17 +143,13 @@ def _kill_previous_instance() -> None:
 
 
 def _write_pid_file() -> None:
-    try:
+    with contextlib.suppress(OSError):
         _PID_FILE.write_text(str(os.getpid()), encoding="utf-8")
-    except OSError:
-        pass
 
 
 def _remove_pid_file() -> None:
-    try:
+    with contextlib.suppress(OSError):
         _PID_FILE.unlink(missing_ok=True)
-    except OSError:
-        pass
 
 
 # ============================================================================
@@ -178,10 +175,8 @@ def _resolve_book() -> str:
         return book
     lbp = _BASE / "last_book.json"  # uvijek relativno od projekta
     if lbp.exists():
-        try:
+        with contextlib.suppress(Exception):
             book = json.loads(lbp.read_text("utf-8")).get("last_book", "")
-        except Exception:
-            pass
     return book
 
 

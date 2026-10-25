@@ -79,6 +79,7 @@ from network.rate_limiter import (
     register_provider_runtime_limits,
     release_key,
 )
+import contextlib
 
 logger = logging.getLogger(__name__)
 
@@ -510,10 +511,8 @@ async def _async_http_post(
             )
         except requests.exceptions.Timeout:
             self.log(f"[{prov_upper}] Timeout ({_read_timeout}s)", "warning")
-            try:
+            with contextlib.suppress(Exception):
                 self.fleet.record_failure(prov, key)
-            except Exception:
-                pass
             try:
                 from network.quota_tracker import quota_tracker
 
@@ -547,10 +546,8 @@ async def _async_http_post(
                     continue
                 except Exception as e2:
                     self.log(f"[{prov_upper}] Mrežna greška: {str(e2)[:120]}", "error")
-                    try:
+                    with contextlib.suppress(Exception):
                         self.fleet.record_failure(prov, key)
-                    except Exception:
-                        pass
                     return None
             if last_exc is not None:
                 self.log(
@@ -575,10 +572,8 @@ async def _async_http_post(
             return None
         except Exception as e:
             self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
-            try:
+            with contextlib.suppress(Exception):
                 self.fleet.record_failure(prov, key)
-            except Exception:
-                pass
             return None
 
         resp_body = None
@@ -591,10 +586,8 @@ async def _async_http_post(
         # FIX tokeni=0: za 200 OK parsiramo JSON PRIJE analyze_response
         # kako bi tokens ekstrakcija u analyze_response imala body s usage poljem.
         if resp.status_code == 200:
-            try:
+            with contextlib.suppress(Exception):
                 self.fleet.record_success(prov, key)
-            except Exception:
-                pass
             try:
                 data = resp.json()
                 resp_body = data  # <-- proslijedi body s usage tokenima
@@ -604,26 +597,20 @@ async def _async_http_post(
                 )
                 return None
 
-        try:
+        with contextlib.suppress(Exception):
             self.fleet.analyze_response(
                 prov, key, resp.status_code, resp.headers, resp_body
             )
-        except Exception:
-            pass
 
         if resp.status_code == 200:
-            try:
+            with contextlib.suppress(Exception):
                 self.fleet.record_success(prov, key)
-            except Exception:
-                pass
             register_provider_runtime_limits(prov_upper, resp.headers, data)
             return data
 
         if resp.status_code in (429, 425):
-            try:
+            with contextlib.suppress(Exception):
                 self.fleet.record_failure(prov, key)
-            except Exception:
-                pass
             register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             body_preview = str(resp_body)[:300] if resp_body else "nema body-ja"
             self.log(
@@ -1440,10 +1427,8 @@ def api_call(
     prov_sem.acquire()
     key_sem.acquire()
     try:
-        try:
+        with contextlib.suppress(Exception):
             quota_tracker.record_request(prov_upper, api_key)
-        except Exception:
-            pass
         _time.sleep(random.uniform(0.5, 2.0))  # humanizovani jitter
         # FIX: proxy rotacija
         _use_proxy = proxy if proxy is not None else _get_next_proxy()
@@ -1496,13 +1481,11 @@ def api_call(
                 ra = float(ra_raw) if ra_raw else 10.0
             except ValueError:
                 ra = 10.0
-            try:
+            with contextlib.suppress(Exception):
                 quota_tracker.set_key_cooldown(
                     prov_upper, api_key, min(ra, 120.0), "429 RPM"
                 )
 
-            except Exception:
-                pass
             # cooldown je zapisan; čekanje se radi izvan semafora u sljedećem pozivu
             return None
 

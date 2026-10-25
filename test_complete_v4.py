@@ -42,6 +42,7 @@ from collections import defaultdict
 from datetime import datetime
 
 import requests
+import contextlib
 
 INF = float("inf")
 
@@ -103,10 +104,8 @@ def want(provider):
 # IZLAZ
 # ═══════════════════════════════════════════════════════════════
 for _s in (sys.stdout, sys.stderr):
-    try:
+    with contextlib.suppress(Exception):
         _s.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
 
 
 def _open_out():
@@ -129,10 +128,8 @@ def log(s=""):
     sys.stdout.flush()
     output.append(s)
     if OUT_FH:
-        try:
+        with contextlib.suppress(Exception):
             OUT_FH.write(s + "\n")
-        except Exception:
-            pass
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -255,10 +252,8 @@ def classify_429(body, headers=None):
         secs = float(m.group(1)) + 1
     ra = (headers or {}).get("retry-after")
     if ra:
-        try:
+        with contextlib.suppress(ValueError):
             secs = float(ra) + 1
-        except ValueError:
-            pass
     q = re.search(r'"quotaId"\s*:\s*"([^"]+)"', body)
     quota = q.group(1) if q else None
     hay = (body + " " + (quota or "")).lower()
@@ -1641,10 +1636,8 @@ def main():
         if jp:
             log(f"📄 JSON izvještaj: {jp}")
         if OUT_FH:
-            try:
+            with contextlib.suppress(Exception):
                 OUT_FH.close()
-            except Exception:
-                pass
 
 
 if __name__ == "__main__":

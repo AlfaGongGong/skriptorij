@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timezone
 from flask import Blueprint, jsonify, request
 
 from config.settings import SHARED_STATS
+import contextlib
 
 bp = Blueprint("monitor", __name__)
 
@@ -113,10 +114,8 @@ def reset_key():
             if hasattr(ks, "cooldown_reason"):
                 ks.cooldown_reason = None
             if qt:
-                try:
+                with contextlib.suppress(Exception):
                     qt.reset(prov, k)
-                except Exception:
-                    pass
             hit += 1
     return jsonify({"ok": True, "reset": hit})
 

@@ -33,6 +33,7 @@ from core.text_utils import (
     detektuj_tip_bloka,
 )
 from processing.rescue import _spasi_od_sirovog
+import contextlib
 
 # ── Korak 2, 3, 4 integracije ──────────────────────────────────────────────
 try:
@@ -230,7 +231,7 @@ def _chk_read(
                 _text_chk = _BS(tekst, "html.parser").get_text(" ", strip=True)
                 _text_src = _BS(chunk_for_hash, "html.parser").get_text(" ", strip=True)
                 if len(_text_src) > 500 and len(_text_chk) < len(_text_src) * 0.5:
-                    try:
+                    with contextlib.suppress(Exception):
                         self.log(
                             f"[{file_name}] Blok {chunk_idx}"
                             f"{'.' + suffix if suffix else ''}: "
@@ -238,8 +239,6 @@ def _chk_read(
                             f"— re-obradjujem",
                             "warning",
                         )
-                    except Exception:
-                        pass
                     return None
                 if len(_text_chk) < 20:
                     return None
@@ -1392,10 +1391,8 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         glosar_hash=glosar_hash,
         model_hash=prov1,
     )
-    try:
+    with contextlib.suppress(Exception):
         _chk_path(self, file_name, chunk_idx, "prevod").unlink(missing_ok=True)
-    except Exception:
-        pass
 
     self.global_done_chunks += 1
     self.stvarno_prevedeno_u_sesiji += 1
@@ -1429,10 +1426,8 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 )
                 # V1.0: Dodaj i u GLOBALNI few-shot (za sve buduće knjige)
                 if _FEW_SHOT_OK and dodaj_odlican_prevod:
-                    try:
+                    with contextlib.suppress(Exception):
                         dodaj_odlican_prevod(en_tekst, hr_tekst, qs_score, tip_bloka)
-                    except Exception:
-                        pass
         except Exception:
             pass
 
@@ -1486,10 +1481,8 @@ async def process_chunk_with_retry(
 
                 # ── Korak 7: Zabilježi prevoditelja za nezavisni scorer ──
                 if _SCORER_V2_OK and _zabilježi_prev:
-                    try:
+                    with contextlib.suppress(Exception):
                         _zabilježi_prev(file_name, chunk_idx, engine_label)
-                    except Exception:
-                        pass
 
                 # Upis checkpointa i quality scoringa
                 _chk_write(self, file_name, chunk_idx, tekst, chunk_for_hash=chunk)

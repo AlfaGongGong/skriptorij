@@ -19,6 +19,7 @@ from flask import (
 
 from api_fleet import FleetManager
 from utils.file_utils import secure_filename as _secure_filename
+import contextlib
 
 
 def _rebuild_epub(eng, shared_stats: dict, shared_controls: dict) -> None:
@@ -28,10 +29,8 @@ def _rebuild_epub(eng, shared_stats: dict, shared_controls: dict) -> None:
     """
     from epub.packager import finalize
 
-    try:
+    with contextlib.suppress(Exception):
         eng.buildlive_epub()
-    except Exception:
-        pass
     finalize(eng)
 
 
@@ -48,6 +47,7 @@ _fleet_fallback = FleetManager(config_path=_CONFIG_PATH)
 import logging
 
 from api_fleet import register_active_fleet
+import contextlib
 
 logger = logging.getLogger("booklyfi.app")
 register_active_fleet(_fleet_fallback)
@@ -197,10 +197,8 @@ def _obrisi_checkpoint_i_kes(book: str) -> dict:
 
 def create_app() -> Flask:
     os.makedirs(INPUT_DIR, exist_ok=True)
-    try:
+    with contextlib.suppress(OSError):
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-    except OSError:
-        pass
 
     app = Flask(
         __name__,
@@ -767,12 +765,10 @@ def create_app() -> Flask:
 
                         qs_path = eng.checkpoint_dir / "quality_scores.json"
                         if qs_path.exists():
-                            try:
+                            with contextlib.suppress(Exception):
                                 SHARED_STATS["quality_scores"] = _j.loads(
                                     qs_path.read_text("utf-8")
                                 )
-                            except Exception:
-                                pass
                         SHARED_STATS["status"] = "RETRO: samo loši blokovi..."
                         _asyncio.run(
                             retroaktivna_relektura_v10(
@@ -1780,10 +1776,8 @@ def create_app() -> Flask:
             if not book:
                 lbp = Path(INPUT_DIR) / "last_book.json"
                 if lbp.exists():
-                    try:
+                    with contextlib.suppress(Exception):
                         book = _json.loads(lbp.read_text("utf-8")).get("last_book", "")
-                    except Exception:
-                        pass
 
             if not book:
                 return Response("Nema aktivne knjige.", mimetype="text/plain")

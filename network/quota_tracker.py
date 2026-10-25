@@ -11,6 +11,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Optional
+import contextlib
 
 logger = logging.getLogger(__name__)
 
@@ -469,10 +470,8 @@ class QuotaTracker:
             if retry_after is None and headers:
                 ra = headers.get("Retry-After") or headers.get("retry-after")
                 if ra:
-                    try:
+                    with contextlib.suppress(TypeError, ValueError):
                         retry_after = float(ra)
-                    except (TypeError, ValueError):
-                        pass
             kq.record_error(status_code, retry_after)
             self._persist_cooldowns()
 

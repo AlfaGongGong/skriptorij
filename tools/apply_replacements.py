@@ -90,7 +90,7 @@ def main():
     print(f"  Fajlova ukupno: {files_total}")
     print(f"  Fajlova promijenjeno: {files_changed}")
     print(
-        f"  Pravila aktivirana: {len(set((f.rule.source_line) for f in total_fires))}"
+        f"  Pravila aktivirana: {len({(f.rule.source_line) for f in total_fires})}"
     )
     print(f"  Ukupno zamjena: {sum(f.count for f in total_fires)}")
 

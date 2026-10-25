@@ -22,6 +22,7 @@ from epub.parser import (
     _zamijeni_epub_css,
 )
 from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
+import contextlib
 
 try:
     import mobi
@@ -198,10 +199,8 @@ def _pametni_reset_cachea(engine, scores: dict, sharedstats):
         return 0
 
     for chk in losi:
-        try:
+        with contextlib.suppress(Exception):
             chk.unlink()
-        except Exception:
-            pass
 
     for chk in losi:
         sharedstats.get("quality_scores", {}).pop(chk.stem, None)
@@ -336,10 +335,8 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                         shutil.copy(item, target)
             else:
                 shutil.copy(extracted_path, engine.work_dir / extracted_path.name)
-            try:
+            with contextlib.suppress(Exception):
                 shutil.rmtree(tempdir, ignore_errors=True)
-            except Exception:
-                pass
             engine.log("MOBI konvertovan. Nastavljam.", "system")
         except Exception as e:
             engine.log(f"MOBI ekstrakcija neuspješna: {e}", "error")
@@ -446,12 +443,10 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
 
     # ── Prebrojavanje chunkova za ETA ─────────────────────────────────────
     for f in engine.html_files:
-        try:
+        with contextlib.suppress(Exception):
             engine.global_total_chunks += len(
                 engine.chunk_html(f.read_text("utf-8", errors="ignore"))
             )
-        except Exception:
-            pass
 
     # ── Auto-detekcija strategije (_detect_knjiga_mode UVIJEK na početku) ─
     sharedstats["status"] = "ANALIZA KNJIGE..."

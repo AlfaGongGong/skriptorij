@@ -23,6 +23,7 @@ from config.settings import (
     SHARED_CONTROLS,
     SHARED_STATS,
 )
+import contextlib
 
 bp = Blueprint("processing", __name__)
 
@@ -585,12 +586,10 @@ def review_list():
         if not book:
             last_book_path = Path(PROJECTS_ROOT) / "last_book.json"
             if last_book_path.exists():
-                try:
+                with contextlib.suppress(Exception):
                     book = json.loads(last_book_path.read_text("utf-8")).get(
                         "last_book", ""
                     )
-                except Exception:
-                    pass
 
         if not book:
             return jsonify([])
@@ -685,12 +684,10 @@ def review_chunk(chunk_stem):
         if not book:
             last_book_path = Path(PROJECTS_ROOT) / "last_book.json"
             if last_book_path.exists():
-                try:
+                with contextlib.suppress(Exception):
                     book = json.loads(last_book_path.read_text("utf-8")).get(
                         "last_book", ""
                     )
-                except Exception:
-                    pass
 
         if not book:
             # FIX: jsonify umjesto abort(404) — abort vraća HTML stranicu
@@ -811,10 +808,8 @@ def rebuild_review():
     if not book:
         lbp = Path(PROJECTS_ROOT) / "last_book.json"
         if lbp.exists():
-            try:
+            with contextlib.suppress(Exception):
                 book = _json.loads(lbp.read_text()).get("last_book", "")
-            except Exception:
-                pass
     if not book:
         return jsonify({"error": "Nema aktivne knjige"}), 404
 
@@ -845,10 +840,8 @@ def _init_review_state():
     if not book:
         lbp = Path(PROJECTS_ROOT) / "last_book.json"
         if lbp.exists():
-            try:
+            with contextlib.suppress(Exception):
                 book = json.loads(lbp.read_text()).get("last_book", "")
-            except Exception:
-                pass
     if book:
         clean = re.sub(r"[^a-zA-Z0-9_\\-]", "", Path(book).stem)
         hr_path = (
@@ -881,10 +874,8 @@ def epub_preview():
         if not book:
             lbp = Path(PROJECTS_ROOT) / "last_book.json"
             if lbp.exists():
-                try:
+                with contextlib.suppress(Exception):
                     book = json.loads(lbp.read_text("utf-8")).get("last_book", "")
-                except Exception:
-                    pass
 
         if not book:
             return Response(
@@ -949,10 +940,8 @@ def clean_annotations():
     if not book:
         lbp = Path(PROJECTS_ROOT) / "last_book.json"
         if lbp.exists():
-            try:
+            with contextlib.suppress(Exception):
                 book = json.loads(lbp.read_text("utf-8")).get("last_book", "")
-            except Exception:
-                pass
 
     if not book:
         return jsonify({"error": "Nema aktivne knjige"}), 400

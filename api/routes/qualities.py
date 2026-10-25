@@ -16,6 +16,7 @@ from config.settings import (
     SHARED_CONTROLS,
     SHARED_STATS,
 )
+import contextlib
 
 bp = Blueprint("quality_routes", __name__)
 logger = logging.getLogger(__name__)
@@ -333,12 +334,10 @@ def fix_marked_blocks():
 
                 qs_path = eng.checkpoint_dir / "quality_scores.json"
                 if qs_path.exists():
-                    try:
+                    with contextlib.suppress(Exception):
                         SHARED_STATS["quality_scores"] = _j.loads(
                             qs_path.read_text("utf-8")
                         )
-                    except Exception:
-                        pass
                 SHARED_STATS["status"] = f"RELEKTURA {len(za_retro)} BLOKOVA..."
                 asyncio.run(retroaktivna_relektura_v10(eng, force=True, only_bad=False))
                 SHARED_STATS["status"] = "RELEKTURA ZAVRŠENA"
@@ -435,10 +434,8 @@ def human_review():
             )
             notes = {}
             if notes_path.exists():
-                try:
+                with contextlib.suppress(Exception):
                     notes = _j.loads(notes_path.read_text("utf-8"))
-                except Exception:
-                    pass
             notes[stem] = {"note": note, "ts": __import__("time").time()}
             notes_path.write_text(
                 _j.dumps(notes, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -755,10 +752,8 @@ def qa_flags():
                             r"<!-- QA-FLAG: ocjena=([0-9.]+) razlog=([^>]+) -->", tekst
                         )
                         if m:
-                            try:
+                            with contextlib.suppress(Exception):
                                 ocjena = float(m.group(1))
-                            except Exception:
-                                pass
                             razlog = m.group(2).strip()
                         tekst = tekst.replace(m.group(0), "").strip() if m else tekst
 

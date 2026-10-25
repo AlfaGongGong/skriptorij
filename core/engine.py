@@ -17,6 +17,7 @@ from analysis.book_context import BookContextManager
 from api_fleet import FleetManager
 from config.settings import CHECKPOINT_BASE_DIR, OUTPUT_DIR
 from utils.logging import add_audit
+import contextlib
 
 
 class SkriptorijAllInOne:
@@ -75,10 +76,8 @@ class SkriptorijAllInOne:
             pass
         self.knjiga_analizirana = False
         self.glosar_tekst = ""
-        try:
+        with contextlib.suppress(Exception):
             self._auto_generiraj_kanon()
-        except Exception:
-            pass
 
         self._chapter_summaries = {}
         self._chapter_order = []
@@ -145,10 +144,8 @@ class SkriptorijAllInOne:
             tmp.write_text(content, encoding="utf-8")
             tmp.replace(path)
         except Exception as e:
-            try:
+            with contextlib.suppress(Exception):
                 tmp.unlink(missing_ok=True)
-            except Exception:
-                pass
             path.write_text(content, encoding="utf-8")
             self.log(f"[atomic_write] Fallback pisanje za {path.name}: {e}", "warning")
 
@@ -688,10 +685,8 @@ class SkriptorijAllInOne:
             qs_cache = self.checkpoint_dir / "quality_scores.json"
             scores = {}
             if qs_cache.exists():
-                try:
+                with contextlib.suppress(Exception):
                     scores = json.loads(qs_cache.read_text("utf-8"))
-                except Exception:
-                    pass
 
             for chk in chk_fajlovi:
                 score = scores.get(chk.stem, None)
@@ -723,10 +718,8 @@ class SkriptorijAllInOne:
         pattern = f"{file_name}_blok_*.chk"
         chk_fajlovi = list(self.checkpoint_dir.glob(pattern))
         for chk in chk_fajlovi:
-            try:
+            with contextlib.suppress(Exception):
                 chk.unlink()
-            except Exception:
-                pass
         self.log(
             f"🗑️ Cache fajla '{file_name}': {len(chk_fajlovi)} blokova obrisano.",
             "system",

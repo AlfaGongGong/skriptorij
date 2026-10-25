@@ -22,6 +22,7 @@ from core.text_utils import (
     _post_process_tipografija,
     _smart_extract,
 )
+import contextlib
 
 _RETRO_QA_THRESHOLD = 9.5  # FIX: QA retry prag za retro
 
@@ -141,10 +142,8 @@ async def retroaktivna_relektura_v10(
         qs_cache = chk_dir / "quality_scores.json"
         prev_scores = {}
         if qs_cache.exists():
-            try:
+            with contextlib.suppress(Exception):
                 prev_scores = json.loads(qs_cache.read_text("utf-8"))
-            except Exception:
-                pass
         ciljani = [
             chk for chk in svi_chk if prev_scores.get(chk.stem, 10.0) < bad_threshold
         ]
@@ -319,10 +318,8 @@ async def retroaktivna_relektura_v10(
             _qs_cache_now = chk_dir / "quality_scores.json"
             _existing_now = {}
             if _qs_cache_now.exists():
-                try:
+                with contextlib.suppress(Exception):
                     _existing_now = json.loads(_qs_cache_now.read_text("utf-8"))
-                except Exception:
-                    pass
             # Normalizuj sve na float prije upisa (B1 compat)
             for _k, _v in list(_existing_now.items()):
                 if isinstance(_v, dict) and "score" in _v:
@@ -379,10 +376,8 @@ async def retroaktivna_relektura_v10(
     qs_cache = chk_dir / "quality_scores.json"
     existing_scores = {}
     if qs_cache.exists():
-        try:
+        with contextlib.suppress(Exception):
             existing_scores = json.loads(qs_cache.read_text("utf-8"))
-        except Exception:
-            pass
     existing_scores.update(self._quality_scores)
 
     cleaned_scores = {}

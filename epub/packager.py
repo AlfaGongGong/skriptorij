@@ -4,6 +4,7 @@ import re
 import shutil
 import zipfile
 from pathlib import Path
+import contextlib
 
 # Uvezi zaštitu za container.xml
 try:
@@ -483,11 +484,9 @@ def finalize(self):
                     )
 
         except Exception as _me:
-            try:
+            with contextlib.suppress(Exception):
                 self.log(f"⚠ Metadata greška: {_me}", "warning")
 
-            except Exception:
-                pass
 
         with zipfile.ZipFile(self.out_path, "w", zipfile.ZIP_DEFLATED) as z:
             for f in self.work_dir.rglob("*"):

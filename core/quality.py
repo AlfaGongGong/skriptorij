@@ -235,7 +235,7 @@ def _provjeri_nepromjenjenost(stari_tekst: str, novi_tekst: str) -> float:
 
     # Poređenje na razini karaktera (Jaccard na bigramima)
     def bigrami(s):
-        return set(s[i : i + 2] for i in range(len(s) - 1))
+        return {s[i : i + 2] for i in range(len(s) - 1)}
 
     b1, b2 = bigrami(stari_hash), bigrami(novi_hash)
     if not b1 or not b2:
@@ -635,6 +635,7 @@ def quality_summary(scores: dict) -> dict:
 # ─────────────────────────────────────────────────────────────
 
 import threading as _threading
+import contextlib
 
 _SCORER_PRIORITETI = {
     "gemini": ["groq", "cerebras", "mistral", "cohere"],
@@ -766,10 +767,8 @@ def generiraj_report(knjiga_id: str, checkpoint_dir: str = None) -> dict:
     scores = {}
     qs_path = cdir / "quality_scores.json"
     if qs_path.exists():
-        try:
+        with contextlib.suppress(Exception):
             scores = _json.loads(qs_path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
 
     # Analiza
     ukupno = len(scores)

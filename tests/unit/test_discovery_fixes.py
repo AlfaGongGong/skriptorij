@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import contextlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
@@ -115,12 +116,10 @@ def test_retryDelay_over_3600_without_rpd_gives_60s():
         assert secs > 0
 
     # Cleanup
-    try:
+    with contextlib.suppress(Exception):
         quota_tracker.clear_key_cooldown("GEMINI", key) if hasattr(
             quota_tracker, "clear_key_cooldown"
         ) else None
-    except Exception:
-        pass
 
 
 def test_retryDelay_over_3600_with_daily_gives_10h():
