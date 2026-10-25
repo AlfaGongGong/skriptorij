@@ -442,7 +442,7 @@ class SkriptorijAllInOne:
             glosar["termini"][ime] = {
                 "hr": r.get("hr", ime),
                 "kategorija": r.get("kategorija", "?"),
-                "odbacene_varijante": [],
+                "odbacene_varijante": r.get("forbidden_variants", []),
                 "broj_pojava": broj,
                 "spoji_sa": r.get("spoji_sa", ""),
                 "potvrdjeno": bool(r.get("kategorija")),
