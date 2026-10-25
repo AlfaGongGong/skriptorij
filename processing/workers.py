@@ -1156,10 +1156,14 @@ class WorkerV2:
     def _postprocessing(self, tekst: str, model_ime: str) -> str:
         """
         Post-processing pipeline:
+        0. HTML atribute cleanup („ → " u atributima)
         1. Anti-pattern čišćenje (per-model)
         2. KalkoviEngine deterministička korekcija
         3. MorfoValidator (za high-risk modele ili uvijek za validator ulogu)
         """
+        # 0. HTML atributi cleanup (FIX 2026-10-25)
+        tekst = _ocisti_html_atribute(tekst)
+
         # 1. Anti-pattern čišćenje
         tekst = _ocisti_anti_patterne(tekst, model_ime)
 
