@@ -634,8 +634,8 @@ def quality_summary(scores: dict) -> dict:
 # SCORER TRACKER — preuzeto iz quality_scorer_v2.py
 # ─────────────────────────────────────────────────────────────
 
-import threading as _threading
 import contextlib
+import threading as _threading
 
 _SCORER_PRIORITETI = {
     "gemini": ["groq", "cerebras", "mistral", "cohere"],

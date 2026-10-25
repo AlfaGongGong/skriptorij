@@ -9,12 +9,12 @@ Testovi za FAZA 5 fixeve:
   - _odredi_strategiju filename heuristika
 """
 
+import contextlib
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-import contextlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 

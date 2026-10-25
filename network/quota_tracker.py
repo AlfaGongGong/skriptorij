@@ -4,6 +4,7 @@ Per-ključ cooldown praćenje. Prati RPM/RPD iscrpljenost i cooldown stanje
 svakog API ključa. Podaci se persistiraju na disk kako bi preživjeli restart.
 """
 
+import contextlib
 import json
 import logging
 import os
@@ -11,7 +12,6 @@ import threading
 import time
 from pathlib import Path
 from typing import Optional
-import contextlib
 
 logger = logging.getLogger(__name__)
 

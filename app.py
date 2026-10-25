@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import re
@@ -19,7 +20,6 @@ from flask import (
 
 from api_fleet import FleetManager
 from utils.file_utils import secure_filename as _secure_filename
-import contextlib
 
 
 def _rebuild_epub(eng, shared_stats: dict, shared_controls: dict) -> None:
@@ -47,7 +47,6 @@ _fleet_fallback = FleetManager(config_path=_CONFIG_PATH)
 import logging
 
 from api_fleet import register_active_fleet
-import contextlib
 
 logger = logging.getLogger("booklyfi.app")
 register_active_fleet(_fleet_fallback)

@@ -1,10 +1,10 @@
+import contextlib
 import re
 
 # epub/packager.py
 import shutil
 import zipfile
 from pathlib import Path
-import contextlib
 
 # Uvezi zaštitu za container.xml
 try:

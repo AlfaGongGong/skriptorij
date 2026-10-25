@@ -6,6 +6,7 @@
 #      unutar async konteksta — bez nested asyncio.run()
 
 import asyncio
+import contextlib
 import json
 import shutil
 import sys
@@ -22,7 +23,6 @@ from epub.parser import (
     _zamijeni_epub_css,
 )
 from utils.checkpoint_cleaner import _no_cisti_chk_fajlove
-import contextlib
 
 try:
     import mobi

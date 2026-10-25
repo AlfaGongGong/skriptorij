@@ -1,12 +1,12 @@
 """api/routes/monitor.py — Real-time praćenje stanja ključeva."""
 
+import contextlib
 import time
 from datetime import UTC, datetime, timezone
 
 from flask import Blueprint, jsonify, request
 
 from config.settings import SHARED_STATS
-import contextlib
 
 bp = Blueprint("monitor", __name__)
 

@@ -3,6 +3,7 @@
 Rute za quality scores — dohvat i prikaz po blokovima i fajlovima.
 """
 
+import contextlib
 import json
 import logging
 from pathlib import Path
@@ -16,7 +17,6 @@ from config.settings import (
     SHARED_CONTROLS,
     SHARED_STATS,
 )
-import contextlib
 
 bp = Blueprint("quality_routes", __name__)
 logger = logging.getLogger(__name__)

@@ -31,6 +31,7 @@ Pokretanje:
 """
 
 import argparse
+import contextlib
 import difflib
 import json
 import os
@@ -42,7 +43,6 @@ from collections import defaultdict
 from datetime import datetime
 
 import requests
-import contextlib
 
 INF = float("inf")
 

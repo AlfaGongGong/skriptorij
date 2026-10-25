@@ -15,6 +15,7 @@
 #   • Ako nema retryDelay ali je RESOURCE_EXHAUSTED — cooldown do ponoći UTC
 # ============================================================================
 
+import contextlib
 import json
 import logging
 import threading
@@ -23,7 +24,6 @@ from pathlib import Path
 
 from config.system_logger import syslog
 from network.quota_tracker import quota_tracker
-import contextlib
 
 logger = logging.getLogger(__name__)
 

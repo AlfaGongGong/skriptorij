@@ -9,6 +9,7 @@ IZMJENE (knjiga_mode patch + checkpoint putanja):
   - _detect_language() zadržan kao interni helper.
 """
 
+import contextlib
 import json
 import re
 from pathlib import Path
@@ -17,7 +18,6 @@ from analysis.book_context import BookContextManager
 from api_fleet import FleetManager
 from config.settings import CHECKPOINT_BASE_DIR, OUTPUT_DIR
 from utils.logging import add_audit
-import contextlib
 
 
 class SkriptorijAllInOne:

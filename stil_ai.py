@@ -30,10 +30,10 @@ sys.path.insert(0, SKRIPTORIJ_DIR)
 for _d in Path(SKRIPTORIJ_DIR).rglob("__pycache__"):
     shutil.rmtree(_d, ignore_errors=True)
 
+import contextlib
 import warnings
 
 from bs4 import BeautifulSoup
-import contextlib
 
 # 2026-10-24 RUN1: deduplikacija upozorenja 'nema ornamenta za scenu X'
 _UPOZORENO: set[str] = set()

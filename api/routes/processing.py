@@ -3,6 +3,7 @@ Rute za upravljanje obradom knjiga (files, start, status, modeli).
 Dio Skriptorij V12.0 sistema.
 """
 
+import contextlib
 import json
 import logging
 import os
@@ -23,7 +24,6 @@ from config.settings import (
     SHARED_CONTROLS,
     SHARED_STATS,
 )
-import contextlib
 
 bp = Blueprint("processing", __name__)
 

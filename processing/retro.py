@@ -7,6 +7,7 @@
 #   B13: checkpoint_dir se nalazio u work_dir — sada koristi CHECKPOINT_BASE_DIR.
 #   B14: mark_for_review iterirala sve *.chk uključujući međukorak fajlove.
 
+import contextlib
 import json
 import re
 from pathlib import Path
@@ -22,7 +23,6 @@ from core.text_utils import (
     _post_process_tipografija,
     _smart_extract,
 )
-import contextlib
 
 _RETRO_QA_THRESHOLD = 9.5  # FIX: QA retry prag za retro
 

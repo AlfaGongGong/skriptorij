@@ -21,6 +21,8 @@ from pathlib import Path
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+import contextlib
+
 from core.quality import _CACHE_ACCEPT_SCORE
 from core.text_utils import (
     _agresivno_cisti,
@@ -33,7 +35,6 @@ from core.text_utils import (
     detektuj_tip_bloka,
 )
 from processing.rescue import _spasi_od_sirovog
-import contextlib
 
 # ── Korak 2, 3, 4 integracije ──────────────────────────────────────────────
 try:

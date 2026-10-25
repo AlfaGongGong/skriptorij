@@ -66,6 +66,7 @@ def _get_http_session():
     return _HTTP_SESSION
 
 
+import contextlib
 import threading
 
 from config.ai_config import (
@@ -79,7 +80,6 @@ from network.rate_limiter import (
     register_provider_runtime_limits,
     release_key,
 )
-import contextlib
 
 logger = logging.getLogger(__name__)
 
