@@ -920,7 +920,7 @@ logger = logging.getLogger(__name__)
 # LAZY IMPORTI — ne ruše startup ako nešto nedostaje
 # ─────────────────────────────────────────────────────────────
 try:
-    from core.model_profiles import PROFILI, get_anti_patterne, get_max_tokens, get_temp
+    from core.model_profiles import get_anti_patterne, get_max_tokens, get_temp
 
     _profiles_ok = True
 except ImportError:
