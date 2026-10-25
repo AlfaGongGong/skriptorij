@@ -897,7 +897,7 @@ async def process_single_file_worker(self, file_path):
 
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

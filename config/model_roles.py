@@ -14,7 +14,6 @@ Primjer:
     pick_model_for_role("SCORER", enriched)      # -> "gemini-2.5-flash-lite" (fast, latency 6s)
 """
 
-from typing import Optional
 
 # Uloga -> zahtevi koje model mora da ispuni
 # min_rpd: minimum RPD-a

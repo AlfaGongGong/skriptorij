@@ -2,7 +2,7 @@
 
 import contextlib
 import time
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 
 from flask import Blueprint, jsonify, request
 

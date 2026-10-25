@@ -32,7 +32,6 @@ import hashlib
 import re
 import uuid
 from pathlib import Path
-from typing import Optional
 
 from bs4 import BeautifulSoup
 

@@ -21,7 +21,7 @@ import sys
 import tempfile
 import time
 import zipfile
-from functools import cache, lru_cache
+from functools import cache
 from pathlib import Path
 from urllib.parse import unquote
 

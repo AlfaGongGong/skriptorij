@@ -6,7 +6,6 @@ AI routing logika. Odabir provajdera i modela prema ulozi, tipu bloka i dostupno
 import asyncio
 import logging
 import random
-from typing import Optional, Tuple
 
 from config.ai_config import MODEL_MAP, PROVIDER_PRIORITY
 from core.model_profiles import PROFILI, ModelProfile

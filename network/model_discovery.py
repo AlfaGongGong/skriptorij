@@ -12,7 +12,6 @@ import logging
 import re
 import threading
 import time
-from typing import Optional
 
 import requests
 

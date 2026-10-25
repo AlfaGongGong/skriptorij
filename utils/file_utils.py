@@ -2,7 +2,6 @@
 
 import os
 import re
-from typing import Optional
 
 
 def secure_filename(filename: str) -> str:

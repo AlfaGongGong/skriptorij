@@ -39,7 +39,6 @@ import time
 import zipfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

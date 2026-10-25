@@ -21,7 +21,6 @@ import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from config.settings import CHECKPOINT_BASE_DIR, INPUT_DIR
 
