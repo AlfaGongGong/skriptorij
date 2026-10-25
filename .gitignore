@@ -17,3 +17,7 @@ data/rod_registri/
 .env.*
 !.env.example
 *.corrupt*
+.logs/
+*.log
+nohup.out
+venv/
