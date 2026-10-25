@@ -34,7 +34,6 @@ import warnings
 
 from bs4 import BeautifulSoup
 
-
 # 2026-10-24 RUN1: deduplikacija upozorenja 'nema ornamenta za scenu X'
 _UPOZORENO: set[str] = set()
 
@@ -1296,9 +1295,7 @@ def _preskoci(n):
     )
     for t in tehnicke:
         if (
-            base.startswith(t)
-            or base.endswith(t + ".xhtml")
-            or base.endswith(t + ".html")
+            base.startswith(t) or base.endswith((t + ".xhtml", t + ".html"))
         ):
             return True
 

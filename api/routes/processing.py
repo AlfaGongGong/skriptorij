@@ -714,7 +714,7 @@ def review_chunk(chunk_stem):
             text = chk_path.read_text("utf-8", errors="ignore")
             return jsonify({"stem": stem, "text": text})
 
-        elif request.method == "POST":
+        if request.method == "POST":
             data = request.get_json(silent=True) or {}
             new_text = data.get("text", "")
             if not new_text.strip():

@@ -140,35 +140,34 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
                 "system",
             )
             return saved_mode
-        else:
-            # 2026-10-23 FIX: filename heuristika umesto default PREVOD
-            book_name = (
-                engine.book_path.name.upper() if hasattr(engine, "book_path") else ""
+        # 2026-10-23 FIX: filename heuristika umesto default PREVOD
+        book_name = (
+            engine.book_path.name.upper() if hasattr(engine, "book_path") else ""
+        )
+        if "PREVEDENO" in book_name:
+            engine.log(
+                f"💾 Nastavak sesije: {chk_count} checkpointa — "
+                f"filename sadrzi 'PREVEDENO' → LEKTURA",
+                "system",
             )
-            if "PREVEDENO" in book_name:
-                engine.log(
-                    f"💾 Nastavak sesije: {chk_count} checkpointa — "
-                    f"filename sadrzi 'PREVEDENO' → LEKTURA",
-                    "system",
-                )
-                _save_book_analysis(engine, "LEKTURA")
-                return "LEKTURA"
-            # Probaj detekciju iz html_files
-            try:
-                detected = engine._detect_knjiga_mode(html_files, n_files=5)
-                engine.log(
-                    f"💾 Nastavak sesije: {chk_count} checkpointa — "
-                    f"detektovano '{detected}' iz html_files",
-                    "system",
-                )
-                _save_book_analysis(engine, detected)
-                return detected
-            except Exception as e:
-                engine.log(
-                    f"⚠️  Detekcija pala ({e}) — default PREVOD",
-                    "warning",
-                )
-                return "PREVOD"
+            _save_book_analysis(engine, "LEKTURA")
+            return "LEKTURA"
+        # Probaj detekciju iz html_files
+        try:
+            detected = engine._detect_knjiga_mode(html_files, n_files=5)
+            engine.log(
+                f"💾 Nastavak sesije: {chk_count} checkpointa — "
+                f"detektovano '{detected}' iz html_files",
+                "system",
+            )
+            _save_book_analysis(engine, detected)
+            return detected
+        except Exception as e:
+            engine.log(
+                f"⚠️  Detekcija pala ({e}) — default PREVOD",
+                "warning",
+            )
+            return "PREVOD"
 
     # Svježa sesija (nema checkpointa) — detektuj jezik knjige
     knjiga_mode = engine._detect_knjiga_mode(html_files, n_files=5)
@@ -408,7 +407,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
         # Tehnicke stranice po imenu
         stem = f.stem.lower()
         for t in TEHNICKE:
-            if stem == t or stem.startswith(t + "_") or stem.startswith(t + "-"):
+            if stem == t or stem.startswith((t + "_", t + "-")):
                 return True
         return False
 
@@ -512,8 +511,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             sharedstats["pct"] = 100
         return  # Izlaz — ne ulazi u main_loop() ispod
 
-    else:
-        engine.knjiga_mode = strategija
+    engine.knjiga_mode = strategija
 
     sharedstats["knjiga_mode"] = engine.knjiga_mode
     engine.log(

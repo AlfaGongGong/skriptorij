@@ -71,7 +71,7 @@ def _je_finalni_chk(chk_path: Path) -> bool:
     stem = (
         chk_path.stem
     )  # npr. "chapter001.html_blok_0" ili "chapter001.html_blok_0.prevod"
-    return not (stem.endswith(".prevod") or stem.endswith(".lektura"))
+    return not (stem.endswith((".prevod", ".lektura")))
 
 
 def _get_checkpoint_dir(self) -> Path:

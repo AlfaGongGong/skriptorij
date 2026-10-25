@@ -379,7 +379,7 @@ def _je_poglavlje(html_bytes, full_path):
 
     tl = title.lower().strip()
     for skip in SKIP_TITLES:
-        if tl == skip or tl.startswith(skip + " ") or tl.startswith(skip + ":"):
+        if tl == skip or tl.startswith((skip + " ", skip + ":")):
             return False
 
     fp = soup.find("p")

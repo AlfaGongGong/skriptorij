@@ -31,7 +31,7 @@ def export_result(fmt):
                     "Content-Disposition": f"attachment; filename=izvjestaj_{output_file}.json"
                 },
             )
-        elif fmt == "txt":
+        if fmt == "txt":
             data = generate_txt_report(epub_path, SHARED_STATS)
             return Response(
                 data,
@@ -40,7 +40,6 @@ def export_result(fmt):
                     "Content-Disposition": f"attachment; filename=izvjestaj_{output_file}.txt"
                 },
             )
-        else:
-            return jsonify({"error": f"Nepoznat format: {fmt}"}), 400
+        return jsonify({"error": f"Nepoznat format: {fmt}"}), 400
     except Exception:
         return jsonify({"error": "Greška pri generiranju izvještaja"}), 500

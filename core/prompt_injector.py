@@ -173,8 +173,7 @@ class PromptInjector:
         if kontekst:
             separator = "\n\n" + "=" * 60 + "\n## KONTEKST KNJIGE\n" + "=" * 60 + "\n\n"
             return base_prompt + separator + kontekst
-        else:
-            return base_prompt
+        return base_prompt
 
     def statistika(self) -> dict:
         """Vraća info o dostupnim komponentama."""

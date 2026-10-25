@@ -619,7 +619,7 @@ async def _async_http_post(
             register_provider_runtime_limits(prov_upper, resp.headers, data)
             return data
 
-        elif resp.status_code in (429, 425):
+        if resp.status_code in (429, 425):
             try:
                 self.fleet.record_failure(prov, key)
             except Exception:
@@ -635,7 +635,7 @@ async def _async_http_post(
             # prolaze odjednom (burst). Pravilni throttle je u acquire_key/rate_limiter.
             return None
 
-        elif resp.status_code in (500, 503):
+        if resp.status_code in (500, 503):
             # 2026-10-22: 503 UNAVAILABLE = Google "high demand".
             # Kljuc je dobar, server preopterecen. Kratki backoff, NE 30s cooldown.
             _is_high_demand = False
@@ -666,28 +666,27 @@ async def _async_http_post(
                     "warning",
                 )
                 return None
-            else:
-                try:
-                    from network.quota_tracker import quota_tracker as _qt
+            try:
+                from network.quota_tracker import quota_tracker as _qt
 
-                    _qt.set_key_cooldown(
-                        prov_upper,
-                        key,
-                        30.0,
-                        f"{resp.status_code} server greska",
-                    )
-                except Exception:
-                    pass
-                await asyncio.sleep(2.0)
-                return None
+                _qt.set_key_cooldown(
+                    prov_upper,
+                    key,
+                    30.0,
+                    f"{resp.status_code} server greska",
+                )
+            except Exception:
+                pass
+            await asyncio.sleep(2.0)
+            return None
 
-        elif resp.status_code in (401, 402, 403, 412):
+        if resp.status_code in (401, 402, 403, 412):
             self.log(
                 f"[{prov_upper}] HTTP {resp.status_code} — ključ nevažeći", "error"
             )
             return None
 
-        elif resp.status_code == 404:
+        if resp.status_code == 404:
             model_used = (
                 (json_payload or {}).get("model", "")
                 if isinstance(json_payload, dict)
@@ -703,7 +702,7 @@ async def _async_http_post(
             self.log(f"[{prov_upper}] HTTP 404 — model ne postoji", "warning")
             return None
 
-        elif resp.status_code == 400:
+        if resp.status_code == 400:
             err = str(resp_body)[:300] if resp_body else resp.text[:300]
             if any(
                 kw in err.lower()
@@ -723,9 +722,8 @@ async def _async_http_post(
             self.log(f"[{prov_upper}] HTTP 400: {err}", "warning")
             return None
 
-        else:
-            self.log(f"[{prov_upper}] HTTP {resp.status_code}", "warning")
-            return None
+        self.log(f"[{prov_upper}] HTTP {resp.status_code}", "warning")
+        return None
 
     finally:
         release_key(key, prov)

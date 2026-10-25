@@ -1046,7 +1046,7 @@ def run_burst(n, gap):
         stop = None
         last_hdr = {}
         t0 = time.time()
-        for i in range(n):
+        for _i in range(n):
             r = fn(key)
             LAST_CALL[provider] = time.time()
             if r.get("headers"):

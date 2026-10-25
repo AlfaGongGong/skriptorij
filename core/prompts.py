@@ -819,7 +819,7 @@ def get_system_prompt(
                 patches = MODEL_PATCHES.get(_prov, {})
         except Exception:
             pass
-    for patch_key, patch_text in patches.items():
+    for _patch_key, patch_text in patches.items():
         parts.append(patch_text)
 
     # 3. Tip bloka patch

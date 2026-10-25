@@ -189,7 +189,7 @@ def ping_key(provider, idx):
         sc = resp.status_code
         if sc == 200:
             return jsonify({"ok": True, "latency_ms": latency, "status_code": sc})
-        elif sc == 429:
+        if sc == 429:
             try:
                 body = resp.json()
                 err = (
@@ -207,7 +207,7 @@ def ping_key(provider, idx):
                     "error": f"429 Rate limit — {err}",
                 }
             )
-        elif sc in (401, 403):
+        if sc in (401, 403):
             return jsonify(
                 {
                     "ok": False,
@@ -216,14 +216,13 @@ def ping_key(provider, idx):
                     "error": "Ključ nevažeći (401/403)",
                 }
             )
-        else:
-            try:
-                err = str(resp.json())[:120]
-            except Exception:
-                err = resp.text[:120]
-            return jsonify(
-                {"ok": False, "latency_ms": latency, "status_code": sc, "error": err}
-            )
+        try:
+            err = str(resp.json())[:120]
+        except Exception:
+            err = resp.text[:120]
+        return jsonify(
+            {"ok": False, "latency_ms": latency, "status_code": sc, "error": err}
+        )
     except requests.exceptions.Timeout:
         latency = int((time.time() - t0) * 1000)
         return jsonify(

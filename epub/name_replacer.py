@@ -241,7 +241,7 @@ def _group_by_similarity(candidates: dict[str, int]) -> list[list[str]]:
 
     # Dalje razbij grupe koje su prevelike ili nepovezane
     final_groups = []
-    for pkey, group in prefix_groups.items():
+    for _pkey, group in prefix_groups.items():
         if len(group) == 1:
             # Samotnjak — pošalji kao grupu od 1 (AI može prepoznati varijante)
             final_groups.append(group)

@@ -104,7 +104,7 @@ def _hunspell_neispravna(rijec: str) -> bool:
         )
         # Hunspell izlaz: '&' = pogrešno, '*' = ispravno, '+' = ispravno (složenica)
         for line in result.stdout.splitlines():
-            if line.startswith("&") or line.startswith("#"):
+            if line.startswith(("&", "#")):
                 return True
         return False
     except Exception:

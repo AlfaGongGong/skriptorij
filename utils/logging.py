@@ -211,8 +211,7 @@ def add_audit(
                     _events[-1]["tekst"] = msg + " (×" + str(_prev["count"]) + ")"
                 shared_stats["live_audit"] = "".join(audit_logs)
                 return
-            else:
-                _AUDIT_LAST[_key] = {"ts": _now_ts, "nivo": atype, "count": 1}
+            _AUDIT_LAST[_key] = {"ts": _now_ts, "nivo": atype, "count": 1}
 
         shared_stats["live_audit"] = "".join(audit_logs)
         # ── Paralelno strukturirano (JSON za /api/monitor/audit) ──

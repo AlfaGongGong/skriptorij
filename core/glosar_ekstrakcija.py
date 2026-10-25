@@ -128,7 +128,7 @@ def detektuj_jezik(epub_path):
 
                 if hr_score > en_score * 1.5:
                     return "HR"
-                elif en_score > hr_score * 1.5:
+                if en_score > hr_score * 1.5:
                     return "EN"
     except Exception:
         pass

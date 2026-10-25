@@ -367,7 +367,7 @@ def create_app() -> Flask:
 
             # Ako je current_file HTML, izvuci ime knjige iz live_audit
             if not book_name and current_file:
-                if current_file.endswith(".html") or current_file.endswith(".xhtml"):
+                if current_file.endswith((".html", ".xhtml")):
                     import re as _re
 
                     _la = SHARED_STATS.get("live_audit", "")

@@ -919,12 +919,11 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 self.spaseno_iz_checkpointa += 1
                 self.global_done_chunks += 1
                 return cached_final, "DATABASE"
-            else:
-                self.log(
-                    f"[{file_name}] Blok {chunk_idx}: ♻️ Cache ignorisan "
-                    f"(score={cached_score:.1f} < {_CACHE_ACCEPT_SCORE}) — ponovo obrađujem.",
-                    "warning",
-                )
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ♻️ Cache ignorisan "
+                f"(score={cached_score:.1f} < {_CACHE_ACCEPT_SCORE}) — ponovo obrađujem.",
+                "warning",
+            )
 
     # ── Setup ────────────────────────────────────────────────────────────────
     knjiga_mode = getattr(self, "knjiga_mode", None)

@@ -108,7 +108,7 @@ def _izracunaj_heuristicki_score(tekst: str) -> tuple[float, list[str]]:
     _je_kratak_blok = len(cist.strip()) < 120
     if en_udio > 0.25 and not _je_kratak_blok:
         return 1.0, [f"Neprevedeno: {en_udio:.0%} engleskog teksta"]
-    elif en_udio > 0.15:
+    if en_udio > 0.15:
         kazne += 5.0
         razlozi.append(f"Kritična EN kontaminacija: {en_udio:.0%}")
     elif en_udio > 0.08:

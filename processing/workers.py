@@ -562,15 +562,14 @@ def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
                     "tech",
                 )
                 return res, novi_qa, True
-            elif novi_ocjena > ocjena:
+            if novi_ocjena > ocjena:
                 self.log(
                     "  Retry QA poboljsan: " + str(ocjena) + " -> " + str(novi_ocjena),
                     "tech",
                 )
                 return res, novi_qa, False
-            else:
-                self.log("  Retry QA bez poboljsanja: " + str(novi_ocjena), "warning")
-                continue
+            self.log("  Retry QA bez poboljsanja: " + str(novi_ocjena), "warning")
+            continue
         except Exception as e:
             self.log("  Retry greska (" + str(provider) + "): " + str(e), "warning")
             continue
@@ -709,7 +708,7 @@ async def process_single_file_worker(self, file_path):
     )
 
     final_parts = []
-    for i, (res, eng) in enumerate(results):
+    for i, (res, _eng) in enumerate(results):
         if res is None:
             self.log(f"⚠️ Blok {i} nije obrađen, koristim original", "warning")
             final_parts.append(chunks[i])

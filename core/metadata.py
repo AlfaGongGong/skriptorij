@@ -191,7 +191,7 @@ def standardizuj_metapodatke(
     if date_tag:
         old_date = date_tag.get_text(strip=True)
         # Očisti "0101-01-01T00:00:00+00:00" i slično
-        if old_date.startswith("0101") or old_date.startswith("0000"):
+        if old_date.startswith(("0101", "0000")):
             date_tag.decompose()
             stats["date_set"] = True
         else:

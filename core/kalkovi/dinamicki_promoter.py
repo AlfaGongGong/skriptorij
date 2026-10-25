@@ -52,10 +52,9 @@ class DinamickiPromoter:
         avg = row[0] if row else 0.0
         if avg < 7.5:
             return avg, "los_score"
-        elif avg < 8.2:
+        if avg < 8.2:
             return avg, "prihvatljiv"
-        else:
-            return avg, "dobar_score_mozda_nije_kalk"
+        return avg, "dobar_score_mozda_nije_kalk"
 
     def _generisi_python_unos(self, pattern: str, tip: str) -> str:
         escaped = re.escape(pattern)
