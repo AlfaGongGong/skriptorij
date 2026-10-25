@@ -14,6 +14,8 @@ Apply samo na tekstualne cvorove HTML-a, ne na tagove/atribute/CSS/JS.
 import re
 from dataclasses import dataclass
 from pathlib import Path
+
+
 @dataclass
 class Rule:
     search: str

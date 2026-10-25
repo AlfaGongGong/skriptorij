@@ -2,8 +2,8 @@ import contextlib
 import json
 import logging
 import os
-import subprocess
 import signal
+import subprocess
 import sys
 import threading
 import time
