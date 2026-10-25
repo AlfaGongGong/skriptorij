@@ -1,32 +1,32 @@
 {
   "Čim": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 10,
     "clue_z": 0
   },
   "maršal": {
     "rod": "M",
-    "clue_m": 64,
+    "clue_m": 65,
     "clue_z": 0
   },
   "komornik": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 11,
     "clue_z": 0
   },
   "Hoff": {
     "rod": "M",
-    "clue_m": 21,
+    "clue_m": 23,
     "clue_z": 0
   },
   "admiral": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Brak": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 1
   },
   "guverner": {
@@ -46,7 +46,7 @@
   },
   "Zrak": {
     "rod": "M",
-    "clue_m": 15,
+    "clue_m": 16,
     "clue_z": 0
   },
   "Govornik": {
@@ -57,12 +57,12 @@
   "Vick": {
     "rod": "Ž",
     "clue_m": 1,
-    "clue_z": 36
+    "clue_z": 38
   },
   "Savine": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 143
+    "clue_z": 150
   },
   "Ardee": {
     "rod": "Ž",
@@ -96,17 +96,17 @@
   },
   "Halder": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 10,
     "clue_z": 0
   },
   "Broad": {
     "rod": "M",
-    "clue_m": 37,
+    "clue_m": 38,
     "clue_z": 0
   },
   "Malmer": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 10,
     "clue_z": 0
   },
   "Figura": {
@@ -117,7 +117,7 @@
   "Istina": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 23
+    "clue_z": 25
   },
   "Iako": {
     "rod": "M",
@@ -132,7 +132,7 @@
   "Još": {
     "rod": "Ž",
     "clue_m": 2,
-    "clue_z": 9
+    "clue_z": 10
   },
   "Zlobno": {
     "rod": "M",
@@ -146,12 +146,12 @@
   },
   "Mustred": {
     "rod": "M",
-    "clue_m": 14,
+    "clue_m": 15,
     "clue_z": 0
   },
   "Clensher": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 10,
     "clue_z": 0
   },
   "Clover": {
@@ -296,12 +296,12 @@
   },
   "kancelar": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 11,
     "clue_z": 0
   },
   "namjesnik": {
     "rod": "M",
-    "clue_m": 45,
+    "clue_m": 51,
     "clue_z": 0
   },
   "Lorsen": {
@@ -310,29 +310,29 @@
     "clue_z": 0
   },
   "Zaprepašteno": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Orsa": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 4
+    "clue_z": 5
   },
   "Jedva": {
     "rod": "M",
-    "clue_m": 15,
+    "clue_m": 16,
     "clue_z": 5
   },
   "Onda": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Mozolia": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 8
+    "clue_z": 10
   },
   "Zatim": {
     "rod": "M",
@@ -1130,6 +1130,16 @@
     "clue_z": 1
   },
   "Polako": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Nespretno": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bahato": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
