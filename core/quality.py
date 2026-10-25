@@ -441,7 +441,7 @@ async def _scoruj_kvalitetu(
         # temp=0.05, max_tokens=128, priority=GROQ/CEREBRAS/GEMINI
         scorer_sys_override = None
         if self_obj is not None:
-            try:
+            try:  # noqa: SIM105 — namerno, tolerancija na ImportError
                 # merged: get_scorer_sys_override je sada u ovom fajlu
                 scorer_sys_override = get_scorer_sys_override(
                     self_obj, prevodilac_provider, chunk_idx, file_name
