@@ -8,30 +8,20 @@ Server: python3 main.py -> Flask na http://127.0.0.1:8080
 
 <!-- AUTO:START -->
 
-### Auto-generisano: 2026-10-19 17:47
+### Auto-generisano: 2026-10-25 17:45
 
 **Git:**
-- HEAD: e9f1379 feat: Gemma fallback lanac — kontekst → Mistral (bez OpenRoutera)
-- Status: M KONTEKST.md
- M data/rod_registri/The_Trouble_With_Peace.json
+- HEAD: 3b7972d prije: KONTEKST update
+
+**Status:**
+M .logs/KONTEKST_174520.log
 
 **Zadnjih 5 commitova:**
-e9f1379 feat: Gemma fallback lanac — kontekst → Mistral (bez OpenRoutera)
-aa2f20d feat: Gemini fallback lanac — kontekst → Gemma → Mistral (bez OpenRoutera)
-1e33599 fix: QA score poruka dobija file_name + prevodilac_provider
-7627dfa fix: GEMMA pool odvojen od GEMINI (samo kad ima vlastite kljuceve)
-8008f48 fix: UI audit log — sacuvaj selekciju + povezi dugme 'Na kraj'
-
-**Kljucni moduli (funkcije/klase/linije):**
-  - epub/styler.py: 19f/0c/1287L
-  - epub/normalizer.py: 8f/0c/371L
-  - processing/pipeline.py: 16f/0c/1106L
-  - network/http_client.py: 27f/1c/1515L
-  - network/provider_router.py: 5f/1c/592L
-  - core/engine.py: 0f/1c/686L
-
-**Testovi:**
-84 passed, 0 failed (2026-10-22)
+3b7972d prije: KONTEKST update
+0e4439b prije: KONTEKST.md update (P17, P18, FAZA 7)
+b90e36c chore: BATCH A-2 — SIM105 contextlib.suppress (57), UP035/C401 partial; 12 ostalo za ručno
+6f58379 chore: BATCH A — ruff autofix (I001, UP, SIM, RET, C401, B007, PIE810)
+08bdad3 fix(ui): selectBadBlocks čita data-score (qh-cell je prazan div, textContent je bio 10)
 
 <!-- AUTO:END -->
 
@@ -118,6 +108,35 @@ aa2f20d feat: Gemini fallback lanac — kontekst → Gemma → Mistral (bez Open
 - Na kraju bloka: `echo "Log: $LOG"` — korisnik zna gde je
 - Ako se izgubi početak: `cat $(ls -t /tmp/blok_*.log | head -1)` — vraća ceo blok iz fajla
 - Cilj: korisnik uvek dobije čist, kompletan output od nule, bez traženja početka u starom terminalu
+
+---
+
+### P17 — LOG PUTANJA (Termux)
+
+Nikad ne koristiti /tmp/ za logove — nije writable u Termux-u.
+
+Uvek pre skripte:
+
+    mkdir -p .logs
+    TS=$(date +%H%M%S)
+    LOG=.logs/ime_$TS.log
+    exec > >(tee $LOG) 2>&1
+
+Na kraju skripte: echo Log: $LOG
+
+Log fajlovi su u .logs/ (gitignore).
+
+### P18 — REPO GUARD
+
+Svaka skripta koja dira git mora na pocetku imati:
+
+    cd /root/skriptorij
+    if [ ! -d .git ]; then echo FAIL: nema .git; exit 1; fi
+    REPO=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [ "$REPO" != "/root/skriptorij" ]; then echo FAIL: repo je $REPO; exit 1; fi
+
+Bez ovoga skripta ne sme da se izvrsi.
+
 
 ---
 
@@ -657,6 +676,60 @@ Sigurnost: backup pre svega, automatski rollback ako sintaksa ili F821 puknu.
 - `RUCNO_ZA_POPRAVITI.md` — 30 mesta sa kontekstom koda, treba ljudska odluka
 - `classla` u `requirements.txt` — nije instaliran paket, ali se uvozi (mozda treba `pip install classla`)
 - `skriptorij` u `requirements.txt` — self-import, ignorisi
+
+---
+
+---
+
+## FAZA 7 (2026-10-25) — UI selekcija, Ruff, P17/P18
+
+### Uradjeno
+
+UI selekcija:
+- f0a96c7 — selekcija bar u Kvalitet tabu
+- 03d0295 — inline onclick, SW v4, bump verzije
+- d45623e — qh-cell umesto qs-block-pill
+- 08bdad3 — data-score umesto textContent
+- Backfill 20 NEPREVEDENO markera na score 1.0
+
+Ruff:
+- 6f58379 (BATCH A) — I001, UP, SIM, RET, C401, B007, PIE810 (36 nalaza)
+- b90e36c (BATCH A-2) — SIM105 contextlib.suppress (57 nalaza)
+
+Pravila:
+- P17 — log u .logs/
+- P18 — repo guard pre git operacija
+
+### Trenutni baseline
+
+- Testovi: 102 passed
+- Ruff baseline (F,E9,B,PLE,PIE): 160 nalaza
+  - S110 x124 (fail-safe pattern, ne diramo)
+  - F401 x31 (unused imports, auto-fix)
+  - B905 x3 (zip strict, rucno)
+  - F811 x1, B007 x1
+- Commit: b90e36c
+
+### Otvoreno — prioritet
+
+BATCH P (pipeline fix):
+- P1 — _je_placeholder_lokalni prepoznaj NEPREVEDENO marker
+- P2 — process_chunk_with_retry upisi marker + score 1.0
+- P3 — workers.py res is None upisi marker, skip QA
+
+BATCH HIGIJENA:
+- A-3 — I001, F401, SIM105, B007, F811 auto-fix
+- A-4 — UP035 (10), B905 (3) rucno
+- A-5 — pyproject.toml ignore S110
+- B — test_complete_v4 u tools/, .env.example, pin requirements, orfani
+- D — git rm cached tajne, Bandit B605/B602
+
+BATCH F (KONTEKST planirano):
+- Blok 4 — workers.py provider umesto model_ime
+- Blok 5 — ai_config.py AI_MODEL_STRINGS fallback
+- A2 — tri imena za isti model
+- EKAVIZMI — suziti \breci\b
+- part0066.html — JSON wrapper
 
 ---
 
