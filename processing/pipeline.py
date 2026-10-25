@@ -420,6 +420,13 @@ def _primijeni_kalkove_i_validator(
     import logging
     import re as _re_lore
 
+    # Korak 0.9: HTML atributi cleanup („ → " u atributima)
+    try:
+        from utils.checkpoint_cleaner import _ocisti_escape as _ocisti_attrs
+        finalno = _ocisti_attrs(finalno)
+    except Exception as _e:
+        logging.debug(f"[pipeline] HTML atributi cleanup greška: {_e}")
+
     # Korak 1.5: Lore enforcement — zameni zabranjene varijante sa kanonskim
     try:
         kanon = {}
