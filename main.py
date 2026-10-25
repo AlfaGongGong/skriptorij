@@ -2,6 +2,7 @@ import contextlib
 import json
 import logging
 import os
+import subprocess
 import signal
 import sys
 import threading
@@ -204,7 +205,7 @@ if __name__ == "__main__":
         try:
             TERMUX_OPEN = "/data/data/com.termux/files/usr/bin/termux-open-url"
             if os.path.exists(TERMUX_OPEN):
-                rc = os.system(f"{TERMUX_OPEN} {url} > /dev/null 2>&1")
+                rc = subprocess.run([TERMUX_OPEN, url], capture_output=True)
                 if rc != 0:
                     print(
                         f"{_YELLOW}[BOOKLYFI]{_RESET} termux-open-url exit {rc} — otvori ručno: {url}"
