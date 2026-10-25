@@ -9,4 +9,4 @@ extend-exclude = [".cistoca", "venv", ".venv"]
 [tool.ruff.lint]
 select = ["F", "E9", "B", "I", "UP"]
 # B905 (zip strict) i B007 (nekorištena petlja) su stil, ne bug
-ignore = ["B905", "B007"]
+ignore = ["B905", "B007", "S110"]
