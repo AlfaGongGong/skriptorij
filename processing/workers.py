@@ -1254,21 +1254,7 @@ class WorkerV2:
                     "success": False,
                 }
 
-            provider, model_string, api_key = routing
-
-            # Pronađi model_ime po api_model_string-u (za profil lookup)
-            model_ime = (
-                next(
-                    (
-                        ime
-                        for ime, p in PROFILI.items()
-                        if p.api_model_string == model_string
-                    ),
-                    model_string,
-                )
-                if _profiles_ok
-                else model_string
-            )
+            provider, model_string, api_key, model_ime = routing
 
             # 2. Sklopi prompt
             system_prompt = self._sklopi_prompt(model_ime, chunk_tekst)
