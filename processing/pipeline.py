@@ -441,7 +441,7 @@ def _primijeni_kalkove_i_validator(
                     if not _bad or _bad.lower() == _hr.lower():
                         continue
                     _pattern = _re_lore.compile(
-                        r"" + _re_lore.escape(_bad) + r"",
+                        r"\b" + _re_lore.escape(_bad) + r"\b",
                         _re_lore.IGNORECASE,
                     )
                     _new, _n = _pattern.subn(_hr, finalno)
