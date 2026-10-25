@@ -418,6 +418,43 @@ def _primijeni_kalkove_i_validator(
     Fail-safe: ako bilo što ne uspije, vraća originalni tekst.
     """
     import logging
+    import re as _re_lore
+
+    # Korak 1.5: Lore enforcement — zameni zabranjene varijante sa kanonskim
+    try:
+        kanon = {}
+        if hasattr(self, "book_path"):
+            from pathlib import Path as _P
+            _knjiga_id = _P(self.book_path).stem
+            _kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (_knjiga_id + ".json")
+            if _kanon_path.exists():
+                import json as _json_lore
+                _data = _json_lore.loads(_kanon_path.read_text(encoding="utf-8"))
+                kanon = _data.get("termini", {})
+
+        if kanon:
+            zamenjeno = 0
+            for _en, _info in kanon.items():
+                _hr = _info.get("hr", _en)
+                _forbidden = _info.get("odbacene_varijante", [])
+                for _bad in _forbidden:
+                    if not _bad or _bad.lower() == _hr.lower():
+                        continue
+                    _pattern = _re_lore.compile(
+                        r"" + _re_lore.escape(_bad) + r"",
+                        _re_lore.IGNORECASE,
+                    )
+                    _new, _n = _pattern.subn(_hr, finalno)
+                    if _n > 0:
+                        finalno = _new
+                        zamenjeno += _n
+            if zamenjeno > 0:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: Lore enforcement — {zamenjeno} zamena",
+                    "tech",
+                )
+    except Exception as _lore_err:
+        logging.debug(f"[pipeline] Lore enforcement greška: {_lore_err}")
 
     # Korak 2: Kalkovi engine
     if _KALKOVI_OK and kalkovi_engine is not None:
