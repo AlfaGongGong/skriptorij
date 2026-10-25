@@ -1448,7 +1448,7 @@ def api_call(
                 _dt,
                 _kid,
             )
-            try:
+            try:  # noqa: SIM105 — namerno, best-effort cooldown
                 # FIX: cooldown SAMO za prov_upper, ne križaj GEMINI↔GEMMA.
                 # Prije je Gemini timeout stavljao i GEMMA ključ u cooldown,
                 # iako Gemma nije ni pozvana. Zato je Gemma bila "vječno"
