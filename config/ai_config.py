@@ -666,6 +666,8 @@ def get_provider_for_model(model_ime: str) -> str | None:
         ("llama_sambanova", "SAMBANOVA"),
         ("deepseek_openrouter", "OPENROUTER"),
         ("qwen_chutes", "CHUTES"),
+        ("gpt_oss", "GROQ"),
+        ("gpt-oss", "GROQ"),
     )
     low = model_ime.lower()
     for prefix, prov in _PREFIX_MAP:
