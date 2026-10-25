@@ -167,7 +167,11 @@ Dobit ces listu termina iz EN knjige. Za SVAKI termin odluci:
   2. Ako je DA:
      - kategorija: lik | mjesto | termin
      - hr: hrvatski oblik (npr. Shev -> Sev)
-     - spoji_sa: nadimak/varijanta glavnog.
+     - spoji_sa: nadimak/varijanta glavnog
+     - forbidden_variants: lista ZABRANJENIH sinonima i pogresnih prijevoda
+       koje treba izbegavati. Ukljuci sve moguce varijante koje AI model
+       moze izmisliti: sinonime, pogresne prijevode, bukvalne prevode.
+       Primjer za Dogman: ["Cucek", "Psoglavi", "Covjek Pas", "Dogman"]
   3. Ako je NE: vrati {"en": "...", "izbaci": true}
 
 Vrati ISKLJUCIVO JSON. Budi STROG.
