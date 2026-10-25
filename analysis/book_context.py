@@ -123,7 +123,7 @@ def _dekliniraj_ime(ime: str, rod: str = "auto") -> dict[str, str]:
     while len(oblici) < 7:
         oblici.append(ime)
 
-    return dict(zip(PADEZI, oblici[:7]))
+    return dict(zip(PADEZI, oblici[:7], strict=False))
 
 
 def _normaliziraj_glosar_entry(ime: str, rod: str = "auto") -> dict:

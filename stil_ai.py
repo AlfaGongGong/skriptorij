@@ -462,7 +462,7 @@ def _gradi_dash(t, razdvoji):
         return [t]
     turns = []
     cur = lead + "— " + parts[0]
-    for prev, part in zip(parts, parts[1:]):
+    for prev, part in zip(parts, parts[1:]):  # noqa: B905
         if razdvoji and _veliko(part) and re.search(r"[.!?…]\W*$", prev):
             turns.append(cur)
             cur = "— " + part

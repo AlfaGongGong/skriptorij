@@ -552,7 +552,7 @@ async def _scoruj_batch(
         keys.append(stem)
 
     scores = await asyncio.gather(*tasks, return_exceptions=True)
-    for key, score in zip(keys, scores):
+    for key, score in zip(keys, scores, strict=True):
         if isinstance(score, Exception) or score is None:
             # Konzistentan fallback — heuristika za neuspjele
             results[key] = 6.0
