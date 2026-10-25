@@ -2,14 +2,14 @@
 # Instaliraj s: pip install -r requirements.txt
 
 # ── Web framework ─────────────────────────────────────────────────────────────
-flask>=3.1.0
+flask>=3.0.0
 
 # ── HTTP klijent (API pozivi prema AI provajderima) ───────────────────────────
-requests>=2.32.0
+requests>=2.31.0
 
 # ── EPUB parsiranje i obrada ──────────────────────────────────────────────────
 beautifulsoup4>=4.12.0
-lxml>=6.0.0
+lxml>=5.0.0
 ebooklib>=0.18
 
 # ── Opcionalno: MOBI format podrška ──────────────────────────────────────────
@@ -23,8 +23,8 @@ ebooklib>=0.18
 # obeliks==1.1.6
 
 # ── Testovi ───────────────────────────────────────────────────────────────────
-pytest>=9.0.0
-watchdog
+pytest>=8.0.0
+watchdog>=4.0.0
 Werkzeug>=3.1.8
 mobi>=0.4.1
 httpx>=0.28.1
