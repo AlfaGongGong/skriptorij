@@ -5,8 +5,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
-
 from config.providers import all_fallbacks, all_profiles
 
 # RPD limiti (free tier, maj 2026):

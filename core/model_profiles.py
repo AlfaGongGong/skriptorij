@@ -6,7 +6,7 @@ i anti-patterne karakteristične za taj model.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Optional
 
 from config.ai_config import AI_MODEL_STRINGS, MODEL_MAP
 

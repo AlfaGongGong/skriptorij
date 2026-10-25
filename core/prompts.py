@@ -455,7 +455,7 @@ Nasljednik core/prompts.py — backward compatible.
 Koristi core/model_profiles.py za model-specifična upozorenja.
 """
 
-from typing import Dict, Optional
+from typing import Optional
 
 # ─────────────────────────────────────────────────────────────
 # BASE PROMPTOVI — zajednička osnova za sve modele
