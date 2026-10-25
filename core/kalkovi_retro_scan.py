@@ -481,7 +481,7 @@ def primijeni_u_qa_benchmark(conn: sqlite3.Connection) -> dict:
     QA_BENCHMARK_PATH.write_text(src_novi, encoding="utf-8")
 
     # Označi kao primijenjene u DB-u
-    for red, k, ts in novi_redovi:
+    for _red, k, ts in novi_redovi:
         conn.execute(
             """
             INSERT OR REPLACE INTO primijenjeni
