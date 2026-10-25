@@ -1557,7 +1557,19 @@ async def process_chunk_with_retry(
             self.log("🔄 Pokušavam sa drugim modelom...", "info")
 
     self.log(
-        f"❌ Blok {chunk_idx} nije obrađen ni nakon {max_retries} pokušaja — koristim original",
+        f"❌ Blok {chunk_idx} nije obrađen ni nakon {max_retries} pokušaja — upisujem NEPREVEDENO marker",
         "error",
     )
-    return chunk, "ORIGINAL-FALLBACK"
+    _marker = f"<p>[[NEPREVEDENO: blok {chunk_idx}]]</p>"
+    try:
+        _chk_write(self, file_name, chunk_idx, _marker, chunk_for_hash=chunk)
+    except Exception as _e:
+        self.log(f"⚠️ Ne mogu upisati marker .chk: {_e}", "warning")
+    _stem = f"{file_name}_blok_{chunk_idx}"
+    if not hasattr(self, "_quality_scores"):
+        self._quality_scores = {}
+    if "quality_scores" not in self.shared_stats:
+        self.shared_stats["quality_scores"] = {}
+    self._quality_scores[_stem] = 1.0
+    self.shared_stats["quality_scores"][_stem] = 1.0
+    return _marker, "NEPREVEDENO-MARKER"
