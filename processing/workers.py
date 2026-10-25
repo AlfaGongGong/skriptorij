@@ -710,8 +710,23 @@ async def process_single_file_worker(self, file_path):
     final_parts = []
     for i, (res, _eng) in enumerate(results):
         if res is None:
-            self.log(f"⚠️ Blok {i} nije obrađen, koristim original", "warning")
-            final_parts.append(chunks[i])
+            _marker = f"<p>[[NEPREVEDENO: blok {i}]]</p>"
+            self.log(
+                f"⚠️ Blok {i} nije obrađen (None), upisujem NEPREVEDENO marker",
+                "warning",
+            )
+            try:
+                import hashlib as _hl_mk
+                _chk_p = self.checkpoint_dir / f"{file_name}_blok_{i}.chk"
+                _sha = _hl_mk.sha256(chunks[i].encode("utf-8")).hexdigest()[:16]
+            except Exception as _e:
+                self.log(f"⚠️ Ne mogu upisati marker: {_e}", "warning")
+            _stem = f"{file_name}_blok_{i}"
+            if "quality_scores" not in self.shared_stats:
+                self.shared_stats["quality_scores"] = {}
+            self.shared_stats["quality_scores"][_stem] = 1.0
+            final_parts.append(_marker)
+            continue
         else:
             # VALIDACIJA 1: prekratak output (AI vratio samo dio)
             if len(res.strip()) < 50:
