@@ -42,7 +42,7 @@
   "Wetterlant": {
     "rod": "Ž",
     "clue_m": 5,
-    "clue_z": 100
+    "clue_z": 103
   },
   "Zrak": {
     "rod": "M",
@@ -62,12 +62,12 @@
   "Savine": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 141
+    "clue_z": 143
   },
   "Ardee": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 57
+    "clue_z": 58
   },
   "Curnsbick": {
     "rod": "M",
@@ -141,7 +141,7 @@
   },
   "Leo": {
     "rod": "M",
-    "clue_m": 61,
+    "clue_m": 63,
     "clue_z": 0
   },
   "Mustred": {
@@ -206,8 +206,8 @@
   },
   "Isher": {
     "rod": "M",
-    "clue_m": 40,
-    "clue_z": 3
+    "clue_m": 43,
+    "clue_z": 4
   },
   "Bayaz": {
     "rod": "M",
@@ -222,7 +222,7 @@
   "Finree": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 78
+    "clue_z": 79
   },
   "guvernerice": {
     "rod": null,
@@ -301,7 +301,7 @@
   },
   "namjesnik": {
     "rod": "M",
-    "clue_m": 44,
+    "clue_m": 45,
     "clue_z": 0
   },
   "Lorsen": {
@@ -322,7 +322,7 @@
   "Jedva": {
     "rod": "M",
     "clue_m": 15,
-    "clue_z": 4
+    "clue_z": 5
   },
   "Onda": {
     "rod": "M",
@@ -411,7 +411,7 @@
   },
   "Uvijek": {
     "rod": "M",
-    "clue_m": 17,
+    "clue_m": 18,
     "clue_z": 0
   },
   "Haroon": {
@@ -1120,6 +1120,16 @@
     "clue_z": 0
   },
   "Nekako": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Hitno": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Polako": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0

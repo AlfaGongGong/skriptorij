@@ -11,23 +11,23 @@
   },
   "Trusdale": {
     "rod": "M",
-    "clue_m": 8,
+    "clue_m": 12,
     "clue_z": 0
   },
   "Hines": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 3,
     "clue_z": 0
   },
   "Cline": {
     "rod": "M",
-    "clue_m": 4,
-    "clue_z": 3
+    "clue_m": 8,
+    "clue_z": 6
   },
   "Jednom": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "John": {
     "rod": null,
@@ -35,13 +35,13 @@
     "clue_z": 0
   },
   "Dan": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Rowles": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Pokus": {
@@ -55,8 +55,18 @@
     "clue_z": 0
   },
   "On": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Barem": {
     "rod": null,
     "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kuća": {
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   }
 }
