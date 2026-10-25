@@ -309,6 +309,9 @@ def _je_placeholder_lokalni(tekst: str) -> bool:
     }
     if cist in _exact:
         return True
+    # 2026-10-25: NEPREVEDENO marker iz fallback-a (retry iscrpljen)
+    if "[[neprevedeno" in cist or "[[manual:" in cist:
+        return True
     _contains = [
         "molim te, pošalji tekst",
         "čekam ga",
