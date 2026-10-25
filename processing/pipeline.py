@@ -700,6 +700,23 @@ async def _quality_scoring(
         )
         return
 
+    # 2026-10-26 M fix: nonprose blokovi (TOC, copyright, dedication, itd.)
+    # ne idu kroz AI scorer niti ratio check — samo 10.0
+    try:
+        from core.quality import _je_nonprose_blok as _nonprose_check
+
+        if _nonprose_check(finalno or ""):
+            score_float = 10.0
+            self._quality_scores[stem_key] = score_float
+            self.shared_stats["quality_scores"][stem_key] = score_float
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: nonprose (TOC/paratekst) → 10.0",
+                "tech",
+            )
+            return
+    except Exception:
+        pass
+
     try:
         from core.quality import _scoruj_kvalitetu
 
