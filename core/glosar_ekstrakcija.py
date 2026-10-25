@@ -166,15 +166,23 @@ Dobit ces listu termina iz EN knjige. Za SVAKI termin odluci:
   1. Je li to VLASTITO IME (lik, mjesto) ili SPECIFICAN TERMIN?
   2. Ako je DA:
      - kategorija: lik | mjesto | termin
-     - hr: hrvatski oblik (npr. Shev -> Sev)
+     - hr: kanonski hrvatski oblik (npr. Shev -> Sev, Dogman -> Pas Covjek)
      - spoji_sa: nadimak/varijanta glavnog
-     - forbidden_variants: lista ZABRANJENIH sinonima i pogresnih prijevoda
-       koje treba izbegavati. Ukljuci sve moguce varijante koje AI model
-       moze izmisliti: sinonime, pogresne prijevode, bukvalne prevode.
-       Primjer za Dogman: ["Cucek", "Psoglavi", "Covjek Pas", "Dogman"]
+     - forbidden_variants: OBAVEZNO polje. Lista zabranjenih alternativa
+       koje AI model moze slucajno izmisliti tokom prijevoda:
+       * alternativne prijevode (Dogman -> "Pas Covjek", "Cucek", "Psoglavi")
+       * alternativne transliteracije (Jon -> "Dzon", "John", "Dzonatan")
+       * sinonime za termin (maca -> "sablja", "mac")
+       NAPOMENA: Ako "hr" ostaje isti kao "en" (ime se ne prevodi, ostaje
+       u originalu), OBAVEZNO navedi alternativne oblike koje treba zabraniti
+       (npr. ako je Dogman ostavljen kao Dogman, forbidden = alternativni
+       prijevodi na nas jezik koji bi AI mogao izmisliti).
   3. Ako je NE: vrati {"en": "...", "izbaci": true}
 
-Vrati ISKLJUCIVO JSON. Budi STROG.
+VRATI ISKLJUCIVO JSON. Za svaki lik OBAVEZNO popuni forbidden_variants
+(nikad ne izostavljaj polje). Primjer ispravnog odgovora:
+{"rezultati": [{"en": "Dogman", "kategorija": "lik", "hr": "Pas Covjek",
+"spoji_sa": "", "forbidden_variants": ["Cucek", "Psoglavi", "Dogman"]}]}
 """
     lista = "\n".join("- " + t for t in batch)
     user_prompt = "Termini:\n\n" + lista
