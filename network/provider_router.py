@@ -756,7 +756,7 @@ class ProviderRouterV2:
         uloga: str,
         tip_bloka: str | None = None,
         exclude: list[str] | None = None,
-    ) -> tuple[str, str, str | None] | None:
+    ) -> tuple[str, str, str | None, str] | None:
         exclude = exclude or []
         kandidati = []
 
@@ -797,7 +797,12 @@ class ProviderRouterV2:
             best_profil.provider,
             best_score,
         )
-        return best_profil.provider, best_profil.api_model_string, api_key
+        return (
+            best_profil.provider,
+            best_profil.api_model_string,
+            api_key,
+            best_ime,
+        )
 
     def get_ranked_models(
         self,
