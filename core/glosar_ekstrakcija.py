@@ -253,6 +253,7 @@ VRATI ISKLJUCIVO JSON. Za svaki lik OBAVEZNO popuni forbidden_variants
                         "kategorija": r.get("kategorija", "termin"),
                         "hr": r.get("hr", en),
                         "spoji_sa": r.get("spoji_sa") or "",
+                        "forbidden_variants": r.get("forbidden_variants", []),
                     }
             if rezultati:
                 return rezultati
