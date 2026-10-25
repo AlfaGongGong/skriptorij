@@ -648,6 +648,15 @@ def get_provider_for_model(model_ime: str) -> str | None:
     if not model_ime:
         return None
 
+    # 0. Direktno iz PROFILI (lazy import izbegava cirkularnu zavisnost)
+    try:
+        from core.model_profiles import PROFILI as _PROFILI
+
+        if model_ime in _PROFILI:
+            return _PROFILI[model_ime].provider.upper()
+    except Exception:
+        pass
+
     # 1. Direktno po imenu (prefix/substring)
     _PREFIX_MAP = (
         ("gemini_25_flash", "GEMINI"),
