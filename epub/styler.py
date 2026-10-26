@@ -905,16 +905,27 @@ def run_epub_styler(
             # run_epub_styler je u MEMORIJI od početka. Bez reload-a,
             # files dict ima STARU verziju HTML-a (sa galley-rw, navodnicima).
             _reloaded = 0
+            _skipped = 0
             for _html_name in list(files.keys()):
                 if not _html_name.endswith((".html", ".xhtml", ".htm")):
                     continue
-                _disk_path = _pravi_skr / _html_name
+                _basename = _html_name.split("/")[-1]
+                # Traži u text/ (najčešće)
+                _disk_path = _pravi_skr / "text" / _basename
                 if not _disk_path.exists():
-                    _disk_path = _pravi_skr / "text" / _html_name.split("/")[-1]
-                if _disk_path.exists():
+                    # Traži bilo gde u _skr_
+                    _found = list(_pravi_skr.rglob(_basename))
+                    if _found:
+                        _disk_path = _found[0]
+                    else:
+                        _skipped += 1
+                        continue
+                try:
                     files[_html_name] = _disk_path.read_bytes()
                     _reloaded += 1
-            print(f"  Reloaded {_reloaded} HTML fajlova sa diska")
+                except Exception:
+                    _skipped += 1
+            print(f"  Reloaded {_reloaded} HTML fajlova sa diska (skip: {_skipped})")
         else:
             print("  ⚠ Nema _skr_ sa .chk + text/")
     except Exception as _e:
