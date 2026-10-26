@@ -367,55 +367,60 @@ def _spoji_chk_u_html(engine):
     work_dir = _P(engine.work_dir)
     checkpoint_dir = _P(engine.checkpoint_dir)
 
-    # FIX 2026-10-26: Fallback na stariji _skr_ folder ako trenutni nema .chk.
+    # FIX 2026-10-26: Fallback na stariji _skr_ folder — i za work_dir i za
+    # checkpoint_dir iz ISTOG foldera.
     # Kad output postane Joe_Abercrombie_..._PREVEDENO.epub, clean_book_name
-    # postane Joe_Abercrombie_The_Trouble_With_Peace, ali .chk su u
-    # _skr_The_Trouble_With_Peace (od pre output-rename faze).
-    # Traži u SVIM _skr_* folderima koji dele prvih 15 znakova imena.
+    # postane Joe_Abercrombie_The_Trouble_With_Peace, ali i .chk i HTML su
+    # u _skr_The_Trouble_With_Peace (od pre output-rename faze).
     from config.settings import CHECKPOINT_BASE_DIR as _CPB
 
-    def _nadji_chk_dir():
-        # 1. Trenutni
-        if checkpoint_dir.exists() and any(checkpoint_dir.glob("*.chk")):
-            return checkpoint_dir
+    def _nadji_skr_folder():
+        """Vrati _skr_ folder koji ima i .chk i text/ HTML."""
+        # 1. Trenutni — mora imati .chk I text/ HTML
+        ckpt = checkpoint_dir
+        txt = work_dir / "text"
+        if ckpt.exists() and any(ckpt.glob("*.chk")) and txt.exists() and any(txt.glob("*.html")):
+            return work_dir
 
-        # 2. Fuzzy po imenu — skini Joe_Abercrombie_ i slicne prefikse
+        # 2. Fuzzy po prefixu imena
         name = engine.clean_book_name
-        # Ukloni prefiks "Joe_Abercrombie_" ili bilo koji "Ime_Prezime_"
-        # da dobijemo čist naziv knjige
-        # Probaj različite dužine ključa
         for kljuc_len in (30, 25, 20, 15, 10):
             kljuc = name[:kljuc_len]
             if len(kljuc) < 8:
                 continue
-            kandidati = list(_CPB.glob(f"_skr_*{kljuc}*"))
-            for k in kandidati:
-                ckpt = k / "checkpoints"
-                if ckpt.exists() and any(ckpt.glob("*.chk")):
-                    return ckpt
+            for k in _CPB.glob(f"_skr_*{kljuc}*"):
+                ckpt_k = k / "checkpoints"
+                txt_k = k / "text"
+                if (ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
+                        and txt_k.exists() and any(txt_k.glob("*.html"))):
+                    return k
 
-        # 3. Traži po sufiksu — skini sve prefikse pre poslednje dve reči
+        # 3. Fuzzy po sufiksu — skini prefikse
         parts = name.split("_")
         for i in range(len(parts) - 1):
             suffix = "_".join(parts[i:])
             if len(suffix) < 8:
                 continue
-            kandidati = list(_CPB.glob(f"_skr_*{suffix}*"))
-            for k in kandidati:
-                ckpt = k / "checkpoints"
-                if ckpt.exists() and any(ckpt.glob("*.chk")):
-                    return ckpt
+            for k in _CPB.glob(f"_skr_*{suffix}*"):
+                ckpt_k = k / "checkpoints"
+                txt_k = k / "text"
+                if (ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
+                        and txt_k.exists() and any(txt_k.glob("*.html"))):
+                    return k
 
         return None
 
-    stvarni_chk_dir = _nadji_chk_dir()
-    if stvarni_chk_dir is None:
-        engine.log("⚠ _spoji_chk_u_html: nema .chk ni u jednom _skr_ folderu", "warning")
+    pravi_skr = _nadji_skr_folder()
+    if pravi_skr is None:
+        engine.log("⚠ _spoji_chk_u_html: nema _skr_ sa .chk + text/", "warning")
         return 0
 
-    if stvarni_chk_dir != checkpoint_dir:
+    stvarni_work_dir = pravi_skr
+    stvarni_chk_dir = pravi_skr / "checkpoints"
+
+    if stvarni_work_dir != work_dir or stvarni_chk_dir != checkpoint_dir:
         engine.log(
-            f"🔍 _spoji_chk_u_html: koristim .chk iz {stvarni_chk_dir.parent.name}",
+            f"🔍 _spoji_chk_u_html: koristim _skr_{pravi_skr.name[5:]}",
             "tech",
         )
 
@@ -447,10 +452,10 @@ def _spoji_chk_u_html(engine):
 
     zamenjeno = 0
     for html_name, blokovi in chks.items():
-        src = work_dir / "text" / html_name
+        src = stvarni_work_dir / "text" / html_name
         if not src.exists():
             # Pokušaj rekurzivno
-            found = list(work_dir.rglob(html_name))
+            found = list(stvarni_work_dir.rglob(html_name))
             if not found:
                 continue
             src = found[0]
