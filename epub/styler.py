@@ -874,34 +874,45 @@ def run_epub_styler(
     from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
     from bs4 import BeautifulSoup as _BS_sd
 
-    # FIX: izvuci ime iz EPUB putanje, ne biraj po mtime
+    # FIX: UVIJEK traži folder koji IMA .chk fajlove, pa filtriraj po imenu
     import re as _re_name
     _epub_stem = Path(str(epub_path)).stem
     _epub_stem = _re_name.sub(r"^(?:PREVEDENO_)+", "", _epub_stem, flags=_re_name.IGNORECASE)
     _epub_stem = _re_name.sub(r"(?:_PREVEDENO|_STYLED)+$", "", _epub_stem, flags=_re_name.IGNORECASE)
 
+    # Prvo nađi SVE foldere koji imaju .chk
+    _svi_sa_chk = []
+    for _k in _CPB_s.glob("_skr_*"):
+        _ckpt = _k / "checkpoints"
+        if _ckpt.exists() and any(_ckpt.glob("*.chk")):
+            _svi_sa_chk.append(_k)
+
     _pravi_skr = None
-    _exact = _CPB_s / f"_skr_{_epub_stem}"
-    if _exact.exists() and (_exact / "checkpoints").exists() and any((_exact / "checkpoints").glob("*.chk")):
-        _pravi_skr = _exact
-    else:
-        _kandidati = []
-        for _k in _CPB_s.glob("_skr_*"):
-            _ckpt = _k / "checkpoints"
-            if not _ckpt.exists() or not any(_ckpt.glob("*.chk")):
-                continue
-            _k_name = _k.name.replace("_skr_", "")
-            if _k_name in _epub_stem or _epub_stem in _k_name:
-                _kandidati.append(_k)
-                continue
-            if _k_name[:20] == _epub_stem[:20]:
-                _kandidati.append(_k)
-                continue
-            if _k_name[-20:] == _epub_stem[-20:]:
-                _kandidati.append(_k)
-                continue
-        if _kandidati:
-            _pravi_skr = max(_kandidati, key=lambda k: len(list((k / "checkpoints").glob("*.chk"))))
+    if _svi_sa_chk:
+        # Exact match (samo ako ima .chk, jer _svi_sa_chk to garantuje)
+        _exact = _CPB_s / f"_skr_{_epub_stem}"
+        if _exact in _svi_sa_chk:
+            _pravi_skr = _exact
+        else:
+            # Fuzzy: ime foldera sadrži ime knjige ili obrnuto
+            _kandidati = []
+            for _k in _svi_sa_chk:
+                _k_name = _k.name.replace("_skr_", "")
+                if _k_name in _epub_stem or _epub_stem in _k_name:
+                    _kandidati.append(_k)
+                elif _k_name[:20] == _epub_stem[:20]:
+                    _kandidati.append(_k)
+                elif _k_name[-20:] == _epub_stem[-20:]:
+                    _kandidati.append(_k)
+            if _kandidati:
+                _pravi_skr = max(_kandidati, key=lambda k: len(list((k / "checkpoints").glob("*.chk"))))
+            else:
+                # Fallback: uzmi onaj sa najviše .chk
+                _pravi_skr = max(_svi_sa_chk, key=lambda k: len(list((k / "checkpoints").glob("*.chk"))))
+
+    print(f"  _pravi_skr: {_pravi_skr.name if _pravi_skr else 'None'}")
+    if _pravi_skr:
+        print(f"  .chk: {len(list((_pravi_skr / 'checkpoints').glob('*.chk')))}")
 
     if _pravi_skr:
         _ckpt_dir = _pravi_skr / "checkpoints"
