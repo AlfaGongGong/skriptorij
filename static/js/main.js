@@ -3507,7 +3507,7 @@ const EpubStyler = (() => {
             const resp = await fetch('/api/style_epub', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ file: _selBook, options, mode: 'booklyfi' }),
+                body:    JSON.stringify({ file: _selBook, options, mode: 'standard' }),
             });
             const data = await resp.json();
 
@@ -3817,7 +3817,7 @@ async function auto_stiliziraj(bookName) {
         const r = await fetch("/api/style_epub", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({file: bookName, mode: "booklyfi"}),
+            body: JSON.stringify({file: bookName, mode: "standard"}),
         });
         const d = await r.json();
         if (d.ok) {

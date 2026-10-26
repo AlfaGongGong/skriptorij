@@ -581,7 +581,7 @@ def style_epub_endpoint():
     options = data.get("options", {})
 
     try:
-        mode = data.get("mode", "booklyfi")
+        mode = data.get("mode", "standard")
 
         if mode == "ai":
             from epub.styler_ai import run_epub_styler_ai
