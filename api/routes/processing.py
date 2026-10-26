@@ -679,6 +679,10 @@ def review_chunk(chunk_stem):
     POST — sprema izmijenjeni tekst nazad u .chk fajl.
     Uvijek vraća JSON — nikad HTML grešku.
     """
+    # FIX A1: spreci path traversal kroz <path:stem>
+    if "/" in chunk_stem or "\\" in chunk_stem or ".." in chunk_stem:
+        return jsonify({"error": "invalid stem"}), 400
+
     try:
         book = SHARED_STATS.get("current_file", "")
         if not book:

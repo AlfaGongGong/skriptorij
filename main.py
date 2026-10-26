@@ -182,6 +182,8 @@ def _resolve_book() -> str:
 
 
 if __name__ == "__main__":
+    import os as _os
+    _host = _os.environ.get("BOOKLYFI_HOST", "127.0.0.1")
     configure_logging(logging.ERROR)
     os.system("clear" if os.name == "posix" else "cls")
 
@@ -191,7 +193,7 @@ if __name__ == "__main__":
     _kill_previous_instance()
     _write_pid_file()
 
-    print(f"{_GREEN}[BOOKLYFI]{_RESET} Server na http://127.0.0.1:{PORT}…")
+    print(f"{_GREEN}[BOOKLYFI]{_RESET} Server na http://{_host}:{PORT}…")
     if _INTRO_LOADED:
         print(f"{_CYAN}[BOOKLYFI]{_RESET} Intro animacija: AKTIVAN")
     print(f"{_YELLOW}[BOOKLYFI]{_RESET} CTRL+C za zaustavljanje.\n")
@@ -229,7 +231,7 @@ if __name__ == "__main__":
 
     try:
         app.run(
-            host="0.0.0.0", port=PORT, debug=False, use_reloader=False, threaded=True
+            host=_host, port=PORT, debug=False, use_reloader=False, threaded=True
         )
     except Exception as exc:
         sys.stdout.write(

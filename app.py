@@ -1579,6 +1579,10 @@ def create_app() -> Flask:
         Vraća tekst prevoda iz .chk fajla za dati stem.
         Odgovor: {"stem": str, "text": str, "path": str}
         """
+        # FIX A1: spreci path traversal
+        if "/" in stem or "\\" in stem or ".." in stem:
+            return jsonify({"error": "invalid stem"}), 400
+
         try:
             chk_path = _find_chk_path(stem)
             if chk_path is None:
@@ -1617,6 +1621,10 @@ def create_app() -> Flask:
     @app.route("/api/review/chunk/<path:stem>", methods=["DELETE"])
     def api_review_chunk_delete(stem):
         """Briše .chk fajl za dati stem — koristi se za AI re-obradu jednog bloka."""
+        # FIX A1: spreci path traversal
+        if "/" in stem or "\\" in stem or ".." in stem:
+            return jsonify({"error": "invalid stem"}), 400
+
         try:
             chk_path = _find_chk_path(stem)
             if chk_path is None or not chk_path.exists():
@@ -1633,6 +1641,10 @@ def create_app() -> Flask:
         Ručna izmjena dobija automatsku ocjenu 10.0 (human_edit=True).
         Body: {"text": "novi tekst prevoda"}
         """
+        # FIX A1: spreci path traversal
+        if "/" in stem or "\\" in stem or ".." in stem:
+            return jsonify({"error": "invalid stem"}), 400
+
         try:
             chk_path = _find_chk_path(stem)
             if chk_path is None:
