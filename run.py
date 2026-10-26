@@ -648,12 +648,13 @@ def _auto_stilizuj(engine):
 
         from epub.styler import run_epub_styler
 
-        output_file = engine.shared_stats.get("output_file")
-        if not output_file:
-            engine.log("Auto-stilizacija: output_file nije postavljen", "warning")
+        # FIX 2026-10-26: Koristi engine.out_path direktno, ne shared_stats
+        # (shared_stats može biti star od prethodne sesije).
+        epub_path = Path(getattr(engine, "out_path", ""))
+        if not epub_path or not epub_path.exists():
+            engine.log(f"Auto-stilizacija: fajl ne postoji: {epub_path}", "warning")
             return
-
-        epub_path = Path(output_file)
+        output_file = str(epub_path)
         if not epub_path.exists():
             engine.log(f"Auto-stilizacija: fajl ne postoji: {epub_path}", "warning")
             return
