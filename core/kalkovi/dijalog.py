@@ -22,6 +22,12 @@ NAPOMENA o em-crtici:
 # Red je bitan: specifičnije (trostruki, ugaoni) ispred jednostavnih.
 
 DIJALOG_TIPOGRAFIJA = [
+    # FIX 2026-10-26: ASCII navodnici "..." na početku odlomka
+    # (AI često vraća "dijalog" umesto — dijalog)
+    # Pretvara "citat" u — citat na početku pasusa
+    (r'(?m)^(\s*)"([^"\n]{1,300})"(?=\s|[,.;:!?]|$)', r'\1— \2'),
+    # "citat" na kraju, posle zareza: ", "citat"" → " — citat"
+    (r',\s*"([^"\n]{1,300})"', r' — \1'),
     # FIX 2026-09-27 v5: Patterni prihvaćaju SVE kombinacije
     # tipografskih + ASCII navodnika (AI često miješa).
     # Srpski otvarajući „ → zamijeni s ASCII " + sadržaj + zatvori s "

@@ -1099,9 +1099,26 @@ def _dodaj_naslov(soup, broj, naslov=None):
     if len(body.get_text(strip=True)) < 400:
         return
 
+    # FIX 2026-10-26: Pre fallback-a na "POGLAVLJE N", probaj <title>
+    # ili prvi <p> da izvučeš pravi naslov
+    _naslov_fallback = None
+    _title_tag = soup.find("title")
+    if _title_tag:
+        _t = _title_tag.get_text(strip=True)
+        if _t and len(_t) < 100 and _t.lower() not in ("navigation", "cover", "toc"):
+            _naslov_fallback = _t
+
+    if not _naslov_fallback:
+        # Probaj prvi kratki <p> (naslov obično nije dijalog)
+        for p in body.find_all("p")[:3]:
+            t = p.get_text(strip=True)
+            if t and 5 < len(t) < 80 and t[0] not in ("—", "–", "-", '"', "„", "«"):
+                _naslov_fallback = t
+                break
+
     h1 = soup.new_tag("h1")
     h1["class"] = "booklyfi-naslov"
-    h1.string = "POGLAVLJE %d" % broj
+    h1.string = _naslov_fallback or ("POGLAVLJE %d" % broj)
     insert_pos = 0
     for i, child in enumerate(body.children):
         cls = child.get("class") if hasattr(child, "get") else None
@@ -1234,6 +1251,9 @@ def run_epub_styler(
                 return False, "cover(opf)", None, False
             if title == "cover":
                 return False, "cover(title)", None, False
+            # FIX 2026-10-26: Calibre "Navigation" stub nije poglavlje
+            if title == "navigation":
+                return False, "navigation stub", None, False
             if imgs >= 1 and tlen < 30:
                 return False, "samo-slika", None, False
             if imgs >= 1 and tlen < 100:
