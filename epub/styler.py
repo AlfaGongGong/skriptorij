@@ -899,6 +899,22 @@ def run_epub_styler(
             _eng = _FakeEngine(_pravi_skr, _pravi_skr / "checkpoints")
             _n = _spoji_chk_u_html(_eng)
             print(f"  Spojeno {_n} HTML fajlova iz .chk")
+
+            # FIX 2026-10-26: Ponovo učitaj HTML fajlove sa diska u files dict.
+            # _spoji_chk_u_html menja fajlove NA DISKU, ali files dict u
+            # run_epub_styler je u MEMORIJI od početka. Bez reload-a,
+            # files dict ima STARU verziju HTML-a (sa galley-rw, navodnicima).
+            _reloaded = 0
+            for _html_name in list(files.keys()):
+                if not _html_name.endswith((".html", ".xhtml", ".htm")):
+                    continue
+                _disk_path = _pravi_skr / _html_name
+                if not _disk_path.exists():
+                    _disk_path = _pravi_skr / "text" / _html_name.split("/")[-1]
+                if _disk_path.exists():
+                    files[_html_name] = _disk_path.read_bytes()
+                    _reloaded += 1
+            print(f"  Reloaded {_reloaded} HTML fajlova sa diska")
         else:
             print("  ⚠ Nema _skr_ sa .chk + text/")
     except Exception as _e:
