@@ -3,6 +3,8 @@ Rute za upravljanje obradom knjiga (files, start, status, modeli).
 Dio Skriptorij V12.0 sistema.
 """
 
+import logging
+logger = logging.getLogger(__name__)
 import contextlib
 import json
 import logging
@@ -155,7 +157,7 @@ def get_status():
         else:
             SHARED_STATS["book_name"] = _book
     except Exception:
-        pass
+        logger.exception("[C1_http] processing.py:158 Exception")
     # FIX: ako current_file je prazan, izvuci iz live_audit
     if not SHARED_STATS.get("current_file"):
         try:
@@ -178,7 +180,7 @@ def get_status():
                 if _name:
                     SHARED_STATS["current_file"] = _name
         except Exception:
-            pass
+            logger.exception("[C1_http] processing.py:181 Exception")
     # FIX: izvuci fazu iz live_audit ako status nije jasan
     if SHARED_STATS.get("status") in ("ANALIZA KNJIGE...", "POKRETANJE...", None):
         try:
@@ -188,7 +190,7 @@ def get_status():
                 if _m:
                     SHARED_STATS["retro_info"] = f"{_m.group(1)}/{_m.group(2)} blokova"
         except Exception:
-            pass
+            logger.exception("[C1_http] processing.py:191 Exception")
     return jsonify(SHARED_STATS)
 
 
@@ -259,7 +261,7 @@ def start_processing():
             with open(os.path.join(PROJECTS_ROOT, "last_book.json"), "w") as f:
                 json.dump({"last_book": book}, f)
         except Exception:
-            pass
+            logger.debug("[C3_fallback] processing.py:262 Exception")
 
         # Odabir modula: TTS, RETRO ili auto Prevod/Lektura
         if tool == "TTS":
@@ -615,7 +617,7 @@ def review_list():
                         item.setdefault("source", "human_review")
                         review_items.append(item)
             except Exception:
-                pass
+                logger.exception("[C1_http] processing.py:618 Exception")
 
         # ── Izvor 2: quality_scores.json — blokovi ispod threshold-a ─────────
         qs_path = chk_base / "quality_scores.json"
@@ -650,7 +652,7 @@ def review_list():
                         )
                         seen_stems.add(stem)
             except Exception:
-                pass
+                logger.warning("[C2_parse] processing.py:653 Exception")
 
         # Sortiraj: najlošiji blokovi (niži score) idu naprijed
         review_items.sort(key=lambda x: float(x.get("score", 10.0)))
@@ -857,7 +859,7 @@ def _init_review_state():
             SHARED_STATS["current_file"] = data.get("file_path", "")
             SHARED_STATS["segments"] = data.get("segments", [])
         except Exception:
-            pass
+            logger.exception("[C1_http] processing.py:860 Exception")
 
 
 _init_review_state()
@@ -1045,7 +1047,7 @@ def epub_text(book):
                     elif isinstance(v, (int, float)):
                         scores[k] = float(v)
             except Exception:
-                pass
+                logger.warning("[C2_parse] processing.py:1048 Exception")
 
         # Učitaj sadržaj finalnih .chk fajlova
         blocks = []
@@ -1063,7 +1065,7 @@ def epub_text(book):
                     }
                 )
             except Exception:
-                pass
+                logger.exception("[C1_http] processing.py:1066 Exception")
 
         return jsonify({"blocks": blocks, "total": len(blocks), "book": book})
 
@@ -1102,7 +1104,7 @@ def epub_plain(book):
                 for k, v in raw_scores.items():
                     scores[k] = float(v["score"]) if isinstance(v, dict) else float(v)
             except Exception:
-                pass
+                logger.warning("[C2_parse] processing.py:1105 Exception")
 
         blocks = []
         for chk in sorted(chk_dir.glob("*.chk")):
@@ -1125,7 +1127,7 @@ def epub_plain(book):
                     }
                 )
             except Exception:
-                pass
+                logger.exception("[C1_http] processing.py:1128 Exception")
 
         return jsonify({"blocks": blocks, "total": len(blocks), "book": book})
 

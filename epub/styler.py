@@ -317,7 +317,7 @@ def _meta(files: dict) -> tuple[str, str]:
                     t.get_text(strip=True) if t else "Nepoznat_naslov",
                 )
             except Exception:
-                pass
+                logger.exception("[C1_http] styler.py:320 Exception")
     return "Nepoznat_autor", "Nepoznat_naslov"
 
 
@@ -423,7 +423,7 @@ def _izvuci_toc_mapu(files, opf_dir):
             if mapa:
                 return mapa
         except Exception:
-            pass
+            logger.exception("[C1_kriticno] styler.py:426 Exception")
 
     ncx = next((n for n in files if n.lower().endswith(".ncx")), None)
     if ncx:
@@ -446,7 +446,7 @@ def _izvuci_toc_mapu(files, opf_dir):
             if mapa:
                 return mapa
         except Exception:
-            pass
+            logger.exception("[C1_kriticno] styler.py:449 Exception")
     return mapa
 
 
@@ -704,7 +704,7 @@ def run_epub_styler(
                     if not book_title or t.lower() != book_title.lower():
                         return t
         except Exception:
-            pass
+            logger.exception("[C1_http] styler.py:707 Exception")
         return None
 
     def _classify(hb, href, toc_naslov, book_title, cover_hrefs):
@@ -817,7 +817,7 @@ def run_epub_styler(
                 if lg:
                     dc_lang = lg.get_text(strip=True) or "hr"
             except Exception:
-                pass
+                logger.exception("[C1_http] styler.py:820 Exception")
             break
 
     for n in list(files.keys()):
@@ -837,7 +837,7 @@ def run_epub_styler(
                 _log("   -> Obrisan NAV TOC: " + n, "tech")
                 continue
         except Exception:
-            pass
+            logger.debug("[C3_fallback] styler.py:840 Exception")
         if any(kw in low for kw in ("toc", "sadrzaj", "contents", "nav.")):
             del files[n]
             _log("   -> Obrisan stari TOC: " + n, "tech")
@@ -941,7 +941,7 @@ def run_epub_styler(
                         if k in d and isinstance(d[k], str):
                             return d[k]
                 except Exception:
-                    pass
+                    logger.warning("[C2_parse] styler.py:944 Exception")
             return t
 
         _basename_to_key = {
@@ -1019,7 +1019,7 @@ def run_epub_styler(
                         if _new != _orig:
                             _node.replace_with(_new)
                 except Exception:
-                    pass
+                    logger.debug("[C3_fallback] styler.py:1022 Exception")
 
                 _cist = str(_tmp.body) if _tmp.body else str(_tmp)
                 if _cist.startswith("<body>"):
@@ -1445,7 +1445,7 @@ def run_epub_styler(
                     ):
                         return t
         except Exception:
-            pass
+            logger.exception("[C1_http] styler.py:1448 Exception")
         return None
 
     def _classify(hb, href, toc_naslov, book_title, cover_hrefs):
@@ -1578,7 +1578,7 @@ def run_epub_styler(
                 if lg:
                     dc_lang = lg.get_text(strip=True) or "hr"
             except Exception:
-                pass
+                logger.exception("[C1_http] styler.py:1581 Exception")
             break
 
     for n in list(files.keys()):
@@ -1598,7 +1598,7 @@ def run_epub_styler(
                 _log("   -> Obrisan NAV TOC: " + n, "tech")
                 continue
         except Exception:
-            pass
+            logger.debug("[C3_fallback] styler.py:1601 Exception")
         if any(kw in low for kw in ("toc", "sadrzaj", "contents", "nav.")):
             del files[n]
             _log("   -> Obrisan stari TOC: " + n, "tech")

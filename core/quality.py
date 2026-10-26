@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 # core/quality.py
 """
 Quality scoring engine za Skriptorij / Booklyfi.
@@ -65,7 +67,7 @@ def _ekstrahuj_cist_tekst(tekst: str) -> str:
                     tekst = data[key]
                     break
         except Exception:
-            pass
+            logger.warning("[C2_parse] quality.py:68 Exception")
 
     # 2. HTML ekstrakcija
     for parser in ("lxml", "html.parser"):
@@ -447,7 +449,7 @@ async def _scoruj_kvalitetu(
                     self_obj, prevodilac_provider, chunk_idx, file_name
                 )
             except ImportError:
-                pass
+                logger.exception("[C1_http] quality.py:450 ImportError")
 
             raw, _ = await self_obj._call_ai_engine(
                 prompt,
@@ -497,7 +499,7 @@ async def _scoruj_kvalitetu(
                             if vrijednosti:
                                 ai_score = round(sum(vrijednosti) / len(vrijednosti), 1)
                 except (json.JSONDecodeError, ValueError):
-                    pass
+                    logger.exception("[C1_http] quality.py:500 Exception")
 
     except Exception as _scorer_exc:
         if self_obj is not None and hasattr(self_obj, "log"):
@@ -737,7 +739,7 @@ def get_scorer_sys_override(self_obj, prevodilac_provider, chunk_idx, file_name)
         if scorer_provider in dostupni:
             return f"__FORCE_PROVIDER__{scorer_provider}__"
     except Exception:
-        pass
+        logger.exception("[C1_http] quality.py:740 Exception")
     return None
 
 
@@ -792,7 +794,7 @@ def generiraj_report(knjiga_id: str, checkpoint_dir: str = None) -> dict:
             if "QA-FLAG" in content[:500]:
                 qa_flag_count += 1
         except Exception:
-            pass
+            logger.debug("[C3_fallback] quality.py:795 Exception")
 
     return {
         "knjiga": knjiga_id,

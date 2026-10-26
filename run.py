@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # run.py — Booklyfi V10.2  PATCH v4
 # Auto-detekcija moda: PREVOD | LEKTURA | AUTO-RETRO
@@ -66,7 +68,7 @@ def _save_book_analysis(engine, mode: str) -> None:
         existing["knjiga_mode"] = mode
         ba_path.write_text(json.dumps(existing, ensure_ascii=False, indent=2), "utf-8")
     except Exception:
-        pass
+        logger.exception("[C1_kriticno] run.py:69 Exception")
 
 
 def _odredi_strategiju(engine, html_files, scores: dict) -> str:
@@ -120,7 +122,7 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
                 ba = _json.loads(ba_path.read_text("utf-8"))
                 saved_mode = ba.get("knjiga_mode") or ba.get("mode")
         except Exception:
-            pass
+            logger.exception("[C1_kriticno] run.py:123 Exception")
 
         if saved_mode in ("PREVOD", "LEKTURA"):
             # 2026-10-23 FIX: override PREVOD ako filename sadrzi PREVEDENO
@@ -435,7 +437,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                     hf.write_text(cleaned, encoding="utf-8")
                     ocisceno_html += 1
             except Exception:
-                pass
+                logger.exception("[C1_kriticno] run.py:438 Exception")
         if ocisceno_html:
             engine.log(f"🧹 HTML pre-processing: {ocisceno_html} fajlova.", "tech")
     else:
@@ -497,7 +499,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                     engine.apply_dropcap_and_toc(soup, hf)
                     hf.write_text(str(soup), encoding="utf-8")
                 except Exception:
-                    pass
+                    logger.exception("[C1_kriticno] run.py:500 Exception")
             engine.generate_ncx()
             engine.finalize()
             _obrada_karantene_kraj_knjige(engine)
@@ -559,7 +561,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 engine.apply_dropcap_and_toc(soup, hf)
                 hf.write_text(str(soup), encoding="utf-8")
             except Exception:
-                pass
+                logger.exception("[C1_kriticno] run.py:562 Exception")
         engine.generate_ncx()
 
         try:

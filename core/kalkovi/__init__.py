@@ -2,6 +2,8 @@
 core/kalkovi/__init__.py
 """
 
+import logging
+logger = logging.getLogger(__name__)
 from core.kalkovi.dijalog import DIJALOG
 from core.kalkovi.glagoli import GLAGOLI
 from core.kalkovi.pleonazmi import PLEONAZMI
@@ -80,7 +82,7 @@ def reload_dinamicki_kalkove() -> int:
 
         kalkovi_engine.reload(SVE_LISTE)
     except Exception:
-        pass
+        logger.debug("[C3_fallback] __init__.py:83 Exception")
 
     return len(SVE_LISTE)
 

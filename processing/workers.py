@@ -37,7 +37,7 @@ def _je_toc_fajl(html_content: str) -> bool:
             if len(non_link) < 500:
                 return True
     except Exception:
-        pass
+        logger.exception("[C1_http] workers.py:40 Exception")
     return False
 
 
@@ -65,7 +65,7 @@ def _robust_json_parse(raw: str) -> dict | None:
         if isinstance(result, dict):
             return result
     except (json.JSONDecodeError, ValueError):
-        pass
+        logger.warning("[C2_parse] workers.py:68 Exception")
 
     # 2. Ukloni markdown fences
     cleaned = re.sub(r"```(?:json)?\s*", "", raw)
@@ -75,7 +75,7 @@ def _robust_json_parse(raw: str) -> dict | None:
         if isinstance(result, dict):
             return result
     except (json.JSONDecodeError, ValueError):
-        pass
+        logger.warning("[C2_parse] workers.py:78 Exception")
 
     # 3. Izvuci sve JSON objekte iz teksta i pokušaj svaki
     # Napredniji approach: pronađi sve { ... } blokove respektirajući ugniježđenost
@@ -113,7 +113,7 @@ def _robust_json_parse(raw: str) -> dict | None:
             if isinstance(result, dict):
                 return result
         except (json.JSONDecodeError, ValueError):
-            pass
+            logger.warning("[C2_parse] workers.py:116 Exception")
 
     # 5. Agresivna sanacija: AI je vratio Python-style dict (jednostruki navodnici, trailing commas)
     if first_brace != -1 and last_brace > first_brace:
@@ -129,7 +129,7 @@ def _robust_json_parse(raw: str) -> dict | None:
                 if isinstance(result, dict):
                     return result
         except Exception:
-            pass
+            logger.warning("[C2_parse] workers.py:132 Exception")
 
         # 5b. Regex sanacija: ' → ", trailing commas, liste
         try:
@@ -144,7 +144,7 @@ def _robust_json_parse(raw: str) -> dict | None:
             if isinstance(result, dict):
                 return result
         except Exception:
-            pass
+            logger.warning("[C2_parse] workers.py:147 Exception")
 
     return None
 
@@ -837,7 +837,7 @@ async def process_single_file_worker(self, file_path):
                             )
                             res = marker + res
                         except Exception:
-                            pass
+                            logger.exception("[C1_http] workers.py:840 Exception")
                     else:
                         self.log("  QA: " + str(ukupno) + " OK nakon retry-a", "tech")
                 else:
@@ -863,9 +863,9 @@ async def process_single_file_worker(self, file_path):
                             res = spasen
                             self.log("  Rescue uspio", "tech")
                     except Exception:
-                        pass
+                        logger.debug("[C3_fallback] workers.py:866 Exception")
             except Exception:
-                pass
+                logger.debug("[C3_fallback] workers.py:868 Exception")
             final_parts.append(res)
 
         # Ažuriraj UI povremeno

@@ -165,7 +165,7 @@ def _dohvati_api_key(fleet=None) -> str | None:
             if ks:
                 return ks.key if hasattr(ks, "key") else str(ks)
         except Exception:
-            pass
+            logger.exception("[C1_http] morfo_validator.py:168 Exception")
     return os.environ.get("GEMINI_API_KEY")
 
 

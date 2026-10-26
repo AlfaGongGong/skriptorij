@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 # core/text_utils.py
 #
 # BUGFIX:
@@ -128,7 +130,7 @@ def _strip_html_wrapper(tekst: str) -> str:
             if inner.strip():
                 return inner
     except Exception:
-        pass
+        logger.debug("[C3_fallback] text_utils.py:131 Exception")
     return tekst
 
 
@@ -185,7 +187,7 @@ def _smart_extract(raw: str) -> str:
                             _strip_html_wrapper(str(data[k]).strip())
                         )
         except Exception:
-            pass
+            logger.warning("[C2_parse] text_utils.py:188 Exception")
 
     # Regex fallback za finalno_polirano: pohlepni (.+) namjerno hvata vrijednosti
     # s neescape-danim ASCII navodnicima unutar HTML-a (npr. dijalog sekcije).
@@ -359,7 +361,7 @@ def _detektuj_halucinaciju(original: str, prijevod: str, uloga: str = "LEKTOR") 
         if uloga == "PREVODILAC" and (ratio < 0.70 or ratio > 1.50):
             return True
     except Exception:
-        pass
+        logger.debug("[C3_fallback] text_utils.py:362 Exception")
     return False
 
 

@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 # epub/parser.py
 import re
 import warnings
@@ -93,7 +95,7 @@ def _strip_json_artifacts_from_html(html_fajlovi: list, log_fn=None) -> int:
                 fajl.write_text(str(soup), encoding="utf-8")
                 fixed += 1
         except Exception:
-            pass
+            logger.exception("[C1_kriticno] parser.py:96 Exception")
     if fixed and log_fn:
         log_fn(f"🔧 JSON omotači uklonjeni iz {fixed} HTML fajl(ov)a.", "tech")
     return fixed
@@ -116,7 +118,7 @@ def _ukloni_inline_stilove(html_fajlovi: list, log_fn=None) -> int:
                 fajl.write_text(str(soup), encoding="utf-8")
                 modificirano += 1
         except Exception:
-            pass
+            logger.exception("[C1_kriticno] parser.py:119 Exception")
     if modificirano and log_fn:
         log_fn(f"🎨 Inline stilovi očišćeni u {modificirano} HTML fajl(ov)a.", "tech")
     return modificirano
@@ -335,7 +337,7 @@ class EpubParser:
                 if rf and rf.get("full-path"):
                     return rf["full-path"]
             except Exception:
-                pass
+                logger.exception("[C1_http] parser.py:338 Exception")
         return ""
 
     def _parse_opf_spine(self, zf, opf_path: str) -> list:

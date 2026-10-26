@@ -296,7 +296,7 @@ def create_app() -> Flask:
                         if prov in has_keys:
                             models.append(prov)
             except Exception:
-                pass
+                logger.warning("[C2_parse] app.py:299 Exception")
             if not models:
                 models = ["V10_TURBO", "V8_TURBO", "GEMINI", "GROQ", "MISTRAL"]
             return jsonify(models)
@@ -344,7 +344,7 @@ def create_app() -> Flask:
                         if _name:
                             SHARED_STATS["book_name"] = _name
             except Exception:
-                pass
+                logger.exception("[C1_http] app.py:347 Exception")
 
             fleet = _get_fleet()
             summary = fleet.get_fleet_summary()
@@ -433,7 +433,7 @@ def create_app() -> Flask:
                     if qs_file.exists():
                         scores_raw = json.loads(qs_file.read_text("utf-8"))
             except Exception:
-                pass
+                logger.exception("[C1_kriticno] app.py:436 Exception")
 
         scores: dict[str, float] = {}
         for k, v in scores_raw.items():
@@ -508,7 +508,7 @@ def create_app() -> Flask:
                             if qs_file.exists():
                                 scores_raw = json.loads(qs_file.read_text("utf-8"))
                 except Exception:
-                    pass
+                    logger.exception("[C1_kriticno] app.py:511 Exception")
 
             scores: dict[str, float] = {}
             for k, v in scores_raw.items():
@@ -1889,7 +1889,7 @@ def create_app() -> Flask:
                         elif isinstance(v, (int, float)):
                             scores[k] = float(v)
                 except Exception:
-                    pass
+                    logger.warning("[C2_parse] app.py:1892 Exception")
 
             # Ako quality_scores.json prazna/ne postoji, pokušaj iz SHARED_STATS
             if not scores:
@@ -1929,7 +1929,7 @@ def create_app() -> Flask:
                                 or raw
                             )
                     except (json.JSONDecodeError, ValueError):
-                        pass
+                        logger.exception("[C1_http] app.py:1932 Exception")
                     score = scores.get(chk.stem, None)
                     blocks.append(
                         {
@@ -1983,7 +1983,7 @@ def create_app() -> Flask:
                         elif isinstance(v, (int, float)):
                             scores[k] = float(v)
                 except Exception:
-                    pass
+                    logger.warning("[C2_parse] app.py:1986 Exception")
 
             if not scores:
                 raw_qs = SHARED_STATS.get("quality_scores", {})
@@ -2019,7 +2019,7 @@ def create_app() -> Flask:
                                 or raw
                             )
                     except (json.JSONDecodeError, ValueError):
-                        pass
+                        logger.exception("[C1_http] app.py:2022 Exception")
                     try:
                         plain = _BS(raw, "html.parser").get_text(
                             separator=" ", strip=True

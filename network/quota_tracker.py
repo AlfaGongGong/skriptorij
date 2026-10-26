@@ -138,7 +138,7 @@ class KeyQuota:
 
                     _qt.set_provider_cooldown(self.provider, 10.0, "503 server")
                 except Exception:
-                    pass
+                    logger.exception("[C1_http] quota_tracker.py:141 Exception")
                 logger.warning(
                     "[QuotaTracker] %s ...%s → 503 (server) — provider cooldown 10s",
                     self.provider,

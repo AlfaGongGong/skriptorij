@@ -5,6 +5,8 @@ Svaki profil definira snage, slabosti, optimalne temperature
 i anti-patterne karakteristične za taj model.
 """
 
+import logging
+logger = logging.getLogger(__name__)
 from dataclasses import dataclass, field
 
 from config.ai_config import AI_MODEL_STRINGS, MODEL_MAP
@@ -673,7 +675,7 @@ def _provider_fallback_profil(ime: str) -> ModelProfile | None:
             # PROFILI kljucevi su lower-case (gemini, gemma, groq, mistral...)
             return PROFILI.get(prov.lower()) or PROFILI.get(prov)
     except Exception:
-        pass
+        logger.exception("[C1_http] model_profiles.py:676 Exception")
     return None
 
 

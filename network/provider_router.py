@@ -727,7 +727,7 @@ class ProviderRouterV2:
                 if rates:
                     return sum(rates) / len(rates)
             except Exception:
-                pass
+                logger.exception("[C1_http] provider_router.py:730 Exception")
         return 1.0
 
     def _provider_dostupan(self, profil: ModelProfile) -> bool:

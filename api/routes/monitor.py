@@ -1,5 +1,7 @@
 """api/routes/monitor.py — Real-time praćenje stanja ključeva."""
 
+import logging
+logger = logging.getLogger(__name__)
 import contextlib
 import time
 from datetime import UTC, datetime
@@ -84,7 +86,7 @@ def status():
                     kd["qt_available"] = ok
                     kd["qt_reason"] = None if ok else reason
                 except Exception:
-                    pass
+                    logger.debug("[C3_fallback] monitor.py:87 Exception")
             pd["keys"].append(kd)
         pd["n_total"] = len(pd["keys"])
         pd["n_available"] = sum(1 for x in pd["keys"] if x.get("available"))

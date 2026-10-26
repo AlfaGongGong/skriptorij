@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 # processing/retro.py
 # BUGFIX:
 #   B10: Retro ne smije čitati .prevod.chk i .lektura.chk međukorak fajlove —
@@ -350,7 +352,7 @@ async def retroaktivna_relektura_v10(
                 if finalno_k and len(finalno_k.strip()) > 10:
                     finalno = finalno_k
             except Exception:
-                pass
+                logger.exception("[C1_http] retro.py:353 Exception")
 
         if _ROD_DETEKTOR_OK and _rod_detektor_singleton is not None:
             try:
@@ -364,7 +366,7 @@ async def retroaktivna_relektura_v10(
                 if n_rod and finalno_r and len(finalno_r.strip()) > 10:
                     finalno = finalno_r
             except Exception:
-                pass
+                logger.exception("[C1_http] retro.py:367 Exception")
 
         self._atomic_write(chk, finalno)
         self.log(
@@ -416,7 +418,7 @@ async def retroaktivna_relektura_v10(
             self.apply_dropcap_and_toc(soup, hf)
             hf.write_text(str(soup), encoding="utf-8")
         except Exception:
-            pass
+            logger.exception("[C1_kriticno] retro.py:419 Exception")
 
     self.generate_ncx()
     self.finalize()
@@ -472,7 +474,7 @@ async def mark_for_review(self, score_threshold: float = _QUALITY_RESCUE_THRESHO
                 elif isinstance(v, dict) and "score" in v:
                     scores[k] = float(v["score"])
         except Exception:
-            pass
+            logger.warning("[C2_parse] retro.py:475 Exception")
 
     # B14 FIX: samo finalni fajlovi
     finalni_chk = [f for f in sorted(chk_dir.glob("*.chk")) if _je_finalni_chk(f)]
@@ -526,7 +528,7 @@ async def mark_for_review(self, score_threshold: float = _QUALITY_RESCUE_THRESHO
                     }
                 )
         except Exception:
-            pass
+            logger.exception("[C1_http] retro.py:529 Exception")
 
     review_path = chk_dir / "human_review.json"
     self._atomic_write(
@@ -584,7 +586,7 @@ def retroaktivna_rod_korekcija(
                 for k, v in raw.items():
                     scores[k] = float(v["score"]) if isinstance(v, dict) else float(v)
             except Exception:
-                pass
+                logger.warning("[C2_parse] retro.py:587 Exception")
         ciljani = [c for c in svi_chk if scores.get(c.stem, 10.0) < bad_threshold]
         self.log(
             f"[retro_rod] Selektivni mod: {len(ciljani)}/{len(svi_chk)} blokova "
@@ -633,7 +635,7 @@ def retroaktivna_rod_korekcija(
                     tmp.replace(chk)
                     n_kalkovi += n
             except Exception:
-                pass
+                logger.exception("[C1_kriticno] retro.py:636 Exception")
         if n_kalkovi:
             self.log(
                 f"[retro_rod] Kalkovi engine: {n_kalkovi} dodatnih zamjena", "tech"
@@ -659,7 +661,7 @@ async def send_to_fix(self, score_threshold: float = _QUALITY_RESCUE_THRESHOLD):
                 elif isinstance(v, dict) and "score" in v:
                     scores[k] = float(v["score"])
         except Exception:
-            pass
+            logger.warning("[C2_parse] retro.py:662 Exception")
 
     # B14 FIX: samo finalni fajlovi
     losi = [

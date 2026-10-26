@@ -9,6 +9,8 @@ IZMJENE (knjiga_mode patch + checkpoint putanja):
   - _detect_language() zadržan kao interni helper.
 """
 
+import logging
+logger = logging.getLogger(__name__)
 import contextlib
 import json
 import re
@@ -39,7 +41,7 @@ class SkriptorijAllInOne:
 
             register_active_fleet(self.fleet)
         except Exception:
-            pass
+            logger.debug("[C3_fallback] engine.py:42 Exception")
 
         # ── Provjera i auto-discovery modela pri startu ──────────────────────
         # startup_key_check: validira sve ključeve (401/429 → disable/cooldown)
@@ -53,7 +55,7 @@ class SkriptorijAllInOne:
             # start_background_discovery ocekuje dict {provider: [KeyState, ...]}
             start_background_discovery(self.fleet.fleet)
         except Exception:
-            pass
+            logger.debug("[C3_fallback] engine.py:56 Exception")
 
         # ── Strip PREVEDENO_ prefiks i _STYLED sufiks (BUG: dupli PREVEDENO) ──
         _stem = self.book_path.stem
@@ -146,7 +148,7 @@ class SkriptorijAllInOne:
             if self.book_context and hasattr(self.book_context, "set_engine"):
                 self.book_context.set_engine(self)
         except Exception:
-            pass
+            logger.debug("[C3_fallback] engine.py:149 Exception")
         self.knjiga_analizirana = False
         self.glosar_tekst = ""
         with contextlib.suppress(Exception):
@@ -540,7 +542,7 @@ class SkriptorijAllInOne:
             dst.parent.mkdir(parents=True, exist_ok=True)
             _sh.copy2(kanon_path, dst)
         except Exception:
-            pass
+            logger.debug("[C3_fallback] engine.py:543 Exception")
 
         return True
 
@@ -562,7 +564,7 @@ class SkriptorijAllInOne:
                 if summary:
                     return f"Prethodno poglavlje ({prev_name}): {summary}"
         except (ValueError, IndexError):
-            pass
+            logger.exception("[C1_http] engine.py:565 Exception")
         return "Pocetak knjige ili kontekst nije dostupan."
 
     def _save_chapter_summaries(self):
@@ -578,7 +580,7 @@ class SkriptorijAllInOne:
                 self._chapter_summaries = data.get("summaries", {})
                 self._chapter_order = data.get("order", [])
             except Exception:
-                pass
+                logger.exception("[C1_http] engine.py:581 Exception")
 
     # =========================================================================
     # PROMPT DELEGACIJA

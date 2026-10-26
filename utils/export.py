@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 # ============================================================================
 # SKRIPTORIJ V8 — utils/export.py
 # Export rezultata: EPUB metapodaci, PDF/TXT report, JSON
@@ -54,7 +56,7 @@ def get_epub_metadata(epub_path: str) -> dict:
                     _tag("description", opf)[:300] or meta["description"]
                 )
     except Exception:
-        pass
+        logger.exception("[C1_kriticno] export.py:57 Exception")
     return meta
 
 

@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """
 stil_ai.py — Stilizacija EPUB-a s AI normalizacijom dijaloga.
@@ -43,7 +45,7 @@ try:
 
     warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 except ImportError:
-    pass
+    logger.warning("[C2_parse] stil_ai.py:46 ImportError")
 
 ORNAMENTS_DIR = os.environ.get(
     "STIL_ORNAMENTS", "/storage/emulated/0/Books/MoonReader/ornaments_small_size"
@@ -1018,7 +1020,7 @@ def dodaj_dropcap(soup, res, fname):
                 if d2 in DIGRAFI and d2 in DROPCAP_MAP:
                     dig = d2
         except Exception:
-            pass
+            logger.exception("[C1_http] stil_ai.py:1021 Exception")
 
         if dig in DROPCAP_MAP:
             kljuc = dig
@@ -1630,13 +1632,13 @@ def _safe_copy(src, dst):
             print("   (isti fajl — preskačem kopiju)")
             return
     except Exception:
-        pass
+        logger.debug("[C3_fallback] stil_ai.py:1633 Exception")
     try:
         if src_p.samefile(dst_p):
             print("   (isti fajl — preskačem kopiju)")
             return
     except (OSError, FileNotFoundError):
-        pass
+        logger.debug("[C3_fallback] stil_ai.py:1639 Exception")
     _sh.copy2(src, dst)
 
 

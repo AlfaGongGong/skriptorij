@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """core/glosar_ekstrakcija.py — Ekstrakcija, cistka i AI provjera glosara."""
 
@@ -131,7 +133,7 @@ def detektuj_jezik(epub_path):
                 if en_score > hr_score * 1.5:
                     return "EN"
     except Exception:
-        pass
+        logger.exception("[C1_kriticno] glosar_ekstrakcija.py:134 Exception")
     return "EN"
 
 

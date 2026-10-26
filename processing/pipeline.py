@@ -10,6 +10,8 @@ IZMJENE vs v3.0:
   - Korak 7: Nezavisni scorer — bilježenje prevoditelja za quality_scorer_v2
 """
 
+import logging
+logger = logging.getLogger(__name__)
 import asyncio
 import gc
 import json
@@ -258,11 +260,11 @@ def _chk_read(
                 if len(_text_chk) < 20:
                     return None
             except Exception:
-                pass
+                logger.exception("[C1_http] pipeline.py:261 Exception")
 
         return tekst
     except Exception:
-        pass
+        logger.exception("[C1_kriticno] pipeline.py:265 Exception")
     return None
 
 
@@ -747,7 +749,7 @@ async def _quality_scoring(
             )
             return
     except Exception:
-        pass
+        logger.debug("[C3_fallback] pipeline.py:750 Exception")
 
     try:
         from core.quality import _scoruj_kvalitetu
@@ -820,7 +822,7 @@ async def _quality_scoring(
                 __import__("json").dumps(_existing_m, ensure_ascii=False, indent=2),
             )
         except Exception:
-            pass
+            logger.exception("[C1_kriticno] pipeline.py:823 Exception")
 
         if score_float < 6.5:
             _prov = prevodilac_provider or "?"
@@ -850,7 +852,7 @@ async def _quality_scoring(
                         json.dumps(hr_data, ensure_ascii=False, indent=2),
                     )
             except Exception:
-                pass
+                logger.exception("[C1_kriticno] pipeline.py:853 Exception")
 
         done = self.global_done_chunks
         if done > 0 and done % 10 == 0:
@@ -880,10 +882,10 @@ async def _quality_scoring(
                     # Sinhronizuj shared_stats da ne raste bezveze
                     self.shared_stats["quality_scores"] = merged
             except Exception:
-                pass
+                logger.exception("[C1_kriticno] pipeline.py:883 Exception")
 
     except Exception:
-        pass
+        logger.exception("[C1_kriticno] pipeline.py:886 Exception")
 
 
 # ── Glavni AI pipeline ────────────────────────────────────────────────────────
@@ -1253,7 +1255,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 if fs_text:
                     fusion_sys += "\n" + fs_text
             except Exception:
-                pass
+                logger.exception("[C1_http] pipeline.py:1256 Exception")
         p_fusion = f"Engleski tekst za prevod:\n{chunk}"
         raw_fusion, prov1 = await self._call_ai_engine(
             p_fusion,
@@ -1437,7 +1439,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 skip_kor = True
                 prov3 = "SKIP_ORACLE"
         except Exception:
-            pass
+            logger.exception("[C1_http] pipeline.py:1440 Exception")
 
     if not skip_kor:
         raw_kor, prov3 = await self._call_ai_engine(
@@ -1524,7 +1526,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     with contextlib.suppress(Exception):
                         dodaj_odlican_prevod(en_tekst, hr_tekst, qs_score, tip_bloka)
         except Exception:
-            pass
+            logger.exception("[C1_http] pipeline.py:1527 Exception")
 
     aud = (
         f"📦 Blok {chunk_idx} [{tip_bloka}] | {prov1}→{prov2} | "

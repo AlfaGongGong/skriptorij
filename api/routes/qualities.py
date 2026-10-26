@@ -724,7 +724,7 @@ def qa_flags():
                                     content = data[k]
                                     break
                     except Exception:
-                        pass
+                        logger.exception("[C1_http] qualities.py:727 Exception")
 
                 # Ako nema ocjene u JSON-u, probaj iz imena quality_scores
                 if ocjena is None:
@@ -734,7 +734,7 @@ def qa_flags():
                             qs = _json.loads(qs_path.read_text(encoding="utf-8"))
                             ocjena = qs.get(chk.stem)
                         except Exception:
-                            pass
+                            logger.exception("[C1_http] qualities.py:737 Exception")
 
                 # QA-FLAG ako < 9.5 ili ima marker
                 ima_flag = "QA-FLAG" in content[:500] or (

@@ -187,7 +187,7 @@ def _provjeri_hunspell(tekst: str) -> list[str]:
             rijeci = [r for r in rijeci if len(r) > 3 and not r[0].isupper()]
             return rijeci[:10]  # max 10 grešaka po bloku
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+        logger.debug("[C3_fallback] qa_benchmark.py:190 Exception")
     return []
 
 
@@ -299,7 +299,7 @@ def _ucitaj_chunkove(file_name: str) -> list[dict]:
                         tekst = data.get("text") or data.get("tekst") or sadrzaj
                         score = data.get("quality_score") or data.get("score")
                     except json.JSONDecodeError:
-                        pass
+                        logger.exception("[C1_http] qa_benchmark.py:302 JSONDecodeError")
 
                 if len(tekst.strip()) >= MIN_DULJINA_BLOKA:
                     # Izvuci chunk index iz naziva fajla (npr. 0042.chk)
@@ -348,7 +348,7 @@ def _ucitaj_trend(trend_path: Path) -> dict | None:
             with open(trend_path, encoding="utf-8") as f:
                 return json.load(f)
     except Exception:
-        pass
+        logger.debug("[C3_fallback] qa_benchmark.py:351 Exception")
     return None
 
 

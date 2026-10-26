@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import contextlib
 import re
 
@@ -333,7 +335,7 @@ def _finaliziraj_fix_epub(self):
                     novi_ncx = novi_ncx[:start] + novi + novi_ncx[end:]
                 ncx_path.write_text(novi_ncx, encoding="utf-8")
         except Exception:
-            pass
+            logger.exception("[C1_kriticno] packager.py:336 Exception")
 
     # 4. Obrisi root toc.ncx
     oebps_ncx = work_dir / "OEBPS" / "toc.ncx"
@@ -381,7 +383,7 @@ def _spoji_chk_u_files_dict(files: dict, checkpoint_dir: Path) -> int:
                     if k in d and isinstance(d[k], str):
                         return d[k]
             except Exception:
-                pass
+                logger.warning("[C2_parse] packager.py:384 Exception")
         return t
 
     zamenjeno = 0
@@ -465,7 +467,7 @@ def _spoji_chk_u_files_dict(files: dict, checkpoint_dir: Path) -> int:
                         if new != orig:
                             node.replace_with(new)
                 except Exception:
-                    pass
+                    logger.debug("[C3_fallback] packager.py:468 Exception")
 
                 raw = str(_tmp.body) if _tmp.body else str(_tmp)
                 if raw.startswith("<body>"):
@@ -474,7 +476,7 @@ def _spoji_chk_u_files_dict(files: dict, checkpoint_dir: Path) -> int:
                     raw = raw[:-7]
                 raw = raw.strip()
             except Exception:
-                pass
+                logger.exception("[C1_http] packager.py:477 Exception")
 
             if raw:
                 delovi.append(raw)
@@ -597,7 +599,7 @@ def _spoji_chk_u_html(engine):
                     if k in d and isinstance(d[k], str):
                         return d[k]
             except Exception:
-                pass
+                logger.warning("[C2_parse] packager.py:600 Exception")
         return t
 
     zamenjeno = 0
@@ -691,7 +693,7 @@ def _spoji_chk_u_html(engine):
                         if new != orig:
                             node.replace_with(new)
                 except Exception:
-                    pass
+                    logger.debug("[C3_fallback] packager.py:694 Exception")
 
                 # 7. Skini <h1>/<h2>/<h3> iz .chk sadržaja (naslov je već u originalnom HTML-u)
                 for h in _tmp_soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
@@ -755,11 +757,11 @@ def _spoji_chk_u_html(engine):
                         if new != orig:
                             node.replace_with(new)
                 except Exception:
-                    pass
+                    logger.debug("[C3_fallback] packager.py:758 Exception")
                 src.write_text(str(soup), encoding="utf-8")
                 zamenjeno += 1
             except Exception:
-                pass
+                logger.exception("[C1_kriticno] packager.py:762 Exception")
             continue
 
         body.clear()
@@ -809,9 +811,9 @@ def _spoji_chk_u_html(engine):
                     if new != orig:
                         node.replace_with(new)
             except Exception:
-                pass
+                logger.debug("[C3_fallback] packager.py:812 Exception")
         except Exception:
-            pass
+            logger.exception("[C1_http] packager.py:814 Exception")
 
         src.write_text(str(soup), encoding="utf-8")
         zamenjeno += 1
@@ -904,7 +906,7 @@ def finalize(self):
                             _translated_at = _dt.now().isoformat(timespec="seconds")
 
                 except Exception:
-                    pass
+                    logger.exception("[C1_http] packager.py:907 Exception")
 
                 # Glossary ID
 
@@ -919,7 +921,7 @@ def finalize(self):
                         _glossary_id = _knjiga_id
 
                 except Exception:
-                    pass
+                    logger.exception("[C1_kriticno] packager.py:922 Exception")
 
                 # Standardizuj
 

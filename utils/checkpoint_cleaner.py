@@ -93,7 +93,7 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
                 if _extracted.lower() not in _PLACEHOLDERS:
                     return sha_prefix + _extracted
     except (ValueError, TypeError):
-        pass
+        logger.warning("[C2_parse] checkpoint_cleaner.py:96 Exception")
 
     # Normalizuj tipografske navodnike → ASCII za potrebe json.loads.
     # AI modeli ponekad koriste „..." umjesto ASCII "" čak i u JSON omotaču.
@@ -108,7 +108,7 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
                     if extracted.lower() not in _PLACEHOLDERS:
                         return extracted
         except (json.JSONDecodeError, ValueError):
-            pass
+            logger.warning("[C2_parse] checkpoint_cleaner.py:111 Exception")
 
     # FIX 2026-09-25: normaliziraj tipografske navodnike u stripped
     stripped_norm = _TYPO_Q.sub('"', stripped)

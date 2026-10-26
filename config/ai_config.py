@@ -3,6 +3,8 @@
 """Central AI configuration shared across routing, quota, and model layers."""
 
 from __future__ import annotations
+import logging
+logger = logging.getLogger(__name__)
 
 from dataclasses import dataclass
 
@@ -655,7 +657,7 @@ def get_provider_for_model(model_ime: str) -> str | None:
         if model_ime in _PROFILI:
             return _PROFILI[model_ime].provider.upper()
     except Exception:
-        pass
+        logger.exception("[C1_http] ai_config.py:658 Exception")
 
     # 1. Direktno po imenu (prefix/substring)
     _PREFIX_MAP = (
@@ -739,6 +741,6 @@ def get_provider_for_model(model_ime: str) -> str | None:
                 if api == api_string:
                     return prov
     except Exception:
-        pass
+        logger.exception("[C1_http] ai_config.py:742 Exception")
 
     return None

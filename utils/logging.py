@@ -288,7 +288,7 @@ def add_structured(nivo: str, modul: str, event: str, **kwargs):
             }.get(nivo, logger.info)
             _logger_func(msg)
         except Exception:
-            pass
+            logger.exception("[C1_http] logging.py:291 Exception")
     # 2026-10-24 C1: strukturirani zapis u SHARED_STATS["audit_events"]
     # (config.settings.SHARED_STATS — pravi objekat, ne utils.shared_state)
     try:
@@ -304,5 +304,5 @@ def add_structured(nivo: str, modul: str, event: str, **kwargs):
         if len(SHARED_STATS["audit_events"]) > 1000:
             SHARED_STATS["audit_events"] = SHARED_STATS["audit_events"][-1000:]
     except Exception:
-        pass
+        logger.debug("[C3_fallback] logging.py:307 Exception")
     return entry

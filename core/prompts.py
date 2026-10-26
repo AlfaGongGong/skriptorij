@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 # core/prompts.py — BUGFIX B09
 # B09: get_lektor_prompt(..., for_gemma=True) umetao literal "{text}" placeholder
 #      koji nikad nije bio zamijenjen stvarnim tekstom.
@@ -832,7 +834,7 @@ def get_system_prompt(
             if _prov:
                 patches = MODEL_PATCHES.get(_prov, {})
         except Exception:
-            pass
+            logger.exception("[C1_http] prompts.py:835 Exception")
     for _patch_key, patch_text in patches.items():
         parts.append(patch_text)
 

@@ -349,7 +349,7 @@ class BookContext:
                 if ks:
                     return ks.key if hasattr(ks, "key") else str(ks)
             except Exception:
-                pass
+                logger.exception("[C1_http] book_context.py:352 Exception")
         return self.api_key or os.environ.get("GEMINI_API_KEY")
 
     def _generiraj_summary(self, tekst: str, broj: int, naslov: str) -> str:
@@ -695,7 +695,7 @@ class BookContextManager:
                 data = json.loads(self._cache_file.read_text("utf-8"))
                 self._glosar = data.get("glosar", {})
             except Exception:
-                pass
+                logger.exception("[C1_http] book_context.py:698 Exception")
 
     def _spremi_cache(self):
         if self._cache_file:
@@ -708,7 +708,7 @@ class BookContextManager:
                     encoding="utf-8",
                 )
             except Exception:
-                pass
+                logger.exception("[C1_kriticno] book_context.py:711 Exception")
 
     def build_glosar_tekst(self):
         """Vraća glosar kao tekst za prompt injection.
@@ -750,7 +750,7 @@ class BookContextManager:
                     if linije:
                         return "\n".join(linije)
         except Exception:
-            pass
+            logger.exception("[C1_http] book_context.py:753 Exception")
 
         # 2. Ako nema kanona — vrati prazno (NE smeće)
         return ""

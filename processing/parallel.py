@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 # processing/parallel.py
 import asyncio
 import random
@@ -85,7 +87,7 @@ class AdaptiveParallelism:
                                 _sc is None or _sc >= _QUALITY_RESCUE_THRESHOLD
                             )
                     except Exception:
-                        pass
+                        logger.exception("[C1_kriticno] parallel.py:88 Exception")
 
                     if not _is_cache_hit:
                         # Stagger proporcionalan min_gap-u provajdera — ne fiksan 0.1-0.8s.

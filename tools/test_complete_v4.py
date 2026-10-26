@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 """
 KOMPLETNI TEST v4 — Booklyfi / Skriptorij
@@ -282,7 +284,7 @@ def _rl_headers(h):
             if kl.startswith("x-ratelimit") or kl == "retry-after":
                 out[kl] = v
     except Exception:
-        pass
+        logger.debug("[C3_fallback] test_complete_v4.py:285 Exception")
     return out
 
 
@@ -441,14 +443,14 @@ def try_json(txt):
         json.loads(t)
         return True, False
     except Exception:
-        pass
+        logger.warning("[C2_parse] test_complete_v4.py:444 Exception")
     m = re.match(r"^```(?:json)?\s*(.*?)\s*```$", t, re.S | re.I)
     if m:
         try:
             json.loads(m.group(1))
             return False, True
         except Exception:
-            pass
+            logger.warning("[C2_parse] test_complete_v4.py:451 Exception")
     return False, False
 
 

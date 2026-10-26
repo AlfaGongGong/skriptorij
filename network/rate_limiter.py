@@ -85,7 +85,7 @@ def _provider_global_rpm_gap(prov: str) -> float:
         if rpm > 0:
             return 60.0 / rpm
     except Exception:
-        pass
+        logger.exception("[C1_http] rate_limiter.py:88 Exception")
     return 2.5
 
 
@@ -441,7 +441,7 @@ async def acquire_key(key: str, provider: str | None = None):
                     )
                     raise RuntimeError(f"Ključ nedostupan: {reason}")
         except ImportError:
-            pass
+            logger.exception("[C1_http] rate_limiter.py:444 ImportError")
         except RuntimeError:
             raise
 
@@ -485,7 +485,7 @@ async def acquire_key(key: str, provider: str | None = None):
 
             quota_tracker.record_request(provider, key)
         except Exception:
-            pass
+            logger.exception("[C1_http] rate_limiter.py:488 Exception")
 
 
 def release_key(key: str, provider: str | None = None):
@@ -493,7 +493,7 @@ def release_key(key: str, provider: str | None = None):
         _GLOBAL_SEMAPHORE.release()
         logger.debug("[rate_limiter] GLOBAL-semaphore oslobođen")
     except Exception:
-        pass
+        logger.debug("[C3_fallback] rate_limiter.py:496 Exception")
     sem = _key_semaphores.get(key)
     if sem is not None:
         sem.release()

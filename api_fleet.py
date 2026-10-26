@@ -428,7 +428,7 @@ class FleetManager:
 
                 fallback = _MM.get(prov, "")
             except Exception:
-                pass
+                logger.exception("[C1_http] api_fleet.py:431 Exception")
         if fallback and fallback not in dead:
             return fallback
 
@@ -439,7 +439,7 @@ class FleetManager:
             if key:
                 trigger_rediscover_background(prov, key)
         except Exception:
-            pass
+            logger.exception("[C1_http] api_fleet.py:442 Exception")
         return fallback
 
     def get_best_key(self, provider: str):
@@ -685,7 +685,7 @@ class FleetManager:
                             )
                         break
             except Exception:
-                pass
+                logger.exception("[C1_http] api_fleet.py:688 Exception")
 
             # Ako je RESOURCE_EXHAUSTED bez retryDelay — ne znamo je li RPM ili RPD.
             # 2026-10-23 FIX: Google za RPM 429 salje SAMO

@@ -424,7 +424,7 @@ def _extract_cohere(data: dict) -> str | None:
             ).strip()
             return text or None
     except (KeyError, TypeError):
-        pass
+        logger.exception("[C1_http] http_client.py:427 Exception")
     return None
 
 
@@ -439,7 +439,7 @@ def _extract_openai_compat(data: dict) -> str | None:
             if isinstance(content, str):
                 return content.strip() or None
     except (KeyError, TypeError):
-        pass
+        logger.exception("[C1_http] http_client.py:442 Exception")
     return None
 
 
@@ -495,7 +495,7 @@ async def _async_http_post(
             if prov != prov_upper:
                 self.fleet.record_request(prov_upper, key)
         except Exception:
-            pass
+            logger.debug("[C3_fallback] http_client.py:498 Exception")
 
         # FIX: Gemini/GEMMA timeout 45s (bilo 90s), ostali 45s
         _read_timeout = _GEMINI_TIMEOUT if prov_upper in ("GEMINI", "GEMMA") else 20
@@ -519,7 +519,7 @@ async def _async_http_post(
                 quota_tracker.set_key_cooldown(prov_upper, key, 30.0, "timeout 90s")
 
             except Exception:
-                pass
+                logger.debug("[C3_fallback] http_client.py:522 Exception")
             return None
         except requests.exceptions.ConnectionError as e:
             # FIX: DNS/konekcijski hipovi su cesto prolazni (sub-sekundni) -
@@ -632,7 +632,7 @@ async def _async_http_post(
                     _status = (_body.get("error") or {}).get("status", "")
                     _is_high_demand = _status == "UNAVAILABLE"
                 except Exception:
-                    pass
+                    logger.exception("[C1_http] http_client.py:635 Exception")
 
             if _is_high_demand:
                 try:
@@ -645,7 +645,7 @@ async def _async_http_post(
                         "503 high demand (kratki backoff)",
                     )
                 except Exception:
-                    pass
+                    logger.debug("[C3_fallback] http_client.py:648 Exception")
                 await asyncio.sleep(5.0)
                 self.log(
                     f"[{prov_upper}] 503 UNAVAILABLE (Google high demand) — "
@@ -663,7 +663,7 @@ async def _async_http_post(
                     f"{resp.status_code} server greska",
                 )
             except Exception:
-                pass
+                logger.debug("[C3_fallback] http_client.py:666 Exception")
             await asyncio.sleep(2.0)
             return None
 
@@ -685,7 +685,7 @@ async def _async_http_post(
 
                     invalidate_cached_model(prov_upper, model_used)
                 except Exception:
-                    pass
+                    logger.debug("[C3_fallback] http_client.py:688 Exception")
             self.log(f"[{prov_upper}] HTTP 404 — model ne postoji", "warning")
             return None
 
@@ -921,7 +921,7 @@ async def _call_gemini_with_full_rotation(
 
                     trigger_rediscover_background("GEMINI", key)
                 except Exception:
-                    pass
+                    logger.debug("[C3_fallback] http_client.py:924 Exception")
                 break
 
             self.log(f"[GEMINI] {current_model} → {next_model}", "warning")
@@ -1423,7 +1423,7 @@ def api_call(
             )
             _time.sleep(wait_s)
     except Exception:
-        pass
+        logger.debug("[C3_fallback] http_client.py:1426 Exception")
     prov_sem.acquire()
     key_sem.acquire()
     try:
@@ -1455,7 +1455,7 @@ def api_call(
                 # u cooldownu bez ijednog stvarnog poziva.
                 quota_tracker.set_key_cooldown(prov_upper, api_key, 30.0, "timeout 90s")
             except Exception:
-                pass
+                logger.debug("[C3_fallback] http_client.py:1458 Exception")
             return None
         except requests.exceptions.RequestException as e:
             _dt = _time.time() - _t0
@@ -1622,7 +1622,7 @@ def _je_prohibited_content(response_data) -> bool:
             if fr in ("PROHIBITED_CONTENT", "SAFETY", "RECITATION"):
                 return True
     except Exception:
-        pass
+        logger.exception("[C1_http] http_client.py:1625 Exception")
     return False
 
 

@@ -31,7 +31,7 @@ def _reload_active_fleet() -> None:
         if fm is not None:
             fm.reload()
     except Exception:
-        pass
+        logger.exception("[C1_http] keys.py:34 Exception")
 
 
 @bp.route("/api/keys", methods=["GET"])

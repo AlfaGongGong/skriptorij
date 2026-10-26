@@ -20,7 +20,7 @@ def _print_critical(prefix: str, msg: str, color: str = _RED) -> None:
         sys.stdout.write(f"{color}[{prefix}] {msg}{_RESET}\n")
         sys.stdout.flush()
     except Exception:
-        pass
+        logger.exception("[C1_kriticno] __init__.py:23 Exception")
 
 
 def register_error_handlers(app: Flask) -> None:

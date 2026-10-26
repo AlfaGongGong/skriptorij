@@ -218,7 +218,7 @@ if __name__ == "__main__":
                         f"{_YELLOW}[BOOKLYFI]{_RESET} Browser se nije otvorio — otvori ručno: {url}"
                     )
         except Exception:
-            pass
+            logger.debug("[C3_fallback] main.py:221 Exception")
 
     threading.Thread(target=_open_browser, daemon=True).start()
 
