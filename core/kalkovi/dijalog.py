@@ -22,6 +22,18 @@ NAPOMENA o em-crtici:
 # Red je bitan: specifičnije (trostruki, ugaoni) ispred jednostavnih.
 
 DIJALOG_TIPOGRAFIJA = [
+    # FIX 2026-10-26 v2: orphan navodnici (1-6, bez rizicnog full-pair)
+    # 1) orphan opening " na pocetku reda
+    (r'(?m)^(\s*)"(?=\S)', r'\1— '),
+    # 2) orphan opening " posle . ! ? … :
+    (r'(?<=[.!?…:] )"(?=\S)', r'— '),
+    # 3) orphan closing " prije interpunkcije
+    (r'(?<=[a-zA-ZčćšžđČĆŠŽĐ.!?…])"(?=\s*[,;:.!?])', ''),
+    # 4) orphan closing " na kraju reda
+    (r'(?<=[a-zA-ZčćšžđČĆŠŽĐ.!?…])"\s*$', ''),
+    # 5) orphan opening " posle , ; :
+    (r'(?<=[,;:])\s*"(?=[A-Za-zČĆŠŽĐčćšžđ])', ' '),
+
     # FIX 2026-10-26: ASCII navodnici "..." na početku odlomka
     # (AI često vraća "dijalog" umesto — dijalog)
     # Pretvara "citat" u — citat na početku pasusa
