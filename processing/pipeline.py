@@ -389,6 +389,17 @@ def _plain_len(tekst: str) -> int:
 def _je_sumnjiv_gubitak_teksta(
     original: str, kandidat: str, uloga: str = "LEKTOR"
 ) -> bool:
+    """
+    FIX 2026-10-26: Poredi PLAIN vs PLAIN, ne RAW vs PLAIN.
+
+    Prije: poredio len(original) (HTML sa tagovima, 3007 raw) sa
+    len(kandidat) (plain text, 1499). Tagovi u originalu napuhavaju
+    broj → lažni "gubitak 51%".
+
+    Sad: oba se svode na plain tekst pa se poredi. Stvarni gubitak
+    (kad lektura odseče deo teksta) se i dalje detektuje, ali HTML
+    tagovi ne prave lažni signal.
+    """
     if not original or not kandidat:
         return False
     orig_len = _plain_len(original)
