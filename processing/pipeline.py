@@ -20,6 +20,9 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
+import threading as _threading
+_QS_LOCK = _threading.Lock()
+
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 import contextlib
 

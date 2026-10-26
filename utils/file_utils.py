@@ -39,3 +39,26 @@ def safe_path(filename: str, root: str | None = None) -> str:
     if not full.startswith(os.path.realpath(base)):
         raise ValueError(f"Path traversal pokušaj: {filename}")
     return full
+
+
+def atomic_write_text(path, content: str) -> None:
+    """Atomicki upis: pise u .tmp pa os.replace. Prezivljava pad usred upisa."""
+    from pathlib import Path as _P
+    path = _P(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    try:
+        tmp.write_text(content, encoding="utf-8")
+        tmp.replace(path)
+    except Exception:
+        try:
+            tmp.unlink(missing_ok=True)
+        except Exception:
+            pass
+        raise
+
+
+def atomic_write_json(path, data, indent: int = 2) -> None:
+    """Atomicki JSON upis sa indent + ensure_ascii=False."""
+    import json
+    atomic_write_text(path, json.dumps(data, indent=indent, ensure_ascii=False))

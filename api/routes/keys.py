@@ -10,6 +10,7 @@ from flask import Blueprint, jsonify, request
 
 from config.ai_config import GOOGLE_MODEL_POOL, MODEL_MAP, get_gemini_url
 from config.settings import CONFIG_PATH
+from utils.file_utils import atomic_write_json
 from network.provider_urls import get_url as _get_provider_url
 
 # Konstante za ping timeout
@@ -86,8 +87,7 @@ def add_key(provider):
             cfg[prov_upper].append(new_key)
         else:
             cfg[prov_upper].setdefault("keys", []).append(new_key)
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(cfg, f, indent=2, ensure_ascii=False)
+        atomic_write_json(CONFIG_PATH, cfg)
         # Odmah aktiviraj novi ključ u aktivnoj floti (bez restarta)
         _reload_active_fleet()
         logger.info("[keys] Dodan ključ za %s: ...%s", prov_upper, new_key[-6:])
@@ -116,8 +116,7 @@ def delete_key(provider, idx):
         if idx < 0 or idx >= len(keys_list):
             return jsonify({"error": "Indeks van opsega"}), 400
         keys_list.pop(idx)
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(cfg, f, indent=2, ensure_ascii=False)
+        atomic_write_json(CONFIG_PATH, cfg)
         # Odmah ukloni obrisani ključ iz aktivne flote (bez restarta)
         _reload_active_fleet()
         logger.info("[keys] Obrisan ključ[%d] za %s", idx, prov_upper)
