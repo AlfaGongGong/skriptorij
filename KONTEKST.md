@@ -733,4 +733,90 @@ BATCH F (KONTEKST planirano):
 
 ---
 
+
+---
+
+## PLAN RADA — batch-evi (2026-10-26)
+
+Statička analiza (104 fajla, ~1.6 MB, backend + frontend). Redoslijed po prioritetu. Jedan batch = jedna poruka, P2 (jedna izmjena po bloku), P4 (STARO/NOVO prije primjene).
+
+### A — Sigurnost hitno
+
+| # | Stavka | Fajl |
+|---|---|---|
+| A1 | Path traversal u `/api/review/chunk/<path:stem>` — `..` i `/` u `stem` mogu izaci iz `checkpoints/` | `api/routes/qualities.py` (`_find_chk_path`) |
+| A2 | `main.py` slusa na `0.0.0.0` bez autentifikacije — prebaciti na `127.0.0.1` ili dodati token | `main.py` |
+
+### B — Data integrity
+
+| # | Stavka | Fajl |
+|---|---|---|
+| B1 | Atomski upis za `api_keys` (trenutno `open("w")` + `json.dump`) | `api/routes/keys.py` |
+| B2 | Atomski upis za `quality_scores.json` + `threading.Lock` oko merge bloka | `processing/pipeline.py` |
+| B3 | Atomski upis za `quota_tracker` | `network/quota_tracker.py` |
+| B4 | Premjestiti `_atomic_write` iz `core/engine.py` u `utils/file_utils.py`, koristiti svuda | `core/engine.py` → `utils/file_utils.py` |
+
+### C — Tihi `except`
+
+~450 `except Exception`, 152 `except: pass`. Najvise u `app.py`, `processing/*`, `packager.py`, `styler.py`, `http_client.py`. Minimum: `pass` → `logger.exception(...)` u pipeline/packager/styler. Gdje je namjerno — komentar zasto.
+
+### D — Frontend performanse
+
+| # | Stavka | Fajl |
+|---|---|---|
+| D1 | 7 `setInterval`, 3 zasebno zovu `/api/status` → jedan poller | `static/js/main.js` |
+| D2 | `services/polling.js` postoji ali se ne ucitava → ucitati i koristiti | `static/js/main.js`, `templates/index.html` |
+| D3 | Nema `visibilitychange` → pauziraj polling kad je tab skriven | `static/js/main.js` |
+| D4 | `sw.js` cache-uje `/static/js/app.js` (ne postoji), stranica ucitava `main.js` → `cache.addAll` padne → offline cache prazan | `static/js/sw.js` |
+
+### E — Mobilni raspored
+
+| # | Stavka | Fajl |
+|---|---|---|
+| E1 | `viewport-fit=cover` bez `env(safe-area-inset-*)` | `style.css` |
+| E2 | `100vh` → `100dvh` | `style.css` |
+| E3 | 8 tabova u jednom horizontalnom redu bez `scroll-snap` i bez skrolovanja aktivnog u vidno polje → 4 glavna + "Vise" | `index.html`, `main.js`, `style.css` |
+| E4 | 53 dugmeta, samo 2 imaju `min-height: 44px` → svi dugmici na 44px | `style.css` |
+
+### F — UX
+
+| # | Stavka | Fajl |
+|---|---|---|
+| F1 | 11 `alert()` → toast | `static/js/main.js` |
+| F2 | 4 `confirm()` → bottom sheet (posebno za brisanje kljuceva/chunkova) | `static/js/main.js` |
+| F3 | Nedostaju loading stanja za retro/rescue — ETA umesto samo % | `static/js/main.js` |
+
+### G — Pristupacnost
+
+| # | Stavka | Fajl |
+|---|---|---|
+| G1 | 2 `aria-` atributa, nijedan `:focus-visible` → `aria-label` na ikonske dugmice, `:focus-visible` na sve interaktivno | `main.js`, `style.css`, `index.html` |
+| G2 | Nema `prefers-reduced-motion` — intro animacija ~40 KB JS na slabijim telefonima → "Preskoci" + media query | `main.js`, `style.css` |
+| G3 | 186 `!important` u CSS-u → postepeno ciscenje, modul po modul | `style.css` |
+| G4 | 32 `innerHTML` sa tekstom iz chunkova → `textContent` gdje nije HTML | `static/js/main.js` |
+
+### H — `app.py` → blueprints (visok rizik)
+
+`app.py` ima 2098 redaka, 33 rute u `create_app()` paralelno sa `api/routes/` blueprintima. Prebaciti sve u blueprinte. Nestaju duplirane "familije ruta".
+
+### I — Duplirana stilizacija (visok rizik)
+
+5 modula dira dropcap: `epub/styler.py` (1924), `stil_ai.py` (1783), `styling.py`, `styler_ai.py`, `normalizer.py` + `packager.py`. Odabrati jedan vlasnik (predlog: `epub/styler.py`), ostali postaju pozivi prema njemu.
+
+### J — Odrzavanje
+
+| # | Stavka | Fajl |
+|---|---|---|
+| J1 | Testovi (`tests/unit`, `tests/golden`) — nista ih ne pokrece → `pytest` hook / CI | `pyproject.toml`, `tools/` |
+| J2 | 168 `print(` uz `utils/logging.py` → logger | svi |
+| J3 | `# FIX 2026-10-26` rasuti po fajlovima → `CHANGELOG.md`, u kodu samo "zasto" | svi |
+
+### Preporuceni redosled
+
+A → B → C → D → E → F → G → J → H → I
+
+H i I su veliki refaktori (visok rizik), idu na kraj kad su A–G i J stabilni.
+
+---
+
 KRAJ KONTEKSTA
