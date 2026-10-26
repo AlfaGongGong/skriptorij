@@ -64,7 +64,7 @@ def mehanicka_cistka(imena, min_pojava=3):
             continue
         if ime in STOP_RIJECI:
             continue
-        if len(ime) < 4:
+        if len(ime) < 3:
             continue
         if "'" in ime:
             continue

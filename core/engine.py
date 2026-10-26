@@ -342,8 +342,8 @@ class SkriptorijAllInOne:
         self.log("Jezik knjige: " + jezik, "system")
 
         cisto = mehanicka_cistka(imena, min_pojava=3)
-        if len(cisto) > 300:
-            cisto = dict(sorted(cisto.items(), key=lambda x: x[1], reverse=True)[:300])
+        if len(cisto) > 500:
+            cisto = dict(sorted(cisto.items(), key=lambda x: x[1], reverse=True)[:500])
         self.log("Kandidata za glosar: " + str(len(cisto)), "tech")
 
         fleet = getattr(self, "fleet", None)
