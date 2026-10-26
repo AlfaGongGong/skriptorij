@@ -66,7 +66,54 @@ class SkriptorijAllInOne:
         # ── work_dir i checkpoint_dir u CHECKPOINT_BASE_DIR ──
         # Bez PREVEDENO_ prefiksa: lektura prevedene knjige koristi ISTI
         # work_dir kao prevod (ne pravi novi _skr_PREVEDENO_ folder)
-        self.work_dir = CHECKPOINT_BASE_DIR / f"_skr_{self.clean_book_name}"
+        _default_work_dir = CHECKPOINT_BASE_DIR / f"_skr_{self.clean_book_name}"
+
+        # FIX 2026-10-26: Ako trenutni _skr_ nema .chk+text/ (npr. output je
+        # renamed u Joe_Abercrombie_..._PREVEDENO.epub, ali .chk su u
+        # _skr_The_Trouble_With_Peace), traži pravi _skr_ folder.
+        def _nadji_pravi_skr():
+            # 1. Trenutni — mora imati .chk I text/ HTML
+            ckpt = _default_work_dir / "checkpoints"
+            txt = _default_work_dir / "text"
+            if (
+                ckpt.exists() and any(ckpt.glob("*.chk"))
+                and txt.exists() and any(txt.glob("*.html"))
+            ):
+                return _default_work_dir
+
+            name = self.clean_book_name
+            # 2. Prefix fuzzy
+            for kljuc_len in (30, 25, 20, 15, 10):
+                kljuc = name[:kljuc_len]
+                if len(kljuc) < 8:
+                    continue
+                for k in CHECKPOINT_BASE_DIR.glob(f"_skr_*{kljuc}*"):
+                    ckpt_k = k / "checkpoints"
+                    txt_k = k / "text"
+                    if (
+                        ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
+                        and txt_k.exists() and any(txt_k.glob("*.html"))
+                    ):
+                        return k
+
+            # 3. Suffix fuzzy
+            parts = name.split("_")
+            for i in range(len(parts) - 1):
+                suffix = "_".join(parts[i:])
+                if len(suffix) < 8:
+                    continue
+                for k in CHECKPOINT_BASE_DIR.glob(f"_skr_*{suffix}*"):
+                    ckpt_k = k / "checkpoints"
+                    txt_k = k / "text"
+                    if (
+                        ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
+                        and txt_k.exists() and any(txt_k.glob("*.html"))
+                    ):
+                        return k
+
+            return _default_work_dir
+
+        self.work_dir = _nadji_pravi_skr()
         self.checkpoint_dir = self.work_dir / "checkpoints"
 
         # ── out_path: čitaj pisac+naslov iz OPF, fallback na clean_book_name ──
