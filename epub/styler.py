@@ -134,6 +134,12 @@ def _ukloni_sve(soup: BeautifulSoup) -> None:
         elif el.get("class") is not None:
             del el["class"]
 
+    # FIX 2026-10-26: unwrap <section> i div.galley-rw (sirovi lektura HTML iz .chk)
+    for sec in soup.find_all("section"):
+        sec.unwrap()
+    for _g in soup.find_all(class_="galley-rw"):
+        _g.unwrap()
+
 
 def _normalizuj(soup: BeautifulSoup) -> None:
     # div → p

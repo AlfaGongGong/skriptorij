@@ -32,14 +32,16 @@ DIJALOG_TIPOGRAFIJA = [
     # tipografskih + ASCII navodnika (AI često miješa).
     # Srpski otvarajući „ → zamijeni s ASCII " + sadržaj + zatvori s "
     # Prihvaća: „tekst"  „tekst"  „tekst"  „tekst"
-    (r'\u201e([^"\u201c\u201d\u00bb\u00ab]*?)[\u201c\u201d"]', r'"\1"'),
+    (r'\u201e([^"\u201c\u201d\u00bb\u00ab]*?)[\u201c\u201d"]', r'— \1'),
     # Srpski otvarajući „ s ugaonim zatvaranjem (rijetko, ali moguće)
-    (r'\u201e([^"\u201c\u201d\u00bb\u00ab]*?)\u00ab', r'"\1"'),
+    (r'\u201e([^"\u201c\u201d\u00bb\u00ab]*?)\u00ab', r'— \1'),
     # Ugaoni »tekst« → ASCII "tekst"
-    (r'\u00bb([^"\u00bb\u00ab]*?)\u00ab', r'"\1"'),
-    (r"\u203a([^\u2039\u203a]*?)\u2039", r'"\1"'),
+    (r'\u00bb([^"\u00bb\u00ab]*?)\u00ab', r'— \1'),
+    (r"\u203a([^\u2039\u203a]*?)\u2039", r'— \1'),
     # Pametni ASCII → ASCII " (curly → straight)
-    (r'\u201c([^"\u00bb\u00ab\u201c\u201d]*?)\u201d', r'"\1"'),
+    (r'\u201c([^"\u00bb\u00ab\u201c\u201d]*?)\u201d', r'— \1'),
+    # FIX 2026-10-26: ASCII "citat" bilo gdje → — citat
+    (r'"([^"\n]{1,300})"', r'— \1'),
     # Jednostruki tipografski → ASCII '
     (r"\u2018([^\u2018\u2019]*?)\u2019", r"'\1'"),
     # Em-crtica ispred replike: - ili – na početku retka → —
