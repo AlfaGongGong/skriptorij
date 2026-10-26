@@ -22,6 +22,7 @@ from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 import threading as _threading
 _QS_LOCK = _threading.Lock()
+from utils.file_utils import atomic_write_json
 
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 import contextlib
@@ -859,27 +860,25 @@ async def _quality_scoring(
 
                 qs_path = self.checkpoint_dir / "quality_scores.json"
 
-                # FIX: MERGE umjesto overwrite — čuvaj postojeće ocjene
-                existing = {}
-                if qs_path.exists():
-                    try:
-                        existing = _json.loads(qs_path.read_text("utf-8"))
-                    except Exception:
-                        existing = {}
+                # FIX B2: lock oko read-merge-write (sprecava race izmedju niti)
+                with _QS_LOCK:
+                    existing = {}
+                    if qs_path.exists():
+                        try:
+                            existing = _json.loads(qs_path.read_text("utf-8"))
+                        except Exception:
+                            existing = {}
 
-                # Spoji: shared_stats ima prioritet (novije ocjene)
-                merged = dict(existing)
-                for k, v in self.shared_stats.get("quality_scores", {}).items():
-                    merged[k] = v
+                    # Spoji: shared_stats ima prioritet (novije ocjene)
+                    merged = dict(existing)
+                    for k, v in self.shared_stats.get("quality_scores", {}).items():
+                        merged[k] = v
 
-                # Upisi merged
-                qs_path.write_text(
-                    _json.dumps(merged, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
+                    # Atomicki upis (B3) — sprecava korupciju pri padu
+                    atomic_write_json(qs_path, merged)
 
-                # Sinhronizuj shared_stats da ne raste bezveze
-                self.shared_stats["quality_scores"] = merged
+                    # Sinhronizuj shared_stats da ne raste bezveze
+                    self.shared_stats["quality_scores"] = merged
             except Exception:
                 pass
 
