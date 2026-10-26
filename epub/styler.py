@@ -1273,6 +1273,24 @@ def _dodaj_naslov(soup, broj, naslov=None):
     if not body:
         return
 
+    # FIX 2026-10-26: TOC naslov moze biti "Pitanja\nPoradili su mu na ruci…"
+    # — spojen naslov + prva recenica iz .chk. Uzmi samo prvu liniju kao naslov
+    # i ukloni je iz prvog <p> da dropcap ne uzme slovo iz naslova.
+    if naslov and "\n" in naslov:
+        prva = naslov.split("\n")[0].strip()
+        if prva and len(prva) < 60:
+            for _p in body.find_all("p"):
+                if _p.find(True):
+                    continue
+                _t = _p.get_text()
+                if _t.lstrip().startswith(prva):
+                    _rest = _t.lstrip()[len(prva):].lstrip("\n\r \t")
+                    if _rest:
+                        _p.clear()
+                        _p.append(_rest)
+                        naslov = prva
+                    break
+
     if naslov:
         for h in body.find_all("h1"):
             h.decompose()
