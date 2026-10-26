@@ -868,28 +868,145 @@ def run_epub_styler(
     _log("   -> %d poglavlja" % len(poglavlja), "tech")
 
     dropcaps = 0
-    # FIX 2026-10-26: Spoji .chk u files dict U MEMORIJI (ne na disk).
-    # run_epub_styler radi sa files dict, ne sa diskom. Zato koristimo
-    # _spoji_chk_u_files_dict koji direktno menja files dict.
-    try:
-        from epub.packager import _spoji_chk_u_files_dict
-        from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
+    # FIX 2026-10-26 v2: Direktno ocisti .chk i ubaci u files dict.
+    # Bez _spoji_chk_u_files_dict (koji ocigledno ne radi).
+    import re as _re_sd
+    from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
+    from bs4 import BeautifulSoup as _BS_sd
 
-        # Nađi pravi _skr_ folder sa .chk
-        _pravi_skr = None
-        for _k in _CPB_s.glob("_skr_*"):
-            _ckpt = _k / "checkpoints"
-            if _ckpt.exists() and any(_ckpt.glob("*.chk")):
-                if _pravi_skr is None or _k.stat().st_mtime > _pravi_skr.stat().st_mtime:
-                    _pravi_skr = _k
+    _pravi_skr = None
+    for _k in _CPB_s.glob("_skr_*"):
+        _ckpt = _k / "checkpoints"
+        if _ckpt.exists() and any(_ckpt.glob("*.chk")):
+            if _pravi_skr is None or _k.stat().st_mtime > _pravi_skr.stat().st_mtime:
+                _pravi_skr = _k
 
-        if _pravi_skr:
-            _n = _spoji_chk_u_files_dict(files, _pravi_skr / "checkpoints")
-            print(f"  Spojeno {_n} HTML fajlova iz .chk U MEMORIJI")
-        else:
-            print("  ⚠ Nema _skr_ sa .chk")
-    except Exception as _e:
-        print(f"  ⚠ _spoji_chk_u_files_dict greška: {_e}")
+    if _pravi_skr:
+        _ckpt_dir = _pravi_skr / "checkpoints"
+        _chks = {}
+        for _f in _ckpt_dir.glob("*.chk"):
+            if _f.stem.endswith((".prevod", ".lektura")):
+                continue
+            _m = _re_sd.match(r"(.+?)_blok_(\d+)$", _f.stem)
+            if not _m:
+                continue
+            _chks.setdefault(_m.group(1), {})[int(_m.group(2))] = _f
+
+        def _ocisti(t):
+            t = _re_sd.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", t)
+            if t.strip().startswith("{"):
+                try:
+                    import json as _j
+                    d = _j.loads(t)
+                    for k in ("finalno_polirano", "korektura", "tekst", "translated"):
+                        if k in d and isinstance(d[k], str):
+                            return d[k]
+                except Exception:
+                    pass
+            return t
+
+        _basename_to_key = {
+            k.split("/")[-1]: k for k in files.keys()
+            if isinstance(k, str) and k.endswith((".html", ".xhtml", ".htm"))
+        }
+
+        _spojeno = 0
+        for _html_name, _blokovi in _chks.items():
+            _key = _basename_to_key.get(_html_name)
+            if _key is None:
+                continue
+            try:
+                _soup = _BS_sd(files[_key].decode("utf-8", "replace"), "html.parser")
+            except Exception:
+                continue
+            _body = _soup.body
+            if not _body:
+                continue
+
+            _delovi = []
+            for _i in sorted(_blokovi.keys()):
+                _raw = _ocisti(_blokovi[_i].read_text("utf-8", errors="ignore")).strip()
+                if not _raw:
+                    continue
+
+                # Očisti HTML iz .chk
+                _tmp = _BS_sd(_raw, "html.parser")
+
+                # Klase
+                for _el in _tmp.find_all(True):
+                    if _el.get("class"):
+                        _kl = _el.get("class") or []
+                        if isinstance(_kl, str):
+                            _kl = _kl.split()
+                        _nove = [
+                            c for c in _kl
+                            if not any(x in c.lower() for x in (
+                                "dc1_", "galley", "drop_capital", "toc-",
+                                "chapter", "page-", "bt1_", "bt2_",
+                                "copyright-", "part-",
+                            ))
+                        ]
+                        if _nove:
+                            _el["class"] = _nove
+                        else:
+                            del _el["class"]
+
+                # Unwrap tagove
+                for _tag_name in ("a", "section", "div"):
+                    for _tag in _tmp.find_all(_tag_name):
+                        _tag.unwrap()
+
+                # Span (osim dropcap)
+                for _span in _tmp.find_all("span"):
+                    _st = str(_span.get("style", ""))
+                    if "font-size:1px" in _st or "color:transparent" in _st:
+                        continue
+                    _span.unwrap()
+
+                # Naslovi
+                for _h in _tmp.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+                    _h.decompose()
+
+                # Dijalog
+                try:
+                    from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA as _DIJ
+                    for _node in _tmp.find_all(string=True):
+                        if _node.parent and _node.parent.name in ("script", "style"):
+                            continue
+                        _orig = str(_node)
+                        _new = _orig
+                        for _pat, _rep in _DIJ:
+                            _new = _re_sd.sub(_pat, _rep, _new)
+                        if _new != _orig:
+                            _node.replace_with(_new)
+                except Exception:
+                    pass
+
+                _cist = str(_tmp.body) if _tmp.body else str(_tmp)
+                if _cist.startswith("<body>"):
+                    _cist = _cist[6:]
+                if _cist.endswith("</body>"):
+                    _cist = _cist[:-7]
+                _cist = _cist.strip()
+
+                if _cist:
+                    _delovi.append(_cist)
+
+            if not _delovi:
+                continue
+
+            _body.clear()
+            _ns = _BS_sd("".join(_delovi), "html.parser")
+            _src = _ns.body or _ns
+            for _c in list(_src.children):
+                _body.append(_c.extract())
+
+            files[_key] = str(_soup).encode("utf-8")
+            _spojeno += 1
+
+        print(f"  Spojeno {_spojeno} HTML fajlova iz .chk (direktno)")
+    else:
+        print("  ⚠ Nema _skr_ sa .chk")
 
     for p in poglavlja:
         soup = BeautifulSoup(
