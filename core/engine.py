@@ -55,16 +55,40 @@ class SkriptorijAllInOne:
         except Exception:
             pass
 
-        self.clean_book_name = re.sub(r"[^a-zA-Z0-9_\-]", "", self.book_path.stem)
+        # ── Strip PREVEDENO_ prefiks i _STYLED sufiks (BUG: dupli PREVEDENO) ──
+        _stem = self.book_path.stem
+        _stem = re.sub(r"^PREVEDENO_+", "", _stem, flags=re.IGNORECASE)
+        _stem = re.sub(r"_STYLED$", "", _stem, flags=re.IGNORECASE)
+        self.clean_book_name = re.sub(r"[^a-zA-Z0-9_\-]", "", _stem)
 
-        # ── IZMJENA: work_dir i checkpoint_dir u CHECKPOINT_BASE_DIR ────────
-        # Staro: self.book_path.parent / f"_skr_{self.clean_book_name}"
-        # Novo:  CHECKPOINT_BASE_DIR  / f"_skr_{self.clean_book_name}"
+        # ── work_dir i checkpoint_dir u CHECKPOINT_BASE_DIR ──
+        # Bez PREVEDENO_ prefiksa: lektura prevedene knjige koristi ISTI
+        # work_dir kao prevod (ne pravi novi _skr_PREVEDENO_ folder)
         self.work_dir = CHECKPOINT_BASE_DIR / f"_skr_{self.clean_book_name}"
         self.checkpoint_dir = self.work_dir / "checkpoints"
 
-        # out_path ostaje u OUTPUT_DIR (Moon+ Reader biblioteka)
-        self.out_path = OUTPUT_DIR / f"PREVEDENO_{self.clean_book_name}.epub"
+        # ── out_path: čitaj pisac+naslov iz OPF, fallback na clean_book_name ──
+        try:
+            import zipfile as _zf
+            with _zf.ZipFile(self.book_path) as _z:
+                _opf = next((n for n in _z.namelist() if n.endswith(".opf")), None)
+                _creator, _title = "", self.clean_book_name
+                if _opf:
+                    from bs4 import BeautifulSoup as _BS
+                    _soup = _BS(_z.read(_opf), "xml")
+                    _c = _soup.find("dc:creator")
+                    _t = _soup.find("dc:title")
+                    if _c: _creator = _c.get_text(strip=True)
+                    if _t: _title = _t.get_text(strip=True)
+                if _creator and _title:
+                    _safe_creator = re.sub(r"[^\w\-]+", "_", _creator)[:40]
+                    _safe_title = re.sub(r"[^\w\-]+", "_", _title)[:60]
+                    _base = f"{_safe_creator}_{_safe_title}"
+                else:
+                    _base = self.clean_book_name
+        except Exception:
+            _base = self.clean_book_name
+        self.out_path = OUTPUT_DIR / f"{_base}_PREVEDENO.epub"
 
         self.context_mgr = BookContextManager(self.checkpoint_dir, self.log)
         self.book_context = self.context_mgr.book_context

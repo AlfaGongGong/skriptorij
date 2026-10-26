@@ -321,7 +321,7 @@ def _san(s: str) -> str:
 
 
 def _ime(c: str, t: str) -> str:
-    return f"{_san(c)}_-_{_san(t)}_PREVEDENO_STYLED.epub"
+    return f"{_san(c)}_{_san(t)}_PREVEDENO_STYLED.epub"
 
 
 SKIP_TITLES = (

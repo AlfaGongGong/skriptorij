@@ -580,6 +580,43 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.log(f"⚠️ Quality scores snimanje palo: {e}", "warning")
 
         engine.finalize()
+
+        # ── Metadata standardizacija (dc:language=hr, preveden naslov) ──
+        try:
+            from datetime import datetime as _dt_m
+            from zipfile import ZipFile as _ZipM
+
+            from core.metadata import standardizuj_metapodatke
+
+            _out = Path(engine.shared_stats.get("output_file", ""))
+            if _out.exists():
+                with _ZipM(_out) as _z:
+                    _files = {n: _z.read(n) for n in _z.namelist() if not n.endswith("/")}
+                _opf = next((n for n in _files if n.endswith(".opf")), None)
+                if _opf:
+                    _qs = engine.shared_stats.get("quality_scores", {})
+                    _vals = [v for v in _qs.values() if isinstance(v, (int, float))]
+                    _avg = sum(_vals) / len(_vals) if _vals else None
+                    _stats = standardizuj_metapodatke(
+                        files=_files, opf_path=_opf, epub_path=str(_out),
+                        translated_at=_dt_m.now().isoformat(timespec="seconds"),
+                        quality_score=_avg,
+                        pipeline_version=getattr(engine, "model_name", "V10_TURBO"),
+                    )
+                    if _stats.get("ok"):
+                        import shutil as _sh_m
+                        _tmp = str(_out) + ".meta.tmp"
+                        with _ZipM(_tmp, "w") as _z2:
+                            if "mimetype" in _files:
+                                _z2.writestr("mimetype", _files["mimetype"], compress_type=0)
+                            for _n, _d in _files.items():
+                                if _n != "mimetype":
+                                    _z2.writestr(_n, _d)
+                        _sh_m.move(_tmp, str(_out))
+                        engine.log(f"📋 Metadata standardizovani ({_stats['booklyfi_meta_added']} polja)", "tech")
+        except Exception as _me:
+            engine.log(f"⚠ Metadata greška: {_me}", "warning")
+
         _obrada_karantene_kraj_knjige(engine)
         _auto_stilizuj(engine)
 
