@@ -407,9 +407,78 @@ def _spoji_chk_u_files_dict(files: dict, checkpoint_dir: Path) -> int:
 
         delovi = []
         for i in sorted(blokovi.keys()):
-            t = _ocisti(blokovi[i].read_text("utf-8", errors="ignore")).strip()
-            if t:
-                delovi.append(t)
+            raw = _ocisti(blokovi[i].read_text("utf-8", errors="ignore")).strip()
+            if not raw:
+                continue
+
+            # FIX 2026-10-26: Očisti .chk pre ubacivanja u files dict.
+            # .chk ima sirovi HTML (galley-rw, section, h1, a, navodnici).
+            try:
+                _tmp = _BS_sd(raw, "html.parser")
+
+                # Skini klase
+                for el in _tmp.find_all(True):
+                    if el.get("class"):
+                        klase = el.get("class") or []
+                        if isinstance(klase, str):
+                            klase = klase.split()
+                        nove = [
+                            k for k in klase
+                            if not any(x in k.lower() for x in (
+                                "dc1_", "galley", "drop_capital",
+                                "toc-", "chapter", "page-", "bt1_", "bt2_",
+                                "copyright-", "part-",
+                            ))
+                        ]
+                        if nove:
+                            el["class"] = nove
+                        else:
+                            del el["class"]
+
+                # Skini <a>
+                for a in _tmp.find_all("a"):
+                    a.unwrap()
+
+                # Skini <section>, <div>, <span>
+                for tag in _tmp.find_all(["section", "div", "span"]):
+                    # Očuvaj dropcap span
+                    style = str(tag.get("style", ""))
+                    if tag.name == "span" and ("font-size:1px" in style or "color:transparent" in style):
+                        continue
+                    tag.unwrap()
+
+                # Skini <h1>-<h6> (naslov je već u originalnom HTML-u)
+                for h in _tmp.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+                    h.decompose()
+
+                # Dijalog: navodnici → em-crtica
+                try:
+                    from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA as _DIJ
+                    import re as _re_d
+                    for node in _tmp.find_all(string=True):
+                        if node.parent and node.parent.name in ("script", "style"):
+                            continue
+                        orig = str(node)
+                        new = orig
+                        for pattern, repl in _DIJ:
+                            new = _re_d.sub(pattern, repl, new)
+                        if new != orig:
+                            node.replace_with(new)
+                except Exception:
+                    pass
+
+                raw = str(_tmp.body) if _tmp.body else str(_tmp)
+                if raw.startswith("<body>"):
+                    raw = raw[6:]
+                if raw.endswith("</body>"):
+                    raw = raw[:-7]
+                raw = raw.strip()
+            except Exception:
+                pass
+
+            if raw:
+                delovi.append(raw)
+
         if not delovi:
             continue
 
