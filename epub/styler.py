@@ -481,7 +481,31 @@ def _dodaj_naslov(soup, broj, naslov=None):
 def _dodaj_dropcap(soup):
     from bs4 import NavigableString
 
-    for p in soup.find_all("p"):
+    # FIX 2026-10-26: Dropcap ide SAMO u prvi <p> posle <h1>.
+    # Ako je taj <p> dijalog (— " „), PRESKOČI dropcap za celo poglavlje
+    # (ne idi dalje — inače završi na pola stranice).
+    body = soup.find("body")
+    if not body:
+        return False
+
+    h1 = body.find("h1")
+    if h1:
+        # Prvi <p> sibling posle <h1> (ili unutar div-a posle <h1>)
+        prvi_p = h1.find_next("p")
+    else:
+        prvi_p = body.find("p")
+
+    if prvi_p is None:
+        return False
+
+    # Ako je prvi <p> dijalog — preskoči dropcap
+    prvi_tekst = prvi_p.get_text(strip=True)
+    if prvi_tekst and prvi_tekst[0] in ("—", "–", "-", "‒", "―",
+                                         '"', "„", '"', '"', "«", "'"):
+        return False
+
+    # Primeni dropcap SAMO na prvi_p
+    for p in [prvi_p]:
         cls = p.get("class") or []
         if isinstance(cls, str):
             cls = cls.split()
@@ -490,10 +514,6 @@ def _dodaj_dropcap(soup):
 
         text = p.get_text(strip=True)
         if len(text) < 60 or text.isdigit():
-            continue
-        if text[0] in ("—", "–", "-", "‒", "―"):
-            continue
-        if text[0] in ('"', "„", '"', '"', "«", "'"):
             continue
 
         prvo = None
