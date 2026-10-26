@@ -874,12 +874,34 @@ def run_epub_styler(
     from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
     from bs4 import BeautifulSoup as _BS_sd
 
+    # FIX: izvuci ime iz EPUB putanje, ne biraj po mtime
+    import re as _re_name
+    _epub_stem = Path(str(epub_path)).stem
+    _epub_stem = _re_name.sub(r"^(?:PREVEDENO_)+", "", _epub_stem, flags=_re_name.IGNORECASE)
+    _epub_stem = _re_name.sub(r"(?:_PREVEDENO|_STYLED)+$", "", _epub_stem, flags=_re_name.IGNORECASE)
+
     _pravi_skr = None
-    for _k in _CPB_s.glob("_skr_*"):
-        _ckpt = _k / "checkpoints"
-        if _ckpt.exists() and any(_ckpt.glob("*.chk")):
-            if _pravi_skr is None or _k.stat().st_mtime > _pravi_skr.stat().st_mtime:
-                _pravi_skr = _k
+    _exact = _CPB_s / f"_skr_{_epub_stem}"
+    if _exact.exists() and (_exact / "checkpoints").exists() and any((_exact / "checkpoints").glob("*.chk")):
+        _pravi_skr = _exact
+    else:
+        _kandidati = []
+        for _k in _CPB_s.glob("_skr_*"):
+            _ckpt = _k / "checkpoints"
+            if not _ckpt.exists() or not any(_ckpt.glob("*.chk")):
+                continue
+            _k_name = _k.name.replace("_skr_", "")
+            if _k_name in _epub_stem or _epub_stem in _k_name:
+                _kandidati.append(_k)
+                continue
+            if _k_name[:20] == _epub_stem[:20]:
+                _kandidati.append(_k)
+                continue
+            if _k_name[-20:] == _epub_stem[-20:]:
+                _kandidati.append(_k)
+                continue
+        if _kandidati:
+            _pravi_skr = max(_kandidati, key=lambda k: len(list((k / "checkpoints").glob("*.chk"))))
 
     if _pravi_skr:
         _ckpt_dir = _pravi_skr / "checkpoints"
