@@ -1,0 +1,321 @@
+{
+  "_opis": "Globalna pravila prevoda — HR ijekavica. Primenjuju se na SVE knjige.",
+  "_verzija": "1.0",
+  "_datum": "2026-10-26",
+  "titula": {
+    "King": {
+      "hr": "Kralj",
+      "obavezno": true
+    },
+    "Queen": {
+      "hr": "Kraljica",
+      "obavezno": true
+    },
+    "Prince": {
+      "hr": "Princ",
+      "obavezno": true
+    },
+    "Princess": {
+      "hr": "Princeza",
+      "obavezno": true
+    },
+    "Duke": {
+      "hr": "Vojvoda",
+      "obavezno": true
+    },
+    "Duchess": {
+      "hr": "Vojvotkinja",
+      "obavezno": true
+    },
+    "Count": {
+      "hr": "Grof",
+      "obavezno": true
+    },
+    "Countess": {
+      "hr": "Grofica",
+      "obavezno": true
+    },
+    "Marshal": {
+      "hr": "Maršal",
+      "obavezno": true
+    },
+    "Colonel": {
+      "hr": "Pukovnik",
+      "obavezno": true
+    },
+    "Captain": {
+      "hr": "Kapetan",
+      "obavezno": true
+    },
+    "Corporal": {
+      "hr": "Korporal",
+      "obavezno": true
+    },
+    "Private": {
+      "hr": "Redov",
+      "obavezno": true
+    },
+    "General": {
+      "hr": "General",
+      "obavezno": true
+    },
+    "Minister": {
+      "hr": "Ministar",
+      "obavezno": true
+    },
+    "Chancellor": {
+      "hr": "Kancelar",
+      "obavezno": true
+    },
+    "Governor": {
+      "hr": "Guverner",
+      "obavezno": true
+    },
+    "Judge": {
+      "hr": "Sudac",
+      "obavezno": true
+    },
+    "Alderman": {
+      "hr": "Vijećnik",
+      "obavezno": true
+    },
+    "Chief": {
+      "hr": "Glavar",
+      "obavezno": true
+    },
+    "Dowager": {
+      "hr": "Udovica",
+      "obavezno": true
+    },
+    "Superior": {
+      "hr": "Superior",
+      "obavezno": true
+    },
+    "High": {
+      "hr": "Visoki",
+      "obavezno": true
+    },
+    "Practical": {
+      "hr": "Praktičar",
+      "hr_z": "Praktičarka",
+      "obavezno": true
+    }
+  },
+  "frakcija": {
+    "Circle": {
+      "hr": "Krug",
+      "obavezno": true
+    },
+    "Eaters": {
+      "hr": "Žderači",
+      "obavezno": true
+    },
+    "Knights": {
+      "hr": "Vitezovi",
+      "obavezno": true
+    },
+    "Society": {
+      "hr": "Društvo",
+      "obavezno": true
+    },
+    "Order": {
+      "hr": "Red",
+      "obavezno": true
+    },
+    "Division": {
+      "hr": "Divizija",
+      "obavezno": true
+    },
+    "Legion": {
+      "hr": "Legija",
+      "obavezno": true
+    },
+    "Practicals": {
+      "hr": "Praktičari",
+      "obavezno": true
+    },
+    "Chiefs": {
+      "hr": "Glavari",
+      "obavezno": true
+    },
+    "Assembly": {
+      "hr": "Skupština",
+      "obavezno": true
+    },
+    "Killers": {
+      "hr": "Ubojice",
+      "obavezno": true
+    },
+    "Riders": {
+      "hr": "Jahači",
+      "obavezno": true
+    },
+    "Burners": {
+      "hr": "Palikuće",
+      "obavezno": true
+    },
+    "Breakers": {
+      "hr": "Razbijači",
+      "obavezno": true
+    }
+  },
+  "mjesto_opisno": {
+    "North": {
+      "hr": "Sjever",
+      "obavezno": true
+    },
+    "South": {
+      "hr": "Jug",
+      "obavezno": true
+    },
+    "East": {
+      "hr": "Istok",
+      "obavezno": true
+    },
+    "West": {
+      "hr": "Zapad",
+      "obavezno": true
+    },
+    "Forest": {
+      "hr": "Šuma",
+      "obavezno": true
+    },
+    "Isles": {
+      "hr": "Otoci",
+      "obavezno": true
+    },
+    "Islands": {
+      "hr": "Otoci",
+      "obavezno": true
+    },
+    "Lake": {
+      "hr": "Jezero",
+      "obavezno": true
+    },
+    "Sea": {
+      "hr": "More",
+      "obavezno": true
+    },
+    "Ocean": {
+      "hr": "Ocean",
+      "obavezno": true
+    },
+    "Mountain": {
+      "hr": "Planina",
+      "obavezno": true
+    },
+    "River": {
+      "hr": "Rijeka",
+      "obavezno": true
+    },
+    "Crossroads": {
+      "hr": "Raskrižje",
+      "obavezno": true
+    },
+    "City": {
+      "hr": "Grad",
+      "obavezno": true
+    },
+    "Wall": {
+      "hr": "Zid",
+      "obavezno": true
+    },
+    "Gate": {
+      "hr": "Vrata",
+      "obavezno": true
+    },
+    "Bridge": {
+      "hr": "Most",
+      "obavezno": true
+    },
+    "Tower": {
+      "hr": "Kula",
+      "obavezno": true
+    },
+    "Castle": {
+      "hr": "Dvorac",
+      "obavezno": true
+    },
+    "Fortress": {
+      "hr": "Tvrđava",
+      "obavezno": true
+    },
+    "Valley": {
+      "hr": "Dolina",
+      "obavezno": true
+    },
+    "Hill": {
+      "hr": "Brijeg",
+      "obavezno": true
+    },
+    "Plain": {
+      "hr": "Ravnica",
+      "obavezno": true
+    },
+    "Desert": {
+      "hr": "Pustinja",
+      "obavezno": true
+    }
+  },
+  "nadimak": {
+    "Ironhand": {
+      "hr": "Željezna Ruka",
+      "obavezno": true
+    },
+    "Snake": {
+      "hr": "Zmija",
+      "obavezno": true
+    },
+    "Ladderman": {
+      "hr": "Ljestvičar",
+      "obavezno": true
+    },
+    "Breaker": {
+      "hr": "Razbijač",
+      "obavezno": true
+    },
+    "Burner": {
+      "hr": "Palikuća",
+      "obavezno": true
+    },
+    "Eater": {
+      "hr": "Žderač",
+      "obavezno": true
+    },
+    "Maker": {
+      "hr": "Tvorac",
+      "obavezno": true
+    },
+    "Wolf": {
+      "hr": "Vuk",
+      "obavezno": true
+    },
+    "Lion": {
+      "hr": "Lav",
+      "obavezno": true
+    },
+    "Serpent": {
+      "hr": "Zmija",
+      "obavezno": true
+    }
+  },
+  "lik": {
+    "_pravilo": "Likovi (osobna imena) se NIKAD ne prevode. Leo, Savine, Sand, Scale, Sulfur ostaju."
+  },
+  "mjesto_izmisljeno": {
+    "_pravilo": "Izmišljena imena mjesta (Dagoska, Styria, Adua, Crinna, Protectorate) ostaju u originalu."
+  },
+  "titule_ostaju": {
+    "_opis": "Titule koje ostaju u originalu (opcija A — konzervativna HR fantasy)",
+    "liste": [
+      "Lord",
+      "Lady",
+      "Sir",
+      "Dame",
+      "Baron",
+      "Baroness",
+      "Master",
+      "Mistress"
+    ]
+  }
+}
