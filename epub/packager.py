@@ -344,6 +344,87 @@ def _finaliziraj_fix_epub(self):
     self.log("Finalni fixevi primijenjeni", "tech")
 
 
+def _spoji_chk_u_files_dict(files: dict, checkpoint_dir: Path) -> int:
+    """
+    FIX 2026-10-26: Spoji .chk u files dict U MEMORIJI (ne na disk).
+    Za razliku od _spoji_chk_u_html koji menja fajlove na disku,
+    ova funkcija menja files dict direktno — bez disk I/O.
+
+    Koristi se u run_epub_styler gde radimo sa files dict, ne sa diskom.
+    """
+    import re as _re_sd
+    from bs4 import BeautifulSoup as _BS_sd
+
+    checkpoint_dir = Path(checkpoint_dir)
+    if not checkpoint_dir.exists():
+        return 0
+
+    chks = {}
+    for f in checkpoint_dir.glob("*.chk"):
+        if f.stem.endswith((".prevod", ".lektura")):
+            continue
+        m = _re_sd.match(r"(.+?)_blok_(\d+)$", f.stem)
+        if not m:
+            continue
+        chks.setdefault(m.group(1), {})[int(m.group(2))] = f
+
+    if not chks:
+        return 0
+
+    def _ocisti(t):
+        t = _re_sd.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", t)
+        if t.strip().startswith("{"):
+            try:
+                import json as _j
+                d = _j.loads(t)
+                for k in ("finalno_polirano", "korektura", "tekst", "translated"):
+                    if k in d and isinstance(d[k], str):
+                        return d[k]
+            except Exception:
+                pass
+        return t
+
+    zamenjeno = 0
+    # Mapiraj basename -> puni kljuc u files dict
+    basename_to_key = {}
+    for k in files.keys():
+        if isinstance(k, str) and k.endswith((".html", ".xhtml", ".htm")):
+            basename_to_key[k.split("/")[-1]] = k
+
+    for html_name, blokovi in chks.items():
+        # html_name je npr "part0082.html"
+        key = basename_to_key.get(html_name)
+        if key is None:
+            continue
+
+        try:
+            soup = _BS_sd(files[key].decode("utf-8", "replace"), "html.parser")
+        except Exception:
+            continue
+        body = soup.body
+        if not body:
+            continue
+
+        delovi = []
+        for i in sorted(blokovi.keys()):
+            t = _ocisti(blokovi[i].read_text("utf-8", errors="ignore")).strip()
+            if t:
+                delovi.append(t)
+        if not delovi:
+            continue
+
+        body.clear()
+        ns = _BS_sd("".join(delovi), "html.parser")
+        src_soup = ns.body or ns
+        for c in list(src_soup.children):
+            body.append(c.extract())
+
+        files[key] = str(soup).encode("utf-8")
+        zamenjeno += 1
+
+    return zamenjeno
+
+
 def _spoji_chk_u_html(engine):
     """
     FIX 2026-10-26: Spoji .chk blokove u HTML fajlove u work_dir PRE

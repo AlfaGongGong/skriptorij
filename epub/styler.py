@@ -868,68 +868,28 @@ def run_epub_styler(
     _log("   -> %d poglavlja" % len(poglavlja), "tech")
 
     dropcaps = 0
-    # FIX 2026-10-26: Spo ji .chk u files dict pre obrade.
-    # Koristi pravi _spoji_chk_u_html() sa fake engine-om koji ima
-    # clean_book_name (za fuzzy pretragu _skr_ foldera).
+    # FIX 2026-10-26: Spoji .chk u files dict U MEMORIJI (ne na disk).
+    # run_epub_styler radi sa files dict, ne sa diskom. Zato koristimo
+    # _spoji_chk_u_files_dict koji direktno menja files dict.
     try:
-        from epub.packager import _spoji_chk_u_html
+        from epub.packager import _spoji_chk_u_files_dict
         from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
-        from pathlib import Path as _P_s
 
-        # Napravi fake engine sa svim potrebnim atributima
-        class _FakeEngine:
-            def __init__(self, work_dir, checkpoint_dir):
-                self.work_dir = work_dir
-                self.checkpoint_dir = checkpoint_dir
-                self.clean_book_name = work_dir.name.replace("_skr_", "", 1)
-            def log(self, msg, lvl="info"):
-                print(f"  [{lvl}] {msg}")
-
-        # Nađi pravi _skr_ folder (sa .chk + text/)
+        # Nađi pravi _skr_ folder sa .chk
         _pravi_skr = None
         for _k in _CPB_s.glob("_skr_*"):
             _ckpt = _k / "checkpoints"
-            _txt = _k / "text"
-            if (_ckpt.exists() and any(_ckpt.glob("*.chk"))
-                    and _txt.exists() and any(_txt.glob("*.html"))):
+            if _ckpt.exists() and any(_ckpt.glob("*.chk")):
                 if _pravi_skr is None or _k.stat().st_mtime > _pravi_skr.stat().st_mtime:
                     _pravi_skr = _k
 
         if _pravi_skr:
-            _eng = _FakeEngine(_pravi_skr, _pravi_skr / "checkpoints")
-            _n = _spoji_chk_u_html(_eng)
-            print(f"  Spojeno {_n} HTML fajlova iz .chk")
-
-            # FIX 2026-10-26: Ponovo učitaj HTML fajlove sa diska u files dict.
-            # _spoji_chk_u_html menja fajlove NA DISKU, ali files dict u
-            # run_epub_styler je u MEMORIJI od početka. Bez reload-a,
-            # files dict ima STARU verziju HTML-a (sa galley-rw, navodnicima).
-            _reloaded = 0
-            _skipped = 0
-            for _html_name in list(files.keys()):
-                if not _html_name.endswith((".html", ".xhtml", ".htm")):
-                    continue
-                _basename = _html_name.split("/")[-1]
-                # Traži u text/ (najčešće)
-                _disk_path = _pravi_skr / "text" / _basename
-                if not _disk_path.exists():
-                    # Traži bilo gde u _skr_
-                    _found = list(_pravi_skr.rglob(_basename))
-                    if _found:
-                        _disk_path = _found[0]
-                    else:
-                        _skipped += 1
-                        continue
-                try:
-                    files[_html_name] = _disk_path.read_bytes()
-                    _reloaded += 1
-                except Exception:
-                    _skipped += 1
-            print(f"  Reloaded {_reloaded} HTML fajlova sa diska (skip: {_skipped})")
+            _n = _spoji_chk_u_files_dict(files, _pravi_skr / "checkpoints")
+            print(f"  Spojeno {_n} HTML fajlova iz .chk U MEMORIJI")
         else:
-            print("  ⚠ Nema _skr_ sa .chk + text/")
+            print("  ⚠ Nema _skr_ sa .chk")
     except Exception as _e:
-        print(f"  ⚠ _spoji_chk_u_html greška: {_e}")
+        print(f"  ⚠ _spoji_chk_u_files_dict greška: {_e}")
 
     for p in poglavlja:
         soup = BeautifulSoup(
