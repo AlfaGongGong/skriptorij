@@ -344,6 +344,98 @@ def _finaliziraj_fix_epub(self):
     self.log("Finalni fixevi primijenjeni", "tech")
 
 
+def _spoji_chk_u_html(engine):
+    """
+    FIX 2026-10-26: Spoji .chk blokove u HTML fajlove u work_dir PRE
+    pakovanja EPUB-a.
+
+    Uzrok problema: process_single_file_worker ažurira HTML iz final_parts,
+    ali kad su svi blokovi cache hit, može se desiti da se HTML ne ažurira
+    sinhrono sa .chk → finalize() pakuje HTML od PREVOD-a (837k) umesto
+    lekturiranog (.chk, 918k). Gubitak 81k.
+
+    Rešenje: pre pakovanja, za svaki HTML koji ima .chk u checkpoint_dir,
+    spoji sve .chk blokove (sortirano po blok_idx) i prepiši <body>.
+
+    Idempotentno — ne menja ništa ako su .chk već spojeni u HTML.
+    """
+    import re as _re_sk
+    from pathlib import Path as _P
+
+    from bs4 import BeautifulSoup as _BS
+
+    work_dir = _P(engine.work_dir)
+    checkpoint_dir = _P(engine.checkpoint_dir)
+
+    if not checkpoint_dir.exists():
+        return 0
+
+    # Skupi .chk po HTML fajlu
+    chks = {}
+    for f in checkpoint_dir.glob("*.chk"):
+        if f.stem.endswith((".prevod", ".lektura")):
+            continue
+        m = _re_sk.match(r"(.+?)_blok_(\d+)$", f.stem)
+        if not m:
+            continue
+        chks.setdefault(m.group(1), {})[int(m.group(2))] = f
+
+    if not chks:
+        return 0
+
+    def _ocisti_chk(t):
+        t = _re_sk.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", t)
+        if t.strip().startswith("{"):
+            try:
+                import json as _j
+                d = _j.loads(t)
+                for k in ("finalno_polirano", "korektura", "tekst", "translated"):
+                    if k in d and isinstance(d[k], str):
+                        return d[k]
+            except Exception:
+                pass
+        return t
+
+    zamenjeno = 0
+    for html_name, blokovi in chks.items():
+        src = work_dir / "text" / html_name
+        if not src.exists():
+            # Pokušaj rekurzivno
+            found = list(work_dir.rglob(html_name))
+            if not found:
+                continue
+            src = found[0]
+
+        try:
+            soup = _BS(src.read_text("utf-8", errors="ignore"), "html.parser")
+        except Exception:
+            continue
+
+        body = soup.body
+        if not body:
+            continue
+
+        delovi = []
+        for i in sorted(blokovi.keys()):
+            t = _ocisti_chk(blokovi[i].read_text("utf-8", errors="ignore")).strip()
+            if t:
+                delovi.append(t)
+
+        if not delovi:
+            continue
+
+        body.clear()
+        ns = _BS("".join(delovi), "html.parser")
+        src_soup = ns.body or ns
+        for c in list(src_soup.children):
+            body.append(c.extract())
+
+        src.write_text(str(soup), encoding="utf-8")
+        zamenjeno += 1
+
+    return zamenjeno
+
+
 def finalize(self):
     """
     1. Pakuje finalni EPUB u INPUT_DIR (kao i dosad).
@@ -487,6 +579,18 @@ def finalize(self):
             with contextlib.suppress(Exception):
                 self.log(f"⚠ Metadata greška: {_me}", "warning")
 
+
+        # FIX 2026-10-26: Spoji .chk u HTML pre pakovanja.
+        # Garantuje da EPUB sadrži lekturirani tekst, ne HTML od PREVOD-a.
+        try:
+            _spojeno = _spoji_chk_u_html(self)
+            if _spojeno > 0:
+                self.log(
+                    f"🔗 Spojeno {_spojeno} HTML fajlova iz .chk prije pakovanja",
+                    "tech",
+                )
+        except Exception as _e:
+            self.log(f"⚠ Spajanje .chk u HTML palo: {_e}", "warning")
 
         # FIX 2026-10-26: Streaming pakovanje sa minimalnom memorijom.
         # compresslevel=1 (3x manje memorije), mimetype prvi bez kompresije.
