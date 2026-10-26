@@ -563,6 +563,53 @@ def _spoji_chk_u_html(engine):
                 delovi.append(raw)
 
         if not delovi:
+            # Nema .chk za ovaj fajl (paratekst) — samo ocisti HTML
+            try:
+                for el in soup.find_all(True):
+                    if el.get("class"):
+                        klase = el.get("class") or []
+                        if isinstance(klase, str):
+                            klase = klase.split()
+                        nove = [
+                            k for k in klase
+                            if not any(x in k.lower() for x in (
+                                "dc1_", "galley", "drop_capital",
+                                "toc-", "chapter", "page-", "bt1_", "bt2_",
+                            ))
+                        ]
+                        if nove:
+                            el["class"] = nove
+                        else:
+                            del el["class"]
+                for a in soup.find_all("a"):
+                    href = a.get("href", "")
+                    if not href or href.startswith("#") or "part0" in href or "toc-" in href:
+                        a.unwrap()
+                for sec in soup.find_all("section"):
+                    sec.unwrap()
+                for div in soup.find_all("div"):
+                    div.unwrap()
+                for span in soup.find_all("span"):
+                    span.unwrap()
+                # Dijalog i na fajlovima bez .chk
+                try:
+                    from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA as _DIJ
+                    import re as _re_p
+                    for node in soup.find_all(string=True):
+                        if node.parent and node.parent.name in ("script", "style"):
+                            continue
+                        orig = str(node)
+                        new = orig
+                        for pattern, repl in _DIJ:
+                            new = _re_p.sub(pattern, repl, new)
+                        if new != orig:
+                            node.replace_with(new)
+                except Exception:
+                    pass
+                src.write_text(str(soup), encoding="utf-8")
+                zamenjeno += 1
+            except Exception:
+                pass
             continue
 
         body.clear()
@@ -570,6 +617,51 @@ def _spoji_chk_u_html(engine):
         src_soup = ns.body or ns
         for c in list(src_soup.children):
             body.append(c.extract())
+
+        # FINALNO CISCENJE — posle ubacivanja .chk u body
+        # Ukloni sve sto je ostalo (galley-rw, dc1_, navodnike)
+        try:
+            for el in soup.find_all(True):
+                if el.get("class"):
+                    klase = el.get("class") or []
+                    if isinstance(klase, str):
+                        klase = klase.split()
+                    nove = [
+                        k for k in klase
+                        if not any(x in k.lower() for x in (
+                            "dc1_", "galley", "drop_capital",
+                            "toc-", "chapter", "page-", "bt1_", "bt2_",
+                        ))
+                    ]
+                    if nove:
+                        el["class"] = nove
+                    else:
+                        del el["class"]
+            for div in soup.find_all("div"):
+                div.unwrap()
+            for span in soup.find_all("span"):
+                # Očuvaj dropcap span (font-size:1px) i sliku
+                style = str(span.get("style", ""))
+                if "font-size:1px" in style or "color:transparent" in style:
+                    continue
+                span.unwrap()
+            # Dijalog posle ubacivanja (finalni prolaz)
+            try:
+                from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA as _DIJ2
+                import re as _re_p2
+                for node in soup.find_all(string=True):
+                    if node.parent and node.parent.name in ("script", "style"):
+                        continue
+                    orig = str(node)
+                    new = orig
+                    for pattern, repl in _DIJ2:
+                        new = _re_p2.sub(pattern, repl, new)
+                    if new != orig:
+                        node.replace_with(new)
+            except Exception:
+                pass
+        except Exception:
+            pass
 
         src.write_text(str(soup), encoding="utf-8")
         zamenjeno += 1
