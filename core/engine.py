@@ -57,8 +57,10 @@ class SkriptorijAllInOne:
 
         # ── Strip PREVEDENO_ prefiks i _STYLED sufiks (BUG: dupli PREVEDENO) ──
         _stem = self.book_path.stem
-        _stem = re.sub(r"^PREVEDENO_+", "", _stem, flags=re.IGNORECASE)
-        _stem = re.sub(r"_STYLED$", "", _stem, flags=re.IGNORECASE)
+        # Skini SVE PREVEDENO_ prefikse (može biti dupli PREVEDENO_PREVEDENO_)
+        _stem = re.sub(r"^(?:PREVEDENO_)+", "", _stem, flags=re.IGNORECASE)
+        # Skini SVE _PREVEDENO i _STYLED sufikse (može biti _PREVEDENO_STYLED)
+        _stem = re.sub(r"(?:_PREVEDENO|_STYLED)+$", "", _stem, flags=re.IGNORECASE)
         self.clean_book_name = re.sub(r"[^a-zA-Z0-9_\-]", "", _stem)
 
         # ── work_dir i checkpoint_dir u CHECKPOINT_BASE_DIR ──
