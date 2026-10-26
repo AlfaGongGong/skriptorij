@@ -471,9 +471,96 @@ def _spoji_chk_u_html(engine):
 
         delovi = []
         for i in sorted(blokovi.keys()):
-            t = _ocisti_chk(blokovi[i].read_text("utf-8", errors="ignore")).strip()
-            if t:
-                delovi.append(t)
+            raw = _ocisti_chk(blokovi[i].read_text("utf-8", errors="ignore")).strip()
+            if not raw:
+                continue
+
+            # FIX 2026-10-26: Očisti .chk pre ubacivanja u HTML.
+            # .chk može imati sirovi HTML iz lekture:
+            #   - <div class="galley-rw">, <span class="dc1_drop_capital_">
+            #   - <a> tagove, <section> tagove
+            #   - ASCII navodnike "..." u dijalogu (treba → —)
+            # Redosled: strip → normalizuj → dijalog
+            try:
+                from bs4 import BeautifulSoup as _BS_C
+                _tmp_soup = _BS_C(raw, "html.parser")
+
+                # 1. Skini stare klase (dc1_drop_capital_, galley-rw, itd.)
+                for el in _tmp_soup.find_all(True):
+                    if el.get("class"):
+                        klase = el.get("class") or []
+                        if isinstance(klase, str):
+                            klase = klase.split()
+                        nove = [
+                            k for k in klase
+                            if not any(x in k.lower() for x in (
+                                "dc1_", "galley", "drop_capital",
+                                "toc-", "chapter", "page-", "bt1_", "bt2_",
+                            ))
+                        ]
+                        if nove:
+                            el["class"] = nove
+                        else:
+                            del el["class"]
+                    # Skini id koji je Calibre-ov anchor
+                    if el.get("id") and el.name in ("h1", "h2", "h3", "a", "section"):
+                        if any(x in str(el.get("id")).lower() for x in (
+                            "chapter", "toc-", "page-", "1737",
+                        )):
+                            del el["id"]
+
+                # 2. Skini <a> tagove koji su samo navigacioni (bez href ili href u istoj knjizi)
+                for a in _tmp_soup.find_all("a"):
+                    href = a.get("href", "")
+                    if not href or href.startswith("#") or "part0" in href or "toc-" in href:
+                        a.unwrap()
+
+                # 3. Skini <section> (unwrap)
+                for sec in _tmp_soup.find_all("section"):
+                    sec.unwrap()
+
+                # 4. Skini <div> sa tekstom → unwrap, sa decom → unwrap
+                for div in _tmp_soup.find_all("div"):
+                    div.unwrap()
+
+                # 5. Skini <span> sa decom → unwrap (dc1_drop_capital)
+                for span in _tmp_soup.find_all("span"):
+                    span.unwrap()
+
+                # 6. Dijalog: ASCII "..." → —
+                try:
+                    from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA
+                    import re as _re_d
+                    for node in _tmp_soup.find_all(string=True):
+                        if node.parent and node.parent.name in ("script", "style"):
+                            continue
+                        orig = str(node)
+                        new = orig
+                        for pattern, repl in DIJALOG_TIPOGRAFIJA:
+                            new = _re_d.sub(pattern, repl, new)
+                        if new != orig:
+                            node.replace_with(new)
+                except Exception:
+                    pass
+
+                # 7. Skini <h1>/<h2>/<h3> iz .chk sadržaja (naslov je već u originalnom HTML-u)
+                for h in _tmp_soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+                    h.decompose()
+
+                raw = str(_tmp_soup.body) if _tmp_soup.body else str(_tmp_soup)
+                # Skini <body> wrapper ako postoji
+                if raw.startswith("<body>"):
+                    raw = raw[6:]
+                if raw.endswith("</body>"):
+                    raw = raw[:-7]
+                raw = raw.strip()
+            except Exception as _ce:
+                engine.log(f"⚠ čišćenje .chk palo: {_ce}", "warning")
+                # Fallback: koristi original
+                pass
+
+            if raw:
+                delovi.append(raw)
 
         if not delovi:
             continue
