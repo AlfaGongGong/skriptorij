@@ -820,3 +820,32 @@ H i I su veliki refaktori (visok rizik), idu na kraj kad su A–G i J stabilni.
 ---
 
 KRAJ KONTEKSTA
+
+## THREAD 2026-10-26
+
+### Uradjeno
+- _ukloni_sve unwrap section/galley-rw
+- Orphan navodnici 1-6 (dijalog.py)
+- _dodaj_naslov split TOC naslov
+- UI default standard (run_epub_styler)
+- A1 path traversal 4 rute
+- A2 main.py bind 127.0.0.1
+- B1-B3 atomic_write + _QS_LOCK
+- C1/C2/C3 146 except-pass -> logger
+- _ukloni_duplikate_p (80c prefix)
+- Dropcap display:block
+
+### Bugovi koji ostaju
+- Dijalog u lekturi spojen u jedan p (razdvoji_dijalog_p uklonjen jer je stetio naraciji)
+- 46 poglavlja bez dropcapa (pocinju emcrticom ili kratkim p)
+- 3 sumnjiva replacement pravila
+
+### Batch D-J nedovrseno
+D frontend | E mobilni | F UX | G pristupacnost | H app.py blueprints | I duplirana stilizacija | J odrzavanje
+
+### Kriticno
+- main.py: _host PRIJE try: (inace NameError)
+- from __future__ poslije svih importa (compile() hvata, ast.parse ne)
+- _ukloni_duplikate_p PRIJE _dodaj_dropcap
+- _razdvoji_dijalog_p NIKAD vracati (steti naraciji)
+- Dva run_epub_styler (641, 1328) — Python koristi zadnju
