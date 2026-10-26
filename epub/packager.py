@@ -367,12 +367,61 @@ def _spoji_chk_u_html(engine):
     work_dir = _P(engine.work_dir)
     checkpoint_dir = _P(engine.checkpoint_dir)
 
-    if not checkpoint_dir.exists():
+    # FIX 2026-10-26: Fallback na stariji _skr_ folder ako trenutni nema .chk.
+    # Kad output postane Joe_Abercrombie_..._PREVEDENO.epub, clean_book_name
+    # postane Joe_Abercrombie_The_Trouble_With_Peace, ali .chk su u
+    # _skr_The_Trouble_With_Peace (od pre output-rename faze).
+    # Traži u SVIM _skr_* folderima koji dele prvih 15 znakova imena.
+    from config.settings import CHECKPOINT_BASE_DIR as _CPB
+
+    def _nadji_chk_dir():
+        # 1. Trenutni
+        if checkpoint_dir.exists() and any(checkpoint_dir.glob("*.chk")):
+            return checkpoint_dir
+
+        # 2. Fuzzy po imenu — skini Joe_Abercrombie_ i slicne prefikse
+        name = engine.clean_book_name
+        # Ukloni prefiks "Joe_Abercrombie_" ili bilo koji "Ime_Prezime_"
+        # da dobijemo čist naziv knjige
+        # Probaj različite dužine ključa
+        for kljuc_len in (30, 25, 20, 15, 10):
+            kljuc = name[:kljuc_len]
+            if len(kljuc) < 8:
+                continue
+            kandidati = list(_CPB.glob(f"_skr_*{kljuc}*"))
+            for k in kandidati:
+                ckpt = k / "checkpoints"
+                if ckpt.exists() and any(ckpt.glob("*.chk")):
+                    return ckpt
+
+        # 3. Traži po sufiksu — skini sve prefikse pre poslednje dve reči
+        parts = name.split("_")
+        for i in range(len(parts) - 1):
+            suffix = "_".join(parts[i:])
+            if len(suffix) < 8:
+                continue
+            kandidati = list(_CPB.glob(f"_skr_*{suffix}*"))
+            for k in kandidati:
+                ckpt = k / "checkpoints"
+                if ckpt.exists() and any(ckpt.glob("*.chk")):
+                    return ckpt
+
+        return None
+
+    stvarni_chk_dir = _nadji_chk_dir()
+    if stvarni_chk_dir is None:
+        engine.log("⚠ _spoji_chk_u_html: nema .chk ni u jednom _skr_ folderu", "warning")
         return 0
+
+    if stvarni_chk_dir != checkpoint_dir:
+        engine.log(
+            f"🔍 _spoji_chk_u_html: koristim .chk iz {stvarni_chk_dir.parent.name}",
+            "tech",
+        )
 
     # Skupi .chk po HTML fajlu
     chks = {}
-    for f in checkpoint_dir.glob("*.chk"):
+    for f in stvarni_chk_dir.glob("*.chk"):
         if f.stem.endswith((".prevod", ".lektura")):
             continue
         m = _re_sk.match(r"(.+?)_blok_(\d+)$", f.stem)
