@@ -219,6 +219,16 @@ def _chk_read(
                 ]
                 if stored != expected:
                     return None
+
+        # FIX 2026-10-26: Ukloni SVE preostale chunk_sha markere (mogu biti
+        # u sredini/kraju teksta od prethodnih lektura koje su pisale u HTML).
+        import re as _re_csr
+        _prije = len(tekst)
+        tekst = _re_csr.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", tekst)
+        if len(tekst) < _prije:
+            # Marker je bio u sredini — očisti i JSON wrapper ako treba
+            tekst = _ocisti_json_wrapper(tekst)
+
         tekst = _ocisti_json_wrapper(tekst)
         if len(tekst) <= 10 or _je_placeholder(tekst):
             return None
@@ -265,6 +275,13 @@ def _chk_write(
     import hashlib as _hashlib
 
     p = _chk_path(self, file_name, chunk_idx, suffix)
+
+    # FIX 2026-10-26: Očisti SVE postojeće chunk_sha markere iz sadržaja
+    # prije dodavanja novog. Sprječava akumulaciju markera kroz lekturu:
+    # _chk_read ukloni prvi, ostali ostaju u res, pa u HTML, pa u sljedeći .chk...
+    import re as _re_cs
+    sadrzaj = _re_cs.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", sadrzaj)
+
     if chunk_for_hash is not None:
         sha = _hashlib.sha256(chunk_for_hash.encode("utf-8")).hexdigest()[:16]
         if model_hash is not None or glosar_hash is not None:

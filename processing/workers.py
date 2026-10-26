@@ -901,14 +901,25 @@ async def process_single_file_worker(self, file_path):
     body = orig_soup.body
     if body:
         body.clear()
-        translated_soup = BeautifulSoup("".join(final_parts), "html.parser")
+        # FIX 2026-10-26: Očisti chunk_sha markere iz svih delova prije upisa
+        # u HTML. Sprječava da markeri iz .chk procure u HTML fajl (i dalje
+        # u sljedeću lekturu — vicious cycle).
+        import re as _re_ws
+        _final_joined = "".join(final_parts)
+        _final_joined = _re_ws.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", _final_joined)
+
+        translated_soup = BeautifulSoup(_final_joined, "html.parser")
         # BUGFIX: .children vraća <html> wrapper, ne body djecu — koristimo .body
         source = translated_soup.body or translated_soup
         for child in list(source.children):
             body.append(child.extract())
         file_path.write_text(str(orig_soup), encoding="utf-8")
     else:
-        file_path.write_text("".join(final_parts), encoding="utf-8")
+        import re as _re_ws2
+        file_path.write_text(
+            _re_ws2.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", "".join(final_parts)),
+            encoding="utf-8",
+        )
 
 
 import logging
