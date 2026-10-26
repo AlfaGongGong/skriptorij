@@ -216,6 +216,69 @@ def _dijalog(soup: BeautifulSoup) -> int:
     return n
 
 
+def _ukloni_duplikate_p(soup: BeautifulSoup) -> int:
+    """Ukloni <p> ciji se pocetak (80c) poklapa sa vec vidjenim <p>.
+    Zadrzava duzi <p>. Vraca broj uklonjenih."""
+    import re as _re
+
+    def norm(t):
+        t = _re.sub(r"^[\u2014\u2013\-\s]+", "", t.strip())
+        return _re.sub(r"\s+", " ", t).lower()
+
+    ps = soup.find_all("p")
+    seen = {}
+    to_remove = []
+    for p in ps:
+        text = p.get_text(strip=True)
+        if len(text) < 40:
+            continue
+        prefix = norm(text)[:80]
+        if len(prefix) < 60:
+            continue
+        existing = seen.get(prefix)
+        if existing is not None:
+            if len(text) > len(existing.get_text(strip=True)):
+                to_remove.append(existing)
+                seen[prefix] = p
+            else:
+                to_remove.append(p)
+        else:
+            seen[prefix] = p
+    for el in to_remove:
+        el.decompose()
+    return len(to_remove)
+
+
+def _razdvoji_dijalog_p(soup: BeautifulSoup) -> int:
+    """Razdvoji <p> sa 3+ replika (em-crtica posle .!?…) u zasebne <p>."""
+    import re as _re
+
+    changes = 0
+    for p in list(soup.find_all("p")):
+        text = p.get_text()
+        if len(text) < 200 or text.count("\u2014") < 3:
+            continue
+        parts = _re.split(r"(?<=[.!?\u2026])\s*(?=\u2014\s)", text.strip())
+        if len(parts) <= 1:
+            continue
+        parent = p.parent
+        if parent is None:
+            continue
+        idx = list(parent.children).index(p) if p in parent.children else -1
+        if idx < 0:
+            continue
+        p.clear()
+        p.append(parts[0])
+        insert_at = idx + 1
+        for part in parts[1:]:
+            new_p = soup.new_tag("p")
+            new_p.append(part.strip())
+            parent.insert(insert_at, new_p)
+            insert_at += 1
+        changes += 1
+    return changes
+
+
 def _dodaj_vijenac(soup: BeautifulSoup) -> None:
     b64 = _png_b64(CENTER_ORNAMENT_PNG)
     body = soup.find("body")
@@ -1732,6 +1795,12 @@ def run_epub_styler(
         _ukloni_sve(soup)
         _normalizuj(soup)
         _dijalog(soup)
+        _n_dup = _ukloni_duplikate_p(soup)
+        if _n_dup:
+            pass
+        _n_split = _razdvoji_dijalog_p(soup)
+        if _n_split:
+            pass
         _dodaj_vijenac(soup)
         _ocisti_fffc(soup)
         if p.get("no_heading"):
