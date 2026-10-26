@@ -164,6 +164,21 @@ Vrati ISKLJUCIVO JSON:
 Dobit ces listu termina iz EN knjige. Za SVAKI termin odluci:
 
   1. Je li to VLASTITO IME (lik, mjesto) ili SPECIFICAN TERMIN?
+
+KRITICNO — VELIKA SLOVA SU SIGNAL:
+Termini pisani velikim slovom u originalu koji se ponavljaju jesu
+VJEROVATNO vlastita imena (likovi, mjesta, titule) cak i ako zvuce
+kao obicne engleske rijeci. NE odbacuj ih samo zato sto izgledaju
+kao EN rijec — u kontekstu ove knjige funkcionisu kao vlastita imenica.
+
+Primjeri koji MORAJU biti prihvaceni:
+  "Round"     -> mjesto u knjizi (ne "okrugao")
+  "North"     -> regija (ne "sjever")
+  "Steadfast" -> tvrdjava/mjesto (ne "postojan")
+  "Sulfur"    -> lik (ne "sumpor")
+  "Sticks"    -> nadimak lika (ne "stapovi")
+  "Practicals"-> titula u vojnoj hijerarhiji
+
   2. Ako je DA:
      - kategorija: lik | mjesto | termin
      - hr: kanonski hrvatski oblik (npr. Shev -> Sev, Dogman -> Pas Covjek)
