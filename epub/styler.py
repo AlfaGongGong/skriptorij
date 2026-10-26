@@ -81,7 +81,7 @@ h1.booklyfi-naslov { color:#5D4037; text-align:center;
     margin:0.5em 0 0.8em 0; line-height:1.3; text-indent:0; }
 img.booklyfi-vijenac { display:block; width:70%; height:auto;
     margin:0.5em auto 0.8em auto; }
-img.booklyfi-dropcap { float:left; display:inline;
+img.booklyfi-dropcap { float:left; display:block;
     width:4em; height:auto; max-width:none;
     margin:0.1em 0.15em 0 0; padding:0; vertical-align:top; }
 em, i { font-style:italic; }
@@ -616,7 +616,7 @@ def _dodaj_dropcap(soup):
         img_html = (
             '<img class="booklyfi-dropcap" '
             'src="data:image/png;base64,' + b64 + '" '
-            'style="float:left;display:inline;'
+            'style="float:left;display:block;'
             "width:4em;height:auto;max-width:none;"
             "margin:0.1em 0.15em 0 0;padding:0;"
             'vertical-align:top;" />'
@@ -637,7 +637,7 @@ def _dodaj_dropcap(soup):
     return False
 
 
-def _ekstrahuj_zajednicke_slike(files: dict) -> list[str]:
+# def _ekstrahuj_zajednicke_slike(files: dict) -> list[str]:
     """
     2026-10-24 B7: dedup inline base64 slike u zajednicke PNG/JPG fajlove.
     Zamena src="data:image/png;base64,XXX" sa relativnim putem do PNG-a.
@@ -1961,7 +1961,7 @@ def run_epub_styler(
     for ir in stag.find_all("itemref"):
         ir.decompose()
     # 2026-10-24 B7: dedup base64 slike u zajednicke PNG pre OPF build
-    _shared_images = _ekstrahuj_zajednicke_slike(files)
+#     _shared_images = _ekstrahuj_zajednicke_slike(files)
     if _shared_images:
         _log("   -> %d zajednickih slika (dedup base64)" % len(_shared_images), "tech")
 
