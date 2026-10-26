@@ -217,8 +217,7 @@ def _dijalog(soup: BeautifulSoup) -> int:
 
 
 def _ukloni_duplikate_p(soup: BeautifulSoup) -> int:
-    """Ukloni <p> ciji se pocetak (80c) poklapa sa vec vidjenim <p>.
-    Zadrzava duzi <p>. Vraca broj uklonjenih."""
+    """Ukloni <p> ciji je pocetak prefix ili identican drugom <p>. Zadrzava duzi."""
     import re as _re
 
     def norm(t):
@@ -226,27 +225,28 @@ def _ukloni_duplikate_p(soup: BeautifulSoup) -> int:
         return _re.sub(r"\s+", " ", t).lower()
 
     ps = soup.find_all("p")
-    seen = {}
     to_remove = []
-    for p in ps:
-        text = p.get_text(strip=True)
-        if len(text) < 40:
+    for i, p1 in enumerate(ps):
+        t1 = p1.get_text(strip=True)
+        if len(t1) < 30:
             continue
-        prefix = norm(text)[:80]
-        if len(prefix) < 60:
-            continue
-        existing = seen.get(prefix)
-        if existing is not None:
-            if len(text) > len(existing.get_text(strip=True)):
-                to_remove.append(existing)
-                seen[prefix] = p
-            else:
-                to_remove.append(p)
-        else:
-            seen[prefix] = p
-    for el in to_remove:
-        el.decompose()
+        n1 = norm(t1)
+        for p2 in ps[i+1:]:
+            t2 = p2.get_text(strip=True)
+            if len(t2) < 30:
+                continue
+            n2 = norm(t2)
+            mn = min(len(n1), len(n2))
+            if mn < 60:
+                continue
+            if n1[:mn] == n2[:mn]:
+                to_remove.append(p2 if len(t1) > len(t2) else p1)
+                break
+    for el in set(to_remove):
+        if el.parent is not None:
+            el.decompose()
     return len(to_remove)
+
 
 
 def _razdvoji_dijalog_p(soup: BeautifulSoup) -> int:
@@ -1795,12 +1795,7 @@ def run_epub_styler(
         _ukloni_sve(soup)
         _normalizuj(soup)
         _dijalog(soup)
-        _n_dup = _ukloni_duplikate_p(soup)
-        if _n_dup:
-            pass
-        _n_split = _razdvoji_dijalog_p(soup)
-        if _n_split:
-            pass
+        _ukloni_duplikate_p(soup)
         _dodaj_vijenac(soup)
         _ocisti_fffc(soup)
         if p.get("no_heading"):
