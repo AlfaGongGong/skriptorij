@@ -488,10 +488,22 @@ def finalize(self):
                 self.log(f"⚠ Metadata greška: {_me}", "warning")
 
 
-        with zipfile.ZipFile(self.out_path, "w", zipfile.ZIP_DEFLATED) as z:
+        # FIX 2026-10-26: Streaming pakovanje sa minimalnom memorijom.
+        # compresslevel=1 (3x manje memorije), mimetype prvi bez kompresije.
+        with zipfile.ZipFile(
+            self.out_path, "w", zipfile.ZIP_DEFLATED, compresslevel=1
+        ) as z:
+            mimetype = self.work_dir / "mimetype"
+            if mimetype.exists():
+                z.write(mimetype, "mimetype", compress_type=zipfile.ZIP_STORED)
             for f in self.work_dir.rglob("*"):
-                if f.is_file() and "checkpoints" not in f.parts:
-                    z.write(f, f.relative_to(self.work_dir))
+                if not f.is_file():
+                    continue
+                if "checkpoints" in f.parts:
+                    continue
+                if f.name == "mimetype":
+                    continue
+                z.write(f, f.relative_to(self.work_dir))
         self.log(f"📦 EPUB spakovan: {self.out_path.name}", "tech")
     except Exception as e:
         self.log(f"❌ Pakovanje EPUB-a palo: {e}", "error")
