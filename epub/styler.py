@@ -868,6 +868,82 @@ def run_epub_styler(
     _log("   -> %d poglavlja" % len(poglavlja), "tech")
 
     dropcaps = 0
+    # FIX 2026-10-26: PRE obrade HTML-a, spoji .chk u HTML.
+    # Time se izbegava da originalni HTML (galley-rw, navodnici)
+    # pregazi .chk sadržaj.
+    try:
+        from epub.packager import _spoji_chk_u_html
+        class _TmpEngine:
+            pass
+        _eng = _TmpEngine()
+        _eng.work_dir = Path(STYLED_OUTPUT_DIR).parent / "_tmp_styler_work"
+        # Ne koristimo _spoji_chk_u_html jer on radi na engine.work_dir
+        # Umesto toga, direktno spojimo .chk u files dict
+        import re as _re_s
+        from pathlib import Path as _P_s
+        from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
+
+        _name = book_uid.replace("urn:uuid:", "").replace("-", "")[:40]
+        # Nađi pravi _skr_ folder
+        _skr = None
+        for _k in _CPB_s.glob("_skr_*"):
+            _ckpt = _k / "checkpoints"
+            if _ckpt.exists() and any(_ckpt.glob("*.chk")):
+                # Uzmi najnoviji
+                if _skr is None or _k.stat().st_mtime > _skr.stat().st_mtime:
+                    _skr = _k
+
+        if _skr:
+            _ckpt = _skr / "checkpoints"
+            _chk_po_fajlu = {}
+            for _f in _ckpt.glob("*.chk"):
+                if _f.stem.endswith((".prevod", ".lektura")): continue
+                _m = _re_s.match(r"(.+?)_blok_(\d+)$", _f.stem)
+                if not _m: continue
+                _chk_po_fajlu.setdefault(_m.group(1), {})[int(_m.group(2))] = _f
+
+            def _ocisti_chk(t):
+                t = _re_s.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", t)
+                if t.strip().startswith("{"):
+                    try:
+                        import json as _j
+                        d = _j.loads(t)
+                        for k in ("finalno_polirano", "korektura", "tekst", "translated"):
+                            if k in d and isinstance(d[k], str): return d[k]
+                    except: pass
+                return t
+
+            _spojeno = 0
+            for _html_name, _blokovi in _chk_po_fajlu.items():
+                if _html_name not in files:
+                    # Nađi po basename
+                    _found = None
+                    for _k2 in files:
+                        if _k2.endswith(_html_name) or _html_name.endswith(_k2.split("/")[-1]):
+                            _found = _k2; break
+                    if not _found: continue
+                    _html_name = _found
+
+                try:
+                    _soup = BeautifulSoup(files[_html_name].decode("utf-8", "replace"), "html.parser")
+                except: continue
+                _body = _soup.body
+                if not _body: continue
+
+                _delovi = [_ocisti_chk(_blokovi[i].read_text("utf-8", errors="ignore")).strip() for i in sorted(_blokovi.keys())]
+                _delovi = [d for d in _delovi if d]
+                if not _delovi: continue
+
+                _body.clear()
+                _ns = BeautifulSoup("".join(_delovi), "html.parser")
+                _src = _ns.body or _ns
+                for _c in list(_src.children):
+                    _body.append(_c.extract())
+                files[_html_name] = str(_soup).encode("utf-8")
+                _spojeno += 1
+    except Exception as _e:
+        print(f"  ⚠ _spoji_chk_u_html greška: {_e}")
+
     for p in poglavlja:
         soup = BeautifulSoup(
             files[p["full_path"]].decode("utf-8", errors="replace"), "html.parser"
@@ -1452,6 +1528,82 @@ def run_epub_styler(
             _log("   -> Obrisan iz EPUB-a: " + h, "tech")
 
     dropcaps = 0
+    # FIX 2026-10-26: PRE obrade HTML-a, spoji .chk u HTML.
+    # Time se izbegava da originalni HTML (galley-rw, navodnici)
+    # pregazi .chk sadržaj.
+    try:
+        from epub.packager import _spoji_chk_u_html
+        class _TmpEngine:
+            pass
+        _eng = _TmpEngine()
+        _eng.work_dir = Path(STYLED_OUTPUT_DIR).parent / "_tmp_styler_work"
+        # Ne koristimo _spoji_chk_u_html jer on radi na engine.work_dir
+        # Umesto toga, direktno spojimo .chk u files dict
+        import re as _re_s
+        from pathlib import Path as _P_s
+        from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
+
+        _name = book_uid.replace("urn:uuid:", "").replace("-", "")[:40]
+        # Nađi pravi _skr_ folder
+        _skr = None
+        for _k in _CPB_s.glob("_skr_*"):
+            _ckpt = _k / "checkpoints"
+            if _ckpt.exists() and any(_ckpt.glob("*.chk")):
+                # Uzmi najnoviji
+                if _skr is None or _k.stat().st_mtime > _skr.stat().st_mtime:
+                    _skr = _k
+
+        if _skr:
+            _ckpt = _skr / "checkpoints"
+            _chk_po_fajlu = {}
+            for _f in _ckpt.glob("*.chk"):
+                if _f.stem.endswith((".prevod", ".lektura")): continue
+                _m = _re_s.match(r"(.+?)_blok_(\d+)$", _f.stem)
+                if not _m: continue
+                _chk_po_fajlu.setdefault(_m.group(1), {})[int(_m.group(2))] = _f
+
+            def _ocisti_chk(t):
+                t = _re_s.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", t)
+                if t.strip().startswith("{"):
+                    try:
+                        import json as _j
+                        d = _j.loads(t)
+                        for k in ("finalno_polirano", "korektura", "tekst", "translated"):
+                            if k in d and isinstance(d[k], str): return d[k]
+                    except: pass
+                return t
+
+            _spojeno = 0
+            for _html_name, _blokovi in _chk_po_fajlu.items():
+                if _html_name not in files:
+                    # Nađi po basename
+                    _found = None
+                    for _k2 in files:
+                        if _k2.endswith(_html_name) or _html_name.endswith(_k2.split("/")[-1]):
+                            _found = _k2; break
+                    if not _found: continue
+                    _html_name = _found
+
+                try:
+                    _soup = BeautifulSoup(files[_html_name].decode("utf-8", "replace"), "html.parser")
+                except: continue
+                _body = _soup.body
+                if not _body: continue
+
+                _delovi = [_ocisti_chk(_blokovi[i].read_text("utf-8", errors="ignore")).strip() for i in sorted(_blokovi.keys())]
+                _delovi = [d for d in _delovi if d]
+                if not _delovi: continue
+
+                _body.clear()
+                _ns = BeautifulSoup("".join(_delovi), "html.parser")
+                _src = _ns.body or _ns
+                for _c in list(_src.children):
+                    _body.append(_c.extract())
+                files[_html_name] = str(_soup).encode("utf-8")
+                _spojeno += 1
+    except Exception as _e:
+        print(f"  ⚠ _spoji_chk_u_html greška: {_e}")
+
     for p in poglavlja:
         soup = BeautifulSoup(
             files[p["full_path"]].decode("utf-8", errors="replace"), "html.parser"
