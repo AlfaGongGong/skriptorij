@@ -42,6 +42,13 @@ DIJALOG_TIPOGRAFIJA = [
     (r'\u201c([^"\u00bb\u00ab\u201c\u201d]*?)\u201d', r'— \1'),
     # FIX 2026-10-26: ASCII "citat" bilo gdje → — citat
     (r'"([^"\n]{1,300})"', r'— \1'),
+    # FIX 2026-10-26: orphan closing " prije interpunkcije (— tekst", rekao je)
+    (r'(?<=[a-zA-ZčćšžđČĆŠŽĐ.!?…])"(?=\s*[,;:.!?])', ''),
+    # FIX 2026-10-26: orphan opening " na pocetku (npr. "Jesi li...)
+    (r'(?m)^(\s*)"(?=[A-ZČĆŠŽĐ])', r'\1— '),
+    # FIX 2026-10-26: orphan tipografski „ i " "
+    (r'(?m)^(\s*)„', r'\1— '),
+    (r'(?<=[a-zA-ZčćšžđČĆŠŽĐ.!?…])[""](?=\s*[,;:.!?]|$)', ''),
     # Jednostruki tipografski → ASCII '
     (r"\u2018([^\u2018\u2019]*?)\u2019", r"'\1'"),
     # Em-crtica ispred replike: - ili – na početku retka → —
