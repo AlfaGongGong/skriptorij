@@ -272,7 +272,16 @@ class SkriptorijAllInOne:
 
         from core.text_utils import _HR_DIACRITICALS, _detektuj_en_ostatke
 
-        uzorak_fajlova = html_files[:n_files]
+        # FIX F0.22: uzmi uzorak iz razlicitih dijelova knjige (ne samo prvih 5)
+        # Prvih 5 fajlova su frontmatter (copyright, naslovna, posveta) na HR,
+        # sto lazno detektuje LEKTURA za knjigu koja je na EN.
+        if len(html_files) <= n_files:
+            uzorak_fajlova = html_files
+        else:
+            # Preskoci prvih 10% (frontmatter), uzmi n_files ravnomjerno
+            start_idx = max(0, int(len(html_files) * 0.10))
+            korak = max(1, (len(html_files) - start_idx) // n_files)
+            uzorak_fajlova = html_files[start_idx::korak][:n_files]
         if not uzorak_fajlova:
             self.knjiga_mode = "PREVOD"
             return self.knjiga_mode
