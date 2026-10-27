@@ -1357,6 +1357,19 @@ def run_epub_styler(
                         _delovi_dedup.append(_sk)
                 _delovi = _delovi_dedup
 
+                # F0.18b: ako zadnji blok ima >=50 rijeci teksta i zavrsava bez interpunkcije = prekinut
+                if _delovi:
+                    from bs4 import BeautifulSoup as _BS_f018
+                    _zadnji_html = _delovi[-1]
+                    _zadnji_tekst = _BS_f018(_zadnji_html, "html.parser").get_text(strip=True)
+                    if (
+                        _zadnji_tekst
+                        and _zadnji_tekst[-1] not in '.!?"\u2014\u2026)\u203a\u00bb:;'
+                        and len(_zadnji_tekst.split()) >= 50
+                    ):
+                        _delovi[-1] = _zadnji_html + '\n<p>[[NEPREVEDENO: prekinut prevod]]</p>'
+                        _log("   -> PREKINUT: " + _html_name + " (" + str(len(_zadnji_tekst.split())) + "w) zavrsava sa " + repr(_zadnji_tekst[-40:]), "warning")
+
                 _body.clear()
                 # F0.13b: wrap po bloku PRIJE spajanja (sprecava pogled."Zadovoljstvo)
                 _delovi_wrapped = []
