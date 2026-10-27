@@ -59,7 +59,7 @@ def worker(mode, epub, result_path):
             m = EpubStylerManager(epub_path=Path(epub), log_callback=cb)
             if not hasattr(m, "stilizuj"):
                 raise AttributeError("EpubStylerManager nema metodu 'stilizuj'")
-            res["result"] = m.stilizuj(mode=mode)
+            res["result"] = m.stilizuj()
         except BaseException as e:
             res["exception"] = {"type": type(e).__name__, "msg": str(e),
                                 "tb": traceback.format_exc()}
@@ -93,7 +93,7 @@ EPUB_CANDIDATES = [
     Path("/storage/emulated/0/Download/Joe_Abercrombie_The_Trouble_With_Peace_PREVEDENO.epub"),
     Path("/storage/emulated/0/Books/MoonReader/STYLED/Joe_Abercrombie_The_Trouble_With_Peace_PREVEDENO_STYLED.epub"),
 ]
-MODES = ["standard", "ai", "booklyfi"]
+MODES = ["default"]  # jedan mod
 TIMEOUT = int(os.environ.get("AUDIT_TIMEOUT", "900"))
 DO_IDEM = os.environ.get("AUDIT_IDEM", "1") == "1"
 SKIP_IMPORTS = os.environ.get("AUDIT_SKIP_IMPORTS", "0") == "1"
@@ -821,7 +821,7 @@ def main():
     report_metrics("1_INPUT", inp)
 
     # FAZA 4: modovi
-    modes_to_run = MODES if LEVEL == "full" else ["standard"]
+    modes_to_run = MODES  # jedan mod
     INFO("4_RUN", f"LEVEL={LEVEL}, modovi: {modes_to_run}")
     outputs = {}
     for mode in modes_to_run:
@@ -858,7 +858,7 @@ def main():
     INFO("6_COMPARE", "upoređujem modove...")
     done = list(analyses)
     if len(done) < 2:
-        WARN("6_COMPARE", f"samo {len(done)} mod(a) završio — ne mogu porediti")
+        INFO("6_COMPARE", f"jedan mod — nema sta porediti")
     else:
         for other in done[1:]:
             INFO("6_COMPARE", f"{done[0]} vs {other}:")
