@@ -589,12 +589,6 @@ def _dodaj_naslov(soup, broj, naslov=None):
         break
     body.insert(insert_pos, h1)
 
-    # F0.17: ako je prvi <p> posle h1 identican naslovu, obrisi ga
-    _naslov_tekst = naslov if naslov else ("POGLAVLJE %d" % broj)
-    _prvi_p = h1.find_next("p")
-    if _prvi_p and _prvi_p.get_text(strip=True) == _naslov_tekst:
-        _prvi_p.decompose()
-
 
 def _dodaj_dropcap(soup):
     from bs4 import NavigableString
@@ -842,6 +836,11 @@ def _dodaj_naslov(soup, broj, naslov=None):
                     continue
             break
         body.insert(insert_pos, h1)
+
+        # F0.17: ako je prvi <p> posle h1 identican naslovu, obrisi ga
+        _prvi_p = h1.find_next("p")
+        if _prvi_p and _prvi_p.get_text(strip=True) == h1.get_text(strip=True):
+            _prvi_p.decompose()
         return
 
     if body.find("h1"):
@@ -1357,6 +1356,13 @@ def run_epub_styler(
                     if _sk.strip():
                         _delovi_dedup.append(_sk)
                 _delovi = _delovi_dedup
+
+                # F0.18: ako zadnji blok zavrsava bez interpunkcije, markiraj
+                _zadnji = _delovi[-1].rstrip() if _delovi else ""
+                _zavrsava_ok = not _zadnji or _zadnji[-1] in '.!?"\u2014\u2026)\u203a\u00bb:;'
+                if not _zavrsava_ok and len(_zadnji.split()) < 50:
+                    _delovi[-1] = _zadnji + '\n<p>[[NEPREVEDENO: prekinut prevod]]</p>'
+                    _log("   -> PREKINUT: " + _html_name + " zavrsava sa " + repr(_zadnji[-40:]), "warning")
 
                 _body.clear()
                 # F0.13b: wrap po bloku PRIJE spajanja (sprecava pogled."Zadovoljstvo)
