@@ -265,6 +265,16 @@ def _skrati_overlap(prethodni, sljedeci, min_rijeci=15):
     return sljedeci, 0
 
 
+def _je_duplikat(t1, t2, threshold=0.7):
+    """Fuzzy match: 70%+ zajednickih rijeci (duzine >3)."""
+    import re as _re
+    w1 = set(w.lower() for w in _re.findall(r"\w+", t1) if len(w) > 3)
+    w2 = set(w.lower() for w in _re.findall(r"\w+", t2) if len(w) > 3)
+    if not w1 or not w2:
+        return False
+    return len(w1 & w2) / min(len(w1), len(w2)) >= threshold
+
+
 
 def _razdvoji_dijalog_p(soup: BeautifulSoup) -> int:
     """Razdvoji <p> sa 3+ replika (em-crtica posle .!?…) u zasebne <p>."""
@@ -1229,6 +1239,21 @@ def run_epub_styler(
                 _delovi = [_ocisti_chk(_blokovi[i].read_text("utf-8", errors="ignore")).strip() for i in sorted(_blokovi.keys())]
                 _delovi = [d for d in _delovi if d]
                 if not _delovi: continue
+
+                # F0.7: obrisi plain-text duplikate HTML blokova (fuzzy 70%+)
+                _html_idx = [(i, t) for i, t in enumerate(_delovi) if "<p" in t]
+                _plain_idx = [(i, t) for i, t in enumerate(_delovi) if "<p" not in t]
+                _za_brisanje = set()
+                for _pi, _pt in _plain_idx:
+                    for _hi, _ht in _html_idx:
+                        if _je_duplikat(_pt, _ht, 0.7):
+                            if len(_ht.split()) >= 0.8 * len(_pt.split()):
+                                _za_brisanje.add(_pi)
+                                print(f"  [dup] {_html_name}: obrisan blok_{_pi} (plain, duplikat blok_{_hi})")
+                            break
+                if _za_brisanje:
+                    _delovi = [t for i, t in enumerate(_delovi) if i not in _za_brisanje]
+                    if not _delovi: continue
 
                 # F0.6: skrati overlap izmedju susjednih blokova
                 _delovi_dedup = [_delovi[0]]
