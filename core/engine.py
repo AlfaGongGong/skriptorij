@@ -153,6 +153,14 @@ class SkriptorijAllInOne:
         self.glosar_tekst = ""
         with contextlib.suppress(Exception):
             self._auto_generiraj_kanon()
+        # F0.20: popuni glosar_tekst iz kanona nakon generisanja
+        with contextlib.suppress(Exception):
+            self.glosar_tekst = self._build_glosar_tekst()
+            if self.glosar_tekst:
+                self.log(
+                    f"📖 Glosar: {len(self.glosar_tekst.splitlines())} linija u promptu",
+                    "tech",
+                )
 
         self._chapter_summaries = {}
         self._chapter_order = []
