@@ -248,6 +248,23 @@ def _ukloni_duplikate_p(soup: BeautifulSoup) -> int:
     return len(to_remove)
 
 
+def _skrati_overlap(prethodni, sljedeci, min_rijeci=15):
+    """Ako kraj prethodnog = pocetak sljedeceg, skrati sljedeci za taj overlap.
+    Vraca (skraceni_tekst, broj_uklonjenih_rijeci).
+    Radi nad cistim tekstom (bez HTML)."""
+    import re as _re
+    def _words(t):
+        return _re.sub(r"<[^>]+>", " ", t).split()
+    w1 = _words(prethodni)
+    w2 = _words(sljedeci) if False else _words(sljedeci)
+    mn = min(len(w1), len(w2), 500)
+    for L in range(mn, min_rijeci - 1, -1):
+        if w1[-L:] == w2[:L]:
+            # Skrati sljedeci za L rijeci; vrati ostatak
+            return " ".join(w2[L:]), L
+    return sljedeci, 0
+
+
 
 def _razdvoji_dijalog_p(soup: BeautifulSoup) -> int:
     """Razdvoji <p> sa 3+ replika (em-crtica posle .!?…) u zasebne <p>."""
@@ -1212,6 +1229,16 @@ def run_epub_styler(
                 _delovi = [_ocisti_chk(_blokovi[i].read_text("utf-8", errors="ignore")).strip() for i in sorted(_blokovi.keys())]
                 _delovi = [d for d in _delovi if d]
                 if not _delovi: continue
+
+                # F0.6: skrati overlap izmedju susjednih blokova
+                _delovi_dedup = [_delovi[0]]
+                for _sl in _delovi[1:]:
+                    _sk, _n = _skrati_overlap(_delovi_dedup[-1], _sl)
+                    if _n > 0:
+                        print(f"  [overlap] {_html_name}: skraceno {_n} rijeci")
+                    if _sk.strip():
+                        _delovi_dedup.append(_sk)
+                _delovi = _delovi_dedup
 
                 _body.clear()
                 _ns = BeautifulSoup("".join(_delovi), "html.parser")
