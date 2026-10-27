@@ -1364,7 +1364,7 @@ def run_epub_styler(
                     _zadnji_tekst = _BS_f018(_zadnji_html, "html.parser").get_text(strip=True)
                     if (
                         _zadnji_tekst
-                        and _zadnji_tekst[-1] not in '.!?"\u2014\u2026)\u203a\u00bb:;'
+                        and _zadnji_tekst[-1] not in '.!?"\u201c\u201d\u201e\u2014\u2026)\u203a\u00bb:;'
                         and len(_zadnji_tekst.split()) >= 50
                     ):
                         _delovi[-1] = _zadnji_html + '\n<p>[[NEPREVEDENO: prekinut prevod]]</p>'
