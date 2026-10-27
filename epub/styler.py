@@ -1357,13 +1357,6 @@ def run_epub_styler(
                         _delovi_dedup.append(_sk)
                 _delovi = _delovi_dedup
 
-                # F0.18: ako zadnji blok zavrsava bez interpunkcije, markiraj
-                _zadnji = _delovi[-1].rstrip() if _delovi else ""
-                _zavrsava_ok = not _zadnji or _zadnji[-1] in '.!?"\u2014\u2026)\u203a\u00bb:;'
-                if not _zavrsava_ok and len(_zadnji.split()) < 50:
-                    _delovi[-1] = _zadnji + '\n<p>[[NEPREVEDENO: prekinut prevod]]</p>'
-                    _log("   -> PREKINUT: " + _html_name + " zavrsava sa " + repr(_zadnji[-40:]), "warning")
-
                 _body.clear()
                 # F0.13b: wrap po bloku PRIJE spajanja (sprecava pogled."Zadovoljstvo)
                 _delovi_wrapped = []
