@@ -1575,6 +1575,48 @@ def run_epub_styler(
         stag["toc"] = "ncx"
     files[opf_path] = str(opf_soup).encode("utf-8")
 
+    # F0.16: primijeni Moon+ .replacement pravila ako postoje
+    try:
+        from core.replacements import (
+            load_moon_replacements as _lmr,
+            apply_to_html as _ath,
+        )
+
+        # Trazi .replacement na vise lokacija
+        _epub_stem_orig = Path(str(epub_path)).stem
+        _repl_kandidati = [
+            Path(str(epub_path) + ".replacement"),
+            Path(str(epub_path).replace(".epub", "") + ".epub.replacement"),
+            Path(STYLED_OUTPUT_DIR) / f"{_epub_stem_orig}.epub.replacement",
+            Path(STYLED_OUTPUT_DIR) / f"{_epub_stem_orig}_STYLED.epub.replacement",
+        ]
+        # Dodaj varijantu bez PREVEDENO_ prefiksa
+        import re as _re_r
+        _stem_bez = _re_r.sub(r"^(?:PREVEDENO_)+", "", _epub_stem_orig, flags=_re_r.IGNORECASE)
+        if _stem_bez != _epub_stem_orig:
+            _repl_kandidati.append(Path(STYLED_OUTPUT_DIR) / f"{_stem_bez}.epub.replacement")
+            _repl_kandidati.append(Path(STYLED_OUTPUT_DIR) / f"PREVEDENO_{_stem_bez}.epub.replacement")
+
+        _repl_path = next((r for r in _repl_kandidati if r.exists()), None)
+        if _repl_path:
+            _rules = _lmr(str(_repl_path))
+            _log(f"   -> replacement: {_repl_path.name} ({len(_rules)} pravila)", "tech")
+            _total_fires = 0
+            _total_count = 0
+            for _fname in list(files.keys()):
+                if not _fname.lower().endswith((".xhtml", ".html", ".htm")):
+                    continue
+                _new_bytes, _fires = _ath(files[_fname], _rules)
+                if _fires:
+                    files[_fname] = _new_bytes
+                    _total_fires += len(_fires)
+                    _total_count += sum(f.count for f in _fires)
+            _log(f"   -> replacement: {_total_fires} pravila, {_total_count} zamjena", "tech")
+        else:
+            _log("   -> replacement: nema .replacement fajla", "tech")
+    except Exception as _e_r:
+        _log(f"   -> replacement greska: {type(_e_r).__name__}: {_e_r}", "warning")
+
     if output_path:
         out = Path(output_path)
     else:
