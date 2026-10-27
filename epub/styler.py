@@ -589,6 +589,12 @@ def _dodaj_naslov(soup, broj, naslov=None):
         break
     body.insert(insert_pos, h1)
 
+    # F0.17: ako je prvi <p> posle h1 identican naslovu, obrisi ga
+    _naslov_tekst = naslov if naslov else ("POGLAVLJE %d" % broj)
+    _prvi_p = h1.find_next("p")
+    if _prvi_p and _prvi_p.get_text(strip=True) == _naslov_tekst:
+        _prvi_p.decompose()
+
 
 def _dodaj_dropcap(soup):
     from bs4 import NavigableString
