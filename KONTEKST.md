@@ -321,6 +321,63 @@ Svi audit FAIL-ovi reseni. Pipeline radi.
 
 ---
 
+## PIPELINE BACKLOG (vraceno iz starog plana)
+
+Sve stavke iz starih sekcija "A. Aktivna revizija", "B. Predlozi — kod i rad sistema", "C. UI predlozi", "D. UX predlozi", plus batch A-J iz 2026-10-26. Status provjeren na git logu i kodu.
+
+### A. Revizija — bugovi (15 stavki)
+
+| # | Stavka | Status | Fajl | Napomena |
+|---|---|---|---|---|
+| A#1 | 429 drzi semafor 120s | ✅ ZAVRSENO | network/http_client.py | sleep pre acquire |
+| A#2 | Tri imena za qwen/gpt-oss | ⏳ OSTALO | config/ai_config.py | `gpt_oss`, `gpt-oss`, `qwen_chutes` — nije razrijeseno |
+| A#3 | Dupli MODEL_MAP / GEMINI_BASE_URL | ⏳ DELIMICNO | config/ai_config.py | `MODEL_MAP = all_fallbacks()` samo jedan, ali heuristike za nove modele na 688 |
+| A#4 | SKIP_TITLES "prolaznost zivota" | ✅ ZAVRSENO | epub/styler.py | v7 |
+| A#5 | Dropcap gubi slovo u em/strong | ✅ ZAVRSENO | epub/styler.py | v5 |
+| A#6 | _dodaj_naslov brise sve h1-h3 | ✅ ZAVRSENO | epub/styler.py | v7 |
+| A#7 | XML escaping u NCX/TOC/NAV | ✅ ZAVRSENO | epub/styler.py | v5 |
+| A#8 | _je_poglavlje folder/podniz | ✅ ZAVRSENO | epub/styler.py | v5 |
+| A#9 | Gemma fallback dijagnostika | ✅ ZAVRSENO | network/provider_router.py | log pokazuje RPD |
+| A#10 | Cloudflare grana ostala | ✅ ZATVORENO | network/http_client.py | funkcionalna |
+| A#11 | NVIDIA/GROQ + thinkingConfig duplo | ✅ ZAVRSENO | network/http_client.py | Grupa 2 |
+| A#12 | live_audit kao JSON | ✅ ZAVRSENO | api/routes/monitor.py, static/js/main.js | 3a-1, 3a-2, 3b |
+| A#13 | Jitter sleep unutar semafora | ✅ ZATVORENO | network/http_client.py | dizajnerski kompromis |
+| A#14 | Cache hash fix | ✅ ZAVRSENO | processing/pipeline.py | blok 1-3 |
+| A#15 | Pola rata cache 318 .chk bez hash | ⏳ OSTALO | /storage/.../booklyfi_checkpoints | odluka A |
+
+### B. Predlozi — kod i rad sistema (9 stavki)
+
+| # | Stavka | Status | Napomena |
+|---|---|---|---|
+| B#1 | Jedan `providers.json` izvor istine | ⏳ OSTALO | umesto razbijenog MODEL_MAP + AI_MODEL_STRINGS |
+| B#2 | Jedan HTTP klijent (httpx/aiohttp) | ⏳ OSTALO | blokirajuci api_call + async |
+| B#3 | Stanje kvota na disk | ⏳ DELIMICNO | `quota_tracker.py:439` jos `open(w)` — nije atomic |
+| B#4 | Kes odgovora po chunku (model + glosar u hash) | ⏳ OSTALO | trenutno samo chunk |
+| B#5 | Pametnije grupiranje: batch SCORER/VALIDATOR/glosar | ⏳ OSTALO | chunk velicina po TPM-u |
+| B#6 | Stilizator kao niz cistih faza | ⏳ DELIMICNO | F0 razdvojio neke faze, ali nije pun refaktor |
+| B#7 | Dropcap slike kao zajednicki fajlovi | ⏳ OSTALO | trenutno base64 u svakom poglavlju |
+| B#8 | Strukturirano logiranje (JSON) | ⏳ OSTALO | nivo, modul, provider, maskiran kljuc |
+| B#9 | Golden-test s mini EPUB + pyflakes/ruff | ⏳ DELIMICNO | `make golden` postoji, `make audit-quick` pokriva pyflakes |
+
+### C. UI predlozi (6 stavki) → prebaceno u "UI poboljsanja"
+
+### D. UX predlozi (9 stavki) → prebaceno u "F — UX"
+
+### Batch-evi 2026-10-26 (A-J)
+
+| Batch | Stavka | Status | Napomena |
+|---|---|---|---|
+| A | Path traversal + bind 127.0.0.1 | ✅ ZAVRSENO | commit d226896, sve 4 rute + main.py |
+| B1 | Atomski upis za api_keys | ✅ ZAVRSENO | commit bdb85ec, `atomic_write_json` |
+| B2 | Atomski upis za quality_scores + lock | ✅ ZAVRSENO | commit 65f9386, `_QS_LOCK` |
+| B3 | Atomski upis za quota_tracker | ⏳ DELIMICNO | `quota_tracker.py:439` jos `open(w)` |
+| B4 | `_atomic_write` u `utils/file_utils.py` | ⏳ DELIMICNO | jos u `core/engine.py:213`, `file_utils` ima svoju |
+| C | `except-pass` → logger | ✅ ZAVRSENO | commit 7643be2, 37 fajlova, 152→13 |
+| C+ | Preostalih 13 `except-pass` | ⏳ OSTALO | 2 u `styler.py`, 2 u `engine.py`, 1 u `packager.py`, 1 u `workers.py`, 1 u `main.py`, 1 u `tts.py`, 1 u `system_logger.py`, 1 u `name_replacer.py`, 1 u `app.py`, 1 u `file_utils.py` |
+| D-J | Frontend, mobilni, UX, a11y, refaktor | ⏳ OSTALO | vidi "OTVORENO — BATCH D–J" |
+
+---
+
 ## OTVORENO — BATCH D–J
 
 ### D — Frontend performanse
