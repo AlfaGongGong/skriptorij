@@ -1727,15 +1727,57 @@ def run_epub_styler(
         from pathlib import Path as _P_s
         from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
 
-        _name = book_uid.replace("urn:uuid:", "").replace("-", "")[:40]
-        # Nađi pravi _skr_ folder
+        _epub_stem = Path(str(epub_path)).stem
+        _epub_stem = _re_s.sub(
+            r"^(?:PREVEDENO_)+", "", _epub_stem, flags=_re_s.IGNORECASE
+        )
+        _epub_stem = _re_s.sub(
+            r"(?:_PREVEDENO|_STYLED)+$", "", _epub_stem, flags=_re_s.IGNORECASE
+        )
+        _svi_sa_chk = [
+            _k
+            for _k in _CPB_s.glob("_skr_*")
+            if (_k / "checkpoints").exists()
+            and any((_k / "checkpoints").glob("*.chk"))
+        ]
+        _exact = _CPB_s / ("_skr_" + _epub_stem)
         _skr = None
-        for _k in _CPB_s.glob("_skr_*"):
-            _ckpt = _k / "checkpoints"
-            if _ckpt.exists() and any(_ckpt.glob("*.chk")):
-                # Uzmi najnoviji
-                if _skr is None or _k.stat().st_mtime > _skr.stat().st_mtime:
-                    _skr = _k
+        if _exact in _svi_sa_chk:
+            _skr = _exact
+        else:
+            _kandidati = []
+            for _k in _svi_sa_chk:
+                _k_name = _k.name[len("_skr_") :]
+                if _k_name in _epub_stem or _epub_stem in _k_name:
+                    _kandidati.append(_k)
+                elif (
+                    len(_k_name) >= 20
+                    and len(_epub_stem) >= 20
+                    and (
+                        _k_name[:20] == _epub_stem[:20]
+                        or _k_name[-20:] == _epub_stem[-20:]
+                    )
+                ):
+                    _kandidati.append(_k)
+            if len(_kandidati) == 1:
+                _skr = _kandidati[0]
+            else:
+                _skr = None
+                _imena = (
+                    ", ".join(_k.name for _k in _kandidati)
+                    if _kandidati
+                    else "(nema)"
+                )
+                _log(
+                    "   -> _skr_ nije jedinstven za "
+                    + _epub_stem
+                    + " ("
+                    + str(len(_kandidati))
+                    + ": "
+                    + _imena
+                    + "), .chk se ne spaja",
+                    "warning",
+                )
 
         if _skr:
             _ckpt = _skr / "checkpoints"
