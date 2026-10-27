@@ -600,21 +600,50 @@ def _dodaj_dropcap(soup):
     if not body:
         return False
 
+    # F0.11: nadji prvi <p> sa >=60c teksta (preskoci kratke naslove prica)
+    prvi_p = None
     h1 = body.find("h1")
     if h1:
-        # Prvi <p> sibling posle <h1> (ili unutar div-a posle <h1>)
-        prvi_p = h1.find_next("p")
-    else:
-        prvi_p = body.find("p")
+        for kandidat in h1.find_all_next("p"):
+            t = kandidat.get_text(strip=True)
+            if len(t) >= 60 and not t.isdigit():
+                prvi_p = kandidat
+                break
+    if prvi_p is None:
+        for kandidat in body.find_all("p"):
+            t = kandidat.get_text(strip=True)
+            if len(t) >= 60 and not t.isdigit():
+                prvi_p = kandidat
+                break
 
     if prvi_p is None:
         return False
 
-    # Ako je prvi <p> dijalog — preskoči dropcap
     prvi_tekst = prvi_p.get_text(strip=True)
-    if prvi_tekst and prvi_tekst[0] in ("—", "–", "-", "‒", "―",
-                                         '"', "„", '"', '"', "«", "'"):
-        return False
+    prvi_char = prvi_tekst[0] if prvi_tekst else ""
+    dijalog_chars = ("—", "–", "-", "‒", "―", '"', "„", '"', '"', "«", "'")
+
+    if prvi_char in dijalog_chars:
+        # F0.11: dijalog na pocetku — velika crtica umesto slova
+        if prvi_char in ("—", "–", "‒", "―"):
+            crtica = prvi_char
+        else:
+            crtica = "—"
+        img_html = (
+            '<span class="booklyfi-crtica" '
+            'style="float:left;display:block;'
+            'font-size:4em;line-height:0.8;'
+            'margin:0.1em 0.05em 0 0;padding:0;">'
+            + crtica
+            + '</span>'
+        )
+        cls = prvi_p.get("class") or []
+        if isinstance(cls, str):
+            cls = cls.split()
+        crtica_tag = BeautifulSoup(img_html, "html.parser").find("span")
+        prvi_p.insert(0, crtica_tag)
+        prvi_p["class"] = list(cls) + ["booklyfi-prvi"]
+        return True
 
     # Primeni dropcap SAMO na prvi_p
     for p in [prvi_p]:
