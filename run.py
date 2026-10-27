@@ -641,63 +641,24 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.log(f"⚠️ knjiga_mode snimanje palo: {e}", "warning")
 
 
-def _auto_stilizuj(engine):
-    """Automatski pokrece stilizaciju posle uspesne obrade.
-    Ne prekida finalizaciju ako stilizacija padne.
-    """
+def _auto_stilizuj(epub_path):
+    """Automatsko stilizovanje sa sigurnim loggerom i EpubStylerManager-om."""
+    if isinstance(epub_path, str):
+        epub_path = Path(epub_path)
+    
+    def log(msg, atype="info"):
+        print(f"[{atype.upper()}] {msg}")
+    
+    log(f"Pokrećem automatsko stilizovanje za: {epub_path.name}", "system")
     try:
-        from pathlib import Path
-
-        from epub.styler import run_epub_styler
-
-        # FIX 2026-10-26: Koristi engine.out_path direktno, ne shared_stats
-        # (shared_stats može biti star od prethodne sesije).
-        epub_path = Path(getattr(engine, "out_path", ""))
-        if not epub_path or not epub_path.exists():
-            engine.log(f"Auto-stilizacija: fajl ne postoji: {epub_path}", "warning")
-            return
-        output_file = str(epub_path)
-        if not epub_path.exists():
-            engine.log(f"Auto-stilizacija: fajl ne postoji: {epub_path}", "warning")
-            return
-
-        engine.log(f"Auto-stilizacija: {epub_path.name}", "system")
-
-        result = run_epub_styler(
-            epub_path=epub_path,
-            fleet=getattr(engine, "fleet", None),
-            log_callback=engine.log,
-        )
-
-        if result and result.get("ok"):
-            engine.log(
-                f"Stilizovano: {Path(result['epub_path']).name} "
-                f"({result.get('chapters', 0)} pogl, {result.get('dropcaps_added', 0)} dropcapa)",
-                "success",
-            )
+        from epub.manager import EpubStylerManager
+        manager = EpubStylerManager(epub_path=epub_path, log_callback=log)
+        result = manager.stilizuj()
+        if result.get("ok"):
+            log(f"Auto-stilizacija uspješno završena. Obrađeno poglavlja: {result.get('chapters')}", "success")
         else:
-            err = result.get("error", "?") if result else "?"
-            engine.log(f"Stilizacija nije uspela: {err}", "warning")
+            log(f"Auto-stilizacija nije uspjela: {result.get('error')}", "warning")
+        return result
     except Exception as e:
-        engine.log(f"Auto-stilizacija greska: {type(e).__name__}: {e}", "warning")
-
-
-if __name__ == "__main__":
-    WORK_DIR = next(
-        (a for a in sys.argv[1:] if not a.startswith("--") and Path(a).exists()),
-        None,
-    )
-    if WORK_DIR is None:
-        print("Usage: python run.py <work_dir>")
-        sys.exit(1)
-
-    shared_stats = {"status": "V10.2 AUTO-MODE"}
-    shared_controls = {"stop": False, "reset": False, "pause": False}
-    engine = SkriptorijAllInOne(
-        Path(WORK_DIR).parent / "dummy.epub",
-        "dummy",
-        shared_stats,
-        shared_controls,
-    )
-    engine.work_dir = Path(WORK_DIR)
-    asyncio.run(engine.retroaktivna_relektura_v10(force=False, only_bad=True))
+        log(f"Auto-stilizacija izuzetak: {type(e).__name__}: {e}", "warning")
+        return {"ok": False, "error": str(e)}

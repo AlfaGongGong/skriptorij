@@ -517,53 +517,39 @@ def patch_quality_score(stem):
 @bp.route("/api/style_epub", methods=["POST"])
 def style_epub_endpoint():
     """
-    Primjenjuje "Stara knjižara" premium stil na EPUB.
-
-    Body (JSON):
-        {
-          "file": "naziv.epub",          # ili epub_path za apsolutnu putanju
-          "output": "naziv_STYLED.epub", # opciono
-          "options": {                   # opciono
-            "add_dropcaps":  true,
-            "add_ornaments": true,
-            "add_toc":       true,
-            "ai_toc_titles": true
-          }
-        }
+    Jedinstveni endpoint za stilizovanje EPUB-a preko EpubStylerManager-a.
     """
-    import traceback
-    from pathlib import Path
-
+    from flask import request, jsonify
     from config.settings import INPUT_DIR, OUTPUT_DIR, SHARED_STATS
+    from epub.manager import EpubStylerManager
 
     data = request.get_json(silent=True) or {}
     audit_msgs = []
 
     def _log(msg, atype="info"):
         from utils.logging import add_audit
-
         audit_msgs.append({"msg": msg, "type": atype})
         add_audit(msg, atype, shared_stats=SHARED_STATS)
 
-    # Resolvi epub_path
     epub_path = None
     if "epub_path" in data:
         epub_path = Path(data["epub_path"])
     elif "file" in data:
         fname = data["file"]
-        for base in [OUTPUT_DIR, INPUT_DIR]:
-            c = Path(base) / fname
+        stem = Path(fname).stem
+        ext = Path(fname).suffix or ".epub"
+        
+        kandidati = [
+            Path(OUTPUT_DIR) / fname,
+            Path(INPUT_DIR) / fname,
+            Path(OUTPUT_DIR) / f"{stem}_PREVEDENO{ext}",
+            Path(INPUT_DIR) / f"{stem}_PREVEDENO{ext}",
+            Path(OUTPUT_DIR) / f"{stem}_STYLED{ext}"
+        ]
+        for c in kandidati:
             if c.exists():
                 epub_path = c
                 break
-        if epub_path is None:
-            # Pokušaj s _PREVEDENO sufiksom
-            for base in [OUTPUT_DIR, INPUT_DIR]:
-                for ext in ["", "_PREVEDENO"]:
-                    c = Path(base) / (Path(fname).stem + ext + Path(fname).suffix)
-                    if c.exists():
-                        epub_path = c
-                        break
     else:
         out_file = SHARED_STATS.get("output_file", "")
         if out_file:
@@ -571,68 +557,31 @@ def style_epub_endpoint():
             if c.exists():
                 epub_path = c
 
-    if epub_path is None:
-        return jsonify({"ok": False, "error": "EPUB fajl nije pronađen"}), 404
+    if epub_path is None or not epub_path.exists():
+        return jsonify({"ok": False, "error": "EPUB fajl nije pronađen ni na jednoj lokaciji."}), 404
 
-    output = data.get("output")
-    if output:
-        output = Path(OUTPUT_DIR) / output
+    output_path = data.get("output")
+    if output_path:
+        output_path = Path(OUTPUT_DIR) / output_path
 
     options = data.get("options", {})
 
     try:
-        mode = data.get("mode", "standard")
-
-        if mode == "ai":
-            from epub.styler_ai import run_epub_styler_ai
-
-            bez_ai = bool(options.get("bez_ai", False))
-            result = run_epub_styler_ai(
-                epub_path=epub_path,
-                output_path=output,
-                log_callback=_log,
-                bez_ai=bez_ai,
-            )
-        elif mode == "booklyfi":
-            from stil_ai import stilizuj_epub
-
-            result = stilizuj_epub(
-                epub_path=epub_path,
-                output_path=output,
-                log_callback=_log,
-            )
-            if not result.get("ok"):
-                result = {"ok": False, "error": result.get("greska", "?")}
-
-        else:
-            from api_fleet import get_active_fleet
-            from epub.styler import run_epub_styler
-
-            fleet = get_active_fleet()
-            result = run_epub_styler(
-                epub_path=epub_path,
-                fleet=fleet,
-                output_path=output,
-                log_callback=_log,
-                options=options,
-            )
+        manager = EpubStylerManager(epub_path=epub_path, output_path=output_path, log_callback=_log)
+        result = manager.stilizuj(options=options)
+        
         result["audit"] = audit_msgs[-30:]
-        return jsonify(result), 200 if result["ok"] else 500
+        status_code = 200 if result.get("ok") else 500
+        return jsonify(result), status_code
 
-    except ImportError as e:
-        logger.exception("[style_epub] Import greška")
-        return jsonify({"ok": False, "error": f"Modul nije dostupan: {e}"}), 500
-    except Exception:
-        logger.exception("[style_epub] Neočekivana greška")
-        return jsonify(
-            {
-                "ok": False,
-                "error": "Interna greška — vidi server log",
-                "traceback": traceback.format_exc()[-600:],
-                "audit": audit_msgs,
-            }
-        ), 500
-
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "ok": False,
+            "error": f"Interna greška: {type(e).__name__}: {e}",
+            "traceback": traceback.format_exc()[-400:],
+            "audit": audit_msgs
+        }), 500
 
 @bp.route("/api/style_epub/preview_css", methods=["GET"])
 def style_epub_preview_css():
