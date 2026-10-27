@@ -53,26 +53,31 @@ def load_moon_replacements(path: str) -> list[Rule]:
 
         # Detektuj mode
         if search_part.startswith("*"):
-            mode = "literal"
+            mode = "prefix"
             search = search_part[1:]
         elif "\\b" in search_part or "\\B" in search_part or "\\w" in search_part:
             mode = "regex"
             search = search_part
         elif "\\" in search_part:
-            # escape bez \b — tretiraj kao regex
             mode = "regex"
             search = search_part
         else:
-            mode = "literal"
+            mode = "word"  # cijela rijec
             search = search_part
 
         if not search:
             continue
 
-        # Kompajliraj
+        # Kompajliraj po mode
         try:
             if mode == "regex":
                 pattern = re.compile(search)
+            elif mode == "prefix":
+                # F0.15: *X = word boundary na pocetku, bez granice na kraju
+                pattern = re.compile(r"\b" + re.escape(search))
+            elif mode == "word":
+                # F0.15: X = cijela rijec
+                pattern = re.compile(r"\b" + re.escape(search) + r"\b")
             else:
                 pattern = re.compile(re.escape(search))
         except re.error as e:
@@ -144,6 +149,20 @@ def apply_to_html(html_bytes: bytes, rules: list[Rule]) -> tuple[bytes, list[Fir
     )
     html = _re.sub(
         r"<style\b[^>]*>.*?</style>",
+        _save_block,
+        html,
+        flags=_re.DOTALL | _re.IGNORECASE,
+    )
+    # F0.15: sacuvaj <head> (title, meta) — ne diramo metapodatke
+    html = _re.sub(
+        r"<head\b[^>]*>.*?</head>",
+        _save_block,
+        html,
+        flags=_re.DOTALL | _re.IGNORECASE,
+    )
+    # F0.15: sacuvaj naslove poglavlja <h1>, <h2>, <h3>
+    html = _re.sub(
+        r"<h[123]\b[^>]*>.*?</h[123]>",
         _save_block,
         html,
         flags=_re.DOTALL | _re.IGNORECASE,
