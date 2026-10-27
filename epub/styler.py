@@ -275,6 +275,22 @@ def _je_duplikat(t1, t2, threshold=0.7):
     return len(w1 & w2) / min(len(w1), len(w2)) >= threshold
 
 
+def _spoji_blokove(delovi):
+    """Spoji blokove sa separatorom kad se spajaju dvije rijeci (alfanum na obje strane)."""
+    if not delovi:
+        return ""
+    result = delovi[0]
+    for b in delovi[1:]:
+        if not b:
+            continue
+        last = result.rstrip()[-1] if result.rstrip() else ""
+        first = b.lstrip()[0] if b.lstrip() else ""
+        if last.isalnum() and first.isalnum():
+            result += "\n"
+        result += b
+    return result
+
+
 
 def _razdvoji_dijalog_p(soup: BeautifulSoup) -> int:
     """Razdvoji <p> sa 3+ replika (em-crtica posle .!?…) u zasebne <p>."""
@@ -1285,7 +1301,7 @@ def run_epub_styler(
                 _delovi = _delovi_dedup
 
                 _body.clear()
-                _ns = BeautifulSoup("".join(_delovi), "html.parser")
+                _ns = BeautifulSoup(_spoji_blokove(_delovi), "html.parser")
                 _src = _ns.body or _ns
                 for _c in list(_src.children):
                     _body.append(_c.extract())
