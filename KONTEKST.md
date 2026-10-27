@@ -109,6 +109,40 @@ b90e36c chore: BATCH A-2 — SIM105 contextlib.suppress (57), UP035/C401 partial
 - Ako se izgubi početak: `cat $(ls -t /tmp/blok_*.log | head -1)` — vraća ceo blok iz fajla
 - Cilj: korisnik uvek dobije čist, kompletan output od nule, bez traženja početka u starom terminalu
 
+
+### P17 — Dijagnostika → STARO/NOVO → test → audit
+
+**Za svaku izmjenu koda:**
+
+1. **Dijagnostika prije STARO/NOVO** — `grep -n`, `sed -n`, Python `ast` ili `py_compile` na **stvarnom** kodu. Bez pretpostavki. Ako funkcija ne postoji ili ima više kopija, prvo to prikaži.
+2. **STARO / NOVO** — jedan blok, jedna izmjena. Bez "usput sam popravio još ovo".
+3. **Primijeni** — `ast.parse` + `py_compile` + `import`. Ako pukne, rollback odmah.
+4. **Test na stvarnom ulazu** — ne na `mini_hatred.epub` (premali). Prava knjiga, pravi izlaz. Broji: `galley-rw`, `section`, `display:inline`, `dropcaps_added`, hash ulaz≠izlaz.
+5. **`make audit` (medium)** — jedan mod, jedan EPUB. Ako FAIL raste → rollback.
+6. **`make audit-diff`** — uporedi sa baseline. Novi FAIL = rollback. Rešeni FAIL = nastavi.
+
+**Zašto:** `ast.parse` i `import` ne hvataju da fix nije u živoj funkciji (slučaj `_ukloni_sve` u mrtvoj kopiji), da fix ne piše output (slučaj `EpubStyler.stilizuj` šablona), ili da fix kvari izlaz (slučaj `_razdvoji_dijalog_p` koji je štetio naraciji). Samo audit kroz stvarni EPUB vidi razliku.
+
+**Zabranjeno:**
+- Reći "radi" na osnovu `ast.parse` ili `import` — bez testa na stvarnom izlazu
+- Ostaviti fix u mrtvoj kopiji funkcije (provjeri `grep -n "def ime"` — koliko kopija)
+- Popravljati preko greške — `git checkout`, pa ispočetka drugačije (P6)
+- Mijenjati više od jedne stvari u bloku (P2)
+- Testirati na `mini_hatred.epub` kao dokaz da radi (samo frontmatter, bez h1)
+
+**Alati:**
+- `make audit-quick` — poslije svake izmjene (~10s)
+- `make audit` — prije commita (~2-5 min)
+- `make audit-full` — prije veće izmjene (~15-30 min)
+- `make audit-diff` — uporedi sa baseline
+- `make baseline` — snimi trenutni audit kao baseline
+
+**Kad audit pokaže novi FAIL:**
+- Ako je fix uzrok → `git checkout <fajl>`, pa drugačije
+- Ako je baseline bio nepotpun → ažuriraj baseline
+- Ne ignorisati FAIL "zato što je mali" — svaki FAIL ima uzrok
+
+
 ---
 
 ### P17 — LOG PUTANJA (Termux)
@@ -818,6 +852,34 @@ A → B → C → D → E → F → G → J → H → I
 H i I su veliki refaktori (visok rizik), idu na kraj kad su A–G i J stabilni.
 
 ---
+
+
+
+## FAZA F0 (2026-10-27) — audit FAIL-ovi
+
+### Urađeno
+- **F0.1** `_shared_images = []` u `run_epub_styler` (NameError poslije brisanja dedup funkcije)
+- **F0.2** `epub/manager.py` prepravljen da zove `run_epub_styler` (output_path, options, fleet)
+
+### Rezultat (audit-diff)
+- FAIL: **15 → 1**
+- Rešeno 14 FAIL-ova (izlaz=ulaz, display:inline, run_epub_styler)
+- Novi FAIL (1): `6_IN_OUT_STANDARD` — broj riječi 4582 → 5094 (11%)
+
+### Otvoreno
+- **F0.3** — `dropcaps=0` za 75 poglavlja, uzrok nije nađen (test na mini_hatred nije reprezentativan — samo frontmatter, bez h1)
+- **F0.4** — sva 3 moda daju isti izlaz (osim hash-a, `run_epub_styler` ne koristi `mode`)
+- **F0.5** — broj riječi raste 11% u izlazu — vjerovatno `_dodaj_naslov` ili naslovna/impresum
+
+### Alati
+- `tools/pipeline_audit.py` — 3 nivoa (`--level quick|medium|full`)
+- `tools/audit_diff.py` — uporedi baseline
+- `Makefile` — `make audit-quick|audit|audit-full|baseline|audit-diff`
+
+### Baseline
+- `baseline_20261027_143918.json` (15 FAIL, 63 WARN)
+- Trenutni: 1 FAIL, 64 WARN
+
 
 KRAJ KONTEKSTA
 
