@@ -1240,17 +1240,36 @@ def run_epub_styler(
                 _delovi = [d for d in _delovi if d]
                 if not _delovi: continue
 
-                # F0.7: obrisi plain-text duplikate HTML blokova (fuzzy 70%+)
-                _html_idx = [(i, t) for i, t in enumerate(_delovi) if "<p" in t]
-                _plain_idx = [(i, t) for i, t in enumerate(_delovi) if "<p" not in t]
+                # F0.7+F0.8: obrisi duplikate (plain vs HTML, HTML vs HTML)
                 _za_brisanje = set()
-                for _pi, _pt in _plain_idx:
-                    for _hi, _ht in _html_idx:
-                        if _je_duplikat(_pt, _ht, 0.7):
-                            if len(_ht.split()) >= 0.8 * len(_pt.split()):
-                                _za_brisanje.add(_pi)
-                                print(f"  [dup] {_html_name}: obrisan blok_{_pi} (plain, duplikat blok_{_hi})")
-                            break
+                _parovi = [(i, t) for i, t in enumerate(_delovi)]
+                for _i1, _t1 in _parovi:
+                    if _i1 in _za_brisanje: continue
+                    _je_plain1 = "<p" not in _t1
+                    for _i2, _t2 in _parovi:
+                        if _i1 >= _i2: continue
+                        if _i2 in _za_brisanje: continue
+                        _je_plain2 = "<p" not in _t2
+                        # plain vs HTML: 70%+ threshold
+                        # HTML vs HTML: 90%+ threshold (stroze)
+                        if _je_plain1 and _je_plain2:
+                            _th = 0.7
+                        elif _je_plain1 or _je_plain2:
+                            _th = 0.7
+                        else:
+                            _th = 0.90
+                        if not _je_duplikat(_t1, _t2, _th):
+                            continue
+                        _w1 = len(_t1.split())
+                        _w2 = len(_t2.split())
+                        # Obrisi kraci
+                        if _w1 >= _w2:
+                            _za_brisanje.add(_i2)
+                            print(f"  [dup] {_html_name}: obrisan blok_{_i2} ({'plain' if _je_plain2 else 'HTML'}, {_w2}w) — duplikat blok_{_i1} ({_w1}w, {_th*100:.0f}%)")
+                        else:
+                            _za_brisanje.add(_i1)
+                            print(f"  [dup] {_html_name}: obrisan blok_{_i1} ({'plain' if _je_plain1 else 'HTML'}, {_w1}w) — duplikat blok_{_i2} ({_w2}w, {_th*100:.0f}%)")
+                        break
                 if _za_brisanje:
                     _delovi = [t for i, t in enumerate(_delovi) if i not in _za_brisanje]
                     if not _delovi: continue
