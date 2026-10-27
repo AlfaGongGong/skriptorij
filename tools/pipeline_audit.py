@@ -586,7 +586,9 @@ def analyze_epub(path, tag):
                     m["dup_ids"] += 1
                     FAIL(tag, f"duplikat id='{k}' u {n}")
             docs_ids[n] = set(ids)
-            txt = "".join(root.itertext())
+            # F0.5: broji samo <body> tekst (ne <style>, <title>, CSS)
+            _body_el = next((el for el in root.iter() if ln(el.tag) == "body"), None)
+            txt = "".join(_body_el.itertext()) if _body_el is not None else "".join(root.itertext())
             all_text_blob.append(txt)
             words = len(re.findall(r"\w+", txt))
             if words == 0 and not root.findall(".//{*}img") and not root.findall(".//{*}svg"):
