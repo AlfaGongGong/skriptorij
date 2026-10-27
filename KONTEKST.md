@@ -551,4 +551,52 @@ Svaka stavka iz detaljne analize (sigurnost, podaci, greske, struktura, odrzavan
 
 ---
 
+## T — TACNOST PREVODA (analiza 2026-10-27)
+
+Stavke iz detaljne analize kvaliteta prevoda. Status: `POTVRDJEN BUG` / `PROVJERENO OK` / `NEPROVJERENO` / `DELIMICNO`.
+
+| # | Stavka | Status | Fajl | Napomena |
+|---|---|---|---|---|
+| T1 | Kanon ne ulazi u prompt | NEPROVJERENO | core/prompt_injector.py, core/glosar_ekstrakcija.py | `_extract_relevant_glossary` cita `context_mgr._glosar` (autodetektirana imena bez prijevoda), `engine.glosar_tekst` prazan. Kanon radi samo kao post-zamjena `odbacene_varijante`. Popravak: po bloku filtrirati kanonske termine koji se pojavljuju, ubaci kao EN→HR u prompt |
+| T2 | Kontekst susjednih blokova prazan | NEPROVJERENO | processing/pipeline.py | `get_context_window` vraca samo "Prethodni blok postoji". Daj zadnje 2 recenice prethodnog EN bloka i pocetak sljedeceg |
+| T3 | Scorer ne vidi original | NEPROVJERENO | core/quality.py | Tacnost se ne moze mjeriti. Dodaj deterministicke provjere u `core/metrics.py`: iste cifre, isti broj `<p>`, omjer recenica, imena iz kanona prisutna |
+| T4 | Retro/REFIX gubi formatiranje i ne vidi EN | NEPROVJERENO | processing/retro.py | Lektoru salje plain tekst i vraca `<p>`, nestaju `<em>`, `<br>`. Za lose blokove ponovo pokrenuti PREVODILAC iz EN s feedbackom (drugi provider), HTML netaknut |
+| T5 | Few-shot iz vlastitih izlaza (≥9) kruzan | NEPROVJERENO | core/few_shot_global.py | Scorer ocjenjuje isti sistem koji generise tekst. Rucne izmjene iz Revizije su pravi zlatni parovi. `replacements_learn.py` postoji, ali neiskoristen |
+| T6 | A/B KOREKTOR prije nego sto se zadrzi | NEPROVJERENO | processing/pipeline.py | Pustiti 20-30 blokova s KOREKTOROM i bez, uporediti `quality_metrics`. Mozda usteda ~25% poziva |
+| T7 | Jezička norma nejasna | DELIMICNO | core/kalkovi/, core/prompts.py | Kalkovi forsiraju hrvatski leksik (tisuca, tocno, obitelj, tko), prompt mijesa "hrvatski/bosanski", `dc:language` = `hr`. Treba jedno podesavanje (`bs` ili `hr`) koje pokrece i liste i prompt |
+
+## Q — KVALITET EPUB-A (analiza 2026-10-27)
+
+| # | Stavka | Status | Fajl | Napomena |
+|---|---|---|---|---|
+| Q1 | Vijenac i dropcap base64 u svakom poglavlju | POTVRDJENO | epub/styler.py | `_ekstrahuj_zajednicke_slike` zakomentarisana (styler.py:712, 1544). Spremiti jednom kao `images/*.png`, dodati u manifest |
+| Q2 | `.replacement` generisi iz kanona s prefiksom | NEPROVJERENO | tools/, core/replacements_learn.py | `*Bayaz#->#Bajaz` pokriva sve padeze. Isto za lore enforcement u pipelineu (sada `\b...\b`) |
+| Q3 | Dijalog-regeksi preagresivni | POTVRDJENO | core/kalkovi/dijalog.py | `"citat"` → `— citat` i `, "citat"` → ` — citat` vaze za bilo koji pasus. Kvari misli, naslove, ironicne navodnike. Ograniciti na pasuse gdje navodnici otvaraju i zatvaraju cijelu repliku |
+| Q4 | `dc:subject` uvijek "Fantasy", UUID random | POTVRDJENO (subject), NEPROVJERENO (UUID) | core/metadata.py:225 | `dc:subject = "Fantasy"` hardkodiran. UUID: `uuid4` nema u packageru, ali audit pokazuje razlicite hash-eve — provjeriti u styler/metadata |
+| Q5 | Greske u `ekavizmi.py` | POTVRDJENO | core/kalkovi/ekavizmi.py | Cirilicno `и` u `brinutи`, cirilicno `е` u `bеže`. Dupli `pobede` (linije 44, 142, 198) — redoslijed: 142 pobijedi, pa imenica postaje `pobijede` (pogresno). `predelom` → `prejelom`. Dodaj audit za nelatinicne znakove |
+| Q6 | TOC fallback | NEPROVJERENO | epub/styler.py | Naslove iz prve recenice ("Nije odgovorio...") zamijeniti sa "Poglavlje N". Prelome scena (`* * *`, `<hr>`) svesti na jedan ornament |
+| Q7 | Audit: XML well-formedness + manifest/spine/ID | DELIMICNO | tools/pipeline_audit.py | `make audit-quick` pokriva staticku analizu, ali ne XML validaciju EPUB-a. Dodati u `analyze_epub` |
+
+## S — RAD SISTEMA (analiza 2026-10-27)
+
+| # | Stavka | Status | Fajl | Napomena |
+|---|---|---|---|---|
+| S1 | `_auto_stilizuj(engine)` — pogresan argument | POTVRDJEN BUG | run.py:506, 623, 644 | `run.py:506` i `:623` salju `engine`, funkcija prima `epub_path`. `epub_path.name` puca `AttributeError` izvan `try`, nakon finalize, preskace snimanje `knjiga_mode`. Treba `engine.out_path` |
+| S2 | Dupli QA u `workers.py` | NEPROVJERENO | processing/workers.py:654 | Nakon pipelinea drugi QA s do 2 retry-a. Dupli trosak. `engine_fn` pogresan, sinhroni `api_call` blokira event loop, retry se ne upisuje u `.chk`, finalize pregazi. Ukloniti ili prebaciti u pipeline |
+| S3 | Mrtav kod: `WorkerV2`, `process_chunk_with_retry` | NEPROVJERENO | processing/parallel.py, processing/workers.py | `parallel.py` zove `process_chunk_with_ai` direktno, `PromptInjector.assemble` ne postoji. Kandidat za batch I/J |
+| S4 | `[[NEPREVEDENO]]` markeri tiho ostaju | POTVRDJENO | processing/pipeline.py:1301, 1656 | Krsi P11. Finalize treba izvjestaj integriteta (markeri, broj `<p>`, omjer rijeci po poglavlju), crveni banner, dugme "Ponovi samo ove blokove" |
+| S5 | Android ubija pozadinski Termux proces | NEPROVJERENO | main.py | Dodati `termux-wake-lock` pri startu servera, `termux-notification` na kraj ili gresku |
+
+## U — UI/UX (analiza 2026-10-27)
+
+| # | Stavka | Status | Napomena |
+|---|---|---|---|
+| U1 | Pre-flight u koraku 2 | NEPROVJERENO | Prikazati procjenu: broj blokova, poziva, vrijeme prema RPD flote i spremne kljuceve. Detektovani mod (PREVOD/LEKTURA) s mogucnoscu promjene |
+| U2 | Revizija EN | HR uporedo | NEPROVJERENO | EN HTML se u `work_dir` pregazi nakon prijevoda. Cuvati `source/` ili ponovo izvesti iz originalnog EPUB-a (chunking je deterministicki) |
+| U3 | Izvjestaj knjige na kraju | NEPROVJERENO | Prosjek, klase metrika, markeri, top zamjene, vrijeme i pozivi po provideru |
+
+**Prioritet iz UI/UX (analiza):** D1/D3 (jedan poller + `visibilitychange`, baterija), zatim E3/E4 i F1.
+
+---
+
 KRAJ KONTEKSTA
