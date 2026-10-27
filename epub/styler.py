@@ -1582,7 +1582,7 @@ def run_epub_styler(
             apply_to_html as _ath,
         )
 
-        # Trazi .replacement na vise lokacija
+        # Trazi .replacement na vise lokacija + fuzzy match
         _epub_stem_orig = Path(str(epub_path)).stem
         _repl_kandidati = [
             Path(str(epub_path) + ".replacement"),
@@ -1590,7 +1590,6 @@ def run_epub_styler(
             Path(STYLED_OUTPUT_DIR) / f"{_epub_stem_orig}.epub.replacement",
             Path(STYLED_OUTPUT_DIR) / f"{_epub_stem_orig}_STYLED.epub.replacement",
         ]
-        # Dodaj varijantu bez PREVEDENO_ prefiksa
         import re as _re_r
         _stem_bez = _re_r.sub(r"^(?:PREVEDENO_)+", "", _epub_stem_orig, flags=_re_r.IGNORECASE)
         if _stem_bez != _epub_stem_orig:
@@ -1598,6 +1597,38 @@ def run_epub_styler(
             _repl_kandidati.append(Path(STYLED_OUTPUT_DIR) / f"PREVEDENO_{_stem_bez}.epub.replacement")
 
         _repl_path = next((r for r in _repl_kandidati if r.exists()), None)
+
+        # F0.16b: fuzzy match po kljucnim rijecima ako direktni kandidati ne rade
+        if _repl_path is None:
+            def _norm_name(s):
+                s = _re_r.sub(r"^(?:PREVEDENO_)+", "", s, flags=_re_r.IGNORECASE)
+                s = _re_r.sub(r"(?:_PREVEDENO|_STYLED)+$", "", s, flags=_re_r.IGNORECASE)
+                return s.lower()
+
+            _stem_norm = _norm_name(_epub_stem_orig)
+            _stem_tokens = set(t for t in _stem_norm.split("_") if len(t) > 2)
+
+            # Pretrazi STYLED i Download
+            _search_dirs = [Path(STYLED_OUTPUT_DIR), Path(str(epub_path)).parent]
+            _best_match = None
+            _best_score = 0
+            for _d in _search_dirs:
+                if not _d.exists():
+                    continue
+                for _cand in _d.glob("*.replacement"):
+                    _cand_name = _cand.name.replace(".epub.replacement", "")
+                    _cand_norm = _norm_name(_cand_name)
+                    _cand_tokens = set(t for t in _cand_norm.split("_") if len(t) > 2)
+                    if not _cand_tokens:
+                        continue
+                    _score = len(_stem_tokens & _cand_tokens) / max(len(_stem_tokens), len(_cand_tokens))
+                    if _score > _best_score:
+                        _best_score = _score
+                        _best_match = _cand
+
+            if _best_match is not None and _best_score >= 0.5:
+                _repl_path = _best_match
+                _log(f"   -> replacement: fuzzy match {_best_match.name} (score {_best_score:.2f})", "tech")
         if _repl_path:
             _rules = _lmr(str(_repl_path))
             _log(f"   -> replacement: {_repl_path.name} ({len(_rules)} pravila)", "tech")
