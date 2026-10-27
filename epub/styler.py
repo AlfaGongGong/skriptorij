@@ -1397,6 +1397,7 @@ def run_epub_styler(
         ir.decompose()
     # 2026-10-24 B7: dedup base64 slike u zajednicke PNG pre OPF build
 #     _shared_images = _ekstrahuj_zajednicke_slike(files)
+    _shared_images = []  # FIX F0.1: funkcija obrisana, dedup onemogucen (inline base64)
     if _shared_images:
         _log("   -> %d zajednickih slika (dedup base64)" % len(_shared_images), "tech")
 
