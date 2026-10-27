@@ -765,12 +765,24 @@ class BookContextManager:
         return ""
 
     def extract_relevant_glossary(self, chunk_text, glosar_tekst):
-        """Izdvaja relevantne glosar unose za dati chunk — s punim formatom (ime: varijante)."""
+        """Izdvaja relevantne glosar unose za dati chunk.
+        Prioritet: glosar_tekst (kanon, vec formatiran), fallback na _glosar."""
+        import re as _re
+        chunk_lower = chunk_text.lower()
+        if glosar_tekst:
+            linije = []
+            for linija in glosar_tekst.split("\n"):
+                m = _re.match(r"^-\s+([^\s(]+)", linija)
+                if m:
+                    en_ime = m.group(1).strip()
+                    if en_ime and en_ime.lower() in chunk_lower:
+                        linije.append(linija)
+            return "\n".join(linije)
         if not self._glosar:
             return ""
         linije = []
         for ime, varijante in self._glosar.items():
-            if ime.lower() in chunk_text.lower():
+            if ime.lower() in chunk_lower:
                 if varijante:
                     linije.append(f"{ime}: {', '.join(varijante)}")
                 else:

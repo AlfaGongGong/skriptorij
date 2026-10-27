@@ -608,7 +608,7 @@ class SkriptorijAllInOne:
 
         return get_prevodilac_prompt(
             self.book_context,
-            glosar_chunk or self.glosar_tekst,
+            glosar_chunk,
             prev_kraj,
             tip_bloka=tip_bloka,
         )
@@ -625,7 +625,7 @@ class SkriptorijAllInOne:
         return get_lektor_prompt(
             self.book_context,
             prev_kraj,
-            glosar_injekcija or self.glosar_tekst,
+            glosar_injekcija,
             chapter_summary,
             tip_bloka=tip_bloka,
         )
