@@ -413,10 +413,31 @@ Sve stavke iz starih sekcija "A. Aktivna revizija", "B. Predlozi — kod i rad s
 - odabrati epub/styler.py kao vlasnika
 
 ### J — Odrzavanje
-- testovi, 168 print() → logger
-- # FIX komentari → CHANGELOG.md
+- testovi se ne pokrecu automatski (33 fajla u tests/unit, tests/golden)
+  - `make test` postoji, ali nema hook/CI
+  - predlog: pre-commit hook `make test && make golden` ili GitHub Action
+- 211 `print()` → logger (bio 168 u starom planu, sad 211)
+- `# FIX 2026-10-26` komentari → `CHANGELOG.md`, u kodu samo "zasto"
+- 13 preostalih `except-pass` (vidi C+)
 
-**Preporuceni redoslijed:** D → E → F → G → J → H → I
+### K — Modularizacija velikih fajlova
+
+Cilj: podijeliti monolite po odgovornostima radi lakseg rada u Acodeu i manjih diffova.
+
+| Fajl | Trenutno | Predlog podjele |
+|---|---|---|
+| `static/js/main.js` | 3867 redaka | `main.js` (core), `review.js`, `setup.js`, `history.js`, `log.js`, `keys.js`, `tts.js` |
+| `static/css/style.css` | 3487 redaka | `base.css`, `layout.css`, `components.css`, `tabs.css`, `review.css`, `mobile.css` |
+| `network/http_client.py` | 1705 redaka | `http_client.py` (dispatch), `http_retry.py`, `http_rate.py`, `http_parse.py` (per-provider parsers) |
+| `processing/pipeline.py` | 1664 redaka | `pipeline.py` (orchestrator), `pipeline_checkpoint.py`, `pipeline_quality.py`, `pipeline_workers.py` |
+
+**Rizik:** srednji. Svaki fajl podijeliti u zasebnom bloku, sa `make audit-full` prije i poslije. Rollback ako FAIL raste.
+
+**Zavisnost:** raditi poslije H i I (refaktor `app.py` i duplirane stilizacije), jer se `pipeline.py` i `main.js` mijenjaju u tim batch-evima.
+
+**Preporuceni redoslijed:** D → E → F → G → J → H → I → K
+
+
 
 ---
 
@@ -454,6 +475,79 @@ Ne diraj bez testa na TWP i The Collective.
 8. .replacement — *X prefix, X cijela rijec, \bX\b regex.
 9. apply_to_html — skip <head>, <h1-h3>, <script>, <style>.
 10. main.py — _host prije try: bloka.
+
+---
+
+## MAPIRANJE ANALIZE 2026-10-27 → BATCH-EVI
+
+Svaka stavka iz detaljne analize (sigurnost, podaci, greske, struktura, odrzavanje, frontend, UX, pristupacnost) mapirana na batch.
+
+### Sigurnost
+
+| Stavka | Batch | Status |
+|---|---|---|
+| Path traversal /api/review/chunk/<path:stem> | A1 | ZAVRSENO d226896 (4 rute) |
+| main.py na 0.0.0.0 bez auth | A2 | ZAVRSENO d226896 (127.0.0.1 + env) |
+
+### Sigurnost podataka
+
+| Stavka | Batch | Status |
+|---|---|---|
+| Atomski upis api_keys | B1 | ZAVRSENO bdb85ec |
+| Atomski upis quality_scores + lock | B2 | ZAVRSENO 65f9386 |
+| Atomski upis quota_tracker | B3 | DELIMICNO (quota_tracker.py:439 open(w)) |
+| _atomic_write u utils/file_utils.py | B4 | DELIMICNO (jos u engine.py:213) |
+
+### Tihi except
+
+| Stavka | Batch | Status |
+|---|---|---|
+| 152 except-pass → logger | C | ZAVRSENO 7643be2 (37 fajlova, 152→13) |
+| Preostalih 13 | C+ | OSTALO |
+
+### Struktura koda
+
+| Stavka | Batch | Status |
+|---|---|---|
+| app.py 2098 → blueprints | H | OSTALO (visok rizik) |
+| Duplirana stilizacija (5 modula) | I | OSTALO (visok rizik) |
+| Veliki fajlovi: main.js, style.css, http_client.py, pipeline.py | K | OSTALO (novo) |
+
+### Odrzavanje
+
+| Stavka | Batch | Status |
+|---|---|---|
+| Testovi se ne pokrecu | J | DELIMICNO (make test postoji, nema hook/CI) |
+| 211 print() → logger | J | OSTALO |
+| # FIX komentari → CHANGELOG.md | J | OSTALO |
+
+### Frontend / UI / UX / A11y
+
+| Stavka | Batch | Status |
+|---|---|---|
+| 7 setInterval, 3 /api/status → jedan poller | D1 | OSTALO |
+| polling.js se ne ucitava | D2 | OSTALO |
+| nema visibilitychange | D3 | OSTALO |
+| sw.js cache-uje nepostojeci app.js | D4 | OSTALO |
+| viewport-fit bez safe-area-inset | E1 | OSTALO |
+| 100vh → 100dvh | E2 | OSTALO |
+| 8 tabova → 4 + Vise (scroll-snap) | E3 | OSTALO |
+| 53 dugmeta, 2 na 44px | E4 | OSTALO |
+| 11 alert(), 4 confirm() | F1, F2 | OSTALO |
+| Loading stanja za retro/rescue | F3 | OSTALO |
+| Poruke umesto logova, filter, obavijest | F (prosireno) | OSTALO |
+| Wake Lock, prezivljava refresh | F (prosireno) | OSTALO |
+| Revizija diff, heatmap klik, iframe preview | F (prosireno) | OSTALO |
+| Provjeri kljuceve s kvacicama | F (prosireno) | OSTALO |
+| 2 aria-, nijedan :focus-visible | G1 | OSTALO |
+| prefers-reduced-motion | G2 | OSTALO |
+| 186 !important | G3 | OSTALO |
+| 32 innerHTML | G4 | OSTALO |
+| Donja traka 3-4 taba | UI poboljsanja | OSTALO |
+| Status kartica (faza, ETA, provider) | UI poboljsanja | OSTALO |
+| Kvote vizualno | UI poboljsanja | OSTALO |
+| Intro three.js sa Preskoci | UI poboljsanja | OSTALO |
+| Dnevnik JSON + SSE | UI poboljsanja | OSTALO |
 
 ---
 
