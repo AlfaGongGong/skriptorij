@@ -984,6 +984,11 @@ def run_epub_styler(
             ):
                 return False, "toc(kombinacija)", None, False
 
+            # F0.10: copyright/marketing filter samo za KRATKE fajlove bez <h1> POGLAVLJE
+            _h1 = s.find("h1")
+            _has_chapter_h1 = _h1 is not None and "poglavlje" in _h1.get_text(strip=True).lower()
+            _je_dugacak = tlen > 5000
+
             cpy = (
                 "\u00a9",
                 "copyright",
@@ -995,8 +1000,9 @@ def run_epub_styler(
                 "first published",
                 "originally published",
             )
-            if any(m in tlow for m in cpy):
-                return False, "copyright", None, False
+            if not (_has_chapter_h1 or _je_dugacak):
+                if any(m in tlow for m in cpy):
+                    return False, "copyright", None, False
 
             mk = (
                 "discovery page",
