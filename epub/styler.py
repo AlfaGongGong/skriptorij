@@ -1353,7 +1353,13 @@ def run_epub_styler(
                 _delovi = _delovi_dedup
 
                 _body.clear()
-                _ns = BeautifulSoup(_spoji_blokove(_delovi), "html.parser")
+                _joined = _spoji_blokove(_delovi)
+                # F0.14: ako .chk nema <p>, konvertuj plain text u <p> (split po \n\n)
+                _ima_p = "<p" in _joined.lower()
+                if not _ima_p:
+                    _paragrafi = [x.strip() for x in _joined.split("\n\n") if x.strip()]
+                    _joined = "".join("<p>" + x + "</p>" for x in _paragrafi)
+                _ns = BeautifulSoup(_joined, "html.parser")
                 _src = _ns.body or _ns
                 for _c in list(_src.children):
                     _body.append(_c.extract())
