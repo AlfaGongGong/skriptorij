@@ -1006,6 +1006,23 @@ def run_epub_styler(
 
             if "table of contents" in title or "inhaltsverzeichnis" in title:
                 return False, "toc(title)", None, False
+
+            # F0.12: skip frontmatter po h1 tekstu (Calibre stavlja ime knjige u title)
+            _h1 = s.find("h1")
+            if _h1 is not None:
+                _h1_low = _h1.get_text(strip=True).lower()
+                _h1_skip = (
+                    "navigation",
+                    "autor:",
+                    "autor :",
+                    "o autoru",
+                    "sadržaj",
+                    "sadrzaj",
+                    "table of contents",
+                    "naslovna",
+                )
+                if any(m in _h1_low for m in _h1_skip):
+                    return False, "frontmatter(h1)", None, False
             if (
                 ("sadrzaj" in tlow or "sadr\u017eaj" in tlow)
                 and ("naslovnica" in tlow or "naslovna stranica" in tlow)
