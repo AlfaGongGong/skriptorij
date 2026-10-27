@@ -833,7 +833,36 @@ async def _call_gemini_with_full_rotation(
                     f"[GEMINI] {current_model} prazan odgovor — {reason}", "warning"
                 )
 
-                # FIX: PROHIBITED_CONTENT je sadržajna zabrana koju
+                # F0.19: MAX_TOKENS — boost max_tokens i retry isti kljuc/model
+                if "MAX_TOKENS" in reason:
+                    _boosted = min(max_tokens * 2, 8192)
+                    if _boosted > max_tokens:
+                        self.log(
+                            f"[GEMINI] {current_model} MAX_TOKENS — retry sa max_tokens={_boosted}",
+                            "warning",
+                        )
+                        _boosted_payload = _build_gemini_native_payload(
+                            sys_content, user_prompt, opt_temp, _boosted
+                        )
+                        _boosted_data = await _async_http_post(
+                            self, url, headers, _boosted_payload,
+                            "GEMINI", "GEMINI", key, _proxy=None
+                        )
+                        if _boosted_data is not None:
+                            _boosted_content = _extract_gemini_native(_boosted_data)
+                            if _boosted_content:
+                                self.log(
+                                    f"[GEMINI] {current_model} uspjeh sa max_tokens={_boosted}",
+                                    "warning",
+                                )
+                                return _boosted_content, f"GEMINI-{current_model}"
+                            _boosted_reason = _diagnose_empty_gemini_response(_boosted_data)
+                            self.log(
+                                f"[GEMINI] {current_model} i dalje MAX_TOKENS: {_boosted_reason}",
+                                "warning",
+                            )
+
+                # FIX: PROHIBITED_CONTENT je sadrzajna zabrana koju
                 # safetySettings ne pokriva (BLOCK_NONE vrijedi samo za 4
                 # podesive kategorije, ne i za ovu) — drugi ključ ili model
                 # garantovano daje isti rezultat na istom sadržaju. Umjesto
