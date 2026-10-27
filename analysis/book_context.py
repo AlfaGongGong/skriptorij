@@ -732,8 +732,17 @@ class BookContextManager:
                     else None
                 )
             if kid:
-                kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (kid + ".json")
-                if kanon_path.exists():
+                _kanon_dirs = [
+                    _P("/root/skriptorij/data/kanon/knjige"),
+                    _P("/storage/emulated/0/Books/MoonReader/kanon"),
+                ]
+                kanon_path = None
+                for _kd in _kanon_dirs:
+                    _kp = _kd / (kid + ".json")
+                    if _kp.exists():
+                        kanon_path = _kp
+                        break
+                if kanon_path:
                     data = _json.loads(kanon_path.read_text(encoding="utf-8"))
                     linije = []
                     for en, info in sorted(data.get("termini", {}).items()):

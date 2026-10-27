@@ -339,10 +339,17 @@ class SkriptorijAllInOne:
             from pathlib import Path as _P
 
             knjiga_id = _P(self.book_path).stem
-            kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (
-                knjiga_id + ".json"
-            )
-            if not kanon_path.exists():
+            _kanon_dirs = [
+                _P("/root/skriptorij/data/kanon/knjige"),
+                _P("/storage/emulated/0/Books/MoonReader/kanon"),
+            ]
+            kanon_path = None
+            for _kd in _kanon_dirs:
+                _kp = _kd / (knjiga_id + ".json")
+                if _kp.exists():
+                    kanon_path = _kp
+                    break
+            if not kanon_path:
                 return ""
             data = _json.loads(kanon_path.read_text(encoding="utf-8"))
             termini = data.get("termini", {})
