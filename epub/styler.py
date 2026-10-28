@@ -134,6 +134,20 @@ def _ukloni_sve(soup: BeautifulSoup) -> None:
         elif el.get("class") is not None:
             del el["class"]
 
+    # F0.39: Obrisi SVE ostale klase i inline stilove (osim za dropcap/TTS)
+    for tag in soup.find_all(True):
+        if tag.name in ("h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "span", "section"):
+            # Style
+            if "style" in tag.attrs:
+                style_val = tag["style"]
+                if "font-size:1px" not in style_val and "booklyfi-dropcap" not in tag.get("class", []):
+                    del tag["style"]
+            # Class
+            if "class" in tag.attrs:
+                cls = tag["class"]
+                if not any(c.startswith("booklyfi-") for c in cls) and "booklyfi-dropcap" not in cls:
+                    del tag["class"]
+
     # FIX 2026-10-26: unwrap <section> i div.galley-rw (sirovi lektura HTML iz .chk)
     for sec in soup.find_all("section"):
         sec.unwrap()
