@@ -398,11 +398,58 @@ Vrati ISKLJUCIVO JSON:
 """
 
 
+def _je_prompt_echo(tekst):
+    """Detektuje da je model vratio svoj prompt umjesto prijevoda (2026-10-28).
+
+    Ne zavisi od AI — cist deterministicki guard prije trosenja poziva.
+    """
+    if not tekst:
+        return False
+    markeri = (
+        "The user wants me",
+        "The user is asking",
+        "I need to apply",
+        "I need to translate",
+        "I need to professionally",
+        "Let me analyze",
+        "Let me check",
+        "Let me translate",
+        "Let me compare",
+        "Original:",
+        "Raw:",
+        "Issues:",
+        "Here is the translation",
+        "Here is the Croatian",
+        "Sure, here",
+        "As an AI",
+        "I'll keep it",
+        "I'll write",
+        "I will now",
+    )
+    glava = tekst[:3000]
+    for m in markeri:
+        if m in glava:
+            return True
+    return False
+
+
 def _qa_ai_ocjena(tekst, fleet):
     """
     AI QA ocjena chunka. Vraca dict {vjernost, stil, gramatika, konzistentnost, tipografija, ukupno, razlog}.
     Ako AI ne radi — vrati heuristiku.
     """
+    # Deterministička provjera PRIJE trosenja AI poziva (P11, 2026-10-28)
+    if _je_prompt_echo(tekst):
+        return {
+            "vjernost": 0,
+            "stil": 0,
+            "gramatika": 0,
+            "konzistentnost": 0,
+            "tipografija": 0,
+            "ukupno": 1.0,
+            "razlog": "prompt echo",
+        }
+
     if not fleet:
         return _qa_ocjena(tekst)
 
