@@ -134,9 +134,9 @@ def _ukloni_sve(soup: BeautifulSoup) -> None:
         elif el.get("class") is not None:
             del el["class"]
 
-    # F0.39: Obrisi SVE ostale klase i inline stilove (osim za dropcap/TTS)
+    # F0.40: Obrisi SVE ostale klase i inline stilove na SVIM tagovima (osim slika)
     for tag in soup.find_all(True):
-        if tag.name in ("h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "span", "section"):
+        if tag.name not in ("img", "image"):
             # Style
             if "style" in tag.attrs:
                 style_val = tag["style"]
