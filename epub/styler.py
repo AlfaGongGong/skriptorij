@@ -977,6 +977,9 @@ def run_epub_styler(
                         kw in tu for kw in ("DIO", "KNJIGA", "PART", "BOOK")
                     ):
                         return t
+                if t and (not book_title or book_title.strip().lower() not in t.lower()):
+                    if not t.lower().startswith(("za ", "posveta", "uvod", "predgovor")):
+                        return t
         except Exception:
             logger.exception("[C1_http] styler.py:1448 Exception")
         return None
