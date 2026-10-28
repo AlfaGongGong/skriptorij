@@ -937,29 +937,37 @@ def run_epub_styler(
         return False
 
     def _naslov_iz(hb, toc_naslov, book_title):
-        # Preskoči toc_naslov ako sadrži ime knjige (Calibre stavlja isto za sve)
-        if (
-            toc_naslov
-            and not GENERIC_RX.match(toc_naslov.strip())
-            and not (
-                book_title and book_title.strip().lower() in toc_naslov.strip().lower()
-            )
-        ):
-            return toc_naslov
+        # F0.37: Stroga validacija naslova (ne smije biti recenica)
+        INVALID_TITLES = {"A Little Hatred", "The Trouble With Peace", "The Wisdom of Crowds",
+                          "A Little Hatred: Book One of The Age of Madness",
+                          "The Age of Madness Trilogy"}
+        def _is_valid_title(t):
+            if not t: return False
+            t = t.strip()
+            if len(t) > 60 or len(t.split()) > 10: return False
+            if t.endswith("…") or t.endswith("."): return False
+            if t in INVALID_TITLES: return False
+            if GENERIC_RX.match(t): return False
+            if book_title and book_title.strip().lower() in t.lower(): return False
+            if t.lower().startswith(("za ", "posveta", "uvod", "predgovor")): return False
+            return True
+
+        if _is_valid_title(toc_naslov):
+            return toc_naslov.strip()
+
         try:
             s = BeautifulSoup(hb, "html.parser")
             for tag in ("h1", "h2", "h3"):
                 h = s.find(tag)
                 if h:
                     t = h.get_text(strip=True)
-                    if t and 0 < len(t) < 120:
+                    if _is_valid_title(t):
                         return t
             tt = s.find("title")
             if tt:
                 t = tt.get_text(strip=True)
-                if t and 0 < len(t) < 120:
-                    if not (book_title and book_title.strip().lower() in t.lower()):
-                        return t
+                if _is_valid_title(t):
+                    return t
             # F0.33: Ne uzimaj prvi pasus kao naslov.
             pass
         except Exception:
