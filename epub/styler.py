@@ -858,13 +858,7 @@ def _dodaj_naslov(soup, broj, naslov=None):
         if _t and len(_t) < 100 and _t.lower() not in ("navigation", "cover", "toc"):
             _naslov_fallback = _t
 
-    if not _naslov_fallback:
-        # Probaj prvi kratki <p> (naslov obično nije dijalog)
-        for p in body.find_all("p")[:3]:
-            t = p.get_text(strip=True)
-            if t and 5 < len(t) < 80 and t[0] not in ("—", "–", "-", '"', "„", "«"):
-                _naslov_fallback = t
-                break
+    # F0.34: Ne uzimaj prvi <p> kao naslov. Ako nema title, koristi "POGLAVLJE N".
 
     h1 = soup.new_tag("h1")
     h1["class"] = "booklyfi-naslov"
@@ -968,18 +962,8 @@ def run_epub_styler(
                 if t and 0 < len(t) < 120:
                     if not (book_title and book_title.strip().lower() in t.lower()):
                         return t
-            first_p = s.find("p")
-            if first_p:
-                t = first_p.get_text(strip=True)
-                if t and 0 < len(t) < 80:
-                    tu = t.upper()
-                    if t == tu or any(
-                        kw in tu for kw in ("DIO", "KNJIGA", "PART", "BOOK")
-                    ):
-                        return t
-                if t and (not book_title or book_title.strip().lower() not in t.lower()):
-                    if not t.lower().startswith(("za ", "posveta", "uvod", "predgovor")):
-                        return t
+            # F0.33: Ne uzimaj prvi pasus kao naslov.
+            pass
         except Exception:
             logger.exception("[C1_http] styler.py:1448 Exception")
         return None
