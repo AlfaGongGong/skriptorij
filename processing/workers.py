@@ -553,21 +553,37 @@ def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
     razlog = qa.get("razlog", "")
     ocjena = qa.get("ukupno", 0)
 
-    # Pripremi feedback prompt
-    feedback = (
-        "PRETHODNI PRIJEVOD (ocjena "
-        + str(ocjena)
-        + "/10):\n"
-        + tekst[:1500]
-        + "\n\n"
-        + "RAZLOG NISKE OCJENE:\n"
-        + razlog
-        + "\n\n"
-        + "ORIGINAL (za kontekst):\n"
-        + original_tekst[:1000]
-        + "\n\n"
-        + "Prevedi PONOVNO, ispravljajuci navedene probleme. Vrati SAMO tekst."
-    )
+    # 2026-10-28 BLOK 2: "prompt echo" zahtijeva poseban tretman.
+    # Model je vratio svoje razmisljanje umjesto prijevoda — nema se
+    # sta "popraviti", treba prevesti original ispocetka.
+    if razlog == "prompt echo":
+        feedback = (
+            "TEHNICKA GRESKA: Prethodni pokusaj je vratio tvoje "
+            "razmisljanje ili prompt umjesto prijevoda. To NIJE "
+            "prijevod i ne moze se popraviti.\n\n"
+            "ORIGINAL (engleski, prevedi ispocetka):\n"
+            + original_tekst[:3000]
+            + "\n\n"
+            "Prevedi ORIGINAL na hrvatski. NE vracaj objasnjenja. "
+            "NE vracaj razmisljanje. NE vracaj analizu. "
+            "Vrati SAMO prevedeni tekst."
+        )
+    else:
+        # Pripremi feedback prompt
+        feedback = (
+            "PRETHODNI PRIJEVOD (ocjena "
+            + str(ocjena)
+            + "/10):\n"
+            + tekst[:1500]
+            + "\n\n"
+            + "RAZLOG NISKE OCJENE:\n"
+            + razlog
+            + "\n\n"
+            + "ORIGINAL (za kontekst):\n"
+            + original_tekst[:1000]
+            + "\n\n"
+            + "Prevedi PONOVNO, ispravljajuci navedene probleme. Vrati SAMO tekst."
+        )
 
     # Pozovi AI
     for provider in ["GEMINI", "GROQ", "MISTRAL", "NVIDIA", "CLOUDFLARE"]:
