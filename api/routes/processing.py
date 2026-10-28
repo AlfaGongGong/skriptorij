@@ -711,6 +711,14 @@ def review_chunk(chunk_stem):
         stem = chunk_stem.replace(".chk", "")
         chk_path = _resolve_chunk_path(chk_dir, stem)
 
+        # F0.23: fallback na .prevod.chk / .lektura.chk kad glavni .chk ne postoji
+        if not chk_path.exists():
+            for suffix in (".prevod.chk", ".lektura.chk"):
+                candidate = chk_dir / f"{stem}{suffix}"
+                if candidate.exists():
+                    chk_path = candidate
+                    break
+
         if request.method == "GET":
             if not chk_path.exists():
                 return jsonify({"error": f"Chunk nije pronađen: {stem}"}), 404
