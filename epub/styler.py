@@ -849,16 +849,14 @@ def _dodaj_naslov(soup, broj, naslov=None):
     if len(body.get_text(strip=True)) < 400:
         return
 
-    # FIX 2026-10-26: Pre fallback-a na "POGLAVLJE N", probaj <title>
-    # ili prvi <p> da izvučeš pravi naslov
+    # F0.36: Stroga validacija <title> taga
     _naslov_fallback = None
     _title_tag = soup.find("title")
     if _title_tag:
         _t = _title_tag.get_text(strip=True)
-        if _t and len(_t) < 100 and _t.lower() not in ("navigation", "cover", "toc"):
-            _naslov_fallback = _t
-
-    # F0.34: Ne uzimaj prvi <p> kao naslov. Ako nema title, koristi "POGLAVLJE N".
+        if _t and len(_t) <= 60 and len(_t.split()) <= 10 and not _t.endswith("…") and not _t.endswith("."):
+            if _t.lower() not in ("navigation", "cover", "toc")                and _t not in ("A Little Hatred", "The Trouble With Peace", "The Wisdom of Crowds"):
+                _naslov_fallback = _t
 
     h1 = soup.new_tag("h1")
     h1["class"] = "booklyfi-naslov"
