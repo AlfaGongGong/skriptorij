@@ -386,7 +386,9 @@ async def retroaktivna_relektura_v10(
             except Exception:
                 logger.exception("[C1_http] retro.py:367 Exception")
 
-        self._atomic_write(chk, finalno)
+        # F0.31b: upisi finalni tekst u pravi .chk, ne u .prevod.chk
+        _final_chk = chk.with_name(_clean_name + ".chk")
+        self._atomic_write(_final_chk, finalno)
         self.log(
             f"[{file_name}] Blok {chunk_idx}: ✅ Retro | score: {ocjena:.1f}/10",
             "info",
