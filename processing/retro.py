@@ -111,8 +111,11 @@ async def retroaktivna_relektura_v10(
     chk_dir = _get_checkpoint_dir(self)
     self.checkpoint_dir = chk_dir  # ažuriraj engine atribut
 
-    # B10 FIX: samo finalni .chk fajlovi
-    svi_chk = sorted([f for f in chk_dir.glob("*.chk") if _je_finalni_chk(f)])
+    # B10 FIX: prihvati i .prevod.chk kao validan ulaz za re-lekturu
+    svi_chk = sorted([
+        f for f in chk_dir.glob("*.chk") 
+        if _je_finalni_chk(f) or f.name.endswith(".prevod.chk")
+    ])
 
     if not svi_chk:
         self.log("❌ Nema finalnih .chk fajlova.", "error")
@@ -121,8 +124,15 @@ async def retroaktivna_relektura_v10(
     # ── Selektivni mod ───────────────────────────────────────────────────────
     if stems_whitelist is not None:
         whiteset = set(stems_whitelist)
-        ciljani = [chk for chk in svi_chk if chk.stem in whiteset]
-        nedostaju = whiteset - {chk.stem for chk in ciljani}
+        # Očisti .prevod i .lektura iz imena pre poređenja
+        def _clean_stem(chk_path):
+            s = chk_path.stem
+            if s.endswith(".prevod"): s = s[:-7]
+            if s.endswith(".lektura"): s = s[:-8]
+            return s
+
+        ciljani = [chk for chk in svi_chk if _clean_stem(chk) in whiteset]
+        nedostaju = whiteset - {_clean_stem(chk) for chk in ciljani}
         if nedostaju:
             self.log(
                 f"⚠️ Neki označeni blokovi nemaju .chk fajl: {sorted(nedostaju)}",
