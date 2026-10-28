@@ -703,8 +703,11 @@ def review_chunk(chunk_stem):
                 {"error": "Nema aktivne knjige. Odaberi knjigu pa pokušaj ponovo."}
             ), 404
 
-        # FIX: ispravljen regex — bez dvostrukog backslasha
-        clean = re.sub(r"[^a-zA-Z0-9_-]", "", Path(book).stem)
+        # F0.29: skini PREVEDENO_ i _PREVEDENO da bi se nasao pravi _skr_ folder (kao u engine.py)
+        _book_stem = Path(book).stem
+        _book_stem = re.sub(r"^(?:PREVEDENO_)+", "", _book_stem, flags=re.IGNORECASE)
+        _book_stem = re.sub(r"(?:_PREVEDENO|_STYLED)+$", "", _book_stem, flags=re.IGNORECASE)
+        clean = re.sub(r"[^a-zA-Z0-9_-]", "", _book_stem)
 
         # FIX: koristi CHECKPOINT_BASE_DIR (ispravna putanja)
         chk_dir = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
