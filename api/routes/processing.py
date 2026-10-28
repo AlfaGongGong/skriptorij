@@ -531,10 +531,11 @@ def _resolve_chunk_path(chk_dir, stem: str):
 
     chk_dir = Path(chk_dir)
 
-    # 1. Direktno poklapanje
-    direct = chk_dir / f"{stem}.chk"
-    if direct.exists():
-        return direct
+    # 1. Direktno poklapanje (F0.28: prihvati i .prevod.chk i .lektura.chk)
+    for ext in (".chk", ".prevod.chk", ".lektura.chk"):
+        direct = chk_dir / f"{stem}{ext}"
+        if direct.exists():
+            return direct
 
     # 2. Ukloni .htm/.html/.xhtml ispred _blok_ i pokušaj ponovo
     clean_stem2 = re.sub(r"\.(x?html?)(_blok_)", r"\2", stem, flags=re.IGNORECASE)
@@ -546,9 +547,10 @@ def _resolve_chunk_path(chk_dir, stem: str):
     for s in (clean_stem2, clean_stem3, clean_stem1):
         if s == stem:
             continue
-        p = chk_dir / f"{s}.chk"
-        if p.exists():
-            return p
+        for ext in (".chk", ".prevod.chk", ".lektura.chk"):
+            p = chk_dir / f"{s}{ext}"
+            if p.exists():
+                return p
 
     # 3. Glob fallback — traži po broju bloka
     blok_match = re.search(r"_blok_(\d+)$", stem)
