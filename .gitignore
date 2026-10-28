@@ -21,3 +21,4 @@ data/rod_registri/
 *.log
 nohup.out
 venv/
+Makefile.pre_audit
