@@ -435,6 +435,34 @@ Cilj: podijeliti monolite po odgovornostima radi lakseg rada u Acodeu i manjih d
 
 **Zavisnost:** raditi poslije H i I (refaktor `app.py` i duplirane stilizacije), jer se `pipeline.py` i `main.js` mijenjaju u tim batch-evima.
 
+
+
+### UI poboljsanja (sa slika 2026-10-27)
+
+**Logo:**
+- Trenutni logo je low-res, tekst preko slike, izgleda kao Bitcoin ikonica
+- Napraviti novi SVG (knjiga, pero, ili apstraktno), tekst odvojeno u HTML-u
+
+**Proces obrade (semafor Analiza/Prevod/Lektor/Korektor):**
+- Zaledio se na "Lektor" iako je "PREVOD U TOKU"
+- Implementirati dinamicki highlight (osvjetljenje) na osnovu `current_phase` iz `shared_stats`
+- Ako ne stignemo, pojednostaviti na "trenutna radnja: X" (jedan manji tab)
+
+**ETA i progres:**
+- Slika 5 (lijepi plavi bar) ne radi (ETA 00:00)
+- Slika 6 (ružni tekstualni bar) radi, ali je višak
+- Uzeti logiku za ETA iz Slike 6 i ubaciti u Sliku 5. Sliku 6 obrisati.
+
+**API Ključevi:**
+- Prebaciti panel u tab "Strucniak"
+- Dodati semafor (zelena/zuta/crvena tacka) po provajderu
+- Grupisati u kartice (Kljucevi, Modeli, Logovi, Dijagnostika) radi mobilnog izgleda
+- Strucniak tab generalno srediti da lici na mobilnu aplikaciju, bez izbacivanja funkcija
+
+**Ostalo:**
+- Ukloniti višak elemenata (slike 3 i 4) koji se preklapaju sa glavnim statusom
+
+
 **Preporuceni redoslijed:** D → E → F → G → J → H → I → K
 
 
