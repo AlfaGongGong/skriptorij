@@ -1647,9 +1647,11 @@ def run_epub_styler(
                         _best_score = _score
                         _best_match = _cand
 
-            if _best_match is not None and _best_score >= 0.5:
+            if _best_match is not None and _best_score >= 0.8:
                 _repl_path = _best_match
                 _log(f"   -> replacement: fuzzy match {_best_match.name} (score {_best_score:.2f})", "tech")
+            else:
+                _log(f"   -> replacement: nema .replacement fajla (najbolji match {_best_score:.2f} < 0.8)", "tech")
         if _repl_path:
             _rules = _lmr(str(_repl_path))
             _log(f"   -> replacement: {_repl_path.name} ({len(_rules)} pravila)", "tech")
