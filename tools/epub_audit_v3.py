@@ -158,6 +158,11 @@ HR_COMMON_WORDS = {
     "da", "je", "bi", "li", "ne", "to", "ga", "mu", "joj", "im", "ih",
     "me", "te", "ma", "pa", "sto", "kao", "kad", "jer", "ako", "ali",
     "ili", "sve", "smo", "ste", "i", "a", "u", "o", "s", "k",
+    # HR glagol "biti" i "imati" u svim oblicima (ne poklapaju se sa EN)
+    "bio", "bila", "bilo", "bili", "biti",
+    "ima", "imao", "imala", "imalo", "imali", "imati",
+    "imaš", "imamo", "imate", "imaju",
+    # NAPOMENA: "ever" i "bit" NE idu — to su EN reči, stvarne greške
 }
 EN_STOP -= HR_COMMON_WORDS
 
@@ -1054,6 +1059,7 @@ class Auditor:
             prev = body[i - 1] if i > 0 else None
             nxt = body[i + 1] if i + 1 < len(body) else None
             self.check_structure(s, prev, nxt)
+        self.check_chapter_quotes(body)
 
     def audit_seg(self, seg: Seg) -> None:
         self.check_encoding(seg)               # prije NFC normalizacije
@@ -1271,6 +1277,30 @@ class Auditor:
                      pos, pos + 1)
 
     # ── stil ────────────────────────────────────────────
+    def check_chapter_quotes(self, body: list[Seg]) -> None:
+        """Multi-pasus praćenje navodnika „ i [“”] kroz cijelo poglavlje.
+        Rešava dijalog koji se otvara u jednom pasusu i zatvara u drugom."""
+        if False:  # DIJAGNOSTIKA — privremeno
+            return
+        open_stack: list[tuple[Seg, int, str]] = []
+        for seg in body:
+            t = seg.text
+            for m in re.finditer(r'[„“”]', t):
+                q = m.group()
+                if q == "„":
+                    open_stack.append((seg, m.start(), q))
+                else:
+                    if open_stack:
+                        open_stack.pop()
+                    else:
+                        self.add(seg, "upozorenje", "neparni_navodnik",
+                                 f"Zatvarajući navodnik „{q}“ bez otvarajućeg",
+                                 m.start(), m.start() + 1)
+        for seg, pos, q in open_stack:
+            self.add(seg, "upozorenje", "neparni_navodnik",
+                     f"Otvarajući navodnik „{q}“ nije zatvoren do kraja poglavlja",
+                     pos, pos + 1)
+
     def check_style(self, seg: Seg) -> None:
         t = seg.text
         skip_dup = {"da", "ne", "ha", "he", "hi", "ho", "bla", "ah", "oh", "voljela",

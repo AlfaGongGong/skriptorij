@@ -1,0 +1,88 @@
+{
+ "alat": {
+  "naziv": "epub_audit",
+  "verzija": "3.0"
+ },
+ "izlazi_sha256": {
+  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.csv": "000d1869af2ae304397a963202b81c077a6c51a884fcb4045dd0ef1a664a700e",
+  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.html": "5bddfc7e23ae095c64529f2e571d7db0ca3fa7bbc351f45a2ff8b3e453624755",
+  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.json": "a3bf912687080e74eb5f0b55351c3ed4389d3b29d45cfe56d2ec95ed652395b4",
+  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.md": "1f9f680357aedbdceaf05a6e783db5e6bab1412e483ff61890a8349d63a88174"
+ },
+ "izračunato": {
+  "dijalog_crtica_po_stilu": {
+   "—": 9724
+  },
+  "granica_pasusa_znakova": 2000.0,
+  "granica_rečenice_riječi": 60.0,
+  "naučena_imena": 0,
+  "navodnici_po_stilu": {
+   "\"…\"": 1491
+  },
+  "preskočene_datoteke": [],
+  "riječi": 521856
+ },
+ "izvornik": null,
+ "konfiguracija": {
+  "isključena_pravila": [],
+  "jezik": "hr",
+  "min_severity": "info",
+  "pragovi": {
+   "learn_names_lower_ratio": 0.1,
+   "learn_names_min_count": 1,
+   "min_style_samples": 20,
+   "minority_ratio": 0.2,
+   "paragraph_chars_floor": 2000,
+   "percentile": 99.0,
+   "percentile_factor": 1.5,
+   "pron_per_par": 3,
+   "sentence_words_floor": 60
+  },
+  "quote_style": "auto",
+  "skip_files": [],
+  "učenje_imena": false,
+  "wordlist_sha256": null
+ },
+ "nalazi": {
+  "po_ozbiljnosti": {
+   "greška": 861,
+   "info": 137,
+   "upozorenje": 9890
+  },
+  "po_vrsti": {
+   "crtica": 10,
+   "dijalekt": 64,
+   "engleska_riječ": 842,
+   "h1_nedostaje": 2,
+   "ime_en": 9610,
+   "ime_nedosljedno": 45,
+   "interpunkcija": 2,
+   "kalk": 2,
+   "kodiranje": 1,
+   "neparni_navodnik": 111,
+   "neprevedeno_dio": 9,
+   "numeracija_rupa": 2,
+   "odlomak_malo_slovo": 26,
+   "ponovljena_riječ": 11,
+   "predug_pasus": 1,
+   "prompt_echo": 7,
+   "purizam": 29,
+   "rečenica_duga": 20,
+   "strano_slovo_riječ": 77,
+   "tropuntkice": 1,
+   "truncated": 5,
+   "zamjenice": 11
+  },
+  "ukupno": 10888
+ },
+ "profil": {
+  "datoteka": null,
+  "naziv": "default",
+  "sha256": null
+ },
+ "ulaz": {
+  "bajtova": 8716118,
+  "datoteka": "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED.epub",
+  "sha256": "0fc19c8114db05f6ba8540e5becc678d3518876254b6707f89b40e3aaaecf676"
+ }
+}
