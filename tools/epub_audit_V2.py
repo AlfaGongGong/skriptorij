@@ -924,6 +924,8 @@ class Auditor:
 
     # ── imena ───────────────────────────────────────────
     def check_names(self, seg: Seg) -> None:
+        if seg.kind == "toc":
+            return
         t = seg.text
         if self.name_rx:
             for m in self.name_rx.finditer(t):
@@ -940,8 +942,10 @@ class Auditor:
     # ── tipografija ─────────────────────────────────────
     def check_typography(self, seg: Seg) -> None:
         t = seg.text
-        if t.count('"') % 2 == 1:
-            self.add(seg, "upozorenje", "navodnici", "Neparan broj ravnih navodnika u pasusu", 0, 0, "„…“")
+        n_ascii = t.count('"')
+        n_hr = t.count("„") + t.count("“") + t.count("”")
+        if n_ascii > 0 and n_hr > 0 and n_ascii % 2 == 1:
+            self.add(seg, "upozorenje", "navodnici", "Mješani ravni i hrvatski navodnici u pasusu", 0, 0, "„…“")
         for m in re.finditer(r"(?:^|(?<=[\s(\[]))“(?=\S)", t):
             self.add(seg, "upozorenje", "navodnici", "Engleski otvarajući navodnik", m.start(), m.end(), "„")
         self.check_unpaired_quotes(seg)
@@ -1512,7 +1516,7 @@ def main() -> None:
     ap.add_argument("--exclude", help="JSON {files:[regex], patterns:[regex]} ili lista regexa")
     ap.add_argument("--min-severity", default="info", choices=list(SEV_ORDER))
     ap.add_argument("--max-words", type=int, default=60, help="prag duljine rečenice (riječi)")
-    ap.add_argument("--max-paragraph", type=int, default=1200, help="prag duljine pasusa (znakovi)")
+    ap.add_argument("--max-paragraph", type=int, default=2000, help="prag duljine pasusa (znakovi)")
     ap.add_argument("--format", default="csv,json,md,html", help="csv,json,md,html")
     ap.add_argument("--skip-fantasy", action="store_true",
                     help="ne prijavljuj ime_strano_pismo (Bayaz, Brock, Stour…)")
