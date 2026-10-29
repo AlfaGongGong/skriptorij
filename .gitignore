@@ -22,3 +22,11 @@ data/rod_registri/
 nohup.out
 venv/
 Makefile.pre_audit
+
+# Audit izlazi (CSV/JSON/HTML/MD) — ne commit-uj
+booklyfi_audit/
+*.audit.csv
+*.audit.json
+*.audit.html
+*.audit.md
+*.audit_run.json
