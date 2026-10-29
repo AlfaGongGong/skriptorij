@@ -1001,7 +1001,7 @@ class Auditor:
     # ── stil ────────────────────────────────────────────
     def check_style(self, seg: Seg) -> None:
         t = seg.text
-        skip_dup = {"da", "ne", "ha", "he", "hi", "ho", "bla", "ah", "oh",
+        skip_dup = {"da", "ne", "ha", "he", "hi", "ho", "bla", "ah", "oh", "voljela",
                     "ajde", "la", "tra", "ta", "ni", "pa", "ma", "je", "i", "u", "a",
                     "na", "se", "od", "do", "za", "s", "k", "su", "bi", "smo", "ste"}
         for m in re.finditer(r"(?<![\w-])([^\W\d_]{2,})(\s+)\1(?![\w-])", t, re.I):
