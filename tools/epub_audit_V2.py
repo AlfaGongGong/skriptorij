@@ -874,6 +874,8 @@ class Auditor:
     # ── tokeni ──────────────────────────────────────────
     def check_tokens(self, seg: Seg, toks: list[re.Match], full: bool) -> None:
         t = seg.text
+        if seg.kind in ("meta", "naslov") or seg.tag == "title":
+            return
         en_hits: list[re.Match] = []
         for m in toks:
             w = m.group()
@@ -907,7 +909,7 @@ class Auditor:
                     self.unknown_first.setdefault(lw, (seg, m.start(), m.end()))
 
         n = len(toks)
-        if not en_hits:
+        if not en_hits or n < 5:
             return
         ratio = len(en_hits) / max(n, 1)
         if n >= 5 and (len(en_hits) >= 3 or (len(en_hits) >= 2 and ratio >= 0.15)):
