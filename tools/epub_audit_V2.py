@@ -1045,18 +1045,14 @@ class Auditor:
         pass
         ends = t.rstrip().endswith(tuple(TERM_CHARS))
         is_head = seg.tag.startswith("h")
-        if not ends and len(t) >= 100 and not is_head and nxt:
-            self.add(seg, "info", "truncated", "Odlomak ne završava interpunkcijom",
-                     max(0, len(t) - 40), len(t))
+        # truncated: previše lažnih (nastavci), preskočeno (2026-10-29)
+        pass
         if len(t) >= 60 and nxt and nxt.tag == seg.tag and not ends and nxt.text[:1].islower():
             self.add(seg, "greška", "prekinut_odlomak",
                      "Odlomak prekinut usred rečenice (sljedeći počinje malim slovom)",
                      max(0, len(t) - 60), len(t))
-        m = re.search(r"[^\W\d_]", t)
-        if m and m.group().islower() and m.start() <= 3:
-            if not (prev and prev.tag == seg.tag and not prev.text.rstrip().endswith(tuple(TERM_CHARS))):
-                self.add(seg, "info", "odlomak_malo_slovo", "Odlomak počinje malim slovom",
-                         m.start(), m.start() + 20)
+        # odlomak_malo_slovo: dijalog nastavci, preskočeno (2026-10-29)
+        pass
 
     def check_numbering(self, seg: Seg) -> None:
         for m in re.finditer(r"(?:POGLAVLJE|Poglavlje)\s+(\d+)", seg.text):
@@ -1236,9 +1232,8 @@ def finish(aud: Auditor) -> None:
                 rare = b if aud.name_cnt[b] <= aud.name_cnt[a] else a
                 other = a if rare == b else b
                 seg, s, e = aud.name_first[rare]
-                aud.add(seg, "upozorenje", "ime_nedosljedno",
-                        f"„{rare}“ ({aud.name_cnt[rare]}×) vs „{other}“ ({aud.name_cnt[other]}×) — isto ime, različito pisanje?",
-                        s, e, other)
+                # ime_nedosljedno: legit parovi (Kraljevoj/Kraljevskoj itd.) — preskočeno (2026-10-29)
+                pass
 
     # padeži imena: Brodu vs Broka
     name_forms: defaultdict[str, list[tuple[str, int]]] = defaultdict(list)
