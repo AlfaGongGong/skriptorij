@@ -931,7 +931,7 @@ class Auditor:
             for m in self.name_rx.finditer(t):
                 w = m.group()
                 base = next((n for n in self.names_sorted if w.startswith(n)), None)
-                if base and w != self.names_map[base]:
+                if base and w != self.names_map[base] and not w.startswith(self.names_map[base]):
                     self.add(seg, "upozorenje", "ime_en",
                              f"Englesko ime „{w}“ – hrvatski oblik: {self.names_map[base]}",
                              m.start(), m.end(), self.names_map[base])
