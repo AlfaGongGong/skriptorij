@@ -2,7 +2,7 @@
 
 Profil: **default** · jezik: **hr** · alat: epub_audit v3.0
 
-Riječi (približno): **521856** · nalaza: **10888** (greške 861, upozorenja 9890, info 137)
+Riječi (približno): **521821** · nalaza: **10867** (greške 859, upozorenja 9890, info 118)
 
 ## Po vrstama
 
@@ -11,17 +11,17 @@ Riječi (približno): **521856** · nalaza: **10888** (greške 861, upozorenja 9
 | ime_en | Englesko ime nije prilagođeno | 0 | 9610 | 0 | 9610 |
 | engleska_riječ | Engleska riječ u hrvatskom tekstu | 842 | 0 | 0 | 842 |
 | neparni_navodnik | Neparni navodnik (bez para) | 0 | 111 | 0 | 111 |
-| strano_slovo_riječ | Riječ sa stranim slovima/grafemima | 0 | 0 | 77 | 77 |
+| strano_slovo_riječ | Riječ sa stranim slovima/grafemima | 0 | 0 | 73 | 73 |
 | dijalekt | Srbizam/bosnizam (odstupanje od hr. standarda) | 0 | 64 | 0 | 64 |
 | ime_nedosljedno | Nedosljedno pisanje imena | 0 | 45 | 0 | 45 |
 | purizam | Anglicizam/internacionalizam (purizam) | 0 | 0 | 29 | 29 |
 | odlomak_malo_slovo | Odlomak počinje malim slovom nakon završene rečenice | 0 | 26 | 0 | 26 |
-| rečenica_duga | Predugačka rečenica (relativno prema knjizi) | 0 | 0 | 20 | 20 |
 | ponovljena_riječ | Ponovljena riječ | 0 | 11 | 0 | 11 |
 | zamjenice | Nagomilane zamjenice u subjektu | 0 | 0 | 11 | 11 |
 | crtica | Crtice / spojnice | 0 | 10 | 0 | 10 |
-| neprevedeno_dio | Nepreveden / djelomično engleski odlomak | 9 | 0 | 0 | 9 |
+| neprevedeno_dio | Nepreveden / djelomično engleski odlomak | 7 | 0 | 0 | 7 |
 | prompt_echo | AI vratio svoj prompt umjesto prijevoda | 7 | 0 | 0 | 7 |
+| rečenica_duga | Predugačka rečenica (relativno prema knjizi) | 0 | 0 | 5 | 5 |
 | truncated | Pasus bez završne interpunkcije | 0 | 5 | 0 | 5 |
 | h1_nedostaje | Poglavlje bez <h1> | 0 | 2 | 0 | 2 |
 | interpunkcija | Interpunkcija i razmaci | 2 | 0 | 0 | 2 |
@@ -44,7 +44,6 @@ Riječi (približno): **521856** · nalaza: **10888** (greške 861, upozorenja 9
 | 152 | POGLAVLJE 149 | 65 | 0 | 7 | 107.7 |
 | 74 | Veliki ljudi | 765 | 1 | 80 | 105.9 |
 | 147 | POGLAVLJE 144 | 143 | 0 | 15 | 104.9 |
-| 1 | The Age of Madness Trilogy | 10 | 1 | 0 | 100.0 |
 | 225 | Veliki ljudi | 684 | 0 | 64 | 93.6 |
 | 145 | Veliki ljudi | 244 | 0 | 14 | 57.4 |
 | 92 | Beskonačna zaliha | 2204 | 4 | 99 | 46.7 |
@@ -53,7 +52,6 @@ Riječi (približno): **521856** · nalaza: **10888** (greške 861, upozorenja 9
 | 52 | Budalasto oružje | 1468 | 4 | 59 | 42.9 |
 | 141 | Ta imena | 2450 | 8 | 94 | 41.6 |
 | 106 | Vatra na vatru | 1763 | 1 | 72 | 41.4 |
-| 2 | IMPRESUM | 25 | 1 | 0 | 40.0 |
 | 40 | U ogledalu | 2057 | 3 | 77 | 38.9 |
 | 220 | Trenutak | 1843 | 2 | 67 | 37.4 |
 | 105 | Stari načini, pravi načini | 2861 | 3 | 104 | 37.4 |
@@ -65,6 +63,8 @@ Riječi (približno): **521856** · nalaza: **10888** (greške 861, upozorenja 9
 | 187 | Uzimanje i držanje | 1896 | 5 | 63 | 35.9 |
 | 213 | Bilo je loše | 2029 | 23 | 48 | 35.0 |
 | 193 | Ništa od karata | 878 | 0 | 30 | 34.2 |
+| 71 | Moj tip kopileta | 2005 | 4 | 64 | 33.9 |
+| 91 | Kasno | 2566 | 7 | 80 | 33.9 |
 
 ## Imena i velika slova usred rečenice
 
@@ -72,11 +72,11 @@ Folk (885), Leo (619), Oko (533), Orso (504), Uzvišenosti (241), Vaša (211), U
 
 ## Pokazatelji stila
 
-- Rečenica: 47931; rečenica koje počinju „On/Ona/Ja… je“: 567
+- Rečenica: 47920; rečenica koje počinju „On/Ona/Ja… je“: 567
 - Oblici „napravi…“: 106 (0.2 na 1000 riječi)
 - dijalog_crtica_po_stilu: {"—": 9724}
 - granica_pasusa_znakova: 2000.0
-- granica_rečenice_riječi: 60.0
+- granica_rečenice_riječi: 76.0
 - navodnici_po_stilu: {"\"…\"": 1491}
 
 ## Primjeri po vrsti
@@ -344,12 +344,6 @@ Folk (885), Leo (619), Oko (533), Orso (504), Uzvišenosti (241), Vaša (211), U
 
 ### neprevedeno_dio – Nepreveden / djelomično engleski odlomak
 
-- [greška] Odlomak je neprevedeno/djelomično engleski (2 EN funkcijskih od 5)  
-  `booklyfi_001_naslovna.xhtml · „The Age of Madness Trilogy“ · odl. 2 <h1> · znak 0`  
-  ⟦The Age of Madness Trilogy⟧
-- [greška] Odlomak je neprevedeno/djelomično engleski (2 EN funkcijskih od 6)  
-  `booklyfi_002_impresum.xhtml · „IMPRESUM“ · odl. 2 <p> · znak 0`  
-  ⟦Naslov: The Age of Madness Trilogy⟧
 - [greška] Odlomak je neprevedeno/djelomično engleski (3 EN funkcijskih od 55)  
   `text/part0031.html · „Iznenađenja“ · odl. 56 <p> · znak 0`  
   ⟦— Meni naprosto nikad nisi djelovao strašno. Ever mi je tvoje oko bilo nekako lijepo. Sjajno. Rikke ga je pomilovala po ožiljkastom obrazu. — Ever si mi se čini⟧o… izgubljeno. Kao da si izgubio samog sebe, …
@@ -527,42 +521,21 @@ Folk (885), Leo (619), Oko (533), Orso (504), Uzvišenosti (241), Vaša (211), U
 
 ### rečenica_duga – Predugačka rečenica (relativno prema knjizi)
 
-- [info] Rečenica ima 63 riječi (granica za ovu knjigu: 60)  
-  `text/part0025.html · „Što su veći“ · odl. 23 <body> · znak 765`  
-  …por na nogavici otkrivao je zavoj ispod nje. ⟦Mlađa je imala široko, gotovo previše izražajno lice, debelu zlatnu alku u nosu i zamršenu riđu kosu, toliko bujnu da su oni iza nje morali kriviti vratove da b⟧i išta vidjeli. — Ovo je pravo muško — rekla …
-- [info] Rečenica ima 80 riječi (granica za ovu knjigu: 60)  
+- [info] Rečenica ima 80 riječi (granica za ovu knjigu: 76)  
   `text/part0025.html · „Što su veći“ · odl. 54 <p> · znak 0`  
   ⟦Rikke je zabila šake Leoocu u lice i ispružila po jedan prst za svaku stavku. — Bila sam gladna, ošamarena, popišana, na mene su pucali, gonili me psi, prijetil⟧i mi da će me silovati svinja, spavala sam is…
-- [info] Rečenica ima 66 riječi (granica za ovu knjigu: 60)  
-  `text/part0028.html · „Bolne tačke“ · odl. 55 <p> · znak 11`  
-  I bila je. ⟦Bila je lijepa, profinjena, diskretna, govorila je pet jezika, posjedovala istančan smisao za humor i nevjerojatnu lakoću u baratanju poslovnim umijećem, a ipak⟧ nikada nije na sebe skretala pozornost. nesu…
-- [info] Rečenica ima 64 riječi (granica za ovu knjigu: 60)  
-  `text/part0031.html · „Iznenađenja“ · odl. 104 <p> · znak 130`  
-  …om prilično iznervirana slamom u stražnjici. ⟦Uspjela je svući hlače oko gležnjeva tako da je jahala na njemu, počela se rvati s njegovim remenom, ali nije vidjela ništa, a tmina joj se vrtjela pred očima i⟧ letimično pomisli kako bi mogla pasti premda…
-- [info] Rečenica ima 70 riječi (granica za ovu knjigu: 60)  
-  `text/part0031.html · „Iznenađenja“ · odl. 109 <p> · znak 11`  
-  — Oprosti. ⟦Možda se ipak malo zarđala i šupa se sad jamačno vrtjela, vrtjela poput čamca što tone u vir, ali nedvojbeno ugodan vir, topao i ljepljiv, koji je mirisao po ži⟧votinjama, a njegova je ruka bila zauzeta izm…
-- [info] Rečenica ima 108 riječi (granica za ovu knjigu: 60)  
+- [info] Rečenica ima 108 riječi (granica za ovu knjigu: 76)  
   `text/part0037.html · „Mali ljudi“ · odl. 7 <body> · znak 383`  
   …kresnu Lisbit, bijesna. No on se nije gubio. ⟦Još se muškaraca naguralo iza njega, s požudnim licima na prozorima i prljavim rukama koje su posezale za njom. — U pomoć! — vrisnula je, zgrčivši se uz vrata. ⟧— U pomoć! — I divlje je udarila nogom onoga …
-- [info] Rečenica ima 62 riječi (granica za ovu knjigu: 60)  
-  `text/part0037.html · „Mali ljudi“ · odl. 46 <p> · znak 0`  
-  ⟦Kolona zatvorenika teturajući je prolazila pokraj velike tvornice u plamenu, dim se kovitlao uzdižući se u sve mračniju sumaglicu, uslijedio je prasak dok se pr⟧ozor raspao u komadiće, zasipajući okolinu st…
-- [info] Rečenica ima 69 riječi (granica za ovu knjigu: 60)  
-  `text/part0106.html · „Neka zvona zvone“ · odl. 16 <body> · znak 754`  
-  …e. Isold zatrepće gledajući je. — Misliš li? ⟦Savine nije mislila. — Kako bi moglo biti drugačije? — upita, podigavši Isold za bradu i izmamivši joj osmijeh. — Zuri, može li jedna od djevojaka pomoći Isold ⟧oko pudera? — Blagoslovljena je ona koja pruž…
-- [info] Rečenica ima 62 riječi (granica za ovu knjigu: 60)  
-  `text/part0114.html · „Malo javno vješanje“ · odl. 29 <p> · znak 65`  
-  …vio u otvoru, a krvnici nisu imali rješenje. ⟦Jedan se beskorisno rvao s polugom, drugi je držao zatvorenika ispod ruku pokušavajući ga izvući, a treći je udarao nogom onu jednu nogu koja je još bila zaglav⟧ljena iznad otvora, pokušavajući je gurnuti n…
-- [info] Rečenica ima 101 riječi (granica za ovu knjigu: 60)  
+- [info] Rečenica ima 101 riječi (granica za ovu knjigu: 76)  
   `text/part0121.html · „Mali ljudi“ · odl. 78 <p> · znak 98`  
   …ostoje oni koji bi htjeli promijeniti smjer! ⟦Morilee je znala kako se osjećaju oni na dnu ljestvice, u to je bila sigurna, s kućama srušenima da bi se napravilo mjesta za tvornice i vrtovima pregrađenima d⟧a bi se podigli hramovi, s obiteljima naguran…
-- [info] Rečenica ima 62 riječi (granica za ovu knjigu: 60)  
-  `text/part0130.html · „Nema filozofa“ · odl. 17 <p> · znak 0`  
-  ⟦Broad ju je promatrao, razapet između užasa i opčinjenosti, dok se ona saginjala, hvatala rub svojih dronjavih suknji i podizala ga, podizala sve više kako bi o⟧tkrila natpis istetoviran ukrug po njezinim b…
-- [info] Rečenica ima 93 riječi (granica za ovu knjigu: 60)  
+- [info] Rečenica ima 93 riječi (granica za ovu knjigu: 76)  
   `text/part0136.html · „Oluje“ · odl. 8 <p> · znak 0`  
   ⟦Kao za inat, njezin se muž cerio vjetru i kiši koja mu se slivala niz lice, nikad sretniji nego kad bi se našao pred nekom jednostavnom fizičkom preprekom s koj⟧om se junački mogao pohrvati i junački je svl…
+- [info] Rečenica ima 102 riječi (granica za ovu knjigu: 76)  
+  `text/part0229.html · „Ne zbog nagrada“ · odl. 51 <body> · znak 128`  
+  …trani, kriveći lice od tupe boli u patrljku. ⟦Majka odmaknu Savine na dužinu ruku, promatrajući joj kratko ošišanu kosu, odjeću i ožiljak. — I temeljito moderna. — Mogla bih reći isto za tebe. — Ali ne bi s⟧e usudila jer bi to bilo prokleto ulagivanje.…
 
 ### strano_slovo_riječ – Riječ sa stranim slovima/grafemima
 
@@ -572,9 +545,6 @@ Folk (885), Leo (619), Oko (533), Orso (504), Uzvišenosti (241), Vaša (211), U
 - [info] Riječ sa stranim grafemima „IX“ – moguća neprevedena engleska riječ  
   `nav.xhtml · „sadržaj (nav)“ · odl. 197 <li> · znak 4`  
   Dio ⟦IX⟧
-- [info] Riječ sa stranim grafemima „BOOKLYFI“ – moguća neprevedena engleska riječ  
-  `booklyfi_001_naslovna.xhtml · „The Age of Madness Trilogy“ · odl. 1 <p> · znak 0`  
-  ⟦BOOKLYFI⟧ IZDANJE
 - [info] Riječ sa stranim grafemima „gradova-Country“ – moguća neprevedena engleska riječ  
   `text/part0089.html · „Daleko od Adue“ · odl. 21 <p> · znak 192`  
   …k se Stiria pretvorila iz krparije zavađenih ⟦gradova-Country⟧ u jednu snažnu naciju pod jednim snažnim kra…
@@ -602,6 +572,9 @@ Folk (885), Leo (619), Oko (533), Orso (504), Uzvišenosti (241), Vaša (211), U
 - [info] Riječ sa stranim grafemima „text“ – moguća neprevedena engleska riječ  
   `text/part0137.html · „Lašče, lašče“ · odl. 2 <body> · znak 98`  
   …Croatian translation of an English text. The ⟦text⟧ is from a novel (fantasy/historical fiction …
+- [info] Riječ sa stranim grafemima „fantasy“ – moguća neprevedena engleska riječ  
+  `text/part0137.html · „Lašče, lašče“ · odl. 2 <body> · znak 120`  
+  …f an English text. The text is from a novel (⟦fantasy⟧/historical fiction based on names like "Lord…
 
 ### tropuntkice – Nedosljedne/nepravilne tri točkice
 

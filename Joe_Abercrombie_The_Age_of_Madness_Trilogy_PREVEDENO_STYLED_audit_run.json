@@ -4,23 +4,23 @@
   "verzija": "3.0"
  },
  "izlazi_sha256": {
-  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.csv": "000d1869af2ae304397a963202b81c077a6c51a884fcb4045dd0ef1a664a700e",
-  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.html": "5bddfc7e23ae095c64529f2e571d7db0ca3fa7bbc351f45a2ff8b3e453624755",
-  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.json": "a3bf912687080e74eb5f0b55351c3ed4389d3b29d45cfe56d2ec95ed652395b4",
-  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.md": "1f9f680357aedbdceaf05a6e783db5e6bab1412e483ff61890a8349d63a88174"
+  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.csv": "39f521de92d890697064fe0a8019daa03c199fe63f533710d95ddcf76c689afe",
+  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.html": "9159f4f0c7b0ac7ec06552d38a7bb6e00d4bc7385e56cd87cd3046cba29ae8ee",
+  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.json": "a82732a3a4e642f3548a36f509493d51948c94febb5b6527f0563b86e76c5341",
+  "Joe_Abercrombie_The_Age_of_Madness_Trilogy_PREVEDENO_STYLED_audit.md": "b632b909fd259ae48a5f8f94485d5a2fec8cf4b69380bcd7dece60e06bfcb878"
  },
  "izračunato": {
   "dijalog_crtica_po_stilu": {
    "—": 9724
   },
   "granica_pasusa_znakova": 2000.0,
-  "granica_rečenice_riječi": 60.0,
+  "granica_rečenice_riječi": 76.0,
   "naučena_imena": 0,
   "navodnici_po_stilu": {
    "\"…\"": 1491
   },
   "preskočene_datoteke": [],
-  "riječi": 521856
+  "riječi": 521821
  },
  "izvornik": null,
  "konfiguracija": {
@@ -31,10 +31,10 @@
    "learn_names_lower_ratio": 0.1,
    "learn_names_min_count": 1,
    "min_style_samples": 20,
-   "minority_ratio": 0.2,
+   "minority_ratio": 0.35,
    "paragraph_chars_floor": 2000,
    "percentile": 99.0,
-   "percentile_factor": 1.5,
+   "percentile_factor": 2.0,
    "pron_per_par": 3,
    "sentence_words_floor": 60
   },
@@ -45,8 +45,8 @@
  },
  "nalazi": {
   "po_ozbiljnosti": {
-   "greška": 861,
-   "info": 137,
+   "greška": 859,
+   "info": 118,
    "upozorenje": 9890
   },
   "po_vrsti": {
@@ -60,20 +60,20 @@
    "kalk": 2,
    "kodiranje": 1,
    "neparni_navodnik": 111,
-   "neprevedeno_dio": 9,
+   "neprevedeno_dio": 7,
    "numeracija_rupa": 2,
    "odlomak_malo_slovo": 26,
    "ponovljena_riječ": 11,
    "predug_pasus": 1,
    "prompt_echo": 7,
    "purizam": 29,
-   "rečenica_duga": 20,
-   "strano_slovo_riječ": 77,
+   "rečenica_duga": 5,
+   "strano_slovo_riječ": 73,
    "tropuntkice": 1,
    "truncated": 5,
    "zamjenice": 11
   },
-  "ukupno": 10888
+  "ukupno": 10867
  },
  "profil": {
   "datoteka": null,

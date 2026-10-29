@@ -68,10 +68,10 @@ DEFAULT_THRESHOLDS = {
     "sentence_words_floor": 60,     # donja granica: rečenica kraća od ovoga nikad se ne prijavljuje
     "paragraph_chars_floor": 2000,  # isto za pasus (znakovi)
     "percentile": 99.0,             # granica = max(floor, percentil_knjige * factor)
-    "percentile_factor": 1.5,
+    "percentile_factor": 2.0,
     "pron_per_par": 3,              # rečenica koje počinju zamjenicom + glagolom u jednom pasusu
     "min_style_samples": 20,        # min. uzoraka da bi se proglasio "dominantni stil"
-    "minority_ratio": 0.2,          # stil s udjelom manjim od ovoga je "manjinski"
+    "minority_ratio": 0.5,          # stil s udjelom manjim od ovoga je "manjinski"
     "learn_names_min_count": 1,     # min. pojavljivanja imena u izvorniku
     "learn_names_lower_ratio": 0.1, # dopušten udio malih slova (May/may → nije ime)
 }
@@ -81,7 +81,8 @@ DEFAULT_PROFILE = {
     "language": "hr",
     "names": {},              # {en: hr} — ime_en
     "proper_names": [],       # riječi koje nisu greška kad su velikim slovom usred rečenice
-    "foreign_ok": ["lady", "lord", "sir", "madam", "mister", "sherry", "whisky"],
+    "foreign_ok": ["lady", "lord", "sir", "madam", "mister", "sherry", "whisky",
+                   "westport*", "styrijski*", "stirijski*"],
     #   "x*" = prefiks (obuhvaća padeže), "x" = točno taj oblik
     "skip_files": [],         # regex na putanju: datoteka se uopće ne čita kao poglavlje
     "structure_skip_files": [r"content\.opf", r"(?:nav|toc)\.xhtml"],  # bez provjere h1/praznih <p>
@@ -801,7 +802,7 @@ class Book:
                 if idref not in book.manifest:
                     continue
                 href, mt, props = book.manifest[idref]
-                if href not in names or "nav" in props.split():
+                if href not in names or "nav" in props.split() or "booklyfi_00" in href:
                     continue
                 if any(rx.search(href) for rx in skip_rx):
                     book.skipped_files.append(href)
@@ -1152,7 +1153,7 @@ class Auditor:
     # ── tokeni ──────────────────────────────────────────
     def check_tokens(self, seg: Seg, toks: list[re.Match], full: bool) -> None:
         t = seg.text
-        if seg.kind in ("meta", "naslov") or seg.tag == "title":
+        if seg.kind in ("meta", "naslov") or seg.tag == "title" or "booklyfi_00" in seg.file:
             return
         en_hits: list[re.Match] = []
         for m in toks:
@@ -1270,21 +1271,20 @@ class Auditor:
                          "Neparni \" u dijalogu (vjerojatno treba obrisati)", pos, pos + 1, "obriši")
         opens = [m.start() for m in re.finditer("„", t)]
         closes = [m.start() for m in re.finditer("[“”]", t)]
-        if abs(len(opens) - len(closes)) > 1:
-            pos = (opens or closes)[-1]
-            self.add(seg, "upozorenje", "neparni_navodnik",
-                     f"Neparni „“ navodnici (otvarajućih {len(opens)}, zatvarajućih {len(closes)})",
-                     pos, pos + 1)
+        # „/“ se proveravaju u check_chapter_quotes (per poglavlje)
 
     # ── stil ────────────────────────────────────────────
     def check_chapter_quotes(self, body: list[Seg]) -> None:
         """Multi-pasus praćenje navodnika „ i [“”] kroz cijelo poglavlje.
         Rešava dijalog koji se otvara u jednom pasusu i zatvara u drugom."""
-        if False:  # DIJAGNOSTIKA — privremeno
+        if not self.on("neparni_navodnik"):
             return
         open_stack: list[tuple[Seg, int, str]] = []
         for seg in body:
             t = seg.text
+            # Dijalog sa crticom: — ... „...“ ili — ..." je legit
+            if t.lstrip()[:1] in ("—", "–", "-"):
+                continue
             for m in re.finditer(r'[„“”]', t):
                 q = m.group()
                 if q == "„":
@@ -1360,7 +1360,7 @@ class Auditor:
                 self.par_cand.append((seg, len(t)))
         ends = t.rstrip().endswith(tuple(TERM_CHARS))
         is_head = seg.tag.startswith("h")
-        continues = bool(nxt and nxt.text[:1].islower())
+        continues = bool(nxt and nxt.text and (nxt.text[:1].islower() or nxt.text[:1] in ('"', "„", "—", "–", "-", "«")))
         if (self.on("truncated") and not ends and not is_head and len(t) >= 80
                 and not continues):
             self.add(seg, "upozorenje", "truncated",

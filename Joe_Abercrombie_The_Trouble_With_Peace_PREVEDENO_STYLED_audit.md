@@ -2,72 +2,70 @@
 
 Profil: **default** · jezik: **hr** · alat: epub_audit v3.0
 
-Riječi (približno): **150683** · nalaza: **162** (greške 2, upozorenja 115, info 45)
+Riječi (približno): **150643** · nalaza: **113** (greške 0, upozorenja 94, info 19)
 
 ## Po vrstama
 
 | vrsta | opis | greške | upoz. | info | ukupno |
 |---|---|--:|--:|--:|--:|
-| rečenica_duga | Predugačka rečenica (relativno prema knjizi) | 0 | 0 | 30 | 30 |
-| predug_pasus | Predug pasus (relativno prema knjizi) | 0 | 29 | 0 | 29 |
-| neparni_navodnik | Neparni navodnik (bez para) | 0 | 27 | 0 | 27 |
+| neparni_navodnik | Neparni navodnik (bez para) | 0 | 25 | 0 | 25 |
 | navodnici_stil | Navodnici: odstupanje od dominantnog stila knjige | 0 | 24 | 0 | 24 |
-| truncated | Pasus bez završne interpunkcije | 0 | 15 | 0 | 15 |
+| predug_pasus | Predug pasus (relativno prema knjizi) | 0 | 17 | 0 | 17 |
 | ime_nedosljedno | Nedosljedno pisanje imena | 0 | 12 | 0 | 12 |
-| strano_slovo_riječ | Riječ sa stranim slovima/grafemima | 0 | 0 | 11 | 11 |
+| rečenica_duga | Predugačka rečenica (relativno prema knjizi) | 0 | 0 | 12 | 12 |
+| truncated | Pasus bez završne interpunkcije | 0 | 8 | 0 | 8 |
 | ime_en | Englesko ime nije prilagođeno | 0 | 5 | 0 | 5 |
 | zamjenice | Nagomilane zamjenice u subjektu | 0 | 0 | 4 | 4 |
+| strano_slovo_riječ | Riječ sa stranim slovima/grafemima | 0 | 0 | 3 | 3 |
 | odlomak_malo_slovo | Odlomak počinje malim slovom nakon završene rečenice | 0 | 2 | 0 | 2 |
 | crtica | Crtice / spojnice | 0 | 1 | 0 | 1 |
-| interpunkcija | Interpunkcija i razmaci | 1 | 0 | 0 | 1 |
-| neprevedeno_dio | Nepreveden / djelomično engleski odlomak | 1 | 0 | 0 | 1 |
 
 ## Poglavlja po gustoći (greške+upozorenja na 1000 riječi)
 
 | # | poglavlje | riječi | greške | upoz. | /1000 |
 |--:|---|--:|--:|--:|--:|
-| 2 | IMPRESUM | 31 | 2 | 0 | 64.5 |
 | 78 | Na Sjeveru | 115 | 0 | 2 | 17.4 |
 | 81 | Red magova | 63 | 0 | 1 | 15.9 |
 | 75 | U krugu Savin dan Glokta | 193 | 0 | 3 | 15.5 |
 | 80 | Iz Englenda | 85 | 0 | 1 | 11.8 |
-| 14 | The Trouble With Peace | 1159 | 0 | 8 | 6.9 |
 | 76 | U Vestportu i Sipaniju, gradovima Štirije | 150 | 0 | 1 | 6.7 |
+| 14 | The Trouble With Peace | 1159 | 0 | 7 | 6.0 |
 | 74 | Veliki ljudi | 239 | 0 | 1 | 4.2 |
-| 40 | The Trouble With Peace | 5298 | 0 | 15 | 2.8 |
-| 21 | The Trouble With Peace | 1625 | 0 | 4 | 2.5 |
-| 36 | Polovična veleizdaja | 2324 | 0 | 5 | 2.2 |
+| 40 | The Trouble With Peace | 5298 | 0 | 14 | 2.6 |
 | 35 | The Trouble With Peace | 1152 | 0 | 2 | 1.7 |
+| 36 | Polovična veleizdaja | 2324 | 0 | 4 | 1.7 |
 | 43 | Vučje čeljusti | 1192 | 0 | 2 | 1.7 |
-| 34 | Stari načini, pravi načini | 1796 | 0 | 3 | 1.7 |
 | 39 | Novi prijatelji | 1859 | 0 | 3 | 1.6 |
 | 26 | Buduće izdaje, prošle afere | 2524 | 0 | 4 | 1.6 |
 | 38 | Stari prijatelji | 2005 | 0 | 3 | 1.5 |
-| 12 | Neke stvari nikada ne zacjeljuju | 2190 | 0 | 3 | 1.4 |
-| 19 | Ministar šaputanja | 2262 | 0 | 3 | 1.3 |
-| 18 | The Trouble With Peace | 2422 | 0 | 3 | 1.2 |
 | 37 | Privatni jezik | 815 | 0 | 1 | 1.2 |
 | 20 | Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Pla | 2673 | 0 | 3 | 1.1 |
-| 44 | Pitanja | 2678 | 0 | 3 | 1.1 |
-| 29 | Mrtvo drvo, novi izdanci | 3806 | 0 | 4 | 1.1 |
-| 11 | The Trouble With Peace | 3039 | 0 | 3 | 1.0 |
-| 22 | Demon koji kida sve okove | 2042 | 0 | 2 | 1.0 |
-| 25 | Neka zvone zvona | 3101 | 0 | 3 | 1.0 |
-| 48 | Svačiji ukus, bez osude | 4210 | 0 | 4 | 1.0 |
+| 34 | Stari načini, pravi načini | 1796 | 0 | 2 | 1.1 |
+| 19 | Ministar šaputanja | 2262 | 0 | 2 | 0.9 |
 | 10 | Uobičajena rutina | 2290 | 0 | 2 | 0.9 |
 | 32 | Domoljubni prilozi | 1146 | 0 | 1 | 0.9 |
+| 15 | Čovjek naroda | 1185 | 0 | 1 | 0.8 |
+| 18 | The Trouble With Peace | 2422 | 0 | 2 | 0.8 |
+| 28 | Zlatno dijete predgrađa | 2445 | 0 | 2 | 0.8 |
+| 29 | Mrtvo drvo, novi izdanci | 3806 | 0 | 3 | 0.8 |
+| 44 | Pitanja | 2678 | 0 | 2 | 0.7 |
+| 24 | Izbor | 1392 | 0 | 1 | 0.7 |
+| 48 | Svačiji ukus, bez osude | 4210 | 0 | 3 | 0.7 |
+| 11 | The Trouble With Peace | 3039 | 0 | 2 | 0.7 |
+| 25 | Neka zvone zvona | 3101 | 0 | 2 | 0.6 |
+| 21 | The Trouble With Peace | 1625 | 0 | 1 | 0.6 |
 
 ## Imena i velika slova usred rečenice
 
-Orso (198), Savin (180), Leo (171), Visočanstvo (103), Vik (93), Klover (90), Unije (73), Staur (70), Glokta (59), Pajk (59), Išer (59), Brok (58), Vaše (54), Wetterlant (48), Lea (47), Izern (47), Valbeku (42), Lav (42), Mladi (41), Otvorenog (41), Unija (40), Šivers (37), Englenda (36), Tani (34), Sjevernjaka (33), Orsa (32), Staura (32), Sjeveru (31), Vaša (31), Uniji (28), Barezin (28), Milosti (27), Broka (26), Otvoreno (24), Kalder (24), Heugen (23), Tojfel (23), Hof (22), Afrit (22), Džadž (22), Gorst (21), Bruckel (20), Adui (20), Kurnsbik (20), Vuk (20), Veliki (20), Orsu (19), Zatvorenog (19), Lady (18), Salfur (18), Trouble (17), Veličanstva (17), Zatvoreno (17), Visosti (17), Vijeće (17), Leu (17), Vestportu (16), Peace (16), Što (16), Najtfola (16)
+Orso (198), Savin (180), Leo (171), Visočanstvo (103), Vik (93), Klover (90), Unije (73), Staur (70), Glokta (59), Pajk (59), Išer (59), Brok (58), Vaše (54), Wetterlant (48), Lea (47), Izern (47), Valbeku (42), Lav (42), Mladi (41), Otvorenog (41), Unija (40), Šivers (37), Englenda (36), Tani (34), Sjevernjaka (33), Orsa (32), Staura (32), Sjeveru (31), Vaša (31), Uniji (28), Barezin (28), Milosti (27), Broka (26), Otvoreno (24), Kalder (24), Heugen (23), Tojfel (23), Hof (22), Afrit (22), Džadž (22), Gorst (21), Bruckel (20), Adui (20), Kurnsbik (20), Vuk (20), Veliki (20), Orsu (19), Zatvorenog (19), Lady (18), Salfur (18), Veličanstva (17), Zatvoreno (17), Visosti (17), Vijeće (17), Leu (17), Trouble (16), Vestportu (16), Što (16), Najtfola (16), Lava (16)
 
 ## Pokazatelji stila
 
-- Rečenica: 12901; rečenica koje počinju „On/Ona/Ja… je“: 154
+- Rečenica: 12890; rečenica koje počinju „On/Ona/Ja… je“: 154
 - Oblici „napravi…“: 27 (0.2 na 1000 riječi)
 - dijalog_crtica_po_stilu: {"—": 2304}
-- granica_pasusa_znakova: 2266.5
-- granica_rečenice_riječi: 66.0
+- granica_pasusa_znakova: 3022.0
+- granica_rečenice_riječi: 88.0
 - navodnici_po_stilu: {"\"…\"": 24, "„…“": 223}
 
 ## Primjeri po vrsti
@@ -135,12 +133,6 @@ Orso (198), Savin (180), Leo (171), Visočanstvo (103), Vik (93), Klover (90), U
   `text/part0147.html · „Junaštva“ · odl. 36 <p> · znak 204`  
   …zastave na vrhu tornja sa satom. No ni traga ⟦Kraljevoj⟧ gardi, a kamoli Vitezovima tjelohraniteljima…
 
-### interpunkcija – Interpunkcija i razmaci
-
-- [greška] Nedostaje razmak iza interpunkcije  
-  `booklyfi_002_impresum.xhtml · „IMPRESUM“ · odl. 4 <p> · znak 7`  
-  ID: urn⟦:⟧uuid:69c53f4b-5f3c-4f56-b6bd-ebc33064c8e0
-
 ### navodnici_stil – Navodnici: odstupanje od dominantnog stila knjige
 
 - [upozorenje] Nedosljedan stil navodnika: većina knjige koristi „…“ (223×), ovdje "…" → *„…“*  
@@ -206,9 +198,6 @@ Orso (198), Savin (180), Leo (171), Visočanstvo (103), Vik (93), Klover (90), U
 - [upozorenje] Otvarajući navodnik „„“ nije zatvoren do kraja poglavlja  
   `text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 934`  
   …e i kvrgave. — Bojim se da će te izmoriti. — ⟦„⟧Mene? — Nakrivi osmijeh koji nikoga nije uvje…
-- [upozorenje] Neparni „“ navodnici (otvarajućih 7, zatvarajućih 2)  
-  `text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 997`  
-  …smijeh koji nikoga nije uvjerio. — Nikada. — ⟦„⟧Već jesu. — On se ponovno osmjehnu. Iskrenije…
 - [upozorenje] Neparni " u dijalogu (vjerojatno treba obrisati) → *obriši*  
   `text/part0099.html · „The Trouble With Peace“ · odl. 38 <body> · znak 1304`  
   …evu svjetlu. — Onaj koji mi je tvoj otac dao.⟦"⟧ Prihvati ga za zglob, okrenu mu ruku i ispus…
@@ -218,12 +207,9 @@ Orso (198), Savin (180), Leo (171), Visočanstvo (103), Vik (93), Klover (90), U
 - [upozorenje] Otvarajući navodnik „„“ nije zatvoren do kraja poglavlja  
   `text/part0102.html · „The Trouble With Peace“ · odl. 26 <body> · znak 2971`  
   …iti dio Sjevera, tko sam ja da se prepirem?" ⟦„⟧A što ako n
-
-### neprevedeno_dio – Nepreveden / djelomično engleski odlomak
-
-- [greška] Odlomak je neprevedeno/djelomično engleski (2 EN funkcijskih od 5)  
-  `booklyfi_002_impresum.xhtml · „IMPRESUM“ · odl. 2 <p> · znak 0`  
-  ⟦Naslov: The problem With Peace⟧
+- [upozorenje] Zatvarajući navodnik „““ bez otvarajućeg  
+  `text/part0104.html · „The Trouble With Peace“ · odl. 4 <p> · znak 159`  
+  …olji su i u najvećoj opasnosti, dometnuo je H⟦“⟧
 
 ### odlomak_malo_slovo – Odlomak počinje malim slovom nakon završene rečenice
 
@@ -236,123 +222,96 @@ Orso (198), Savin (180), Leo (171), Visočanstvo (103), Vik (93), Klover (90), U
 
 ### predug_pasus – Predug pasus (relativno prema knjizi)
 
-- [upozorenje] Pasus ima 2988 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
-  `text/part0092.html · „The Trouble With Peace“ · odl. 33 <body> · znak 0`  
-  ⟦Loša je ideja bila povesti ga. Vik je znala da bi joj bilo bolje samoj. Lekcija naučena u logorima, iznova i iznova, dok su članovi obitelji jedan po jedan zavr⟧šavali u smrznutoj zemlji. Njen otac, drhteći…
-- [upozorenje] Pasus ima 4558 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
+- [upozorenje] Pasus ima 4558 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
   `text/part0092.html · „The Trouble With Peace“ · odl. 52 <body> · znak 0`  
   ⟦Rosimiche se nakostriješio, ljutito što ga je njezina trapava grubost uspjela izbaciti iz takta. Bahato je napredovao, napuhao se prezirnom nadmošću. — Čujem da⟧ Murkato šalje Casamira i Šenkta u grad. — Ne…
-- [upozorenje] Pasus ima 3001 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
-  `text/part0093.html · „Neke stvari nikada ne zacjeljuju“ · odl. 31 <body> · znak 0`  
-  ⟦Leo se namrštio. Mrzio je kad bi mu majka govorila pametno. Zbog toga se vraški teško svađati s njom, a da sam ne ispadne budala. Ona i Džurand držali su ga u n⟧emilosrdnom, krvavom obruču zdrave pameti. — …
-- [upozorenje] Pasus ima 2964 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
-  `text/part0094.html · „The Trouble With Peace“ · odl. 35 <body> · znak 0`  
-  ⟦— Koplja! — zagrmio je Klover, a ljudi su izronili iz šikare, držeći duga koplja usmjerena niz jarugu tako da spljoštenoglavcima nije preostalo kamo pobjeći. Za⟧kočili su, grebli i posrtali, zatečeni tom šu…
-- [upozorenje] Pasus ima 3042 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
+- [upozorenje] Pasus ima 3042 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
   `text/part0096.html · „Čovjek naroda“ · odl. 14 <body> · znak 0`  
   ⟦Shudra je išao naprijed, razgovarajući s jednim od trgovaca na štirijskom, a potom s drugim na nekom kantskom jeziku, prebacujući se s jednog na drugi i nasmija⟧vajući obojicu, rukujući se s njima, potapšav…
-- [upozorenje] Pasus ima 3010 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
-  `text/part0097.html · „Sigurne ruke“ · odl. 25 <body> · znak 0`  
-  ⟦— Tradicionalna kazna — papagajski će glavni sudac. — Za takve zločine. Jest vješanje. — Ja sam član Otvorenog vijeća! — Uvidjet ćeš da nam svima prijeti manje-⟧više isto — tiho odvrati Glokta. — Ne možeš o…
-- [upozorenje] Pasus ima 3023 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
+- [upozorenje] Pasus ima 3023 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
   `text/part0099.html · „The Trouble With Peace“ · odl. 2 <body> · znak 0`  
   ⟦Blage naravi O Dom lordova bio je veličanstven prostor, sav u mramoru, pozlati i frizovima plemenitih predaka. Srce Unije i sve to, svjetlost se prelijevala kro⟧z vitraže, kroz odzvanjajuće prostranstvo, i …
-- [upozorenje] Pasus ima 3013 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
-  `text/part0099.html · „The Trouble With Peace“ · odl. 38 <body> · znak 0`  
-  ⟦— Svjesni smo da je to previše za probaviti, reče gđa Ardi, no odgađanje ne ide nikome u korist. bez obzira na to tko je koga iskoristio, doveli ste moju kćer u⟧ nezgodan položaj." — Trudna je, dometnu njeg…
-- [upozorenje] Pasus ima 4540 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
+- [upozorenje] Pasus ima 4540 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
   `text/part0100.html · „Ministar šaputanja“ · odl. 19 <body> · znak 0`  
   ⟦— Ulaganje u kanalizaciju. Htjela sam ti još jednom zahvaliti prije nego što odeš. Nikad… nikad prije nisam nikome dugovala život. — Navikneš se na to. — Shudra⟧ je odmjeri podignutih obrva. Možda je već re…
-- [upozorenje] Pasus ima 3092 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
+- [upozorenje] Pasus ima 3092 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
   `text/part0101.html · „Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Plamičci svi…“ · odl. 84 <p> · znak 0`  
   ⟦Osvrnula se prema putu kojim su došle, iz brda preko naboranih dolina prema nizini. Natrag niz duge milje prepješačene prema Afritu. Natrag u prošlost. — Hajdem⟧o ostavljati tragove“, prozujala je Izern i o…
-- [upozorenje] Pasus ima 2954 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
-  `text/part0102.html · „The Trouble With Peace“ · odl. 2 <body> · znak 0`  
-  ⟦Beskrajna zaliha — Kakav mi je stav? — upita Flik, zavirujući preko ramena u svoje stražnje stopalo. — Doći ćemo i do tvoga stava — reče Klover. — Otprilike za ⟧godinu dana, ovom brzinom — promrmlja Daunsaj…
-- [upozorenje] Pasus ima 2983 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?  
-  `text/part0102.html · „The Trouble With Peace“ · odl. 26 <body> · znak 0`  
-  ⟦Staur je prostrijelio pogledom kavez i snažno potegnuo nosom. — Još razmišlja. Pusti ga da plati porez ili mu ureži prokleti križ kao primjer." — Podučit će lju⟧de dobroj lekciji što god odabereš, dometnuo …
+- [upozorenje] Pasus ima 4534 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
+  `text/part0103.html · „Demon koji kida sve okove“ · odl. 29 <body> · znak 0`  
+  ⟦— Ja nisam tvoj mentor, djevojko, niti tvoj učitelj, niti tvoja mudra baka. Želiš da ti dam pravila, ali pravila ne postoje. Ti si poput onih starih budala mago⟧va, koji žele okovati svijet zakonima. Ti si …
+- [upozorenje] Pasus ima 3036 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
+  `text/part0107.html · „Buduće izdaje, prošle afere“ · odl. 49 <body> · znak 0`  
+  ⟦— Nesumnjivo… — Išer baci pogled na Heugena, potom na Barezina, pa natrag na Lea — ponajmanje sam kralj Sjevernjaka, Staur Noćas. Leo se ukoči, čaše napola prin⟧esene ustima. — Nisam siguran da bih ga nazva…
+- [upozorenje] Pasus ima 3036 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
+  `text/part0109.html · „Zlatno dijete predgrađa“ · odl. 49 <body> · znak 0`  
+  ⟦— Priča o ličnom rastu — razmišljao je pisac. — O suočavanju s opasnostima i hrabrom podnošenju kušnji. Žena rođena u povlaštenom položaju koja prolazi kroz vat⟧ru borbe kako bi shvatila težak položaj malog…
+- [upozorenje] Pasus ima 3029 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
+  `text/part0110.html · „Mrtvo drvo, novi izdanci“ · odl. 35 <body> · znak 0`  
+  ⟦— Samo sam morao iskazati poštovanje! — Staur je ušao u utihnulu dvoranu, uz struganje čeličnih vrhova svojih čizama o pod. Glas mu je bio natopljen prezirom, d⟧ok ga, kao obično, nije bilo briga ni za čije…
+- [upozorenje] Pasus ima 4371 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
+  `text/part0117.html · „Polovična veleizdaja“ · odl. 39 <body> · znak 0`  
+  ⟦Kurnsbik bi bio zadovoljan. Stalno ju je poticao neka bude milosrdnija, a gle, sad je dijelila čitave gradove. — Predati Vestport? — zapanjeno dahnu Leo. No Sav⟧in primijeti da lord Išer šuti. — Jadna li ci…
+- [upozorenje] Pasus ima 4992 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
+  `text/part0119.html · „Stari prijatelji“ · odl. 36 <body> · znak 0`  
+  ⟦Zlatni prsten u njenom nosu pomjerio se dok se smiješila. Leo nije znao riječ kojom bi opisao taj osmijeh, ali "toplo, iskreno" ili "direktno" definitivno nisu ⟧bile među njima. — Sjećaš se da sam znala ima…
+- [upozorenje] Pasus ima 3051 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?  
+  `text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 0`  
+  ⟦— Baš tako?, kresnu Orso. — Silno želi kupiti novu haljinu, jelda?" Oštar Salfurov osmijeh nije gubio ni milimetar. — Sve što se tiče stabilnosti kraljevstva od⟧ iznimne je važnosti za lorda Bajaza." — Kako…
 
 ### rečenica_duga – Predugačka rečenica (relativno prema knjizi)
 
-- [info] Rečenica ima 75 riječi (granica za ovu knjigu: 66)  
-  `text/part0092.html · „The Trouble With Peace“ · odl. 6 <p> · znak 0`  
-  ⟦— Malo neimaštine ne bi naškodilo mom nećaku. — Filio odrhda glavom posmatrajući mačevaoce kako se vrte unutar vježbaonice, čije su daske bile uglačane od gener⟧acija mekih mačevalačkih cipela. — Ima brze r…
-- [info] Rečenica ima 79 riječi (granica za ovu knjigu: 66)  
-  `text/part0093.html · „Neke stvari nikada ne zacjeljuju“ · odl. 14 <body> · znak 587`  
-  …oljenih zuba, spreman za borbu. Zatim klonu. ⟦Nije se mogao ljutiti na Džuranda dulje od udaha ili dva. — U pravu si, kopile. — On je uvijek u pravu — tužno dometnu Glavard. — On je pametnjaković — reče Ant⟧aup i zabaci tamni čuperak. — Razum pobjeđuje…
-- [info] Rečenica ima 147 riječi (granica za ovu knjigu: 66)  
+- [info] Rečenica ima 147 riječi (granica za ovu knjigu: 88)  
   `text/part0095.html · „The Trouble With Peace“ · odl. 3 <p> · znak 275`  
   …ke. Zubi su je boljeli. Glava joj je pucala. ⟦Prisilila je jedno oko da se otvori, pa drugo, te ugledala Izern i oca kako se saginju nad njom. — Barem se nisam usrala ovaj put. — Da bi se usrao, moraš jesti⟧, dometnula je Izern, kamena lica kao obično.…
-- [info] Rečenica ima 88 riječi (granica za ovu knjigu: 66)  
-  `text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 0`  
-  ⟦Pomogli su joj da sjedne na očevu omiljenu klupu u zaraslom vrtu, s pogledom na strme uličice Afrita koje su se spuštale prema blistavom moru. — O, sunce je kop⟧ile“, promrmljala je, ali uspjela se osmjehnu…
-- [info] Rečenica ima 96 riječi (granica za ovu knjigu: 66)  
+- [info] Rečenica ima 96 riječi (granica za ovu knjigu: 88)  
   `text/part0097.html · „Sigurne ruke“ · odl. 25 <body> · znak 804`  
   … — Oh, dovraga — prozbori Bruckel kroz zube. ⟦Zastrašujuća žena, crne kose prošarane željeznom sijedom i s krutim haljetkom koji je više vukao na oklopni čelik, probijala se prema njima s odlučnošću ratnog ⟧broda pod punim jedrima. — tko je ovo? — prom…
-- [info] Rečenica ima 75 riječi (granica za ovu knjigu: 66)  
-  `text/part0097.html · „Sigurne ruke“ · odl. 25 <body> · znak 2090`  
-  …o i ne podrazumijeva. U tome i jest problem. ⟦Prvi među Magovima stajao je u vrtovima kad se Orso vratio, među pomno uređenim gredicama iz kojih su prvi cvjetovi tek provirivali iz pupoljaka, mršteći se pre⟧ma Graditeljevoj kući čija se stroga silueta …
-- [info] Rečenica ima 72 riječi (granica za ovu knjigu: 66)  
-  `text/part0098.html · „Zasjeda“ · odl. 16 <body> · znak 472`  
-  …ot je jad koji podnosimo između razočaranja. ⟦Nastavila ga je gurati između veličanstvenih skulptura Casamira Postojanog i njegova nadlektora Zollera. — Trebala bi se truditi ne zamjerati joj. — Otac zastad⟧e na trenutak, a Savin promatra kako lahor mr…
-- [info] Rečenica ima 146 riječi (granica za ovu knjigu: 66)  
+- [info] Rečenica ima 146 riječi (granica za ovu knjigu: 88)  
   `text/part0099.html · „The Trouble With Peace“ · odl. 2 <body> · znak 753`  
   …i. Penjući se, nisi mogao pasti tako daleko. ⟦Odvojio je svoj uobičajeni trenutak da opsuje Dom, mačeve i Staurov Smiraj, a onda je krenuo polako u stranu, gunđajući sa svakim posrtajućim korakom. — Leo! — ⟧Išer je ignorisao pruženu ruku na dnu stepeni…
-- [info] Rečenica ima 93 riječi (granica za ovu knjigu: 66)  
+- [info] Rečenica ima 93 riječi (granica za ovu knjigu: 88)  
   `text/part0100.html · „Ministar šaputanja“ · odl. 19 <body> · znak 1694`  
   …editi odmazde nakon nedavne promjene vlasti. ⟦Dugovi se moraju podmiriti, a računi raščistiti. — Murdine nemirno baci pogled po krčmi i navuče kapuljaču još dublje na čelo. — Ne bih volio da me ponovno zami⟧jene za Šenkta. — Blago zatrese ramena. — A j…
-- [info] Rečenica ima 67 riječi (granica za ovu knjigu: 66)  
-  `text/part0101.html · „Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Plamičci svi…“ · odl. 84 <p> · znak 502`  
-  …ina ljudi ne bi ni mogla reći da se smiješi. ⟦Ali ona je to znala prepoznati. — Nikad, stari gadu — zarežala je, krećući. — Prije ću ja tebe nositi. — To bih volio vidjeti — dobaci Izern preko ramena, a kam⟧enčići se rasuše ispod pete njezine pohabane …
-- [info] Rečenica ima 79 riječi (granica za ovu knjigu: 66)  
-  `text/part0102.html · „The Trouble With Peace“ · odl. 2 <body> · znak 0`  
-  ⟦Beskrajna zaliha — Kakav mi je stav? — upita Flik, zavirujući preko ramena u svoje stražnje stopalo. — Doći ćemo i do tvoga stava — reče Klover. — Otprilike za ⟧godinu dana, ovom brzinom — promrmlja Daunsaj…
-- [info] Rečenica ima 73 riječi (granica za ovu knjigu: 66)  
-  `text/part0102.html · „The Trouble With Peace“ · odl. 26 <body> · znak 1520`  
-  …. — Tko je ovo?""Ove ionako nisu ni za što." ⟦Staur gurne polutrule glave golom nogom kako bi bolje vidio njihove izobličene, kezeće izraze. — Ružni gadovi, ha?" — Osjećam se nekako nesigurno kad moram krit⟧izirati tuđi izgled, reče Klover. — A nitko o…
+- [info] Rečenica ima 100 riječi (granica za ovu knjigu: 88)  
+  `text/part0104.html · „The Trouble With Peace“ · odl. 3 <p> · znak 520`  
+  … Majka bi mu bila silno nesretna da to čuje. ⟦No, nasuprot tome, prije ili kasnije čovjek mora prestati svime ugađati majci. — Prošle godine, pred Valbekom, prijestolonasljednik Orso predsjedao je prijekom ⟧sudu i vješanju dvjestotinjak navodnih revolu…
+- [info] Rečenica ima 146 riječi (granica za ovu knjigu: 88)  
+  `text/part0107.html · „Buduće izdaje, prošle afere“ · odl. 49 <body> · znak 675`  
+  … preko stola tražeći repete. — Mnoge tisuće. ⟦Bila je ondje u prostranoj dnevnoj sobi kad je otvorio vrata, zavaljena na ležaljci u silnom slapu kremastih suknji s uobičajenom pažnjom, kao da ju je kipar na⟧mjestio točno ondje kao svoj model. — Vaša Vi…
+- [info] Rečenica ima 96 riječi (granica za ovu knjigu: 88)  
+  `text/part0119.html · „Stari prijatelji“ · odl. 36 <body> · znak 1173`  
+  …ena, Leo. Najbolja stvar na tebi, rekla bih! ⟦Vidim, sačuvala si rune. — Izgledaju kao dobar znak. — Savin dotaknu male drvene pločice koje je nosila oko vrata. — A ti si sačuvala smaragde. — Izgledaju kao ⟧velika vrijednost — reče Rike, izvlačeći ih s…
+- [info] Rečenica ima 95 riječi (granica za ovu knjigu: 88)  
+  `text/part0121.html · „The Trouble With Peace“ · odl. 42 <p> · znak 84`  
+  …e ima onih koji bi htjeli promijeniti smjer! ⟦Morilee je dobro znala kako se osjećaju oni s dna ljestvice, u to je bila sigurna, s kućama srušenima da bi se napravilo mjesta za tvornice i vrtovima sagrađeni⟧ma preko da bi se podigli hramovi i s obitelj…
+- [info] Rečenica ima 123 riječi (granica za ovu knjigu: 88)  
+  `text/part0124.html · „Vučje čeljusti“ · odl. 13 <body> · znak 1110`  
+  …! Unuk Bethoda i zakoniti kralj Sjevernjaka! ⟦Kažu da je najveći ratnik u krugu svijeta, i lako im mogu povjerovati. — Gotovo si jednako brza na komplimentima koliko ja s mačem. — Staur je pustio niz munjev⟧itih uboda na čovjeka koji je još stajao, a v…
+- [info] Rečenica ima 142 riječi (granica za ovu knjigu: 88)  
+  `text/part0127.html · „The Trouble With Peace“ · odl. 2 <body> · znak 54`  
+  … Gdje je prokleti alkohol? — zagrmio je Jin. ⟦Bacio je torbu na bogato tapaciranu stolicu, s koje je ona skliznula na pod, dok je razvaljivao škrinju dovoljno veliku da bi se Leo u njoj mogao ispružiti, mah⟧nito prekapajući po njezinoj unutrašnjosti. —…
+- [info] Rečenica ima 89 riječi (granica za ovu knjigu: 88)  
+  `text/part0128.html · „Odrasla — Moj stariji brate…“ · odl. 46 <body> · znak 416`  
+  …egantno kao onog dana kad je napustila Aduu. ⟦Uostalom, ako je iko na svijetu mogao parirati njegovoj majci po držanju, bila je to njezina najstarija prijateljica, i mnogo više od prijateljice, grofica Shal⟧ere. — Orso, prekrasno stvorenje! — uzviknula…
+- [info] Rečenica ima 101 riječi (granica za ovu knjigu: 88)  
+  `text/part0136.html · „Oluje“ · odl. 8 <p> · znak 0`  
+  ⟦Kao da joj je htio nanijeti uvredu uvrh uvreda, njezin se muž nasmiješio usprkos nevremenu, dok mu se kiša slijevala niz lice, sretniji nego ikad kad bi naišao ⟧na kakvu prostu fizičku prepreku s kojom se m…
 
 ### strano_slovo_riječ – Riječ sa stranim slovima/grafemima
 
-- [info] Riječ sa stranim grafemima „BOOKLYFI“ – moguća neprevedena engleska riječ  
-  `booklyfi_001_naslovna.xhtml · „The Trouble With Peace“ · odl. 1 <p> · znak 0`  
-  ⟦BOOKLYFI⟧ IZDANJE
-- [info] Riječ sa stranim grafemima „styrijski“ – moguća neprevedena engleska riječ  
-  `text/part0089.html · „Daleko od Adue“ · odl. 17 <p> · znak 233`  
-  …esožderskom čarobnjaku. — Ako je najslavniji ⟦styrijski⟧ ubojica doista u potrazi za plijenom, moramo…
 - [info] Riječ sa stranim grafemima „styrijskoga“ – moguća neprevedena engleska riječ  
   `text/part0089.html · „Daleko od Adue“ · odl. 27 <p> · znak 239`  
   … izgovarao još jedan govor hvaleći dobrobiti ⟦styrijskoga⟧ dobrodošlog zagrljaja. — A Shudra se pokazao…
 - [info] Riječ sa stranim grafemima „styrijskog“ – moguća neprevedena engleska riječ  
   `text/part0092.html · „The Trouble With Peace“ · odl. 17 <p> · znak 146`  
   …anjem. „Mogu ići samo do onog tradicionalnog ⟦styrijskog⟧ možda. Ovdje u Vestportu, na Raskrižju Svije…
-- [info] Riječ sa stranim grafemima „westportskim“ – moguća neprevedena engleska riječ  
-  `text/part0092.html · „The Trouble With Peace“ · odl. 23 <p> · znak 26`  
-  Rijedak povjetarac zapuše ⟦westportskim⟧ javnim vrtovima, noseći miris smole, cvijeća…
-- [info] Riječ sa stranim grafemima „westportskom“ – moguća neprevedena engleska riječ  
-  `text/part0092.html · „The Trouble With Peace“ · odl. 34 <p> · znak 488`  
-  …e i mekše. Kosa puštena i počešljana uljem u ⟦westportskom⟧ stilu. Čak je stavila i parfem, bogovi joj p…
-- [info] Riječ sa stranim grafemima „westportskoj“ – moguća neprevedena engleska riječ  
-  `text/part0125.html · „Pitanja“ · odl. 22 <p> · znak 51`  
-  …a se što joj je Vitari rekla u toj kolibi na ⟦westportskoj⟧ obali. Da je Unija Bajazovo oruđe, banke i I…
-- [info] Riječ sa stranim grafemima „westportskom“ – moguća neprevedena engleska riječ  
-  `text/part0125.html · „Pitanja“ · odl. 24 <p> · znak 253`  
-  …ami, luđeg od bilo kojeg jeftinog proroka na ⟦westportskom⟧ Hramskom trgu.
 - [info] Riječ sa stranim grafemima „styrijskog“ – moguća neprevedena engleska riječ  
   `text/part0129.html · „Svačiji ukus, bez osude“ · odl. 73 <body> · znak 1239`  
   …okletog Orsa i bez pomoći nekakvog cerekavog ⟦styrijskog⟧ perverznjaka. — Šteta — promrmljao je Džapo,…
-- [info] Riječ sa stranim grafemima „styrijskih“ – moguća neprevedena engleska riječ  
-  `text/part0148.html · „Samo razgovor“ · odl. 16 <p> · znak 357`  
-  …nekih carleonskih kovanica, i nešto Unije, i ⟦styrijskih⟧ vaga, i… što je ovo? Podigla je veliku kovan…
-- [info] Riječ sa stranim grafemima „westportskoj“ – moguća neprevedena engleska riječ  
-  `text/part0158.html · „U Vestportu i Sipaniju, gradovima Štirije“ · odl. 14 <p> · znak 47`  
-  …jep Mozolia — trgovac tkaninama, utjecajan u ⟦westportskoj⟧ politici.
 
 ### truncated – Pasus bez završne interpunkcije
 
-- [upozorenje] Pasus završava bez interpunkcije  
-  `text/part0093.html · „Neke stvari nikada ne zacjeljuju“ · odl. 31 <body> · znak 2961`  
-  …okte, utamničenog iza pisaćeg stola, što se z⟦akopava među svoje spise poput crva u ne⟧
 - [upozorenje] Pasus završava bez interpunkcije  
   `text/part0095.html · „The Trouble With Peace“ · odl. 6 <body> · znak 1455`  
   …će on. — U ovom trenutku prihvatiću bilo koga⟦ ko mi može pomoći. Što si ti radio? — S⟧
@@ -360,23 +319,11 @@ Orso (198), Savin (180), Leo (171), Visočanstvo (103), Vik (93), Klover (90), U
   `text/part0100.html · „Ministar šaputanja“ · odl. 19 <body> · znak 4500`  
   …de ruku, natjeravajući je da uzdahne stisnuti⟦h zuba. — Bolje nemoj, prošapta joj mušk⟧
 - [upozorenje] Pasus završava bez interpunkcije  
-  `text/part0100.html · „Ministar šaputanja“ · odl. 33 <body> · znak 1472`  
-  … tjeme i odjednom joj sinu da bi ovo mogla bi⟦ti jedna od onih prijelomnih točaka. Pop⟧
-- [upozorenje] Pasus završava bez interpunkcije  
-  `text/part0102.html · „The Trouble With Peace“ · odl. 26 <body> · znak 2943`  
-  …ne u krilo. Ako Afrit želi biti dio Sjevera, ⟦tko sam ja da se prepirem?" „A što ako n⟧
-- [upozorenje] Pasus završava bez interpunkcije  
-  `text/part0103.html · „Demon koji kida sve okove“ · odl. 29 <body> · znak 4494`  
-  …anja, a pokoji stvarni odgovor u ovom razgovo⟦ru. — Pogledaj oko sebe, djevojko. Da im⟧
-- [upozorenje] Pasus završava bez interpunkcije  
   `text/part0106.html · „Neka zvone zvona“ · odl. 16 <body> · znak 1452`  
   … — Iako u Krugovima Svijeta nikada nije bilo ⟦dovoljno pažnje da se Savin zasiti. — Vi⟧
 - [upozorenje] Pasus završava bez interpunkcije  
   `text/part0107.html · „Buduće izdaje, prošle afere“ · odl. 67 <body> · znak 1475`  
   …spuštajući tiho režanje, dok bi on svaki put ⟦kad bi se spustila niže tiho zaječao. Li⟧
-- [upozorenje] Pasus završava bez interpunkcije  
-  `text/part0110.html · „Mrtvo drvo, novi izdanci“ · odl. 35 <body> · znak 2989`  
-  … omču, urezujući se u njezin tanak vrat. — Al⟦i za većinu vas tu je čelik. Ne treba ti⟧
 - [upozorenje] Pasus završava bez interpunkcije  
   `text/part0110.html · „Mrtvo drvo, novi izdanci“ · odl. 75 <body> · znak 1459`  
   …Izern i Šiversa same u vrtu s kojeg su kapale⟦ kapi kiše. — Čula sam da se veličina ne⟧
@@ -386,6 +333,9 @@ Orso (198), Savin (180), Leo (171), Visočanstvo (103), Vik (93), Klover (90), U
 - [upozorenje] Pasus završava bez interpunkcije  
   `text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 3011`  
   …iješa u neku odluku, ma koliko površno to bil⟦o. Ipak, odluke su se morale donositi. M⟧
+- [upozorenje] Pasus završava bez interpunkcije  
+  `text/part0128.html · „Odrasla — Moj stariji brate…“ · odl. 46 <body> · znak 1471`  
+  …jučnih kostiju pri njezinu ubrzanu dahu. Za n⟦ju, bio je to vihor strasti. — Pa — reče⟧
 
 ### zamjenice – Nagomilane zamjenice u subjektu
 

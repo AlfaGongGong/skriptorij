@@ -1,56 +1,5 @@
 [
  {
-  "severity": "info",
-  "code": "strano_slovo_riječ",
-  "message": "Riječ sa stranim grafemima „BOOKLYFI“ – moguća neprevedena engleska riječ",
-  "file": "booklyfi_001_naslovna.xhtml",
-  "spine": 1,
-  "chapter": "The Trouble With Peace",
-  "par": 1,
-  "tag": "p",
-  "eid": "",
-  "offset": 0,
-  "match": "BOOKLYFI",
-  "context": "⟦BOOKLYFI⟧ IZDANJE",
-  "suggestion": "",
-  "id": 1,
-  "lokacija": "booklyfi_001_naslovna.xhtml · „The Trouble With Peace“ · odl. 1 <p> · znak 0"
- },
- {
-  "severity": "greška",
-  "code": "neprevedeno_dio",
-  "message": "Odlomak je neprevedeno/djelomično engleski (2 EN funkcijskih od 5)",
-  "file": "booklyfi_002_impresum.xhtml",
-  "spine": 2,
-  "chapter": "IMPRESUM",
-  "par": 2,
-  "tag": "p",
-  "eid": "",
-  "offset": 0,
-  "match": "Naslov: The problem With Peace",
-  "context": "⟦Naslov: The problem With Peace⟧",
-  "suggestion": "",
-  "id": 2,
-  "lokacija": "booklyfi_002_impresum.xhtml · „IMPRESUM“ · odl. 2 <p> · znak 0"
- },
- {
-  "severity": "greška",
-  "code": "interpunkcija",
-  "message": "Nedostaje razmak iza interpunkcije",
-  "file": "booklyfi_002_impresum.xhtml",
-  "spine": 2,
-  "chapter": "IMPRESUM",
-  "par": 4,
-  "tag": "p",
-  "eid": "",
-  "offset": 7,
-  "match": ":",
-  "context": "ID: urn⟦:⟧uuid:69c53f4b-5f3c-4f56-b6bd-ebc33064c8e0",
-  "suggestion": "",
-  "id": 3,
-  "lokacija": "booklyfi_002_impresum.xhtml · „IMPRESUM“ · odl. 4 <p> · znak 7"
- },
- {
   "severity": "upozorenje",
   "code": "crtica",
   "message": "Crtica bez razmaka",
@@ -64,25 +13,8 @@
   "match": "—",
   "context": "— To su tek optužbe⟦—⟧ dometnu Matstringer.",
   "suggestion": " – ",
-  "id": 4,
+  "id": 1,
   "lokacija": "text/part0088.html · „Nepravde ovog svijeta“ · odl. 76 <p> · znak 19"
- },
- {
-  "severity": "info",
-  "code": "strano_slovo_riječ",
-  "message": "Riječ sa stranim grafemima „styrijski“ – moguća neprevedena engleska riječ",
-  "file": "text/part0089.html",
-  "spine": 8,
-  "chapter": "Daleko od Adue",
-  "par": 17,
-  "tag": "p",
-  "eid": "",
-  "offset": 233,
-  "match": "styrijski",
-  "context": "…esožderskom čarobnjaku. — Ako je najslavniji ⟦styrijski⟧ ubojica doista u potrazi za plijenom, moramo…",
-  "suggestion": "",
-  "id": 5,
-  "lokacija": "text/part0089.html · „Daleko od Adue“ · odl. 17 <p> · znak 233"
  },
  {
   "severity": "info",
@@ -98,7 +30,7 @@
   "match": "styrijskoga",
   "context": "… izgovarao još jedan govor hvaleći dobrobiti ⟦styrijskoga⟧ dobrodošlog zagrljaja. — A Shudra se pokazao…",
   "suggestion": "",
-  "id": 6,
+  "id": 2,
   "lokacija": "text/part0089.html · „Daleko od Adue“ · odl. 27 <p> · znak 239"
  },
  {
@@ -115,7 +47,7 @@
   "match": "\"",
   "context": "…e nego što bi otpustila taj trostruki šav. — ⟦\"⟧Gospođo Savin?\" — oglasi se Zuri zabrinutim g…",
   "suggestion": "„…“",
-  "id": 7,
+  "id": 3,
   "lokacija": "text/part0090.html · „More Trouble“ · odl. 46 <body> · znak 796"
  },
  {
@@ -132,7 +64,7 @@
   "match": "”",
   "context": "— Nemoj se previše mučiti, tata!⟦”⟧ doviknu mu Mej. Kad se okrenuo, ona mu se os…",
   "suggestion": "",
-  "id": 8,
+  "id": 4,
   "lokacija": "text/part0091.html · „Uobičajena rutina“ · odl. 25 <p> · znak 32"
  },
  {
@@ -149,25 +81,8 @@
   "match": "”",
   "context": "…od ih nije osuđivao. — Baš čudno ime za njega⟦”⟧, reče Banerman gledajući Gaunta kao da je te…",
   "suggestion": "",
-  "id": 9,
+  "id": 5,
   "lokacija": "text/part0091.html · „Uobičajena rutina“ · odl. 30 <p> · znak 121"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 75 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0092.html",
-  "spine": 11,
-  "chapter": "The Trouble With Peace",
-  "par": 6,
-  "tag": "p",
-  "eid": "",
-  "offset": 0,
-  "match": "— Malo neimaštine ne bi naškodilo mom nećaku. — Filio odrhda glavom posmatrajući mačevaoce kako se vrte unutar vježbaonice, čije su daske bile uglačane od gener",
-  "context": "⟦— Malo neimaštine ne bi naškodilo mom nećaku. — Filio odrhda glavom posmatrajući mačevaoce kako se vrte unutar vježbaonice, čije su daske bile uglačane od gener⟧acija mekih mačevalačkih cipela. — Ima brze r…",
-  "suggestion": "",
-  "id": 10,
-  "lokacija": "text/part0092.html · „The Trouble With Peace“ · odl. 6 <p> · znak 0"
  },
  {
   "severity": "info",
@@ -183,59 +98,8 @@
   "match": "styrijskog",
   "context": "…anjem. „Mogu ići samo do onog tradicionalnog ⟦styrijskog⟧ možda. Ovdje u Vestportu, na Raskrižju Svije…",
   "suggestion": "",
-  "id": 11,
+  "id": 6,
   "lokacija": "text/part0092.html · „The Trouble With Peace“ · odl. 17 <p> · znak 146"
- },
- {
-  "severity": "info",
-  "code": "strano_slovo_riječ",
-  "message": "Riječ sa stranim grafemima „westportskim“ – moguća neprevedena engleska riječ",
-  "file": "text/part0092.html",
-  "spine": 11,
-  "chapter": "The Trouble With Peace",
-  "par": 23,
-  "tag": "p",
-  "eid": "",
-  "offset": 26,
-  "match": "westportskim",
-  "context": "Rijedak povjetarac zapuše ⟦westportskim⟧ javnim vrtovima, noseći miris smole, cvijeća…",
-  "suggestion": "",
-  "id": 12,
-  "lokacija": "text/part0092.html · „The Trouble With Peace“ · odl. 23 <p> · znak 26"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 2988 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0092.html",
-  "spine": 11,
-  "chapter": "The Trouble With Peace",
-  "par": 33,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "Loša je ideja bila povesti ga. Vik je znala da bi joj bilo bolje samoj. Lekcija naučena u logorima, iznova i iznova, dok su članovi obitelji jedan po jedan zavr",
-  "context": "⟦Loša je ideja bila povesti ga. Vik je znala da bi joj bilo bolje samoj. Lekcija naučena u logorima, iznova i iznova, dok su članovi obitelji jedan po jedan zavr⟧šavali u smrznutoj zemlji. Njen otac, drhteći…",
-  "suggestion": "",
-  "id": 13,
-  "lokacija": "text/part0092.html · „The Trouble With Peace“ · odl. 33 <body> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "strano_slovo_riječ",
-  "message": "Riječ sa stranim grafemima „westportskom“ – moguća neprevedena engleska riječ",
-  "file": "text/part0092.html",
-  "spine": 11,
-  "chapter": "The Trouble With Peace",
-  "par": 34,
-  "tag": "p",
-  "eid": "",
-  "offset": 488,
-  "match": "westportskom",
-  "context": "…e i mekše. Kosa puštena i počešljana uljem u ⟦westportskom⟧ stilu. Čak je stavila i parfem, bogovi joj p…",
-  "suggestion": "",
-  "id": 14,
-  "lokacija": "text/part0092.html · „The Trouble With Peace“ · odl. 34 <p> · znak 488"
  },
  {
   "severity": "upozorenje",
@@ -251,13 +115,13 @@
   "match": "\"",
   "context": "…. No onog trena kad je Preuzvišeni izgovorio ⟦\"⟧Vestport, počela se pakirati. Još je stajala …",
   "suggestion": "„…“",
-  "id": 15,
+  "id": 7,
   "lokacija": "text/part0092.html · „The Trouble With Peace“ · odl. 38 <p> · znak 436"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 4558 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 4558 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0092.html",
   "spine": 11,
   "chapter": "The Trouble With Peace",
@@ -268,7 +132,7 @@
   "match": "Rosimiche se nakostriješio, ljutito što ga je njezina trapava grubost uspjela izbaciti iz takta. Bahato je napredovao, napuhao se prezirnom nadmošću. — Čujem da",
   "context": "⟦Rosimiche se nakostriješio, ljutito što ga je njezina trapava grubost uspjela izbaciti iz takta. Bahato je napredovao, napuhao se prezirnom nadmošću. — Čujem da⟧ Murkato šalje Casamira i Šenkta u grad. — Ne…",
   "suggestion": "",
-  "id": 16,
+  "id": 8,
   "lokacija": "text/part0092.html · „The Trouble With Peace“ · odl. 52 <body> · znak 0"
  },
  {
@@ -285,81 +149,13 @@
   "match": "\"",
   "context": "…p razmijeniše zabrinut pogled. Ništa ne viče ⟦\"⟧bogalj sam\" glasnije od grčevitog uvjeravanja…",
   "suggestion": "„…“",
-  "id": 17,
+  "id": 9,
   "lokacija": "text/part0093.html · „Neke stvari nikada ne zacjeljuju“ · odl. 3 <p> · znak 56"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 79 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0093.html",
-  "spine": 12,
-  "chapter": "Neke stvari nikada ne zacjeljuju",
-  "par": 14,
-  "tag": "body",
-  "eid": "",
-  "offset": 587,
-  "match": "Nije se mogao ljutiti na Džuranda dulje od udaha ili dva. — U pravu si, kopile. — On je uvijek u pravu — tužno dometnu Glavard. — On je pametnjaković — reče Ant",
-  "context": "…oljenih zuba, spreman za borbu. Zatim klonu. ⟦Nije se mogao ljutiti na Džuranda dulje od udaha ili dva. — U pravu si, kopile. — On je uvijek u pravu — tužno dometnu Glavard. — On je pametnjaković — reče Ant⟧aup i zabaci tamni čuperak. — Razum pobjeđuje…",
-  "suggestion": "",
-  "id": 18,
-  "lokacija": "text/part0093.html · „Neke stvari nikada ne zacjeljuju“ · odl. 14 <body> · znak 587"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 3001 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0093.html",
-  "spine": 12,
-  "chapter": "Neke stvari nikada ne zacjeljuju",
-  "par": 31,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "Leo se namrštio. Mrzio je kad bi mu majka govorila pametno. Zbog toga se vraški teško svađati s njom, a da sam ne ispadne budala. Ona i Džurand držali su ga u n",
-  "context": "⟦Leo se namrštio. Mrzio je kad bi mu majka govorila pametno. Zbog toga se vraški teško svađati s njom, a da sam ne ispadne budala. Ona i Džurand držali su ga u n⟧emilosrdnom, krvavom obruču zdrave pameti. — …",
-  "suggestion": "",
-  "id": 19,
-  "lokacija": "text/part0093.html · „Neke stvari nikada ne zacjeljuju“ · odl. 31 <body> · znak 0"
- },
- {
-  "severity": "upozorenje",
-  "code": "truncated",
-  "message": "Pasus završava bez interpunkcije",
-  "file": "text/part0093.html",
-  "spine": 12,
-  "chapter": "Neke stvari nikada ne zacjeljuju",
-  "par": 31,
-  "tag": "body",
-  "eid": "",
-  "offset": 2961,
-  "match": "akopava među svoje spise poput crva u ne",
-  "context": "…okte, utamničenog iza pisaćeg stola, što se z⟦akopava među svoje spise poput crva u ne⟧",
-  "suggestion": "",
-  "id": 20,
-  "lokacija": "text/part0093.html · „Neke stvari nikada ne zacjeljuju“ · odl. 31 <body> · znak 2961"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 2964 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0094.html",
-  "spine": 13,
-  "chapter": "The Trouble With Peace",
-  "par": 35,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "— Koplja! — zagrmio je Klover, a ljudi su izronili iz šikare, držeći duga koplja usmjerena niz jarugu tako da spljoštenoglavcima nije preostalo kamo pobjeći. Za",
-  "context": "⟦— Koplja! — zagrmio je Klover, a ljudi su izronili iz šikare, držeći duga koplja usmjerena niz jarugu tako da spljoštenoglavcima nije preostalo kamo pobjeći. Za⟧kočili su, grebli i posrtali, zatečeni tom šu…",
-  "suggestion": "",
-  "id": 21,
-  "lokacija": "text/part0094.html · „The Trouble With Peace“ · odl. 35 <body> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 147 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 147 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0095.html",
   "spine": 14,
   "chapter": "The Trouble With Peace",
@@ -370,25 +166,8 @@
   "match": "Prisilila je jedno oko da se otvori, pa drugo, te ugledala Izern i oca kako se saginju nad njom. — Barem se nisam usrala ovaj put. — Da bi se usrao, moraš jesti",
   "context": "…ke. Zubi su je boljeli. Glava joj je pucala. ⟦Prisilila je jedno oko da se otvori, pa drugo, te ugledala Izern i oca kako se saginju nad njom. — Barem se nisam usrala ovaj put. — Da bi se usrao, moraš jesti⟧, dometnula je Izern, kamena lica kao obično.…",
   "suggestion": "",
-  "id": 22,
+  "id": 10,
   "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 3 <p> · znak 275"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 88 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0095.html",
-  "spine": 14,
-  "chapter": "The Trouble With Peace",
-  "par": 5,
-  "tag": "p",
-  "eid": "",
-  "offset": 0,
-  "match": "Pomogli su joj da sjedne na očevu omiljenu klupu u zaraslom vrtu, s pogledom na strme uličice Afrita koje su se spuštale prema blistavom moru. — O, sunce je kop",
-  "context": "⟦Pomogli su joj da sjedne na očevu omiljenu klupu u zaraslom vrtu, s pogledom na strme uličice Afrita koje su se spuštale prema blistavom moru. — O, sunce je kop⟧ile“, promrmljala je, ali uspjela se osmjehnu…",
-  "suggestion": "",
-  "id": 23,
-  "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 0"
  },
  {
   "severity": "upozorenje",
@@ -404,7 +183,7 @@
   "match": "„",
   "context": "…čju kožu Rike preko ramena. — Gore u brda. — ⟦„⟧Sve ovisi o tome gdje stojiš. — Rikein otac u…",
   "suggestion": "",
-  "id": 24,
+  "id": 11,
   "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 406"
  },
  {
@@ -421,7 +200,7 @@
   "match": "„",
   "context": "…o vijeće. Ako nisam ondje, raspravljat će. — ⟦„⟧Raspravljat će još i više ako jesi ondje. Dje…",
   "suggestion": "",
-  "id": 25,
+  "id": 12,
   "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 556"
  },
  {
@@ -438,7 +217,7 @@
   "match": "„",
   "context": "… i više ako jesi ondje. Djeca su prokleta. — ⟦„⟧Svi smo mi djeca, Rike. Što si starija, to vi…",
   "suggestion": "",
-  "id": 26,
+  "id": 13,
   "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 620"
  },
  {
@@ -455,7 +234,7 @@
   "match": "„",
   "context": "…ri budu kako treba, sama ih moraš srediti. — ⟦„⟧Kostima i mozgom, ha? — „I srcem, Rike. I src…",
   "suggestion": "",
-  "id": 27,
+  "id": 14,
   "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 804"
  },
  {
@@ -472,7 +251,7 @@
   "match": "„",
   "context": "…ih moraš srediti. — „Kostima i mozgom, ha? — ⟦„⟧I srcem, Rike. I srcem. — Ona stisnu očeve ru…",
   "suggestion": "",
-  "id": 28,
+  "id": 15,
   "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 829"
  },
  {
@@ -489,25 +268,8 @@
   "match": "„",
   "context": "…e i kvrgave. — Bojim se da će te izmoriti. — ⟦„⟧Mene? — Nakrivi osmijeh koji nikoga nije uvje…",
   "suggestion": "",
-  "id": 29,
+  "id": 16,
   "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 934"
- },
- {
-  "severity": "upozorenje",
-  "code": "neparni_navodnik",
-  "message": "Neparni „“ navodnici (otvarajućih 7, zatvarajućih 2)",
-  "file": "text/part0095.html",
-  "spine": 14,
-  "chapter": "The Trouble With Peace",
-  "par": 5,
-  "tag": "p",
-  "eid": "",
-  "offset": 997,
-  "match": "„",
-  "context": "…smijeh koji nikoga nije uvjerio. — Nikada. — ⟦„⟧Već jesu. — On se ponovno osmjehnu. Iskrenije…",
-  "suggestion": "",
-  "id": 30,
-  "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 5 <p> · znak 997"
  },
  {
   "severity": "upozorenje",
@@ -523,13 +285,13 @@
   "match": " ko mi može pomoći. Što si ti radio? — S",
   "context": "…će on. — U ovom trenutku prihvatiću bilo koga⟦ ko mi može pomoći. Što si ti radio? — S⟧",
   "suggestion": "",
-  "id": 31,
+  "id": 17,
   "lokacija": "text/part0095.html · „The Trouble With Peace“ · odl. 6 <body> · znak 1455"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3042 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 3042 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0096.html",
   "spine": 15,
   "chapter": "Čovjek naroda",
@@ -540,30 +302,13 @@
   "match": "Shudra je išao naprijed, razgovarajući s jednim od trgovaca na štirijskom, a potom s drugim na nekom kantskom jeziku, prebacujući se s jednog na drugi i nasmija",
   "context": "⟦Shudra je išao naprijed, razgovarajući s jednim od trgovaca na štirijskom, a potom s drugim na nekom kantskom jeziku, prebacujući se s jednog na drugi i nasmija⟧vajući obojicu, rukujući se s njima, potapšav…",
   "suggestion": "",
-  "id": 32,
+  "id": 18,
   "lokacija": "text/part0096.html · „Čovjek naroda“ · odl. 14 <body> · znak 0"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 3010 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0097.html",
-  "spine": 16,
-  "chapter": "Sigurne ruke",
-  "par": 25,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "— Tradicionalna kazna — papagajski će glavni sudac. — Za takve zločine. Jest vješanje. — Ja sam član Otvorenog vijeća! — Uvidjet ćeš da nam svima prijeti manje-",
-  "context": "⟦— Tradicionalna kazna — papagajski će glavni sudac. — Za takve zločine. Jest vješanje. — Ja sam član Otvorenog vijeća! — Uvidjet ćeš da nam svima prijeti manje-⟧više isto — tiho odvrati Glokta. — Ne možeš o…",
-  "suggestion": "",
-  "id": 33,
-  "lokacija": "text/part0097.html · „Sigurne ruke“ · odl. 25 <body> · znak 0"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 96 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 96 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0097.html",
   "spine": 16,
   "chapter": "Sigurne ruke",
@@ -574,25 +319,8 @@
   "match": "Zastrašujuća žena, crne kose prošarane željeznom sijedom i s krutim haljetkom koji je više vukao na oklopni čelik, probijala se prema njima s odlučnošću ratnog ",
   "context": "… — Oh, dovraga — prozbori Bruckel kroz zube. ⟦Zastrašujuća žena, crne kose prošarane željeznom sijedom i s krutim haljetkom koji je više vukao na oklopni čelik, probijala se prema njima s odlučnošću ratnog ⟧broda pod punim jedrima. — tko je ovo? — prom…",
   "suggestion": "",
-  "id": 34,
+  "id": 19,
   "lokacija": "text/part0097.html · „Sigurne ruke“ · odl. 25 <body> · znak 804"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 75 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0097.html",
-  "spine": 16,
-  "chapter": "Sigurne ruke",
-  "par": 25,
-  "tag": "body",
-  "eid": "",
-  "offset": 2090,
-  "match": "Prvi među Magovima stajao je u vrtovima kad se Orso vratio, među pomno uređenim gredicama iz kojih su prvi cvjetovi tek provirivali iz pupoljaka, mršteći se pre",
-  "context": "…o i ne podrazumijeva. U tome i jest problem. ⟦Prvi među Magovima stajao je u vrtovima kad se Orso vratio, među pomno uređenim gredicama iz kojih su prvi cvjetovi tek provirivali iz pupoljaka, mršteći se pre⟧ma Graditeljevoj kući čija se stroga silueta …",
-  "suggestion": "",
-  "id": 35,
-  "lokacija": "text/part0097.html · „Sigurne ruke“ · odl. 25 <body> · znak 2090"
  },
  {
   "severity": "upozorenje",
@@ -608,30 +336,13 @@
   "match": "Kurnsbrika",
   "context": "…jebeni škrip. Zašto je, kvragu, ikad tražila ⟦Kurnsbrika⟧ da sagradi ovu pištavu skalameriju?",
   "suggestion": "Kurnsbik",
-  "id": 36,
+  "id": 20,
   "lokacija": "text/part0098.html · „Zasjeda“ · odl. 6 <p> · znak 59"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 72 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0098.html",
-  "spine": 17,
-  "chapter": "Zasjeda",
-  "par": 16,
-  "tag": "body",
-  "eid": "",
-  "offset": 472,
-  "match": "Nastavila ga je gurati između veličanstvenih skulptura Casamira Postojanog i njegova nadlektora Zollera. — Trebala bi se truditi ne zamjerati joj. — Otac zastad",
-  "context": "…ot je jad koji podnosimo između razočaranja. ⟦Nastavila ga je gurati između veličanstvenih skulptura Casamira Postojanog i njegova nadlektora Zollera. — Trebala bi se truditi ne zamjerati joj. — Otac zastad⟧e na trenutak, a Savin promatra kako lahor mr…",
-  "suggestion": "",
-  "id": 37,
-  "lokacija": "text/part0098.html · „Zasjeda“ · odl. 16 <body> · znak 472"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3023 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 3023 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0099.html",
   "spine": 18,
   "chapter": "The Trouble With Peace",
@@ -642,13 +353,13 @@
   "match": "Blage naravi O Dom lordova bio je veličanstven prostor, sav u mramoru, pozlati i frizovima plemenitih predaka. Srce Unije i sve to, svjetlost se prelijevala kro",
   "context": "⟦Blage naravi O Dom lordova bio je veličanstven prostor, sav u mramoru, pozlati i frizovima plemenitih predaka. Srce Unije i sve to, svjetlost se prelijevala kro⟧z vitraže, kroz odzvanjajuće prostranstvo, i …",
   "suggestion": "",
-  "id": 38,
+  "id": 21,
   "lokacija": "text/part0099.html · „The Trouble With Peace“ · odl. 2 <body> · znak 0"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 146 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 146 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0099.html",
   "spine": 18,
   "chapter": "The Trouble With Peace",
@@ -659,7 +370,7 @@
   "match": "Odvojio je svoj uobičajeni trenutak da opsuje Dom, mačeve i Staurov Smiraj, a onda je krenuo polako u stranu, gunđajući sa svakim posrtajućim korakom. — Leo! — ",
   "context": "…i. Penjući se, nisi mogao pasti tako daleko. ⟦Odvojio je svoj uobičajeni trenutak da opsuje Dom, mačeve i Staurov Smiraj, a onda je krenuo polako u stranu, gunđajući sa svakim posrtajućim korakom. — Leo! — ⟧Išer je ignorisao pruženu ruku na dnu stepeni…",
   "suggestion": "",
-  "id": 39,
+  "id": 22,
   "lokacija": "text/part0099.html · „The Trouble With Peace“ · odl. 2 <body> · znak 753"
  },
  {
@@ -676,25 +387,8 @@
   "match": "Mi smo",
   "context": "…dili kraljev rat. Mi smo dobili kraljev rat! ⟦Mi smo⟧ platili za jebeni… — Leo je s mukom stišao g…",
   "suggestion": "",
-  "id": 40,
+  "id": 23,
   "lokacija": "text/part0099.html · „The Trouble With Peace“ · odl. 2 <body> · znak 1688"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 3013 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0099.html",
-  "spine": 18,
-  "chapter": "The Trouble With Peace",
-  "par": 38,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "— Svjesni smo da je to previše za probaviti, reče gđa Ardi, no odgađanje ne ide nikome u korist. bez obzira na to tko je koga iskoristio, doveli ste moju kćer u",
-  "context": "⟦— Svjesni smo da je to previše za probaviti, reče gđa Ardi, no odgađanje ne ide nikome u korist. bez obzira na to tko je koga iskoristio, doveli ste moju kćer u⟧ nezgodan položaj.\" — Trudna je, dometnu njeg…",
-  "suggestion": "",
-  "id": 41,
-  "lokacija": "text/part0099.html · „The Trouble With Peace“ · odl. 38 <body> · znak 0"
  },
  {
   "severity": "upozorenje",
@@ -710,13 +404,13 @@
   "match": "\"",
   "context": "…evu svjetlu. — Onaj koji mi je tvoj otac dao.⟦\"⟧ Prihvati ga za zglob, okrenu mu ruku i ispus…",
   "suggestion": "obriši",
-  "id": 42,
+  "id": 24,
   "lokacija": "text/part0099.html · „The Trouble With Peace“ · odl. 38 <body> · znak 1304"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 4540 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 4540 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0100.html",
   "spine": 19,
   "chapter": "Ministar šaputanja",
@@ -727,13 +421,13 @@
   "match": "— Ulaganje u kanalizaciju. Htjela sam ti još jednom zahvaliti prije nego što odeš. Nikad… nikad prije nisam nikome dugovala život. — Navikneš se na to. — Shudra",
   "context": "⟦— Ulaganje u kanalizaciju. Htjela sam ti još jednom zahvaliti prije nego što odeš. Nikad… nikad prije nisam nikome dugovala život. — Navikneš se na to. — Shudra⟧ je odmjeri podignutih obrva. Možda je već re…",
   "suggestion": "",
-  "id": 43,
+  "id": 25,
   "lokacija": "text/part0100.html · „Ministar šaputanja“ · odl. 19 <body> · znak 0"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 93 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 93 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0100.html",
   "spine": 19,
   "chapter": "Ministar šaputanja",
@@ -744,7 +438,7 @@
   "match": "Dugovi se moraju podmiriti, a računi raščistiti. — Murdine nemirno baci pogled po krčmi i navuče kapuljaču još dublje na čelo. — Ne bih volio da me ponovno zami",
   "context": "…editi odmazde nakon nedavne promjene vlasti. ⟦Dugovi se moraju podmiriti, a računi raščistiti. — Murdine nemirno baci pogled po krčmi i navuče kapuljaču još dublje na čelo. — Ne bih volio da me ponovno zami⟧jene za Šenkta. — Blago zatrese ramena. — A j…",
   "suggestion": "",
-  "id": 44,
+  "id": 26,
   "lokacija": "text/part0100.html · „Ministar šaputanja“ · odl. 19 <body> · znak 1694"
  },
  {
@@ -761,30 +455,13 @@
   "match": "h zuba. — Bolje nemoj, prošapta joj mušk",
   "context": "…de ruku, natjeravajući je da uzdahne stisnuti⟦h zuba. — Bolje nemoj, prošapta joj mušk⟧",
   "suggestion": "",
-  "id": 45,
+  "id": 27,
   "lokacija": "text/part0100.html · „Ministar šaputanja“ · odl. 19 <body> · znak 4500"
  },
  {
   "severity": "upozorenje",
-  "code": "truncated",
-  "message": "Pasus završava bez interpunkcije",
-  "file": "text/part0100.html",
-  "spine": 19,
-  "chapter": "Ministar šaputanja",
-  "par": 33,
-  "tag": "body",
-  "eid": "",
-  "offset": 1472,
-  "match": "ti jedna od onih prijelomnih točaka. Pop",
-  "context": "… tjeme i odjednom joj sinu da bi ovo mogla bi⟦ti jedna od onih prijelomnih točaka. Pop⟧",
-  "suggestion": "",
-  "id": 46,
-  "lokacija": "text/part0100.html · „Ministar šaputanja“ · odl. 33 <body> · znak 1472"
- },
- {
-  "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3092 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 3092 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0101.html",
   "spine": 20,
   "chapter": "Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Plamičci svi…",
@@ -795,7 +472,7 @@
   "match": "Osvrnula se prema putu kojim su došle, iz brda preko naboranih dolina prema nizini. Natrag niz duge milje prepješačene prema Afritu. Natrag u prošlost. — Hajdem",
   "context": "⟦Osvrnula se prema putu kojim su došle, iz brda preko naboranih dolina prema nizini. Natrag niz duge milje prepješačene prema Afritu. Natrag u prošlost. — Hajdem⟧o ostavljati tragove“, prozujala je Izern i o…",
   "suggestion": "",
-  "id": 47,
+  "id": 28,
   "lokacija": "text/part0101.html · „Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Plamičci svi…“ · odl. 84 <p> · znak 0"
  },
  {
@@ -812,25 +489,8 @@
   "match": "“",
   "context": "…trag u prošlost. — Hajdemo ostavljati tragove⟦“⟧, prozujala je Izern i okrenula se natrag pre…",
   "suggestion": "",
-  "id": 48,
+  "id": 29,
   "lokacija": "text/part0101.html · „Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Plamičci svi…“ · odl. 84 <p> · znak 180"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 67 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0101.html",
-  "spine": 20,
-  "chapter": "Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Plamičci svi…",
-  "par": 84,
-  "tag": "p",
-  "eid": "",
-  "offset": 502,
-  "match": "Ali ona je to znala prepoznati. — Nikad, stari gadu — zarežala je, krećući. — Prije ću ja tebe nositi. — To bih volio vidjeti — dobaci Izern preko ramena, a kam",
-  "context": "…ina ljudi ne bi ni mogla reći da se smiješi. ⟦Ali ona je to znala prepoznati. — Nikad, stari gadu — zarežala je, krećući. — Prije ću ja tebe nositi. — To bih volio vidjeti — dobaci Izern preko ramena, a kam⟧enčići se rasuše ispod pete njezine pohabane …",
-  "suggestion": "",
-  "id": 49,
-  "lokacija": "text/part0101.html · „Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Plamičci svi…“ · odl. 84 <p> · znak 502"
  },
  {
   "severity": "upozorenje",
@@ -846,93 +506,8 @@
   "match": "u",
   "context": "⟦u⟧ svakom slučaju, bilo joj je drago što je tu.…",
   "suggestion": "",
-  "id": 50,
+  "id": 30,
   "lokacija": "text/part0101.html · „Kasno. — Kasno stižeš, Rike. — Ona otvori oči. Plamičci svi…“ · odl. 85 <body> · znak 0"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 2954 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0102.html",
-  "spine": 21,
-  "chapter": "The Trouble With Peace",
-  "par": 2,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "Beskrajna zaliha — Kakav mi je stav? — upita Flik, zavirujući preko ramena u svoje stražnje stopalo. — Doći ćemo i do tvoga stava — reče Klover. — Otprilike za ",
-  "context": "⟦Beskrajna zaliha — Kakav mi je stav? — upita Flik, zavirujući preko ramena u svoje stražnje stopalo. — Doći ćemo i do tvoga stava — reče Klover. — Otprilike za ⟧godinu dana, ovom brzinom — promrmlja Daunsaj…",
-  "suggestion": "",
-  "id": 51,
-  "lokacija": "text/part0102.html · „The Trouble With Peace“ · odl. 2 <body> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 79 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0102.html",
-  "spine": 21,
-  "chapter": "The Trouble With Peace",
-  "par": 2,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "Beskrajna zaliha — Kakav mi je stav? — upita Flik, zavirujući preko ramena u svoje stražnje stopalo. — Doći ćemo i do tvoga stava — reče Klover. — Otprilike za ",
-  "context": "⟦Beskrajna zaliha — Kakav mi je stav? — upita Flik, zavirujući preko ramena u svoje stražnje stopalo. — Doći ćemo i do tvoga stava — reče Klover. — Otprilike za ⟧godinu dana, ovom brzinom — promrmlja Daunsaj…",
-  "suggestion": "",
-  "id": 52,
-  "lokacija": "text/part0102.html · „The Trouble With Peace“ · odl. 2 <body> · znak 0"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 2983 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0102.html",
-  "spine": 21,
-  "chapter": "The Trouble With Peace",
-  "par": 26,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "Staur je prostrijelio pogledom kavez i snažno potegnuo nosom. — Još razmišlja. Pusti ga da plati porez ili mu ureži prokleti križ kao primjer.\" — Podučit će lju",
-  "context": "⟦Staur je prostrijelio pogledom kavez i snažno potegnuo nosom. — Još razmišlja. Pusti ga da plati porez ili mu ureži prokleti križ kao primjer.\" — Podučit će lju⟧de dobroj lekciji što god odabereš, dometnuo …",
-  "suggestion": "",
-  "id": 53,
-  "lokacija": "text/part0102.html · „The Trouble With Peace“ · odl. 26 <body> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 73 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0102.html",
-  "spine": 21,
-  "chapter": "The Trouble With Peace",
-  "par": 26,
-  "tag": "body",
-  "eid": "",
-  "offset": 1520,
-  "match": "Staur gurne polutrule glave golom nogom kako bi bolje vidio njihove izobličene, kezeće izraze. — Ružni gadovi, ha?\" — Osjećam se nekako nesigurno kad moram krit",
-  "context": "…. — Tko je ovo?\"\"Ove ionako nisu ni za što.\" ⟦Staur gurne polutrule glave golom nogom kako bi bolje vidio njihove izobličene, kezeće izraze. — Ružni gadovi, ha?\" — Osjećam se nekako nesigurno kad moram krit⟧izirati tuđi izgled, reče Klover. — A nitko o…",
-  "suggestion": "",
-  "id": 54,
-  "lokacija": "text/part0102.html · „The Trouble With Peace“ · odl. 26 <body> · znak 1520"
- },
- {
-  "severity": "upozorenje",
-  "code": "truncated",
-  "message": "Pasus završava bez interpunkcije",
-  "file": "text/part0102.html",
-  "spine": 21,
-  "chapter": "The Trouble With Peace",
-  "par": 26,
-  "tag": "body",
-  "eid": "",
-  "offset": 2943,
-  "match": "tko sam ja da se prepirem?\" „A što ako n",
-  "context": "…ne u krilo. Ako Afrit želi biti dio Sjevera, ⟦tko sam ja da se prepirem?\" „A što ako n⟧",
-  "suggestion": "",
-  "id": 55,
-  "lokacija": "text/part0102.html · „The Trouble With Peace“ · odl. 26 <body> · znak 2943"
  },
  {
   "severity": "upozorenje",
@@ -948,13 +523,13 @@
   "match": "„",
   "context": "…iti dio Sjevera, tko sam ja da se prepirem?\" ⟦„⟧A što ako n",
   "suggestion": "",
-  "id": 56,
+  "id": 31,
   "lokacija": "text/part0102.html · „The Trouble With Peace“ · odl. 26 <body> · znak 2971"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 4534 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 4534 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0103.html",
   "spine": 22,
   "chapter": "Demon koji kida sve okove",
@@ -965,7 +540,7 @@
   "match": "— Ja nisam tvoj mentor, djevojko, niti tvoj učitelj, niti tvoja mudra baka. Želiš da ti dam pravila, ali pravila ne postoje. Ti si poput onih starih budala mago",
   "context": "⟦— Ja nisam tvoj mentor, djevojko, niti tvoj učitelj, niti tvoja mudra baka. Želiš da ti dam pravila, ali pravila ne postoje. Ti si poput onih starih budala mago⟧va, koji žele okovati svijet zakonima. Ti si …",
   "suggestion": "",
-  "id": 57,
+  "id": 32,
   "lokacija": "text/part0103.html · „Demon koji kida sve okove“ · odl. 29 <body> · znak 0"
  },
  {
@@ -982,47 +557,13 @@
   "match": "Ti si",
   "context": "…a magova, koji žele okovati svijet zakonima. ⟦Ti si⟧ poput onih starih budala Proždirača, koji že…",
   "suggestion": "",
-  "id": 58,
+  "id": 33,
   "lokacija": "text/part0103.html · „Demon koji kida sve okove“ · odl. 29 <body> · znak 199"
  },
  {
-  "severity": "upozorenje",
-  "code": "truncated",
-  "message": "Pasus završava bez interpunkcije",
-  "file": "text/part0103.html",
-  "spine": 22,
-  "chapter": "Demon koji kida sve okove",
-  "par": 29,
-  "tag": "body",
-  "eid": "",
-  "offset": 4494,
-  "match": "ru. — Pogledaj oko sebe, djevojko. Da im",
-  "context": "…anja, a pokoji stvarni odgovor u ovom razgovo⟦ru. — Pogledaj oko sebe, djevojko. Da im⟧",
-  "suggestion": "",
-  "id": 59,
-  "lokacija": "text/part0103.html · „Demon koji kida sve okove“ · odl. 29 <body> · znak 4494"
- },
- {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 78 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0104.html",
-  "spine": 23,
-  "chapter": "The Trouble With Peace",
-  "par": 3,
-  "tag": "p",
-  "eid": "",
-  "offset": 0,
-  "match": "— Razgovarao sam s kraljem osobno, naširoko i nadugo. — Išer se zavalio na klupi kao da sjedi u vlastitom salonu. — Orso je slika i prilika svoga oca. — Ni bliz",
-  "context": "⟦— Razgovarao sam s kraljem osobno, naširoko i nadugo. — Išer se zavalio na klupi kao da sjedi u vlastitom salonu. — Orso je slika i prilika svoga oca. — Ni bliz⟧u bistar. — Vijećnica lordova bila je puna, a…",
-  "suggestion": "",
-  "id": 60,
-  "lokacija": "text/part0104.html · „The Trouble With Peace“ · odl. 3 <p> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 100 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 100 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0104.html",
   "spine": 23,
   "chapter": "The Trouble With Peace",
@@ -1033,7 +574,7 @@
   "match": "No, nasuprot tome, prije ili kasnije čovjek mora prestati svime ugađati majci. — Prošle godine, pred Valbekom, prijestolonasljednik Orso predsjedao je prijekom ",
   "context": "… Majka bi mu bila silno nesretna da to čuje. ⟦No, nasuprot tome, prije ili kasnije čovjek mora prestati svime ugađati majci. — Prošle godine, pred Valbekom, prijestolonasljednik Orso predsjedao je prijekom ⟧sudu i vješanju dvjestotinjak navodnih revolu…",
   "suggestion": "",
-  "id": 61,
+  "id": 34,
   "lokacija": "text/part0104.html · „The Trouble With Peace“ · odl. 3 <p> · znak 520"
  },
  {
@@ -1050,25 +591,8 @@
   "match": "“",
   "context": "…olji su i u najvećoj opasnosti, dometnuo je H⟦“⟧",
   "suggestion": "",
-  "id": 62,
+  "id": 35,
   "lokacija": "text/part0104.html · „The Trouble With Peace“ · odl. 4 <p> · znak 159"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 79 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0104.html",
-  "spine": 23,
-  "chapter": "The Trouble With Peace",
-  "par": 89,
-  "tag": "body",
-  "eid": "",
-  "offset": 1049,
-  "match": "Stara ga je rana očito mučila mnogo više nego što je htio priznati. — Ostavio sam štap u vijećnici. — Zato imaš mene. — Prihvati ga za lakat, položivši jednu ru",
-  "context": "… trgne, oslanjajući sav teret na jednu nogu. ⟦Stara ga je rana očito mučila mnogo više nego što je htio priznati. — Ostavio sam štap u vijećnici. — Zato imaš mene. — Prihvati ga za lakat, položivši jednu ru⟧ku odozgo, dok ga je druga čvrsto držala odoz…",
-  "suggestion": "",
-  "id": 63,
-  "lokacija": "text/part0104.html · „The Trouble With Peace“ · odl. 89 <body> · znak 1049"
  },
  {
   "severity": "upozorenje",
@@ -1084,25 +608,8 @@
   "match": "“",
   "context": "…dok je dizala oštricu. — Slomite ono što vole⟦“⟧, prozborila je, a Rike je vrisnula dok joj s…",
   "suggestion": "",
-  "id": 64,
+  "id": 36,
   "lokacija": "text/part0105.html · „Izbor“ · odl. 58 <p> · znak 181"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 72 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0106.html",
-  "spine": 25,
-  "chapter": "Neka zvone zvona",
-  "par": 16,
-  "tag": "body",
-  "eid": "",
-  "offset": 755,
-  "match": "Savin nije tako mislila. — Kako bi moglo biti drugačije? — upita, podbradivši Isold i izmamivši joj osmijeh. — Zuri, može li jedna od djevojaka pomoći Isold oko",
-  "context": "…ta podigavši pogled prema njoj. — Misliš li? ⟦Savin nije tako mislila. — Kako bi moglo biti drugačije? — upita, podbradivši Isold i izmamivši joj osmijeh. — Zuri, može li jedna od djevojaka pomoći Isold oko⟧ pudera? — Blagoslovljena ona koja pruža utje…",
-  "suggestion": "",
-  "id": 65,
-  "lokacija": "text/part0106.html · „Neka zvone zvona“ · odl. 16 <body> · znak 755"
  },
  {
   "severity": "upozorenje",
@@ -1118,25 +625,8 @@
   "match": "dovoljno pažnje da se Savin zasiti. — Vi",
   "context": "… — Iako u Krugovima Svijeta nikada nije bilo ⟦dovoljno pažnje da se Savin zasiti. — Vi⟧",
   "suggestion": "",
-  "id": 66,
+  "id": 37,
   "lokacija": "text/part0106.html · „Neka zvone zvona“ · odl. 16 <body> · znak 1452"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 2929 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0106.html",
-  "spine": 25,
-  "chapter": "Neka zvone zvona",
-  "par": 78,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "— Govore svašta. — Njegovo joj je mišljenje nekoć značilo sve, no uvidjela je da joj je u ovom trenu jedva stalo. Jedva je čekao da sa sebe strese krhotine svoj",
-  "context": "⟦— Govore svašta. — Njegovo joj je mišljenje nekoć značilo sve, no uvidjela je da joj je u ovom trenu jedva stalo. Jedva je čekao da sa sebe strese krhotine svoj⟧ega prošlog života poput zmijske košuljice i …",
-  "suggestion": "",
-  "id": 67,
-  "lokacija": "text/part0106.html · „Neka zvone zvona“ · odl. 78 <body> · znak 0"
  },
  {
   "severity": "upozorenje",
@@ -1152,7 +642,7 @@
   "match": "\"",
   "context": "…itmu. — Bi li me mogla odvesti natrag unutra?⟦\"⟧ Pomislila je kako bi ga mogla otkotrljati ra…",
   "suggestion": "obriši",
-  "id": 68,
+  "id": 38,
   "lokacija": "text/part0106.html · „Neka zvone zvona“ · odl. 78 <body> · znak 2748"
  },
  {
@@ -1169,13 +659,13 @@
   "match": "p",
   "context": "⟦p⟧rotiv tvog svekra, dometnuo je Išer. — Kralj …",
   "suggestion": "",
-  "id": 69,
+  "id": 39,
   "lokacija": "text/part0107.html · „Buduće izdaje, prošle afere“ · odl. 27 <p> · znak 0"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3036 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 3036 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0107.html",
   "spine": 26,
   "chapter": "Buduće izdaje, prošle afere",
@@ -1186,7 +676,7 @@
   "match": "— Nesumnjivo… — Išer baci pogled na Heugena, potom na Barezina, pa natrag na Lea — ponajmanje sam kralj Sjevernjaka, Staur Noćas. Leo se ukoči, čaše napola prin",
   "context": "⟦— Nesumnjivo… — Išer baci pogled na Heugena, potom na Barezina, pa natrag na Lea — ponajmanje sam kralj Sjevernjaka, Staur Noćas. Leo se ukoči, čaše napola prin⟧esene ustima. — Nisam siguran da bih ga nazva…",
   "suggestion": "",
-  "id": 70,
+  "id": 40,
   "lokacija": "text/part0107.html · „Buduće izdaje, prošle afere“ · odl. 49 <body> · znak 0"
  },
  {
@@ -1203,13 +693,13 @@
   "match": "Brda",
   "context": "…evernjaka s kojima su se suočili kod Crvenog ⟦Brda⟧. — On je divlji. Žedan krvi. Podao. — Ali *t…",
   "suggestion": "Broda",
-  "id": 71,
+  "id": 41,
   "lokacija": "text/part0107.html · „Buduće izdaje, prošle afere“ · odl. 49 <body> · znak 427"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 146 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 146 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0107.html",
   "spine": 26,
   "chapter": "Buduće izdaje, prošle afere",
@@ -1220,7 +710,7 @@
   "match": "Bila je ondje u prostranoj dnevnoj sobi kad je otvorio vrata, zavaljena na ležaljci u silnom slapu kremastih suknji s uobičajenom pažnjom, kao da ju je kipar na",
   "context": "… preko stola tražeći repete. — Mnoge tisuće. ⟦Bila je ondje u prostranoj dnevnoj sobi kad je otvorio vrata, zavaljena na ležaljci u silnom slapu kremastih suknji s uobičajenom pažnjom, kao da ju je kipar na⟧mjestio točno ondje kao svoj model. — Vaša Vi…",
   "suggestion": "",
-  "id": 72,
+  "id": 42,
   "lokacija": "text/part0107.html · „Buduće izdaje, prošle afere“ · odl. 49 <body> · znak 675"
  },
  {
@@ -1237,13 +727,13 @@
   "match": "kad bi se spustila niže tiho zaječao. Li",
   "context": "…spuštajući tiho režanje, dok bi on svaki put ⟦kad bi se spustila niže tiho zaječao. Li⟧",
   "suggestion": "",
-  "id": 73,
+  "id": 43,
   "lokacija": "text/part0107.html · „Buduće izdaje, prošle afere“ · odl. 67 <body> · znak 1475"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3036 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 3036 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0109.html",
   "spine": 28,
   "chapter": "Zlatno dijete predgrađa",
@@ -1254,25 +744,8 @@
   "match": "— Priča o ličnom rastu — razmišljao je pisac. — O suočavanju s opasnostima i hrabrom podnošenju kušnji. Žena rođena u povlaštenom položaju koja prolazi kroz vat",
   "context": "⟦— Priča o ličnom rastu — razmišljao je pisac. — O suočavanju s opasnostima i hrabrom podnošenju kušnji. Žena rođena u povlaštenom položaju koja prolazi kroz vat⟧ru borbe kako bi shvatila težak položaj malog…",
   "suggestion": "",
-  "id": 74,
+  "id": 44,
   "lokacija": "text/part0109.html · „Zlatno dijete predgrađa“ · odl. 49 <body> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 87 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0109.html",
-  "spine": 28,
-  "chapter": "Zlatno dijete predgrađa",
-  "par": 49,
-  "tag": "body",
-  "eid": "",
-  "offset": 849,
-  "match": "Razmislite o toj biografiji. — I vrati se natrag kroz prozor. — Dakle… to je taj slavni pisac? — upita Leo. — Ima neke od najhrabrijih brkova koje sam ikada vid",
-  "context": "…rik i poskoči. — Vaša Milosti. Vaša Milosti. ⟦Razmislite o toj biografiji. — I vrati se natrag kroz prozor. — Dakle… to je taj slavni pisac? — upita Leo. — Ima neke od najhrabrijih brkova koje sam ikada vid⟧io. — Unatoč tome što je jedna od najvećih ku…",
-  "suggestion": "",
-  "id": 75,
-  "lokacija": "text/part0109.html · „Zlatno dijete predgrađa“ · odl. 49 <body> · znak 849"
  },
  {
   "severity": "upozorenje",
@@ -1288,13 +761,13 @@
   "match": "Brodovih",
   "context": "…uri je čekala s Haroonom, Rabikom i dvojicom ⟦Brodovih⟧ ljudi. Okupila je red najbjednijih, a među n…",
   "suggestion": "Brokovih",
-  "id": 76,
+  "id": 45,
   "lokacija": "text/part0109.html · „Zlatno dijete predgrađa“ · odl. 65 <p> · znak 46"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3029 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 3029 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0110.html",
   "spine": 29,
   "chapter": "Mrtvo drvo, novi izdanci",
@@ -1305,7 +778,7 @@
   "match": "— Samo sam morao iskazati poštovanje! — Staur je ušao u utihnulu dvoranu, uz struganje čeličnih vrhova svojih čizama o pod. Glas mu je bio natopljen prezirom, d",
   "context": "⟦— Samo sam morao iskazati poštovanje! — Staur je ušao u utihnulu dvoranu, uz struganje čeličnih vrhova svojih čizama o pod. Glas mu je bio natopljen prezirom, d⟧ok ga, kao obično, nije bilo briga ni za čije…",
   "suggestion": "",
-  "id": 77,
+  "id": 46,
   "lokacija": "text/part0110.html · „Mrtvo drvo, novi izdanci“ · odl. 35 <body> · znak 0"
  },
  {
@@ -1322,25 +795,8 @@
   "match": "\"",
   "context": "…palio, zar ne? Zar ne? Zar ne? Posljednji se ⟦\"⟧zar ne?\" prosuo kroz stisnute zube, uz prskan…",
   "suggestion": "„…“",
-  "id": 78,
+  "id": 47,
   "lokacija": "text/part0110.html · „Mrtvo drvo, novi izdanci“ · odl. 35 <body> · znak 813"
- },
- {
-  "severity": "upozorenje",
-  "code": "truncated",
-  "message": "Pasus završava bez interpunkcije",
-  "file": "text/part0110.html",
-  "spine": 29,
-  "chapter": "Mrtvo drvo, novi izdanci",
-  "par": 35,
-  "tag": "body",
-  "eid": "",
-  "offset": 2989,
-  "match": "i za većinu vas tu je čelik. Ne treba ti",
-  "context": "… omču, urezujući se u njezin tanak vrat. — Al⟦i za većinu vas tu je čelik. Ne treba ti⟧",
-  "suggestion": "",
-  "id": 79,
-  "lokacija": "text/part0110.html · „Mrtvo drvo, novi izdanci“ · odl. 35 <body> · znak 2989"
  },
  {
   "severity": "upozorenje",
@@ -1356,25 +812,8 @@
   "match": " kapi kiše. — Čula sam da se veličina ne",
   "context": "…Izern i Šiversa same u vrtu s kojeg su kapale⟦ kapi kiše. — Čula sam da se veličina ne⟧",
   "suggestion": "",
-  "id": 80,
+  "id": 48,
   "lokacija": "text/part0110.html · „Mrtvo drvo, novi izdanci“ · odl. 75 <body> · znak 1459"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 3021 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0112.html",
-  "spine": 31,
-  "chapter": "The Trouble With Peace",
-  "par": 19,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "— Noga ga je još boljela, ali učio se nositi s tim. Opasao ju je remenom ispod hlača, neposredno iznad koljena. Tako je bila kruća, ali mnogo čvršća. Džurand ga",
-  "context": "⟦— Noga ga je još boljela, ali učio se nositi s tim. Opasao ju je remenom ispod hlača, neposredno iznad koljena. Tako je bila kruća, ali mnogo čvršća. Džurand ga⟧ je pokušao obići u krugu, no Leo ga je motri…",
-  "suggestion": "",
-  "id": 81,
-  "lokacija": "text/part0112.html · „The Trouble With Peace“ · odl. 19 <body> · znak 0"
  },
  {
   "severity": "upozorenje",
@@ -1390,25 +829,8 @@
   "match": "\"",
   "context": "Na riječ ⟦\"⟧prihodi, Mustredove i Clensherove obrve polet…",
   "suggestion": "„…“",
-  "id": 82,
+  "id": 49,
   "lokacija": "text/part0113.html · „Domoljubni prilozi“ · odl. 24 <p> · znak 9"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 2997 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0115.html",
-  "spine": 34,
-  "chapter": "Stari načini, pravi načini",
-  "par": 16,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "Čelik je zveketao, a dvojica starih ratnih poglavica stenjala su, posrtala i hrvala se, umorna i nespretna. sve u svemu, prilično neugledan prizor. Postoji razl",
-  "context": "⟦Čelik je zveketao, a dvojica starih ratnih poglavica stenjala su, posrtala i hrvala se, umorna i nespretna. sve u svemu, prilično neugledan prizor. Postoji razl⟧og zašto se borba uglavnom prepušta mladima. …",
-  "suggestion": "",
-  "id": 83,
-  "lokacija": "text/part0115.html · „Stari načini, pravi načini“ · odl. 16 <body> · znak 0"
  },
  {
   "severity": "upozorenje",
@@ -1424,7 +846,7 @@
   "match": "Crvenkapinom",
   "context": "…u kapaljku, a golema se lokva spajala s onom ⟦Crvenkapinom⟧ i polako se širila.",
   "suggestion": "Crvenkapom",
-  "id": 84,
+  "id": 50,
   "lokacija": "text/part0115.html · „Stari načini, pravi načini“ · odl. 22 <p> · znak 189"
  },
  {
@@ -1441,7 +863,7 @@
   "match": "Rikin",
   "context": "Kao što je ⟦Rikin⟧ otac običavao govoriti, želiš li da stvari b…",
   "suggestion": "Rikein",
-  "id": 85,
+  "id": 51,
   "lokacija": "text/part0115.html · „Stari načini, pravi načini“ · odl. 34 <p> · znak 11"
  },
  {
@@ -1458,7 +880,7 @@
   "match": "\"",
   "context": "… je tako i zvučao, silno naglašavajući svako ⟦\"⟧r\" koje bi prevalio preko usana, a tako je i …",
   "suggestion": "„…“",
-  "id": 86,
+  "id": 52,
   "lokacija": "text/part0116.html · „The Trouble With Peace“ · odl. 2 <body> · znak 147"
  },
  {
@@ -1475,59 +897,8 @@
   "match": "Greenway",
   "context": "⟦Greenway⟧ je uhvatio samozvanog maga za vrat i odvukao…",
   "suggestion": "Grinvej",
-  "id": 87,
+  "id": 53,
   "lokacija": "text/part0116.html · „The Trouble With Peace“ · odl. 3 <p> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 80 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0117.html",
-  "spine": 36,
-  "chapter": "Polovična veleizdaja",
-  "par": 15,
-  "tag": "p",
-  "eid": "",
-  "offset": 388,
-  "match": "Možda neprijatelji i ponajviše. — Tek je sumrak. — Znam, ali nadam se da bih i sama mogla biti u… nekom osjetljivom stanju. — Isold je rumenila pri samoj pomisl",
-  "context": "…j prijatelji, poznanici, čak i neprijatelji. ⟦Možda neprijatelji i ponajviše. — Tek je sumrak. — Znam, ali nadam se da bih i sama mogla biti u… nekom osjetljivom stanju. — Isold je rumenila pri samoj pomisl⟧i, jadnica. — Suprug želi pošteno se odmoriti…",
-  "suggestion": "",
-  "id": 88,
-  "lokacija": "text/part0117.html · „Polovična veleizdaja“ · odl. 15 <p> · znak 388"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 3007 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0117.html",
-  "spine": 36,
-  "chapter": "Polovična veleizdaja",
-  "par": 29,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "Ali zato ga je i imala. Ispravila je ramena, širom otvorila vrata i zakoračila unutra. Savin nije mijenjala ovu prostoriju. Vjerojatno je niko nije mijenjao već",
-  "context": "⟦Ali zato ga je i imala. Ispravila je ramena, širom otvorila vrata i zakoračila unutra. Savin nije mijenjala ovu prostoriju. Vjerojatno je niko nije mijenjao već⟧ dva stoljeća. Pokoje tamno ulje pokojnih lor…",
-  "suggestion": "",
-  "id": 89,
-  "lokacija": "text/part0117.html · „Polovična veleizdaja“ · odl. 29 <body> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 74 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0117.html",
-  "spine": 36,
-  "chapter": "Polovična veleizdaja",
-  "par": 29,
-  "tag": "body",
-  "eid": "",
-  "offset": 928,
-  "match": "Leo je zvučao pomalo zagušeno. — Upravo smo razgovarali o… — Razgovarali ste o okupljanju saveznika u otvorenoj pobuni protiv kralja Orsa — reče Savin, zatečena",
-  "context": "…ana za odjeću moderne dame. Pogotovo trudne. ⟦Leo je zvučao pomalo zagušeno. — Upravo smo razgovarali o… — Razgovarali ste o okupljanju saveznika u otvorenoj pobuni protiv kralja Orsa — reče Savin, zatečena⟧ time koliko joj je ravnomjerno vlastiti glas…",
-  "suggestion": "",
-  "id": 90,
-  "lokacija": "text/part0117.html · „Polovična veleizdaja“ · odl. 29 <body> · znak 928"
  },
  {
   "severity": "upozorenje",
@@ -1543,7 +914,7 @@
   "match": "žom, to će on postajati čvršći.\" „Mislio",
   "context": "…eličnu volju. Što situacija bude postajala te⟦žom, to će on postajati čvršći.\" „Mislio⟧",
   "suggestion": "",
-  "id": 91,
+  "id": 54,
   "lokacija": "text/part0117.html · „Polovična veleizdaja“ · odl. 29 <body> · znak 2967"
  },
  {
@@ -1560,13 +931,13 @@
   "match": "„",
   "context": "…postajala težom, to će on postajati čvršći.\" ⟦„⟧Mislio",
   "suggestion": "",
-  "id": 92,
+  "id": 55,
   "lokacija": "text/part0117.html · „Polovična veleizdaja“ · odl. 29 <body> · znak 3000"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 4371 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 4371 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0117.html",
   "spine": 36,
   "chapter": "Polovična veleizdaja",
@@ -1577,7 +948,7 @@
   "match": "Kurnsbik bi bio zadovoljan. Stalno ju je poticao neka bude milosrdnija, a gle, sad je dijelila čitave gradove. — Predati Vestport? — zapanjeno dahnu Leo. No Sav",
   "context": "⟦Kurnsbik bi bio zadovoljan. Stalno ju je poticao neka bude milosrdnija, a gle, sad je dijelila čitave gradove. — Predati Vestport? — zapanjeno dahnu Leo. No Sav⟧in primijeti da lord Išer šuti. — Jadna li ci…",
   "suggestion": "",
-  "id": 93,
+  "id": 56,
   "lokacija": "text/part0117.html · „Polovična veleizdaja“ · odl. 39 <body> · znak 0"
  },
  {
@@ -1594,7 +965,7 @@
   "match": "Stirijaca",
   "context": "…no neću žaliti. — Vodili smo tri rata protiv ⟦Stirijaca⟧. I to gadna. Mislim… — Leo potraži Išerovu p…",
   "suggestion": "Styrijaca",
-  "id": 94,
+  "id": 57,
   "lokacija": "text/part0117.html · „Polovična veleizdaja“ · odl. 39 <body> · znak 431"
  },
  {
@@ -1611,13 +982,13 @@
   "match": "\"",
   "context": "…no znače. Ono što je Brod podrazumijevao pod ⟦\"⟧bacanjem riječi-dvije\" značilo je da je izbio…",
   "suggestion": "„…“",
-  "id": 95,
+  "id": 58,
   "lokacija": "text/part0118.html · „Privatni jezik“ · odl. 3 <p> · znak 183"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 4992 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 4992 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0119.html",
   "spine": 38,
   "chapter": "Stari prijatelji",
@@ -1628,7 +999,7 @@
   "match": "Zlatni prsten u njenom nosu pomjerio se dok se smiješila. Leo nije znao riječ kojom bi opisao taj osmijeh, ali \"toplo, iskreno\" ili \"direktno\" definitivno nisu ",
   "context": "⟦Zlatni prsten u njenom nosu pomjerio se dok se smiješila. Leo nije znao riječ kojom bi opisao taj osmijeh, ali \"toplo, iskreno\" ili \"direktno\" definitivno nisu ⟧bile među njima. — Sjećaš se da sam znala ima…",
   "suggestion": "",
-  "id": 96,
+  "id": 59,
   "lokacija": "text/part0119.html · „Stari prijatelji“ · odl. 36 <body> · znak 0"
  },
  {
@@ -1645,7 +1016,7 @@
   "match": "\"",
   "context": "… znao riječ kojom bi opisao taj osmijeh, ali ⟦\"⟧toplo, iskreno\" ili \"direktno\" definitivno ni…",
   "suggestion": "„…“",
-  "id": 97,
+  "id": 60,
   "lokacija": "text/part0119.html · „Stari prijatelji“ · odl. 36 <body> · znak 111"
  },
  {
@@ -1662,13 +1033,13 @@
   "match": "\"",
   "context": "…opisao taj osmijeh, ali \"toplo, iskreno\" ili ⟦\"⟧direktno\" definitivno nisu bile među njima. —…",
   "suggestion": "„…“",
-  "id": 98,
+  "id": 61,
   "lokacija": "text/part0119.html · „Stari prijatelji“ · odl. 36 <body> · znak 132"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 96 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 96 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0119.html",
   "spine": 38,
   "chapter": "Stari prijatelji",
@@ -1679,42 +1050,8 @@
   "match": "Vidim, sačuvala si rune. — Izgledaju kao dobar znak. — Savin dotaknu male drvene pločice koje je nosila oko vrata. — A ti si sačuvala smaragde. — Izgledaju kao ",
   "context": "…ena, Leo. Najbolja stvar na tebi, rekla bih! ⟦Vidim, sačuvala si rune. — Izgledaju kao dobar znak. — Savin dotaknu male drvene pločice koje je nosila oko vrata. — A ti si sačuvala smaragde. — Izgledaju kao ⟧velika vrijednost — reče Rike, izvlačeći ih s…",
   "suggestion": "",
-  "id": 99,
+  "id": 62,
   "lokacija": "text/part0119.html · „Stari prijatelji“ · odl. 36 <body> · znak 1173"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 74 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0120.html",
-  "spine": 39,
-  "chapter": "Novi prijatelji",
-  "par": 17,
-  "tag": "body",
-  "eid": "",
-  "offset": 110,
-  "match": "I taj je dio toliko žalio za gubitkom njega, i žene kakva je s njim bila, i životom koji je s njim mogla imati, da su joj se neočekivano suze nakupile u slijepo",
-  "context": "…postojao je dio nje koji ga je jednom volio. ⟦I taj je dio toliko žalio za gubitkom njega, i žene kakva je s njim bila, i životom koji je s njim mogla imati, da su joj se neočekivano suze nakupile u slijepo⟧m oku te se morala pretvarati da joj je nešto…",
-  "suggestion": "",
-  "id": 100,
-  "lokacija": "text/part0120.html · „Novi prijatelji“ · odl. 17 <body> · znak 110"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 71 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0120.html",
-  "spine": 39,
-  "chapter": "Novi prijatelji",
-  "par": 17,
-  "tag": "body",
-  "eid": "",
-  "offset": 486,
-  "match": "Izern se vratila tog jutra i stajala polako žvačući, mršteći se za Leom i Savin te njihovim ljudima i kolima dok su uz lupu napuštali grad. — Ne smeta ti što ti",
-  "context": "…rago vidjeti da se još uvijek lako zacrveni. ⟦Izern se vratila tog jutra i stajala polako žvačući, mršteći se za Leom i Savin te njihovim ljudima i kolima dok su uz lupu napuštali grad. — Ne smeta ti što ti⟧ je ukrala muškarca, ha?\" — Ukrala ga? — Rike…",
-  "suggestion": "",
-  "id": 101,
-  "lokacija": "text/part0120.html · „Novi prijatelji“ · odl. 17 <body> · znak 486"
  },
  {
   "severity": "upozorenje",
@@ -1730,7 +1067,7 @@
   "match": "\"",
   "context": "…ko, Čavao zamišljeno podiže blijede obrve. — ⟦\"⟧Onda tvoj dogovor s Padom Noći neće trajati v…",
   "suggestion": "„…“",
-  "id": 102,
+  "id": 63,
   "lokacija": "text/part0120.html · „Novi prijatelji“ · odl. 36 <body> · znak 1865"
  },
  {
@@ -1747,7 +1084,7 @@
   "match": "\"",
   "context": "…smjeri ga prema vratima dvorane svoga oca. — ⟦\"⟧Ništa ne traje vječno.",
   "suggestion": "„…“",
-  "id": 103,
+  "id": 64,
   "lokacija": "text/part0120.html · „Novi prijatelji“ · odl. 36 <body> · znak 2002"
  },
  {
@@ -1764,7 +1101,7 @@
   "match": "\"",
   "context": "…smjeri ga prema vratima dvorane svoga oca. — ⟦\"⟧Ništa ne traje vječno.",
   "suggestion": "obriši",
-  "id": 104,
+  "id": 65,
   "lokacija": "text/part0120.html · „Novi prijatelji“ · odl. 36 <body> · znak 2002"
  },
  {
@@ -1781,7 +1118,7 @@
   "match": "\"",
   "context": "…nenadni nalet pare iz stroja, popraćen valom ⟦\"⟧oohova\" i \"aahova, nakon čega je uslijedio pr…",
   "suggestion": "„…“",
-  "id": 105,
+  "id": 66,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 7 <p> · znak 65"
  },
  {
@@ -1798,13 +1135,13 @@
   "match": "\"",
   "context": "…et pare iz stroja, popraćen valom \"oohova\" i ⟦\"⟧aahova, nakon čega je uslijedio pristojan plj…",
   "suggestion": "„…“",
-  "id": 106,
+  "id": 67,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 7 <p> · znak 76"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3051 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 3051 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0121.html",
   "spine": 40,
   "chapter": "The Trouble With Peace",
@@ -1815,7 +1152,7 @@
   "match": "— Baš tako?, kresnu Orso. — Silno želi kupiti novu haljinu, jelda?\" Oštar Salfurov osmijeh nije gubio ni milimetar. — Sve što se tiče stabilnosti kraljevstva od",
   "context": "⟦— Baš tako?, kresnu Orso. — Silno želi kupiti novu haljinu, jelda?\" Oštar Salfurov osmijeh nije gubio ni milimetar. — Sve što se tiče stabilnosti kraljevstva od⟧ iznimne je važnosti za lorda Bajaza.\" — Kako…",
   "suggestion": "",
-  "id": 107,
+  "id": 68,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 0"
  },
  {
@@ -1832,7 +1169,7 @@
   "match": "\"",
   "context": "…projekt, učitelju Salfure, no… prilično skup.⟦\"⟧ Orso se poče okretati. — Bojim se da moja ri…",
   "suggestion": "obriši",
-  "id": 108,
+  "id": 69,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 1024"
  },
  {
@@ -1849,7 +1186,7 @@
   "match": "”",
   "context": "… se da moja riznica nije dorasla tom izazovu.⟦”⟧ — Bankarska kuća Valint i Balk već se ponudi…",
   "suggestion": "",
-  "id": 109,
+  "id": 70,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 1101"
  },
  {
@@ -1866,25 +1203,8 @@
   "match": "”",
   "context": "…lint i Balk već se ponudila poduzeti kapital.⟦”⟧ Orso se namršti. Upravo zbog uništavajućih k…",
   "suggestion": "",
-  "id": 110,
+  "id": 71,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 1167"
- },
- {
-  "severity": "upozorenje",
-  "code": "neparni_navodnik",
-  "message": "Neparni „“ navodnici (otvarajućih 0, zatvarajućih 3)",
-  "file": "text/part0121.html",
-  "spine": 40,
-  "chapter": "The Trouble With Peace",
-  "par": 19,
-  "tag": "body",
-  "eid": "",
-  "offset": 1332,
-  "match": "”",
-  "context": "…u. — To je… neuobičajeno velikodušno od njih.⟦”⟧ — Banka bi uzela potrebna zemljišta u skrbni…",
-  "suggestion": "",
-  "id": 111,
-  "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 1332"
  },
  {
   "severity": "upozorenje",
@@ -1900,7 +1220,7 @@
   "match": "”",
   "context": "…u. — To je… neuobičajeno velikodušno od njih.⟦”⟧ — Banka bi uzela potrebna zemljišta u skrbni…",
   "suggestion": "",
-  "id": 112,
+  "id": 72,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 1332"
  },
  {
@@ -1917,7 +1237,7 @@
   "match": "o. Ipak, odluke su se morale donositi. M",
   "context": "…iješa u neku odluku, ma koliko površno to bil⟦o. Ipak, odluke su se morale donositi. M⟧",
   "suggestion": "",
-  "id": 113,
+  "id": 73,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 19 <body> · znak 3011"
  },
  {
@@ -1934,13 +1254,13 @@
   "match": "Kurnsbrik",
   "context": "— Povedi nas u budućnost, majstore ⟦Kurnsbrik⟧! urliknuo je njihov blesavi kralj.",
   "suggestion": "Kurnsbik",
-  "id": 114,
+  "id": 74,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 37 <p> · znak 35"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 95 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 95 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0121.html",
   "spine": 40,
   "chapter": "The Trouble With Peace",
@@ -1951,7 +1271,7 @@
   "match": "Morilee je dobro znala kako se osjećaju oni s dna ljestvice, u to je bila sigurna, s kućama srušenima da bi se napravilo mjesta za tvornice i vrtovima sagrađeni",
   "context": "…e ima onih koji bi htjeli promijeniti smjer! ⟦Morilee je dobro znala kako se osjećaju oni s dna ljestvice, u to je bila sigurna, s kućama srušenima da bi se napravilo mjesta za tvornice i vrtovima sagrađeni⟧ma preko da bi se podigli hramovi i s obitelj…",
   "suggestion": "",
-  "id": 115,
+  "id": 75,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 42 <p> · znak 84"
  },
  {
@@ -1968,7 +1288,7 @@
   "match": "”",
   "context": "…e kao iznimno teška ozljeda. — Visoka pravdo?⟦”⟧ upitala je dok joj se sručio u krilo, ali ni…",
   "suggestion": "",
-  "id": 116,
+  "id": 76,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 60 <p> · znak 86"
  },
  {
@@ -1985,13 +1305,13 @@
   "match": "”",
   "context": "…ila za njegov krvavi sako. — Što se dogodilo?⟦”⟧ Nije mogla čuti samu sebe dok govori. Nije m…",
   "suggestion": "",
-  "id": 117,
+  "id": 77,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 63 <p> · znak 59"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 4508 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 4508 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0121.html",
   "spine": 40,
   "chapter": "The Trouble With Peace",
@@ -2002,7 +1322,7 @@
   "match": "Letci koje su izradili zatreperili su i poletjeli prema tlu. Objašnjenja, isprike, opravdanja. Jedan je pao blizu Sofeine čizme te počeo upijati krv s jednog ru",
   "context": "⟦Letci koje su izradili zatreperili su i poletjeli prema tlu. Objašnjenja, isprike, opravdanja. Jedan je pao blizu Sofeine čizme te počeo upijati krv s jednog ru⟧ba i rumeniti se. Bila je odgajateljica godin…",
   "suggestion": "",
-  "id": 118,
+  "id": 78,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 66 <body> · znak 0"
  },
  {
@@ -2019,13 +1339,13 @@
   "match": "\"",
   "context": "… ih zubima. Sada se pitala tko su to zapravo ⟦\"⟧oni. Čiji je neprijatelj dječak na čije se li…",
   "suggestion": "„…“",
-  "id": 119,
+  "id": 79,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 66 <body> · znak 584"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3930 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 3930 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0121.html",
   "spine": 40,
   "chapter": "The Trouble With Peace",
@@ -2036,30 +1356,13 @@
   "match": "Nitko ovdje gore ne bi bio od velike koristi u borbi. Kurnsbik je držao ruke pritisnute na užasnuto lice. Kort je otpuzao prema stražnjem dijelu. Čudno je kako ",
   "context": "⟦Nitko ovdje gore ne bi bio od velike koristi u borbi. Kurnsbik je držao ruke pritisnute na užasnuto lice. Kort je otpuzao prema stražnjem dijelu. Čudno je kako ⟧se, kad je smrt na stolu, iznimno važnim čini…",
   "suggestion": "",
-  "id": 120,
+  "id": 80,
   "lokacija": "text/part0121.html · „The Trouble With Peace“ · odl. 74 <body> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 88 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0122.html",
-  "spine": 41,
-  "chapter": "The Trouble With Peace",
-  "par": 2,
-  "tag": "body",
-  "eid": "",
-  "offset": 422,
-  "match": "Prikladan doček za njega bila bi sjekira u glavu. — Sjekira u glavu tvoj je odgovor na sve — primijeti Šola, koja je posudila nešto oklopa za tu prigodu, a uspj",
-  "context": "…im kopiletom mlatili prije nekoliko mjeseci? ⟦Prikladan doček za njega bila bi sjekira u glavu. — Sjekira u glavu tvoj je odgovor na sve — primijeti Šola, koja je posudila nešto oklopa za tu prigodu, a uspj⟧ela ga je navući na svoje koščato tijelo samo…",
-  "suggestion": "",
-  "id": 121,
-  "lokacija": "text/part0122.html · „The Trouble With Peace“ · odl. 2 <body> · znak 422"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 4535 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 4535 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0124.html",
   "spine": 43,
   "chapter": "Vučje čeljusti",
@@ -2070,13 +1373,13 @@
   "match": "Takozvani Veliki Vuk skočio je šišteći na jednoga od svojih sparing-partnera, tako iznenadno i divljački da je Savin instinktivno stavila zaštitničku ruku na tr",
   "context": "⟦Takozvani Veliki Vuk skočio je šišteći na jednoga od svojih sparing-partnera, tako iznenadno i divljački da je Savin instinktivno stavila zaštitničku ruku na tr⟧buh. Morala se natjerati da se ne trzne unatr…",
   "suggestion": "",
-  "id": 122,
+  "id": 81,
   "lokacija": "text/part0124.html · „Vučje čeljusti“ · odl. 13 <body> · znak 0"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 123 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 123 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0124.html",
   "spine": 43,
   "chapter": "Vučje čeljusti",
@@ -2087,7 +1390,7 @@
   "match": "Kažu da je najveći ratnik u krugu svijeta, i lako im mogu povjerovati. — Gotovo si jednako brza na komplimentima koliko ja s mačem. — Staur je pustio niz munjev",
   "context": "…! Unuk Bethoda i zakoniti kralj Sjevernjaka! ⟦Kažu da je najveći ratnik u krugu svijeta, i lako im mogu povjerovati. — Gotovo si jednako brza na komplimentima koliko ja s mačem. — Staur je pustio niz munjev⟧itih uboda na čovjeka koji je još stajao, a v…",
   "suggestion": "",
-  "id": 123,
+  "id": 82,
   "lokacija": "text/part0124.html · „Vučje čeljusti“ · odl. 13 <body> · znak 1110"
  },
  {
@@ -2104,42 +1407,8 @@
   "match": "“",
   "context": "… krug…\"Možeš ga uzeti, moje je da ti dopustim⟦“⟧ — rekla je Savin, istupivši bliže, slegnuvši…",
   "suggestion": "",
-  "id": 124,
+  "id": 83,
   "lokacija": "text/part0124.html · „Vučje čeljusti“ · odl. 13 <body> · znak 1542"
- },
- {
-  "severity": "info",
-  "code": "strano_slovo_riječ",
-  "message": "Riječ sa stranim grafemima „westportskoj“ – moguća neprevedena engleska riječ",
-  "file": "text/part0125.html",
-  "spine": 44,
-  "chapter": "Pitanja",
-  "par": 22,
-  "tag": "p",
-  "eid": "",
-  "offset": 51,
-  "match": "westportskoj",
-  "context": "…a se što joj je Vitari rekla u toj kolibi na ⟦westportskoj⟧ obali. Da je Unija Bajazovo oruđe, banke i I…",
-  "suggestion": "",
-  "id": 125,
-  "lokacija": "text/part0125.html · „Pitanja“ · odl. 22 <p> · znak 51"
- },
- {
-  "severity": "info",
-  "code": "strano_slovo_riječ",
-  "message": "Riječ sa stranim grafemima „westportskom“ – moguća neprevedena engleska riječ",
-  "file": "text/part0125.html",
-  "spine": 44,
-  "chapter": "Pitanja",
-  "par": 24,
-  "tag": "p",
-  "eid": "",
-  "offset": 253,
-  "match": "westportskom",
-  "context": "…ami, luđeg od bilo kojeg jeftinog proroka na ⟦westportskom⟧ Hramskom trgu.",
-  "suggestion": "",
-  "id": 126,
-  "lokacija": "text/part0125.html · „Pitanja“ · odl. 24 <p> · znak 253"
  },
  {
   "severity": "upozorenje",
@@ -2155,25 +1424,8 @@
   "match": "\"",
   "context": "…a su vam prijatelji obično su sve samo to ne.⟦\"⟧ — Čak vam i neprijatelji mogu reći istinu, p…",
   "suggestion": "obriši",
-  "id": 127,
+  "id": 84,
   "lokacija": "text/part0125.html · „Pitanja“ · odl. 40 <body> · znak 1403"
- },
- {
-  "severity": "upozorenje",
-  "code": "truncated",
-  "message": "Pasus završava bez interpunkcije",
-  "file": "text/part0125.html",
-  "spine": 44,
-  "chapter": "Pitanja",
-  "par": 40,
-  "tag": "body",
-  "eid": "",
-  "offset": 1455,
-  "match": "ti Orso. „Odnosi između Krune i Otvoreno",
-  "context": "… vam i neprijatelji mogu reći istinu, primije⟦ti Orso. „Odnosi između Krune i Otvoreno⟧",
-  "suggestion": "",
-  "id": 128,
-  "lokacija": "text/part0125.html · „Pitanja“ · odl. 40 <body> · znak 1455"
  },
  {
   "severity": "upozorenje",
@@ -2189,13 +1441,13 @@
   "match": "„",
   "context": "…prijatelji mogu reći istinu, primijeti Orso. ⟦„⟧Odnosi između Krune i Otvoreno",
   "suggestion": "",
-  "id": 129,
+  "id": 85,
   "lokacija": "text/part0125.html · „Pitanja“ · odl. 40 <body> · znak 1464"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 142 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 142 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0127.html",
   "spine": 46,
   "chapter": "The Trouble With Peace",
@@ -2206,30 +1458,13 @@
   "match": "Bacio je torbu na bogato tapaciranu stolicu, s koje je ona skliznula na pod, dok je razvaljivao škrinju dovoljno veliku da bi se Leo u njoj mogao ispružiti, mah",
   "context": "… Gdje je prokleti alkohol? — zagrmio je Jin. ⟦Bacio je torbu na bogato tapaciranu stolicu, s koje je ona skliznula na pod, dok je razvaljivao škrinju dovoljno veliku da bi se Leo u njoj mogao ispružiti, mah⟧nito prekapajući po njezinoj unutrašnjosti. —…",
   "suggestion": "",
-  "id": 130,
+  "id": 86,
   "lokacija": "text/part0127.html · „The Trouble With Peace“ · odl. 2 <body> · znak 54"
- },
- {
-  "severity": "upozorenje",
-  "code": "truncated",
-  "message": "Pasus završava bez interpunkcije",
-  "file": "text/part0127.html",
-  "spine": 46,
-  "chapter": "The Trouble With Peace",
-  "par": 2,
-  "tag": "body",
-  "eid": "",
-  "offset": 1453,
-  "match": "ke vatre nego za blagovaonskim stolom. S",
-  "context": "…ma nego srebrnim priborom, sjedeći oko logors⟦ke vatre nego za blagovaonskim stolom. S⟧",
-  "suggestion": "",
-  "id": 131,
-  "lokacija": "text/part0127.html · „The Trouble With Peace“ · odl. 2 <body> · znak 1453"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 89 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 89 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0128.html",
   "spine": 47,
   "chapter": "Odrasla — Moj stariji brate…",
@@ -2240,7 +1475,7 @@
   "match": "Uostalom, ako je iko na svijetu mogao parirati njegovoj majci po držanju, bila je to njezina najstarija prijateljica, i mnogo više od prijateljice, grofica Shal",
   "context": "…egantno kao onog dana kad je napustila Aduu. ⟦Uostalom, ako je iko na svijetu mogao parirati njegovoj majci po držanju, bila je to njezina najstarija prijateljica, i mnogo više od prijateljice, grofica Shal⟧ere. — Orso, prekrasno stvorenje! — uzviknula…",
   "suggestion": "",
-  "id": 132,
+  "id": 87,
   "lokacija": "text/part0128.html · „Odrasla — Moj stariji brate…“ · odl. 46 <body> · znak 416"
  },
  {
@@ -2257,30 +1492,13 @@
   "match": "ju, bio je to vihor strasti. — Pa — reče",
   "context": "…jučnih kostiju pri njezinu ubrzanu dahu. Za n⟦ju, bio je to vihor strasti. — Pa — reče⟧",
   "suggestion": "",
-  "id": 133,
+  "id": 88,
   "lokacija": "text/part0128.html · „Odrasla — Moj stariji brate…“ · odl. 46 <body> · znak 1471"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 3017 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
-  "file": "text/part0129.html",
-  "spine": 48,
-  "chapter": "Svačiji ukus, bez osude",
-  "par": 9,
-  "tag": "body",
-  "eid": "",
-  "offset": 0,
-  "match": "— Ovdje u Cardottiju udovoljavamo svim ukusima i ne donosimo nikakve sudove — Domaćica ih je povela pokraj poluotvorenih vrata, iza kojih su u svjetlosti svjeti",
-  "context": "⟦— Ovdje u Cardottiju udovoljavamo svim ukusima i ne donosimo nikakve sudove — Domaćica ih je povela pokraj poluotvorenih vrata, iza kojih su u svjetlosti svjeti⟧ljke vrebale tri figure. Bile su odjevene, il…",
-  "suggestion": "",
-  "id": 134,
-  "lokacija": "text/part0129.html · „Svačiji ukus, bez osude“ · odl. 9 <body> · znak 0"
- },
- {
-  "severity": "upozorenje",
-  "code": "predug_pasus",
-  "message": "Pasus ima 7546 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 7546 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0129.html",
   "spine": 48,
   "chapter": "Svačiji ukus, bez osude",
@@ -2291,25 +1509,8 @@
   "match": "Leo zastane. Svi su se složili ponuditi Vestport, ako bude trebalo. — Praznovjerna sirotinjska četvrt, rekla je Savin. Bijedna cijena za Englend, Starikland i M",
   "context": "⟦Leo zastane. Svi su se složili ponuditi Vestport, ako bude trebalo. — Praznovjerna sirotinjska četvrt, rekla je Savin. Bijedna cijena za Englend, Starikland i M⟧iderland. Tada je nevoljko pristao, no sada g…",
   "suggestion": "",
-  "id": 135,
+  "id": 89,
   "lokacija": "text/part0129.html · „Svačiji ukus, bez osude“ · odl. 73 <body> · znak 0"
- },
- {
-  "severity": "info",
-  "code": "rečenica_duga",
-  "message": "Rečenica ima 87 riječi (granica za ovu knjigu: 66)",
-  "file": "text/part0129.html",
-  "spine": 48,
-  "chapter": "Svačiji ukus, bez osude",
-  "par": 73,
-  "tag": "body",
-  "eid": "",
-  "offset": 1159,
-  "match": "Mogao je pobijediti nekoga poput prokletog Orsa i bez pomoći nekakvog cerekavog styrijskog perverznjaka. — Šteta — promrmljao je Džapo, premda je bilo teško raz",
-  "context": "…Staura Najtfola. Pobijedio je Black Kaldera. ⟦Mogao je pobijediti nekoga poput prokletog Orsa i bez pomoći nekakvog cerekavog styrijskog perverznjaka. — Šteta — promrmljao je Džapo, premda je bilo teško raz⟧aznati govori li o ponudi ili o onome tko je …",
-  "suggestion": "",
-  "id": 136,
-  "lokacija": "text/part0129.html · „Svačiji ukus, bez osude“ · odl. 73 <body> · znak 1159"
  },
  {
   "severity": "info",
@@ -2325,7 +1526,7 @@
   "match": "styrijskog",
   "context": "…okletog Orsa i bez pomoći nekakvog cerekavog ⟦styrijskog⟧ perverznjaka. — Šteta — promrmljao je Džapo,…",
   "suggestion": "",
-  "id": 137,
+  "id": 90,
   "lokacija": "text/part0129.html · „Svačiji ukus, bez osude“ · odl. 73 <body> · znak 1239"
  },
  {
@@ -2342,7 +1543,7 @@
   "match": "Cardottijevom",
   "context": "…Džapo se namrštio gledajući masku. — To se u ⟦Cardottijevom⟧ baš i ne radi.\" — Mi smo kraljevi. Ono što m…",
   "suggestion": "Cardottijevima",
-  "id": 138,
+  "id": 91,
   "lokacija": "text/part0129.html · „Svačiji ukus, bez osude“ · odl. 73 <body> · znak 1930"
  },
  {
@@ -2359,7 +1560,7 @@
   "match": "Ona je",
   "context": "… Sudbine…\"\"Moja bi se majka složila s tobom. ⟦Ona je⟧ vojnik.\" Džapo je zabacio glavu; u tom pokre…",
   "suggestion": "",
-  "id": 139,
+  "id": 92,
   "lokacija": "text/part0129.html · „Svačiji ukus, bez osude“ · odl. 73 <body> · znak 3065"
  },
  {
@@ -2376,13 +1577,13 @@
   "match": "\"",
   "context": "…jezinu vratu. Potom je ugledala Lea, siknula ⟦\"⟧Ne bi smio biti ovdje!\" i zalupila vratima pr…",
   "suggestion": "„…“",
-  "id": 140,
+  "id": 93,
   "lokacija": "text/part0129.html · „Svačiji ukus, bez osude“ · odl. 73 <body> · znak 5189"
  },
  {
   "severity": "upozorenje",
   "code": "predug_pasus",
-  "message": "Pasus ima 10188 znakova (granica za ovu knjigu: 2266) – spojeni blokovi?",
+  "message": "Pasus ima 10188 znakova (granica za ovu knjigu: 3022) – spojeni blokovi?",
   "file": "text/part0130.html",
   "spine": 49,
   "chapter": "The Trouble With Peace",
@@ -2393,7 +1594,7 @@
   "match": "Nikakav filozof Skinuli su mu kapuljaču. Brod je ostao škiljiti na jedno oko, uzaludno pokušavajući izoštriti mrlje oko sebe koje je probadala oštra svjetlost s",
   "context": "⟦Nikakav filozof Skinuli su mu kapuljaču. Brod je ostao škiljiti na jedno oko, uzaludno pokušavajući izoštriti mrlje oko sebe koje je probadala oštra svjetlost s⟧vjetiljke. — Gle, gle, gle. Gunar Brod, u moj…",
   "suggestion": "",
-  "id": 141,
+  "id": 94,
   "lokacija": "text/part0130.html · „The Trouble With Peace“ · odl. 2 <body> · znak 0"
  },
  {
@@ -2410,13 +1611,13 @@
   "match": "Broad",
   "context": "⟦Broad⟧ je klečao ondje, u blatu, u tami, sa sjekiro…",
   "suggestion": "Brod",
-  "id": 142,
+  "id": 95,
   "lokacija": "text/part0133.html · „Neki ljudi si jednostavno ne mogu pomoći“ · odl. 2 <p> · znak 0"
  },
  {
   "severity": "info",
   "code": "rečenica_duga",
-  "message": "Rečenica ima 101 riječi (granica za ovu knjigu: 66)",
+  "message": "Rečenica ima 101 riječi (granica za ovu knjigu: 88)",
   "file": "text/part0136.html",
   "spine": 55,
   "chapter": "Oluje",
@@ -2427,7 +1628,7 @@
   "match": "Kao da joj je htio nanijeti uvredu uvrh uvreda, njezin se muž nasmiješio usprkos nevremenu, dok mu se kiša slijevala niz lice, sretniji nego ikad kad bi naišao ",
   "context": "⟦Kao da joj je htio nanijeti uvredu uvrh uvreda, njezin se muž nasmiješio usprkos nevremenu, dok mu se kiša slijevala niz lice, sretniji nego ikad kad bi naišao ⟧na kakvu prostu fizičku prepreku s kojom se m…",
   "suggestion": "",
-  "id": 143,
+  "id": 96,
   "lokacija": "text/part0136.html · „Oluje“ · odl. 8 <p> · znak 0"
  },
  {
@@ -2444,7 +1645,7 @@
   "match": "\"",
   "context": "…uzdignute brade. Bila je Viktarin, s velikim ⟦\"⟧dan\" u imenu i ravnodušnim prijezirom prema s…",
   "suggestion": "„…“",
-  "id": 144,
+  "id": 97,
   "lokacija": "text/part0137.html · „Lažljivica, lažljivica“ · odl. 11 <p> · znak 159"
  },
  {
@@ -2461,7 +1662,7 @@
   "match": "Brokovoj",
   "context": "— Dvadeset tisuća, prema ⟦Brokovoj⟧ vlastitoj procjeni, odvrati Vik.",
   "suggestion": "Brodovoj",
-  "id": 145,
+  "id": 98,
   "lokacija": "text/part0139.html · „Plodno tlo“ · odl. 59 <p> · znak 25"
  },
  {
@@ -2478,7 +1679,7 @@
   "match": "Rikke",
   "context": "⟦Rikke⟧ je čučala u vlažnoj šumi, vrteći prstima sta…",
   "suggestion": "Rike",
-  "id": 146,
+  "id": 99,
   "lokacija": "text/part0141.html · „Uzvišenje“ · odl. 2 <p> · znak 0"
  },
  {
@@ -2495,7 +1696,7 @@
   "match": "Brdu",
   "context": "…og onoga što je taj čovjek učinio na Crvenom ⟦Brdu⟧. I zbog pobjede nad Staurom Sumrakom u Krugu…",
   "suggestion": "Brodu",
-  "id": 147,
+  "id": 100,
   "lokacija": "text/part0145.html · „Mali ljudi“ · odl. 82 <p> · znak 243"
  },
  {
@@ -2512,7 +1713,7 @@
   "match": "Northernovci",
   "context": "…irenih ruku. U liniji se otvorila praznina i ⟦Northernovci⟧ su nahrupili kroz nju.",
   "suggestion": "Northernovaca",
-  "id": 148,
+  "id": 101,
   "lokacija": "text/part0145.html · „Mali ljudi“ · odl. 193 <p> · znak 147"
  },
  {
@@ -2529,25 +1730,8 @@
   "match": "Kraljevoj",
   "context": "…zastave na vrhu tornja sa satom. No ni traga ⟦Kraljevoj⟧ gardi, a kamoli Vitezovima tjelohraniteljima…",
   "suggestion": "Kraljevskoj",
-  "id": 149,
+  "id": 102,
   "lokacija": "text/part0147.html · „Junaštva“ · odl. 36 <p> · znak 204"
- },
- {
-  "severity": "info",
-  "code": "strano_slovo_riječ",
-  "message": "Riječ sa stranim grafemima „styrijskih“ – moguća neprevedena engleska riječ",
-  "file": "text/part0148.html",
-  "spine": 67,
-  "chapter": "Samo razgovor",
-  "par": 16,
-  "tag": "p",
-  "eid": "",
-  "offset": 357,
-  "match": "styrijskih",
-  "context": "…nekih carleonskih kovanica, i nešto Unije, i ⟦styrijskih⟧ vaga, i… što je ovo? Podigla je veliku kovan…",
-  "suggestion": "",
-  "id": 150,
-  "lokacija": "text/part0148.html · „Samo razgovor“ · odl. 16 <p> · znak 357"
  },
  {
   "severity": "upozorenje",
@@ -2563,7 +1747,7 @@
   "match": "\"",
   "context": "…imenom\" – a on je to, zaboga, trebao znati – ⟦\"⟧jest u tome što narod uvijek čuva svoju najbo…",
   "suggestion": "„…“",
-  "id": 151,
+  "id": 103,
   "lokacija": "text/part0148.html · „Samo razgovor“ · odl. 67 <p> · znak 146"
  },
  {
@@ -2580,7 +1764,7 @@
   "match": "Ti si",
   "context": "… je bio poticatelj! On je bio glavni krivac! ⟦Ti si⟧ nas dovio do ovoga, prokleti luđače!",
   "suggestion": "",
-  "id": 152,
+  "id": 104,
   "lokacija": "text/part0152.html · „Fusnota u historiji“ · odl. 32 <p> · znak 171"
  },
  {
@@ -2597,7 +1781,7 @@
   "match": "\"",
   "context": "Vrhovni lektor Sand dan Glokta — ⟦\"⟧Stari Štapovi, najstrašniji čovjek u Uniji, p…",
   "suggestion": "„…“",
-  "id": 153,
+  "id": 105,
   "lokacija": "text/part0156.html · „Veliki ljudi“ · odl. 8 <p> · znak 33"
  },
  {
@@ -2614,7 +1798,7 @@
   "match": "\"",
   "context": "Gunar ⟦\"⟧Bik\" Brod — bivši stubar koji se bori s nasil…",
   "suggestion": "„…“",
-  "id": 154,
+  "id": 106,
   "lokacija": "text/part0157.html · „U krugu Savin dan Glokta“ · odl. 9 <p> · znak 6"
  },
  {
@@ -2631,7 +1815,7 @@
   "match": "\"",
   "context": "…lonostima, nekoć Rušitelj, a sada zadužen za ⟦\"⟧radne odnose\" kod Savin.",
   "suggestion": "„…“",
-  "id": 155,
+  "id": 107,
   "lokacija": "text/part0157.html · „U krugu Savin dan Glokta“ · odl. 9 <p> · znak 103"
  },
  {
@@ -2648,7 +1832,7 @@
   "match": "\"",
   "context": "Honrig Kurnsbik — ⟦\"⟧Veliki Strojar, slavni izumitelj i industrija…",
   "suggestion": "„…“",
-  "id": 156,
+  "id": 108,
   "lokacija": "text/part0157.html · „U krugu Savin dan Glokta“ · odl. 14 <p> · znak 18"
  },
  {
@@ -2665,25 +1849,8 @@
   "match": "\"",
   "context": "Velika vojvotkinja Monzcarro Murkato — ⟦\"⟧Zmija iz Talinsa, majka kralja Džapoa, strašn…",
   "suggestion": "„…“",
-  "id": 157,
+  "id": 109,
   "lokacija": "text/part0158.html · „U Vestportu i Sipaniju, gradovima Štirije“ · odl. 5 <p> · znak 39"
- },
- {
-  "severity": "info",
-  "code": "strano_slovo_riječ",
-  "message": "Riječ sa stranim grafemima „westportskoj“ – moguća neprevedena engleska riječ",
-  "file": "text/part0158.html",
-  "spine": 76,
-  "chapter": "U Vestportu i Sipaniju, gradovima Štirije",
-  "par": 14,
-  "tag": "p",
-  "eid": "",
-  "offset": 47,
-  "match": "westportskoj",
-  "context": "…jep Mozolia — trgovac tkaninama, utjecajan u ⟦westportskoj⟧ politici.",
-  "suggestion": "",
-  "id": 158,
-  "lokacija": "text/part0158.html · „U Vestportu i Sipaniju, gradovima Štirije“ · odl. 14 <p> · znak 47"
  },
  {
   "severity": "upozorenje",
@@ -2699,7 +1866,7 @@
   "match": "Stour",
   "context": "⟦Stour⟧ Najtfol — \"Veliki Vuk, kralj Sjevernjaka, pr…",
   "suggestion": "Staur",
-  "id": 159,
+  "id": 110,
   "lokacija": "text/part0160.html · „Na Sjeveru“ · odl. 2 <p> · znak 0"
  },
  {
@@ -2716,7 +1883,7 @@
   "match": "\"",
   "context": "Stour Najtfol — ⟦\"⟧Veliki Vuk, kralj Sjevernjaka, proslavljeni r…",
   "suggestion": "„…“",
-  "id": 160,
+  "id": 111,
   "lokacija": "text/part0160.html · „Na Sjeveru“ · odl. 2 <p> · znak 16"
  },
  {
@@ -2733,7 +1900,7 @@
   "match": "\"",
   "context": "Leo dan Brok — ⟦\"⟧Mladi Lav, lord namjesnik Englenda, ishitreni…",
   "suggestion": "„…“",
-  "id": 161,
+  "id": 112,
   "lokacija": "text/part0162.html · „Iz Englenda“ · odl. 2 <p> · znak 15"
  },
  {
@@ -2750,7 +1917,7 @@
   "match": "Bayaz",
   "context": "⟦Bayaz⟧ — Prvi od magova, legendarni čarobnjak, spas…",
   "suggestion": "Bajaz",
-  "id": 162,
+  "id": 113,
   "lokacija": "text/part0163.html · „Red magova“ · odl. 2 <p> · znak 0"
  }
 ]
