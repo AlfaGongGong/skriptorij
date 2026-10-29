@@ -898,7 +898,7 @@ class Auditor:
                                  f"Ime/pojam sa stranim grafemima „{w}“ – prilagodi hrvatskom pismu",
                                  m.start(), m.end())
             else:
-                if re.search(r"[wqxy]|th|sh|ck|ph|gh|ee|oo", lw):
+                if re.search(r"[wqxy]", lw):
                     self.add(seg, "info", "strano_slovo_riječ",
                              f"Riječ sa stranim grafemima „{w}“ – moguća neprevedena engleska riječ",
                              m.start(), m.end())
@@ -1245,11 +1245,8 @@ def finish(aud: Auditor) -> None:
     for _base, forms in name_forms.items():
         for i, (n1, c1) in enumerate(forms):
             for n2, c2 in forms[i + 1:]:
-                if n1 != n2 and n1[:-2] == n2[:-2] and n1[-2:] != n2[-2:]:
-                    seg, s, e = aud.name_first[n1]
-                    aud.add(seg, "info", "imena_padez",
-                            f"„{n1}“ ({c1}×) vs „{n2}“ ({c2}×) — ista osnova, različit padež (OK ako je namjerno)",
-                            s, e, n2)
+                # Padeži istog imena su legitimni — preskočeno (2026-10-29)
+                pass
 
     # nepoznate riječi
     for w, c in aud.unknown_words.items():
