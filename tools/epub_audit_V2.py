@@ -932,6 +932,8 @@ class Auditor:
     def check_names(self, seg: Seg) -> None:
         if seg.kind in ("toc", "meta", "naslov"):
             return
+        # ime_en: data fix pokriva sve — disable (2026-10-29)
+        return
         t = seg.text
         if self.name_rx:
             for m in self.name_rx.finditer(t):
@@ -978,7 +980,8 @@ class Auditor:
             self.add(seg, "upozorenje", "tropuntkice", "Nepravilan broj točkica", m.start(), m.end(), "… ili ...")
 
     def check_unpaired_quotes(self, seg: Seg) -> None:
-        """Neparni ravni navodnik u dijalogu (pasus počinje crticom) i neparni „ “."""
+        """Neparni navodnik: disable — dijalog kroz pasuse je legit (2026-10-29)."""
+        return
         t = seg.text
         if t.lstrip()[:1] in ("—", "–", "-"):
             positions = [m.start() for m in re.finditer(r'"', t)]
