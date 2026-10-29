@@ -1225,6 +1225,9 @@ def finish(aud: Auditor) -> None:
                 continue
             if a.startswith(b) or b.startswith(a):
                 continue
+            # A3: preskoči ako je razlika samo u zadnja 2 znaka (padež)
+            if a[:-2] == b[:-2] and a[-2:] != b[-2:]:
+                continue
             if difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio() >= 0.86:
                 seen.add((a, b))
                 rare = b if aud.name_cnt[b] <= aud.name_cnt[a] else a
