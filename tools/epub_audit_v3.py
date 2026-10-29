@@ -71,7 +71,7 @@ DEFAULT_THRESHOLDS = {
     "percentile_factor": 2.0,
     "pron_per_par": 3,              # rečenica koje počinju zamjenicom + glagolom u jednom pasusu
     "min_style_samples": 20,        # min. uzoraka da bi se proglasio "dominantni stil"
-    "minority_ratio": 0.5,          # stil s udjelom manjim od ovoga je "manjinski"
+    "minority_ratio": 0.2,          # stil s udjelom manjim od ovoga je "manjinski"
     "learn_names_min_count": 1,     # min. pojavljivanja imena u izvorniku
     "learn_names_lower_ratio": 0.1, # dopušten udio malih slova (May/may → nije ime)
 }
