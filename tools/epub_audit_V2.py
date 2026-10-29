@@ -930,7 +930,7 @@ class Auditor:
 
     # ── imena ───────────────────────────────────────────
     def check_names(self, seg: Seg) -> None:
-        if seg.kind == "toc":
+        if seg.kind in ("toc", "meta", "naslov"):
             return
         t = seg.text
         if self.name_rx:
@@ -988,7 +988,8 @@ class Auditor:
                          "Neparni \" u dijalogu (vjerojatno treba obrisati)", pos, pos + 1, "obriši")
         opens = [m.start() for m in re.finditer("„", t)]
         closes = [m.start() for m in re.finditer("[“”]", t)]
-        if len(opens) != len(closes) and (opens or closes):
+        # Dijalog kroz više pasusa: razlika 1 je legitimna (2026-10-29)
+        if abs(len(opens) - len(closes)) > 1:
             pos = (opens or closes)[-1]
             self.add(seg, "upozorenje", "neparni_navodnik",
                      f"Neparni „“ navodnici (otvarajućih {len(opens)}, zatvarajućih {len(closes)})",
