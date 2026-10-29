@@ -1228,6 +1228,10 @@ def finish(aud: Auditor) -> None:
             # A3: preskoči ako je razlika samo u zadnja 2 znaka (padež)
             if a[:-2] == b[:-2] and a[-2:] != b[-2:]:
                 continue
+            # prefix check (Brod/Brodova/Džurand/Džurandova)
+            mn = min(len(a), len(b))
+            if mn >= 4 and a[:mn-1].lower() == b[:mn-1].lower():
+                continue
             if difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio() >= 0.86:
                 seen.add((a, b))
                 rare = b if aud.name_cnt[b] <= aud.name_cnt[a] else a
