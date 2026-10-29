@@ -1160,6 +1160,8 @@ class Auditor:
             w = m.group()
             lw = w.lower().replace("’", "'")
             if lw in EN_STOP or lw in EN_STRUCT:
+                if w[0].isupper() and not w.isupper() and self.known_name(w):
+                    continue
                 en_hits.append(m)
                 continue
             if not full:
