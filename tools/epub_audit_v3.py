@@ -150,6 +150,17 @@ EN_STOP = {
     "that's", "what's", "who's", "there's", "here's",
 }
 
+# Safety net: kratke HR riječi koje NE smiju biti u EN_STOP.
+# Sprečava lažni "neprevedeno_dio" ako se HR reč poklopi s EN.
+HR_COMMON_WORDS = {
+    "on", "ona", "ono", "oni", "one",
+    "do", "no", "po", "od", "za", "iz", "na", "sa", "se", "su",
+    "da", "je", "bi", "li", "ne", "to", "ga", "mu", "joj", "im", "ih",
+    "me", "te", "ma", "pa", "sto", "kao", "kad", "jer", "ako", "ali",
+    "ili", "sve", "smo", "ste", "i", "a", "u", "o", "s", "k",
+}
+EN_STOP -= HR_COMMON_WORDS
+
 EN_STRUCT = {
     "chapter", "prologue", "epilogue", "contents", "introduction",
     "acknowledgements", "acknowledgments", "foreword", "preface",
@@ -213,6 +224,101 @@ CODE_LABEL = {
     "izvornik_višak": "Odlomak postoji u prijevodu, ne u izvorniku",
     "nepoznata_riječ": "Riječ nije u rječniku",
 }
+
+
+# ═══════════════════════════════════════════════════════════════
+# DETERMINISTIC FIXES + BASELINE
+# ═══════════════════════════════════════════════════════════════
+
+CYR_TO_LAT = {
+    "а":"a","б":"b","в":"v","г":"g","д":"d","ђ":"đ","е":"e","ж":"ž","з":"z",
+    "и":"i","ј":"j","к":"k","л":"l","љ":"lj","м":"m","н":"n","њ":"nj","о":"o",
+    "п":"p","р":"r","с":"s","т":"t","ћ":"ć","у":"u","ф":"f","х":"h","ц":"c",
+    "ч":"č","џ":"dž","ш":"š",
+    "А":"A","Б":"B","В":"V","Г":"G","Д":"D","Ђ":"Đ","Е":"E","Ж":"Ž","З":"Z",
+    "И":"I","Ј":"J","К":"K","Л":"L","Љ":"Lj","М":"M","Н":"N","Њ":"Nj","О":"O",
+    "П":"P","Р":"R","С":"S","Т":"T","Ћ":"Ć","У":"U","Ф":"F","Х":"H","Ц":"C",
+    "Ч":"Č","Џ":"Dž","Ш":"Š",
+}
+
+
+def _finding_key(d):
+    return (d["code"], d["file"], d["par"], (d.get("match") or "")[:40])
+
+
+def render_fixes_csv(data):
+    """CSV: STARO/NOVO za determinističke, 'ručno' za ostalo."""
+    buf = io.StringIO(newline="")
+    w = csv.writer(buf, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+    w.writerow(["id","ozbiljnost","vrsta","datoteka","poglavlje","odlomak",
+                "znak","staro","novo","napomena"])
+    n_det = n_man = 0
+    for d in data:
+        match = d.get("match") or ""
+        sug = d.get("suggestion") or ""
+        code = d["code"]
+        novo = None
+        if code == "pismo" and match:
+            novo = "".join(CYR_TO_LAT.get(c, c) for c in match)
+            if novo == match: novo = None
+        elif code == "dvostruko_escapano" and match.startswith("&") and match.endswith(";"):
+            novo = html_mod.unescape(match)
+        elif code == "ponovljena_riječ" and match:
+            parts = match.split()
+            if len(parts) == 2 and parts[0].lower() == parts[1].lower():
+                novo = parts[0]
+        elif code == "ai_artefakt" and match.startswith("**") and match.endswith("**") and len(match) > 4:
+            novo = match[2:-2]
+        elif code == "tropuntkice" and match and match not in ("...", "…"):
+            novo = "…"
+        elif sug and sug != match and code in (
+            "ekavica","dijalekt","purizam","kalk","ime_en","mjesto_en",
+            "crtica","interpunkcija","navodnici","veliko_malo",
+        ):
+            novo = sug
+        if novo:
+            w.writerow([d["id"], d["severity"], code, d["file"],
+                        d["chapter"], d["par"], d["offset"], match, novo, ""])
+            n_det += 1
+        else:
+            w.writerow([d["id"], d["severity"], code, d["file"],
+                        d["chapter"], d["par"], d["offset"], match, "", "ručno"])
+            n_man += 1
+    print(f"[emit-fixes] determinističkih: {n_det}, ručnih: {n_man}")
+    return buf.getvalue()
+
+
+def save_baseline(path, data, by_sev):
+    """Baseline: severity + set ključeva za diff."""
+    baseline = {
+        "alat": f"epub_audit {VERSION}",
+        "po_ozbiljnosti": dict(sorted(by_sev.items())),
+        "kljucevi": sorted(set(_finding_key(d) for d in data)),
+    }
+    write_if_changed(path, json.dumps(baseline, ensure_ascii=False, indent=1, sort_keys=True))
+
+
+def diff_baseline(path, data, by_sev):
+    """Uporedi trenutni sa baseline. Vraća dict ili None."""
+    if not os.path.exists(path):
+        return None
+    try:
+        baseline = json.loads(open(path, encoding="utf-8").read())
+    except (OSError, json.JSONDecodeError):
+        return None
+    old_keys = set(tuple(k) for k in baseline.get("kljucevi", []))
+    new_keys = set(_finding_key(d) for d in data)
+    old_sev = baseline.get("po_ozbiljnosti", {})
+    sev_diff = {k: by_sev.get(k, 0) - old_sev.get(k, 0)
+                for k in set(old_sev) | set(by_sev)}
+    return {
+        "resolved": sorted(old_keys - new_keys),
+        "added": sorted(new_keys - old_keys),
+        "sev_old": old_sev,
+        "sev_new": dict(sorted(by_sev.items())),
+        "sev_diff": sev_diff,
+    }
+
 
 EKAV_PATTERNS = [
     (r"\bvreme\b", "vrijeme"),
@@ -1769,6 +1875,12 @@ def main(argv: Optional[list[str]] = None) -> None:
     ap.add_argument("--max-words", type=int, help="donja granica duljine rečenice (riječi)")
     ap.add_argument("--max-paragraph", type=int, help="donja granica duljine pasusa (znakovi)")
     ap.add_argument("--format", default="csv,json,md,html", help="csv,json,jsonl,md,html")
+    ap.add_argument("--emit-fixes", action="store_true",
+                    help="emituj _fixes.csv sa STARO/NOVO")
+    ap.add_argument("--save-baseline", action="store_true",
+                    help="sačuvaj baseline (_audit_baseline.json)")
+    ap.add_argument("--diff-baseline", action="store_true",
+                    help="uporedi sa baseline")
     ap.add_argument("--skip-fantasy", action="store_true",
                     help="ne prijavljuj ime_strano_pismo")
     ap.add_argument("--version", action="version", version=f"epub_audit {VERSION}")
@@ -1940,6 +2052,38 @@ def main(argv: Optional[list[str]] = None) -> None:
         emit("_audit.md", render_md(data, base, aud, by_sev, prof["name"]))
     if "html" in formats:
         emit("_audit.html", render_html(data, base, aud))
+
+    if args.emit_fixes:
+        fixes_csv = render_fixes_csv(data)
+        path = base_path + "_fixes.csv"
+        digest, wrote = write_if_changed(path, fixes_csv, bom=True)
+        outputs[os.path.basename(path)] = digest
+        status.append((path, wrote))
+
+    if args.save_baseline:
+        save_baseline(base_path + "_audit_baseline.json", data, by_sev)
+        print(f"[audit] baseline: {base_path}_audit_baseline.json")
+
+    if args.diff_baseline:
+        diff = diff_baseline(base_path + "_audit_baseline.json", data, by_sev)
+        if diff is None:
+            print("[audit] --diff-baseline: nema baseline (koristi --save-baseline)")
+        else:
+            print("\n[audit] DIFF vs baseline:")
+            for k, v in sorted(diff["sev_diff"].items()):
+                if v != 0:
+                    arrow = "↑" if v > 0 else "↓"
+                    print(f"  {arrow} {k}: {diff['sev_old'].get(k,0)} → {diff['sev_new'].get(k,0)} ({v:+d})")
+            if diff["added"]:
+                print(f"\n  NOVI ({len(diff['added'])}):")
+                for k in diff["added"][:20]:
+                    print(f"    + {k[0]:20s} | {k[1]} §{k[2]} | {k[3]}")
+            if diff["resolved"]:
+                print(f"\n  REŠENI ({len(diff['resolved'])}):")
+                for k in diff["resolved"][:20]:
+                    print(f"    - {k[0]:20s} | {k[1]} §{k[2]} | {k[3]}")
+            if diff["sev_diff"].get("greška", 0) > 0:
+                print("\n  ⚠ GREŠKE PORASLE — razmisli o rollback-u")
 
     manifest = {
         "alat": {"naziv": "epub_audit", "verzija": VERSION},
