@@ -1,19 +1,19 @@
-# HANDOFF — 2026-10-30 14:10
+# HANDOFF — 2026-10-30 14:19
 
 ## Stanje
 - Faza: 1
-- Zadatak: T2
+- Zadatak: S4b
 - Status: commit (ZAVRŠENO)
-- Git HEAD: 94d68f9
+- Git HEAD: afbf2b5
 
 ## Sledeći korak (tačno)
-S4b: Layer A retry (Claude acc 2, kad se resetuje 17:50)
+Faza 1 gotova. Sledeće: T4 fix (retro formatiranje) ili T6 (A/B KOREKTOR) — odluka korisnika.
 
 ## Blokirano
 nema
 
 ## Otvorena pitanja
-Nema
+Layer A u V2, ali V1 fallback nema — ako V2 padne, V1 može upisati isti problem. Sledeći korak.
 
 ## Log poslednje sesije
-.logs/t2_fix2_141045.log
+.logs/s4b_apply_141943.log
