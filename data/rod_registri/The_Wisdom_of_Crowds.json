@@ -1,7 +1,7 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 53,
+    "clue_m": 54,
     "clue_z": 0
   },
   "Orso": {
@@ -66,7 +66,7 @@
   },
   "Zatim": {
     "rod": "M",
-    "clue_m": 7,
+    "clue_m": 8,
     "clue_z": 3
   },
   "Visoko": {
@@ -166,7 +166,7 @@
   },
   "Tada": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 3
   },
   "Broad": {
@@ -1340,6 +1340,16 @@
     "clue_z": 1
   },
   "Muškarac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Brok": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "prokleti": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
