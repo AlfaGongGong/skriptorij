@@ -1,7 +1,9 @@
+import atexit
 import contextlib
 import json
 import logging
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -181,6 +183,20 @@ def _resolve_book() -> str:
     return book
 
 
+def _termux_wake_lock():
+    if shutil.which("termux-wake-lock"):
+        subprocess.run(["termux-wake-lock"], check=False)
+    else:
+        print(f"{_YELLOW}[WARN]{_RESET} termux-api nije instaliran, wake-lock preskočen")
+
+
+def _termux_wake_unlock():
+    if shutil.which("termux-wake-unlock"):
+        subprocess.run(["termux-wake-unlock"], check=False)
+    else:
+        print(f"{_YELLOW}[WARN]{_RESET} termux-api nije instaliran, wake-unlock preskočen")
+
+
 if __name__ == "__main__":
     import os as _os
     _host = _os.environ.get("BOOKLYFI_HOST", "127.0.0.1")
@@ -229,6 +245,9 @@ if __name__ == "__main__":
         name="flask-audit",
     ).start()
 
+    _termux_wake_lock()
+    atexit.register(_termux_wake_unlock)
+
     try:
         app.run(
             host=_host, port=PORT, debug=False, use_reloader=False, threaded=True
@@ -242,4 +261,5 @@ if __name__ == "__main__":
         sys.stdout.flush()
         sys.exit(1)
     finally:
+        _termux_wake_unlock()
         _remove_pid_file()
