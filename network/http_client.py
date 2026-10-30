@@ -904,9 +904,30 @@ async def _call_gemini_with_full_rotation(
                         )
                         return gemma_content, gemma_engine or "GEMMA"
 
-                    # FALLBACK 3: Mistral (nezavisan od Google safety filtera)
+                    # FALLBACK 3: Groq (qwen — labaviji od Mistrala za književno nasilje)
                     self.log(
-                        "[GEMINI→GEMMA] Nije uspio — prelazim na Mistral",
+                        "[GEMINI→GEMMA] Nije uspio — prelazim na Groq",
+                        "warning",
+                    )
+                    groq_res, groq_engine = await _call_single_provider(
+                        self,
+                        "GROQ",
+                        "qwen/qwen3.8-27b",
+                        sys_content,
+                        user_prompt,
+                        opt_temp,
+                        max_tokens,
+                    )
+                    if groq_res:
+                        self.log(
+                            "[GROQ] Uspjeh — vraćam rezultat",
+                            "warning",
+                        )
+                        return groq_res, groq_engine or "GROQ"
+
+                    # FALLBACK 4: Mistral (zadnja linija odbrane)
+                    self.log(
+                        "[GEMINI→GEMMA→GROQ] Nije uspio — prelazim na Mistral",
                         "warning",
                     )
                     mistral_res, mistral_engine = await _call_single_provider(
@@ -927,7 +948,7 @@ async def _call_gemini_with_full_rotation(
 
                     # Svi fallback-ovi pali
                     self.log(
-                        "[GEMINI] Svi fallback-ovi pali (kontekst, Gemma, Mistral) — odustajem",
+                        "[GEMINI] Svi fallback-ovi pali (kontekst, Gemma, Groq, Mistral) — odustajem",
                         "error",
                     )
                     return None, None
