@@ -1,17 +1,17 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 55,
+    "clue_m": 56,
     "clue_z": 0
   },
   "Orso": {
     "rod": "M",
-    "clue_m": 62,
+    "clue_m": 66,
     "clue_z": 0
   },
   "Leo": {
     "rod": "M",
-    "clue_m": 59,
+    "clue_m": 61,
     "clue_z": 0
   },
   "guverner": {
@@ -37,7 +37,7 @@
   "Zuri": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 14
+    "clue_z": 15
   },
   "Hoff": {
     "rod": "M",
@@ -137,7 +137,7 @@
   "Jedva": {
     "rod": "Ž",
     "clue_m": 12,
-    "clue_z": 10
+    "clue_z": 11
   },
   "Stalno": {
     "rod": "M",
@@ -191,7 +191,7 @@
   },
   "kancelar": {
     "rod": "M",
-    "clue_m": 15,
+    "clue_m": 16,
     "clue_z": 0
   },
   "Istina": {
@@ -201,7 +201,7 @@
   },
   "komornik": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 11,
     "clue_z": 0
   },
   "Ritam": {
@@ -277,7 +277,7 @@
   "Pravda": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Judge": {
     "rod": "Ž",
@@ -286,7 +286,7 @@
   },
   "Risinau": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 12,
     "clue_z": 0
   },
   "Hildi": {
@@ -312,7 +312,7 @@
   "Ljubav": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Leov": {
     "rod": null,
@@ -735,9 +735,9 @@
     "clue_z": 0
   },
   "Većina": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Smiler": {
     "rod": "M",
@@ -1302,7 +1302,7 @@
   "Savin": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 8
   },
   "Mrko": {
     "rod": null,
@@ -1311,7 +1311,7 @@
   },
   "Hof": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Valbek": {
@@ -1377,7 +1377,7 @@
   "Rike": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Staur": {
     "rod": null,
@@ -1400,6 +1400,11 @@
     "clue_z": 0
   },
   "Svorbrik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Kurnsbik": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
