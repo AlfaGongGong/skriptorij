@@ -1819,14 +1819,14 @@ window._currentReviewStem = null;
 async function sacuvajTrenutniChunk() {
     const stem = window._currentReviewStem;
     if (!stem) {
-        alert("Nema odabranog chunka");
+        showToast("Nema odabranog chunka", "warning");
         return;
     }
     const ta = document.getElementById("review-text");
     if (!ta) return;
     const newText = ta.value;
     if (!newText.trim()) {
-        alert("Tekst je prazan!");
+        showToast("Tekst je prazan!", "warning");
         return;
     }
     try {
@@ -1860,10 +1860,10 @@ async function sacuvajTrenutniChunk() {
                 } catch (_) {}
             }, 300);
         } else {
-            alert("Greška: " + (d.error || "Nepoznata"));
+            showToast("Greška: " + (d.error || "Nepoznata"), "error");
         }
     } catch (e) {
-        alert("Mrežna greška: " + e.message);
+        showToast("Mrežna greška: " + e.message, "error");
     }
 }
 window.sacuvajTrenutniChunk = sacuvajTrenutniChunk;
@@ -1871,7 +1871,7 @@ window.sacuvajTrenutniChunk = sacuvajTrenutniChunk;
 async function obrisiTrenutniChunk() {
     const stem = window._currentReviewStem;
     if (!stem) {
-        alert("Nema odabranog chunka");
+        showToast("Nema odabranog chunka", "warning");
         return;
     }
     if (!confirm(`Obrisati chunk "${stem}"? AI će ga ponovo obraditi.`)) return;
@@ -1889,7 +1889,7 @@ async function obrisiTrenutniChunk() {
             if (ta) ta.value = "";
         }
     } catch (e) {
-        alert("Mrežna greška: " + e.message);
+        showToast("Mrežna greška: " + e.message, "error");
     }
 }
 window.obrisiTrenutniChunk = obrisiTrenutniChunk;
@@ -1904,7 +1904,7 @@ async function sacuvajReviziju(stem) {
     }
     const newText = textarea.value;
     if (!newText.trim()) {
-        alert("Tekst je prazan!");
+        showToast("Tekst je prazan!", "warning");
         return;
     }
 
@@ -1926,10 +1926,10 @@ async function sacuvajReviziju(stem) {
                 scoreEl.classList.add("score-human");
             }
         } else {
-            alert("Greška: " + (d.error || "Nepoznata"));
+            showToast("Greška: " + (d.error || "Nepoznata"), "error");
         }
     } catch (e) {
-        alert("Mrežna greška: " + e.message);
+        showToast("Mrežna greška: " + e.message, "error");
     }
 }
 window.sacuvajReviziju = sacuvajReviziju;
@@ -1950,7 +1950,7 @@ async function obrisiReviziju(stem) {
             if (el) el.remove();
         }
     } catch (e) {
-        alert("Mrežna greška: " + e.message);
+        showToast("Mrežna greška: " + e.message, "error");
     }
 }
 window.obrisiReviziju = obrisiReviziju;
@@ -3780,7 +3780,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 body: JSON.stringify({provider: prov, key_prefix: prefix})
             });
             load();
-        } catch(e) { alert(e.message); }
+        } catch(e) { showToast(e.message, "error"); }
     };
 
     function tick() {
