@@ -2,15 +2,15 @@
 
 ## Stanje
 - Faza: 1
-- Zadatak: T4
+- Zadatak: Q5
 - Status: dijagnostika
-- Git HEAD: 5e86556
+- Git HEAD: 23565a1
 
 ## Sledeći korak (tačno)
-Claude: primeni T4 (retro _restore_inline_tags). Dijagnostika završena (bfdc100). Claude treba da uradi STARO/NOVO + primenu + test.
+Claude: primeni Q5 (ekavizmi.py cirilica + dupli pobede). Dijagnostika završena (abbf453).
 
 ## Blokirano
-Primena nije urađena — samo dijagnostika
+Primena nije urađena
 
 ## Otvorena pitanja
 Nema
