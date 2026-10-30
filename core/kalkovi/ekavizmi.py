@@ -103,7 +103,7 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bvoleti\b", "voljeti", "voleti→voljeti"),
     (r"\bgoreti\b", "gorjeti", "goreti→gorjeti"),
     (r"\btrpeti\b", "trpjeti", "trpeti→trpjeti"),
-    (r"\bbrineti\b", "brinutи", "brineti→brinuti"),
+    (r"\bbrineti\b", "brinuti", "brineti→brinuti"),
     (r"\bsazreti\b", "sazrijeti", "sazreti→sazrijeti"),
     # ══════════════════════════════════════════════════════════════
     # D) GLAGOLI — PREZENT (sva lica)
@@ -119,7 +119,6 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bbeži\b", "bježi", "beži→bježi"),
     (r"\bbežimo\b", "bježimo", "bežimo→bježimo"),
     (r"\bbežite\b", "bježite", "bežite→bježite"),
-    (r"\bbеže\b", "bježe", "beže→bježe"),
     (r"\bbeže\b", "bježe", "beže→bježe"),
     (r"\bpevam\b", "pjevam", "pevam→pjevam"),
     (r"\bpevaš\b", "pjevaš", "pevaš→pjevaš"),
@@ -139,7 +138,6 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bpobedi\b", "pobijedi", "pobedi→pobijedi (prezent)"),
     (r"\bpobedimo\b", "pobijedimo", "pobedimo→pobijedimo"),
     (r"\bpobedite\b", "pobijedite", "pobedite→pobijedite"),
-    (r"\bpobede\b", "pobijede", "pobede→pobijede"),
     # ══════════════════════════════════════════════════════════════
     # E) IMENICE — ČESTI EKAVIZMI
     # ══════════════════════════════════════════════════════════════
@@ -209,7 +207,7 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bpredeo\b", "predjel", "predeo→predjel"),
     (r"\bpredela\b", "predjela", "predela→predjela"),
     (r"\bpredelu\b", "predjelu", "predelu→predjelu"),
-    (r"\bpredelom\b", "prejelom", "predelom→prejelom"),
+    (r"\bpredelom\b", "predjelom", "predelom→predjelom"),
     (r"\bsever\b", "sjever", "sever→sjever"),
     (r"\bsevera\b", "sjevera", "severa→sjevera"),
     (r"\bseveru\b", "sjeveru", "severu→sjeveru"),
@@ -218,7 +216,6 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bpevačica\b", "pjevačica", "pevačica→pjevačica"),
     (r"\bpobednik\b", "pobjednik", "pobednik→pobjednik"),
     (r"\bpobednika\b", "pobjednika", "pobednika→pobjednika"),
-    (r"\bpobednici\b", "pobjednici", "pobednici→pobjednici"),
     (r"\bpobednici\b", "pobjednici", "pobednici→pobjednici"),
     (
         r"\bpobedničk\w+",
@@ -331,3 +328,18 @@ EKAVIZMI = [
     for (pat, rep, opis) in EKAVIZMI
     if "je isto" not in opis and not callable(rep)
 ]
+
+
+def _audit_nelatinicni():
+    """Provera da nema nelatinicnih znakova u EKAVIZMI listi."""
+    for i, entry in enumerate(EKAVIZMI, 1):
+        for field in entry:
+            if not isinstance(field, str):
+                continue
+            for ch in field:
+                if 0x0400 <= ord(ch) <= 0x04FF:  # ćirilica
+                    raise ValueError(f'EKAVIZMI[{i}] ima ćirilicu {ch!r} (U+{ord(ch):04X}): {field!r}')
+                if 0x0370 <= ord(ch) <= 0x03FF:  # grčki
+                    raise ValueError(f'EKAVIZMI[{i}] ima grčki {ch!r} (U+{ord(ch):04X}): {field!r}')
+
+_audit_nelatinicni()
