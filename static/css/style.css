@@ -3773,3 +3773,42 @@ a.fq-prov-name:hover { text-decoration: underline; }
 .key-card-btn.ok { border-color: var(--emerald); color: var(--emerald); }
 .key-card-btn.warn { border-color: var(--amber); color: var(--amber); }
 .key-card-btn.err { border-color: var(--rose); color: var(--rose); }
+
+/* ═══════════════════════════════════════════════════════════
+   Pre-flight modal (U1, 2026-10-30)
+   ═══════════════════════════════════════════════════════════ */
+.preflight-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--bd-soft);
+    font-size: 0.78rem;
+}
+
+.preflight-row:last-child {
+    border-bottom: none;
+}
+
+.preflight-row span {
+    color: var(--tx-3);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.preflight-row b {
+    color: var(--tx-1);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    text-align: right;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.preflight-row b.warn { color: var(--amber); }
+.preflight-row b.err { color: var(--rose); }
+.preflight-row b.ok { color: var(--emerald); }

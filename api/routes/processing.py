@@ -194,6 +194,60 @@ def get_status():
     return jsonify(SHARED_STATS)
 
 
+@bp.route("/api/preflight_info", methods=["GET"])
+def preflight_info():
+    """U1 — procena pre pokretanja: broj fajlova, blokova, aktivnih ključeva."""
+    book = request.args.get("book", "")
+    full_path = os.path.join(str(INPUT_DIR), book)
+    if not book or not os.path.exists(full_path):
+        return jsonify({"error": "Knjiga nije pronađena"}), 404
+
+    files = 0
+    blocks = 0
+    try:
+        import zipfile as _zf
+        from bs4 import BeautifulSoup as _BS
+        from core.chunking import chunk_html as _ch
+        with _zf.ZipFile(full_path) as z:
+            for n in z.namelist():
+                if not n.endswith((".html", ".xhtml")):
+                    continue
+                if "booklyfi_00" in n or "/nav" in n or "toc" in n.lower():
+                    continue
+                files += 1
+                try:
+                    html = z.read(n).decode("utf-8", "replace")
+                    soup = _BS(html, "html.parser")
+                    text = str(soup.body) if soup.body else str(soup)
+                    blocks += len(_ch(text, max_words=500))
+                except Exception:
+                    blocks += 1
+    except Exception as e:
+        logger.warning(f"preflight_info: {e}")
+
+    active_keys = 0
+    try:
+        from api.routes.processing import _fleet
+        fl = _fleet()
+        if fl:
+            active_keys = fl.get_total_active_keys()
+    except Exception:
+        try:
+            from api_fleet import FleetManager
+            from config.settings import CONFIG_PATH
+            fl = FleetManager(config_path=CONFIG_PATH)
+            active_keys = fl.get_total_active_keys() if hasattr(fl, "get_total_active_keys") else 0
+        except Exception:
+            pass
+
+    return jsonify({
+        "book": book,
+        "files": files,
+        "blocks": blocks,
+        "active_keys": active_keys,
+    })
+
+
 @bp.route("/api/start", methods=["POST"])
 def start_processing():
     """

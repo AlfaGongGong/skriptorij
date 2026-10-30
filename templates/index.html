@@ -33,6 +33,27 @@
         </div>
     </div>
 
+    <!-- ═══════════════════ PRE-FLIGHT MODAL (U1) ═══════════════════ -->
+    <div class="modal-overlay" id="preflight-modal" role="dialog" aria-modal="true">
+        <div class="modal modal-friendly">
+            <div class="modal-icon">🚀</div>
+            <div class="modal-title">Prije pokretanja</div>
+            <div class="modal-body" id="preflight-body">
+                <div class="preflight-row"><span>Knjiga</span><b id="preflight-book">—</b></div>
+                <div class="preflight-row"><span>Mod</span><b id="preflight-mode">—</b></div>
+                <div class="preflight-row"><span>Fajlova</span><b id="preflight-files">—</b></div>
+                <div class="preflight-row"><span>Blokova</span><b id="preflight-blocks">—</b></div>
+                <div class="preflight-row"><span>AI poziva (proc.)</span><b id="preflight-calls">—</b></div>
+                <div class="preflight-row"><span>Proc. vreme</span><b id="preflight-eta">—</b></div>
+                <div class="preflight-row"><span>Aktivni ključevi</span><b id="preflight-keys">—</b></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-sm" id="preflight-cancel">✕ Odustani</button>
+                <button class="btn btn-sm btn-primary" id="preflight-start">🚀 Pokreni</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══════════════════ CONFIRM MODAL (F) ═══════════════════ -->
     <div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true">
         <div class="modal modal-friendly">

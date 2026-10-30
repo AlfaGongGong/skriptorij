@@ -589,20 +589,71 @@ async function loadModels() {
 }
 
 // ═══════════════ POKRETANJE ═════════════════════════════
-async function startProcessing() {
-    const book = STATE.book;
-    const model = document.getElementById("model-select")?.value || STATE.model;
-    const mode = STATE.ttsMode ? "TTS" : "FUSION";
+function _fmtSec(s) {
+    if (!s || s < 0) return "—";
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (h > 0) return h + "h " + m + "m";
+    if (m > 0) return m + "m " + Math.floor(s % 60) + "s";
+    return Math.floor(s) + "s";
+}
 
-    if (!book) {
-        showToast("Odaberi ili učitaj knjigu!", "warning");
-        setWizardStep(1);
-        return;
-    }
-    if (!model) {
-        showToast("Odaberi model!", "warning");
-        return;
-    }
+async function _preflightAndStart(book, model, mode) {
+    // Otvori modal sa placeholder-ima
+    const modal = document.getElementById("preflight-modal");
+    if (!modal) { await _doStart(book, model, mode); return; }
+    document.getElementById("preflight-book").textContent = book;
+    document.getElementById("preflight-mode").textContent = mode;
+    ["files", "blocks", "calls", "eta", "keys"].forEach(k => {
+        const el = document.getElementById("preflight-" + k);
+        if (el) { el.textContent = "…"; el.className = ""; }
+    });
+    modal.classList.add("open");
+
+    // Fetch preflight info
+    try {
+        const r = await fetch("/api/preflight_info?book=" + encodeURIComponent(book));
+        if (r.ok) {
+            const info = await r.json();
+            const setB = (k, txt, cls) => {
+                const el = document.getElementById("preflight-" + k);
+                if (el) { el.textContent = txt; el.className = cls || ""; }
+            };
+            setB("files", info.files != null ? info.files : "—");
+            setB("blocks", info.blocks != null ? info.blocks : "—");
+            const calls = info.blocks ? Math.round(info.blocks * 5) : null;
+            setB("calls", calls != null ? "~" + calls : "—");
+            const eta = info.blocks ? Math.round(info.blocks * 2.5) : null;
+            setB("eta", eta != null ? _fmtSec(eta) : "—");
+            const keys = info.active_keys != null ? info.active_keys : null;
+            setB("keys", keys != null ? String(keys) : "—",
+                 keys === 0 ? "err" : (keys != null && keys < 3 ? "warn" : "ok"));
+        } else {
+            ["files", "blocks", "calls", "eta", "keys"].forEach(k => {
+                const el = document.getElementById("preflight-" + k);
+                if (el) el.textContent = "?";
+            });
+        }
+    } catch (_) {}
+
+    return new Promise((resolve) => {
+        const cancelBtn = document.getElementById("preflight-cancel");
+        const startBtn = document.getElementById("preflight-start");
+        const cleanup = () => {
+            modal.classList.remove("open");
+            cancelBtn.onclick = null;
+            startBtn.onclick = null;
+        };
+        cancelBtn.onclick = () => { cleanup(); resolve(false); };
+        startBtn.onclick = async () => {
+            cleanup();
+            await _doStart(book, model, mode);
+            resolve(true);
+        };
+    });
+}
+
+async function _doStart(book, model, mode) {
     clearOverrides();
     const btn = document.getElementById("btn-start");
     if (btn) {
@@ -638,6 +689,23 @@ async function startProcessing() {
             btn.textContent = "🚀 Pokreni";
         }
     }
+}
+
+async function startProcessing() {
+    const book = STATE.book;
+    const model = document.getElementById("model-select")?.value || STATE.model;
+    const mode = STATE.ttsMode ? "TTS" : "FUSION";
+
+    if (!book) {
+        showToast("Odaberi ili učitaj knjigu!", "warning");
+        setWizardStep(1);
+        return;
+    }
+    if (!model) {
+        showToast("Odaberi model!", "warning");
+        return;
+    }
+    await _preflightAndStart(book, model, mode);
 }
 
 async function sendControl(action) {
