@@ -1,13 +1,13 @@
-# HANDOFF — 2026-10-30 12:51
+# HANDOFF — 2026-10-30 12:59
 
 ## Stanje
 - Faza: 1
 - Zadatak: S1
-- Status: dijagnostika
-- Git HEAD: 5059109
+- Status: commit (ZAVRŠENO)
+- Git HEAD: e6c406e
 
 ## Sledeći korak (tačno)
-Pročitati S1 dijangostiku, pa STARO/NOVO za run.py:506 i 623
+T1: glosar u prompt — dijagnostika _extract_relevant_glossary i prompt_injector
 
 ## Blokirano
 nema
@@ -16,4 +16,4 @@ nema
 nema
 
 ## Log poslednje sesije
-.logs/s1_dijag_123924.log
+.logs/s1_apply_125916.log
