@@ -433,6 +433,42 @@ def _je_prompt_echo(tekst):
     return False
 
 
+_LA_EN_RIJECI = frozenset({
+    "the", "and", "of", "was", "were", "with", "that", "this", "for",
+    "had", "his", "her", "you", "they", "she", "from", "but", "are",
+    "have", "been", "would", "could", "said", "not", "what", "there",
+    "their", "which", "when", "your", "into", "him", "them", "then",
+})
+_LA_MOJIBAKE = (
+    "\u00c3", "\u00c2", "\u00e2\u0080", "\u00c5\u00a1", "\u00c5\u00be",
+    "\u00c4\u0087", "\u00c4\u008d", "\u00c4\u0087", "\ufffd",
+)
+
+
+def _layer_a_problem(izvor, tekst):
+    """S4b Layer A: '' ako je tekst OK, inače razlog:
+    echo | mojibake | nfd | en_ostatak."""
+    import re as _re
+    import unicodedata as _ud
+
+    if not tekst:
+        return ""
+    if _je_prompt_echo(tekst):
+        return "echo"
+    izvor = izvor or ""
+    for m in _LA_MOJIBAKE:
+        if m in tekst and m not in izvor:
+            return "mojibake"
+    if _ud.normalize("NFC", tekst) != tekst and _ud.normalize("NFC", izvor) == izvor:
+        return "nfd"
+    plain = _re.sub(r"<[^>]+>", " ", tekst)
+    hit = [r.lower() in _LA_EN_RIJECI for r in _re.findall(r"[^\W\d_]+", plain)]
+    for i in range(len(hit) - 5):
+        if sum(hit[i:i + 6]) >= 3:
+            return "en_ostatak"
+    return ""
+
+
 def _qa_ai_ocjena(tekst, fleet):
     """
     AI QA ocjena chunka. Vraca dict {vjernost, stil, gramatika, konzistentnost, tipografija, ukupno, razlog}.
@@ -1356,6 +1392,17 @@ class WorkerV2:
             # 4. Post-processing
             obradjeni = self._postprocessing(odgovor, model_ime)
             zadnji_tekst = obradjeni
+
+            # S4b Layer A: echo / neprevedeni dio / kodiranje -> drugi model
+            _la = _layer_a_problem(chunk_tekst, obradjeni)
+            if _la:
+                logger.warning(
+                    f"Layer A [{_la}] od {model_ime} — "
+                    f"retry s drugim modelom ({retries + 1}/{MAX_RETRIES})"
+                )
+                exclude.append(model_ime)
+                retries += 1
+                continue
 
             # 5. Quality scoring
             quality_score = 0.0
