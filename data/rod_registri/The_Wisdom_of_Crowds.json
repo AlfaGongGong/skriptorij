@@ -1,7 +1,7 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 52,
+    "clue_m": 53,
     "clue_z": 0
   },
   "Orso": {
@@ -81,7 +81,7 @@
   },
   "Oduvijek": {
     "rod": "M",
-    "clue_m": 13,
+    "clue_m": 17,
     "clue_z": 1
   },
   "Kurva": {
@@ -111,7 +111,7 @@
   },
   "Shawley": {
     "rod": "M",
-    "clue_m": 6,
+    "clue_m": 8,
     "clue_z": 0
   },
   "Gate": {
@@ -121,7 +121,7 @@
   },
   "Furnevelt": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Čovjek": {
@@ -132,12 +132,12 @@
   "Lilott": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 4
   },
   "Jedva": {
     "rod": "Ž",
-    "clue_m": 9,
-    "clue_z": 9
+    "clue_m": 12,
+    "clue_z": 10
   },
   "Stalno": {
     "rod": "M",
@@ -151,17 +151,17 @@
   },
   "Parry": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Gore": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Ettenbeck": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Tada": {
@@ -741,7 +741,7 @@
   },
   "Smiler": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Još": {
@@ -1040,8 +1040,8 @@
     "clue_z": 1
   },
   "Dolje": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Sama": {
@@ -1323,5 +1323,25 @@
     "rod": "Ž",
     "clue_m": 0,
     "clue_z": 3
+  },
+  "Neprestano": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Narod": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Adnes": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Muškarac": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
   }
 }
