@@ -6,7 +6,7 @@
   },
   "Orso": {
     "rod": "M",
-    "clue_m": 72,
+    "clue_m": 73,
     "clue_z": 0
   },
   "Leo": {
@@ -1452,7 +1452,7 @@
   "Džadž": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 4
+    "clue_z": 5
   },
   "Sarlbi": {
     "rod": "M",
