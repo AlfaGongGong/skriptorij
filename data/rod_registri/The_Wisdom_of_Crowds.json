@@ -6,12 +6,12 @@
   },
   "Orso": {
     "rod": "M",
-    "clue_m": 61,
+    "clue_m": 62,
     "clue_z": 0
   },
   "Leo": {
     "rod": "M",
-    "clue_m": 57,
+    "clue_m": 58,
     "clue_z": 0
   },
   "guverner": {
@@ -37,7 +37,7 @@
   "Zuri": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 13
+    "clue_z": 14
   },
   "Hoff": {
     "rod": "M",
@@ -72,7 +72,7 @@
   "Visoko": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Jakib": {
     "rod": "M",
@@ -181,7 +181,7 @@
   },
   "Heugen": {
     "rod": "M",
-    "clue_m": 8,
+    "clue_m": 9,
     "clue_z": 0
   },
   "Palača": {
@@ -235,13 +235,13 @@
     "clue_z": 0
   },
   "Jednom": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Prostor": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Tallow": {
@@ -265,13 +265,13 @@
     "clue_z": 0
   },
   "Kralj": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Krevet": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Pravda": {
@@ -551,7 +551,7 @@
   },
   "On": {
     "rod": "M",
-    "clue_m": 8,
+    "clue_m": 9,
     "clue_z": 0
   },
   "Glawarda": {
@@ -781,7 +781,7 @@
   },
   "Nervozno": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 1
   },
   "regent": {
@@ -1016,7 +1016,7 @@
   },
   "namjesnik": {
     "rod": "M",
-    "clue_m": 11,
+    "clue_m": 12,
     "clue_z": 1
   },
   "Dobit": {
@@ -1026,7 +1026,7 @@
   },
   "Svijet": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Bludnica": {
@@ -1055,8 +1055,8 @@
     "clue_z": 1
   },
   "General": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Bogme": {
@@ -1302,7 +1302,7 @@
   "Savin": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Mrko": {
     "rod": null,
@@ -1322,7 +1322,7 @@
   "Vik": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 8
   },
   "Neprestano": {
     "rod": null,
@@ -1356,7 +1356,7 @@
   },
   "Brod": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Rucksted": {
@@ -1378,5 +1378,30 @@
     "rod": "Ž",
     "clue_m": 0,
     "clue_z": 2
+  },
+  "Staur": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Talou": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Finri": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Išer": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Svorbrik": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
   }
 }
