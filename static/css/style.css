@@ -3533,3 +3533,24 @@ a.fq-prov-name:hover { text-decoration: underline; }
   align-items: center;
   justify-content: center;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   G1+G6 — a11y (focus-visible, prefers-reduced-motion)
+   ═══════════════════════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--accent, #4a9eff);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
