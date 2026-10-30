@@ -343,6 +343,35 @@ def _finaliziraj_fix_epub(self):
     if oebps_ncx.exists() and root_ncx.exists():
         root_ncx.unlink()
 
+    # Tipografija na tekstualnim čvorovima (ne regex na HTML-u)
+    try:
+        from core.text_utils import _post_process_tipografija
+        from bs4 import BeautifulSoup as _BS_typo, NavigableString as _NS_typo
+        n_typo = 0
+        for _f in list(work_dir.rglob("*.xhtml")) + list(work_dir.rglob("*.html")):
+            try:
+                _raw = _f.read_text(encoding="utf-8")
+                _soup = _BS_typo(_raw, "html.parser")
+                _changed = False
+                for _node in _soup.find_all(string=True):
+                    if type(_node) is not _NS_typo:
+                        continue  # Comment/Doctype/CData/PI ne diramo
+                    if _node.parent.name in ("script", "style", "title"):
+                        continue
+                    _fixed = _post_process_tipografija(str(_node))
+                    if _fixed != str(_node):
+                        _node.replace_with(_fixed)
+                        _changed = True
+                if _changed:
+                    _f.write_text(str(_soup), encoding="utf-8")
+                    n_typo += 1
+            except Exception:
+                pass
+        if n_typo:
+            self.log(f"Tipografija: {n_typo} fajlova", "tech")
+    except Exception as _e:
+        self.log(f"Tipografija greška: {_e}", "warning")
+
     self.log("Finalni fixevi primijenjeni", "tech")
 
 
