@@ -331,6 +331,20 @@ function showConfirm(title, body, opts = {}) {
 }
 window.showConfirm = showConfirm;
 
+// Loading wrapper — doda .btn-loading, čeka asyncFn, ukloni
+async function withLoading(btn, asyncFn) {
+    if (!btn) return asyncFn();
+    btn.classList.add("btn-loading");
+    btn.disabled = true;
+    try {
+        return await asyncFn();
+    } finally {
+        btn.classList.remove("btn-loading");
+        btn.disabled = false;
+    }
+}
+window.withLoading = withLoading;
+
 function showToast(msg, type = "info", d = 3500) {
     const tc = document.getElementById("toast-container");
     const t = document.createElement("div");
@@ -2388,38 +2402,41 @@ async function sendMarkedForRefix() {
         showToast("Nema aktivne knjige.", "warning");
         return;
     }
-    try {
-        const r1 = await fetch("/api/review/mark", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ book, stems })
-        });
-        const d1 = await r1.json();
-        if (d1.error) throw new Error(d1.error);
-        const r2 = await fetch("/api/start", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ book, model, tool: "REFIX" })
-        });
-        const d2 = await r2.json();
-        if (d2.error) throw new Error(d2.error);
-        showToast(
-            `🔧 Re-lektura pokrenuta za ${stems.length} blokova!`,
-            "success"
-        );
-        _markedForReview.clear();
-        document
-            .querySelectorAll(".qs-block-pill[data-stem]")
-            .forEach(el => (el.style.outline = ""));
-        document.getElementById("qs-box-poor")?.classList.remove("qs-selected");
-        document
-            .getElementById("qs-box-critical")
-            ?.classList.remove("qs-selected");
-        _updateRefixBar();
-        showDashboard();
-    } catch (e) {
-        showToast("Greška: " + e.message, "error");
-    }
+    const btn = document.getElementById("btn-send-marked");
+    await withLoading(btn, async () => {
+        try {
+            const r1 = await fetch("/api/review/mark", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ book, stems })
+            });
+            const d1 = await r1.json();
+            if (d1.error) throw new Error(d1.error);
+            const r2 = await fetch("/api/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ book, model, tool: "REFIX" })
+            });
+            const d2 = await r2.json();
+            if (d2.error) throw new Error(d2.error);
+            showToast(
+                `🔧 Re-lektura pokrenuta za ${stems.length} blokova!`,
+                "success"
+            );
+            _markedForReview.clear();
+            document
+                .querySelectorAll(".qs-block-pill[data-stem]")
+                .forEach(el => (el.style.outline = ""));
+            document.getElementById("qs-box-poor")?.classList.remove("qs-selected");
+            document
+                .getElementById("qs-box-critical")
+                ?.classList.remove("qs-selected");
+            _updateRefixBar();
+            showDashboard();
+        } catch (e) {
+            showToast("Greška: " + e.message, "error");
+        }
+    });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2618,20 +2635,23 @@ function closeDownloadModal() {
 }
 
 async function confirmDownloadLive() {
+    const btn = document.getElementById("btn-confirm-download-live");
     closeDownloadModal();
-    try {
-        const r = await fetch("/api/download_live");
-        if (!r.ok) { showToast("Live download nije dostupan.", "warning"); return; }
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "live_preview.epub";
-        a.click();
-        URL.revokeObjectURL(url);
-    } catch (e) {
-        showToast("Greška: " + e.message, "error");
-    }
+    await withLoading(btn, async () => {
+        try {
+            const r = await fetch("/api/download_live");
+            if (!r.ok) { showToast("Live download nije dostupan.", "warning"); return; }
+            const blob = await r.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "live_preview.epub";
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            showToast("Greška: " + e.message, "error");
+        }
+    });
 }
 
 // ═══════════════ INIT ═══════════════════════════
@@ -3849,6 +3869,7 @@ async function auto_stiliziraj(bookName) {
     const $cb = document.getElementById("auto-stil");
     if (!$cb || !$cb.checked) return;
     console.log("[AUTO-STIL] Pokrećem stilizaciju za:", bookName);
+    if (typeof _log === "function") _log("✨ Auto-stilizacija u toku...", "system");
     try {
         const r = await fetch("/api/style_epub", {
             method: "POST",

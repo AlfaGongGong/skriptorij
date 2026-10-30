@@ -3554,3 +3554,30 @@ a.fq-prov-name:hover { text-decoration: underline; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Loading stanja — spinner u dugmetu (2026-10-30)
+   ═══════════════════════════════════════════════════════════ */
+.btn.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+  opacity: 0.7;
+}
+.btn.btn-loading::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 50%;
+  left: 50%;
+  margin: -7px 0 0 -7px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: var(--tx-1);
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
