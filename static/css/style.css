@@ -68,6 +68,7 @@ body.light {
 /* ═══════════════════ BASE ═══════════════════ */
 html, body {
     min-height: 100vh;
+    min-height: 100dvh;
 }
 
 body {
@@ -3484,4 +3485,51 @@ a.fq-prov-name:hover { text-decoration: underline; }
         width: 100%;
         margin-bottom: 2px;
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   E1+E3+E4 — mobilni fixevi (safe-area, tabovi, 44px)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* E1: safe-area za iPhone notch/dynamic island */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  header, .header, .top-bar {
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+  footer, .footer, .tab-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* E3: tabovi — horizontalni scroll na malim ekranima (8 tabova) */
+@media (max-width: 640px) {
+  .tab-nav {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 2px;
+  }
+  .tab-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-btn {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+}
+
+/* E4: min 44px touch target za tabove i dugmad */
+.tab-btn,
+.btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
