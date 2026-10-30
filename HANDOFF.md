@@ -1,19 +1,19 @@
-# HANDOFF — 2026-10-30 14:31
+# HANDOFF — 2026-10-30 16:25
 
 ## Stanje
 - Faza: 1
-- Zadatak: T3b-fix
-- Status: commit (ZAVRŠENO)
-- Git HEAD: a41865b
+- Zadatak: T4
+- Status: dijagnostika
+- Git HEAD: 5e86556
 
 ## Sledeći korak (tačno)
-T5: pusti 1 poglavlje Mudrosti vrana kroz pipeline
+Claude: primeni T4 (retro _restore_inline_tags). Dijagnostika završena (bfdc100). Claude treba da uradi STARO/NOVO + primenu + test.
 
 ## Blokirano
-nema
+Primena nije urađena — samo dijagnostika
 
 ## Otvorena pitanja
 Nema
 
 ## Log poslednje sesije
-.logs/t3b_fix_143059.log
+.logs/handoff_sync_162554.log
