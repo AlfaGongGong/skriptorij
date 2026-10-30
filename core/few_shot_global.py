@@ -8,8 +8,8 @@ import re
 from difflib import SequenceMatcher
 from pathlib import Path
 
-FEW_SHOT_PATH = Path("data/few_shot_global.json")
-MAX_SHOTS = 200
+FEW_SHOT_PATH = Path("data/few_shot_abercombie.json")
+MAX_SHOTS = 5000
 MIN_SCORE = 9.0  # BEZ DEGRADACIJE: samo odlični (9+) idu u bazu
 MIN_SIMILARITY = 0.4  # sniženo: pasusi iz različitih knjiga retko imaju >0.5; 0.4 hvata najsličnije
 
