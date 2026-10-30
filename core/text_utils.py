@@ -467,6 +467,19 @@ def _post_process_tipografija(tekst: str) -> str:
     # Zamijeni zaostale dvostruke navodnike koji nisu dio HTML-a
     tekst = re.sub(r'\u201c([^"\u201c\u201d<>\n\r]{1,400})\u201d', r'„\1"', tekst)
 
+    # Streljajući " u dijalogu (— Dijalog." ili — Dijalog!") — neparan broj " u redu
+    # koji počinje s —, a nema „ (jer „ bi značio legitiman par)
+    _linije = tekst.split("\n")
+    _nove = []
+    for _l in _linije:
+        _ls = _l.strip()
+        if _ls.startswith(("—", "–")) and _l.count('"') % 2 == 1 and "„" not in _l:
+            _idx = _l.rfind('"')
+            if _idx >= 0:
+                _l = _l[:_idx] + _l[_idx + 1:]
+        _nove.append(_l)
+    tekst = "\n".join(_nove)
+
     # Whitespace ispred interpunkcije
     tekst = re.sub(r"\s+([,;:!?])", r"\1", tekst)
 
