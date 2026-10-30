@@ -1,13 +1,13 @@
-# HANDOFF — 2026-10-30 13:05
+# HANDOFF — 2026-10-30 13:10
 
 ## Stanje
 - Faza: 1
-- Zadatak: T3a
+- Zadatak: T3b
 - Status: commit (ZAVRŠENO)
-- Git HEAD: 6590a6a
+- Git HEAD: 907de4e
 
 ## Sledeći korak (tačno)
-T3b: rečenice_manjak + tagovi_razlika (Claude acc 2)
+T3c: imena_nedostaju + en_ostaci (Claude acc 3)
 
 ## Blokirano
 nema
@@ -16,4 +16,4 @@ nema
 nema
 
 ## Log poslednje sesije
-.logs/t3a_append_130508.log
+.logs/t3b_merge_131010.log
