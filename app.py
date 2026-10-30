@@ -681,6 +681,56 @@ def create_app() -> Flask:
     # START — auto-detekcija moda, bez mode parametra
     # ═════════════════════════════════════════════════════════════════════════
 
+    @app.route("/api/preflight_info", methods=["GET"])
+    def api_preflight_info():
+        """U1 — procena pre pokretanja: broj fajlova, blokova, aktivnih ključeva."""
+        book = request.args.get("book", "")
+        full_path = os.path.join(str(INPUT_DIR), book)
+        if not book or not os.path.exists(full_path):
+            return jsonify({"error": "Knjiga nije pronađena"}), 404
+
+        files = 0
+        blocks = 0
+        try:
+            import zipfile as _zf
+            from bs4 import BeautifulSoup as _BS
+            from core.chunking import chunk_html as _ch
+
+            with _zf.ZipFile(full_path) as z:
+                html_files = []
+                for n in z.namelist():
+                    if not n.endswith((".html", ".xhtml")):
+                        continue
+                    if "booklyfi_00" in n or "/nav" in n or "toc" in n.lower():
+                        continue
+                    html_files.append(n)
+                files = len(html_files)
+                for n in html_files:
+                    try:
+                        html = z.read(n).decode("utf-8", "replace")
+                        soup = _BS(html, "html.parser")
+                        text = str(soup.body) if soup.body else str(soup)
+                        blocks += len(_ch(text, max_words=500))
+                    except Exception:
+                        blocks += 1
+        except Exception as e:
+            logger.warning(f"api_preflight_info: {e}")
+
+        active_keys = 0
+        try:
+            fl = _get_fleet()
+            if fl:
+                active_keys = fl.get_total_active_keys()
+        except Exception:
+            pass
+
+        return jsonify({
+            "book": book,
+            "files": files,
+            "blocks": blocks,
+            "active_keys": active_keys,
+        })
+
     @app.route("/api/start", methods=["POST"])
     def api_start():
         global _engine_thread
