@@ -376,7 +376,8 @@ def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
     en_rec = [r for r in re.split(r'(?<=[.!?…])\s+', en_text.strip()) if r.strip()]
     if len(en_rec) > 0:
         odnos = len(hr_rec) / len(en_rec)
-        if not (0.9 <= odnos <= 1.1):
+        # 0.75-1.35: dijalog i skraćenice cepaju rečenice drugačije na HR/EN
+        if not (0.75 <= odnos <= 1.35):
             issues.append({
                 "code": "rečenice_manjak",
                 "severity": "upozorenje",
