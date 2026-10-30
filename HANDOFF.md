@@ -1,13 +1,13 @@
-# HANDOFF — 2026-10-30 12:59
+# HANDOFF — 2026-10-30 13:01
 
 ## Stanje
 - Faza: 1
-- Zadatak: S1
+- Zadatak: T3a
 - Status: commit (ZAVRŠENO)
-- Git HEAD: e6c406e
+- Git HEAD: bea8892
 
 ## Sledeći korak (tačno)
-T1: glosar u prompt — dijagnostika _extract_relevant_glossary i prompt_injector
+T3b: rečenice_manjak + tagovi_razlika (Claude acc 2)
 
 ## Blokirano
 nema
@@ -16,4 +16,4 @@ nema
 nema
 
 ## Log poslednje sesije
-.logs/s1_apply_125916.log
+.logs/t3a_test_130106.log
