@@ -1,0 +1,77 @@
+{
+ "alat": {
+  "naziv": "epub_audit",
+  "verzija": "3.0"
+ },
+ "izlazi_sha256": {
+  "Joe_Abercrombie_The_Trouble_With_Peace_PREVEDENO_STYLED_audit.csv": "eb3163e42d34446f8a4f513d7d0a732b00e8d87760929796af476c1424d98b75",
+  "Joe_Abercrombie_The_Trouble_With_Peace_PREVEDENO_STYLED_audit.html": "25a45d6b45f32521247af0d1f03ddc499253f8db0b400e2b9f4540104dadb3fd",
+  "Joe_Abercrombie_The_Trouble_With_Peace_PREVEDENO_STYLED_audit.json": "260766c213d3fae5afe62fd89f38a1902b68f43fa49c40b565b1ee592eae377c",
+  "Joe_Abercrombie_The_Trouble_With_Peace_PREVEDENO_STYLED_audit.md": "69dae0adb3e626ba570d9ded29fe5595d313f3df586097f9d3573909401602d7"
+ },
+ "izračunato": {
+  "dijalog_crtica_po_stilu": {
+   "—": 2304
+  },
+  "granica_pasusa_znakova": 3022.0,
+  "granica_rečenice_riječi": 88.0,
+  "naučena_imena": 0,
+  "navodnici_po_stilu": {
+   "\"…\"": 24,
+   "„…“": 223
+  },
+  "preskočene_datoteke": [],
+  "riječi": 150643
+ },
+ "izvornik": null,
+ "konfiguracija": {
+  "isključena_pravila": [],
+  "jezik": "hr",
+  "min_severity": "info",
+  "pragovi": {
+   "learn_names_lower_ratio": 0.1,
+   "learn_names_min_count": 1,
+   "min_style_samples": 20,
+   "minority_ratio": 0.35,
+   "paragraph_chars_floor": 2000,
+   "percentile": 99.0,
+   "percentile_factor": 2.0,
+   "pron_per_par": 3,
+   "sentence_words_floor": 60
+  },
+  "quote_style": "auto",
+  "skip_files": [],
+  "učenje_imena": false,
+  "wordlist_sha256": null
+ },
+ "nalazi": {
+  "po_ozbiljnosti": {
+   "info": 19,
+   "upozorenje": 94
+  },
+  "po_vrsti": {
+   "crtica": 1,
+   "ime_en": 5,
+   "ime_nedosljedno": 12,
+   "navodnici_stil": 24,
+   "neparni_navodnik": 25,
+   "odlomak_malo_slovo": 2,
+   "predug_pasus": 17,
+   "rečenica_duga": 12,
+   "strano_slovo_riječ": 3,
+   "truncated": 8,
+   "zamjenice": 4
+  },
+  "ukupno": 113
+ },
+ "profil": {
+  "datoteka": null,
+  "naziv": "default",
+  "sha256": null
+ },
+ "ulaz": {
+  "bajtova": 4971313,
+  "datoteka": "Joe_Abercrombie_The_Trouble_With_Peace_PREVEDENO_STYLED.epub",
+  "sha256": "30f0706e6a7ca8557a7c9cacff2b1f9c1aea87a9456a81e7fc59225e01c0a716"
+ }
+}
