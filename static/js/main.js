@@ -302,6 +302,35 @@ function toggleTheme() {
     saveAppState();
 }
 
+// F: modalni confirm (zamjena za window.confirm)
+function showConfirm(title, body, opts = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("confirm-modal");
+        if (!modal) { resolve(window.confirm(body)); return; }
+        document.getElementById("confirm-title").textContent = title;
+        document.getElementById("confirm-body").textContent = body;
+        const iconEl = document.getElementById("confirm-icon");
+        const yesBtn = document.getElementById("confirm-yes");
+        const noBtn = document.getElementById("confirm-no");
+        if (iconEl) iconEl.textContent = opts.icon || "⚠️";
+        if (yesBtn) {
+            yesBtn.textContent = opts.yesLabel || "✓ Potvrdi";
+            yesBtn.className = "btn btn-sm " + (opts.danger === false ? "btn-primary" : "btn-danger");
+        }
+        if (noBtn) noBtn.textContent = opts.noLabel || "✕ Odustani";
+        const cleanup = (result) => {
+            modal.classList.remove("open");
+            yesBtn.onclick = null;
+            noBtn.onclick = null;
+            resolve(result);
+        };
+        yesBtn.onclick = () => cleanup(true);
+        noBtn.onclick = () => cleanup(false);
+        modal.classList.add("open");
+    });
+}
+window.showConfirm = showConfirm;
+
 function showToast(msg, type = "info", d = 3500) {
     const tc = document.getElementById("toast-container");
     const t = document.createElement("div");
@@ -1667,7 +1696,7 @@ async function addKey() {
 }
 
 async function deleteKey(provider, index) {
-    if (!confirm(`Obrisati ključ #${index} za ${provider}?`)) return;
+    if (!await showConfirm("Obriši ključ", `Obrisati ključ #${index} za ${provider}?`, {icon: "🗑", yesLabel: "🗑 Obriši", danger: true})) return;
     try {
         const r = await fetch(
             `/api/keys/${encodeURIComponent(provider)}/${index}`,
@@ -1881,7 +1910,7 @@ async function obrisiTrenutniChunk() {
         showToast("Nema odabranog chunka", "warning");
         return;
     }
-    if (!confirm(`Obrisati chunk "${stem}"? AI će ga ponovo obraditi.`)) return;
+    if (!await showConfirm("Obriši chunk", `Obrisati chunk "${stem}"? AI će ga ponovo obraditi.`, {icon: "🗑", yesLabel: "🗑 Obriši", danger: true})) return;
     try {
         const r = await fetch(`/api/review/chunk/${encodeURIComponent(stem)}`, {
             method: "DELETE",
@@ -1943,7 +1972,7 @@ window.sacuvajReviziju = sacuvajReviziju;
 
 // ── Obriši chunk (za AI re-obradu) ──
 async function obrisiReviziju(stem) {
-    if (!confirm(`Obrisati chunk "${stem}"? AI će ga ponovo obraditi.`)) return;
+    if (!await showConfirm("Obriši chunk", `Obrisati chunk "${stem}"? AI će ga ponovo obraditi.`, {icon: "🗑", yesLabel: "🗑 Obriši", danger: true})) return;
     try {
         const r = await fetch(`/api/review/chunk/${encodeURIComponent(stem)}`, {
             method: "DELETE",
@@ -3779,7 +3808,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     window._monReset = async (prov, prefix) => {
-        if (!confirm(`Resetiraj cooldown za ${prov} ključ ${prefix}…?`)) return;
+        if (!await showConfirm("Resetiraj cooldown", `Resetiraj cooldown za ${prov} ključ ${prefix}…?`, {icon: "🔄", yesLabel: "🔄 Resetiraj", danger: false})) return;
         try {
             await fetch("/api/monitor/reset_key", {
                 method: "POST",
