@@ -1,17 +1,17 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 58,
+    "clue_m": 60,
     "clue_z": 0
   },
   "Orso": {
     "rod": "M",
-    "clue_m": 73,
+    "clue_m": 76,
     "clue_z": 0
   },
   "Leo": {
     "rod": "M",
-    "clue_m": 68,
+    "clue_m": 71,
     "clue_z": 0
   },
   "guverner": {
@@ -27,7 +27,7 @@
   "Čvrsto": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 4
   },
   "Budućnost": {
     "rod": "Ž",
@@ -81,8 +81,8 @@
   },
   "Oduvijek": {
     "rod": "M",
-    "clue_m": 17,
-    "clue_z": 1
+    "clue_m": 18,
+    "clue_z": 2
   },
   "Kurva": {
     "rod": null,
@@ -137,7 +137,7 @@
   "Jedva": {
     "rod": "Ž",
     "clue_m": 12,
-    "clue_z": 11
+    "clue_z": 12
   },
   "Stalno": {
     "rod": "M",
@@ -181,7 +181,7 @@
   },
   "Heugen": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 10,
     "clue_z": 0
   },
   "Palača": {
@@ -197,7 +197,7 @@
   "Istina": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 15
+    "clue_z": 16
   },
   "komornik": {
     "rod": "M",
@@ -241,7 +241,7 @@
   },
   "Prostor": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Tallow": {
@@ -292,7 +292,7 @@
   "Hildi": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 7
+    "clue_z": 8
   },
   "Downside": {
     "rod": null,
@@ -326,7 +326,7 @@
   },
   "Problem": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Haroon": {
@@ -336,7 +336,7 @@
   },
   "Harod": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Time": {
@@ -471,7 +471,7 @@
   },
   "Bell": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Zapravo": {
@@ -482,37 +482,37 @@
   "Stoffenbeck": {
     "rod": "M",
     "clue_m": 2,
-    "clue_z": 0
+    "clue_z": 1
   },
   "Vallimir": {
     "rod": null,
-    "clue_m": 1,
+    "clue_m": 2,
     "clue_z": 2
   },
   "Uvijek": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 1
   },
   "Sudnica": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Šanker": {
-    "rod": null,
-    "clue_m": 1,
-    "clue_z": 0
-  },
-  "Halder": {
     "rod": "M",
     "clue_m": 2,
     "clue_z": 0
   },
+  "Halder": {
+    "rod": "M",
+    "clue_m": 3,
+    "clue_z": 0
+  },
   "Soba": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Ardee": {
     "rod": "Ž",
@@ -526,12 +526,12 @@
   },
   "Farans": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Farmer": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Isern-i-Phail": {
@@ -646,7 +646,7 @@
   },
   "Neprijatelj": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Scenn": {
@@ -1016,7 +1016,7 @@
   },
   "namjesnik": {
     "rod": "M",
-    "clue_m": 12,
+    "clue_m": 13,
     "clue_z": 1
   },
   "Dobit": {
@@ -1302,7 +1302,7 @@
   "Savin": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 22
+    "clue_z": 26
   },
   "Mrko": {
     "rod": null,
@@ -1322,7 +1322,7 @@
   "Vik": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 11
+    "clue_z": 14
   },
   "Neprestano": {
     "rod": null,
@@ -1356,7 +1356,7 @@
   },
   "Brod": {
     "rod": "M",
-    "clue_m": 15,
+    "clue_m": 19,
     "clue_z": 0
   },
   "Rucksted": {
@@ -1377,7 +1377,7 @@
   "Rike": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 9
+    "clue_z": 11
   },
   "Staur": {
     "rod": null,
@@ -1452,11 +1452,11 @@
   "Džadž": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 5
+    "clue_z": 6
   },
   "Sarlbi": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Kula": {
@@ -1488,5 +1488,35 @@
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
+  },
+  "Dvostruko": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Džurand": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Banerman": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Tojfel": {
+    "rod": null,
+    "clue_m": 2,
+    "clue_z": 1
+  },
+  "Ardi": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Fejl": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
   }
 }
