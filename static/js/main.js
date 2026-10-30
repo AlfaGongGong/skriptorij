@@ -840,18 +840,6 @@ function azuriraj_kontekst(s) {
     set("kk-faza", faza);
     set("kk-faza-detalj", detalj);
 
-    // ── Vrijeme ──
-    set("kk-eta", `ETA: ${s.est || "--:--:--"}`);
-
-    const startTs = window._booklyfi_start_ts;
-    if (startTs && s.pct > 0 && s.pct < 100) {
-        const elapsed = Math.floor((Date.now() - startTs) / 1000);
-        set("kk-protece", `Proteče: ${fmtTime(elapsed)}`);
-    } else if (s.pct >= 100) {
-        set("kk-protece", "Završeno");
-    } else {
-        set("kk-protece", "Proteče: 00:00");
-    }
 }
 
 function updateStatus(s) {
@@ -977,13 +965,23 @@ function updateStatus(s) {
     const bar = document.getElementById("progress-bar");
     if (bar) bar.style.width = pct + "%";
     setVal("progress-pct-text", `Završeno: ${pct}%`);
-    if (STATE.startTime && pct > 0 && pct < 100) {
-        const elapsed = (Date.now() - STATE.startTime) / 1000;
-        const eta = elapsed / (pct / 100) - elapsed;
-        document.getElementById("progress-eta").textContent =
-            `ETA: ${fmtTime(eta)} | ⏱ ${fmtTime(elapsed)}`;
-    } else if (s.est) {
-        document.getElementById("progress-eta").textContent = `ETA: ${s.est}`;
+    // ETA + proteklo — jedina logika
+    const _etaEl = document.getElementById("progress-eta");
+    if (_etaEl) {
+        if (pct >= 100) {
+            _etaEl.textContent = "✅ Završeno";
+        } else if (pct > 0) {
+            if (!STATE.startTime) {
+                STATE.startTime = Date.now() - (pct / 100) * 60000;
+            }
+            const elapsed = (Date.now() - STATE.startTime) / 1000;
+            const eta = elapsed / (pct / 100) - elapsed;
+            _etaEl.textContent = `ETA: ${fmtTime(eta)} | ⏱ ${fmtTime(elapsed)}`;
+        } else if (s.est && s.est !== "--:--:--") {
+            _etaEl.textContent = `ETA: ${s.est}`;
+        } else {
+            _etaEl.textContent = "ETA: --:--:--";
+        }
     }
     updatePipeline(st, pct);
 
