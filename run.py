@@ -503,7 +503,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.generate_ncx()
             engine.finalize()
             _obrada_karantene_kraj_knjige(engine)
-            _auto_stilizuj(engine)
+            _auto_stilizuj(engine.out_path)
             sharedstats["status"] = "ZAVRŠENO (AUTO-RETRO)"
             sharedstats["pct"] = 100
         return  # Izlaz — ne ulazi u main_loop() ispod
@@ -620,7 +620,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.log(f"⚠ Metadata greška: {_me}", "warning")
 
         _obrada_karantene_kraj_knjige(engine)
-        _auto_stilizuj(engine)
+        _auto_stilizuj(engine.out_path)
 
         # BUG #2 FIX (nastavak): Sačuvaj knjiga_mode u book_analysis.json na kraju
         # sesije da bi ga sljedeća sesija mogla pročitati i preskočiti detekciju.
