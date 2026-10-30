@@ -403,6 +403,67 @@ def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
             "en_fragment": "",
         })
 
+    # --- imena_nedostaju (T3c) ---
+    if glossary:
+        nedost_en = []
+        nedost_hr = []
+        en_frag = ""
+        for en_ime, hr_ime in glossary.items():
+            en_m = re.search(r'\b' + re.escape(en_ime) + r'\b', en_text)
+            if not en_m:
+                continue
+            if hr_ime in hr_text or en_ime in hr_text:
+                continue
+            if not nedost_en:
+                od = max(0, en_m.start() - _KONTEKST_BROJ)
+                do = min(len(en_text), en_m.end() + _KONTEKST_BROJ)
+                en_frag = " ".join(en_text[od:do].split())
+            nedost_en.append(en_ime)
+            nedost_hr.append(hr_ime)
+        if nedost_en:
+            issues.append({
+                "code": "imena_nedostaju",
+                "severity": "upozorenje",
+                "detail": "U EN: %s, u HR nema: %s" % (
+                    ", ".join(nedost_en[:5]) + (", ..." if len(nedost_en) > 5 else ""),
+                    ", ".join(nedost_hr[:5]) + (", ..." if len(nedost_hr) > 5 else ""),
+                ),
+                "hr_fragment": "",
+                "en_fragment": en_frag,
+            })
+
+    # --- en_ostaci (T3c) ---
+    if len(hr_text) >= 100:
+        en_stop = ["the", "and", "of", "is", "are", "was", "were", "you",
+                   "they", "with", "from", "this", "that", "have", "has",
+                   "had", "not", "but", "for", "what"]
+        izuzeti = [
+            (m.start(), m.end())
+            for m in re.finditer(
+                r'<em\b[^>]*>.*?</em>|<i\b[^>]*>.*?</i>|"[^"]*"',
+                hr_text, re.S | re.I
+            )
+        ]
+        ostaci = [
+            m for m in re.finditer(r'\b(?:' + "|".join(en_stop) + r')\b', hr_text)
+            if not any(s <= m.start() < e for s, e in izuzeti)
+        ]
+        if len(ostaci) >= 3:
+            rijeci = list(dict.fromkeys(m.group() for m in ostaci))
+            prvi = ostaci[0]
+            od = max(0, prvi.start() - _KONTEKST_BROJ)
+            do = min(len(hr_text), prvi.end() + _KONTEKST_BROJ)
+            issues.append({
+                "code": "en_ostaci",
+                "severity": "upozorenje",
+                "detail": "U HR tekstu %d EN stop-reči: %s" % (
+                    len(ostaci),
+                    ", ".join(rijeci[:5]) + (", ..." if len(rijeci) > 5 else ""),
+                ),
+                "hr_fragment": " ".join(hr_text[od:do].split()),
+                "en_fragment": "",
+            })
+
     # --- score (privremeno, do T3d) ---
     if any(i["severity"] == "greška" for i in issues):
         score = 40
