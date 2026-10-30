@@ -23,7 +23,11 @@ def _similarity(a, b):
 
 
 def load_shots():
-    """Tolerira prazan/korumpiran fajl — vraća [] umjesto da pukne."""
+    """Tolerira prazan/korumpiran fajl — vraća [] umjesto da pukne.
+    Podržava oba formata:
+      - list (stari few_shot_global.json)
+      - dict sa ključem "parovi" (novi few_shot_abercombie.json)
+    """
     if not FEW_SHOT_PATH.exists():
         return []
     try:
@@ -31,7 +35,11 @@ def load_shots():
         if not content.strip():
             return []
         data = json.loads(content)
-        return data if isinstance(data, list) else []
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict) and isinstance(data.get("parovi"), list):
+            return data["parovi"]
+        return []
     except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         # Korumpiran ili prazan — vrati []
         return []
