@@ -221,10 +221,6 @@ code {
     color: var(--tx-2);
 }
 
-.header-live-stage {
-    color: var(--accent-2);
-    font-weight: 700;
-}
 
 /* Dot indicator */
 .dot {
