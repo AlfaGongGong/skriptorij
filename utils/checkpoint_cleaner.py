@@ -6,6 +6,8 @@ import re
 import shutil
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 try:
     from core.text_utils import _je_ai_anotacija as _detect_anotacija
 except ImportError:
@@ -92,8 +94,10 @@ def _ocisti_json_wrapper(sadrzaj: str) -> str:
                 _extracted = _data[_k].strip()
                 if _extracted.lower() not in _PLACEHOLDERS:
                     return sha_prefix + _extracted
-    except (ValueError, TypeError):
-        logger.warning("[C2_parse] checkpoint_cleaner.py:96 Exception")
+    except (ValueError, TypeError) as _e:
+        logger.warning("[C2_parse] checkpoint_cleaner.py:96 %s", _e)
+        # FIX 2026-10-30: ako JSON pukne, vrati original — ne propagiraj gore
+        return sadrzaj
 
     # Normalizuj tipografske navodnike → ASCII za potrebe json.loads.
     # AI modeli ponekad koriste „..." umjesto ASCII "" čak i u JSON omotaču.
