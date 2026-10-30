@@ -381,8 +381,27 @@ class SkriptorijAllInOne:
                     termini = {}
 
             # twp_names.json — flat {en: hr}, kurirana posle naše lekture
-            # Samo za Abercrombie knjige
-            if "abercrombie" in knjiga_id.lower():
+            # Za Abercrombie knjige: detekcija po autoru iz OPF-a
+            autor = ""
+            try:
+                import zipfile as _zf
+                import re as _re_a
+                with _zf.ZipFile(self.book_path) as _z:
+                    for _n in _z.namelist():
+                        if _n.endswith(".opf"):
+                            _opf = _z.read(_n).decode("utf-8", "replace")
+                            _m = _re_a.search(r"<dc:creator[^>]*>([^<]+)</dc:creator>", _opf)
+                            if _m:
+                                autor = _m.group(1).strip()
+                            break
+            except Exception:
+                pass
+
+            _je_abercrombie = (
+                "abercrombie" in autor.lower()
+                or "abercrombie" in knjiga_id.lower()
+            )
+            if _je_abercrombie:
                 _twp = _P("/storage/emulated/0/Download/booklyfi_audit/twp_names.json")
                 if _twp.exists():
                     try:
