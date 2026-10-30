@@ -2,12 +2,12 @@
 
 ## Stanje
 - Faza: 1
-- Zadatak: Q5
+- Zadatak: Q3
 - Status: dijagnostika
-- Git HEAD: 23565a1
+- Git HEAD: a463ecb
 
 ## Sledeći korak (tačno)
-Claude: primeni Q5 (ekavizmi.py cirilica + dupli pobede). Dijagnostika završena (abbf453).
+Claude: primeni Q3 (dijalog.py preagresivni regeksi). Dijagnostika završena (f3c070b).
 
 ## Blokirano
 Primena nije urađena
