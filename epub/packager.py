@@ -848,7 +848,7 @@ def finalize(self):
 
     # Finalni fixevi (dropcap, ornament, CSS, TOC)
     try:
-        self._finaliziraj_fix_epub()
+        _finaliziraj_fix_epub(self)
     except Exception as _e:
         self.log("Finalni fixevi greska: " + str(_e), "warning")
 
