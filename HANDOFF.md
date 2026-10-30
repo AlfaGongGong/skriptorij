@@ -1,19 +1,19 @@
-# HANDOFF — 2026-10-30 13:22
+# HANDOFF — 2026-10-30 13:45
 
 ## Stanje
 - Faza: 1
-- Zadatak: T5b
-- Status: commit (ZAVRŠENO)
-- Git HEAD: a59cd69
+- Zadatak: S5
+- Status: primena
+- Git HEAD: 90859f1
 
 ## Sledeći korak (tačno)
-T5: dijagnostika core/prompt_injector.py — gde ubaciti few-shot
+Claude: primeni STARO 1-4 (wake-lock). Kad javi 'S5 završeno', ja počinjem paralelni korpus za T5.
 
 ## Blokirano
-nema
+T5 — few_shot_global.json ima 200 primera iz pogrešne knjige (Black Company), treba paralelni korpus iz TWP+trilogija (22000 parova)
 
 ## Otvorena pitanja
-nema
+S5: sys.exit(0) potvrđen, finally+atexit rade. T5: pipeline.py:1523 upisuje HR u EN polje kad je LEKTURA mod. Bug treba popraviti prije nego se few_shot_global.json ponovo puni.
 
 ## Log poslednje sesije
-.logs/t5b_v2_132209.log
+.logs/handoff_t5_134512.log
