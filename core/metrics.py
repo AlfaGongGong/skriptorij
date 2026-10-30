@@ -464,7 +464,38 @@ def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
                 "en_fragment": "",
             })
 
-    # --- score (privremeno, do T3d) ---
+    # --- duplikati (T3d) ---
+    hr_pasusi = re.findall(r'<p\b[^>]*>(.*?)</p>', hr_text, re.I | re.S)
+    if not hr_pasusi:
+        hr_pasusi = re.split(r'\n\n+', hr_text)
+    ociscen = [re.sub(r'<[^>]+>', '', p).strip() for p in hr_pasusi]
+    ociscen = [p for p in ociscen if len(re.findall(r'[^\W\d_]+', p)) >= 4]
+    pas_cnt = Counter(ociscen)
+    dup = [p for p, c in pas_cnt.items() if c >= 2]
+    if dup:
+        issues.append({
+            "code": "duplikati",
+            "severity": "upozorenje",
+            "detail": "%d duplikata: %s" % (
+                len(dup), " | ".join(p[:60] + "..." for p in dup[:3])
+            ),
+            "hr_fragment": dup[0][:100],
+            "en_fragment": "",
+        })
+
+    # --- prazni_pasus (T3d) ---
+    hr_prazni = len(re.findall(r'<p\b[^>]*>\s*</p>', hr_text, re.I))
+    en_prazni = len(re.findall(r'<p\b[^>]*>\s*</p>', en_text, re.I))
+    if hr_prazni > en_prazni:
+        issues.append({
+            "code": "prazni_pasus",
+            "severity": "upozorenje",
+            "detail": "U EN: %d, u HR: %d praznih <p>" % (en_prazni, hr_prazni),
+            "hr_fragment": "",
+            "en_fragment": "",
+        })
+
+    # --- score (konačno, T3d) ---
     if any(i["severity"] == "greška" for i in issues):
         score = 40
     elif issues:
