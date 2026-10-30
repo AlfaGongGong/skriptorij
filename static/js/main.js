@@ -1661,41 +1661,68 @@ async function loadKeys() {
     }
     const selectedProvUpper = selectedProv.toUpperCase();
     try {
-        const r = await fetch("/api/keys");
+        const [r, monR] = await Promise.all([
+            fetch("/api/keys"),
+            fetch("/api/monitor/status").catch(() => null),
+        ]);
         const data = await r.json();
-        const entries = Object.entries(data || {});
-        // filter to only selected provider
-        const filtered = entries.filter(([prov]) => prov.toUpperCase() === selectedProvUpper);
+        let monitor = {};
+        if (monR && monR.ok) {
+            try {
+                const md = await monR.json();
+                monitor = md.providers || {};
+            } catch (_) {}
+        }
+        const filtered = Object.entries(data || {}).filter(
+            ([prov]) => prov.toUpperCase() === selectedProvUpper
+        );
         if (filtered.length === 0 || !filtered[0][1]?.length) {
-            container.innerHTML = `<div style="color:var(--tx-3);font-size:0.75rem">Nema ključeva za ${selectedProv}.</div>`;
+            container.innerHTML = `<div style="color:var(--tx-3);font-size:0.75rem;padding:8px">Nema ključeva za ${selectedProv}.</div>`;
             return;
         }
+        const provData = monitor[selectedProvUpper] || monitor[selectedProv] || {};
+        const provKeys = provData.keys || [];
         let html = "";
         filtered.forEach(([prov, keys]) => {
             (keys || []).forEach((masked, idx) => {
-                html += `<div class="key-row">
-                    <span class="key-prov-badge">${KEY_PROV_ICONS[prov.toUpperCase()] || "🔑"} ${prov}</span>
-                    <span class="key-masked">${masked}</span>
-                    <button class="key-ping-btn" data-provider="${prov}" data-index="${idx}" title="Testiraj ključ">🔍</button>
-                    <button class="key-del-btn" data-provider="${prov}" data-index="${idx}" title="Obriši">✕</button>
+                const kd = provKeys[idx] || {};
+                const avail = kd.available;
+                const cd = kd.cooldown_left || 0;
+                const sr = kd.success_rate;
+                let statusCls = "ok", statusTxt = "OK";
+                if (cd > 0) { statusCls = "cool"; statusTxt = "⏸ " + Math.round(cd) + "s"; }
+                else if (avail === false) { statusCls = "err"; statusTxt = "✕"; }
+                else if (sr != null && sr < 0.5) { statusCls = "cool"; statusTxt = "⚠ " + Math.round(sr * 100) + "%"; }
+                const okCnt = kd.calls_ok != null ? kd.calls_ok : 0;
+                const failCnt = kd.calls_failed != null ? kd.calls_failed : 0;
+                const lastUsed = kd.last_used_ago != null ? Math.round(kd.last_used_ago) + "s" : "—";
+                html += `<div class="key-card${avail === false ? " key-unavail" : ""}">
+                    <div class="key-card-head">
+                        <span class="key-card-icon">${KEY_PROV_ICONS[prov.toUpperCase()] || "🔑"}</span>
+                        <span class="key-card-prov">${prov} #${idx}</span>
+                        <span class="key-card-status ${statusCls}">${statusTxt}</span>
+                    </div>
+                    <div class="key-card-body" title="${masked}">${masked}</div>
+                    <div class="key-card-stats">
+                        <span>✓ <b>${okCnt}</b> / ✗ <b>${failCnt}</b></span>
+                        <span>${lastUsed}</span>
+                    </div>
+                    <div class="key-card-actions">
+                        <button class="key-card-btn ping" data-provider="${prov}" data-index="${idx}">🔍 Testiraj</button>
+                        <button class="key-card-btn del" data-provider="${prov}" data-index="${idx}">🗑 Obriši</button>
+                    </div>
                 </div>`;
             });
         });
         container.innerHTML = html;
-        // Dugme za brisanje
-        container.querySelectorAll(".key-del-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                deleteKey(btn.dataset.provider, btn.dataset.index);
-            });
+        container.querySelectorAll(".key-card-btn.del").forEach(btn => {
+            btn.addEventListener("click", () => deleteKey(btn.dataset.provider, btn.dataset.index));
         });
-        // Dugme za ping/provjeru
-        container.querySelectorAll(".key-ping-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                pingKey(btn.dataset.provider, btn.dataset.index, btn);
-            });
+        container.querySelectorAll(".key-card-btn.ping").forEach(btn => {
+            btn.addEventListener("click", () => pingKey(btn.dataset.provider, btn.dataset.index, btn));
         });
     } catch (e) {
-        container.innerHTML = `<div style="color:var(--rose)">❌ ${e.message}</div>`;
+        container.innerHTML = `<div style="color:var(--rose);padding:8px">❌ ${e.message}</div>`;
     }
 }
 
@@ -1764,27 +1791,30 @@ async function pingKey(provider, index, btn) {
             { method: "POST" }
         );
         const d = await r.json();
-        // Server-side greška (400/404/500) — HTTP status nije OK i nema ping rezultata
+        btn.classList.remove("ok", "warn", "err");
         if (!r.ok) {
             showToast(`${provider}: ❌ ${d.error || "Greška servera"}`, "error");
-            btn.textContent = "✕";
-            setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
+            btn.textContent = "✕ Greška";
+            btn.classList.add("err");
+            setTimeout(() => { btn.textContent = origText; btn.disabled = false; btn.classList.remove("err"); }, 3000);
             return;
         }
         if (d.ok) {
             showToast(`${provider} ✅ OK — ${d.latency_ms}ms`, "success");
-            btn.textContent = "✅";
+            btn.textContent = "✅ " + d.latency_ms + "ms";
+            btn.classList.add("ok");
         } else {
             const msg = d.error || `HTTP ${d.status_code}`;
             showToast(`${provider} ⚠️ ${msg} (${d.latency_ms}ms)`, "warning");
-            btn.textContent = "⚠️";
+            btn.textContent = "⚠ " + msg.slice(0, 20);
+            btn.classList.add("warn");
         }
-        setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 4000);
+        setTimeout(() => { btn.textContent = origText; btn.disabled = false; btn.classList.remove("ok", "warn"); }, 4000);
     } catch (e) {
         showToast(`Ping greška: ${e.message}`, "error");
         btn.textContent = origText;
         btn.disabled = false;
-    }
+      }
 }
 
 // ═══════════════ TABS ═══════════════════════════════

@@ -3644,3 +3644,132 @@ a.fq-prov-name:hover { text-decoration: underline; }
 .audit-log.filtered.filter-critical .log-entry.log-critical {
     display: flex !important;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   API ključevi — mobilne kartice (2026-10-30)
+   ═══════════════════════════════════════════════════════════ */
+.keys-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.key-card {
+    background: var(--bg-1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color var(--t-fast);
+}
+
+.key-card:hover {
+    border-color: var(--accent-2);
+}
+
+.key-card.key-unavail {
+    opacity: 0.6;
+    border-color: rgba(244, 63, 94, 0.3);
+}
+
+.key-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.key-card-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.key-card-prov {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--tx-1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.key-card-status {
+    margin-left: auto;
+    padding: 1px 6px;
+    border-radius: 100px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+}
+
+.key-card-status.ok { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+.key-card-status.cool { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+.key-card-status.err { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
+
+.key-card-body {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--tx-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 4px 0;
+    border-top: 1px solid var(--bd-soft);
+    border-bottom: 1px solid var(--bd-soft);
+}
+
+.key-card-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--tx-3);
+}
+
+.key-card-stat b {
+    color: var(--tx-1);
+    font-weight: 700;
+}
+
+.key-card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.key-card-btn {
+    flex: 1;
+    padding: 6px 8px;
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-sm);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--tx-2);
+    cursor: pointer;
+    min-height: 36px;
+    transition: all var(--t-fast);
+}
+
+.key-card-btn:hover {
+    background: var(--bg-3);
+}
+
+.key-card-btn.ping:hover {
+    border-color: var(--accent-2);
+    color: var(--accent-2);
+}
+
+.key-card-btn.del:hover {
+    border-color: var(--rose);
+    color: var(--rose);
+}
+
+.key-card-btn.ok { border-color: var(--emerald); color: var(--emerald); }
+.key-card-btn.warn { border-color: var(--amber); color: var(--amber); }
+.key-card-btn.err { border-color: var(--rose); color: var(--rose); }
