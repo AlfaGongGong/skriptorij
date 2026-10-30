@@ -11,7 +11,7 @@ from pathlib import Path
 FEW_SHOT_PATH = Path("data/few_shot_global.json")
 MAX_SHOTS = 200
 MIN_SCORE = 9.0  # BEZ DEGRADACIJE: samo odlični (9+) idu u bazu
-MIN_SIMILARITY = 0.75  # koliko sličan mora biti chunk da se few-shot primijeni
+MIN_SIMILARITY = 0.4  # sniženo: pasusi iz različitih knjiga retko imaju >0.5; 0.4 hvata najsličnije
 
 
 def _norm(s):
