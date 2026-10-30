@@ -186,6 +186,12 @@ def _chk_path(self, file_name: str, chunk_idx: int, suffix: str = "") -> object:
     return self.checkpoint_dir / f"{file_name}_blok_{chunk_idx}.chk"
 
 
+def _next_ctx_blok(next_ctx: str) -> str:
+    if not next_ctx or next_ctx in ("Sljedeći blok postoji.", "Ovo je zadnji blok poglavlja."):
+        return ""
+    return f"\n\nKONTEKST (ne prevodi): sljedeći blok počinje s ...{next_ctx[:250]}..."
+
+
 def _chk_read(
     self,
     file_name: str,
@@ -1101,6 +1107,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             chapter_summary=chapter_summary,
             tip_bloka=tip_bloka,
         )
+        lek_sys += _next_ctx_blok(next_ctx)
         p_lek = (
             f"IZVORNI TEKST (već na hrvatskom):\n{sirovo}\n\n"
             f"Lektoriraj tekst: ispravi interpunkciju, em-crtice u dijalogu, "
@@ -1247,6 +1254,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         fusion_sys = self._get_prevodilac_prompt(
             glosar_chunk=rel_glosar, prev_kraj=prev_ctx, tip_bloka=tip_bloka
         )
+        fusion_sys += _next_ctx_blok(next_ctx)
         # V1.0: Dodaj few-shot primjere iz globalne baze
         if _FEW_SHOT_OK and formatiraj_za_prompt:
             try:
@@ -1346,6 +1354,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         chapter_summary=chapter_summary,
         tip_bloka=tip_bloka,
     )
+    lek_sys += _next_ctx_blok(next_ctx)
     p_lek = (
         f"IZVORNI ENGLESKI TEKST:\n{chunk}\n\n"
         f"SIROVI PRIJEVOD:\n{sirovo}\n\n"
