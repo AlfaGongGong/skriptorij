@@ -236,6 +236,13 @@
                 <div class="download-strip-info">
                     <div class="download-strip-title" id="download-strip-title">Prijevod završen!</div>
                     <div class="download-strip-subtitle" id="download-strip-subtitle">EPUB je spreman za preuzimanje</div>
+                    <div class="progress-track" id="download-strip-progress" style="display:none; margin-top:8px">
+                        <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-meta" id="download-strip-meta" style="display:none">
+                        <span id="progress-pct-text">Završeno: 0%</span>
+                        <span id="progress-eta">ETA: --:--:--</span>
+                    </div>
                 </div>
                 <div class="download-strip-btns">
                     <a class="btn btn-success btn-sm" href="/api/download" id="btn-download-final">⬇ EPUB</a>
@@ -258,17 +265,6 @@
                         <span class="k-value k-faza" id="kk-faza">—</span>
                         <span class="k-detalj" id="kk-faza-detalj"></span>
                     </div>
-                </div>
-            </div>
-
-            <!-- Pipeline -->
-            <div class="card card-pipeline">
-                <div class="pipeline" id="pipeline">
-                    <div class="pipe-step" id="pipe-analiza"><span class="pipe-icon">🔬</span><span>Analiza</span></div>
-                    <div class="pipe-step" id="pipe-prevod"><span class="pipe-icon">🌐</span><span>Prevod</span></div>
-                    <div class="pipe-step" id="pipe-lektor"><span class="pipe-icon">✍</span><span>Lektor</span></div>
-                    <div class="pipe-step" id="pipe-korektor"><span class="pipe-icon">📐</span><span>Korektor</span></div>
-                    <div class="pipe-step" id="pipe-gotovo"><span class="pipe-icon">✅</span><span>Gotovo</span></div>
                 </div>
             </div>
 
@@ -300,13 +296,6 @@
                         <div class="stat-label">Kvalitet</div>
                         <div class="stat-value" id="stat-avg-quality" style="color: var(--accent-2)">—</div>
                     </div>
-                </div>
-                <div class="progress-track">
-                    <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
-                </div>
-                <div class="progress-meta">
-                    <span id="progress-pct-text">Završeno: 0%</span>
-                    <span id="progress-eta">ETA: --:--:--</span>
                 </div>
                 <div class="preview-separator"></div>
                 <div class="live-preview-grid" id="live-preview-block" style="display: none">

@@ -1170,7 +1170,6 @@ function updateStatus(s) {
             _etaEl.textContent = "ETA: --:--:--";
         }
     }
-    updatePipeline(st, pct);
 
     // ── Relektura banner ───────────────────────────────────────────────────
     (function () {
@@ -1261,6 +1260,11 @@ function updateStatus(s) {
                 strip.style.background =
                     "linear-gradient(135deg,rgba(16,185,129,0.1),rgba(6,182,212,0.1))";
                 finalBtn?.classList.remove("hidden");
+                // Sakrij progress kad je gotovo
+                const dp = document.getElementById("download-strip-progress");
+                const dm = document.getElementById("download-strip-meta");
+                if (dp) dp.style.display = "none";
+                if (dm) dm.style.display = "none";
                 loadEpubPreview();
             } else if (!isFinished && pct > 5) {
                 titleEl.textContent = `⏳ U toku — ${pct}%`;
@@ -1268,6 +1272,11 @@ function updateStatus(s) {
                 strip.style.borderColor = "rgba(245,158,11,0.3)";
                 strip.style.background = "rgba(245,158,11,0.06)";
                 finalBtn?.classList.add("hidden");
+                // Prikaži progress + ETA u download-strip
+                const dp = document.getElementById("download-strip-progress");
+                const dm = document.getElementById("download-strip-meta");
+                if (dp) dp.style.display = "block";
+                if (dm) dm.style.display = "flex";
             }
         } else {
             strip.classList.add("hidden");
@@ -1576,74 +1585,6 @@ function fmtTime(s) {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 }
 
-// Maps each step id to display label for header live stage
-const PIPE_STAGE_LABELS = {
-    "pipe-analiza":  "🔬 Analiza",
-    "pipe-prevod":   "🌐 Prevod",
-    "pipe-lektor":   "✍ Lektura",
-    "pipe-korektor": "📐 Korekcija",
-    "pipe-gotovo":   "✅ Gotovo"
-};
-
-function updatePipeline(status, pct) {
-    const steps = [
-        "pipe-analiza",
-        "pipe-prevod",
-        "pipe-lektor",
-        "pipe-korektor",
-        "pipe-gotovo"
-    ];
-    const pipeline = document.getElementById("pipeline");
-    steps.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove("active", "done");
-    });
-    pipeline?.classList.remove("processing");
-
-    let activeStep = null;
-    if (pct >= 100) {
-        steps.forEach(id => document.getElementById(id)?.classList.add("done"));
-    } else if (status.includes("ANALIZ")) {
-        activeStep = "pipe-analiza";
-        document.getElementById("pipe-analiza")?.classList.add("active");
-    } else if (pct < 30) {
-        document.getElementById("pipe-analiza")?.classList.add("done");
-        activeStep = "pipe-prevod";
-        document.getElementById("pipe-prevod")?.classList.add("active");
-    } else if (pct < 60) {
-        ["pipe-analiza", "pipe-prevod"].forEach(id =>
-            document.getElementById(id)?.classList.add("done")
-        );
-        activeStep = "pipe-lektor";
-        document.getElementById("pipe-lektor")?.classList.add("active");
-    } else if (pct < 85) {
-        ["pipe-analiza", "pipe-prevod", "pipe-lektor"].forEach(id =>
-            document.getElementById(id)?.classList.add("done")
-        );
-        activeStep = "pipe-korektor";
-        document.getElementById("pipe-korektor")?.classList.add("active");
-    } else {
-        ["pipe-analiza", "pipe-prevod", "pipe-lektor", "pipe-korektor"].forEach(
-            id => document.getElementById(id)?.classList.add("done")
-        );
-        activeStep = "pipe-gotovo";
-        document.getElementById("pipe-gotovo")?.classList.add("active");
-    }
-
-    if (activeStep) pipeline?.classList.add("processing");
-
-    // Update header live stage badge
-    const liveStage = document.getElementById("header-live-stage");
-    if (liveStage) {
-        if (activeStep && pct < 100) {
-            liveStage.textContent = PIPE_STAGE_LABELS[activeStep] || "";
-            liveStage.classList.remove("hidden");
-        } else {
-            liveStage.textContent = "";
-            liveStage.classList.add("hidden");
-        }
-    }
-}
 
 // ═══════════════ SAVE APP STATE ═══════════════════════
 function saveAppState() {
