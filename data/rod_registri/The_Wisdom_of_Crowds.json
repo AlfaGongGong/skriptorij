@@ -461,7 +461,7 @@
   },
   "Trapper": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Calder": {
@@ -1482,6 +1482,11 @@
   "Bajaz": {
     "rod": "M",
     "clue_m": 2,
+    "clue_z": 0
+  },
+  "Kalder": {
+    "rod": null,
+    "clue_m": 1,
     "clue_z": 0
   }
 }
