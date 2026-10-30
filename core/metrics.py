@@ -291,3 +291,92 @@ def classify_metrics(metrics: dict) -> str:
     if review >= 1:
         return "REVIEW"
     return "OK"
+
+
+# ═══════════════════════════════════════════════════════════════
+# T3a — check_accuracy: determinističke provere tačnosti prevoda
+# ═══════════════════════════════════════════════════════════════
+
+_BROJ_RE = re.compile(r"\d+(?:[.,]\d+)*")
+_KONTEKST_BROJ = 15  # znakova sa svake strane broja (~30 ukupno)
+
+
+def _normalizuj_broj(broj: str) -> str:
+    return broj.replace(",", ".")
+
+
+def _nadji_brojeve(tekst: str) -> list:
+    """Lista (normalizovan_broj, start, end) za svako pojavljivanje."""
+    return [
+        (_normalizuj_broj(m.group()), m.start(), m.end())
+        for m in _BROJ_RE.finditer(tekst)
+    ]
+
+
+def _skup_str(brojevi) -> str:
+    """Formatira Counter/set brojeva za ispis, sortirano numerički."""
+    kljuc = lambda s: [int(p) for p in s.split(".")]
+    return "{" + ", ".join(sorted(brojevi, key=kljuc)) + "}"
+
+
+def _fragment_oko_broja(tekst: str, pozicije: list, visak: Counter) -> str:
+    """Kontekst oko prvog broja koji je u višku; \"\" ako ga u tekstu nema."""
+    for broj, start, end in pozicije:
+        if visak[broj] > 0:
+            od = max(0, start - _KONTEKST_BROJ)
+            do = min(len(tekst), end + _KONTEKST_BROJ)
+            return " ".join(tekst[od:do].split())
+    return ""
+
+
+def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
+    """
+    Deterministička provera tačnosti prevoda za jedan blok.
+
+    Vraća:
+        {
+          "score": 0-100,
+          "issues": [
+            {"code": "...", "severity": "greška"|"upozorenje",
+             "detail": "...", "hr_fragment": "...", "en_fragment": "..."}
+          ]
+        }
+
+    Provere:
+      - brojevi_razlika (T3a) — brojevi u HR moraju biti isti kao u EN
+      - rečenice_manjak (T3b)  — TODO
+      - tagovi_razlika  (T3b)  — TODO
+      - imena_nedostaju (T3c)  — TODO
+      - en_ostaci       (T3c)  — TODO
+      - duplikati       (T3d)  — TODO
+      - prazni_pasus    (T3d)  — TODO
+    """
+    issues = []
+
+    # --- brojevi_razlika ---
+    hr_poz = _nadji_brojeve(hr_text)
+    en_poz = _nadji_brojeve(en_text)
+    hr_cnt = Counter(b for b, _, _ in hr_poz)
+    en_cnt = Counter(b for b, _, _ in en_poz)
+    if hr_cnt != en_cnt:
+        hr_visak = hr_cnt - en_cnt
+        en_visak = en_cnt - hr_cnt
+        issues.append({
+            "code": "brojevi_razlika",
+            "severity": "greška",
+            "detail": "U EN: %s, u HR: %s" % (
+                _skup_str(en_visak), _skup_str(hr_visak)
+            ),
+            "hr_fragment": _fragment_oko_broja(hr_text, hr_poz, hr_visak),
+            "en_fragment": _fragment_oko_broja(en_text, en_poz, en_visak),
+        })
+
+    # --- score (privremeno, do T3d) ---
+    if any(i["severity"] == "greška" for i in issues):
+        score = 40
+    elif issues:
+        score = 70
+    else:
+        score = 100
+
+    return {"score": score, "issues": issues}
