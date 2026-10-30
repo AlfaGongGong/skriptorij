@@ -55,11 +55,19 @@ register_active_fleet(_fleet_fallback)
 # ne cekaj prvi SkriptorijAllInOne init. Tako kes bude pun prije obrade.
 try:
     from network.model_discovery import prime_cache_sync, start_background_discovery
+    import threading as _threading
 
-    # Sinhrono popuni cache PRIJE background thread-a (10s po provajderu max)
-    prime_cache_sync(_fleet_fallback.fleet)
+    # FIX 2026-10-30: prime_cache_sync ide u background thread.
+    # Sinhrono blokira startup 3.6 min (43 ključa × 5s timeout).
+    # Cache se puni u pozadini, Flask se diže odmah.
+    _threading.Thread(
+        target=prime_cache_sync,
+        args=(_fleet_fallback.fleet,),
+        daemon=True,
+        name="prime-cache",
+    ).start()
     start_background_discovery(_fleet_fallback.fleet)
-    print("[BOOKLYFI] Model discovery thread pokrenut pri startu servera")
+    print("[BOOKLYFI] Model discovery pokrenut (prime u background thread-u)")
 except Exception as _e:
     print(f"[BOOKLYFI] Model discovery nije pokrenut: {_e}")
 
