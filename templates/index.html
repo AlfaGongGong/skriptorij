@@ -493,6 +493,15 @@
 
                     <div class="expert-section">
                         <div class="expert-section-title">📋 Sistemski dnevnik</div>
+                        <div class="audit-filter-bar" id="audit-filter-bar">
+                            <span class="audit-filter-label">Filter:</span>
+                            <button class="audit-filter-chip active" data-filter="all">Sve</button>
+                            <button class="audit-filter-chip" data-filter="log-system">SYS</button>
+                            <button class="audit-filter-chip" data-filter="log-tech">NET</button>
+                            <button class="audit-filter-chip" data-filter="log-success">OK</button>
+                            <button class="audit-filter-chip" data-filter="log-warning">UPOZ</button>
+                            <button class="audit-filter-chip" data-filter="log-critical">GREŠKA</button>
+                        </div>
                         <div class="audit-log" id="audit-log">
                             <span style="color: var(--tx-3)">Sistem spreman.</span>
                         </div>

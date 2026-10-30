@@ -3581,3 +3581,66 @@ a.fq-prov-name:hover { text-decoration: underline; }
 @keyframes btn-spin {
   to { transform: rotate(360deg); }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Audit log filter (2026-10-30)
+   ═══════════════════════════════════════════════════════════ */
+.audit-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    background: var(--bg-2);
+    border-radius: var(--r-sm);
+}
+
+.audit-filter-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--tx-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+}
+
+.audit-filter-chip {
+    padding: 3px 8px;
+    background: var(--bg-3);
+    border: 1px solid transparent;
+    border-radius: 100px;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--tx-2);
+    cursor: pointer;
+    transition: all 120ms;
+}
+
+.audit-filter-chip:hover {
+    background: var(--bg-1);
+    color: var(--tx-1);
+}
+
+.audit-filter-chip.active {
+    background: var(--accent-1);
+    color: #fff;
+}
+
+.audit-filter-chip[data-filter="log-critical"].active { background: var(--rose); }
+.audit-filter-chip[data-filter="log-warning"].active { background: var(--amber); color: #000; }
+.audit-filter-chip[data-filter="log-success"].active { background: var(--emerald); }
+.audit-filter-chip[data-filter="log-tech"].active { background: var(--violet); }
+.audit-filter-chip[data-filter="log-system"].active { background: var(--accent-2); }
+
+.audit-log.filtered .log-entry {
+    display: none !important;
+}
+.audit-log.filtered.filter-system .log-entry.log-system,
+.audit-log.filtered.filter-tech .log-entry.log-tech,
+.audit-log.filtered.filter-success .log-entry.log-success,
+.audit-log.filtered.filter-warning .log-entry.log-warning,
+.audit-log.filtered.filter-critical .log-entry.log-critical {
+    display: flex !important;
+}

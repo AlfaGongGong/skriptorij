@@ -767,6 +767,32 @@ async function pollFleet() {
 // ═══════════════ STATUS UPDATE ═════════════════════════
 let _auditAutoScroll = true;
 
+// Audit filter — chip click toggle
+function applyAuditFilter(filter) {
+    const log = document.getElementById("audit-log");
+    const chips = document.querySelectorAll(".audit-filter-chip");
+    if (!log) return;
+    chips.forEach(c => c.classList.toggle("active", c.dataset.filter === filter));
+    log.classList.remove("filtered", "filter-system", "filter-tech",
+                         "filter-success", "filter-warning", "filter-critical");
+    if (filter && filter !== "all") {
+        const shortName = filter.replace("log-", "filter-");
+        log.classList.add("filtered", shortName);
+    }
+}
+
+function initAuditFilter() {
+    document.querySelectorAll(".audit-filter-chip").forEach(chip => {
+        chip.addEventListener("click", () => applyAuditFilter(chip.dataset.filter));
+    });
+}
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAuditFilter);
+} else {
+    initAuditFilter();
+}
+window.applyAuditFilter = applyAuditFilter;
+
 function auditResumeScroll() {
     _auditAutoScroll = true;
     const log = document.getElementById("audit-log");
