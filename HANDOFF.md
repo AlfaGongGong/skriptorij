@@ -1,19 +1,19 @@
-# HANDOFF — 2026-10-30 13:11
+# HANDOFF — 2026-10-30 13:12
 
 ## Stanje
 - Faza: 1
-- Zadatak: T3a
+- Zadatak: T3b
 - Status: commit (ZAVRŠENO)
-- Git HEAD: 66d6623
+- Git HEAD: 220de39
 
 ## Sledeći korak (tačno)
-T3b: merge — Claude vraća ceo fajl, zameni samo pass blokove (ne ceo fajl)
+T3c: imena_nedostaju + en_ostaci (Claude acc 3)
 
 ## Blokirano
 nema
 
 ## Otvorena pitanja
-HANDOFF je greškom pisao T3b završeno. T3b NIJE primenjen.
+nema
 
 ## Log poslednje sesije
-.logs/t3b_t1_fix_131108.log
+.logs/t3b_merge2_131220.log
