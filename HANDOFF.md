@@ -1,13 +1,13 @@
-# HANDOFF — 2026-10-30 13:17
+# HANDOFF — 2026-10-30 13:18
 
 ## Stanje
 - Faza: 1
-- Zadatak: T3c
+- Zadatak: T5b
 - Status: commit (ZAVRŠENO)
-- Git HEAD: abaad1b
+- Git HEAD: f4b3305
 
 ## Sledeći korak (tačno)
-T3d: duplikati + prazni_pasus (Claude acc 4)
+T5: few-shot iz replacements.json u prompt (dijagnostika core/prompt_injector.py)
 
 ## Blokirano
 nema
@@ -16,4 +16,4 @@ nema
 nema
 
 ## Log poslednje sesije
-.logs/t3c_merge_131733.log
+.logs/t5b_extract_131839.log
