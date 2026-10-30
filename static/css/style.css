@@ -3812,3 +3812,112 @@ a.fq-prov-name:hover { text-decoration: underline; }
 .preflight-row b.warn { color: var(--amber); }
 .preflight-row b.err { color: var(--rose); }
 .preflight-row b.ok { color: var(--emerald); }
+
+/* ═══════════════════════════════════════════════════════════
+   Report modal (U3, 2026-10-30)
+   ═══════════════════════════════════════════════════════════ */
+.report-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 0.78rem;
+}
+
+.report-row span {
+    color: var(--tx-3);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.report-row b {
+    color: var(--tx-1);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.report-section-title {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--tx-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 12px 0 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--bd-soft);
+}
+
+.report-grade-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.report-grade-item {
+    text-align: center;
+    padding: 6px 4px;
+    background: var(--bg-2);
+    border-radius: var(--r-sm);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+}
+
+.report-grade-item b {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 2px;
+}
+
+.report-grade-item span {
+    font-size: 0.58rem;
+    color: var(--tx-3);
+}
+
+.report-grade-item.excellent b { color: var(--emerald); }
+.report-grade-item.good b { color: var(--accent-2); }
+.report-grade-item.poor b { color: var(--amber); }
+.report-grade-item.critical b { color: var(--rose); }
+
+.report-metrics-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.report-metric {
+    padding: 4px 10px;
+    background: var(--bg-2);
+    border-radius: 100px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--tx-3);
+}
+
+.report-metric b {
+    color: var(--tx-1);
+    font-weight: 700;
+    margin-left: 3px;
+}
+
+.report-metric.ok b { color: var(--emerald); }
+.report-metric.review b { color: var(--amber); }
+.report-metric.reject b { color: var(--rose); }
+
+.report-output-path {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--tx-3);
+    background: var(--bg-2);
+    padding: 6px 8px;
+    border-radius: var(--r-sm);
+    overflow-wrap: break-word;
+    word-break: break-all;
+}

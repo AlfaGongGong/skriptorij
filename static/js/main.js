@@ -979,6 +979,55 @@ function azuriraj_kontekst(s) {
 
 }
 
+async function showReport(s) {
+    const modal = document.getElementById("report-modal");
+    if (!modal) return;
+
+    const setB = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+
+    const knjiga = (s.book_name || s.current_file || "Knjiga").replace(/\.epub$/i, "");
+    setB("report-book", knjiga.length > 40 ? knjiga.slice(0, 37) + "…" : knjiga);
+
+    const dur = STATE.startTime ? Math.floor((Date.now() - STATE.startTime) / 1000) : 0;
+    const hh = Math.floor(dur / 3600), mm = Math.floor((dur % 3600) / 60), ss = dur % 60;
+    setB("report-duration", (hh ? hh + "h " : "") + (mm ? mm + "m " : "") + ss + "s");
+
+    const ok = (s.ok || "0/0").split("/");
+    setB("report-blocks", ok.length === 2 ? `${ok[0].trim()} / ${ok[1].trim()}` : (s.ok || "—"));
+
+    try {
+        const r = await fetch("/api/quality_scores");
+        if (r.ok) {
+            const d = await r.json();
+            const scores = d.scores || {};
+            const vals = Object.values(scores).filter(v => typeof v === "number");
+            if (vals.length > 0) {
+                const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                setB("report-avg", avg.toFixed(2) + "/10");
+                setB("report-excellent", vals.filter(v => v >= 8.5).length);
+                setB("report-good", vals.filter(v => v >= 6.5 && v < 8.5).length);
+                setB("report-poor", vals.filter(v => v >= 4.0 && v < 6.5).length);
+                setB("report-critical", vals.filter(v => v < 4.0).length);
+            }
+            const ms = d.metrics_summary || {};
+            setB("report-ok", ms.OK || 0);
+            setB("report-review", ms.REVIEW || 0);
+            setB("report-reject", ms.REJECT || 0);
+            setB("report-trunc", ms.TRUNCATED || 0);
+        }
+    } catch (_) {}
+
+    setB("report-output-path", s.output_file || "—");
+
+    modal.classList.add("open");
+    const closeBtn = document.getElementById("report-close");
+    const dlBtn = document.getElementById("report-download");
+    const close = () => { modal.classList.remove("open"); closeBtn.onclick = null; dlBtn.onclick = null; };
+    closeBtn.onclick = close;
+    dlBtn.onclick = () => { window.location.href = "/api/download"; close(); };
+}
+window.showReport = showReport;
+
 function updateStatus(s) {
     if (!s) return;
     try { azuriraj_kontekst(s); } catch (e) { console.error("[kontekst]", e); }
@@ -987,6 +1036,7 @@ function updateStatus(s) {
     const _pctLocal = s.pct || 0;
     if (!_autoStilTriggered && _lastPct < 100 && _pctLocal >= 100) {
         _autoStilTriggered = true;
+        setTimeout(() => { try { showReport(s); } catch (_) {} }, 800);
         const cb = document.getElementById("auto-stil");
         if (cb && cb.checked) {
             const book = s.book || s.output_file || s.file || STATE.book || "";

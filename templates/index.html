@@ -33,6 +33,40 @@
         </div>
     </div>
 
+    <!-- ═══════════════════ REPORT MODAL (U3) ═══════════════════ -->
+    <div class="modal-overlay" id="report-modal" role="dialog" aria-modal="true">
+        <div class="modal modal-friendly">
+            <div class="modal-icon">🎉</div>
+            <div class="modal-title">Obrada završena!</div>
+            <div class="modal-body" id="report-body">
+                <div class="report-row"><span>Knjiga</span><b id="report-book">—</b></div>
+                <div class="report-row"><span>Trajanje</span><b id="report-duration">—</b></div>
+                <div class="report-row"><span>Blokova obrađeno</span><b id="report-blocks">—</b></div>
+                <div class="report-section-title">📊 Kvalitet</div>
+                <div class="report-row"><span>Prosečna ocena</span><b id="report-avg">—</b></div>
+                <div class="report-grade-grid">
+                    <div class="report-grade-item excellent"><b id="report-excellent">0</b><span>🌟 Odlično</span></div>
+                    <div class="report-grade-item good"><b id="report-good">0</b><span>✅ Dobro</span></div>
+                    <div class="report-grade-item poor"><b id="report-poor">0</b><span>⚠ Retro</span></div>
+                    <div class="report-grade-item critical"><b id="report-critical">0</b><span>🔴 Kritično</span></div>
+                </div>
+                <div class="report-section-title">🎯 Metrike</div>
+                <div class="report-metrics-row">
+                    <span class="report-metric ok">OK <b id="report-ok">0</b></span>
+                    <span class="report-metric review">REVIEW <b id="report-review">0</b></span>
+                    <span class="report-metric reject">REJECT <b id="report-reject">0</b></span>
+                    <span class="report-metric trunc">TRUNC <b id="report-trunc">0</b></span>
+                </div>
+                <div class="report-section-title">📄 Izlaz</div>
+                <div class="report-output-path" id="report-output-path">—</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-sm" id="report-close">Zatvori</button>
+                <button class="btn btn-sm btn-success" id="report-download">⬇ Preuzmi EPUB</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══════════════════ PRE-FLIGHT MODAL (U1) ═══════════════════ -->
     <div class="modal-overlay" id="preflight-modal" role="dialog" aria-modal="true">
         <div class="modal modal-friendly">
