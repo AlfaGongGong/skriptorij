@@ -164,42 +164,41 @@ Vrati ISKLJUCIVO JSON:
         SYSTEM = """Ti si strucnjak za knjizevni prijevod s engleskog na hrvatski.
 
 Dobit ces listu termina iz EN knjige. Za SVAKI termin odluci:
+je li VLASTITO IME (lik, mjesto, specificna titula) ili OBI\u010cNA RIJE\u010c?
 
-  1. Je li to VLASTITO IME (lik, mjesto) ili SPECIFICAN TERMIN?
+KRITICNO — BUDI STROG:
+- VELIKA SLOVA NISU dovoljan signal. Svaka rijec na pocetku recenice
+  je velikim slovom. To NE znaci da je vlastito ime.
+- OBI\u010cNE RIJE\u010cI (glagoli, pridjevi, prilozi, opce imenice) se ODBACUJU
+  cak i ako su velikim slovom i ponavljaju se.
 
-KRITICNO — VELIKA SLOVA SU SIGNAL:
-Termini pisani velikim slovom u originalu koji se ponavljaju jesu
-VJEROVATNO vlastita imena (likovi, mjesta, titule) cak i ako zvuce
-kao obicne engleske rijeci. NE odbacuj ih samo zato sto izgledaju
-kao EN rijec — u kontekstu ove knjige funkcionisu kao vlastita imenica.
+Primjeri ODBACIVANJA (izbaci: true):
+  "Seems"     -> glagol (3. lice jednine od "seem"), ODBACI
+  "Change"    -> opca imenica/glagol, ODBACI
+  "Great"     -> pridjev, ODBACI (osim ako je dio titule "the Great")
+  "Well"      -> prilog/uzvik, ODBACI
+  "Never"     -> prilog, ODBACI
+  "Has"       -> glagol, ODBACI
+  "Being"     -> glagol/imenica, ODBACI
+  "Said"      -> glagol, ODBACI
+  "Then"      -> prilog, ODBACI
+  "Now"       -> prilog, ODBACI
 
-Primjeri koji MORAJU biti prihvaceni:
-  "Round"     -> mjesto u knjizi (ne "okrugao")
-  "North"     -> regija (ne "sjever")
-  "Steadfast" -> tvrdjava/mjesto (ne "postojan")
-  "Sulfur"    -> lik (ne "sumpor")
-  "Sticks"    -> nadimak lika (ne "stapovi")
-  "Practicals"-> titula u vojnoj hijerarhiji
+Primjeri PRIHVACANJA (kategorija: lik | mjesto | termin):
+  "Orso"      -> lik (osobno ime, ne postoji kao EN rijec)
+  "Bayaz"     -> lik (izmiljeno ime)
+  "Rikke"     -> lik (izmiljeno ime)
+  "Halder"    -> lik (prezime)
+  "Sulfur"    -> lik (nadimak, specifican)
+  "Union"     -> termin (politicka tvorevina, specificna u knjizi)
+  "Inspector" -> termin (titula, specificna u knjizi)
 
-  2. Ako je DA:
-     - kategorija: lik | mjesto | termin
-     - hr: kanonski hrvatski oblik (npr. Shev -> Sev, Dogman -> Pas Covjek)
-     - spoji_sa: nadimak/varijanta glavnog
-     - forbidden_variants: OBAVEZNO polje. Lista zabranjenih alternativa
-       koje AI model moze slucajno izmisliti tokom prijevoda:
-       * alternativne prijevode (Dogman -> "Pas Covjek", "Cucek", "Psoglavi")
-       * alternativne transliteracije (Jon -> "Dzon", "John", "Dzonatan")
-       * sinonime za termin (maca -> "sablja", "mac")
-       NAPOMENA: Ako "hr" ostaje isti kao "en" (ime se ne prevodi, ostaje
-       u originalu), OBAVEZNO navedi alternativne oblike koje treba zabraniti
-       (npr. ako je Dogman ostavljen kao Dogman, forbidden = alternativni
-       prijevodi na nas jezik koji bi AI mogao izmisliti).
-  3. Ako je NE: vrati {"en": "...", "izbaci": true}
+PRAVILO: Ako nisi 100% siguran da je rijec VLASTITO IME ili TITULA
+specificna za ovu knjigu — ODBACI. Bolje propustiti ime nego
+zagaditi glosar obicnom rijecom.
 
-VRATI ISKLJUCIVO JSON. Za svaki lik OBAVEZNO popuni forbidden_variants
-(nikad ne izostavljaj polje). Primjer ispravnog odgovora:
-{"rezultati": [{"en": "Dogman", "kategorija": "lik", "hr": "Pas Covjek",
-"spoji_sa": "", "forbidden_variants": ["Cucek", "Psoglavi", "Dogman"]}]}
+Vrati ISKLJUCIVO JSON:
+{"rezultati": [{"en": "...", "izbaci": true}, {"en": "...", "kategorija": "lik", "hr": "...", "spoji_sa": ""}]}
 """
     lista = "\n".join("- " + t for t in batch)
     user_prompt = "Termini:\n\n" + lista

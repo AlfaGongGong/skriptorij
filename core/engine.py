@@ -580,10 +580,29 @@ class SkriptorijAllInOne:
             "system",
         )
 
+        # Safety net: lokalna lista EN funkcijskih reči koje NIKAD nisu imena
+        _EN_LAZNA_IMENA = {
+            "the", "and", "of", "is", "are", "was", "were", "have", "has",
+            "had", "being", "been", "seems", "seemed", "seem", "said",
+            "says", "change", "changed", "great", "well", "never", "always",
+            "then", "now", "here", "there", "when", "where", "what", "who",
+            "which", "this", "that", "these", "those", "some", "any",
+            "all", "each", "every", "no", "yes", "not", "but", "for",
+            "with", "without", "from", "into", "onto", "upon", "about",
+            "above", "below", "over", "under", "between", "through",
+            "before", "after", "since", "until", "while", "yet", "nor",
+            "or", "because", "though", "although", "whereas", "than",
+        }
+
         glosar = {"knjiga": knjiga_id, "jezik": jezik, "termini": {}}
         for ime, broj in cisto.items():
             r = rezultati.get(ime, {})
             if r.get("izbaci"):
+                continue
+            if ime.lower() in _EN_LAZNA_IMENA:
+                self.log(f"Glosar: preskočeno '{ime}' (EN stop reč)", "tech")
+                continue
+            if len(ime) < 3:
                 continue
             glosar["termini"][ime] = {
                 "hr": r.get("hr", ime),
