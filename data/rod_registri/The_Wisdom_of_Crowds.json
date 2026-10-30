@@ -1,7 +1,7 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 49,
+    "clue_m": 52,
     "clue_z": 0
   },
   "Orso": {
@@ -32,7 +32,7 @@
   "Budućnost": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Zuri": {
     "rod": "Ž",
@@ -51,7 +51,7 @@
   },
   "admiral": {
     "rod": "M",
-    "clue_m": 7,
+    "clue_m": 8,
     "clue_z": 0
   },
   "Vick": {
@@ -67,7 +67,7 @@
   "Zatim": {
     "rod": "M",
     "clue_m": 7,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Visoko": {
     "rod": "Ž",
@@ -75,13 +75,13 @@
     "clue_z": 2
   },
   "Jakib": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Oduvijek": {
     "rod": "M",
-    "clue_m": 12,
+    "clue_m": 13,
     "clue_z": 1
   },
   "Kurva": {
@@ -91,17 +91,17 @@
   },
   "Istodobno": {
     "rod": null,
-    "clue_m": 1,
+    "clue_m": 2,
     "clue_z": 1
   },
   "Leeb": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Doors": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Zrak": {
@@ -551,7 +551,7 @@
   },
   "On": {
     "rod": "M",
-    "clue_m": 7,
+    "clue_m": 8,
     "clue_z": 0
   },
   "Glawarda": {
@@ -1016,7 +1016,7 @@
   },
   "namjesnik": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 11,
     "clue_z": 1
   },
   "Dobit": {
@@ -1026,13 +1026,13 @@
   },
   "Svijet": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Bludnica": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Kapija": {
     "rod": null,
@@ -1160,8 +1160,8 @@
     "clue_z": 1
   },
   "Onda": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Rikki": {
@@ -1293,5 +1293,35 @@
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
+  },
+  "Profit": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Savin": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
+  },
+  "Mrko": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Hof": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Valbek": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Vik": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 3
   }
 }
