@@ -1,13 +1,13 @@
-# HANDOFF — 2026-10-30 14:03
+# HANDOFF — 2026-10-30 14:09
 
 ## Stanje
 - Faza: 1
-- Zadatak: T5
+- Zadatak: T2
 - Status: commit (ZAVRŠENO)
-- Git HEAD: 4f87d51
+- Git HEAD: 965bba8
 
 ## Sledeći korak (tačno)
-T2 čeka Claude acc 2 (prompt poslat). Posle: test na prvom poglavlju Mudrosti vrana.
+S4b: Layer A retry (prompt_echo + neprevedeno_dio → retry u pipeline)
 
 ## Blokirano
 nema
@@ -16,4 +16,4 @@ nema
 Nema
 
 ## Log poslednje sesije
-.logs/t5_path_fix_140355.log
+.logs/t2_apply_140912.log
