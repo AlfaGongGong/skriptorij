@@ -647,6 +647,8 @@ class SkriptorijAllInOne:
 
     def _get_chapter_summary_for_lektor(self, current_file_name):
         try:
+            if current_file_name not in self._chapter_order:
+                return ""
             idx = self._chapter_order.index(current_file_name)
             if idx > 0:
                 prev_name = self._chapter_order[idx - 1]
