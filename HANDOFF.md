@@ -1,13 +1,13 @@
-# HANDOFF — 2026-10-30 13:18
+# HANDOFF — 2026-10-30 13:20
 
 ## Stanje
 - Faza: 1
-- Zadatak: T5b
+- Zadatak: T3d
 - Status: commit (ZAVRŠENO)
-- Git HEAD: f4b3305
+- Git HEAD: 3d84a42
 
 ## Sledeći korak (tačno)
-T5: few-shot iz replacements.json u prompt (dijagnostika core/prompt_injector.py)
+T5b cleanup — replacements.json ima pogrešne parove (Sulfur→Salfur, Uniona→Unija)
 
 ## Blokirano
 nema
@@ -16,4 +16,4 @@ nema
 nema
 
 ## Log poslednje sesije
-.logs/t5b_extract_131839.log
+.logs/t3d_merge_132006.log
