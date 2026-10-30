@@ -254,7 +254,7 @@ async def retroaktivna_relektura_v10(
 
         # B12 FIX: GUARDIAN i POLISH samo ako lektor zaista nešto promijenio
         # i ako tekst nije haluciniran
-        lektor_promjenio = raw_l and (finalno.strip() != old_text_cist.strip())
+        lektor_promjenio = raw_l and (finalno.strip() != old_text_prompt.strip())
         lektor_halucinacija = _detektuj_halucinaciju(old_text_cist, finalno, "RETRO")
 
         if lektor_promjenio and not lektor_halucinacija:
