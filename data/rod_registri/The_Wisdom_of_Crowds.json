@@ -1,12 +1,12 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 54,
+    "clue_m": 55,
     "clue_z": 0
   },
   "Orso": {
     "rod": "M",
-    "clue_m": 58,
+    "clue_m": 61,
     "clue_z": 0
   },
   "Leo": {
@@ -17,7 +17,7 @@
   "guverner": {
     "rod": "M",
     "clue_m": 4,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Savine": {
     "rod": "Ž",
@@ -66,7 +66,7 @@
   },
   "Zatim": {
     "rod": "M",
-    "clue_m": 8,
+    "clue_m": 9,
     "clue_z": 3
   },
   "Visoko": {
@@ -187,21 +187,21 @@
   "Palača": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "kancelar": {
     "rod": "M",
-    "clue_m": 13,
+    "clue_m": 15,
     "clue_z": 0
   },
   "Istina": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 14
+    "clue_z": 15
   },
   "komornik": {
     "rod": "M",
-    "clue_m": 9,
+    "clue_m": 10,
     "clue_z": 0
   },
   "Ritam": {
@@ -211,7 +211,7 @@
   },
   "Učinak": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Rikke": {
@@ -437,7 +437,7 @@
   "Zemlja": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Dow": {
     "rod": null,
@@ -701,7 +701,7 @@
   },
   "Forest": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 6,
     "clue_z": 0
   },
   "Curnsbicka": {
@@ -1310,8 +1310,8 @@
     "clue_z": 0
   },
   "Hof": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Valbek": {
@@ -1353,5 +1353,30 @@
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
+  },
+  "Brod": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Rucksted": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "West": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Šivers": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Rike": {
+    "rod": "Ž",
+    "clue_m": 0,
+    "clue_z": 2
   }
 }

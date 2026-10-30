@@ -28,6 +28,26 @@ from core.text_utils import (
 
 _RETRO_QA_THRESHOLD = 9.5  # FIX: QA retry prag za retro
 
+_RETRO_INLINE_TAGS = frozenset(
+    {"p", "br", "em", "i", "strong", "b", "blockquote",
+     "h1", "h2", "h3", "h4", "h5", "h6"}
+)
+
+
+def _inline_html_za_prompt(html, fallback):
+    """T4: čuva p/br/em/i/strong/b (bez atributa), ostalo skida."""
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+        for tag in soup.find_all(True):
+            if tag.name in _RETRO_INLINE_TAGS:
+                tag.attrs = {}
+            else:
+                tag.unwrap()
+        out = str(soup).replace("</p>", "</p>\n").strip()
+        return out if out else fallback
+    except Exception:
+        return fallback
+
 # Lazy import — rod_detektor i kalkovi_engine (fail-safe)
 try:
     from core.kalkovi.rod_detektor import rod_detektor as _rod_detektor_singleton
@@ -184,6 +204,9 @@ async def retroaktivna_relektura_v10(
         except Exception:
             old_text_cist = re.sub(r"<[^>]+>", " ", old_text_raw).strip()
 
+        # T4 FIX: prompt nosi inline formatiranje (em/strong/br), ne plain tekst
+        old_text_prompt = _inline_html_za_prompt(old_text_raw, old_text_cist)
+
         file_name = chk.stem.split("_blok_")[0] if "_blok_" in chk.stem else "retro"
         chunk_idx_str = chk.stem.split("_blok_")[-1] if "_blok_" in chk.stem else "0"
         try:
@@ -203,8 +226,8 @@ async def retroaktivna_relektura_v10(
             chapter_summary=chapter_summary,
             tip_bloka=tip_bloka,
         )
-        # B11 FIX: šalje čisti tekst, ne sirovi HTML
-        p_lek = f"Lektoriraj tekst:\n{old_text_cist}"
+        # B11/T4 FIX: šalje očišćeni HTML (samo p/br/em/i/strong/b), ne sirovi
+        p_lek = f"Lektoriraj tekst:\n{old_text_prompt}"
         raw_l, _ = await self._call_ai_engine(
             p_lek,
             chunk_idx,
