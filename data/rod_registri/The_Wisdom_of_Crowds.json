@@ -426,18 +426,18 @@
   },
   "Sibalt": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Odjednom": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Zemlja": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 3
+    "clue_z": 4
   },
   "Dow": {
     "rod": null,
@@ -1322,7 +1322,7 @@
   "Vik": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 10
+    "clue_z": 11
   },
   "Neprestano": {
     "rod": null,
@@ -1468,5 +1468,10 @@
     "rod": null,
     "clue_m": 0,
     "clue_z": 1
+  },
+  "Pajk": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
   }
 }
