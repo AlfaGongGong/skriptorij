@@ -350,6 +350,10 @@ class SkriptorijAllInOne:
 
         Vraća SVE potvrđene termine, uključujući one gdje je hr == en
         (za njih piše: "ostavi kako jest").
+
+        Za Abercrombie knjige: merge sa twp_names.json (119 ručno kuriranih
+        imena posle naše lekture). twp_names.json POBEĐUJE za likove —
+        kanon ostaje samo za termine koji nisu u njemu (npr. nove reči).
         """
         try:
             import json as _json
@@ -366,10 +370,35 @@ class SkriptorijAllInOne:
                 if _kp.exists():
                     kanon_path = _kp
                     break
-            if not kanon_path:
+
+            # Skupi termine: auto-generisani kanon + twp_names.json (Abercrombie)
+            termini = {}
+            if kanon_path:
+                try:
+                    data = _json.loads(kanon_path.read_text(encoding="utf-8"))
+                    termini = dict(data.get("termini", {}) or {})
+                except Exception:
+                    termini = {}
+
+            # twp_names.json — flat {en: hr}, kurirana posle naše lekture
+            # Samo za Abercrombie knjige
+            if "abercrombie" in knjiga_id.lower():
+                _twp = _P("/storage/emulated/0/Download/booklyfi_audit/twp_names.json")
+                if _twp.exists():
+                    try:
+                        flat = _json.loads(_twp.read_text(encoding="utf-8"))
+                        for en, hr in flat.items():
+                            termini[en] = {
+                                "hr": hr,
+                                "kategorija": "lik",
+                                "potvrdjeno": True,
+                            }
+                    except Exception:
+                        pass
+
+            if not termini:
                 return ""
-            data = _json.loads(kanon_path.read_text(encoding="utf-8"))
-            termini = data.get("termini", {})
+
             linije = []
             for en, info in sorted(termini.items()):
                 if not info.get("potvrdjeno"):
@@ -384,7 +413,6 @@ class SkriptorijAllInOne:
                     linija += " [" + kat + "]"
                     linije.append(linija)
                 else:
-                    # hr == en: ime ostaje kako jest, NE prevodi se
                     linija = "- " + en + " (OSTAVI KAKO JEST, ne prevodi) [" + kat + "]"
                     linije.append(linija)
             return "\n".join(linije)
