@@ -682,6 +682,15 @@ function stopDashboardPolling() {
     }
 }
 
+// D3: pauziraj glavni poll kad tab skriven (baterija)
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        stopDashboardPolling();
+    } else {
+        startDashboardPolling();
+    }
+});
+
 let _qualityPollTimer = null;
 function startQualityPolling() {
     if (_qualityPollTimer) return;

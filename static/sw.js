@@ -10,7 +10,7 @@ const STATIC_ASSETS = [
     "/",
     "/static/css/style.css",
     "/static/css/intro.css",
-    "/static/js/app.js",
+    "/static/js/main.js",
     "/static/js/api-client.js",
     "/static/manifest.json",
 ];
