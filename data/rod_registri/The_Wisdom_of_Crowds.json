@@ -1,7 +1,7 @@
 {
   "maršal": {
     "rod": "M",
-    "clue_m": 57,
+    "clue_m": 58,
     "clue_z": 0
   },
   "Orso": {
@@ -440,8 +440,8 @@
     "clue_z": 4
   },
   "Dow": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Namršteno": {
@@ -451,7 +451,7 @@
   },
   "Bethod": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 4,
     "clue_z": 0
   },
   "Bayaz": {
@@ -1371,13 +1371,13 @@
   },
   "Šivers": {
     "rod": "M",
-    "clue_m": 3,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Rike": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 5
+    "clue_z": 9
   },
   "Staur": {
     "rod": null,
@@ -1447,7 +1447,7 @@
   "Izern": {
     "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 2
+    "clue_z": 3
   },
   "Džadž": {
     "rod": "Ž",
@@ -1472,6 +1472,16 @@
   "Pajk": {
     "rod": null,
     "clue_m": 1,
+    "clue_z": 0
+  },
+  "Skejl": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Bajaz": {
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   }
 }
