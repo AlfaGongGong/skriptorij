@@ -371,6 +371,38 @@ def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
             "en_fragment": _fragment_oko_broja(en_text, en_poz, en_visak),
         })
 
+    # --- rečenice_manjak (T3b) ---
+    hr_rec = [r for r in re.split(r'(?<=[.!?…])\s+', hr_text.strip()) if r.strip()]
+    en_rec = [r for r in re.split(r'(?<=[.!?…])\s+', en_text.strip()) if r.strip()]
+    if len(en_rec) > 0:
+        odnos = len(hr_rec) / len(en_rec)
+        if not (0.9 <= odnos <= 1.1):
+            issues.append({
+                "code": "rečenice_manjak",
+                "severity": "upozorenje",
+                "detail": "U EN: %d, u HR: %d (odnos %.2f)" % (
+                    len(en_rec), len(hr_rec), odnos
+                ),
+                "hr_fragment": hr_rec[0][:60] if hr_rec else "",
+                "en_fragment": en_rec[0][:60],
+            })
+
+    # --- tagovi_razlika (T3b) ---
+    hr_em = len(re.findall(r'<em\b', hr_text, re.I))
+    hr_br = len(re.findall(r'<br\b', hr_text, re.I))
+    en_em = len(re.findall(r'<em\b', en_text, re.I))
+    en_br = len(re.findall(r'<br\b', en_text, re.I))
+    if (hr_em, hr_br) != (en_em, en_br):
+        issues.append({
+            "code": "tagovi_razlika",
+            "severity": "upozorenje",
+            "detail": "U EN: em=%d, br=%d; u HR: em=%d, br=%d" % (
+                en_em, en_br, hr_em, hr_br
+            ),
+            "hr_fragment": "",
+            "en_fragment": "",
+        })
+
     # --- score (privremeno, do T3d) ---
     if any(i["severity"] == "greška" for i in issues):
         score = 40
