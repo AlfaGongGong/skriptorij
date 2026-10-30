@@ -290,16 +290,32 @@ def chunk_html(html_content: str, max_words: int = 250) -> list:
 
 def get_context_window(checkpoint_dir, chunks: list, idx: int, file_name: str) -> tuple:
     """
-    Vraća (prev_ctx, next_ctx) — BEZ TEKSTA (samo oznaka).
+    Vraća (prev_ctx, next_ctx): zadnje 2 rečenice prethodnog bloka i
+    prva rečenica sljedećeg bloka (plain EN). Placeholder ako nema.
     """
-    prev_ctx = (
-        "Prethodni blok postoji. Nastavi stil i ton."
-        if idx > 0
-        else "Ovo je prvi blok poglavlja."
-    )
-    next_ctx = (
-        "Sljedeći blok postoji."
-        if idx < len(chunks) - 1
-        else "Ovo je zadnji blok poglavlja."
-    )
+    prev_ctx = "Ovo je prvi blok poglavlja."
+    next_ctx = "Ovo je zadnji blok poglavlja."
+
+    if idx > 0 and idx - 1 < len(chunks):
+        try:
+            prev_text = BeautifulSoup(chunks[idx - 1], "html.parser").get_text(" ")
+            prev_text = re.sub(r"\s+", " ", prev_text).strip()
+            if prev_text:
+                tail = " ".join(_SENTENCE_SPLIT.split(prev_text)[-2:]).strip()
+                if tail:
+                    prev_ctx = tail[-300:]
+        except Exception:
+            prev_ctx = "Prethodni blok postoji. Nastavi stil i ton."
+
+    if idx < len(chunks) - 1:
+        try:
+            next_text = BeautifulSoup(chunks[idx + 1], "html.parser").get_text(" ")
+            next_text = re.sub(r"\s+", " ", next_text).strip()
+            if next_text:
+                head = _SENTENCE_SPLIT.split(next_text)[0].strip()
+                if head:
+                    next_ctx = head[:250]
+        except Exception:
+            next_ctx = "Sljedeći blok postoji."
+
     return prev_ctx, next_ctx
