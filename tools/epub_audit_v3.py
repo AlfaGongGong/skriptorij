@@ -91,7 +91,7 @@ DEFAULT_PROFILE = {
     "quote_style": "auto",    # auto | hr | off
     "learn_names": None,      # None → uključeno ako je zadan --source
     "skip_fantasy": False,
-    "disabled_rules": [],
+    "disabled_rules": ["neparni_navodnik"],
     "thresholds": {},
     "extra_rules": [],        # [{pattern, code, severity, message, suggestion, ignore_case}]
 }
