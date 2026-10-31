@@ -480,6 +480,9 @@ def _post_process_tipografija(tekst: str) -> str:
         _nove.append(_l)
     tekst = "\n".join(_nove)
 
+    # FIX ,, -> , (Gemini ume da vrati dvostruki zarez posle pauze)
+    tekst = re.sub(r",,+", ",", tekst)
+
     # Whitespace ispred interpunkcije
     tekst = re.sub(r"\s+([,;:!?])", r"\1", tekst)
 
