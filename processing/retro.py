@@ -240,11 +240,25 @@ async def retroaktivna_relektura_v10(
         # _agresivno_cisti nije parsiralo JSON → pisalo je raw JSON u .chk
         finalno = _smart_extract(raw_l) if raw_l else old_text_raw
 
-        # Struktura FIX: retro šalje plain text AI-u, a HTML struktura se gubi.
-        # Ako originalni .chk je imao HTML tagove (p, em, ...) ali AI vratio
-        # plain text, restauriramo paragrafsku strukturu da EPUB ne izgubi
-        # formatiranje.
-        if _HTML_TAG_RE.search(old_text_raw) and not _HTML_TAG_RE.search(finalno):
+        # T4 VALIDATOR (A1.2): HTML struktura ne smije biti izgubljena.
+        # Gubitak = <p> < 80% ili class= < 50% u odnosu na original → čuvaj original.
+        _h_p_old = len(re.findall(r"<p[\s>]", old_text_raw))
+        _h_p_new = len(re.findall(r"<p[\s>]", finalno))
+        _h_cls_old = old_text_raw.count("class=")
+        _h_cls_new = finalno.count("class=")
+        _html_loss = (
+            (_h_p_old > 0 and _h_p_new < _h_p_old * 0.8)
+            or (_h_cls_old > 0 and _h_cls_new < _h_cls_old * 0.5)
+        )
+        if _html_loss:
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ RETRO_HTML_LOSS "
+                f"(<p>: {_h_p_old}→{_h_p_new}, class=: {_h_cls_old}→{_h_cls_new}) "
+                f"— čuvam original.",
+                "warning",
+            )
+            finalno = old_text_raw
+        elif _HTML_TAG_RE.search(old_text_raw) and not _HTML_TAG_RE.search(finalno):
             paras = [p.strip() for p in re.split(r"\n{2,}", finalno) if p.strip()]
             finalno = (
                 "\n".join(f"<p>{p}</p>" for p in paras)
@@ -288,6 +302,21 @@ async def retroaktivna_relektura_v10(
                 "warning",
             )
             finalno = old_text_raw  # vrati original ako halucinacija
+
+        # T4 VALIDATOR (A1.2b): GUARDIAN/POLISH ne smiju izgubiti HTML strukturu.
+        _g_p_new = len(re.findall(r"<p[\s>]", finalno))
+        _g_cls_new = finalno.count("class=")
+        if (
+            (_h_p_old > 0 and _g_p_new < _h_p_old * 0.8)
+            or (_h_cls_old > 0 and _g_cls_new < _h_cls_old * 0.5)
+        ):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ RETRO_HTML_LOSS_POST "
+                f"(<p>: {_h_p_old}→{_g_p_new}, class=: {_h_cls_old}→{_g_cls_new}) "
+                f"— čuvam original.",
+                "warning",
+            )
+            finalno = old_text_raw
 
         # Quality scoring s relektura penalizacijom
         ocjena = await _scoruj_kvalitetu(
