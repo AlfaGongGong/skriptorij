@@ -235,7 +235,12 @@ def _agresivno_cisti(tekst: str) -> str:
     tekst = re.sub(r"```.*?```", "", tekst, flags=re.DOTALL)
     tekst = re.sub(r"<OVDJE_IDI_[A-Z_]+>", "", tekst)
     tekst = _strip_html_wrapper(tekst)
-    return _ocisti_ai_markere(tekst.strip())
+    tekst = _ocisti_ai_markere(tekst.strip())
+    # 2026-11-01: \" unutar HTML tagova (escape iz JSON-a koji _smart_extract
+    # nije uhvatio jer nije bio validan JSON). Ne diraj van tagova — tamo
+    # _post_process_tipografija radi svoj posao.
+    tekst = re.sub(r"<[^>]+>", lambda m: m.group(0).replace('\\"', '"'), tekst)
+    return tekst
 
 
 def _ocisti_ai_markere(tekst: str) -> str:
