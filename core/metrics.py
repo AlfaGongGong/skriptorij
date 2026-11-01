@@ -329,6 +329,40 @@ def _fragment_oko_broja(tekst: str, pozicije: list, visak: Counter) -> str:
     return ""
 
 
+def accuracy_shadow(hr_text, en_text=None) -> dict:
+    """T3.2 shadow: deterministicki signali kvara po bloku. Ne utjece
+    na ocjenu. en_text=None -> samo provjere bez EN. tagovi_razlika se
+    namjerno ne koristi (58/78 dijelova TWOC, bez signala)."""
+    hr = hr_text or ""
+    flags = []
+    out = {}
+    if re.search(r"\{\s*[„\"“]?\s*korektura", hr):
+        flags.append("leak")
+    if re.search(r"<[^<>]*$", hr.rstrip()):
+        flags.append("kraj_u_tagu")
+    if en_text:
+        hp, ep = _plain_za_provjeru(hr), _plain_za_provjeru(en_text)
+        out["ratio"] = round(len(hp) / max(1, len(ep)), 3)
+        p_hr = len(re.findall(r"<p[\s>]", hr))
+        p_en = len(re.findall(r"<p[\s>]", en_text))
+        out["p"] = [p_en, p_hr]
+        hc = Counter(b for b, _, _ in _nadji_brojeve(hp))
+        ec = Counter(b for b, _, _ in _nadji_brojeve(ep))
+        out["br"] = [sum((ec - hc).values()), sum((hc - ec).values())]
+        r = check_accuracy(hr, en_text, {})
+        out["kodovi"] = [
+            i["code"] for i in r["issues"] if i["code"] != "tagovi_razlika"
+        ]
+        if out["ratio"] < 0.65:
+            flags.append("ratio_nizak")
+        if p_en >= 3 and p_hr < p_en * 0.8:
+            flags.append("p_gubitak")
+        if out["br"][0] or out["br"][1]:
+            flags.append("brojevi")
+    out["flags"] = flags
+    return out
+
+
 def _plain_za_provjeru(html_tekst: str) -> str:
     """HTML -> plain: blok-tagovi postaju prelom reda, atributi nestaju."""
     import html as _html

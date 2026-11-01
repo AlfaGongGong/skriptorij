@@ -731,6 +731,32 @@ async def _quality_scoring(
     if "quality_scores" not in self.shared_stats:
         self.shared_stats["quality_scores"] = {}
 
+    # T3.2 (shadow, 2026-11-01): signali kvara po bloku, NE mijenja ocjenu.
+    # Prije ranih povrataka jer su TOC blokovi imali odsjecen kraj i
+    # procurjeli "{ „korektura" bez ikakvog signala (nonprose -> 10.0).
+    try:
+        from core.metrics import accuracy_shadow
+
+        _acc = accuracy_shadow(
+            finalno,
+            original_chunk if tip_ocjenjivanja == "prevod" else None,
+        )
+        _ap = self.checkpoint_dir / "quality_accuracy.json"
+        with _QS_LOCK:
+            _ex = {}
+            if _ap.exists():
+                try:
+                    _ex = json.loads(_ap.read_text("utf-8"))
+                except Exception:
+                    _ex = {}
+            _ex[stem_key] = _acc
+            self._atomic_write(
+                _ap,
+                json.dumps(_ex, ensure_ascii=False, separators=(",", ":")),
+            )
+    except Exception:
+        logger.exception("[T3.2] accuracy shadow Exception")
+
     if je_paratekst:
         score_float = 8.5
         self._quality_scores[stem_key] = score_float
