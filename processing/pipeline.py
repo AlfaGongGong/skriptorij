@@ -38,6 +38,7 @@ from core.text_utils import (
     _je_ai_anotacija,
     _post_process_tipografija,
     _smart_extract,
+    _je_odsjecen_html,
     detektuj_tip_bloka,
 )
 from processing.rescue import _spasi_od_sirovog
@@ -1156,6 +1157,12 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         else:
             finalno = sirovo
             prov_l = "AUTO-HR"
+        if _je_odsjecen_html(finalno):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ LEKTOR vratio odsjecen HTML — vracam sigurni ulaz.",
+                "warning",
+            )
+            finalno = sirovo
         if _je_sumnjiv_gubitak_teksta(chunk, finalno, uloga="LEKTOR"):
             self.log(
                 f"[{file_name}] Blok {chunk_idx}: ⚠️ Lektor vratio prekratak tekst — vraćam sigurni ulaz.",
@@ -1185,7 +1192,12 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         if raw_kor_l:
             kor_l = _smart_extract(raw_kor_l)
             if kor_l and not _je_placeholder_lokalni(kor_l) and len(kor_l.strip()) > 20:
-                if _je_sumnjiv_gubitak_teksta(pre_korektor_l, kor_l, uloga="LEKTOR"):
+                if _je_odsjecen_html(kor_l):
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ⚠️ KOREKTOR vratio odsjecen HTML — zadrzavam lektor verziju.",
+                        "warning",
+                    )
+                elif _je_sumnjiv_gubitak_teksta(pre_korektor_l, kor_l, uloga="LEKTOR"):
                     self.log(
                         f"[{file_name}] Blok {chunk_idx}: ⚠️ Korektor skratio blok — zadržavam lektor verziju.",
                         "warning",

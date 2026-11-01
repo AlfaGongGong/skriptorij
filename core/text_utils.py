@@ -259,6 +259,19 @@ def _je_placeholder(tekst: str) -> bool:
     return cist in {"lektorisani tekst ovdje", "korigirani tekst ovdje"}
 
 
+def _je_odsjecen_html(tekst: str) -> bool:
+    """True ako tekst zavrsava usred HTML taga ili ima <p> bez </p>.
+    Hvata odsjecen odgovor (finishReason=MAX_TOKENS ili trim)."""
+    if not tekst:
+        return False
+    t = tekst.rstrip()
+    if re.search(r"<[^<>]*$", t):
+        return True
+    if "<p" in t and "</p>" not in t:
+        return True
+    return False
+
+
 # ── Detekcija AI anotacija (annotation-style odgovora) ───────────────────────
 # Kada AI (Lektor/Korektor) umjesto čistog teksta vrati listu izmjena u
 # markdown formatu (npr. "1. **Interpunkcija:** → **novo**"), taj odgovor
