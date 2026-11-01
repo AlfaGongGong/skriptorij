@@ -610,15 +610,17 @@ def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
             "PRETHODNI PRIJEVOD (ocjena "
             + str(ocjena)
             + "/10):\n"
-            + tekst[:1500]
+            + tekst[:8000]
             + "\n\n"
             + "RAZLOG NISKE OCJENE:\n"
             + razlog
             + "\n\n"
             + "ORIGINAL (za kontekst):\n"
-            + original_tekst[:1000]
+            + original_tekst[:8000]
             + "\n\n"
-            + "Prevedi PONOVNO, ispravljajuci navedene probleme. Vrati SAMO tekst."
+            + "Prevedi PONOVNO, ispravljajuci navedene probleme. Vrati CIJELI "
+            "prijevod u istom HTML formatu: sacuvaj sve <p> oznake te class i "
+            "id atribute. Vrati SAMO tekst, bez objasnjenja."
         )
 
     # Pozovi AI
@@ -641,7 +643,7 @@ def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
                 system=_RETRY_FEEDBACK_SYSTEM,
                 user=feedback,
                 temperature=0.3,
-                max_tokens=4000,
+                max_tokens=6000,
                 timeout=120,
             )
             if not res or len(res.strip()) < 50:
@@ -650,6 +652,29 @@ def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
             # Normalizuj dijalog i ocisti atribute
             res, _, _ = _normalizuj_dijalog_pipeline(res)
             res = _ocisti_html_atribute(res)
+
+            # B1: guard protiv gubitka teksta/HTML-a (2026-11-01).
+            # Retry je vracao plain <=1500 znakova, QA ga ocijenio bolje,
+            # a tekst je bio unisten. Ne vrijedi za "prompt echo" (tamo je
+            # prethodni tekst smece, nema sta cuvati).
+            if razlog != "prompt echo":
+                import re as _re_b1
+
+                _t_old = len(_re_b1.sub(r"<[^>]+>", "", tekst).strip())
+                _t_new = len(_re_b1.sub(r"<[^>]+>", "", res).strip())
+                _p_old = len(_re_b1.findall(r"<p[\s>]", tekst))
+                _p_new = len(_re_b1.findall(r"<p[\s>]", res))
+                if _t_old > 0 and (
+                    _t_new < _t_old * 0.9
+                    or (_p_old > 0 and _p_new < _p_old * 0.8)
+                ):
+                    self.log(
+                        "  Retry odbijen (gubitak): tekst "
+                        + str(_t_new) + "/" + str(_t_old)
+                        + ", <p> " + str(_p_new) + "/" + str(_p_old),
+                        "warning",
+                    )
+                    continue
 
             # Nova QA
             novi_qa = _qa_ai_ocjena(res, fleet)
