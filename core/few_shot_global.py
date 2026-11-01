@@ -18,6 +18,32 @@ def _norm(s):
     return re.sub(r"\s+", " ", s).strip().lower()
 
 
+def _zabranjeni_regex():
+    """2026-11-02 T1: oblici koji ne smiju uci u few-shot (uce model
+    pogresnom imenu). Bajaz = pogresno za Bayaz; plus odbacene_varijante
+    iz svih kanona."""
+    oblici = {"Bajaz"}
+    try:
+        kd = Path(__file__).parent.parent / "data" / "kanon" / "knjige"
+        for p in kd.glob("*.json"):
+            try:
+                d = json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            for v in (d.get("termini") or {}).values():
+                for o in (v.get("odbacene_varijante") or []):
+                    if isinstance(o, str) and len(o) >= 3:
+                        oblici.add(o)
+    except Exception:
+        pass
+    return re.compile(
+        r"(?<!\w)(?:" + "|".join(re.escape(o) + r"\w*" for o in sorted(oblici)) + ")"
+    )
+
+
+_ZABRANJENI = _zabranjeni_regex()
+
+
 def _similarity(a, b):
     return SequenceMatcher(None, _norm(a)[:300], _norm(b)[:300]).ratio()
 
@@ -59,6 +85,8 @@ def dodaj_odlican_prevod(en_text, bs_text, score, tip_bloka):
         return
     if not en_text or not bs_text:
         return
+    if _ZABRANJENI.search(bs_text):
+        return  # T1: ne ucimo pogresna imena
     shots = load_shots()
     # Provjeri da nije duplikat
     en_norm = _norm(en_text)[:200]
@@ -82,6 +110,7 @@ def dodaj_odlican_prevod(en_text, bs_text, score, tip_bloka):
 def pronadji_slicne(en_text, tip_bloka=None, max_n=3):
     """Vraća top N sličnih primjera iz baze za zadati tekst."""
     shots = load_shots()
+    shots = [s for s in shots if not _ZABRANJENI.search(str(s.get("bs", "")))]
     if tip_bloka:
         shots = [s for s in shots if s.get("tip") == tip_bloka]
     if not shots:

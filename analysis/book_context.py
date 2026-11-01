@@ -782,11 +782,18 @@ class BookContextManager:
         chunk_lower = chunk_text.lower()
         if glosar_tekst:
             linije = []
+            # 2026-11-02 T1: cijelo ime (i viseriјecno) + granice rijeci.
+            # Prije: substring na prvoj rijeci ("Leo" pogadja "Leopold",
+            # "Dow" pogadja "window").
             for linija in glosar_tekst.split("\n"):
-                m = _re.match(r"^-\s+([^\s(]+)", linija)
+                m = _re.match(r"^-\s+(.+?)\s+(?:->|\()", linija)
                 if m:
                     en_ime = m.group(1).strip()
-                    if en_ime and en_ime.lower() in chunk_lower:
+                    if en_ime and _re.search(
+                        r"(?<!\w)" + _re.escape(en_ime) + r"(?!\w)",
+                        chunk_text,
+                        _re.I,
+                    ):
                         linije.append(linija)
             return "\n".join(linije)
         if not self._glosar:
