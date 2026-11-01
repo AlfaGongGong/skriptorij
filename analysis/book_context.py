@@ -537,6 +537,17 @@ class BookContext:
         """
         if score < 8.5:
             return
+        # 2026-11-01: odbij kontaminirane parove — leak {„korektura:, odsjecen
+        # JSON wrapper bez }, ili prazan tekst. Vidi T4/leak dijagnostiku
+        # (4/2383 zapisa u few_shot_abercombie.json bili kontaminirani).
+        for _t in (originalni, prevedeni):
+            if not _t or not _t.strip():
+                return
+            if "korektura" in _t.lower():
+                return
+            _ts = _t.strip()
+            if _ts.startswith("{") and not _ts.endswith("}"):
+                return
         self.dodaj_few_shot(
             originalni=originalni,
             prevedeni=prevedeni,

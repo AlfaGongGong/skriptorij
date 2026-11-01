@@ -17606,12 +17606,6 @@
     "tip": "naracija"
   },
   {
-    "en": "ContentsCoverTitle PageCopyrightDedicationPart VIILike a KingChangeThe Little PeopleNo More TroubleBring Out the KingAll the CardsQuestionsCitizensMiraclesA Little Public HangingNest of VipersLines of",
-    "bs": "{„korektura: — SadržajNaslovnicaNaslovna stranicaAutorska pravaPosvetaSedmi dioKao kraljPromjenaMali ljudiNema više nevoljaIzvedite kraljaSve kartePitanjaGrađaniČudaMalo javno vješanjeZmijsko gnijezdo",
-    "score": 10.0,
-    "tip": "dijalog"
-  },
-  {
     "en": "He should’ve told that treacherous coward Isher to fuck himself the moment his prattle tilted towards rebellion. Or better yet, gone straight to Savine’s father and spilled the whole story to Old Stic",
     "bs": "Trebao je onom izdajničkom kukavici Išeru reći neka se napušti čim mu je brbljanje naginjalo prema pobuni. Ili još bolje, otići ravno Savinovu ocu i sve istresti Starom Štapu. Onda bi još uvijek bio n",
     "score": 10.0,
@@ -17636,12 +17630,6 @@
     "tip": "naracija"
   },
   {
-    "en": "{„korektura: — SadržajNaslovnicaNaslovna stranicaAutorska pravaPosvetaSedmi dioKao kraljPromjenaMali ljudiNema više nevoljaIzvedite kraljaSve kartePitanjaGrađaniČudaMalo javno vješanjeZmijsko gnijezdo",
-    "bs": "SadržajNaslovnicaNaslovna stranicaAutorska pravaPosvetaSedmi dioKao kraljPromjenaMali ljudiNema više nevoljaIzvedite kraljaSve kartePitanjaGrađaniČudaMalo javno vješanjeZmijsko gnijezdoKanali komunika",
-    "score": 10.0,
-    "tip": "dijalog"
-  },
-  {
     "en": "She licked her split lip and spat yet again, then untangled the thong from her wrist with clumsy fingers and tossed the mace on the ground. After a moment’s thought, she sat down wearily beside it. Bl",
     "bs": "Olizala je napuklu usnu i ponovno pljunula, zatim nespretnim prstima raspetljala remen s ručnog zgloba i bacila buzdovan na tlo. Nakon trenutka razmišljanja umorno je sjela pokraj njega. Krv je potekl",
     "score": 10.0,
@@ -17660,12 +17648,6 @@
     "tip": "opis"
   },
   {
-    "en": "Table of ContentsA Little HatredTitle PageCopyrightDedicationPART IBlessings and CursesWhere the Fight’s HottestGuilt Is a LuxuryKeeping ScoreA Little Public HangingThe BreakersThe Answer to Your Tear",
-    "bs": "{\n „korektura: — SadržajMalo mržnjeNaslovna stranicaAutorska pravaPosvetaI. DIOBlagoslovi i prokletstvaGdje je borba najžešćaKrivnja je luksuzZbrajanje bodovaMalo javno vješanjeRazbijačiOdgovor na tvo",
-    "score": 10.0,
-    "tip": "dijalog"
-  },
-  {
     "en": "Just Talk“Another step and you’ll be arrow-pricked, all four o’ you!”Rikke stopped where she was and showed both her open hands and all her teeth.Her father used to tell her your best shield is a smil",
     "bs": "Samo razgovor\"Još korak i izrešetat ću vas strijelama, sve četvero!\"Rike se zaustavi ondje gdje je stajala i pokaza obje otvorene šake i sve zube.Otac joj je običavao govoriti da joj je najbolji štit ",
     "score": 10.0,
@@ -17682,12 +17664,6 @@
     "bs": "Autor: Joe AbercrombieDOBA LUDILAMalo mržnjeNevolje s miromTRILOGIJA PRVI ZAKONOštrica samaPrije nego što ih objesePosljednji argument kraljevaOsvetnička hladnoćaJunaciCrvena zemljaOštri rubovi: Priče",
     "score": 10.0,
     "tip": "opis"
-  },
-  {
-    "en": "Table of ContentsTitle PageCopyrightDedicationPART IVThe World’s WrongsA Long Way from AduaA Sea of TroubleA RoutineThe Art of CompromiseSome Things Never HealWith the WindVisionsMan of the PeopleSafe",
-    "bs": "{„korektura: — SadržajNaslovna stranicaAutorska pravaPosvetaDIO IV.Svjetske nepravdeDug je put od AdueMore nevoljaRutinaUmjetnost kompromisaNeke rane nikada ne zacjeljujuS vjetromVizijeČovjek iz narod",
-    "score": 10.0,
-    "tip": "dijalog"
   },
   {
     "en": "Teufel was holding up a hand to stop him. She glared down, teeth bared, as if working herself up to some distasteful task. Orso did not care to imagine what kind of threats, blackmail or torture might",
@@ -18690,5 +18666,11 @@
     "bs": "Red MagiBajaz — Prvi među Magima, legendarni čarobnjak, spasitelj Unije i jedan od osnivača Zatvorenog Vijeća.Yoru Sulfur — bivši Bajazov štićenik, posve neupadljiv, osim po svojim očima različitih bo",
     "score": 9.8,
     "tip": "dijalog"
+  },
+  {
+    "en": "“Put it out of your mind.” Orso flung himself into his uncomfortable chair. “I have.”“We were set upon!” Rucksted stormed to his seat with spurs jingling. “The royal party!”“Rioters in the bloody stre",
+    "bs": "\"Izbaci to iz glave.\" Orso se strmoglavio u svoju neudobnu stolicu. \"Ja jesam.\"\"Napadnuti smo!\" Rucksted protutnja do svog sjedala uz zveket ostruga. \"Kraljevska povorka!\"\"Izgrednici na krvavim ulicam",
+    "score": 9.8,
+    "tip": "poetski"
   }
 ]
