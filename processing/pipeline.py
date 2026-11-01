@@ -434,6 +434,13 @@ def _je_prekinut_tekst(original: str, finalno: str) -> bool:
     Ako original završava pravom interpunkcijom, a finalno ne,
     i finalno završava slovom ili crticom — tekst je prekinut.
     """
+    # 2026-11-01: odsjecen HTML (usred taga) je takodje prekinut tekst.
+    # Strip-ovanje tagova ispod ne vidi "</p><" na kraju, pa hvataj ranije.
+    try:
+        if _je_odsjecen_html(finalno):
+            return True
+    except NameError:
+        pass
     orig_clean = re.sub(r"<[^>]+>", "", original).strip()
     final_clean = re.sub(r"<[^>]+>", "", finalno).strip()
 
@@ -1027,6 +1034,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         cached_final = _chk_read(
             self, file_name, chunk_idx, chunk_for_hash=chunk, glosar_hash=glosar_hash
         )
+        # 2026-11-01: odsjecen cache se odbija — inace se zauvek vraca
+        # korumpiran .chk (part0244/Test_Prevod chap02.blok_0 scenario).
+        if cached_final and _je_odsjecen_html(cached_final):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ Cache je odsjecen — ignorišem.",
+                "warning",
+            )
+            cached_final = None
         if cached_final and _detektuj_en_ostatke(cached_final) < 0.08:
             qs = self.shared_stats.get("quality_scores", {})
             stem_key = f"{file_name}_blok_{chunk_idx}"
@@ -1223,6 +1238,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     finalno = kor_l
 
         finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
+
+        # 2026-11-01: kalkovi mogu odsjeci HTML — provjeri prije upisa.
+        if _je_odsjecen_html(finalno):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ Kalkovi odsjekli HTML — vracam sigurni ulaz.",
+                "warning",
+            )
+            finalno = sirovo
 
         if _je_placeholder_lokalni(finalno):
             self.log(
