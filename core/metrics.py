@@ -359,6 +359,20 @@ def accuracy_shadow(hr_text, en_text=None) -> dict:
             flags.append("p_gubitak")
         if out["br"][0] or out["br"][1]:
             flags.append("brojevi")
+    # 2026-11-01 T3.1b: deterministicka ocjena. LLM scorer ne vidi EN, ovo
+    # vidi. Kad se ne slazu, vjerujemo determinističkom (min u pipeline.py).
+    # Kazne iz flagova (rade i bez EN) + kodova (samo uz EN). "brojevi" flag
+    # se NE racuna, jer je isti signal kao kod brojevi_razlika.
+    _kazne_flag = {"leak": 5.0, "kraj_u_tagu": 3.0, "ratio_nizak": 3.0,
+                   "p_gubitak": 2.0}
+    _kazne_kod = {"en_ostaci": 3.0, "imena_nedostaju": 2.0,
+                  "brojevi_razlika": 2.0}
+    _derived = 10.0
+    for _f in flags:
+        _derived -= _kazne_flag.get(_f, 0.0)
+    for _c in out.get("kodovi", []):
+        _derived -= _kazne_kod.get(_c, 0.0)
+    out["accuracy_derived"] = round(max(1.0, _derived), 1)
     out["flags"] = flags
     return out
 

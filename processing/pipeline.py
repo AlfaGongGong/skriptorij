@@ -735,6 +735,7 @@ async def _quality_scoring(
     # T3.2 (shadow, 2026-11-01): signali kvara po bloku, NE mijenja ocjenu.
     # Prije ranih povrataka jer su TOC blokovi imali odsjecen kraj i
     # procurjeli "{ „korektura" bez ikakvog signala (nonprose -> 10.0).
+    _acc = {}
     try:
         from core.metrics import accuracy_shadow
 
@@ -758,8 +759,22 @@ async def _quality_scoring(
     except Exception:
         logger.exception("[T3.2] accuracy shadow Exception")
 
+    # 2026-11-01 T3.1b: konacna ocjena = min(LLM, accuracy_derived).
+    # LLM scorer ne vidi EN; check_accuracy vidi. Kad se ne slazu,
+    # vjerujemo determinističkom. _acc je {} ako je shadow pao -> bez capa.
+    def _cap_acc(_s):
+        _d = _acc.get("accuracy_derived") if isinstance(_acc, dict) else None
+        if _d is not None and _d < _s:
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ accuracy cap "
+                f"{_s:.1f} -> {_d:.1f} (flags={_acc.get('flags', [])})",
+                "warning",
+            )
+            return _d
+        return _s
+
     if je_paratekst:
-        score_float = 8.5
+        score_float = _cap_acc(8.5)
         self._quality_scores[stem_key] = score_float
         self.shared_stats["quality_scores"][stem_key] = score_float
         self.log(
@@ -773,7 +788,7 @@ async def _quality_scoring(
         from core.quality import _je_nonprose_blok as _nonprose_check
 
         if _nonprose_check(finalno or ""):
-            score_float = 10.0
+            score_float = _cap_acc(10.0)
             self._quality_scores[stem_key] = score_float
             self.shared_stats["quality_scores"][stem_key] = score_float
             self.log(
@@ -823,6 +838,8 @@ async def _quality_scoring(
                         f"(ratio={ratio:.2f}, {old_score:.1f}→{score_float:.1f})",
                         "warning",
                     )
+
+        score_float = _cap_acc(score_float)
 
         preview = BeautifulSoup(finalno, "html.parser").get_text()[:80]
         self._quality_scores[stem_key] = score_float
