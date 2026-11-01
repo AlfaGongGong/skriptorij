@@ -1740,6 +1740,35 @@ async def process_chunk_with_retry(
         f"❌ Blok {chunk_idx} nije obrađen ni nakon {max_retries} pokušaja — upisujem NEPREVEDENO marker",
         "error",
     )
+    # 2026-11-02: PREVODILAC fallback kad LEKTOR padne (apendiksi, TOC)
+    _fb_stem = f"{file_name}_blok_{chunk_idx}"
+    try:
+        from pathlib import Path as _FbPath
+        _fb_dir = getattr(self, "checkpoint_dir", None)
+        if _fb_dir is None:
+            _fb_dir = _FbPath("/tmp")
+        _fb_prevod = _FbPath(str(_fb_dir)) / f"{file_name}_blok_{chunk_idx}.prevod.chk"
+        if _fb_prevod.exists():
+            _fb_txt = _fb_prevod.read_text("utf-8", errors="ignore")
+            if _fb_txt and len(_fb_txt.strip()) > 200 and not _je_odsjecen_html(_fb_txt):
+                _chk_write(self, file_name, chunk_idx, _fb_txt, chunk_for_hash=chunk)
+                if not hasattr(self, "_quality_scores"):
+                    self._quality_scores = {}
+                if "quality_scores" not in self.shared_stats:
+                    self.shared_stats["quality_scores"] = {}
+                self._quality_scores[_fb_stem] = 6.0
+                self.shared_stats["quality_scores"][_fb_stem] = 6.0
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ⚠️ LEKTOR pao — koristim PREVODILAC izlaz (6.0)",
+                    "warning",
+                )
+                return _fb_txt, "PREVOD-FALLBACK"
+    except Exception as _fb_err:
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: fallback greska: {_fb_err}",
+            "warning",
+        )
+
     _marker = f"<p>[[NEPREVEDENO: blok {chunk_idx}]]</p>"
     try:
         _chk_write(self, file_name, chunk_idx, _marker, chunk_for_hash=chunk)
