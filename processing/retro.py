@@ -39,8 +39,8 @@ def _inline_html_za_prompt(html, fallback):
     try:
         soup = BeautifulSoup(html, "html.parser")
         for tag in soup.find_all(True):
-            if tag.name in _RETRO_INLINE_TAGS:
-                tag.attrs = {}
+            if tag.name in _RETRO_INLINE_TAGS or tag.name in ("div", "section"):
+                tag.attrs = {k: v for k, v in tag.attrs.items() if k in ("class", "id")}
             else:
                 tag.unwrap()
         out = str(soup).replace("</p>", "</p>\n").strip()
@@ -323,7 +323,16 @@ async def retroaktivna_relektura_v10(
                     novi_score = float(qa_novi.get("ukupno", 0))
                 else:
                     novi_score = float(qa_novi) if qa_novi else 0.0
-                if res_novi and (uspjeh or novi_score > ocjena):
+                _t_old = len(re.sub(r"<[^>]+>", "", finalno).strip())
+                _t_new = len(re.sub(r"<[^>]+>", "", res_novi or "").strip())
+                _rp_old = len(re.findall(r"<p[\s>]", finalno))
+                _rp_new = len(re.findall(r"<p[\s>]", res_novi or ""))
+                _retry_ok = (
+                    _t_old > 0
+                    and _t_new >= _t_old * 0.9
+                    and (_rp_old == 0 or _rp_new >= _rp_old * 0.8)
+                )
+                if res_novi and _retry_ok and (uspjeh or novi_score > ocjena):
                     finalno = res_novi
                     ocjena = round(float(max(1.0, min(10.0, novi_score))), 1)
                     self.log(
