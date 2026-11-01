@@ -207,7 +207,22 @@ def _smart_extract(raw: str) -> str:
     if m:
         return _unescape_json_fallback(m.group(1))
 
-    cist = _agresivno_cisti(raw)
+    # 2026-11-01: AI ponekad vrati JSON omotač bez validnog JSON-a
+    # (npr. '{"korektura": "<div..." odsječeno' ili '{"korektura: <div...'
+    # bez zatvaranja). json.loads padne, regex fallback padne, pa skini
+    # prepoznatljiv prefiks ručno prije _agresivno_cisti.
+    raw_clean = re.sub(
+        r"^\s*\{\s*[„\"“]?\s*(?:korektura|finalno_polirano|translated|tekst|text)"
+        r"\s*[„\"“]?\s*[:—-]\s*[—\-]?\s*[„\"“]?\s*",
+        "",
+        raw,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    if raw_clean != raw and len(raw_clean.strip()) < 10:
+        return ""
+
+    cist = _agresivno_cisti(raw_clean)
     # Odbaci ako je AI vratio anotacijski odgovor umjesto čistog teksta
     if _je_ai_anotacija(cist):
         return ""
