@@ -74,7 +74,12 @@ def load_moon_replacements(path: str) -> list[Rule]:
                 pattern = re.compile(search)
             elif mode == "prefix":
                 # F0.15: *X = word boundary na pocetku, bez granice na kraju
-                pattern = re.compile(r"\b" + re.escape(search))
+                # 2026-11-01: \b ne matchuje ako search pocinje ne-slovom („, ”, itd.)
+                # jer je \b granica word/non-word. Za ne-slova matchuj bilo gde.
+                if search and (search[0].isalpha() or search[0].isdigit()):
+                    pattern = re.compile(r"\b" + re.escape(search))
+                else:
+                    pattern = re.compile(re.escape(search))
             elif mode == "word":
                 # F0.15: X = cijela rijec
                 pattern = re.compile(r"\b" + re.escape(search) + r"\b")
@@ -196,8 +201,11 @@ def apply_to_html(html_bytes: bytes, rules: list[Rule]) -> tuple[bytes, list[Fir
     result = "".join(parts)
 
     # 3. Vrati <script> i <style>
-    for i, block in enumerate(saved):
-        result = result.replace(f"{token_prefix}{i}___", block)
+    # 2026-11-01: obrnutim redom — ugnijezdeni placeholderi (npr. <style>
+    # unutar <head> se sacuva kao _0_, pa head kao _1_). Restore 0->N bi
+    # vratio _0_ tek posle _1_, pa bi _0_ unutar _1_ ostao nerazrijesen.
+    for i in range(len(saved) - 1, -1, -1):
+        result = result.replace(f"{token_prefix}{i}___", saved[i])
 
     return result.encode("utf-8"), all_fires
 
