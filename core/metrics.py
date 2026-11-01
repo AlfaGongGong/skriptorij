@@ -329,6 +329,20 @@ def _fragment_oko_broja(tekst: str, pozicije: list, visak: Counter) -> str:
     return ""
 
 
+def _plain_za_provjeru(html_tekst: str) -> str:
+    """HTML -> plain: blok-tagovi postaju prelom reda, atributi nestaju."""
+    import html as _html
+
+    t = re.sub(
+        r"</?(?:p|div|br|li|h[1-6]|section|blockquote)\b[^>]*>",
+        "\n",
+        html_tekst or "",
+        flags=re.I,
+    )
+    t = re.sub(r"<[^>]+>", "", t)
+    return _html.unescape(t).strip()
+
+
 def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
     """
     Deterministička provera tačnosti prevoda za jedan blok.
@@ -353,9 +367,15 @@ def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
     """
     issues = []
 
+    # T3.1: brojevi i recenice se porede na PLAIN tekstu. Na sirovom HTML-u
+    # brojevi iz id/class/href davali su lazni "brojevi_razlika" i na
+    # ispravnom bloku, a recenice odvojene samo tagovima se nisu brojale.
+    hr_plain = _plain_za_provjeru(hr_text)
+    en_plain = _plain_za_provjeru(en_text)
+
     # --- brojevi_razlika ---
-    hr_poz = _nadji_brojeve(hr_text)
-    en_poz = _nadji_brojeve(en_text)
+    hr_poz = _nadji_brojeve(hr_plain)
+    en_poz = _nadji_brojeve(en_plain)
     hr_cnt = Counter(b for b, _, _ in hr_poz)
     en_cnt = Counter(b for b, _, _ in en_poz)
     if hr_cnt != en_cnt:
@@ -367,13 +387,13 @@ def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
             "detail": "U EN: %s, u HR: %s" % (
                 _skup_str(en_visak), _skup_str(hr_visak)
             ),
-            "hr_fragment": _fragment_oko_broja(hr_text, hr_poz, hr_visak),
-            "en_fragment": _fragment_oko_broja(en_text, en_poz, en_visak),
+            "hr_fragment": _fragment_oko_broja(hr_plain, hr_poz, hr_visak),
+            "en_fragment": _fragment_oko_broja(en_plain, en_poz, en_visak),
         })
 
     # --- rečenice_manjak (T3b) ---
-    hr_rec = [r for r in re.split(r'(?<=[.!?…])\s+', hr_text.strip()) if r.strip()]
-    en_rec = [r for r in re.split(r'(?<=[.!?…])\s+', en_text.strip()) if r.strip()]
+    hr_rec = [r for r in re.split(r'(?<=[.!?…])\s+', hr_plain) if r.strip()]
+    en_rec = [r for r in re.split(r'(?<=[.!?…])\s+', en_plain) if r.strip()]
     if len(en_rec) > 0:
         odnos = len(hr_rec) / len(en_rec)
         # 0.75-1.35: dijalog i skraćenice cepaju rečenice drugačije na HR/EN
