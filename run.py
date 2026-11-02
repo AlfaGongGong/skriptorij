@@ -93,7 +93,7 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
         losi = [v for v in scores.values() if _get_score(v) < _QUALITY_RESCUE_THRESHOLD]
         pct_losi = len(losi) / len(scores) if scores else 0
 
-        if pct_losi > 0.30:
+        if pct_losi > 0.30 and __import__("os").environ.get("BOOKLYFI_AUTO_RETRO") == "1":
             engine.log(
                 f"🔁 AUTO-RETRO detekcija: {len(losi)}/{len(scores)} blokova "
                 f"lošeg kvaliteta ({pct_losi:.0%}) → pokrecemo retro re-lekturu",
