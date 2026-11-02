@@ -322,7 +322,8 @@ Za PRIJEVOD ocjenjujes 4 kriterija:
   tacnost  9-10=savrseno prenosi smisao | 7-8=blago odstupanje | 5-6=neke greske | 1-4=propusti
   jezik    9-10=idiomatski HR | 7-8=par kalkova | 5-6=vise kalkova/EN | 1-4=dominiraju kalkovi
   stil     9-10=tecan knjizevni | 7-8=mali problemi | 5-6=prevodilacki trag | 1-4=mehanicno
-  tipograf 9-10=em-crtice,dobra interpunkcija | 7-8=1-2 greske | 5-6=navodnici umj.crtice | 1-4=haos
+  tipograf 9-10=ispravni navodnici „…” ili em-crtice za dijalog, dobra interpunkcija | 7-8=1-2 greske | 5-6=ASCII navodnici " ili pomijesani stilovi | 1-4=haos
+  (Dijalog u navodnicima „…” je ISPRAVAN i ne smije se kaznjavati.)
   Ako nema dijaloga: tipograf=9. Finalna ocjena = prosjek sva 4.
 
 Za RELEKTURA ocjenjujes 3 kriterija (BEZ tacnosti — nema originalnog EN za poredenje):

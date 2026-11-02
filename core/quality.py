@@ -153,15 +153,8 @@ def _izracunaj_heuristicki_score(tekst: str) -> tuple[float, list[str]]:
         razlozi.append(f"Kalkovi: {', '.join(pronadeni_kalkovi[:3])}")
 
     # ── 4. Dijalog bez em-crtice ─────────────────────────────────────────────
-    # FIX 6: broji tipografske navodnike “”„ zajedno s ASCII "
-    navodnici = (
-        cist.count('"')
-        + cist.count("“")
-        + cist.count("”")
-        + cist.count("„")
-        + cist.count("‘")
-        + cist.count("’")
-    )
+    # FIX 7: „…” je ispravan dijalog (prompt pravilo); kaznjava se samo ASCII "
+    navodnici = cist.count('"')
     em_crtice = cist.count("—")
     dijalog_glagoli = any(
         g in text_lower
