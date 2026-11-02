@@ -778,6 +778,27 @@ def review_chunk(chunk_stem):
                     chk_path = candidate
                     break
 
+        # 2026-11-02: ako nije u aktivnoj knjizi, trazi po SVIM _skr_* folderima
+        # (review_list moze prikazati blokove druge knjige kad last_book nije azuriran)
+        if not chk_path.exists() and CHECKPOINT_BASE_DIR.exists():
+            for _other_skr in CHECKPOINT_BASE_DIR.glob("_skr_*"):
+                if _other_skr == chk_dir.parent:
+                    continue
+                _other_ck = _other_skr / "checkpoints"
+                if not _other_ck.exists():
+                    continue
+                _candidate = _resolve_chunk_path(_other_ck, stem)
+                if _candidate.exists():
+                    chk_path = _candidate
+                    break
+                for suffix in (".prevod.chk", ".lektura.chk"):
+                    _c2 = _other_ck / f"{stem}{suffix}"
+                    if _c2.exists():
+                        chk_path = _c2
+                        break
+                if chk_path.exists():
+                    break
+
         if request.method == "GET":
             if not chk_path.exists():
                 return jsonify({"error": f"Chunk nije pronađen: {stem}"}), 404
@@ -1200,3 +1221,61 @@ def epub_plain(book):
 
     except Exception as e:
         return jsonify({"error": str(e), "blocks": []}), 500
+
+# ── 2026-11-02: names endpoints (UI ih zvao → 404) ──────────────────────────
+
+@bp.route("/api/names/status", methods=["GET"])
+def names_status():
+    book = request.args.get("book", "")
+    if not book:
+        return jsonify({"error": "Nema book parametra", "exists": False, "count": 0}), 200
+    from pathlib import Path as _NPath
+    candidates = [
+        _NPath(str(INPUT_DIR)) / f"{book}.replacement",
+        _NPath(str(INPUT_DIR)).parent / "STYLED" / f"{book}.replacement",
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                txt = p.read_text(encoding="utf-8", errors="ignore")
+                lines = [l for l in txt.splitlines() if l.strip() and not l.lstrip().startswith("#")]
+                return jsonify({"book": book, "exists": True, "count": len(lines), "path": str(p)})
+            except Exception:
+                pass
+    return jsonify({"book": book, "exists": False, "count": 0})
+
+
+@bp.route("/api/names/replacement", methods=["GET"])
+def names_replacement():
+    book = request.args.get("book", "")
+    if not book:
+        return jsonify({"error": "Nema book parametra", "text": ""})
+    from pathlib import Path as _NPath
+    candidates = [
+        _NPath(str(INPUT_DIR)) / f"{book}.replacement",
+        _NPath(str(INPUT_DIR)).parent / "STYLED" / f"{book}.replacement",
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                return jsonify({"book": book, "text": p.read_text(encoding="utf-8", errors="ignore"), "path": str(p)})
+            except Exception:
+                pass
+    return jsonify({"book": book, "text": ""})
+
+
+@bp.route("/api/names/apply", methods=["POST"])
+def names_apply():
+    data = request.get_json() or {}
+    book = data.get("book", "")
+    text = data.get("text", "")
+    if not book:
+        return jsonify({"error": "Nema book parametra"}), 400
+    from pathlib import Path as _NPath
+    p = _NPath(str(INPUT_DIR)) / f"{book}.replacement"
+    try:
+        p.write_text(text, encoding="utf-8")
+        return jsonify({"ok": True, "path": str(p)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
