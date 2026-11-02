@@ -197,6 +197,99 @@ def _termux_wake_unlock():
         print(f"{_YELLOW}[WARN]{_RESET} termux-api nije instaliran, wake-unlock preskočen")
 
 
+
+
+# ── Gemini TTS proxy endpoint (2026-11-02) ─────────────────────────────────
+# Lokalni endpoint za TTS Server plugin. Flask radi Gemini API iz Pythona,
+# plugin zove 127.0.0.1:8080/tts/gemini. Zaobilazi drake.net probleme.
+
+@app.route("/tts/gemini", methods=["POST"])
+def tts_gemini_endpoint():
+    """Body: {"text": "...", "voice": "Kore", "keys": ["..."]}
+    Vraca: WAV (audio/wav) ili JSON gresku."""
+    import json as _json
+    import urllib.request as _urllib_req
+    import urllib.error as _urllib_err
+    import struct as _struct
+
+    try:
+        data = request.get_json()
+        text = data.get("text", "").strip()
+        voice = data.get("voice", "Kore")
+        keys = data.get("keys") or []
+        if not text:
+            return jsonify({"error": "Prazan text"}), 400
+        if not keys:
+            # fallback: ucitaj iz dev_api.json
+            try:
+                with open("dev_api.json", encoding="utf-8") as f:
+                    keys = _json.load(f).get("GEMINI", [])
+            except Exception:
+                pass
+        if not keys:
+            return jsonify({"error": "Nema Gemini kljuceva"}), 400
+
+        # sanitizacija voice
+        ALL = ["Kore","Puck","Charon","Fenrir","Aoede","Leda","Orus","Zephyr",
+               "Autonoe","Enceladus","Iapetus","Umbriel","Algieba","Despina",
+               "Erinome","Algenib","Rasalgethi","Laomedeia","Achernar","Alnilam",
+               "Schedar","Gacrux","Pulcherrima","Achird","Zubenelgenubi",
+               "Vindemiatrix","Sadachbia","Sadaltager","Sulafat"]
+        voice_name = "Kore"
+        for v in ALL:
+            if v in str(voice):
+                voice_name = v
+                break
+
+        body = {
+            "contents": [{"parts": [{"text": text}]}],
+            "generationConfig": {
+                "responseModalities": ["AUDIO"],
+                "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice_name}}}
+            }
+        }
+        model = "gemini-3.1-flash-tts-preview"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        last_err = ""
+        for i, k in enumerate(keys):
+            try:
+                req = _urllib_req.Request(
+                    url,
+                    data=_json.dumps(body).encode("utf-8"),
+                    headers={"Content-Type": "application/json", "x-goog-api-key": k},
+                    method="POST",
+                )
+                with _urllib_req.urlopen(req, timeout=30) as r:
+                    resp = _json.loads(r.read().decode("utf-8"))
+                parts = resp.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                for p in parts:
+                    if "inlineData" in p and p["inlineData"].get("data"):
+                        import base64 as _b64
+                        pcm = _b64.b64decode(p["inlineData"]["data"])
+                        # WAV header
+                        sr, ch, bps = 24000, 1, 16
+                        data_len = len(pcm)
+                        header = _struct.pack("<4sI4s4sIHHIIHH4sI",
+                            b"RIFF", 36 + data_len, b"WAVE", b"fmt ",
+                            16, 1, ch, sr, sr*ch*bps//8, ch*bps//8, bps,
+                            b"data", data_len)
+                        from flask import Response as _Resp
+                        return _Resp(header + pcm, mimetype="audio/wav")
+                last_err = f"K{i+1}: nema audio"
+            except _urllib_err.HTTPError as e:
+                last_err = f"K{i+1}: HTTP {e.code}"
+                if e.code == 429:
+                    continue
+            except Exception as e:
+                last_err = f"K{i+1}: {str(e)[:80]}"
+        return jsonify({"error": "Svi kljucevi pali", "last": last_err}), 502
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+# ── Kraj Gemini TTS endpoint ────────────────────────────────────────────────
+
 if __name__ == "__main__":
     import os as _os
     _host = _os.environ.get("BOOKLYFI_HOST", "127.0.0.1")
