@@ -483,7 +483,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 bad_threshold=_QUALITY_RESCUE_THRESHOLD,
             )
             # Nakon retro — nastavi normalnom obradom za blokove koji još nemaju .chk
-            await engine.main_loop(engine.html_files)
+            await engine._call_single_provider(engine.html_files)
 
         asyncio.run(_retro_pa_nastavi())
 
