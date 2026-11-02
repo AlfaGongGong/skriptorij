@@ -948,6 +948,51 @@ async def _quality_scoring(
 # ── Glavni AI pipeline ────────────────────────────────────────────────────────
 
 
+async def _posalji_po_stavkama(
+    self, chunk, chunk_idx, file_name, fusion_sys, tip_bloka, po_grupi=12
+):
+    """2026-11-02: PREVODILAC izlaz je odsjecen kod dugih lista (TOC, landmarks).
+    Prevodi grupe od po_grupi <li> stavki zasebno; glava, razmaci i rep ostaju
+    iz originala. Vraca prevedeni tekst ili None (tada ostaje stari put)."""
+    import re as _re
+
+    stavke = list(_re.finditer(r"<li\b.*?</li>", chunk, _re.DOTALL | _re.IGNORECASE))
+    n = len(stavke)
+    if n <= po_grupi:
+        return None
+    izlaz = [chunk[: stavke[0].start()]]
+    for a in range(0, n, po_grupi):
+        b = min(a + po_grupi, n) - 1
+        dio = chunk[stavke[a].start() : stavke[b].end()]
+        prevedeno = None
+        for _pokusaj in range(2):
+            raw, _prov = await self._call_ai_engine(
+                f"Engleski tekst za prevod:\n{dio}",
+                chunk_idx,
+                uloga="PREVODILAC",
+                filename=file_name,
+                sys_override=fusion_sys,
+                tip_bloka=tip_bloka,
+            )
+            if not raw:
+                continue
+            tekst = _smart_extract(raw)
+            if (
+                tekst
+                and not _je_odsjecen_html(tekst)
+                and tekst.lower().count("<li") == dio.lower().count("<li")
+            ):
+                prevedeno = tekst.strip()
+                break
+        if prevedeno is None:
+            return None
+        izlaz.append(prevedeno)
+        if b + 1 < n:
+            izlaz.append(chunk[stavke[b].end() : stavke[b + 1].start()])
+    izlaz.append(chunk[stavke[-1].end() :])
+    return "".join(izlaz)
+
+
 async def _posalji_po_paragrafima(
     self, chunk, chunk_idx, file_name, fusion_sys, tip_bloka
 ):
@@ -1381,6 +1426,16 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 )
                 self.chunk_skips += 1
                 return None, "CONTENT_FILTER"
+        if raw_fusion and _je_odsjecen_html(raw_fusion) and chunk.lower().count("<li") > 12:
+            _po_st = await _posalji_po_stavkama(
+                self, chunk, chunk_idx, file_name, fusion_sys, tip_bloka
+            )
+            if _po_st:
+                raw_fusion = _po_st
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ✅ Odsjecen izlaz — prevedeno po grupama <li>",
+                    "tech",
+                )
         if not raw_fusion:
             if prov1 == "ALL_FAILED":
                 marker = (
