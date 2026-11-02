@@ -467,6 +467,51 @@ def _adaptive_temp(uloga: str, tip_bloka: str, bazna_temp: float) -> float:
     return bazna_temp
 
 
+def _navodnici_u_tekstu(html: str) -> str:
+    """2026-11-02: navodnici po stanju unutar odlomka (radi i preko <em>).
+    Mijenja samo tekst izvan tagova: ASCII " i otvarajuci/zatvarajuci
+    tipografski dobivaju oblik „ ... ”. Odlomak koji pocinje crticom, a ima
+    neparan broj ASCII navodnika, ostaje netaknut (stray " rjesava kasniji
+    korak)."""
+    import re as _re
+
+    otv, zat = "\u201e", "\u201d"
+    izlaz = []
+    for seg in _re.split(r"(?i)(?=<p[\s>])", html):
+        dij = _re.split(r"(<[^>]+>)", seg)
+        tekstovi = dij[0::2]
+        if not any(c in t for t in tekstovi for c in ('"', "\u201c", "\u201d", "\u201e")):
+            izlaz.append(seg)
+            continue
+        n_ascii = sum(t.count('"') for t in tekstovi)
+        prvi = next((t.strip() for t in tekstovi if t.strip()), "")
+        if prvi.startswith(("\u2014", "\u2013")) and n_ascii % 2 == 1:
+            izlaz.append(seg)
+            continue
+        otvoren = False
+        for i in range(0, len(dij), 2):
+            nova = []
+            for c in dij[i]:
+                if c in ('"', "\u201c"):
+                    if otvoren:
+                        nova.append(zat)
+                        otvoren = False
+                    else:
+                        nova.append(otv)
+                        otvoren = True
+                elif c == "\u201e":
+                    nova.append(c)
+                    otvoren = True
+                elif c == "\u201d":
+                    nova.append(c)
+                    otvoren = False
+                else:
+                    nova.append(c)
+            dij[i] = "".join(nova)
+        izlaz.append("".join(dij))
+    return "".join(izlaz)
+
+
 def _post_process_tipografija(tekst: str) -> str:
     """
     Post-processing tipografskih konvencija za HR standard.
@@ -504,6 +549,8 @@ def _post_process_tipografija(tekst: str) -> str:
 
     # Streljajući " u dijalogu (— Dijalog." ili — Dijalog!") — neparan broj " u redu
     # koji počinje s —, a nema „ (jer „ bi značio legitiman par)
+    # 2026-11-02: navodnici po stanju unutar odlomka (preko <em> itd.)
+    tekst = _navodnici_u_tekstu(tekst)
     _linije = tekst.split("\n")
     _nove = []
     for _l in _linije:
