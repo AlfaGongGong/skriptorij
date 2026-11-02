@@ -482,8 +482,32 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 only_bad=True,
                 bad_threshold=_QUALITY_RESCUE_THRESHOLD,
             )
-            # Nakon retro — nastavi normalnom obradom za blokove koji još nemaju .chk
-            await engine.main_loop(engine.html_files)
+            # Nakon retro — nastavi obradom preostalih blokova
+            # (main_loop() je lokalna fn definisana nize, ne moze se pozvati odavde)
+            sharedstats["status"] = (
+                "LEKTURA U TOKU..."
+                if engine.knjiga_mode == "LEKTURA"
+                else "PREVOD U TOKU..."
+            )
+            for _i, _hf in enumerate(engine.html_files, 1):
+                if shared_controls.get("stop") or shared_controls.get("reset"):
+                    break
+                engine.log(
+                    f"📄 Poglavlje {_i}/{len(engine.html_files)}: {_hf.name}", "system"
+                )
+                await engine.process_single_file_worker(_hf)
+                engine.buildlive_epub()
+                engine._chapters_processed += 1
+                if engine._chapters_processed % engine.GLOSAR_UPDATE_INTERVAL == 0:
+                    try:
+                        _tekst_pog = _hf.read_text("utf-8", errors="ignore")
+                        await engine._inkrementalna_analiza_glosara(
+                            _tekst_pog, _hf.name
+                        )
+                    except Exception as _e:
+                        engine.log(
+                            f"⚠️ Glosar update pao: {_e}", "warning"
+                        )
 
         asyncio.run(_retro_pa_nastavi())
 
