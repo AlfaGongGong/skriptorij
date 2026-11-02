@@ -392,10 +392,15 @@ async def _scoruj_kvalitetu(
     stari_tekst: str = None,
     tip_ocjenjivanja: str = "opci",
     prevodilac_provider: str = None,
+    meta_out: dict = None,
 ) -> float:
+    """Opcioni meta_out se popunjava sa heur/ai/status. Ostali pozivaoci
+    (retro) ga ne prosledjuju i ponasanje im je nepromijenjeno."""
 
     # Auto-10 za non-prose blokove
     if _je_nonprose_blok(tekst or ""):
+        if meta_out is not None:
+            meta_out.update({"heur": 10.0, "ai": None, "status": "nonprose"})
         return 10.0
     """
     Ocjenjuje kvalitetu teksta — kombinacija heuristike i AI ocjene.
@@ -406,6 +411,8 @@ async def _scoruj_kvalitetu(
     heur_score, heur_razlozi = _izracunaj_heuristicki_score(tekst)
 
     if heur_score <= 2.0:
+        if meta_out is not None:
+            meta_out.update({"heur": heur_score, "ai": None, "status": "heur_low"})
         return heur_score
 
     # ── 2. Provjera nepromjenjenosti (samo za relekturu) ─────────────────────
@@ -514,7 +521,15 @@ async def _scoruj_kvalitetu(
         kompozitni = round(heur_score * 1.0, 1)
 
     kompozitni -= relektura_kazna
-    return round(max(1.0, min(10.0, kompozitni)), 1)
+    _final = round(max(1.0, min(10.0, kompozitni)), 1)
+    if meta_out is not None:
+        meta_out["heur"] = round(heur_score, 1)
+        meta_out["ai"] = ai_score
+        if ai_score is None:
+            meta_out["status"] = "heur_only"
+        else:
+            meta_out["status"] = "ai_ok"
+    return _final
 
 
 async def _scoruj_batch(

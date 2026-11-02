@@ -809,6 +809,7 @@ async def _quality_scoring(
     try:
         from core.quality import _scoruj_kvalitetu
 
+        _qs_meta = {}
         score = await _scoruj_kvalitetu(
             finalno,
             self._call_ai_engine,
@@ -817,6 +818,7 @@ async def _quality_scoring(
             self_obj=self,
             tip_ocjenjivanja=tip_ocjenjivanja,
             prevodilac_provider=prevodilac_provider,
+            meta_out=_qs_meta,
         )
         score_float = float(max(1.0, min(10.0, score)))
         if original_chunk:
@@ -851,6 +853,25 @@ async def _quality_scoring(
         preview = BeautifulSoup(finalno, "html.parser").get_text()[:80]
         self._quality_scores[stem_key] = score_float
         self.shared_stats["quality_scores"][stem_key] = score_float
+
+        # 2026-11-02: upisi status (stvarno AI-ocenjeno vs heuristicki fallback)
+        # u poseban fajl quality_status.json, ne dira quality_scores.json.
+        if _qs_meta:
+            try:
+                _sp = self.checkpoint_dir / "quality_status.json"
+                _sm = {}
+                if _sp.exists():
+                    try:
+                        _sm = json.loads(_sp.read_text("utf-8"))
+                    except Exception:
+                        _sm = {}
+                _qs_meta["score"] = score_float
+                _sm[stem_key] = _qs_meta
+                self._atomic_write(
+                    _sp, json.dumps(_sm, ensure_ascii=False, indent=2)
+                )
+            except Exception:
+                logger.exception("[qs_status] pipeline.py upis status Exception")
 
         # F3a: metrike — deterministicki brojaci gresaka, paralelno sa score-om.
         # Upisuju se u odvojen fajl quality_metrics.json (ne dira quality_scores).
