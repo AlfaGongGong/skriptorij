@@ -485,7 +485,8 @@ def _navodnici_u_tekstu(html: str) -> str:
             continue
         n_ascii = sum(t.count('"') for t in tekstovi)
         prvi = next((t.strip() for t in tekstovi if t.strip()), "")
-        if prvi.startswith(("\u2014", "\u2013")) and n_ascii % 2 == 1:
+        crtica = prvi.startswith(("\u2014", "\u2013"))
+        if crtica and n_ascii % 2 == 1:
             izlaz.append(seg)
             continue
         otvoren = False
@@ -503,7 +504,8 @@ def _navodnici_u_tekstu(html: str) -> str:
                     nova.append(c)
                     otvoren = True
                 elif c == "\u201d":
-                    nova.append(c)
+                    if otvoren or not crtica:
+                        nova.append(c)
                     otvoren = False
                 else:
                     nova.append(c)
