@@ -244,13 +244,11 @@ def _agresivno_cisti(tekst: str) -> str:
 
 
 def _ocisti_ai_markere(tekst: str) -> str:
-    for p in [
-        r"\bNaravno[,!]?\b",
-        r"\bSvakako[,!]?\b",
-        r"Evo (?:rezultata|prijevoda)",
-        r"Izvolite",
-    ]:
-        tekst = re.sub(p, "", tekst, flags=re.IGNORECASE)
+    # Skida samo AI uvod na početku odgovora ("Naravno! Evo prijevoda:").
+    # "naravno"/"svakako"/"izvolite" u dijalogu ostaju netaknuti.
+    tekst = re.sub(r"^\s*(?:Naravno|Svakako)[,!:]?\s+(?=Evo\s)", "", tekst, flags=re.IGNORECASE)
+    tekst = re.sub(r"^\s*Evo\s+(?:rezultata|prijevoda)[:.]?\s*", "", tekst, flags=re.IGNORECASE)
+    tekst = re.sub(r"^\s*Izvolite[:!]?\s*(?=\n|<)", "", tekst, flags=re.IGNORECASE)
     return tekst.strip()
 
 
