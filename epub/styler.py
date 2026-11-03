@@ -1416,13 +1416,15 @@ def run_epub_styler(
                 # F0.6: skrati overlap izmedju susjednih blokova
                 _delovi_dedup = [_delovi[0]]
                 for _sl in _delovi[1:]:
-                    _sk, _n = _skrati_overlap(_delovi_dedup[-1], _sl)
-                    if _n > 0:
-                        print(f"  [overlap] {_html_name}: skraceno {_n} rijeci")
-                    if _n == 0:
-                        _sk, _k, _wk = _skrati_overlap_fuzzy(_delovi_dedup[-1], _sl)
-                        if _k > 0:
-                            print(f"  [overlap~] {_html_name}: uklonjeno {_k} odlomaka ({_wk} rijeci)")
+                    # 2026-11-03: fuzzy (cuva <p> strukturu) prije egzaktnog (vraca goli tekst)
+                    _sk, _k, _wk = _skrati_overlap_fuzzy(_delovi_dedup[-1], _sl)
+                    _n = 0
+                    if _k > 0:
+                        print(f"  [overlap~] {_html_name}: uklonjeno {_k} odlomaka ({_wk} rijeci)")
+                    else:
+                        _sk, _n = _skrati_overlap(_delovi_dedup[-1], _sl)
+                        if _n > 0:
+                            print(f"  [overlap] {_html_name}: skraceno {_n} rijeci")
                     if _sk.strip():
                         _delovi_dedup.append(_sk)
                 _delovi = _delovi_dedup
