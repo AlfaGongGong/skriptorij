@@ -559,6 +559,34 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             if shared_controls.get("stop") or shared_controls.get("reset"):
                 break
 
+            # ── BOOKLYFI_ONLY_FILES filter (2026-11-02) ──────────────────
+            # Zarez-odvojena lista imena, npr. "part0170.html,part0246.html".
+            # Prazno/nepostavljeno = obrađuje se sve (staro ponašanje).
+            # Filtrira SAMO petlju obrade; engine.html_files ostaje cijeli,
+            # pa finalizacija i EPUB i dalje sadrže sve fajlove.
+            import os as _os_of
+            _only_files = {
+                _x.strip()
+                for _x in _os_of.environ.get("BOOKLYFI_ONLY_FILES", "").split(",")
+                if _x.strip()
+            }
+            if _only_files:
+                if i == 1:
+                    _nepoznati = sorted(
+                        _only_files - {_f.name for _f in engine.html_files}
+                    )
+                    engine.log(
+                        f"🎯 BOOKLYFI_ONLY_FILES aktivan: {len(_only_files)} fajl(a)",
+                        "system",
+                    )
+                    if _nepoznati:
+                        engine.log(
+                            f"⚠️ BOOKLYFI_ONLY_FILES nepoznati: {_nepoznati}",
+                            "warning",
+                        )
+                if hf.name not in _only_files:
+                    continue
+
             engine.log(
                 f"📄 Poglavlje {i}/{len(engine.html_files)}: {hf.name}", "system"
             )

@@ -211,6 +211,7 @@ def tts_gemini_endpoint():
     import urllib.request as _urllib_req
     import urllib.error as _urllib_err
     import struct as _struct
+    from flask import request, jsonify
 
     try:
         data = request.get_json()
