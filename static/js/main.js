@@ -1506,6 +1506,8 @@ function updateAuditLogFromJSON(events) {
 
 // ── HUMAN TIMELINE (Claude-style log) ──────────────────────────────────
 function _ensureTimelineCSS() {
+    // CSS je u static/css/style.css
+    return;
     if (document.getElementById("bf-timeline-css")) return;
     const style = document.createElement("style");
     style.id = "bf-timeline-css";
@@ -1568,10 +1570,7 @@ function _ensureTimelineContainer() {
         el.id = "human-timeline";
         el.className = "human-timeline";
         const dashboard = document.getElementById("dashboard-panel");
-        const auditCard = document.getElementById("audit-log")?.closest(".card");
-        if (auditCard && auditCard.parentNode) {
-            auditCard.parentNode.insertBefore(el, auditCard);
-        } else if (dashboard) {
+        if (dashboard) {
             dashboard.insertBefore(el, dashboard.firstChild);
         }
     }
@@ -4192,3 +4191,58 @@ window._qsSelect = function(tip) {
         window.selectBadBlocks(tip);
     }
 };
+
+
+// ═══════════════════════════════════════════════════════════
+// ZEN MODE UI CLEANUP (2026-11-03) — čist dashboard
+// ═══════════════════════════════════════════════════════════
+document.addEventListener("DOMContentLoaded", () => {
+    const dashboard = document.getElementById("dashboard-panel");
+    if (!dashboard) return;
+
+    // 1. Sakrij tehničke elemente (klasa .stats-grid, ne .stats-row)
+    const toHide = [
+        dashboard.querySelector(".stats-grid"),
+        dashboard.querySelector(".card-pipeline"),  // semafor — Timeline preuzima
+    ].filter(Boolean);
+
+    toHide.forEach(el => {
+        el.style.display = "none";
+        el.dataset.zenHidden = "1";
+    });
+
+    // 2. Sakrij sirovi Audit log card
+    const auditLog = document.getElementById("audit-log");
+    const auditCard = auditLog ? auditLog.closest(".card") : null;
+    if (auditCard && auditCard !== dashboard) {
+        auditCard.style.display = "none";
+        auditCard.dataset.zenHidden = "1";
+    }
+
+    // 3. Dodaj toggle dugme na dno dashboard-a
+    const toggleBar = document.createElement("div");
+    toggleBar.className = "zen-toggle-bar";
+
+    const btn = document.createElement("button");
+    btn.className = "btn btn-sm btn-outline zen-toggle-btn";
+    btn.innerHTML = "⚙️ Prikaži tehničke detalje";
+    toggleBar.appendChild(btn);
+    dashboard.appendChild(toggleBar);
+
+    let techVisible = false;
+    btn.addEventListener("click", () => {
+        techVisible = !techVisible;
+        document.querySelectorAll("[data-zen-hidden]").forEach(el => {
+            el.style.display = techVisible ? "" : "none";
+        });
+        btn.innerHTML = techVisible
+            ? "⚙️ Sakrij tehničke detalje"
+            : "⚙️ Prikaži tehničke detalje";
+    });
+
+    // 4. Expert tab blago utišan (postoji, ne uklanja se)
+    const expertTab = document.querySelector('[data-tab="tab-expert"]');
+    if (expertTab) expertTab.style.opacity = "0.7";
+
+    console.log("[ZEN MODE] Dashboard očišćen. Fokus: Human Timeline.");
+});
