@@ -1650,8 +1650,15 @@ let _lastTimelineHash = "";
 let _lastTimelineEventTime = Date.now();
 let _lastTimelineCount = 0;
 function updateHumanTimeline(events) {
-    const container = _ensureTimelineContainer();
-    if (!container) return;
+    let container = document.getElementById("human-timeline");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "human-timeline";
+        container.className = "human-timeline";
+        const dashboard = document.getElementById("dashboard-panel");
+        if (dashboard) dashboard.insertBefore(container, dashboard.firstChild);
+        else return;
+    }
     
     const humanEvents = [];
     for (const e of events) {
@@ -1659,25 +1666,38 @@ function updateHumanTimeline(events) {
         if (mapped) humanEvents.push(mapped);
     }
     
-    if (humanEvents.length === 0) {
+    // DEDUPLIKACIJA: Uklanja uzastopne identične događaje
+    const uniqueEvents = [];
+    for (const ev of humanEvents) {
+        if (uniqueEvents.length > 0) {
+            const last = uniqueEvents[uniqueEvents.length - 1];
+            if (last.title === ev.title && last.text === ev.text) continue;
+        }
+        uniqueEvents.push(ev);
+    }
+
+    if (uniqueEvents.length > (window._lastTimelineCount || 0)) {
+        window._lastTimelineEventTime = Date.now();
+        window._lastTimelineCount = uniqueEvents.length;
+    }
+    
+    const recent = uniqueEvents.slice(-5);
+    const currentHash = JSON.stringify(recent);
+    if (currentHash === window._lastTimelineHash) return;
+    window._lastTimelineHash = currentHash;
+    
+    if (recent.length === 0) {
         if (container.innerHTML === "") {
             container.innerHTML = '<div class="timeline-title">Live Status</div><div class="timeline-items"><div class="timeline-item active"><div class="timeline-icon">⏳</div><div class="timeline-content"><div class="timeline-header">Priprema</div><div class="timeline-text">Čekam prve korake...</div></div></div></div>';
         }
         return;
     }
     
-    const currentHash = JSON.stringify(humanEvents.slice(-5));
-    if (currentHash === _lastTimelineHash) return;
-    _lastTimelineHash = currentHash;
-    
-    const recent = humanEvents.slice(-5);
-    let html = `<div class="timeline-title">Live Status (Šta se dešava sada)</div><div class="timeline-items">`;
-    
+    let html = `<div class="timeline-title">Live Status</div><div class="timeline-items">`;
     for (let i = 0; i < recent.length; i++) {
         const ev = recent[i];
         const isLast = i === recent.length - 1;
-        let cls = "timeline-item";
-        if (isLast) cls += " active";
+        let cls = "timeline-item" + (isLast ? " active" : "");
         if (ev.type) cls += " " + ev.type;
         
         const spinner = isLast ? `<span class="timeline-spinner"></span>` : "";
