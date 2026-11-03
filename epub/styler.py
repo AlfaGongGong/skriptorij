@@ -223,6 +223,9 @@ def _dijalog(soup: BeautifulSoup) -> int:
         orig = str(node)
         new = orig
         for pattern, repl in DIJALOG_TIPOGRAFIJA:
+            # 2026-11-03: preskoci pravila koja „…” vracaju u ASCII "
+            if '"' in repl:
+                continue
             new = re.sub(pattern, repl, new)
         if new != orig:
             node.replace_with(new)
