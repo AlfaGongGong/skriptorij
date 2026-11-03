@@ -105,6 +105,7 @@ KAT = {
     "TIP-CRTICA": ("NISKO", "dijalog počinje crticom '-' umjesto '—'", "core/kalkovi/dijalog.py"),
     "TIP-RAZMAK": ("NISKO", "razmak ispred interpunkcije / nedostaje iza nje", "core/metrics.py::_tipografija_pasus"),
     "TIP-ELIP": ("NISKO", "'...' umjesto '…' (miješanje)", "core/kalkovi/dijalog.py"),
+    "TIP-ZAREZ": ("SREDNJE", "siroče zarez: ',,' ili ', .' (ostatak pokvarenih navodnika)", "core/kalkovi/dijalog.py, epub/styler.py::_dijalog"),
     # ── integritet sadržaja ──
     "INT-TRUNC": ("VISOKO", "poglavlje završava usred rečenice (odsječen zadnji blok)", "core/chunking.py, finish_reason=length retry u network/http_client.py"),
     "INT-SPLIT": ("VISOKO", "rečenica prekinuta između dva pasusa (granica bloka)", "core/chunking.py (max_words=250), inter-chapter context"),
@@ -533,6 +534,11 @@ def provjeri_pasus(N: Nalazi, K: Kontekst, fajl: str, i: int, b: dict):
         if m.group(0).lower() not in DUPW_OK:
             N.add("JEZ-DUPW", fajl, i, t, m.group(0))
             break
+
+    # ── siroče zarez ──
+    mz = re.search(r",\s*,|,\s+\.", t)
+    if mz:
+        N.add("TIP-ZAREZ", fajl, i, t, f"„{mz.group(0)}“")
 
     # ── tipografija ──
     otv = t.count("„")
@@ -1288,6 +1294,7 @@ def main():
     ap.add_argument("--bez-hunspell", action="store_true")
     ap.add_argument("--bez-epubcheck", action="store_true")
     ap.add_argument("--kalkovi-uzorak", type=int, default=1, help="kalkovi samo na svakom N-tom poglavlju (brže)")
+    ap.add_argument("--gate", action="store_true", help="završna kapija: exit 1 ako postoje nalazi iz GATE_KAT")
     args = ap.parse_args()
 
     epub = Path(args.epub)
@@ -1311,6 +1318,14 @@ def main():
         print(f"{sev:9s} {c:>8,}")
     print(f"\nIzvještaj: {out / 'izvjestaj.md'}")
     print(f"CSV:       {out / 'nalazi.csv'}")
+    if args.gate:
+        GATE_KAT = ("TIP-NAVOD", "TIP-ZAREZ", "INT-DUP", "INT-DUPS", "JEZ-EN", "INT-GLOSAR")
+        pad = {k: N.broj[k] for k in GATE_KAT if N.broj.get(k)}
+        print("\n════ KAPIJA ════")
+        for k, n in pad.items():
+            print(f"{k:12s} {n:>6,}")
+        print("KAPIJA: " + ("PAO (exit 1)" if pad else "ČISTO (exit 0)"))
+        return 1 if pad else 0
     return 0
 
 
