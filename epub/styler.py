@@ -292,6 +292,62 @@ def _je_duplikat(t1, t2, threshold=0.7):
     return len(w1 & w2) / min(len(w1), len(w2)) >= threshold
 
 
+def _skrati_overlap_fuzzy(prethodni, sljedeci, prag=0.85, min_znakova=60, zadnjih=60):
+    """2026-11-03: fuzzy overlap na razini odlomaka. Ako pocetak sljedeceg bloka
+    priblizno (>=prag) ponavlja zadnje odlomke prethodnog, ukloni ih iz sljedeceg.
+    Vraca (novi_sljedeci, broj_odlomaka, broj_rijeci); bez promjene (sljedeci, 0, 0)."""
+    import difflib as _dl
+    import html as _hh
+    import re as _re
+
+    def _norm(t):
+        t = _re.sub(r"<[^>]+>", " ", t)
+        return _re.sub(r"\W+", " ", _hh.unescape(t).lower()).strip()
+
+    def _slican(a, b):
+        if not a or not b:
+            return False
+        if a == b:
+            return True
+        sm = _dl.SequenceMatcher(None, a, b, autojunk=False)
+        return (
+            sm.real_quick_ratio() >= prag
+            and sm.quick_ratio() >= prag
+            and sm.ratio() >= prag
+        )
+
+    def _dijeli(t):
+        tx, poz = [], []
+        if "<p" in t.lower():
+            for m in _re.finditer(r"<p[\s>].*?</p>", t, flags=_re.S | _re.I):
+                n = _norm(m.group(0))
+                if n:
+                    tx.append(n)
+                    poz.append(m.end())
+            return tx, (lambda k: t[poz[k - 1]:])
+        dijelovi = _re.split(r"\n\s*\n", t)
+        for i, x in enumerate(dijelovi):
+            n = _norm(x)
+            if n:
+                tx.append(n)
+                poz.append(i)
+        return tx, (lambda k: "\n\n".join(dijelovi[poz[k - 1] + 1:]))
+
+    pt, _ = _dijeli(prethodni)
+    nt, rez = _dijeli(sljedeci)
+    if not pt or not nt:
+        return sljedeci, 0, 0
+    for j in range(max(0, len(pt) - zadnjih), len(pt)):
+        if not _slican(pt[j], nt[0]):
+            continue
+        k = 0
+        while j + k < len(pt) and k < len(nt) and _slican(pt[j + k], nt[k]):
+            k += 1
+        if j + k == len(pt) and sum(len(x) for x in nt[:k]) >= min_znakova:
+            return rez(k), k, sum(len(x.split()) for x in nt[:k])
+    return sljedeci, 0, 0
+
+
 def _spoji_blokove(delovi):
     """Spoji blokove sa separatorom kad se spajaju dvije rijeci (alfanum na obje strane)."""
     if not delovi:
@@ -1363,6 +1419,10 @@ def run_epub_styler(
                     _sk, _n = _skrati_overlap(_delovi_dedup[-1], _sl)
                     if _n > 0:
                         print(f"  [overlap] {_html_name}: skraceno {_n} rijeci")
+                    if _n == 0:
+                        _sk, _k, _wk = _skrati_overlap_fuzzy(_delovi_dedup[-1], _sl)
+                        if _k > 0:
+                            print(f"  [overlap~] {_html_name}: uklonjeno {_k} odlomaka ({_wk} rijeci)")
                     if _sk.strip():
                         _delovi_dedup.append(_sk)
                 _delovi = _delovi_dedup
