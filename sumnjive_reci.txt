@@ -1,0 +1,501 @@
+to	1253
+on	277
+No	272
+do	259
+To	224
+me	184
+pogled	169
+pred	122
+no	109
+naprijed	100
+On	81
+one	77
+ispred	33
+Do	31
+pored	26
+the	25
+May	25
+Mladi Lav	22
+Black Calder	17
+Jonas Clover	14
+time	14
+Caul Shivers	13
+usred	12
+Stour Nightfall	12
+same	11
+more	10
+Crni Calder	10
+Crna Rikke	9
+nasred	8
+One	8
+More	7
+Velike Promjene	7
+most	7
+Mladog Lava	7
+Stoura Nightfalla	7
+Lady Savine	7
+Black Caldera	7
+Velika Promjena	7
+Velikog Vuka	6
+ured	6
+Kapetane Broad	6
+Gunnar Broad	6
+Jonas Steepfield	6
+Lord Hoff	5
+nered	5
+Tri Farme	5
+zapovijed	5
+Chair	5
+Crnog Caldera	5
+Povjerenik Pike	5
+Time	5
+Majka Mostly	4
+naizgled	4
+djed	4
+Krvavi Devet	4
+Long	4
+Mladi Lave	4
+Prije Velike	4
+Kralj Orso	4
+Black Rikke	4
+Zahvale Otkrijte	3
+Yoru Sulfur	3
+unaprijed	3
+Prema Agriontu	3
+izgled	3
+dokument	3
+Lord Isher	3
+Lady Finree	3
+Spillion Sworbreck	3
+Three	3
+Stour Nightfalla	3
+Come	3
+Ni Mladi	3
+argument	3
+Carmee Groom	3
+Black Dow	3
+Gunnara Broada	3
+Skarling's	3
+Savine Brock	3
+Desetnik Tunny	3
+Scale Ironhand	3
+Jonasa Clovera	3
+Dugog Oka	3
+Crnu Rikke	3
+Sudu Naroda	3
+Veliku Promjenu	3
+of	2
+Hachette Book Group	2
+Promjena Mali	2
+Urote Gore	2
+Lekcije Daleko	2
+Odmrzavanje Ljubav	2
+Presuda Kovanje	2
+Iskupljenje Bilo	2
+Odgovori Jedini	2
+Trenutak Malo	2
+Trima Farmama	2
+Dugim Okom	2
+Nova Unija	2
+No Tunny	2
+Black Calderu	2
+Citizen Brock	2
+No Isern	2
+Long Eye	2
+Honrig Curnsbick	2
+Isprike Hildi	2
+Prokleti Stijarci	2
+No Risinauov	2
+Kapetan Broad	2
+Na Sjeveru	2
+Cairm Ironhead	2
+Crnom Calderu	2
+No Rikke	2
+Lukava Rikke	2
+Jonasa Steepfielda	2
+Crnim Calderom	2
+Jedan Sjever	2
+Dugo Oko	2
+Lord Heugen	2
+Inspektorice Teufel	2
+in	2
+blijed	2
+Veliki Vuk	2
+Ako Savine	2
+Inspektore Teufel	2
+ring	2
+Crnog Dowa	2
+Mlada Lava	2
+Doma Graditelja	2
+Desetar Smiler	2
+Orso Prvi	2
+Velikoj Promjeni	2
+Harod Drugi	2
+Stouru Nightfallu	2
+Velika Kraljice	2
+Crni Dow	2
+Ali Leo	2
+Lady Regent	2
+No Savine	2
+Vojvoda Rogont	2
+Samo Crna Rikke	2
+kompliment	2
+Daba Sweeta	2
+Prorok Khalul	2
+Kralj Jezal	2
+Vrati Zatvoreno	2
+Liddy Broad	2
+May Broad	2
+New	1
+Little	1
+Joe Abercrombie Dizajn	1
+Lauren Panepinto Ilustracija	1
+Sam Weber Autorska	1
+Orbit Hachette Book Group	1
+Americas New York	1
+Velikoj Britaniji	1
+Gollancz Orbit	1
+Hachette Book Groupa	1
+Brown Book Group Limited	1
+Hachette Speakers Bureau	1
+Contents Naslovnica Naslovna	1
+Posveta Dio	1
+Bijes Prilike Eksponat Ovog	1
+Zlikovac Kletve	1
+Joea Abercrombieja	1
+Za Loua	1
+Mlado Janje	1
+Orso Nepokolebljivi	1
+Kraljevi Orsovi	1
+Dolje Zatvoreno	1
+Uredbe Tvorca	1
+Prije Orsove	1
+Haroda Velikog	1
+Casamira Postojanog	1
+Ulici Hill	1
+Grgut Orsova	1
+unedogled	1
+Brate Pajk	1
+Sestro Viktorin	1
+Vojnici Unije	1
+Zastava Visokog Kralja	1
+Harodu Velikom	1
+Kapetan Leeb	1
+Izvedite Zatvoreno	1
+Izvedite Njegovo	1
+Vid Majke Mostly	1
+Ali Majka Mostly	1
+Kapetan Rithinghorm	1
+Narednik Hope	1
+Na Trg	1
+No Smiler	1
+Dan Velike	1
+No Leeb	1
+Hvala Sudbini	1
+Gospodine Sulfur	1
+Unutar Agrionta	1
+Kako Unija	1
+protuargument	1
+Krvava Devetka	1
+Kralja Sjevernjaka	1
+Glama Zlatni	1
+Cairm Gvozdena Glava	1
+Scaleu Gvozdenoj Ruci	1
+Stouru Sumraku	1
+Ario Matterno	1
+Ni Starikland	1
+Master Sulfur	1
+Generale Brint	1
+Na Jugu	1
+Three Farmsa	1
+Lord Chamberlain Hoff	1
+Lord Chancellor Gorodets	1
+Zatim High Consul Matstringer	1
+Lord Marshal Rucksted	1
+Prokleti Brockovi	1
+Velikim Vukom	1
+Mladim Lavom	1
+Uto Downside	1
+Reci Black Calderu	1
+Izvan Agrionta	1
+Mladom Lavu	1
+Sam Tkalac	1
+Prilike Savine	1
+Malena Ardee	1
+Neka Haroon	1
+Great	1
+redoslijed	1
+Scaleu Ironhandu	1
+Samo Klin	1
+Morlica Ludog	1
+Three Farmsu	1
+Jurand Leu	1
+General Brint	1
+eksperiment	1
+Brate Sarlby	1
+Preko Trga	1
+Gustave Le Bon	1
+Selest Heugen	1
+Zbog Leovih	1
+Posljedice Valbecka	1
+Old	1
+Old Sticksa	1
+Neka Styrianka	1
+No Sibalt	1
+Vick Tallowu	1
+Brodd Tenways	1
+Glama Golden	1
+Caul Reachey	1
+Black Dowa	1
+Isern Rikke	1
+Ljepljiva Rikke	1
+Dugog Vida	1
+West Valleyja	1
+Prema Calderu	1
+Podijeli Sjever	1
+Kratko Oko	1
+Ali Narodna	1
+Citizen Heugen	1
+Bijes Sworbrecka	1
+Dietam Kortom	1
+Zapovijedanje Narodnom	1
+Prije Stoffenbecka	1
+Na Trgu	1
+Od Velike	1
+Mauzoleju Velike	1
+Izdajnici Velike	1
+Harod Veliki	1
+Cijelu Uniju	1
+Ova Velika	1
+Nakon Velike	1
+Urlikivanje Ardee	1
+Hrabra Rikke	1
+No Dugo	1
+Stoura Bloody Nightfalla	1
+The	1
+The Klina	1
+No Calder	1
+Smrt Juvensa	1
+General Cutler	1
+Glavnog Stvaratelja	1
+Velikog Sangeeda	1
+Kralja Orsa	1
+Desetnik Halder	1
+Henrik Jost	1
+Piater Norlhorm	1
+Boras Heugen	1
+Leo Brock	1
+Kucne Sparksa	1
+Dvoranom Skarling	1
+Poput Wonderful	1
+Ruddu Threetreesu	1
+Cracknut Whirrunima	1
+Black Dowovima	1
+Three Farms	1
+Staroga Carstva	1
+Majstora Graditelja	1
+No Pike	1
+tajming	1
+Spojiti Brockove	1
+Ali Sutkinja	1
+Ako Lord	1
+Ako Bremer	1
+Nije Orso	1
+Inspektor Teufel	1
+sijed	1
+Forleyja Najslabijeg	1
+Calderovi Carls	1
+Dovedi Velikog	1
+Unuk Bethoda	1
+Scale Ironhanda	1
+Kralj Sjevernjaka	1
+Ljudi Caldera	1
+Caulu Shiversu	1
+Dugom Oku	1
+Zapadnih Dolina	1
+Iz Zapadnih	1
+Za Crummock	1
+Neki Crinna	1
+Ponajprije Rikke	1
+Ali Rikke	1
+Veliki Ravnatelj	1
+No Clover	1
+Glama Glama	1
+Krvavom Devetki	1
+Skarlingu Beskrovnom	1
+Krvavom Nineu	1
+Tada Scenn	1
+Djeca Crummock	1
+Karl Marx	1
+Samo Palioci	1
+Od Liddy	1
+Par Forestovih	1
+Sigurnost Njezina	1
+Dom Tvorca	1
+Vrata Agrionta	1
+Na Sudu	1
+Kruga Svijeta	1
+Spilliona Sworbrecka	1
+Komesar Pike	1
+Narednik Hambeck	1
+Za Uniju	1
+Prema Gospodskom	1
+Starog Pruta	1
+Jezala Prvog	1
+Dolje Velika Promjena	1
+Srca Unije	1
+Desetar Tunny	1
+Nema Narodnog	1
+Linija Palioca	1
+Glava Savine	1
+Brodd Flatstone	1
+Blacka Caldera	1
+Ljudi Stand	1
+Velikom Ravnatelju	1
+Crne Rikke	1
+Poput Black Dowa	1
+Poput Black Caldera	1
+Kod Stoffenbecka	1
+No Dvorana	1
+Grad Adua	1
+Lady Brock	1
+Bliske Zemlje	1
+Gospodine Brock	1
+Vrhovni Kralj Unije	1
+nedogled	1
+Vrhovnog Kralja Unije	1
+Jezal Prvi	1
+Same	1
+No Vick	1
+Na Curnsbickovim	1
+Tada Curnsbick	1
+Lordom Regentom	1
+Budnu Inkviziciju	1
+Staro Carstvo	1
+Majkom Nacije	1
+Tornja Lanaca	1
+Vrhovnog Graditelja	1
+Majka Nacije	1
+pradjed	1
+Dika Slumova	1
+Solumeo Shudra	1
+Kralj Harod Drugi	1
+Mali Harod	1
+Kad Brock	1
+Uz Savine	1
+Krugovima Svijeta	1
+Vojvoda Rogonta	1
+Jedan Anglandac	1
+Vrh Gorstova	1
+Preko Gorstova	1
+Prokleti Anglanci	1
+No Broad	1
+Krug Gospode	1
+Poput Valbecka	1
+Poput Styrije	1
+Njezina Visost	1
+Poglavari Visokih	1
+Dom Graditelja	1
+Visokih Kraljeva Unije	1
+Kraljica Sjevernjaka	1
+Krvavi Nine	1
+Savine Dugog Oka	1
+Uffrith Stouru	1
+Crveno Brdo	1
+Stour Sumrak	1
+Caula Shiversa	1
+Inkvizitor Teufel	1
+Kutak Pikeovih	1
+Inkvizitorice Teufel	1
+Ne Pike	1
+Ne Risinau	1
+Zbog Collema Sibalta	1
+Shylo Vitari	1
+Dab Sweeta	1
+Novo Zatvoreno	1
+Ali Prvi	1
+Zamisli Jug	1
+Osim Orsa	1
+Skarlingove Dvorane	1
+Sjever Krvavom Devetercu	1
+Skarlingove Stolice	1
+No Orso	1
+Lordovi Isher	1
+Stourom Nightfallom	1
+ugled	1
+Njezinom Visosti	1
+Njegova Visost	1
+Dok Njegovo	1
+Prijetiti Majci Nacije	1
+Miljenicu Slumsa	1
+Miljenica Slumsa	1
+Crnoj Rikke	1
+Lice Rikke	1
+Od Crinne	1
+Zahvale Kao	1
+Bren Abercrombie	1
+Nick Abercrombie	1
+Rob Abercrombie	1
+Lou Abercrombie	1
+Simon Spanton	1
+Jon Weir	1
+Mark Stay	1
+Jon Wood	1
+Malcolm Edwards	1
+David Shelley	1
+Katie Espiner	1
+Sarah Benton	1
+Didier Graffet	1
+Dave Senior	1
+Laura Brett	1
+Lauren Panepinto	1
+Raymond Swanland	1
+Sam Weber	1
+Lou Anders	1
+Devi Pillai	1
+Bradley Englert	1
+Bill Schafer	1
+Jen Miller	1
+Steven Pacey	1
+Robert Kirby	1
+Gillian Redfearn	1
+Unije Njegovo	1
+Gospa Isold	1
+Iz Anglanda Leo	1
+Lord Clensher	1
+Brock Savine	1
+Inkvizicije Njegova	1
+Pukovnik Vallimir	1
+Gospa Vallimir	1
+Styrije Kralj Jappo	1
+Rogont Murcatto	1
+Monzcarro Murcatto	1
+Princeza Carlot	1
+Predstojnik Lorsen	1
+Sanders Rosimiche	1
+Dayep Mozolia	1
+Starog Carstva	1
+MORE	1
+Napisao Joe Abercrombie	1
+Junaci Crvena	1
+Contents Malo	1
+Naslovnica Autorska	1
+Trenutak Slomite	1
+Pitanja Stroj	1
+Pogodba Novi	1
+Zahtjevi Preuzimanje	1
+Pitanja Civilizacija Prirodno Dobar	1
+Zamjene Ne	1
+Joe Abercrombie Nevolje	1
+Adue More	1
+Rutina Umjetnost	1
+Zasjeda Blage	1
+Izbor Neka	1
+Miljenik Domoljubni	1
+Pitanja Sutradan	1
+Odrasli Odrasli	1
+Joe Abercrombie Mudrost	1
+Posveta Sedmi	1
+Gnjev Prilike Eksponat	1
+Negativac Prokletstva	1
+Joe Abercrombie	1
