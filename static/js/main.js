@@ -1504,6 +1504,160 @@ function updateAuditLogFromJSON(events) {
     updateAuditLog(html);
 }
 
+// ── HUMAN TIMELINE (Claude-style log) ──────────────────────────────────
+function _ensureTimelineCSS() {
+    if (document.getElementById("bf-timeline-css")) return;
+    const style = document.createElement("style");
+    style.id = "bf-timeline-css";
+    style.textContent = `
+        .human-timeline {
+            background: var(--bg-2, #1e1e2e);
+            border: 1px solid var(--border, #333);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-family: var(--font-main, system-ui, sans-serif);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .timeline-title {
+            font-size: 0.85rem; color: var(--tx-2, #aaa); text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 12px; font-weight: 600;
+        }
+        .timeline-items {
+            display: flex; flex-direction: column; gap: 12px; position: relative;
+        }
+        .timeline-items::before {
+            content: ''; position: absolute; left: 15px; top: 0; bottom: 0;
+            width: 2px; background: var(--border, #333); z-index: 0;
+        }
+        .timeline-item {
+            display: flex; gap: 12px; position: relative; z-index: 1;
+            opacity: 0.6; transition: all 0.3s ease;
+        }
+        .timeline-item.active { opacity: 1; }
+        .timeline-icon {
+            width: 32px; height: 32px; background: var(--bg-3, #2a2a35);
+            border: 2px solid var(--border, #444); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0; transition: all 0.3s ease;
+        }
+        .timeline-item.active .timeline-icon {
+            border-color: var(--accent-2, #00d2ff);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+            background: var(--bg-1, #111);
+        }
+        .timeline-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .timeline-header { font-weight: 600; font-size: 0.9rem; color: var(--tx-1, #fff); margin-bottom: 2px; }
+        .timeline-text { font-size: 0.8rem; color: var(--tx-2, #ccc); line-height: 1.4; }
+        .timeline-item.active .timeline-header { color: var(--accent-2, #00d2ff); }
+        .timeline-item.error .timeline-icon { border-color: #f33; }
+        .timeline-item.error .timeline-header { color: #f33; }
+        .timeline-item.warn .timeline-icon { border-color: #fc3; }
+        .timeline-item.warn .timeline-header { color: #fc3; }
+        .timeline-item.success .timeline-icon { border-color: #3d3; }
+        .timeline-item.success .timeline-header { color: #3d3; }
+    `;
+    document.head.appendChild(style);
+}
+
+function _ensureTimelineContainer() {
+    _ensureTimelineCSS();
+    let el = document.getElementById("human-timeline");
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "human-timeline";
+        el.className = "human-timeline";
+        const dashboard = document.getElementById("dashboard-panel");
+        const auditCard = document.getElementById("audit-log")?.closest(".card");
+        if (auditCard && auditCard.parentNode) {
+            auditCard.parentNode.insertBefore(el, auditCard);
+        } else if (dashboard) {
+            dashboard.insertBefore(el, dashboard.firstChild);
+        }
+    }
+    return el;
+}
+
+function _translateAuditEvent(e) {
+    const t = (e.tekst || "").toLowerCase();
+    
+    if (t.includes("engine inicijaliziran")) return { icon: "🚀", title: "Pokretanje", text: "Pripremam engine..." };
+    if (t.includes("glosar:")) return { icon: "📖", title: "Priprema", text: "Učitavam glosar (imena likova)..." };
+    if (t.includes("checkpoint:")) return { icon: "📁", title: "Checkpoint", text: "Proveravam prethodne sesije..." };
+    if (t.includes("html pre-processing")) return { icon: "🧹", title: "Čišćenje", text: "Sređujem HTML pre prevođenja..." };
+    if (t.includes("analiziraj_knjigu") || t.includes("analiza knjige")) return { icon: "🧠", title: "Analiza", text: "Učim stil pisca..." };
+    if (t.includes("analiziram knjigu")) return { icon: "🧠", title: "Analiza", text: "Čitam uzorke..." };
+    
+    if (t.includes("šaljem blok")) {
+        const m = t.match(/šaljem blok (\d+) na ai \(([^)]+)\)/i);
+        if (m) return { icon: "🌍", title: `Obrada bloka ${m[1]}`, text: `Model ${m[2]} obrađuje...` };
+    }
+    
+    if (t.includes("lektor")) return { icon: "✍️", title: "Lektura", text: "Popravljam gramatiku i stil..." };
+    if (t.includes("korektor")) return { icon: "🔍", title: "Korektura", text: "Proveravam tačnost..." };
+    if (t.includes("guardian")) return { icon: "🛡️", title: "Guardian", text: "Proveravam halucinacije..." };
+    if (t.includes("polish")) return { icon: "✨", title: "Poliranje", text: "Finiširam tekst..." };
+    if (t.includes("scorer") || t.includes("score")) return { icon: "⭐", title: "Ocena", text: "Ocenjujem kvalitet..." };
+    if (t.includes("retro")) return { icon: "🔁", title: "Retro", text: "Ponavljam obradu..." };
+    
+    if (t.includes("završ")) return { icon: "✅", title: "Gotovo", text: "Posao završen!", type: "success" };
+    if (t.includes("greška") || t.includes("kritično") || t.includes("error") || t.includes("pao") || t.includes("pali")) 
+        return { icon: "❌", title: "Problem", text: e.tekst, type: "error" };
+    if (t.includes("upoz") || t.includes("halucinacij") || t.includes("prekratak")) 
+        return { icon: "⚠️", title: "Pažnja", text: e.tekst, type: "warn" };
+        
+    if (t.includes("prevod") || t.includes("prevodim") || t.includes("prevodilac")) 
+        return { icon: "🌍", title: "Prevod", text: "Prevodim tekst..." };
+        
+    return null;
+}
+
+let _lastTimelineHash = "";
+function updateHumanTimeline(events) {
+    const container = _ensureTimelineContainer();
+    if (!container) return;
+    
+    const humanEvents = [];
+    for (const e of events) {
+        const mapped = _translateAuditEvent(e);
+        if (mapped) humanEvents.push(mapped);
+    }
+    
+    if (humanEvents.length === 0) {
+        if (container.innerHTML === "") {
+            container.innerHTML = '<div class="timeline-title">Live Status</div><div class="timeline-items"><div class="timeline-item active"><div class="timeline-icon">⏳</div><div class="timeline-content"><div class="timeline-header">Priprema</div><div class="timeline-text">Čekam prve korake...</div></div></div></div>';
+        }
+        return;
+    }
+    
+    const currentHash = JSON.stringify(humanEvents.slice(-5));
+    if (currentHash === _lastTimelineHash) return;
+    _lastTimelineHash = currentHash;
+    
+    const recent = humanEvents.slice(-5);
+    let html = `<div class="timeline-title">Live Status (Šta se dešava sada)</div><div class="timeline-items">`;
+    
+    for (let i = 0; i < recent.length; i++) {
+        const ev = recent[i];
+        const isLast = i === recent.length - 1;
+        let cls = "timeline-item";
+        if (isLast) cls += " active";
+        if (ev.type) cls += " " + ev.type;
+        
+        html += `
+            <div class="${cls}">
+                <div class="timeline-icon">${ev.icon}</div>
+                <div class="timeline-content">
+                    <div class="timeline-header">${ev.title}</div>
+                    <div class="timeline-text">${ev.text}</div>
+                </div>
+            </div>
+        `;
+    }
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
 async function pollAuditAndUpdate() {
     try {
         const r = await fetch("/api/monitor/audit?since=0");
@@ -1511,6 +1665,7 @@ async function pollAuditAndUpdate() {
         const data = await r.json();
         if (data.events == null || data.events.length === 0) return false;
         updateAuditLogFromJSON(data.events);
+        updateHumanTimeline(data.events);
         return true;
     } catch (e) {
         return false;
