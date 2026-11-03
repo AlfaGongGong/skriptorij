@@ -814,12 +814,52 @@ function stopQualityPolling() {
     }
 }
 
+function _checkTimelineStuck(s) {
+    // Provera zaglavljivanja: ako je obrada u toku a nema novog loga >25s
+    const container = document.getElementById("human-timeline");
+    if (!container) return;
+    const status = ((s && s.status) || "").toUpperCase();
+    const isProcessing = status.includes("TOKU") || status.includes("POKRETANJE");
+    if (!isProcessing) {
+        // Očisti stuck stanje kad obrada nije aktivna
+        const msg = container.querySelector(".timeline-stuck-msg");
+        if (msg) msg.remove();
+        const stuck = container.querySelector(".timeline-item.stuck");
+        if (stuck) stuck.classList.remove("stuck");
+        return;
+    }
+    const elapsed = Date.now() - (window._lastTimelineEventTime || Date.now());
+    if (elapsed > 25000) {
+        const activeItem = container.querySelector(".timeline-item.active");
+        if (activeItem && !activeItem.classList.contains("stuck")) {
+            activeItem.classList.add("stuck");
+            const icon = activeItem.querySelector(".timeline-icon");
+            const header = activeItem.querySelector(".timeline-header");
+            if (icon) icon.textContent = "\u26a0\ufe0f";
+            if (header) header.innerHTML = "Čekanje na odgovor... <span class='timeline-spinner'></span>";
+            let msg = container.querySelector(".timeline-stuck-msg");
+            if (!msg) {
+                msg = document.createElement("div");
+                msg.className = "timeline-stuck-msg";
+                msg.innerHTML = "\u26a0\ufe0f Nema odgovora od AI više od " + Math.floor(elapsed / 1000) + "s. Model je možda blokiran ili je mreža pala.";
+                container.appendChild(msg);
+            }
+        }
+    } else {
+        const msg = container.querySelector(".timeline-stuck-msg");
+        if (msg) msg.remove();
+        const stuck = container.querySelector(".timeline-item.stuck");
+        if (stuck) stuck.classList.remove("stuck");
+    }
+}
+
 async function pollStatus() {
     try {
         const r = await fetch("/api/status");
         if (!r.ok) return;
         const d = await r.json();
         updateStatus(d);
+        _checkTimelineStuck(d);
     } catch (_) {}
 }
 
@@ -1031,41 +1071,6 @@ window.showReport = showReport;
 function updateStatus(s) {
     if (!s) return;
     try { azuriraj_kontekst(s); } catch (e) { console.error("[kontekst]", e); }
-
-    // Provera da li je Timeline zaglavio
-    const container = document.getElementById("human-timeline");
-    const st = (s.status || "").toUpperCase();
-    const isProcessing = st.includes("TOKU") || st.includes("POKRETANJE");
-    
-    if (container && isProcessing) {
-        const elapsed = Date.now() - _lastTimelineEventTime;
-        // Ako je prošlo više od 25 sekundi bez novog loga
-        if (elapsed > 25000) {
-            const activeItem = container.querySelector(".timeline-item.active");
-            if (activeItem && !activeItem.classList.contains("stuck")) {
-                activeItem.classList.add("stuck");
-                // Promeni ikonicu i tekst
-                const icon = activeItem.querySelector(".timeline-icon");
-                const header = activeItem.querySelector(".timeline-header");
-                if (icon) icon.textContent = "⚠️";
-                if (header) header.innerHTML = "Čekanje na odgovor... <span class='timeline-spinner'></span>";
-                
-                // Dodaj poruku ispod
-                let msg = container.querySelector(".timeline-stuck-msg");
-                if (!msg) {
-                    msg = document.createElement("div");
-                    msg.className = "timeline-stuck-msg";
-                    msg.innerHTML = `⚠️ Nema odgovora od AI više od ${Math.floor(elapsed/1000)}s. Model je možda blokiran ili je mreža pala. Proveri tehnički log.`;
-                    container.appendChild(msg);
-                }
-            }
-        } else {
-            // Ako je došao novi log, očisti stuck stanje
-            const msg = container.querySelector(".timeline-stuck-msg");
-            if (msg) msg.remove();
-        }
-    }
-
     
     // ── AUTO-STILIZACIJA na kraju obrade ──
     const _pctLocal = s.pct || 0;
@@ -1647,8 +1652,6 @@ function _translateAuditEvent(e) {
 }
 
 let _lastTimelineHash = "";
-let _lastTimelineEventTime = Date.now();
-let _lastTimelineCount = 0;
 function updateHumanTimeline(events) {
     let container = document.getElementById("human-timeline");
     if (!container) {
@@ -1659,14 +1662,14 @@ function updateHumanTimeline(events) {
         if (dashboard) dashboard.insertBefore(container, dashboard.firstChild);
         else return;
     }
-    
+
     const humanEvents = [];
     for (const e of events) {
         const mapped = _translateAuditEvent(e);
         if (mapped) humanEvents.push(mapped);
     }
-    
-    // DEDUPLIKACIJA: Uklanja uzastopne identične događaje
+
+    // Deduplikacija: uklanja uzastopne identične
     const uniqueEvents = [];
     for (const ev of humanEvents) {
         if (uniqueEvents.length > 0) {
@@ -1680,27 +1683,27 @@ function updateHumanTimeline(events) {
         window._lastTimelineEventTime = Date.now();
         window._lastTimelineCount = uniqueEvents.length;
     }
-    
+
     const recent = uniqueEvents.slice(-5);
     const currentHash = JSON.stringify(recent);
     if (currentHash === window._lastTimelineHash) return;
     window._lastTimelineHash = currentHash;
-    
+
     if (recent.length === 0) {
         if (container.innerHTML === "") {
             container.innerHTML = '<div class="timeline-title">Live Status</div><div class="timeline-items"><div class="timeline-item active"><div class="timeline-icon">⏳</div><div class="timeline-content"><div class="timeline-header">Priprema</div><div class="timeline-text">Čekam prve korake...</div></div></div></div>';
         }
         return;
     }
-    
+
     let html = `<div class="timeline-title">Live Status</div><div class="timeline-items">`;
     for (let i = 0; i < recent.length; i++) {
         const ev = recent[i];
         const isLast = i === recent.length - 1;
         let cls = "timeline-item" + (isLast ? " active" : "");
         if (ev.type) cls += " " + ev.type;
-        
-        const spinner = isLast ? `<span class="timeline-spinner"></span>` : "";
+
+        const spinner = isLast ? '<span class="timeline-spinner"></span>' : "";
         html += `
             <div class="${cls}">
                 <div class="timeline-icon">${ev.icon}</div>
