@@ -1031,6 +1031,41 @@ window.showReport = showReport;
 function updateStatus(s) {
     if (!s) return;
     try { azuriraj_kontekst(s); } catch (e) { console.error("[kontekst]", e); }
+
+    // Provera da li je Timeline zaglavio
+    const container = document.getElementById("human-timeline");
+    const st = (s.status || "").toUpperCase();
+    const isProcessing = st.includes("TOKU") || st.includes("POKRETANJE");
+    
+    if (container && isProcessing) {
+        const elapsed = Date.now() - _lastTimelineEventTime;
+        // Ako je prošlo više od 25 sekundi bez novog loga
+        if (elapsed > 25000) {
+            const activeItem = container.querySelector(".timeline-item.active");
+            if (activeItem && !activeItem.classList.contains("stuck")) {
+                activeItem.classList.add("stuck");
+                // Promeni ikonicu i tekst
+                const icon = activeItem.querySelector(".timeline-icon");
+                const header = activeItem.querySelector(".timeline-header");
+                if (icon) icon.textContent = "⚠️";
+                if (header) header.innerHTML = "Čekanje na odgovor... <span class='timeline-spinner'></span>";
+                
+                // Dodaj poruku ispod
+                let msg = container.querySelector(".timeline-stuck-msg");
+                if (!msg) {
+                    msg = document.createElement("div");
+                    msg.className = "timeline-stuck-msg";
+                    msg.innerHTML = `⚠️ Nema odgovora od AI više od ${Math.floor(elapsed/1000)}s. Model je možda blokiran ili je mreža pala. Proveri tehnički log.`;
+                    container.appendChild(msg);
+                }
+            }
+        } else {
+            // Ako je došao novi log, očisti stuck stanje
+            const msg = container.querySelector(".timeline-stuck-msg");
+            if (msg) msg.remove();
+        }
+    }
+
     
     // ── AUTO-STILIZACIJA na kraju obrade ──
     const _pctLocal = s.pct || 0;
@@ -1612,6 +1647,8 @@ function _translateAuditEvent(e) {
 }
 
 let _lastTimelineHash = "";
+let _lastTimelineEventTime = Date.now();
+let _lastTimelineCount = 0;
 function updateHumanTimeline(events) {
     const container = _ensureTimelineContainer();
     if (!container) return;
@@ -1643,11 +1680,12 @@ function updateHumanTimeline(events) {
         if (isLast) cls += " active";
         if (ev.type) cls += " " + ev.type;
         
+        const spinner = isLast ? `<span class="timeline-spinner"></span>` : "";
         html += `
             <div class="${cls}">
                 <div class="timeline-icon">${ev.icon}</div>
                 <div class="timeline-content">
-                    <div class="timeline-header">${ev.title}</div>
+                    <div class="timeline-header">${ev.title}${spinner}</div>
                     <div class="timeline-text">${ev.text}</div>
                 </div>
             </div>

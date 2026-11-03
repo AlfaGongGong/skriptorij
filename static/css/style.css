@@ -4060,3 +4060,49 @@ a.fq-prov-name:hover { text-decoration: underline; }
     .timeline-header { font-size: 0.8rem; }
     .timeline-text { font-size: 0.65rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   HUMAN TIMELINE — Loading Spinner i Stuck Alert (2026-11-03)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.timeline-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(6, 182, 212, 0.3);
+    border-top-color: var(--accent-2);
+    border-radius: 50%;
+    animation: tl-spin 1s linear infinite;
+    margin-left: 8px;
+    vertical-align: text-bottom;
+}
+
+@keyframes tl-spin {
+    to { transform: rotate(360deg); }
+}
+
+.timeline-item.stuck .timeline-icon {
+    border-color: var(--amber);
+    background: rgba(245, 158, 11, 0.1);
+    animation: none;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.timeline-item.stuck .timeline-header { color: var(--amber); }
+
+.timeline-item.stuck .timeline-spinner {
+    border-color: rgba(245, 158, 11, 0.3);
+    border-top-color: var(--amber);
+}
+
+.timeline-stuck-msg {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--r-md);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--amber);
+    line-height: 1.4;
+}
