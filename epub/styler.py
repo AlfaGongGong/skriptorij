@@ -1406,6 +1406,12 @@ def run_epub_styler(
         _ukloni_sve(soup)
         _normalizuj(soup)
         _dijalog(soup)
+        # 2026-11-03: siroce ” u odlomku s crticom (isti normalizator kao u pipelineu)
+        try:
+            from core.text_utils import _navodnici_u_tekstu
+            soup = BeautifulSoup(_navodnici_u_tekstu(str(soup)), "html.parser")
+        except Exception:
+            logger.exception("[C3_fallback] styler: navodnici")
         _ukloni_duplikate_p(soup)
         _dodaj_vijenac(soup)
         _ocisti_fffc(soup)
