@@ -32,3 +32,10 @@ booklyfi_audit/
 *.audit_run.json
 *.epub
 *.db
+
+# Jednokratne skripte (P2.1+)
+.backup_p0*/
+booklyfi_p0*.sh
+booklyfi_p0*.sh/
+booklyfi_*.sh
+*.backup_*
