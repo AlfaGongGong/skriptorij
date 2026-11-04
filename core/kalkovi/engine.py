@@ -96,7 +96,13 @@ def _zamijeni_s_whitelistom(
     ukupno_zamjena = 0
     for kp in compiled_patterns:
         try:
-            novi_tekst, n = kp.compiled.subn(kp.zamjena, tekst)
+            def _repl(m, _z=kp.zamjena):
+                out = m.expand(_z)
+                if out and m.group(0)[:1].islower() and out[:1].isupper():
+                    out = out[:1].lower() + out[1:]
+                return out
+
+            novi_tekst, n = kp.compiled.subn(_repl, tekst)
             if n:
                 ukupno_zamjena += n
                 tekst = novi_tekst
