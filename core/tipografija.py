@@ -1,0 +1,215 @@
+# -*- coding: utf-8 -*-
+"""
+core/tipografija.py — JEDINI modul koji dira navodnike, crtice i trotočje.
+
+Cilj (konačni oblik):
+  • umetnuti navodnici  → „…”  (U+201E / U+201D), nikad ASCII "
+  • replika             → — na početku odlomka
+  • trotočje            → …
+
+API:
+  normaliziraj(tekst)        HTML ili običan tekst → normaliziran string
+  normaliziraj_soup(soup)    in-place nad BeautifulSoup/Tag, vraća broj izmijenjenih čvorova
+  provjeri(tekst, strogo)    lista problema (ništa ne mijenja); strogo=True → AssertionError
+
+Pravila rada:
+  • radi nad TEKSTUALNIM ČVOROVIMA (BeautifulSoup), nikad regex nad HTML-om
+  • stanje navodnika se vodi po odlomku preko granica tagova (<em>, <span> drop-cap...)
+  • ne dira riječi (nema kalkova); atributi i tagovi ostaju netaknuti
+  • idempotentno: normaliziraj(normaliziraj(x)) == normaliziraj(x)
+"""
+from __future__ import annotations
+
+import logging
+import re
+
+from bs4 import BeautifulSoup, NavigableString
+
+logger = logging.getLogger(__name__)
+
+OTV = "\u201e"
+ZAT = "\u201d"
+_TOGGLE = "\"\u201c\u00ab\u00bb"
+_SVE = _TOGGLE + OTV + ZAT
+_CRTICE = ("\u2014", "\u2013")
+_VELIKO = "A-ZČĆŠŽĐ"
+_BLOK = ["p", "li", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6",
+         "div", "td", "th", "dd", "dt", "figcaption", "caption"]
+_PRESKOCI = {"script", "style", "pre", "code", "title"}
+_JE_HTML = re.compile(r"</?[A-Za-z][^>]*>")
+
+
+# ── znakovi s vlasnikom (indeks tekstualnog čvora) ──────────────────────────
+
+def _spoji(z):
+    return "".join(c for c, _ in z)
+
+
+def _primijeni(z, izmjene):
+    """izmjene: [(start, end, novo)] nepreklapajuće; novo nasljeđuje vlasnika prvog znaka."""
+    if not izmjene:
+        return z
+    out, poz = [], 0
+    for s, e, novo in sorted(izmjene):
+        out.extend(z[poz:s])
+        vl = z[s][1] if s < len(z) else (z[-1][1] if z else 0)
+        out.extend((c, vl) for c in novo)
+        poz = e
+    out.extend(z[poz:])
+    return out
+
+
+def _regex(z, pattern, repl, flags=0):
+    t = _spoji(z)
+    izm = [(m.start(), m.end(), m.expand(repl)) for m in re.finditer(pattern, t, flags)]
+    return _primijeni(z, izm)
+
+
+# ── navodnici ───────────────────────────────────────────────────────────────
+
+def _prolaz(t):
+    zam, otvoren, src, opos, stray = [], False, None, -1, []
+    for i, c in enumerate(t):
+        if c in _TOGGLE:
+            if otvoren:
+                zam.append((i, i + 1, ZAT))
+                otvoren = False
+            else:
+                zam.append((i, i + 1, OTV))
+                otvoren, src, opos = True, "toggle", i
+        elif c == OTV:
+            otvoren, src, opos = True, "forced", i
+        elif c == ZAT:
+            if otvoren:
+                otvoren = False
+            else:
+                stray.append(i)
+    return zam, otvoren, src, opos, stray
+
+
+def _zatvarajuci(t, i):
+    """navodnik zalijepljen za prethodnu riječ, iza njega razmak/interpunkcija/kraj."""
+    return (i > 0 and not t[i - 1].isspace()
+            and (i + 1 >= len(t) or t[i + 1].isspace() or t[i + 1] in ",;:.!?\u2026)"))
+
+
+def _navodnici(z):
+    t = _spoji(z)
+    if not any(c in t for c in _SVE):
+        return z
+    # replika u ASCII navodnicima na početku odlomka → crtica
+    z = _regex(z, r'^(\s*)"([^"\n]{1,300})"(?=\s|[,.;:!?]|$)', r"\1— \2")
+    t = _spoji(z)
+    lead = len(t) - len(t.lstrip())
+    dash = t[lead:lead + 1] in _CRTICE
+
+    zam, otv, src, opos, stray = _prolaz(t)
+    if otv and src == "toggle":
+        izm = None
+        if not dash and opos == lead and t[opos + 1:opos + 2].strip():
+            izm = (opos, opos + 1, "— ")          # siroče-otvarač → crtica replike
+            dash = True
+        elif dash or _zatvarajuci(t, opos):
+            izm = (opos, opos + 1, "")            # siroče → briše se
+        if izm:
+            z = _primijeni(z, [izm])
+            t = _spoji(z)
+            zam, otv, src, opos, stray = _prolaz(t)
+    izm = list(zam)
+    if dash:
+        izm += [(i, i + 1, "") for i in stray]    # siroče ” u odlomku s crticom
+    return _primijeni(z, izm)
+
+
+def _blok(z):
+    z = _regex(z, r"\.{3,}|\.\s\.\s\.", "\u2026")
+    z = _regex(z, r"(?<![.\u2026])\.\.(?![.\u2026])", ".")
+    z = _regex(z, r"^\s*--\s*", "\u2014 ")
+    z = _regex(z, rf"^(\s*)[-\u2013\u2014]\s+(?=[{_VELIKO}\"\u201e\u201c\u00bb\u00ab])", "\\1\u2014 ")
+    z = _regex(z, r"^(\s*)\u2014(?=[^\s\u2014])", "\\1\u2014 ")
+    z = _regex(z, r"(?<=\S)--(?=\S)", "\u2014")
+    z = _regex(z, r"\s+--\s+", " \u2014 ")
+    z = _regex(z, r"(?<=\d)\s*-\s*(?=\d)", "\u2013")
+    z = _regex(z, r"(?<=[^\s\u2014])\u2014(?=[^\s\u2014])", " \u2014 ")
+    z = _navodnici(z)
+    z = _regex(z, r",,+", ",")
+    z = _regex(z, r"(?<=\S)\s+(?=[,;:!?])", "")
+    z = _regex(z, r"  +", " ")
+    return z
+
+
+# ── enumeracija blokova ─────────────────────────────────────────────────────
+
+def _cvorovi(el):
+    return [n for n in el.find_all(string=True)
+            if type(n) is NavigableString
+            and not any(p.name in _PRESKOCI for p in n.parents)]
+
+
+def _grupe(soup):
+    grupe, pokriveno = [], set()
+    for el in soup.find_all(_BLOK):
+        if el.find(_BLOK):
+            continue
+        g = _cvorovi(el)
+        if g:
+            grupe.append(g)
+            pokriveno.update(id(n) for n in g)
+    for n in _cvorovi(soup):
+        if id(n) not in pokriveno and n.strip():
+            grupe.append([n])
+    return grupe
+
+
+# ── javni API ───────────────────────────────────────────────────────────────
+
+def normaliziraj_soup(soup) -> int:
+    n = 0
+    for g in _grupe(soup):
+        z = [(c, i) for i, t in enumerate(g) for c in str(t)]
+        novi = _blok(z)
+        tekstovi = ["".join(c for c, o in novi if o == i) for i in range(len(g))]
+        for node, nt in zip(g, tekstovi):
+            if nt != str(node):
+                node.replace_with(nt)
+                n += 1
+    return n
+
+
+def normaliziraj(tekst: str) -> str:
+    if not tekst:
+        return tekst
+    if _JE_HTML.search(tekst):
+        soup = BeautifulSoup(tekst, "html.parser")
+        return str(soup) if normaliziraj_soup(soup) else tekst
+    izlaz = []
+    for linija in tekst.split("\n"):
+        z = [(c, 0) for c in linija]
+        izlaz.append(_spoji(_blok(z)))
+    return "\n".join(izlaz)
+
+
+def provjeri(tekst: str, strogo: bool = False) -> list:
+    """Samo provjerava. Vraća listu problema; strogo=True baca AssertionError."""
+    if _JE_HTML.search(tekst or ""):
+        grupe = [[str(n) for n in g] for g in _grupe(BeautifulSoup(tekst, "html.parser"))]
+    else:
+        grupe = [[l] for l in (tekst or "").split("\n")]
+    pr = []
+    for g in grupe:
+        t = "".join(g)
+        lead = t.lstrip()
+        ctx = lead[:60].replace("\n", " ")
+        if any(c in t for c in _TOGGLE):
+            pr.append(f"ASCII/tuđi navodnik: {ctx}")
+        if lead.startswith(("-", "--")):
+            pr.append(f"ASCII crtica na početku: {ctx}")
+        if "..." in t:
+            pr.append(f"tri tačke umjesto …: {ctx}")
+        if lead[:1] in _CRTICE and ZAT in t and t.count(ZAT) > t.count(OTV):
+            pr.append(f"siroče ” u odlomku s crticom: {ctx}")
+        elif t.count(OTV) != t.count(ZAT):
+            pr.append(f"nebalansirano „ ”: {ctx}")
+    if strogo and pr:
+        raise AssertionError("tipografija: " + "; ".join(pr[:5]))
+    return pr

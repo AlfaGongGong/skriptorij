@@ -345,23 +345,14 @@ def _finaliziraj_fix_epub(self):
 
     # Tipografija na tekstualnim čvorovima (ne regex na HTML-u)
     try:
-        from core.text_utils import _post_process_tipografija
+        from core.tipografija import normaliziraj_soup as _tip_n
         from bs4 import BeautifulSoup as _BS_typo, NavigableString as _NS_typo
         n_typo = 0
         for _f in list(work_dir.rglob("*.xhtml")) + list(work_dir.rglob("*.html")):
             try:
                 _raw = _f.read_text(encoding="utf-8")
                 _soup = _BS_typo(_raw, "html.parser")
-                _changed = False
-                for _node in _soup.find_all(string=True):
-                    if type(_node) is not _NS_typo:
-                        continue  # Comment/Doctype/CData/PI ne diramo
-                    if _node.parent.name in ("script", "style", "title"):
-                        continue
-                    _fixed = _post_process_tipografija(str(_node))
-                    if _fixed != str(_node):
-                        _node.replace_with(_fixed)
-                        _changed = True
+                _changed = _tip_n(_soup) > 0
                 if _changed:
                     _f.write_text(str(_soup), encoding="utf-8")
                     n_typo += 1
@@ -484,19 +475,10 @@ def _spoji_chk_u_files_dict(files: dict, checkpoint_dir: Path) -> int:
 
                 # Dijalog: navodnici → em-crtica
                 try:
-                    from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA as _DIJ
-                    import re as _re_d
-                    for node in _tmp.find_all(string=True):
-                        if node.parent and node.parent.name in ("script", "style"):
-                            continue
-                        orig = str(node)
-                        new = orig
-                        for pattern, repl in _DIJ:
-                            new = _re_d.sub(pattern, repl, new)
-                        if new != orig:
-                            node.replace_with(new)
+                    from core.tipografija import normaliziraj_soup as _tip_n
+                    _tip_n(_tmp)
                 except Exception:
-                    logger.debug("[C3_fallback] packager.py:468 Exception")
+                    logger.exception("[tipografija] packager")
 
                 raw = str(_tmp.body) if _tmp.body else str(_tmp)
                 if raw.startswith("<body>"):
@@ -710,19 +692,10 @@ def _spoji_chk_u_html(engine):
 
                 # 6. Dijalog: ASCII "..." → —
                 try:
-                    from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA
-                    import re as _re_d
-                    for node in _tmp_soup.find_all(string=True):
-                        if node.parent and node.parent.name in ("script", "style"):
-                            continue
-                        orig = str(node)
-                        new = orig
-                        for pattern, repl in DIJALOG_TIPOGRAFIJA:
-                            new = _re_d.sub(pattern, repl, new)
-                        if new != orig:
-                            node.replace_with(new)
+                    from core.tipografija import normaliziraj_soup as _tip_n
+                    _tip_n(_tmp_soup)
                 except Exception:
-                    logger.debug("[C3_fallback] packager.py:694 Exception")
+                    logger.exception("[tipografija] packager")
 
                 # 7. Skini <h1>/<h2>/<h3> iz .chk sadržaja (naslov je već u originalnom HTML-u)
                 for h in _tmp_soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
@@ -774,19 +747,10 @@ def _spoji_chk_u_html(engine):
                     span.unwrap()
                 # Dijalog i na fajlovima bez .chk
                 try:
-                    from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA as _DIJ
-                    import re as _re_p
-                    for node in soup.find_all(string=True):
-                        if node.parent and node.parent.name in ("script", "style"):
-                            continue
-                        orig = str(node)
-                        new = orig
-                        for pattern, repl in _DIJ:
-                            new = _re_p.sub(pattern, repl, new)
-                        if new != orig:
-                            node.replace_with(new)
+                    from core.tipografija import normaliziraj_soup as _tip_n
+                    _tip_n(soup)
                 except Exception:
-                    logger.debug("[C3_fallback] packager.py:758 Exception")
+                    logger.exception("[tipografija] packager")
                 src.write_text(str(soup), encoding="utf-8")
                 zamenjeno += 1
             except Exception:
@@ -828,19 +792,10 @@ def _spoji_chk_u_html(engine):
                 span.unwrap()
             # Dijalog posle ubacivanja (finalni prolaz)
             try:
-                from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA as _DIJ2
-                import re as _re_p2
-                for node in soup.find_all(string=True):
-                    if node.parent and node.parent.name in ("script", "style"):
-                        continue
-                    orig = str(node)
-                    new = orig
-                    for pattern, repl in _DIJ2:
-                        new = _re_p2.sub(pattern, repl, new)
-                    if new != orig:
-                        node.replace_with(new)
+                from core.tipografija import normaliziraj_soup as _tip_n
+                _tip_n(soup)
             except Exception:
-                logger.debug("[C3_fallback] packager.py:812 Exception")
+                logger.exception("[tipografija] packager")
         except Exception:
             logger.exception("[C1_http] packager.py:814 Exception")
 

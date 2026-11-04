@@ -17,50 +17,8 @@ NAPOMENA o em-crtici:
   AI često koristi kratku crtu (-) ili srednju (–).
 """
 
-# ── Tipografija navodnika ─────────────────────────────────────────────────
-# Pretvaramo sve varijante navodnika u konzistentni oblik.
-# Red je bitan: specifičnije (trostruki, ugaoni) ispred jednostavnih.
-
-DIJALOG_TIPOGRAFIJA = [
-    # FIX 2026-10-26 v2: orphan navodnici (1-6, bez rizicnog full-pair)
-    # 1) orphan opening " na pocetku reda
-    (r'(?m)^(\s*)"(?=\S)', r'\1— '),
-    # 2) orphan opening " posle . ! ? … :
-    (r'(?<=[.!?…:] )"(?=\S)', r'— '),
-    # 3) orphan closing " prije interpunkcije
-    (r'(?<=[a-zA-ZčćšžđČĆŠŽĐ.!?…])"(?=\s*[,;:.!?])', ''),
-    # 4) orphan closing " na kraju reda
-    (r'(?<=[a-zA-ZčćšžđČĆŠŽĐ.!?…])"\s*$', ''),
-    # 5) orphan opening " posle , ; :
-    (r'(?<=[,;:])\s*"(?=[A-Za-zČĆŠŽĐčćšžđ])', ' '),
-
-    # FIX 2026-10-26: ASCII navodnici "..." na početku odlomka
-    # (AI često vraća "dijalog" umesto — dijalog)
-    # Pretvara "citat" u — citat na početku pasusa
-    (r'(?m)^(\s*)"([^"\n]{1,300})"(?=\s|[,.;:!?]|$)', r'\1— \2'),
-    # "citat" na kraju, posle zareza: ", "citat"" → " — citat"
-    (r',\s*"([^"\n]{1,300})"', r' — \1'),
-    # FIX 2026-09-27 v5: Patterni prihvaćaju SVE kombinacije
-    # tipografskih + ASCII navodnika (AI često miješa).
-    # Srpski otvarajući „ → zamijeni s ASCII " + sadržaj + zatvori s "
-    # Prihvaća: „tekst"  „tekst"  „tekst"  „tekst"
-    (r'\u201e([^"\u201c\u201d\u00bb\u00ab]*?)[\u201c\u201d"]', r'"\1"'),
-    # Srpski otvarajući „ s ugaonim zatvaranjem (rijetko, ali moguće)
-    (r'\u201e([^"\u201c\u201d\u00bb\u00ab]*?)\u00ab', r'"\1"'),
-    # Ugaoni »tekst« → ASCII "tekst"
-    (r'\u00bb([^"\u00bb\u00ab]*?)\u00ab', r'"\1"'),
-    (r"\u203a([^\u2039\u203a]*?)\u2039", r'"\1"'),
-    # Pametni ASCII → ASCII " (curly → straight)
-    (r'\u201c([^"\u00bb\u00ab\u201c\u201d]*?)\u201d', r'"\1"'),
-    # Jednostruki tipografski → ASCII '
-    (r"\u2018([^\u2018\u2019]*?)\u2019", r"'\1'"),
-    # Em-crtica ispred replike: - ili – na početku retka → —
-    (r'(?m)^(\s*)-\s+(?=[A-ZČĆŠŽĐ"„»\u201c\u201e])', r"\1— "),
-    (r'(?m)^(\s*)[\u2013\u2014]\s+(?=[A-ZČĆŠŽĐ"„»\u201c\u201e])', r"\1— "),
-    # Višestruke točke → pravo trotočje
-    (r"\.{3,4}", "\u2026"),
-    (r"\.\s\.\s\.", "\u2026"),
-]
+# 2026-11-04: tipografija (navodnici, crtice, trotočje) živi u core/tipografija.py.
+# DIJALOG_TIPOGRAFIJA uklonjen — bio je izvor kontradikcije ASCII vs „”.
 
 
 # ── Poštapalice i srbizmi u dijalogu ─────────────────────────────────────
@@ -119,4 +77,4 @@ DIJALOG_KALKOVI = [
 ]
 
 # Objedinjena lista za __init__.py
-DIJALOG = DIJALOG_TIPOGRAFIJA + DIJALOG_KALKOVI
+DIJALOG = DIJALOG_KALKOVI

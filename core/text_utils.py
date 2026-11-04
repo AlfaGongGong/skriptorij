@@ -466,112 +466,15 @@ def _adaptive_temp(uloga: str, tip_bloka: str, bazna_temp: float) -> float:
 
 
 def _navodnici_u_tekstu(html: str) -> str:
-    """2026-11-02: navodnici po stanju unutar odlomka (radi i preko <em>).
-    Mijenja samo tekst izvan tagova: ASCII " i otvarajuci/zatvarajuci
-    tipografski dobivaju oblik „ ... ”. Odlomak koji pocinje crticom, a ima
-    neparan broj ASCII navodnika, ostaje netaknut (stray " rjesava kasniji
-    korak)."""
-    import re as _re
-
-    otv, zat = "\u201e", "\u201d"
-    izlaz = []
-    for seg in _re.split(r"(?i)(?=<p[\s>])", html):
-        dij = _re.split(r"(<[^>]+>)", seg)
-        tekstovi = dij[0::2]
-        if not any(c in t for t in tekstovi for c in ('"', "\u201c", "\u201d", "\u201e")):
-            izlaz.append(seg)
-            continue
-        n_ascii = sum(t.count('"') for t in tekstovi)
-        prvi = next((t.strip() for t in tekstovi if t.strip()), "")
-        crtica = prvi.startswith(("\u2014", "\u2013"))
-        if crtica and n_ascii % 2 == 1:
-            izlaz.append(seg)
-            continue
-        otvoren = False
-        for i in range(0, len(dij), 2):
-            nova = []
-            for c in dij[i]:
-                if c in ('"', "\u201c"):
-                    if otvoren:
-                        nova.append(zat)
-                        otvoren = False
-                    else:
-                        nova.append(otv)
-                        otvoren = True
-                elif c == "\u201e":
-                    nova.append(c)
-                    otvoren = True
-                elif c == "\u201d":
-                    if otvoren or not crtica:
-                        nova.append(c)
-                    otvoren = False
-                else:
-                    nova.append(c)
-            dij[i] = "".join(nova)
-        izlaz.append("".join(dij))
-    return "".join(izlaz)
+    """2026-11-04: alias — tipografiju radi samo core/tipografija.py."""
+    from core.tipografija import normaliziraj
+    return normaliziraj(html)
 
 
 def _post_process_tipografija(tekst: str) -> str:
-    """
-    Post-processing tipografskih konvencija za HR standard.
-    """
-    # Tri tačke
-    tekst = re.sub(r"(?<!\.)\.\.\.(?!\.)", "…", tekst)
-    tekst = re.sub(r"(?<![.\u2026])\.\.(?![.\u2026])", ".", tekst)
-
-    # Četiri+ tačke → …
-    tekst = re.sub(r"\.{4,}", "…", tekst)
-
-    # Dijalog em-crtica — na početku linije
-    tekst = re.sub(r"(?m)^\s*--\s*", "— ", tekst)
-    tekst = re.sub(r"(?m)^\s*-\s+(?=[A-ZČĆŠŽĐ\u201e\"])", "— ", tekst)
-
-    # Em-crtica mid-sentence: " -- " ili "--" između slova/zareza → " — "
-    tekst = re.sub(r"(?<=[^\s\n])--(?=[^\s\n])", "—", tekst)
-    tekst = re.sub(r"\s+--\s+", " — ", tekst)
-
-    # En-crtica za raspone brojeva
-    tekst = re.sub(r"(\d)\s*-\s*(\d)", r"\1–\2", tekst)
-
-    # Em-crtica bez razmaka → s razmacima (ne na početku linije)
-    tekst = re.sub(r"(?<=[^\s\n\u2014])—(?=[^\s\n\u2014])", " — ", tekst)
-
-    # Navodnici: ASCII "..." → HR standard „..." u tekstualnom sadržaju
-    # Isključuje HTML atribute (ne smije biti < > unutar navodnika).
-    # Limit od 400 znakova: štiti od premoći na HTML atribute s dugačkim vrijednostima;
-    # književni citat gotovo nikad ne prelazi 400 znakova unutar jednog para navodnika.
-    # 2026-11-01: ne diraj HTML atribute (class="X" ne sme u class=„X")
-    # (?<!=) sprecava match posle =, a = u char klasi sprecava match preko atributa.
-    tekst = re.sub(r'(?<!=)"([^"<>\n\r=]{1,400})"', r'„\1"', tekst)
-    # Zamijeni zaostale dvostruke navodnike koji nisu dio HTML-a
-    tekst = re.sub(r'\u201c([^"\u201c\u201d<>\n\r]{1,400})\u201d', r'„\1"', tekst)
-
-    # Streljajući " u dijalogu (— Dijalog." ili — Dijalog!") — neparan broj " u redu
-    # koji počinje s —, a nema „ (jer „ bi značio legitiman par)
-    # 2026-11-02: navodnici po stanju unutar odlomka (preko <em> itd.)
-    tekst = _navodnici_u_tekstu(tekst)
-    _linije = tekst.split("\n")
-    _nove = []
-    for _l in _linije:
-        _ls = _l.strip()
-        if _ls.startswith(("—", "–")) and _l.count('"') % 2 == 1 and "„" not in _l:
-            _idx = _l.rfind('"')
-            if _idx >= 0:
-                _l = _l[:_idx] + _l[_idx + 1:]
-        _nove.append(_l)
-    tekst = "\n".join(_nove)
-
-    # FIX ,, -> , (Gemini ume da vrati dvostruki zarez posle pauze)
-    tekst = re.sub(r",,+", ",", tekst)
-
-    # Whitespace ispred interpunkcije
-    tekst = re.sub(r"\s+([,;:!?])", r"\1", tekst)
-
-    # Dvostruki razmaci → jedan
-    tekst = re.sub(r"  +", " ", tekst)
-
-    return tekst
+    """2026-11-04: delegira na core/tipografija.py (jedini normalizator)."""
+    from core.tipografija import normaliziraj
+    return normaliziraj(tekst)
 
 
 def _automatska_korekcija(tekst: str) -> str:

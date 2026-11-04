@@ -211,28 +211,6 @@ def _normalizuj(soup: BeautifulSoup) -> None:
             text_node.replace_with(new)
 
 
-def _dijalog(soup: BeautifulSoup) -> int:
-    try:
-        from core.kalkovi.dijalog import DIJALOG_TIPOGRAFIJA
-    except Exception:
-        return 0
-    n = 0
-    for node in soup.find_all(string=True):
-        if node.parent and node.parent.name in ("script", "style"):
-            continue
-        orig = str(node)
-        new = orig
-        for pattern, repl in DIJALOG_TIPOGRAFIJA:
-            # 2026-11-03: preskoci pravila koja „…” vracaju u ASCII "
-            if '"' in repl:
-                continue
-            new = re.sub(pattern, repl, new)
-        if new != orig:
-            node.replace_with(new)
-            n += 1
-    return n
-
-
 def _ukloni_duplikate_p(soup: BeautifulSoup) -> int:
     """Ukloni <p> ciji je pocetak prefix ili identican drugom <p>. Zadrzava duzi."""
     import re as _re
@@ -1467,13 +1445,13 @@ def run_epub_styler(
         )
         _ukloni_sve(soup)
         _normalizuj(soup)
-        _dijalog(soup)
-        # 2026-11-03: siroce ” u odlomku s crticom (isti normalizator kao u pipelineu)
+        # 2026-11-04: tipografiju radi samo core/tipografija.py (packager); styler samo provjerava
         try:
-            from core.text_utils import _navodnici_u_tekstu
-            soup = BeautifulSoup(_navodnici_u_tekstu(str(soup)), "html.parser")
+            from core.tipografija import provjeri as _tip_provjeri
+            for _pr in _tip_provjeri(str(soup)):
+                logger.warning("[tipografija] %s: %s", p.get("full_path"), _pr)
         except Exception:
-            logger.exception("[C3_fallback] styler: navodnici")
+            logger.exception("[tipografija] styler: provjera")
         _ukloni_duplikate_p(soup)
         _dodaj_vijenac(soup)
         _ocisti_fffc(soup)
