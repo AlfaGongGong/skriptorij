@@ -30,3 +30,5 @@ booklyfi_audit/
 *.audit.html
 *.audit.md
 *.audit_run.json
+*.epub
+*.db
