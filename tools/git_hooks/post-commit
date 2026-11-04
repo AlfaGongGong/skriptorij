@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+MSG=$(git log -1 --pretty=%B | head -1); HEAD=$(git rev-parse --short HEAD)
+TS=$(date +"%Y-%m-%d %H:%M")
+LF="/storage/emulated/0/Download/BOOKLYFI_AI_LOG.md"
+[ -f "$LF" ] && { echo ""; echo "## [$TS] [Auto-commit] — \`$HEAD\`"; echo "**Commit:** $MSG"; echo "**Files:**"; git show --stat --oneline HEAD | tail -n +2 | sed 's/^/  /'; } >> "$LF"
