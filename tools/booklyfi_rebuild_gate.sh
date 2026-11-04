@@ -31,6 +31,13 @@ main() {
     fi
 
     echo
+    echo "=== 1.5. Primenjujem Overlay ispravke (ako postoje) ==="
+    OVR_FILE="/storage/emulated/0/Download/BOOKLYFI_ISPRAVCI/The_Wisdom_of_Crowds.json"
+    if [ -f "$OVR_FILE" ]; then
+        "$PY" tools/apply_overlay.py "/storage/emulated/0/booklyfi_checkpoints/_skr_The_Wisdom_of_Crowds/checkpoints" "$OVR_FILE"
+    fi
+
+    echo
     echo "=== 2. Rebuild (SkriptorijAllInOne + styler) ==="
     "$PY" - << 'PYEOF'
 import os, sys, traceback
