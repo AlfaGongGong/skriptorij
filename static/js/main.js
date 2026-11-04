@@ -331,6 +331,16 @@ function showConfirm(title, body, opts = {}) {
 }
 window.showConfirm = showConfirm;
 
+// P3.4 (2026-11-04): modal Esc handler — zatvori bilo koji otvoren modal
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        const openModals = document.querySelectorAll(".modal-overlay.open");
+        if (openModals.length > 0) {
+            openModals.forEach(m => m.classList.remove("open"));
+        }
+    }
+});
+
 // Loading wrapper — doda .btn-loading, čeka asyncFn, ukloni
 async function withLoading(btn, asyncFn) {
     if (!btn) return asyncFn();
@@ -2342,6 +2352,14 @@ function switchTab(tabId) {
     document.querySelectorAll(".tab-panel").forEach(p => {
         p.classList.toggle("active", p.id === tabId);
     });
+    // P3.4 (2026-11-04): scroll active tab into view (mobile tab strip)
+    const _activeTabBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+    if (_activeTabBtn && _activeTabBtn.scrollIntoView) {
+        try {
+            const _reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            _activeTabBtn.scrollIntoView({ inline: "center", block: "nearest", behavior: _reduced ? "auto" : "smooth" });
+        } catch (_) {}
+    }
     if (tabId === "tab-expert") {
         pollFleet();
         loadKeys();

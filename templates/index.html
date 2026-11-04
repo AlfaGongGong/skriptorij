@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="/static/css/style.css?v=20261024a" />
 </head>
 <body>
+    <a href="#app" class="skip-link">Preskoči na sadržaj</a>
     <div id="toast-container" aria-live="polite"></div>
 
     <!-- ═══════════════════ DOWNLOAD MODAL ═══════════════════ -->
@@ -114,7 +115,7 @@
             <div class="header-controls">
                 <div class="status-badge">
                     <span class="dot dot-idle" id="status-dot"></span>
-                    <span id="status-text" class="status-text">SPREMAN</span>
+                    <span id="status-text" class="status-text" aria-live="polite" aria-atomic="true">SPREMAN</span>
                 </div>
                 <div id="quality-live-badge" class="ql-badge">
                     <div class="ql-ring" data-val="—" style="--ql-pct: 0%"></div>
@@ -123,8 +124,8 @@
                         <span class="ql-score-sub">—</span>
                     </div>
                 </div>
-                <button class="btn-icon" id="theme-btn" title="Promijeni temu">🌙</button>
-                <button class="btn-icon" id="btn-show-setup" title="Postavke">⚙</button>
+                <button class="btn-icon" id="theme-btn" title="Promijeni temu" aria-label="Promijeni temu">🌙</button>
+                <button class="btn-icon" id="btn-show-setup" title="Postavke" aria-label="Otvori postavke">⚙</button>
             </div>
         </header>
 

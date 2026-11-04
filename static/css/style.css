@@ -4106,3 +4106,119 @@ a.fq-prov-name:hover { text-decoration: underline; }
     color: var(--amber);
     line-height: 1.4;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   P3.4 (2026-11-04) — Mobilni UX i A11y
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Skip link — vidljiv samo na fokus (tab) */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: var(--bg-1);
+    color: var(--tx-1);
+    padding: 10px 14px;
+    z-index: 10000;
+    border-radius: var(--r-md);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    border: 1px solid var(--accent-2);
+}
+.skip-link:focus {
+    left: 8px;
+    top: 8px;
+    outline: 2px solid var(--accent-2);
+    outline-offset: 2px;
+}
+
+/* Screen-reader-only utility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Ukloni 300ms tap delay + sivi flash (mobile) */
+button,
+a,
+.btn,
+.btn-icon,
+.tab-btn,
+.tier-pill,
+.audit-filter-chip,
+.key-card-btn,
+input,
+select,
+textarea {
+    -webkit-tap-highlight-color: transparent;
+}
+button,
+.btn,
+.btn-icon,
+.tab-btn,
+.tier-pill,
+.audit-filter-chip,
+.key-card-btn {
+    touch-action: manipulation;
+}
+
+/* 44x44 minimum touch target — WCAG 2.5.5 */
+.btn-icon {
+    min-width: 44px !important;
+    min-height: 44px !important;
+}
+.key-card-btn {
+    min-height: 44px !important;
+}
+
+/* Kompaktni ali tap-friendly */
+.tier-pill {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 14px;
+}
+.audit-filter-chip {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+}
+
+/* Mobile: dodatni boost */
+@media (max-width: 640px) {
+    .tier-pill {
+        min-height: 44px;
+        padding: 0 16px;
+    }
+    .audit-filter-chip {
+        min-height: 36px;
+        padding: 6px 12px;
+    }
+    .tab-btn {
+        scroll-margin-inline: 60px;
+    }
+}
+
+/* Modal: pouzdan focus ring za klavijaturu */
+.modal-overlay .modal :focus-visible {
+    outline: 2px solid var(--accent-2);
+    outline-offset: 2px;
+}
+
+/* prefers-reduced-motion: spineri su essential feedback — dozvoli sporu rotaciju */
+@media (prefers-reduced-motion: reduce) {
+    .timeline-spinner,
+    .btn.btn-loading::after,
+    .dot.dot-active {
+        animation-duration: 3s !important;
+    }
+}
