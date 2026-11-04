@@ -156,10 +156,18 @@ def _unescape_json_fallback(s: str) -> str:
     return _ocisti_escape_artifacts(s)
 
 
+_OUT_TAG_RE = re.compile(r"<\\?/?\s*out\s*>", re.IGNORECASE)
+
+
+def _strip_out_tag(s: str) -> str:
+    """P0.6: modeli (Gemini/Groq) ponekad omotaju izlaz u <out>...</out>."""
+    return _OUT_TAG_RE.sub("", s) if s and "out" in s.lower() else s
+
+
 def _smart_extract(raw: str) -> str:
     if not raw:
         return ""
-    raw = raw.strip()
+    raw = _strip_out_tag(raw).strip()
     if raw.startswith("```"):
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
         raw = re.sub(r"\s*```\s*$", "", raw)  # B19 FIX: bio r"?```\s*$"
