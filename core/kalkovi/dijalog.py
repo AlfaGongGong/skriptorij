@@ -36,8 +36,10 @@ DIJALOG_KALKOVI = [
     # (r"\bvaži\b", "dogovoreno"),
     # (r"\bvaži\s*,", "dogovoreno,"),
     # (r"\bVaži\b", "Dogovoreno"),
-    (r"\bkako\s+god\b", "kako mu drago"),
-    (r"\bkako\s+god\s+ti\b", "kako ti"),
+    # F1.4 (2026-11-04): ZAMRZNUTO — "kako god" je normalan HR izraz
+    # ("kako god hoćeš"). Zamjena kvari smisao.
+    # (r"\bkako\s+god\b", "kako mu drago"),
+    # (r"\bkako\s+god\s+ti\b", "kako ti"),
     # Srpska forma odricanja u dijalogu
     (r"\bNije\s+valjda\b", "Valjda nije"),
     (r"\bnema\s+na\s+čemu\b", "nema na čemu"),  # OK u BS ali provjeriti
@@ -61,15 +63,17 @@ DIJALOG_KALKOVI = [
     # ISKLJUČENO — "kad" je prihvatljivo u BS, ne patch-amo
     # (r'\bkad\b', 'kada'),
     # Anglizam "OK" u dijalogu → lokalna forma
-    (r"\bOK\b", "U redu"),
-    (r"\bOk\b(?!\w)", "U redu"),
+    # F1.4 (2026-11-04): ZAMRZNUTO — "OK" je normalan u dijalogu, mijenja registar.
+    # (r"\bOK\b", "U redu"),
+    # (r"\bOk\b(?!\w)", "U redu"),
     # Srpska forma "izvini" → "ispričaj se" / "oprosti"
-    (r"\bIzvini\b", "Oprosti"),
-    (r"\bizvini\b", "oprosti"),
-    (r"\bIzvinite\b", "Oprostite"),
-    (r"\bizvinite\b", "oprostite"),
-    (r"\bIzvinjavaj\b", "Ispričavaj"),
-    (r"\bizvinjavaj\b", "ispričavaj"),
+    # F1.4 (2026-11-04): ZAMRZNUTO — "izvini" i "oprosti" su oba ispravna HR.
+    # (r"\bIzvini\b", "Oprosti"),
+    # (r"\bizvini\b", "oprosti"),
+    # (r"\bIzvinite\b", "Oprostite"),
+    # (r"\bizvinite\b", "oprostite"),
+    # (r"\bIzvinjavaj\b", "Ispričavaj"),
+    # (r"\bizvinjavaj\b", "ispričavaj"),
     # Srpska forma "molim" bez "te/vas" → dodaj (kontekstualno sigurno)
     # ISKLJUČENO — "molim" je ok u BS kao pozdrav/uljudnost
     # "servisi" → "usluge" u dijalogu
