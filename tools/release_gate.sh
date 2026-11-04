@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o pipefail
 # release_gate.sh - Konacna kapija za izdavacki kvalitet
 cd /root/skriptorij || exit 1
 if [ ! -d .git ]; then echo "FAIL: nema .git"; exit 1; fi
