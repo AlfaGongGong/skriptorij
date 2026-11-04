@@ -90,37 +90,72 @@ def _preserve_case(original: str, replacement: str) -> str:
     return replacement
 
 
+_BLOK_TAG_RX = re.compile(
+    r"^</?(?:p|div|h[1-6]|li|ul|ol|blockquote|tr|td|th|br|table|section|body|head|title)\b",
+    re.IGNORECASE,
+)
+_TAG_SPLIT_RX = re.compile(r"(<[^>]*>)")
+
+
 def _word_boundary_replace(text: str, pattern: str, replacement: str) -> str:
     """
-    Zamjenjuje pattern u tekstu uz:
-    - \b word-boundary (ne kvari podriječi)
-    - Čuvanje originalnog casing-a
-    - Skipovanje sadržaja unutar HTML tagova
+    Zamjenjuje pattern u HTML-u uz:
+    - \\b word-boundary (ne kvari podriječi) i čuvanje casinga
+    - tagovi i atributi se ne diraju
+    - P0.3 tag-aware: hvata i ime razbijeno inline tagovima (drop-cap
+      <span>N</span>ail, <em>Nai</em>l); zamjena se raspoređuje po segmentima
+      pa markup ostaje na mjestu. Preko blok-tagova (</p><p>) se ne spaja.
     """
-    # Splitamo na HTML tagove i tekst između njih
-    parts = re.split(r"(<[^>]+>)", text)
-    result = []
-    escaped = re.escape(pattern)
+    if not pattern:
+        return text
     try:
-        rx = re.compile(rf"\b{escaped}\b", re.IGNORECASE | re.UNICODE)
+        rx = re.compile(rf"\b{re.escape(pattern)}\b", re.IGNORECASE | re.UNICODE)
     except re.error:
-        # Ako pattern ima specijalne znakove, pokušaj bez \b
         try:
             rx = re.compile(re.escape(pattern), re.IGNORECASE | re.UNICODE)
         except re.error:
             return text
 
-    for part in parts:
-        if part.startswith("<"):
-            # HTML tag — ne diramo
-            result.append(part)
-        else:
-            # Tekst — primijeni zamjenu uz casing
-            def _sub(m):
-                return _preserve_case(m.group(0), replacement)
+    # brza provjera: nema pojave ni u golom tekstu -> nema posla
+    if not rx.search(_TAG_SPLIT_RX.sub("", text)):
+        return text
 
-            result.append(rx.sub(_sub, part))
-    return "".join(result)
+    # goli tekst + mapa: pozicija znaka u golom tekstu -> pozicija u HTML-u
+    plain, pos, i = [], [], 0
+    for n, part in enumerate(_TAG_SPLIT_RX.split(text)):
+        if n % 2 == 1:  # tag
+            if _BLOK_TAG_RX.match(part):
+                plain.append("\n")
+                pos.append(-1)
+        else:
+            plain.append(part)
+            pos.extend(range(i, i + len(part)))
+        i += len(part)
+    flat = "".join(plain)
+
+    edits = []
+    for m in rx.finditer(flat):
+        idx = pos[m.start():m.end()]
+        if not idx or -1 in idx:
+            continue
+        runs = [[idx[0]]]
+        for k in idx[1:]:
+            if k == runs[-1][-1] + 1:
+                runs[-1].append(k)
+            else:
+                runs.append([k])
+        rep = _preserve_case(m.group(0), replacement)
+        used = 0
+        for n, run in enumerate(runs):
+            if n == len(runs) - 1:
+                chunk = rep[used:]
+            else:
+                chunk = rep[used:used + len(run)]
+                used += len(chunk)
+            edits.append((run[0], run[-1] + 1, chunk))
+    for s, e, chunk in sorted(edits, reverse=True):
+        text = text[:s] + chunk + text[e:]
+    return text
 
 
 # ---------------------------------------------------------------------------
