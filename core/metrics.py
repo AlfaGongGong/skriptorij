@@ -329,7 +329,7 @@ def _fragment_oko_broja(tekst: str, pozicije: list, visak: Counter) -> str:
     return ""
 
 
-def accuracy_shadow(hr_text, en_text=None) -> dict:
+def accuracy_shadow(hr_text, en_text=None, glossary=None) -> dict:
     """T3.2 shadow: deterministicki signali kvara po bloku. Ne utjece
     na ocjenu. en_text=None -> samo provjere bez EN. tagovi_razlika se
     namjerno ne koristi (58/78 dijelova TWOC, bez signala)."""
@@ -349,7 +349,7 @@ def accuracy_shadow(hr_text, en_text=None) -> dict:
         hc = Counter(b for b, _, _ in _nadji_brojeve(hp))
         ec = Counter(b for b, _, _ in _nadji_brojeve(ep))
         out["br"] = [sum((ec - hc).values()), sum((hc - ec).values())]
-        r = check_accuracy(hr, en_text, {})
+        r = check_accuracy(hr, en_text, glossary or {})
         out["kodovi"] = [
             i["code"] for i in r["issues"] if i["code"] != "tagovi_razlika"
         ]
@@ -476,6 +476,34 @@ def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
     if glossary:
         nedost_en = []
         nedost_hr = []
+        en_frag = ""
+        for en_ime, hr_ime in glossary.items():
+            en_m = re.search(r'\b' + re.escape(en_ime) + r'\b', en_text)
+            if not en_m:
+                continue
+            if hr_ime in hr_text or en_ime in hr_text:
+                continue
+            if not nedost_en:
+                od = max(0, en_m.start() - _KONTEKST_BROJ)
+                do = min(len(en_text), en_m.end() + _KONTEKST_BROJ)
+                en_frag = " ".join(en_text[od:do].split())
+            nedost_en.append(en_ime)
+            nedost_hr.append(hr_ime)
+        if nedost_en:
+            issues.append({
+                "code": "imena_nedostaju",
+                "severity": "upozorenje",
+                "detail": "U EN: %s, u HR nema: %s" % (
+                    ", ".join(nedost_en[:5]) + (", ..." if len(nedost_en) > 5 else ""),
+                    ", ".join(nedost_hr[:5]) + (", ..." if len(nedost_hr) > 5 else ""),
+                ),
+                "hr_fragment": "",
+                "en_fragment": en_frag,
+            })
+
+    # --- imena_nedostaju (T3c) ---
+    if glossary:
+        nedost_en, nedost_hr = [], []
         en_frag = ""
         for en_ime, hr_ime in glossary.items():
             en_m = re.search(r'\b' + re.escape(en_ime) + r'\b', en_text)

@@ -775,9 +775,23 @@ async def _quality_scoring(
     try:
         from core.metrics import accuracy_shadow
 
+        # P1.3 (2026-11-04): proslijedi glosar u accuracy_shadow
+        _glosar_za_acc = {}
+        try:
+            _bc = getattr(self, "book_context", None)
+            if _bc:
+                _raw_g = getattr(_bc, "_glosar", {})
+                _glosar_za_acc = {
+                    _ime: _info.get("hr", _ime)
+                    for _ime, _info in _raw_g.items()
+                    if isinstance(_info, dict) and _info.get("hr")
+                }
+        except Exception:
+            pass
         _acc = accuracy_shadow(
             finalno,
             original_chunk if tip_ocjenjivanja == "prevod" else None,
+            glossary=_glosar_za_acc,
         )
         _ap = self.checkpoint_dir / "quality_accuracy.json"
         with _QS_LOCK:
