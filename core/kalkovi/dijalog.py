@@ -31,9 +31,11 @@ DIJALOG_KALKOVI = [
         r"\1",
     ),  # "Dobro, ali → ali
     # Uobičajene srpske uzrečice koje AI ubacuje
-    (r"\bvaži\b", "dogovoreno"),
-    (r"\bvaži\s*,", "dogovoreno,"),
-    (r"\bVaži\b", "Dogovoreno"),
+    # F0.0 (2026-11-04): ZAMRZNUTO — "važi" je običan glagol u HR/BS
+    # ("pravilo važi za sve"). Zamjena kvari smisao.
+    # (r"\bvaži\b", "dogovoreno"),
+    # (r"\bvaži\s*,", "dogovoreno,"),
+    # (r"\bVaži\b", "Dogovoreno"),
     (r"\bkako\s+god\b", "kako mu drago"),
     (r"\bkako\s+god\s+ti\b", "kako ti"),
     # Srpska forma odricanja u dijalogu
@@ -71,9 +73,12 @@ DIJALOG_KALKOVI = [
     # Srpska forma "molim" bez "te/vas" → dodaj (kontekstualno sigurno)
     # ISKLJUČENO — "molim" je ok u BS kao pozdrav/uljudnost
     # "servisi" → "usluge" u dijalogu
-    (r"\bservise\b", "usluge"),
-    (r"\bservisima\b", "uslugama"),
-    (r"\bservis\b(?!\s+(?:vozila|automobila|auta|kola|motora|bicikla))", "usluga"),
+    # F0.0 (2026-11-04): ZAMRZNUTO — "servis" u HR/BS znači servis vozila,
+    # servis posuđa, teniski servis. Lookahead izuzeci pokrivaju samo
+    # nekoliko fraza, sve ostalo se kvari.
+    # (r"\bservise\b", "usluge"),
+    # (r"\bservisima\b", "uslugama"),
+    # (r"\bservis\b(?!\s+(?:vozila|automobila|auta|kola|motora|bicikla))", "usluga"),
 ]
 
 # Objedinjena lista za __init__.py
