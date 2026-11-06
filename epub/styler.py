@@ -551,6 +551,71 @@ def _apostrof_fix(soup):
     return n
 
 
+def _popravi_fragment_pocetka(soup):
+    """Odlomak koji pocinje malim slovom: prva recenica je odbacen rep
+    prethodnog odlomka (prijelaz bloka pri prevodjenju). Ako prethodni
+    odlomak vec zavrsava tim tekstom -> brise se; inace se dodaje prethodnom.
+    Radi samo kad su id-evi uzastopni (jiN, jiN+1)."""
+    import re as _re
+    from bs4 import NavigableString as _NS
+
+    rx = _re.compile(r'(.{1,200}?[.!?…]["”]?)(?=\s|$)')
+
+    def _num(p):
+        m = _re.search(r"(\d+)$", p.get("id") or "")
+        return int(m.group(1)) if m else None
+
+    def _norm(s):
+        return _re.sub(r"[\W_]+", "", s.lower())
+
+    n_drop = n_move = 0
+    for cur in list(soup.find_all("p")):
+        prev = cur.find_previous_sibling("p")
+        if prev is None or not cur.contents:
+            continue
+        a, b = _num(prev), _num(cur)
+        if a is None or b is None or b != a + 1:
+            continue
+        first = cur.contents[0]
+        if not isinstance(first, _NS):
+            continue
+        st = str(first).lstrip()
+        if not st or not st[0].isalpha() or not st[0].islower():
+            continue
+        m = rx.match(st)
+        if not m:
+            continue
+        frag = m.group(1)
+        if len(frag.split()) > 15:
+            continue
+        if _norm(prev.get_text()).endswith(_norm(frag)) and len(_norm(frag)) >= 5:
+            akcija = "brisem (ponovljen rep)"
+            n_drop += 1
+        else:
+            nodes = prev.find_all(string=True)
+            if not nodes:
+                continue
+            last = nodes[-1]
+            ls = str(last).rstrip()
+            if not ls.endswith(".") or ls.endswith("…"):
+                print(f"  [frag-fix] preskoceno {cur.get('id')}: prethodni ne zavrsava tackom")
+                continue
+            last.replace_with(ls[:-1] + " " + frag)
+            akcija = "dodajem prethodnom"
+            n_move += 1
+        rest = st[len(frag):].lstrip()
+        if rest:
+            first.replace_with(rest)
+        elif len(cur.contents) == 1:
+            cur.decompose()
+        else:
+            first.extract()
+        print(f"  [frag-fix] {cur.get('id')}: {akcija}: {frag[:50]}")
+    if n_drop or n_move:
+        print(f"  [frag-fix] obrisano: {n_drop}, premjesteno: {n_move}")
+    return n_drop + n_move
+
+
 def _stil_ocisti_p(soup):
     """2026-11-06: (1) spaja <p> presjecen usred recenice (prethodni bez zavrsetka,
     sljedeci pocinje malim slovom); (2) brise identican odlomak (>=20 rijeci) ako se
@@ -1750,6 +1815,7 @@ def run_epub_styler(
                 logger.warning("[tipografija] %s: %s", p.get("full_path"), _pr)
         except Exception:
             logger.exception("[tipografija] styler: provjera")
+        _popravi_fragment_pocetka(soup)
         _stil_ocisti_p(soup)
         _ukloni_dup_par(soup)
         _ukloni_duplikate_p(soup)
