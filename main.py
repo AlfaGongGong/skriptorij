@@ -242,11 +242,17 @@ def tts_gemini_endpoint():
                 voice_name = v
                 break
 
+        # 2026-11-05: Podrska za custom glasove (voice_...) i prebuilt (Charon, Kore...)
+        if voice_name.startswith("voice_"):
+            _voice_cfg = {"voiceConfig": {"voice": voice_name}}
+        else:
+            _voice_cfg = {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice_name}}}
+
         body = {
             "contents": [{"parts": [{"text": text}]}],
             "generationConfig": {
                 "responseModalities": ["AUDIO"],
-                "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice_name}}}
+                "speechConfig": _voice_cfg
             }
         }
         model = "gemini-3.1-flash-tts-preview"
@@ -266,16 +272,28 @@ def tts_gemini_endpoint():
                 for p in parts:
                     if "inlineData" in p and p["inlineData"].get("data"):
                         import base64 as _b64
+                        import subprocess as _subprocess
+                        import tempfile as _tempfile
                         pcm = _b64.b64decode(p["inlineData"]["data"])
-                        # WAV header
-                        sr, ch, bps = 24000, 1, 16
-                        data_len = len(pcm)
-                        header = _struct.pack("<4sI4s4sIHHIIHH4sI",
-                            b"RIFF", 36 + data_len, b"WAVE", b"fmt ",
-                            16, 1, ch, sr, sr*ch*bps//8, ch*bps//8, bps,
-                            b"data", data_len)
+                        
+                        # Konvertujemo sirovi PCM u MP3 preko ffmpeg
+                        with _tempfile.NamedTemporaryFile(suffix=".raw", delete=False) as _f_in:
+                            _f_in.write(pcm)
+                            _in_path = _f_in.name
+                        _out_path = _in_path + ".mp3"
+                        try:
+                            _subprocess.run([
+                                "ffmpeg", "-y", "-f", "s16le", "-ar", "24000", "-ac", "1",
+                                "-i", _in_path, "-codec:a", "libmp3lame", "-b:a", "128k", _out_path
+                            ], check=True, capture_output=True, timeout=10)
+                            with open(_out_path, "rb") as _f_out:
+                                _mp3_data = _f_out.read()
+                        finally:
+                            if __import__("os").path.exists(_in_path): __import__("os").remove(_in_path)
+                            if __import__("os").path.exists(_out_path): __import__("os").remove(_out_path)
+                            
                         from flask import Response as _Resp
-                        return _Resp(header + pcm, mimetype="audio/wav")
+                        return _Resp(_mp3_data, mimetype="audio/mpeg")
                 last_err = f"K{i+1}: nema audio"
             except _urllib_err.HTTPError as e:
                 last_err = f"K{i+1}: HTTP {e.code}"
