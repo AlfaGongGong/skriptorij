@@ -39,3 +39,10 @@ booklyfi_p0*.sh
 booklyfi_p0*.sh/
 booklyfi_*.sh
 *.backup_*
+tools/.tts_keys
+
+# P0.7: audiobook skripte s hardkodiranim kljucevima - ne commit-uj dok ne predju na tools/.tts_keys
+tools/audiobook_batch.py
+tools/twoc_audiobook.py
+# P0.7: MCP server, ne commit-uj (secret se nalazi u kodu: tools/claude_files_mcp/.state/secret.txt)
+tools/claude_files_mcp/
