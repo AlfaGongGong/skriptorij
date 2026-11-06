@@ -374,6 +374,25 @@ def _spoji_blokove(delovi):
 
 
 
+def _apostrof_fix(soup):
+    """2026-11-06: AI ponekad pretvori apostrof u otvarajuci navodnik (Skarling\u201es).
+    Radi nad tekstualnim cvorovima: slovo + \u201e + malo slovo -> \u2019. Vraca broj izmjena."""
+    import re as _re
+    from bs4 import NavigableString as _NS
+    _rx = _re.compile("(?<=[A-Za-z\u010d\u0107\u017e\u0161\u0111\u010c\u0106\u017d\u0160\u0110])\u201e(?=[a-z\u010d\u0107\u017e\u0161\u0111])")
+    n = 0
+    for node in list(soup.find_all(string=True)):
+        if type(node) is not _NS:
+            continue
+        if any(par.name in ("script", "style", "title") for par in node.parents):
+            continue
+        nt = _rx.sub("\u2019", str(node))
+        if nt != str(node):
+            node.replace_with(nt)
+            n += 1
+    return n
+
+
 def _stil_ocisti_p(soup):
     """2026-11-06: (1) spaja <p> presjecen usred recenice (prethodni bez zavrsetka,
     sljedeci pocinje malim slovom); (2) brise identican odlomak (>=20 rijeci) ako se
@@ -1556,6 +1575,14 @@ def run_epub_styler(
         )
         _ukloni_sve(soup)
         _normalizuj(soup)
+        # 2026-11-06: .chk se spaja ovdje direktno (mimo packagera), pa tipografiju
+        # (siroci ", crtice, trotocje) primijeni na tekstualnim cvorovima prije provjere
+        try:
+            from core.tipografija import normaliziraj_soup as _tip_norm
+            _apostrof_fix(soup)
+            _tip_norm(soup)
+        except Exception:
+            logger.exception("[tipografija] styler: normalizacija")
         # 2026-11-04: tipografiju radi samo core/tipografija.py (packager); styler samo provjerava
         try:
             from core.tipografija import provjeri as _tip_provjeri
