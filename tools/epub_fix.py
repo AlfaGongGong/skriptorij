@@ -3,7 +3,7 @@
 Upotreba: epub_fix.py <ulaz.epub> <izlaz.epub>
 Ulaz se ne dira. HTML se prepisuje samo ako je nesto promijenjeno.
 """
-import re, sys, zipfile, posixpath, datetime, collections
+import re, sys, zipfile, posixpath, datetime, collections, difflib, os
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote
 from bs4 import BeautifulSoup
@@ -139,7 +139,9 @@ def fix_html(name, raw, names_set, st, idmap, dups):
         old = t["id"]
         new = valid_id(old)
         if new in seen:
-            dups.append((name, new, t.get_text().strip() == first[new].strip()))
+            a_, b_ = first[new].strip(), t.get_text().strip()
+            dups.append((name, new, a_ == b_,
+                         difflib.SequenceMatcher(None, a_, b_).ratio(), a_[:70], b_[:70]))
             del t["id"]
             st["id_dup_skinut"] += 1
             ch = True
@@ -230,6 +232,13 @@ def main(src, dst):
           % (len(changed), len(soups), len(dups), ident))
     for d in [d for d in dups if d[2]][:8]:
         print("  IDENTICAN dup:", d[0], d[1])
+    try:
+        os.makedirs(".logs", exist_ok=True)
+        with open(".logs/epub_fix_dups.txt", "w", encoding="utf-8") as fh:
+            for d in sorted(dups, key=lambda d: -d[3]):
+                fh.write("%.2f\t%s\t%s\t%s\t%s\n" % (d[3], d[0], d[1], d[4], d[5]))
+    except OSError as e:
+        print("izvjestaj dup id nije zapisan:", e)
 
 
 if __name__ == "__main__":
