@@ -374,6 +374,65 @@ def _spoji_blokove(delovi):
 
 
 
+def _stil_ocisti_p(soup):
+    """2026-11-06: (1) spaja <p> presjecen usred recenice (prethodni bez zavrsetka,
+    sljedeci pocinje malim slovom); (2) brise identican odlomak (>=20 rijeci) ako se
+    ponovi unutar 12 odlomaka. Radi nad BeautifulSoup cvorovima. Idempotentno.
+    Vraca (spojeno, uklonjeno)."""
+    import re as _re
+    from bs4 import NavigableString as _NS
+    _KRAJ = set(".!?:;)]*'\"") | {"\u2026", "\u201d", "\u201c", "\u00bb", "\u2014", "\u2013", "\u2019"}
+
+    def _sljedeci_p(el):
+        n = el.next_sibling
+        while n is not None and isinstance(n, _NS) and not str(n).strip():
+            n = n.next_sibling
+        return n if getattr(n, "name", None) == "p" else None
+
+    gone = set()
+    spojeno = 0
+    for p in list(soup.find_all("p")):
+        if id(p) in gone:
+            continue
+        while True:
+            n = _sljedeci_p(p)
+            if n is None:
+                break
+            tp = p.get_text().rstrip()
+            tn = n.get_text().lstrip()
+            if not tp or not tn:
+                break
+            if tp[-1] in _KRAJ or not tn[0].islower():
+                break
+            if p.find("img") is not None or n.find("img") is not None:
+                break
+            if not tp.endswith("-"):
+                p.append(_NS(" "))
+            for c in list(n.contents):
+                p.append(c.extract())
+            n.extract()
+            gone.add(id(n))
+            spojeno += 1
+
+    def _norm(t):
+        return _re.sub(r"\W+", " ", t.lower()).strip()
+
+    vidjeni = []
+    uklonjeno = 0
+    for p in list(soup.find_all("p")):
+        if id(p) in gone:
+            continue
+        nt = _norm(p.get_text())
+        if len(nt.split()) >= 20 and nt in vidjeni[-12:]:
+            p.extract()
+            gone.add(id(p))
+            uklonjeno += 1
+            continue
+        vidjeni.append(nt)
+    if spojeno or uklonjeno:
+        print("  [p-fix] spojeno presjecenih: %d, uklonjeno duplikata: %d" % (spojeno, uklonjeno))
+    return spojeno, uklonjeno
+
 def _razdvoji_dijalog_p(soup: BeautifulSoup) -> int:
     """Razdvoji <p> sa 3+ replika (em-crtica posle .!?…) u zasebne <p>."""
     import re as _re
@@ -1504,6 +1563,7 @@ def run_epub_styler(
                 logger.warning("[tipografija] %s: %s", p.get("full_path"), _pr)
         except Exception:
             logger.exception("[tipografija] styler: provjera")
+        _stil_ocisti_p(soup)
         _ukloni_duplikate_p(soup)
         _dodaj_vijenac(soup)
         _ocisti_fffc(soup)
