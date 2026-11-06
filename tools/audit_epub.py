@@ -544,7 +544,7 @@ def provjeri_pasus(N: Nalazi, K: Kontekst, fajl: str, i: int, b: dict):
     otv = t.count("„")
     zat = t.count("“") + t.count("”") + t.count('"')
     if otv:
-        if otv != zat:
+        if otv != zat and not (otv == zat + 1 and t.rstrip()[-1:] in ("…", "—", "–")):
             N.add("TIP-NAVOD", fajl, i, t, f"„={otv}, zatvarajućih={zat}")
     elif t.count('"') % 2 == 1:
         N.add("TIP-NAVOD", fajl, i, t, "neparan broj \"")
