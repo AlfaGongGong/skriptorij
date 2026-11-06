@@ -37,8 +37,8 @@ fi
 
 echo
 echo "=== 3. EPUBcheck (Sintaksna validacija) ==="
-if command -v epubcheck &>/dev/null; then
-    epubcheck "$EPUB"
+if command -v java &>/dev/null && [ -f /usr/share/java/epubcheck.jar ]; then
+    java -jar /usr/share/java/epubcheck.jar "$EPUB"
     if [ $? -ne 0 ]; then echo "FAIL: EPUBcheck nije prosao."; exit 1; fi
 else
     echo "WARN: epubcheck nije instaliran u sistemu. Preskacem."
