@@ -374,6 +374,82 @@ def _spoji_blokove(delovi):
 
 
 
+def _navodnici_popravi(soup):
+    """2026-11-06: popravke tipicnih gresaka AI prevoda u navodnicima, nad tekstualnim
+    cvorovima (cuva <em>). Samo kad je broj navodnika neparan:
+    (A) izgubljen zatvarajuci ” ispred glagola govora: „Da, uzdahnuo -> „Da”, uzdahnuo
+    (B) crtica usred pasusa umjesto otvarajuceg „: ... gotovo. — Dobro!” -> ... „Dobro!”
+    (C) razmak izmedju crtice i ”: ' — ”' -> ' —”'
+    Vraca broj popravaka."""
+    import re as _re
+    from bs4 import NavigableString as _NS
+    _VERB = (r"(?:re\u010de|rekao|rekla|promrml\w+|izust\w+|prozbor\w+|odvrat\w+|upit\w+|zare\u017ea\w*|"
+             r"dometn\w+|doda|dodao|dodala|povik\w+|uzdah\w+|uzdis\w+|\u0161apn\w+|prošapta\w*|zaurla\w*|"
+             r"kresn\w+|zacvil\w+|dobac\w+|uzvikn\w+|vikn\w+|zapita\w+|zagun\u0111\w+|promuc\w+|prozbor\w+)")
+    _rx_a = _re.compile("\u201e([^\u201e\u201d\"]{1,200}?)(?=,\\s+" + _VERB + r"\b)")
+    _rx_c = _re.compile("\u2014\\s+\u201d")
+
+    def _cv(p):
+        return [n for n in p.find_all(string=True)
+                if type(n) is _NS and not any(q.name in ("script", "style") for q in n.parents)]
+
+    def _izmijeni(nodes, s, e, novo):
+        poz = 0
+        for idx, n in enumerate(nodes):
+            ns = str(n); ln = len(ns)
+            if s == e:
+                ok = (poz <= s < poz + ln) or (idx == len(nodes) - 1 and s == poz + ln)
+            else:
+                ok = poz <= s and e <= poz + ln
+            if ok:
+                n.replace_with(ns[:s - poz] + novo + ns[e - poz:])
+                return True
+            poz += ln
+        return False
+
+    def _siroce(t):
+        otv = False
+        for i, ch in enumerate(t):
+            if ch == "\u201e":
+                otv = True
+            elif ch == "\u201d":
+                if otv:
+                    otv = False
+                else:
+                    return i
+        return -1
+
+    ukupno = 0
+    for p in soup.find_all("p"):
+        for _ in range(4):
+            nodes = _cv(p)
+            t = "".join(str(n) for n in nodes)
+            o = t.count("\u201e")
+            c = t.count("\u201d") + t.count("\u201c") + t.count('"')
+            if o == c + 1:
+                m = _rx_a.search(t)
+                if m and _izmijeni(nodes, m.end(1), m.end(1), "\u201d"):
+                    ukupno += 1
+                    continue
+            if c == o + 1 and not t.lstrip().startswith(("\u2014", "\u2013")):
+                i = _siroce(t)
+                if i > 0:
+                    k = t.rfind("\u2014 ", 0, i)
+                    if (k >= 2 and t[k - 1] == " " and t[k - 2] in ".!?\u2026\u201d"
+                            and not any(q in t[k:i] for q in "\u201e\u201d")
+                            and _izmijeni(nodes, k, k + 2, "\u201e")):
+                        ukupno += 1
+                        continue
+            m = _rx_c.search(t)
+            if m and _izmijeni(nodes, m.start() + 1, m.end() - 1, ""):
+                ukupno += 1
+                continue
+            break
+    if ukupno:
+        print("  [nav-fix] popravljeno navodnika: %d" % ukupno)
+    return ukupno
+
+
 def _apostrof_fix(soup):
     """2026-11-06: AI ponekad pretvori apostrof u otvarajuci navodnik (Skarling\u201es).
     Radi nad tekstualnim cvorovima: slovo + \u201e + malo slovo -> \u2019. Vraca broj izmjena."""
@@ -1580,6 +1656,7 @@ def run_epub_styler(
         try:
             from core.tipografija import normaliziraj_soup as _tip_norm
             _apostrof_fix(soup)
+            _navodnici_popravi(soup)
             _tip_norm(soup)
         except Exception:
             logger.exception("[tipografija] styler: normalizacija")
