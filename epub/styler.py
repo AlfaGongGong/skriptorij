@@ -115,6 +115,8 @@ def _ukloni_sve(soup: BeautifulSoup) -> None:
         tag.decompose()
     for tag in soup.find_all("span", class_="booklyfi-dropcap"):
         tag.decompose()
+    for tag in soup.find_all("span", class_="booklyfi-crtica"):
+        tag.decompose()
 
     # Skrivena slova — VRATI SLOVO U TEKST
     for span in soup.find_all("span", style=True):

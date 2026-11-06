@@ -316,3 +316,30 @@ def test_dropcap_dijalog_drugi_poziv_ne_dupla_crticu(dc):
     styler._dodaj_dropcap(soup)
     styler._dodaj_dropcap(soup)
     assert len(soup.find_all("span", class_="booklyfi-crtica")) == 1
+
+
+# ── restyle: _ukloni_sve → _normalizuj → _dodaj_dropcap (ponovno stiliziranje) ──
+
+def _stiliziraj(soup):
+    styler._ukloni_sve(soup)
+    styler._normalizuj(soup)
+    return styler._dodaj_dropcap(soup)
+
+
+def test_restyle_obican_paragraf(dc):
+    soup = _soup(f"<p>{DUGO}</p>")
+    assert _stiliziraj(soup) is True
+    soup = BeautifulSoup(str(soup), "html.parser")  # kao ponovno učitan EPUB
+    assert _stiliziraj(soup) is True
+    p = soup.find("p")
+    assert len(p.find_all("img", class_="booklyfi-dropcap")) == 1
+    assert p.get_text() == DUGO
+
+
+def test_restyle_dijalog_ne_umnozava_crticu(dc):
+    soup = _soup(f"<p>{DIJALOG_P}</p>")
+    _stiliziraj(soup)
+    prvi = soup.find("p").get_text()
+    soup = BeautifulSoup(str(soup), "html.parser")
+    _stiliziraj(soup)
+    assert soup.find("p").get_text() == prvi
