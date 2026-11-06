@@ -115,8 +115,15 @@ def _ukloni_sve(soup: BeautifulSoup) -> None:
         tag.decompose()
     for tag in soup.find_all("span", class_="booklyfi-dropcap"):
         tag.decompose()
+    from bs4 import NavigableString as _NS
+
     for tag in soup.find_all("span", class_="booklyfi-crtica"):
-        tag.decompose()
+        _sljedeci = tag.next_sibling
+        _prvo = _sljedeci.lstrip()[:1] if isinstance(_sljedeci, _NS) else ""
+        if _prvo and _prvo in "\"\u201e\u201c\u201d\u00ab'":
+            tag.decompose()  # umjetna crtica ispred navodnika
+        else:
+            tag.replace_with(_NS(tag.get_text()))  # prava crtica replike
 
     # Skrivena slova — VRATI SLOVO U TEKST
     for span in soup.find_all("span", style=True):
@@ -694,6 +701,12 @@ def _dodaj_dropcap(soup):
     if prvi_p is None:
         return False
 
+    _cls_ranije = prvi_p.get("class") or []
+    if isinstance(_cls_ranije, str):
+        _cls_ranije = _cls_ranije.split()
+    if "booklyfi-prvi" in _cls_ranije:
+        return False
+
     prvi_tekst = prvi_p.get_text(strip=True)
     prvi_char = prvi_tekst[0] if prvi_tekst else ""
     dijalog_chars = ("—", "–", "-", "‒", "―", '"', "„", '"', '"', "«", "'")
@@ -716,6 +729,14 @@ def _dodaj_dropcap(soup):
         if isinstance(cls, str):
             cls = cls.split()
         crtica_tag = BeautifulSoup(img_html, "html.parser").find("span")
+        if prvi_char in ("\u2014", "\u2013", "\u2012", "\u2015", "-"):
+            for _n in prvi_p.find_all(string=True):
+                _s = str(_n)
+                if _s.strip():
+                    _i = len(_s) - len(_s.lstrip())
+                    if _s[_i] == prvi_char:
+                        _n.replace_with(NavigableString(_s[:_i] + _s[_i + 1:]))
+                    break
         prvi_p.insert(0, crtica_tag)
         prvi_p["class"] = list(cls) + ["booklyfi-prvi"]
         return True

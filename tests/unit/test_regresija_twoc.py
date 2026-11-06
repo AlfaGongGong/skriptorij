@@ -306,11 +306,6 @@ def test_dropcap_drugi_poziv_ne_dodaje_drugu_sliku(dc):
     assert len(soup.find_all("img", class_="booklyfi-dropcap")) == 1
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG (prijavljen, nepopravljen): _dodaj_dropcap u grani za dijalog "
-           "ne provjerava klasu booklyfi-prvi, pa drugi poziv dodaje drugu crticu",
-)
 def test_dropcap_dijalog_drugi_poziv_ne_dupla_crticu(dc):
     soup = _soup(f"<p>{DIJALOG_P}</p>")
     styler._dodaj_dropcap(soup)
@@ -353,3 +348,17 @@ def test_check_accuracy_imena_nedostaju_samo_jednom():
     r = check_accuracy("On je ušao u sobu.", "Calder walked in.", {"Calder": "Kalder"})
     kodovi = [i["code"] for i in r["issues"]]
     assert kodovi.count("imena_nedostaju") == 1
+
+
+def test_dropcap_dijalog_ostaje_jedna_crtica(dc):
+    soup = _soup(f"<p>{DIJALOG_P}</p>")
+    assert styler._dodaj_dropcap(soup) is True
+    assert soup.find("p").get_text() == DIJALOG_P
+
+
+def test_restyle_dijalog_tekst_ostaje_isti(dc):
+    soup = _soup(f"<p>{DIJALOG_P}</p>")
+    _stiliziraj(soup)
+    soup = BeautifulSoup(str(soup), "html.parser")
+    _stiliziraj(soup)
+    assert soup.find("p").get_text() == DIJALOG_P
