@@ -111,3 +111,30 @@ def test_dup_par_ne_dira_kratke():
     from epub.styler import _ukloni_dup_par
     s = BeautifulSoup("<div><p>\u2014 Ne.</p><p>\u2014 Da.</p><p>\u2014 Ne.</p><p>\u2014 Da.</p></div>", "html.parser")
     assert _ukloni_dup_par(s) == 0
+
+
+def test_g_dodaje_zatvarajuci_na_kraj():
+    s = BeautifulSoup("<div><p>Rekao je. „Dat ću vam vremena, ali želim odgovor.</p><p>Krupan muškarac progovori: „Mladi Lave.”</p></div>", "html.parser")
+    n = _navodnici_popravi(s)
+    assert n == 1
+    assert s.find("p").get_text().endswith("odgovor.”")
+
+
+def test_g_ne_dira_navod_kroz_pasuse():
+    s = BeautifulSoup("<div><p>„Koji su im sve uništili. Trebamo vojsku.</p><p>Moramo dobiti konce.”</p></div>", "html.parser")
+    assert _navodnici_popravi(s) == 0
+    assert s.find("p").get_text() == "„Koji su im sve uništili. Trebamo vojsku."
+
+
+def test_i_nedostaje_otvarajuci_poslije_glagola():
+    n, t = _t("<p>„Prokleto besmisleno”, prozbori Leo. Kad je želio biti poput njega. — Eto ti ga na”, promrmlja, moraš sam sebi biti heroj.”</p>")
+    assert n == 2
+    assert t == "„Prokleto besmisleno”, prozbori Leo. Kad je želio biti poput njega. „Eto ti ga na”, promrmlja, „moraš sam sebi biti heroj.”"
+
+
+def test_crtica_navodnik_kraj():
+    from epub.styler import _crtica_navodnik_kraj
+    s = BeautifulSoup("<p>„Mislim, ja — ”</p>", "html.parser")
+    assert _crtica_navodnik_kraj(s) == 1
+    assert s.get_text() == "„Mislim, ja —”"
+    assert _crtica_navodnik_kraj(s) == 0

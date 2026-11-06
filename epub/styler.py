@@ -399,6 +399,26 @@ def _ukloni_dup_par(soup):
     return len(brisi)
 
 
+def _crtica_navodnik_kraj(soup):
+    """2026-11-06: tipografija vrati razmak oko crtice (ja—” -> ja — ”); poslije nje
+    skini razmak izmedju crtice i zatvarajuceg navodnika. Nad tekstualnim cvorovima."""
+    import re as _re
+    from bs4 import NavigableString as _NS
+    rx = _re.compile("\u2014[ \u00a0]+\u201d")
+    n = 0
+    for node in list(soup.find_all(string=True)):
+        if type(node) is not _NS:
+            continue
+        if any(par.name in ("script", "style", "title") for par in node.parents):
+            continue
+        s = str(node)
+        ns = rx.sub("\u2014\u201d", s)
+        if ns != s:
+            node.replace_with(ns)
+            n += 1
+    return n
+
+
 def _navodnici_popravi(soup):
     """2026-11-06: popravke tipicnih gresaka AI prevoda u navodnicima, nad tekstualnim
     cvorovima (cuva <em>). Samo kad je broj navodnika neparan:
@@ -474,6 +494,23 @@ def _navodnici_popravi(soup):
                     continue
                 m = _re.search("(?<=rije\u010d )\u201e(\\w+)(?=[.,;])", t)
                 if m and _izmijeni(nodes, m.end(1), m.end(1), "\u201d"):
+                    ukupno += 1
+                    continue
+            if o == c + 1:
+                _nx = p.find_next_sibling("p")
+                _nt = _nx.get_text().lstrip() if _nx is not None else ""
+                _ic, _io = _nt.find("\u201d"), _nt.find("\u201e")
+                _nast = _ic != -1 and (_io == -1 or _ic < _io)
+                _tr = t.rstrip()
+                if (not _nast and _tr[-1:] in (".", "!", "?", "\u2026")
+                        and _tr.rfind("\u201e") > _tr.rfind("\u201d")
+                        and _izmijeni(nodes, len(_tr), len(_tr), "\u201d")):
+                    ukupno += 1
+                    continue
+            if c == o + 1:
+                m = _re.search("\u201d,\\s+" + _VERB + r"(?:\s+\w+){0,3},\s+(?=[a-z\u010d\u0107\u017e\u0161\u0111])", t)
+                if (m and "\u201e" not in t[m.end():] and "\u201d" in t[m.end():]
+                        and _izmijeni(nodes, m.end(), m.end(), "\u201e")):
                     ukupno += 1
                     continue
             if c > o and not t.lstrip().startswith(("\u2014", "\u2013")):
@@ -1703,6 +1740,7 @@ def run_epub_styler(
             _apostrof_fix(soup)
             _navodnici_popravi(soup)
             _tip_norm(soup)
+            _crtica_navodnik_kraj(soup)
         except Exception:
             logger.exception("[tipografija] styler: normalizacija")
         # 2026-11-04: tipografiju radi samo core/tipografija.py (packager); styler samo provjerava

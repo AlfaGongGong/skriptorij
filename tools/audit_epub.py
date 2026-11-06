@@ -434,6 +434,23 @@ def en_hr_udio(rijeci):
     return en / n, en, hr / n, en_all / n
 
 
+def _navod_nastavak(t, b, otv, zat):
+    """Navod se nastavlja kroz susjedne pasuse (bez ponovnog otvaranja): nije greska."""
+    def prvi(s):
+        c = s.find("\u201d")
+        o = s.find("\u201e")
+        if c != -1 and (o == -1 or c < o):
+            return "zat"
+        return "otv" if o != -1 else ""
+    prev = b.get("_prev") or ""
+    nxt = b.get("_next") or ""
+    if otv == zat + 1 and prvi(nxt) == "zat":
+        return True
+    if zat == otv + 1 and prvi(t) == "zat" and prev.count("\u201e") > prev.count("\u201d"):
+        return True
+    return False
+
+
 def provjeri_pasus(N: Nalazi, K: Kontekst, fajl: str, i: int, b: dict):
     t = b["text"]
     tag = b["tag"]
@@ -544,7 +561,7 @@ def provjeri_pasus(N: Nalazi, K: Kontekst, fajl: str, i: int, b: dict):
     otv = t.count("„")
     zat = t.count("“") + t.count("”") + t.count('"')
     if otv:
-        if otv != zat and not (otv == zat + 1 and t.rstrip()[-1:] in ("…", "—", "–")):
+        if otv != zat and not _navod_nastavak(t, b, otv, zat) and not (otv == zat + 1 and t.rstrip()[-1:] in ("…", "—", "–")):
             N.add("TIP-NAVOD", fajl, i, t, f"„={otv}, zatvarajućih={zat}")
     elif t.count('"') % 2 == 1:
         N.add("TIP-NAVOD", fajl, i, t, "neparan broj \"")
@@ -835,6 +852,8 @@ def audit(args) -> dict:
             hash_pogl[hashlib.md5(alnum(cijeli).encode()).hexdigest()].append(d)
 
         for i, b in enumerate(bl):
+            b["_prev"] = bl[i - 1]["text"] if i > 0 else ""
+            b["_next"] = bl[i + 1]["text"] if i + 1 < len(bl) else ""
             provjeri_pasus(N, K, d, i, b)
 
         # struktura stila
