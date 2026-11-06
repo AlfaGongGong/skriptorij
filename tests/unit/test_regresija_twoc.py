@@ -343,3 +343,13 @@ def test_restyle_dijalog_ne_umnozava_crticu(dc):
     soup = BeautifulSoup(str(soup), "html.parser")
     _stiliziraj(soup)
     assert soup.find("p").get_text() == prvi
+
+
+# ── core/metrics.py: check_accuracy ─────────────────────────────────────────
+
+def test_check_accuracy_imena_nedostaju_samo_jednom():
+    from core.metrics import check_accuracy
+
+    r = check_accuracy("On je ušao u sobu.", "Calder walked in.", {"Calder": "Kalder"})
+    kodovi = [i["code"] for i in r["issues"]]
+    assert kodovi.count("imena_nedostaju") == 1

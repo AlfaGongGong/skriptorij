@@ -501,34 +501,6 @@ def check_accuracy(hr_text: str, en_text: str, glossary: dict) -> dict:
                 "en_fragment": en_frag,
             })
 
-    # --- imena_nedostaju (T3c) ---
-    if glossary:
-        nedost_en, nedost_hr = [], []
-        en_frag = ""
-        for en_ime, hr_ime in glossary.items():
-            en_m = re.search(r'\b' + re.escape(en_ime) + r'\b', en_text)
-            if not en_m:
-                continue
-            if hr_ime in hr_text or en_ime in hr_text:
-                continue
-            if not nedost_en:
-                od = max(0, en_m.start() - _KONTEKST_BROJ)
-                do = min(len(en_text), en_m.end() + _KONTEKST_BROJ)
-                en_frag = " ".join(en_text[od:do].split())
-            nedost_en.append(en_ime)
-            nedost_hr.append(hr_ime)
-        if nedost_en:
-            issues.append({
-                "code": "imena_nedostaju",
-                "severity": "upozorenje",
-                "detail": "U EN: %s, u HR nema: %s" % (
-                    ", ".join(nedost_en[:5]) + (", ..." if len(nedost_en) > 5 else ""),
-                    ", ".join(nedost_hr[:5]) + (", ..." if len(nedost_hr) > 5 else ""),
-                ),
-                "hr_fragment": "",
-                "en_fragment": en_frag,
-            })
-
     # --- en_ostaci (T3c) ---
     if len(hr_text) >= 100:
         en_stop = ["the", "and", "of", "is", "are", "was", "were", "you",
