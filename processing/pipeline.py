@@ -945,6 +945,23 @@ async def _quality_scoring(
         except Exception:
             logger.exception("[C1_kriticno] pipeline.py:823 Exception")
 
+        # P2.1: shadow verifikator EN vs HR (BOOKLYFI_VERIFIER=1), ne mijenja score
+        try:
+            from processing.verifier_hook import verifikuj_blok
+
+            await verifikuj_blok(
+                self,
+                finalno,
+                original_chunk if tip_ocjenjivanja == "prevod" else None,
+                stem_key,
+                chunk_idx,
+                file_name,
+                tip_bloka,
+                locals().get("_glosar_za_acc"),
+            )
+        except Exception:
+            logger.exception("[P2.1] verifier hook")
+
         if score_float < 6.5:
             _prov = prevodilac_provider or "?"
             self.log(
