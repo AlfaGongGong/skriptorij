@@ -787,7 +787,7 @@ async def _quality_scoring(
                     if isinstance(_info, dict) and _info.get("hr")
                 }
         except Exception:
-            pass
+            logger.exception("[P1.3] glosar za accuracy_shadow")
         _acc = accuracy_shadow(
             finalno,
             original_chunk if tip_ocjenjivanja == "prevod" else None,
