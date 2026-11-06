@@ -63,3 +63,51 @@ def test_c_balansirani_pasus_razmak_crtica_navodnik():
     assert n >= 1
     assert "\u2014 \u201d" not in t
     assert t.endswith("ja \u2014\u201d")
+
+
+def test_a_prosireni_glagoli():
+    n, t = _t("<p>\u201ePodno\u0161ljivo\u2026, uspio je procikati.</p>")
+    assert n == 1
+    assert t == "\u201ePodno\u0161ljivo\u2026\u201d, uspio je procikati."
+
+
+def test_a_prilog_prije_glagola():
+    n, t = _t("<p>\u201eO ovome \u0107emo poslije, o\u0161tro odvrati Leo.</p>")
+    assert n == 1
+    assert t == "\u201eO ovome \u0107emo poslije\u201d, o\u0161tro odvrati Leo."
+
+
+def test_d_rijec_u_navodnicima():
+    n, t = _t("<p>Savine nije podnosila rije\u010d \u201edopu\u0161tenje. Vrije\u0111alo ju je. \u201eOn se ne\u0107e protiviti.\u201d</p>")
+    assert n == 1
+    assert "rije\u010d \u201edopu\u0161tenje\u201d." in t
+
+
+def test_f_i_b_zavrsni_otvarajuci():
+    n, t = _t("<p>Savine je zurila u njih. \u2014 Iskoristili ste me kao mamac. Mene i moju djecu \u2014 \u201e</p>")
+    assert t == "Savine je zurila u njih. \u201eIskoristili ste me kao mamac. Mene i moju djecu \u2014\u201d"
+
+
+def test_b_vise_crtica_umjesto_otvarajuceg():
+    n, t = _t("<p>\u201eAli!\u201d rekao je. To nije rekao njoj. \u2014 Sada imamo priliku! Za novu Uniju.\u201d Netko je stajao. \u2014 Priliku\u2026 da stvari u\u010dinimo.\u201d</p>")
+    assert n == 2
+    assert "\u2014" not in t
+
+
+def test_dup_par_brise_ponovljeni_par():
+    from epub.styler import _ukloni_dup_par
+    s = BeautifulSoup(
+        "<div><p>\u2014 Rekla sam da nas se ne smije uznemiravati!</p>"
+        "<p>\u2014 Ali rojalisti se pribli\u017eavaju Agriontu! \u2014 zacvilio je, skvr\u010div\u0161i se.</p>"
+        "<p>\u2014 Pribli\u017eavaju se tko? \u2014 upita ona.</p>"
+        "<p>\u201eMolim sud za strpljenje.\u201d</p>"
+        "<p>\u201eAli rojalisti se pribli\u017eavaju Agriontu!\u201d zacvilio je, skvr\u010div\u0161i se.</p>"
+        "<p>\u201ePribli\u017eavaju se tko?\u201d</p></div>", "html.parser")
+    assert _ukloni_dup_par(s) == 2
+    assert len(s.find_all("p")) == 4
+
+
+def test_dup_par_ne_dira_kratke():
+    from epub.styler import _ukloni_dup_par
+    s = BeautifulSoup("<div><p>\u2014 Ne.</p><p>\u2014 Da.</p><p>\u2014 Ne.</p><p>\u2014 Da.</p></div>", "html.parser")
+    assert _ukloni_dup_par(s) == 0

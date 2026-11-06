@@ -374,6 +374,31 @@ def _spoji_blokove(delovi):
 
 
 
+def _ukloni_dup_par(soup):
+    """2026-11-06: brise PAR uzastopnih odlomaka koji se ponovi unutar 8 odlomaka
+    (ponovljen dijalog u drugom stilu navodnika, retry bloka). Usporedba bez interpunkcije:
+    prvi odlomak identican (>=8 rijeci), drugi identican ili sadrzan. Vraca broj obrisanih."""
+    import re as _re
+    ps = list(soup.find_all("p"))
+    nt = [_re.sub(r"\W+", " ", p.get_text().lower()).strip() for p in ps]
+    brisi = set()
+    for i in range(1, len(ps)):
+        if i in brisi or (i - 1) in brisi:
+            continue
+        a, b = nt[i - 1], nt[i]
+        if len(a.split()) < 8 or not b:
+            continue
+        for j in range(max(1, i - 8), i - 1):
+            if nt[j - 1] == a and nt[j] and (nt[j] == b or nt[j] in b or b in nt[j]):
+                brisi.update((i - 1, i))
+                break
+    for k in sorted(brisi):
+        ps[k].extract()
+    if brisi:
+        print("  [dup-par] obrisano odlomaka: %d" % len(brisi))
+    return len(brisi)
+
+
 def _navodnici_popravi(soup):
     """2026-11-06: popravke tipicnih gresaka AI prevoda u navodnicima, nad tekstualnim
     cvorovima (cuva <em>). Samo kad je broj navodnika neparan:
@@ -385,8 +410,8 @@ def _navodnici_popravi(soup):
     from bs4 import NavigableString as _NS
     _VERB = (r"(?:re\u010de|rekao|rekla|promrml\w+|izust\w+|prozbor\w+|odvrat\w+|upit\w+|zare\u017ea\w*|"
              r"dometn\w+|doda|dodao|dodala|povik\w+|uzdah\w+|uzdis\w+|\u0161apn\w+|prošapta\w*|zaurla\w*|"
-             r"kresn\w+|zacvil\w+|dobac\w+|uzvikn\w+|vikn\w+|zapita\w+|zagun\u0111\w+|promuc\w+|prozbor\w+)")
-    _rx_a = _re.compile("\u201e([^\u201e\u201d\"]{1,200}?)(?=,\\s+" + _VERB + r"\b)")
+             r"kresn\w+|zacvil\w+|dobac\w+|uzvikn\w+|vikn\w+|zapita\w+|zagun\u0111\w+|promuc\w+|prozbor\w+|zagrm\w+|prosikt\w+|uspi\w*|uspje\w*|zamisli\w+|razmi\u0161lja\w+|primijeti\w*|potvrdi\w*|prizna\w+|slagal\w+)")
+    _rx_a = _re.compile("\u201e([^\u201e\u201d\"]{1,200}?)(?=,\\s+(?:[a-z\u010d\u0107\u017e\u0161\u0111]+\\s+)?" + _VERB + r"\b)")
     _rx_c = _re.compile("\u2014\\s+\u201d")
     _rx_c_kraj = _rx_c
 
@@ -431,6 +456,12 @@ def _navodnici_popravi(soup):
                 ukupno += 1
             else:
                 break
+        # (F) zavrsno '— „' -> '—”'
+        _nodes = _cv(p)
+        _t = "".join(str(n) for n in _nodes)
+        _mf = _re.search("\\s*\u2014\\s*\u201e\\s*$", _t)
+        if _mf and _izmijeni(_nodes, _mf.start(), _mf.end(), " \u2014\u201d"):
+            ukupno += 1
         for _ in range(4):
             nodes = _cv(p)
             t = "".join(str(n) for n in nodes)
@@ -441,7 +472,11 @@ def _navodnici_popravi(soup):
                 if m and _izmijeni(nodes, m.end(1), m.end(1), "\u201d"):
                     ukupno += 1
                     continue
-            if c == o + 1 and not t.lstrip().startswith(("\u2014", "\u2013")):
+                m = _re.search("(?<=rije\u010d )\u201e(\\w+)(?=[.,;])", t)
+                if m and _izmijeni(nodes, m.end(1), m.end(1), "\u201d"):
+                    ukupno += 1
+                    continue
+            if c > o and not t.lstrip().startswith(("\u2014", "\u2013")):
                 i = _siroce(t)
                 if i > 0:
                     k = t.rfind("\u2014 ", 0, i)
@@ -1678,6 +1713,7 @@ def run_epub_styler(
         except Exception:
             logger.exception("[tipografija] styler: provjera")
         _stil_ocisti_p(soup)
+        _ukloni_dup_par(soup)
         _ukloni_duplikate_p(soup)
         _dodaj_vijenac(soup)
         _ocisti_fffc(soup)
