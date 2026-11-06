@@ -403,3 +403,16 @@ def test_p14_zamrznuti_kalkovi_ne_diraju_ispravne_recenice():
             if re.search(p, rec, re.IGNORECASE):
                 greske.append((rec, p))
     assert not greske, greske
+
+
+# ── P0.10 (2026-11-06): main.py mora imati logger na nivou modula ──────────
+def test_p010_main_ima_logger_na_nivou_modula():
+    import ast
+    from pathlib import Path
+
+    stablo = ast.parse((Path(__file__).resolve().parents[2] / "main.py").read_text(encoding="utf-8"))
+    definisan = any(
+        isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "logger" for t in n.targets)
+        for n in stablo.body
+    )
+    assert definisan

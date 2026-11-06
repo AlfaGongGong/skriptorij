@@ -18,6 +18,8 @@ from app import app
 from config.logging_config import configure_logging
 from config.settings import PORT, SHARED_CONTROLS, SHARED_STATS
 
+logger = logging.getLogger("booklyfi.main")
+
 # ── Putanje ──────────────────────────────────────────────────────────────────
 # Prilagodi ako su tvoje putanje drugačije
 _BASE = Path(__file__).parent
