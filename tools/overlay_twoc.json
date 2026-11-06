@@ -1,0 +1,55 @@
+{
+ "ispravke": [
+  {
+   "id": "p22-0210-a",
+   "fajl": "part0210.html",
+   "blok": 0,
+   "staro": "kao nekada, dok je držao svoje govore.</p>",
+   "novo": "kao nekada, dok je držao svoje govore vojsci Anglanda.</p>"
+  },
+  {
+   "id": "p22-0210-b",
+   "fajl": "part0210.html",
+   "blok": 1,
+   "staro": "id=\"ji3218\">vojsci Anglanda. „Dok sam ja na čelu",
+   "novo": "id=\"ji3218\">„Dok sam ja na čelu"
+  },
+  {
+   "id": "p22-0215-a",
+   "fajl": "part0215.html",
+   "blok": 2,
+   "staro": "id=\"ji3442\">u laktu. „Jedva se sjećam",
+   "novo": "id=\"ji3442\">„Jedva se sjećam"
+  },
+  {
+   "id": "p22-0215-b",
+   "fajl": "part0215.html",
+   "blok": 2,
+   "staro": "dobrih razloga…</p><p class=\"bt1_body_text_\" id=\"ji3443\">izgorjeli su poput jutarnje magle.” Nije spomenuo",
+   "novo": "dobrih razloga… izgorjeli su poput jutarnje magle.”</p><p class=\"bt1_body_text_\" id=\"ji3443\">Nije spomenuo"
+  },
+  {
+   "id": "p22-0240-a",
+   "fajl": "part0240.html",
+   "blok": 7,
+   "od": "<p id=\"ji6128\">— Ovo nije ni pobjeda ni poraz",
+   "do": "Imamo posla.</p>",
+   "novo": "<p id=\"ji6128\">„Ovo nije ni pobjeda ni poraz, Leo, ovo je brak”, odvrati ona. Izvukla je kutijicu iz rukava i udahnula prstohvat njuškom.</p>"
+  },
+  {
+   "id": "p22-0240-b",
+   "fajl": "part0240.html",
+   "blok": 8,
+   "staro": "id=\"ji6129\">tebi, prije našeg vjenčanja",
+   "novo": "id=\"ji6129\">„Predložila sam tebi, prije našeg vjenčanja"
+  },
+  {
+   "id": "p22-0230-a",
+   "fajl": "part0230.html",
+   "blok": 7,
+   "od": "Kad je želio biti posve poput njega.",
+   "do": "biti heroj.”",
+   "novo": "Kad je želio biti posve poput njega. „Eto ti ga na”, promrmlja, „moraš sam sebi biti heroj.”"
+  }
+ ]
+}
