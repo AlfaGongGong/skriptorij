@@ -56,3 +56,10 @@ def test_idempotentno():
     s = BeautifulSoup("<p>\u201eOv\u010detina, izustila je.</p>", "html.parser")
     _navodnici_popravi(s)
     assert _navodnici_popravi(s) == 0
+
+
+def test_c_balansirani_pasus_razmak_crtica_navodnik():
+    n, t = _t("<p>\u201eReci mi\u201d, rekla je. \u201eNe mogu otići bez nje, ja \u2014 \u201d</p>")
+    assert n >= 1
+    assert "\u2014 \u201d" not in t
+    assert t.endswith("ja \u2014\u201d")

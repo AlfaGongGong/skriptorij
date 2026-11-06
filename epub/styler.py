@@ -388,6 +388,7 @@ def _navodnici_popravi(soup):
              r"kresn\w+|zacvil\w+|dobac\w+|uzvikn\w+|vikn\w+|zapita\w+|zagun\u0111\w+|promuc\w+|prozbor\w+)")
     _rx_a = _re.compile("\u201e([^\u201e\u201d\"]{1,200}?)(?=,\\s+" + _VERB + r"\b)")
     _rx_c = _re.compile("\u2014\\s+\u201d")
+    _rx_c_kraj = _rx_c
 
     def _cv(p):
         return [n for n in p.find_all(string=True)
@@ -421,6 +422,15 @@ def _navodnici_popravi(soup):
 
     ukupno = 0
     for p in soup.find_all("p"):
+        # (C) neovisno o balansu navodnika
+        for _ in range(3):
+            _nodes = _cv(p)
+            _t = "".join(str(n) for n in _nodes)
+            _m = _rx_c_kraj.search(_t)
+            if _m and _izmijeni(_nodes, _m.start() + 1, _m.end() - 1, ""):
+                ukupno += 1
+            else:
+                break
         for _ in range(4):
             nodes = _cv(p)
             t = "".join(str(n) for n in nodes)
