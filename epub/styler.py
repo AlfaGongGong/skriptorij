@@ -260,6 +260,28 @@ def _skrati_overlap(prethodni, sljedeci, min_rijeci=15):
     return sljedeci, 0
 
 
+_DEDUP_LOG_DIR = Path(__file__).resolve().parent.parent / ".logs"
+
+
+def _dedup_log(knjiga, fajl, blok, rijeci, tekst, vrsta):
+    """P0.5 (2026-11-06): jedna TSV linija po brisanju, prije primjene brisanja.
+    .logs/dedup_<knjiga>.tsv: fajl, blok, rijeci, prvih 80 znakova, vrsta, vrijeme.
+    Samo biljezi; ne utice na odluku o brisanju."""
+    import datetime as _dt
+
+    try:
+        _s = re.sub(r"<[^>]+>", " ", str(tekst))
+        _s = re.sub(r"\s+", " ", _s).strip()[:80]
+        _ime = re.sub(r"[^\w.-]+", "_", str(knjiga)) or "knjiga"
+        _DEDUP_LOG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(_DEDUP_LOG_DIR / ("dedup_" + _ime + ".tsv"), "a", encoding="utf-8") as _f:
+            _f.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
+                fajl, blok, rijeci, _s, vrsta,
+                _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    except Exception:
+        logger.exception("[dedup_log] upis nije uspio: %s / %s", knjiga, fajl)
+
+
 def _je_duplikat(t1, t2, threshold=0.7):
     """Fuzzy match: 70%+ zajednickih rijeci (duzine >3)."""
     import re as _re
@@ -1353,7 +1375,9 @@ def run_epub_styler(
                 _body = _soup.body
                 if not _body: continue
 
-                _delovi = [_ocisti_chk(_blokovi[i].read_text("utf-8", errors="ignore")).strip() for i in sorted(_blokovi.keys())]
+                _ids_all = sorted(_blokovi.keys())
+                _delovi = [_ocisti_chk(_blokovi[i].read_text("utf-8", errors="ignore")).strip() for i in _ids_all]
+                _blok_ids = [_bi for _bi, _d in zip(_ids_all, _delovi) if _d]
                 _delovi = [d for d in _delovi if d]
                 if not _delovi: continue
 
@@ -1381,27 +1405,32 @@ def run_epub_styler(
                         _w2 = len(_t2.split())
                         # Obrisi kraci
                         if _w1 >= _w2:
+                            _dedup_log(epub_path.stem, _html_name, _blok_ids[_i2], _w2, _t2, "dup")
                             _za_brisanje.add(_i2)
                             print(f"  [dup] {_html_name}: obrisan blok_{_i2} ({'plain' if _je_plain2 else 'HTML'}, {_w2}w) — duplikat blok_{_i1} ({_w1}w, {_th*100:.0f}%)")
                         else:
+                            _dedup_log(epub_path.stem, _html_name, _blok_ids[_i1], _w1, _t1, "dup")
                             _za_brisanje.add(_i1)
                             print(f"  [dup] {_html_name}: obrisan blok_{_i1} ({'plain' if _je_plain1 else 'HTML'}, {_w1}w) — duplikat blok_{_i2} ({_w2}w, {_th*100:.0f}%)")
                         break
                 if _za_brisanje:
                     _delovi = [t for i, t in enumerate(_delovi) if i not in _za_brisanje]
+                    _blok_ids = [_bi for i, _bi in enumerate(_blok_ids) if i not in _za_brisanje]
                     if not _delovi: continue
 
                 # F0.6: skrati overlap izmedju susjednih blokova
                 _delovi_dedup = [_delovi[0]]
-                for _sl in _delovi[1:]:
+                for _sl, _bid in zip(_delovi[1:], _blok_ids[1:]):
                     # 2026-11-03: fuzzy (cuva <p> strukturu) prije egzaktnog (vraca goli tekst)
                     _sk, _k, _wk = _skrati_overlap_fuzzy(_delovi_dedup[-1], _sl)
                     _n = 0
                     if _k > 0:
+                        _dedup_log(epub_path.stem, _html_name, _bid, _wk, _sl, "overlap~")
                         print(f"  [overlap~] {_html_name}: uklonjeno {_k} odlomaka ({_wk} rijeci)")
                     else:
                         _sk, _n = _skrati_overlap(_delovi_dedup[-1], _sl)
                         if _n > 0:
+                            _dedup_log(epub_path.stem, _html_name, _bid, _n, _sl, "overlap")
                             print(f"  [overlap] {_html_name}: skraceno {_n} rijeci")
                     if _sk.strip():
                         _delovi_dedup.append(_sk)
