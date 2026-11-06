@@ -51,11 +51,6 @@ def test_ai_markeri_u_dijalogu_ostaju(tekst):
     assert _ocisti_ai_markere(tekst) == tekst
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG (prijavljen, nepopravljen): prvi regex skida 'Naravno,' i kad "
-           "iza njega slijedi obično 'evo ti ga' (nije AI uvod)",
-)
 def test_ai_naravno_evo_u_govoru_na_pocetku_bloka():
     tekst = "Naravno, evo ti ga."
     assert _ocisti_ai_markere(tekst) == tekst
@@ -281,11 +276,6 @@ def test_korekcija_idempotentna(h):
     assert _automatska_korekcija(jednom) == jednom
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG (prijavljen, nepopravljen): _automatska_korekcija gubi veliko "
-           "početno slovo (IGNORECASE + mala slova u zamjeni)",
-)
 @pytest.mark.parametrize("ulaz", [
     "<p>Saglasan sam.</p>",
     "<p>Preduzeće je zatvoreno.</p>",
@@ -297,21 +287,11 @@ def test_korekcija_cuva_veliko_pocetno_slovo(ulaz):
     assert BeautifulSoup(out, "html.parser").get_text()[0].isupper()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG (prijavljen, nepopravljen): pravilo 'znao je da' guta razmak "
-           "iza 'da' i zamjena ga ne vraća ('jevidi')",
-)
 def test_korekcija_znao_je_da_ne_spaja_rijeci():
     out = _automatska_korekcija("<p>Tada znao je da vidi sve.</p>")
     assert "jevidi" not in out
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG (prijavljen, nepopravljen): find_all(string=True) hvata i "
-           "Comment pa komentar postaje vidljiv tekst",
-)
 def test_korekcija_ne_dira_html_komentar():
     ulaz = "<p>Tekst.</p><!-- saglasan -->"
     assert _automatska_korekcija(ulaz) == ulaz

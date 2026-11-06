@@ -254,7 +254,7 @@ def _agresivno_cisti(tekst: str) -> str:
 def _ocisti_ai_markere(tekst: str) -> str:
     # Skida samo AI uvod na početku odgovora ("Naravno! Evo prijevoda:").
     # "naravno"/"svakako"/"izvolite" u dijalogu ostaju netaknuti.
-    tekst = re.sub(r"^\s*(?:Naravno|Svakako)[,!:]?\s+(?=Evo\s)", "", tekst, flags=re.IGNORECASE)
+    tekst = re.sub(r"^\s*(?:Naravno|Svakako)[,!:]?\s+(?=Evo\s+(?:rezultata|prijevoda)\b)", "", tekst, flags=re.IGNORECASE)
     tekst = re.sub(r"^\s*Evo\s+(?:rezultata|prijevoda)[:.]?\s*", "", tekst, flags=re.IGNORECASE)
     tekst = re.sub(r"^\s*Izvolite[:!]?\s*(?=\n|<)", "", tekst, flags=re.IGNORECASE)
     return tekst.strip()
@@ -511,7 +511,7 @@ def _automatska_korekcija(tekst: str) -> str:
             (r"\bmorala\s+je\s+da\b", "morala je"),
             (r"\bmorao\s+sam\s+da\b", "morao sam"),
             (r"\bmorala\s+sam\s+da\b", "morala sam"),
-            (r"\bznao\s+je\s+da\b\s+(?=\w+i\b)", "znao je"),
+            (r"\bznao\s+je\s+da\b\s+(?=\w+i\b)", "znao je "),
             # ── Srpski oblici → HR ───────────────────────────────────────────
             (r"\bsaglasan\b", "suglasan"),
             (r"\bsaglasnost\b", "suglasnost"),
@@ -532,14 +532,30 @@ def _automatska_korekcija(tekst: str) -> str:
             (r"\bkoristeć[ia]\s+se\b", "koristeći"),
             (r"\bod\s+strane\s+(\w+)a\b", r"od \1a"),  # samo glajšanje
         ]
+        def _zamijeni(m, zamjena):
+            # čuva veliko početno slovo ako je original počinjao velikim
+            out = m.expand(zamjena)
+            if m.group(0)[:1].isupper() and out[:1].islower():
+                out = out[:1].upper() + out[1:]
+            return out
+
         for pattern, zamjena in zamjene:
-            cist = re.sub(pattern, zamjena, cist, flags=re.IGNORECASE)
+            cist = re.sub(
+                pattern,
+                lambda m, z=zamjena: _zamijeni(m, z),
+                cist,
+                flags=re.IGNORECASE,
+            )
         return cist
 
     # Parsiramo HTML, korigiramo samo tekst nodove
+    from bs4 import NavigableString
+
     try:
         soup = BeautifulSoup(tekst, "html.parser")
         for node in soup.find_all(string=True):
+            if type(node) is not NavigableString:  # komentari, doctype, CDATA
+                continue
             korigiran = _korigiraj_cist(node.string)
             if korigiran != node.string:
                 node.replace_with(korigiran)
