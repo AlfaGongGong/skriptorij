@@ -26,6 +26,10 @@ bash tools/booklyfi_rebuild_gate.sh
 if [ $? -ne 0 ]; then echo "FAIL: Rebuild / Osnovni Gate nije prosao."; exit 1; fi
 
 echo
+echo "=== 1.9 EPUB fix (validnost EPUB3) ==="
+python3 tools/epub_fix.py "$EPUB" "$EPUB.fixed.tmp" || { echo "FAIL: epub_fix pao."; rm -f "$EPUB.fixed.tmp"; exit 1; }
+mv -f "$EPUB.fixed.tmp" "$EPUB"
+
 echo "=== 2. Dubinski Audit (audit_epub.py --gate) ==="
 # Provera da li audit_epub.py postoji
 if [ -f "tools/audit_epub.py" ]; then
