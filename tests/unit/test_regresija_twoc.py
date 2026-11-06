@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 
 from core.kalkovi.dijalog import DIJALOG_KALKOVI
 from core.kalkovi.engine import KalkoviEngine
-from core.text_utils import _ocisti_ai_markere
+from core.text_utils import _automatska_korekcija, _ocisti_ai_markere
 from core.tipografija import normaliziraj, normaliziraj_soup
 from epub import styler
 from epub.name_replacer import _word_boundary_replace
@@ -227,3 +227,91 @@ def test_ime_preko_img_dropcapa_i_skrivenog_spana():
     ulaz = f'<p><img class="booklyfi-dropcap" src="a.png"/>{skriveni}K</span>lover je došao.</p>'
     ocekivano = f'<p><img class="booklyfi-dropcap" src="a.png"/>{skriveni}K</span>alder je došao.</p>'
     assert _word_boundary_replace(ulaz, "Klover", "Kalder") == ocekivano
+
+
+# ── _ocisti_ai_markere: citat u tipografskim navodnicima ────────────────────
+
+def test_ai_markeri_tipografski_navodnik_ostaje():
+    tekst = "„Naravno, šefe.”"
+    assert _ocisti_ai_markere(tekst) == tekst
+
+
+# ── _automatska_korekcija (core/text_utils.py) ──────────────────────────────
+
+@pytest.mark.parametrize("ulaz,ocekivano", [
+    ("<p>Bio sam saglasan s tim.</p>", "<p>Bio sam suglasan s tim.</p>"),
+    ("<p>Tamo je bilo preduzeće.</p>", "<p>Tamo je bilo poduzeće.</p>"),
+    ("<p>Ali na kraju krajeva otišao je.</p>", "<p>Ali naposljetku otišao je.</p>"),
+    ("<p>Tada nije bio u mogućnosti doći.</p>", "<p>Tada nije mogao doći.</p>"),
+])
+def test_korekcija_srbizmi_i_fraze(ulaz, ocekivano):
+    assert _automatska_korekcija(ulaz) == ocekivano
+
+
+@pytest.mark.parametrize("h", [
+    "",
+    "<p>— Važi, servis je zatvoren.</p>",
+    "<p>— Naravno, važi. Servis je zatvoren.</p>",
+    '<p class="x" id="a">Tekst…</p>',
+    "<p>On reče: „Ne znam.”</p>",
+    "<p>Pre</p><p>duzeće</p>",
+])
+def test_korekcija_cist_tekst_ostaje(h):
+    assert _automatska_korekcija(h) == h
+
+
+def test_korekcija_tagovi_i_atributi_netaknuti():
+    ulaz = '<p class="saglasan" id="preduzeće">Bio sam saglasan.</p>'
+    ocekivano = '<p class="saglasan" id="preduzeće">Bio sam suglasan.</p>'
+    assert _automatska_korekcija(ulaz) == ocekivano
+
+
+def test_korekcija_inline_tag_ostaje():
+    ulaz = "<p>Bio je <em>saglasan</em> s tim.</p>"
+    assert _automatska_korekcija(ulaz) == "<p>Bio je <em>suglasan</em> s tim.</p>"
+
+
+@pytest.mark.parametrize("h", [
+    "<p>Bio sam saglasan s tim.</p>",
+    "<p>Ali na kraju krajeva otišao je.</p>",
+    "<p>Tamo je bilo preduzeće.</p>",
+])
+def test_korekcija_idempotentna(h):
+    jednom = _automatska_korekcija(h)
+    assert _automatska_korekcija(jednom) == jednom
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="BUG (prijavljen, nepopravljen): _automatska_korekcija gubi veliko "
+           "početno slovo (IGNORECASE + mala slova u zamjeni)",
+)
+@pytest.mark.parametrize("ulaz", [
+    "<p>Saglasan sam.</p>",
+    "<p>Preduzeće je zatvoreno.</p>",
+    "<p>Morao je da ide kući.</p>",
+    "<p>Na kraju krajeva, otišao je.</p>",
+])
+def test_korekcija_cuva_veliko_pocetno_slovo(ulaz):
+    out = _automatska_korekcija(ulaz)
+    assert BeautifulSoup(out, "html.parser").get_text()[0].isupper()
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="BUG (prijavljen, nepopravljen): pravilo 'znao je da' guta razmak "
+           "iza 'da' i zamjena ga ne vraća ('jevidi')",
+)
+def test_korekcija_znao_je_da_ne_spaja_rijeci():
+    out = _automatska_korekcija("<p>Tada znao je da vidi sve.</p>")
+    assert "jevidi" not in out
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="BUG (prijavljen, nepopravljen): find_all(string=True) hvata i "
+           "Comment pa komentar postaje vidljiv tekst",
+)
+def test_korekcija_ne_dira_html_komentar():
+    ulaz = "<p>Tekst.</p><!-- saglasan -->"
+    assert _automatska_korekcija(ulaz) == ulaz
