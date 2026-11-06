@@ -25,10 +25,14 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bodneo\b", "odnio", "odneo→odnio"),
     (r"\bponeo\b", "ponio", "poneo→ponio"),
     (r"\bnaneo\b", "nanio", "naneo→nanio"),
-    (r"\bzaveo\b", "zavio", "zaveo→zavio"),
-    (r"\bpreveo\b", "previo", "preveo→previo"),
-    (r"\buveo\b", "uvio", "uveo→uvio"),
-    (r"\bnaveo\b", "navio", "naveo→navio"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bzaveo\b", "zavio", "zaveo→zavio"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bpreveo\b", "previo", "preveo→previo"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\buveo\b", "uvio", "uveo→uvio"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bnaveo\b", "navio", "naveo→navio"),
     (r"\bživeo\b", "živio", "živeo→živio"),
     (r"\bproživeo\b", "proživio", "proživeo→proživio"),
     (r"\bpreživeo\b", "preživio", "preživeo→preživio"),
@@ -42,10 +46,14 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bzavladeo\b", "zavladio", "zavladeo→zavladio"),
     (r"\bvladeo\b", "vladio", "vladeo→vladio"),
     (r"\bpobedeo\b", "pobijedio", "pobedeo→pobijedio"),
-    (r"\bpoveo\b", "povio", "poveo→povio"),
-    (r"\bdoveo\b", "dovio", "doveo→dovio"),
-    (r"\bizveo\b", "izvio", "izveo→izvio"),
-    (r"\bosveo\b", "osvio", "osveo→osvio"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bpoveo\b", "povio", "poveo→povio"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bdoveo\b", "dovio", "doveo→dovio"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bizveo\b", "izvio", "izveo→izvio"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bosveo\b", "osvio", "osveo→osvio"),
     (r"\bpobegao\b", "pobjegao", "pobegao→pobjegao"),
     (r"\bbežao\b", "bježao", "bežao→bježao"),
     (r"\bsreo\b", "sreo", "sreo je isto u BS"),
@@ -167,7 +175,8 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bmestu\b", "mjestu", "mestu→mjestu"),
     (r"\bmestom\b", "mjestom", "mestom→mjestom"),
     (r"\bsvest\b", "svijest", "svest→svijest"),
-    (r"\bsvesti\b", "svijesti", "svesti→svijesti"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bsvesti\b", "svijesti", "svesti→svijesti"),
     (r"\bpesma\b", "pjesma", "pesma→pjesma"),
     (r"\bpesme\b", "pjesme", "pesme→pjesme"),
     (r"\bpesmi\b", "pjesmi", "pesmi→pjesmi"),
@@ -203,8 +212,10 @@ EKAVIZMI: list[tuple[str, str, str]] = [
     (r"\bbeda\b", "bijeda", "beda→bijeda"),
     (r"\bbede\b", "bijede", "bede→bijede"),
     (r"\bbedi\b", "bijedi", "bedi→bijedi"),
-    (r"\bbedom\b", "bjedom", "bedom→bjedom"),
-    (r"\bpredeo\b", "predjel", "predeo→predjel"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bbedom\b", "bjedom", "bedom→bjedom"),
+    # F1.4 ZAMRZNUTO: pogresna ijekavska forma / druga rijec (preveo, doveo, svesti, predio)
+    # (r"\bpredeo\b", "predjel", "predeo→predjel"),
     (r"\bpredela\b", "predjela", "predela→predjela"),
     (r"\bpredelu\b", "predjelu", "predelu→predjelu"),
     (r"\bpredelom\b", "predjelom", "predelom→predjelom"),

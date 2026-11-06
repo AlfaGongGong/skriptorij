@@ -362,3 +362,44 @@ def test_restyle_dijalog_tekst_ostaje_isti(dc):
     soup = BeautifulSoup(str(soup), "html.parser")
     _stiliziraj(soup)
     assert soup.find("p").get_text() == DIJALOG_P
+
+
+# ── P1.4 (2026-11-06): zamrznuti kalkovi koji kvare smisao u HR/BS ──────────
+def _p14_aktivni_obrasci():
+    # ista spojena lista koju koristi engine (kalkovi_da, ekavizmi, dinamicki, dijalog, pleonazmi, glagoli)
+    from core.kalkovi import SVE_LISTE
+
+    return [e[0] for e in SVE_LISTE if e and isinstance(e[0], str)]
+
+
+_P14_ISPRAVNE_RECENICE = [
+    "Bila je u vezi s njim godinu dana.",
+    "Stajali su s druge strane rijeke.",
+    "Sjedio je pored toga stabla.",
+    "Silazio je s toga brda.",
+    "Stajao je u prvom redu.",
+    "Preveo je cijelu knjigu.",
+    "Doveo je konje do rijeke.",
+    "Uveo ih je u dvoranu.",
+    "Zaveo ga je na krivi put.",
+    "Mora svesti račun na nulu.",
+    "Potpuno prazna soba.",
+    "Potpuno uništena tvrđava.",
+    "Sasvim jednaka braća.",
+    "Krenuo naprijed.",
+    "Došao sam lično.",
+    "Reče on.",
+    "Reče ona.",
+]
+
+
+def test_p14_zamrznuti_kalkovi_ne_diraju_ispravne_recenice():
+    import re
+
+    obrasci = _p14_aktivni_obrasci()
+    greske = []
+    for rec in _P14_ISPRAVNE_RECENICE:
+        for p in obrasci:
+            if re.search(p, rec, re.IGNORECASE):
+                greske.append((rec, p))
+    assert not greske, greske

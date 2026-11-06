@@ -97,8 +97,10 @@ GLAGOLI = [
     # ══════════════════════════════════════════════════════════════
     # "reče sam" → "rekoh" (arhaični narativni perfekt u dijalogu)
     (r"\breče\s+sam\b", "rekoh"),
-    (r"\breče\s+ona\b", "reče"),  # "reče ona" → "reče" (redundantno)
-    (r"\breče\s+on\b", "reče"),
+    # F1.4 ZAMRZNUTO: brise zamjenicu koja kaze ko govori
+    # (r"\breče\s+ona\b", "reče"),  # "reče ona" → "reče" (redundantno)
+    # F1.4 ZAMRZNUTO: brise zamjenicu koja kaze ko govori
+    # (r"\breče\s+on\b", "reče"),
     # "govoreći" + direktni citat (anglizam)
     # Npr: "Govoreći: 'Idemo'" → "'Idemo'"
     # Previše kontekstualno — preskačemo

@@ -185,8 +185,10 @@ KALKOVI = [
     (r"\bu svrhu da\b", r"da bi"),
     (r"\bpo pitanju\s+", r"o "),
     (r"\bu pogledu\s+", r"što se tiče "),
-    (r"\bu vezi sa\s+", r"o "),
-    (r"\bu vezi s\s+", r"o "),
+    # F1.4 ZAMRZNUTO: u HR/BS ima i doslovno znacenje (veza, strana, red, kretanje); zamjena kvari recenicu
+    # (r"\bu vezi sa\s+", r"o "),
+    # F1.4 ZAMRZNUTO: u HR/BS ima i doslovno znacenje (veza, strana, red, kretanje); zamjena kvari recenicu
+    # (r"\bu vezi s\s+", r"o "),
     (r"\bu odnosu na to\b", r"prema tome"),
     (r"\bu odnosu na\b", r"prema"),
     (r"\bs obzirom na to\b", r"s obzirom na to"),
@@ -202,8 +204,10 @@ KALKOVI = [
     (r"\bu svijetlu toga\b", r"s obzirom na to"),
     (r"\bu stvari\b", r"zapravo"),
     (r"\bnaravno da\b", r"naravno"),
-    (r"\bpored toga\b", r"osim toga"),
-    (r"\bs druge strane\b", r"nasuprot tome"),
+    # F1.4 ZAMRZNUTO: u HR/BS ima i doslovno znacenje (veza, strana, red, kretanje); zamjena kvari recenicu
+    # (r"\bpored toga\b", r"osim toga"),
+    # F1.4 ZAMRZNUTO: u HR/BS ima i doslovno znacenje (veza, strana, red, kretanje); zamjena kvari recenicu
+    # (r"\bs druge strane\b", r"nasuprot tome"),
     (r"\b[čc]ini se da\b", r"izgleda da"),
     (r"\bka[žz]e se da\b", r"tvrdi se da"),
     (r"\bna neki na[čc]in\b", r"nekako"),
@@ -217,7 +221,8 @@ KALKOVI = [
     (r"\bmalo po malo\b", r"postepeno"),
     (r"\bjedan po jedan\b", r"jedan po jedan"),
     (r"\biznad svega\b", r"povrh svega"),
-    (r"\bu prvom redu\b", r"prvenstveno"),
+    # F1.4 ZAMRZNUTO: u HR/BS ima i doslovno znacenje (veza, strana, red, kretanje); zamjena kvari recenicu
+    # (r"\bu prvom redu\b", r"prvenstveno"),
     (r"\bposljednje ali ne najmanje va[žz]no\b", r"naposljetku, ali ne manje važno"),
     (r"\bu krajnjoj liniji\b", r"naposljetku"),
     (r"\bu svakom slu[čc]aju\b", r"u svakom slučaju"),
@@ -244,9 +249,11 @@ KALKOVI = [
     (r"\bu cjelosti\b", r"u cijelosti"),
     (r"\bu cijelosti\b", r"u cijelosti"),
     (r"\bna vrijeme\b", r"na vrijeme"),
-    (r"\bs toga\b", r"stoga"),
+    # F1.4 ZAMRZNUTO: u HR/BS ima i doslovno znacenje (veza, strana, red, kretanje); zamjena kvari recenicu
+    # (r"\bs toga\b", r"stoga"),
     (r"\buprkos tome\b", r"unatoč tome"),
-    (r"\bi pored toga\b", r"i unatoč tome"),
+    # F1.4 ZAMRZNUTO: u HR/BS ima i doslovno znacenje (veza, strana, red, kretanje); zamjena kvari recenicu
+    # (r"\bi pored toga\b", r"i unatoč tome"),
     (r"\bkao i obi[čc]no\b", r"kao obično"),
     (r"\bs pravom\b", r"opravdano"),
     (r"\bbez ikakve sumnje\b", r"nesumnjivo"),

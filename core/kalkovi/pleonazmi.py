@@ -21,23 +21,31 @@ PLEONAZMI = [
     (r"\bnastaviti\s+(?:i\s+)?dalje\b", "nastaviti"),
     (r"\bnastavlja\s+(?:i\s+)?dalje\b", "nastavlja"),
     (r"\bnastavlja\s+dalje\s+s\b", "nastavlja s"),
-    (r"\bkrenuti\s+naprijed\b", "krenuti"),
-    (r"\bkrenuo\s+naprijed\b", "krenuo"),
-    (r"\bkrenula\s+naprijed\b", "krenula"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bkrenuti\s+naprijed\b", "krenuti"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bkrenuo\s+naprijed\b", "krenuo"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bkrenula\s+naprijed\b", "krenula"),
     (r"\bvratiti\s+se\s+natrag\b", "vratiti se"),
     (r"\bvratio\s+se\s+natrag\b", "vratio se"),
     (r"\bvratila\s+se\s+natrag\b", "vratila se"),
     (r"\bvratili\s+se\s+natrag\b", "vratili se"),
     (r"\buspe?ti\s+se\s+gore\b", "uspeti se"),
     # ── 2. Suvišna pojačavanja pridjeva ─────────────────────────────────────
-    (r"\bpotpuno\s+uništen(?:a|o|i|e)?\b", "uništen"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bpotpuno\s+uništen(?:a|o|i|e)?\b", "uništen"),
     (r"\bpotpuno\s+mrtav\b", "mrtav"),
     (r"\bpotpuno\s+mrtva\b", "mrtva"),
     (r"\bpotpuno\s+mrtvo\b", "mrtvo"),
-    (r"\bpotpuno\s+prazn(?:a|o|i|e)?\b", "prazno"),
-    (r"\bapsoluto\s+sigurn(?:a|o|i|e)?\b", "sigurno"),
-    (r"\bsasvim\s+jednak(?:a|o|i|e)?\b", "jednak"),
-    (r"\bidentično\s+ist(?:a|o|i|e)?\b", "isto"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bpotpuno\s+prazn(?:a|o|i|e)?\b", "prazno"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bapsoluto\s+sigurn(?:a|o|i|e)?\b", "sigurno"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bsasvim\s+jednak(?:a|o|i|e)?\b", "jednak"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bidentično\s+ist(?:a|o|i|e)?\b", "isto"),
     # ── 3. Vremenski pleonazmi ───────────────────────────────────────────────
     (r"\bu\s+toku\s+dana\b", "danju"),
     (r"\bu\s+toku\s+noći\b", "noću"),
@@ -47,8 +55,10 @@ PLEONAZMI = [
     (r"\bna\s+kraju\s+krajeva\b", "naposljetku"),
     (r"\bkonačno\s+i\s+definitivno\b", "konačno"),
     # ── 4. Osobne zamjenice uz "sam/lično" ───────────────────────────────────
-    (r"\bsam\s+lično\b", "osobno"),
-    (r"\bsama\s+lično\b", "osobno"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bsam\s+lično\b", "osobno"),
+    # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
+    # (r"\bsama\s+lično\b", "osobno"),
     (r"\bja\s+osobno\s+sam\b", "osobno sam"),
     (r"\bti\s+osobno\s+si\b", "osobno si"),
     (r"\bon\s+osobno\s+je\b", "osobno je"),
