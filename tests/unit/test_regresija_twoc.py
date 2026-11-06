@@ -295,3 +295,24 @@ def test_korekcija_znao_je_da_ne_spaja_rijeci():
 def test_korekcija_ne_dira_html_komentar():
     ulaz = "<p>Tekst.</p><!-- saglasan -->"
     assert _automatska_korekcija(ulaz) == ulaz
+
+
+# ── drop-cap: ponovni poziv na istom soup-u ─────────────────────────────────
+
+def test_dropcap_drugi_poziv_ne_dodaje_drugu_sliku(dc):
+    soup = _soup(f"<p>{DUGO}</p>")
+    assert styler._dodaj_dropcap(soup) is True
+    assert styler._dodaj_dropcap(soup) is False
+    assert len(soup.find_all("img", class_="booklyfi-dropcap")) == 1
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="BUG (prijavljen, nepopravljen): _dodaj_dropcap u grani za dijalog "
+           "ne provjerava klasu booklyfi-prvi, pa drugi poziv dodaje drugu crticu",
+)
+def test_dropcap_dijalog_drugi_poziv_ne_dupla_crticu(dc):
+    soup = _soup(f"<p>{DIJALOG_P}</p>")
+    styler._dodaj_dropcap(soup)
+    styler._dodaj_dropcap(soup)
+    assert len(soup.find_all("span", class_="booklyfi-crtica")) == 1
