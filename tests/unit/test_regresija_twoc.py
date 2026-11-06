@@ -416,3 +416,25 @@ def test_p010_main_ima_logger_na_nivou_modula():
         for n in stablo.body
     )
     assert definisan
+
+
+# ── P0.8 (2026-11-06): audiobook skripte nemaju hardkodirane kljuceve ──────────
+def test_p08_audiobook_skripte_bez_hardkodiranih_kljuceva():
+    import re
+    from pathlib import Path
+
+    korijen = Path(__file__).resolve().parents[2]
+    obrasci = [
+        r"AIza[0-9A-Za-z_\-]{35}",
+        r"AQ\.[A-Za-z0-9_\-\.]{20,}",
+        r"gsk_[A-Za-z0-9]{20,}",
+        r"sk-[A-Za-z0-9_\-]{20,}",
+        r"hf_[A-Za-z0-9]{20,}",
+    ]
+    for ime in ("audiobook_batch.py", "twoc_audiobook.py", "twoc_audiobook_charon.py"):
+        f = korijen / "tools" / ime
+        if not f.exists():
+            continue
+        tekst = f.read_text(encoding="utf-8")
+        for o in obrasci:
+            assert not re.search(o, tekst), f"{ime}: hardkodiran kljuc ({o[:6]})"
