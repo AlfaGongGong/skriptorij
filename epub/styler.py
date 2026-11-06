@@ -551,103 +551,11 @@ def _apostrof_fix(soup):
     return n
 
 
-def _ukloni_dup_id(soup):
-    """Isti id dvaput u poglavlju = isti odlomak iz preklopa blokova.
-    Kasniji primjerak se brise (zadrzava se prvi, iz ranijeg bloka),
-    osim ako je znatno duzi od prvog."""
-    import difflib
-    import re as _re
-
-    def _norm(s):
-        return _re.sub(r"[\W_]+", "", s.lower())
-
-    vidjeni = {}
-    n_del = 0
-    for p in list(soup.find_all("p")):
-        pid = p.get("id")
-        if not pid:
-            continue
-        if pid not in vidjeni:
-            vidjeni[pid] = p
-            continue
-        a = _norm(vidjeni[pid].get_text())
-        b = _norm(p.get_text())
-        if len(b) > len(a) * 1.3 + 10:
-            print(f"  [dup-id] zadrzano {pid}: drugi primjerak je duzi ({len(b)} vs {len(a)})")
-            continue
-        if b in a or difflib.SequenceMatcher(None, a, b).ratio() >= 0.7:
-            p.decompose()
-            n_del += 1
-            print(f"  [dup-id] obrisan drugi primjerak {pid}")
-        else:
-            print(f"  [dup-id] zadrzano {pid}: sadrzaj razlicit")
-    return n_del
-
-
-def _poredaj_po_id(soup):
-    """Odlomak ciji je id manji od prethodnog, a id-1 postoji ranije,
-    vraca se iza tog id-1 (fragment koji je zavrsio na kraju poglavlja)."""
-    import re as _re
-
-    def _num(p):
-        m = _re.search(r"(\d+)$", p.get("id") or "")
-        return int(m.group(1)) if m else None
-
-    n = 0
-    for _ in range(300):
-        ps = [p for p in soup.find_all("p") if _num(p) is not None]
-        pomaknut = False
-        for i in range(1, len(ps)):
-            a, b = _num(ps[i - 1]), _num(ps[i])
-            if b >= a:
-                continue
-            cilj = next((q for q in ps[:i] if _num(q) == b - 1), None)
-            if cilj is None:
-                continue
-            cur = ps[i]
-            cur.extract()
-            cilj.insert_after(cur)
-            n += 1
-            print(f"  [poredak] {cur.get('id')} premjesten iza {cilj.get('id')}")
-            pomaknut = True
-            break
-        if not pomaknut:
-            break
-    return n
-
-
-def _navodnik_nakon_replike(soup):
-    """Pasus ima jedan zatvarajuci navodnik viska, a obrazac
-    ”, glagol, malo-slovo se pojavljuje tacno jednom: dodaje se otvarajuci
-    navodnik (replika, glagol govora, nastavak replike)."""
-    import re as _re
-    from bs4 import NavigableString as _NS
-
-    rx = _re.compile(r"(”,\s+[a-zčćšžđ]+,\s+)(?=[a-zčćšžđ])")
-    n = 0
-    for p in soup.find_all("p"):
-        t = p.get_text()
-        if t.count("”") != t.count("„") + 1:
-            continue
-        pogodci = [x for x in p.find_all(string=True)
-                   if type(x) is _NS and rx.search(str(x))]
-        ukupno = sum(len(rx.findall(str(x))) for x in pogodci)
-        if ukupno != 1:
-            continue
-        node = pogodci[0]
-        novo = rx.sub(lambda m: m.group(1) + "„", str(node), count=1)
-        node.replace_with(_NS(novo))
-        n += 1
-        print(f"  [nav-replika] {p.get('id')}: dodan otvarajuci navodnik")
-    return n
-
-
 def _popravi_fragment_pocetka(soup):
     """Odlomak koji pocinje malim slovom: prva recenica je odbacen rep
     prethodnog odlomka (prijelaz bloka pri prevodjenju). Ako prethodni
-    odlomak vec sadrzi taj tekst na kraju -> brise se; inace se dodaje
-    prethodnom. Radi samo kad su id-evi uzastopni (jiN, jiN+1); prethodni
-    se trazi u cijelom dokumentu (moze biti u drugoj sekciji)."""
+    odlomak vec zavrsava tim tekstom -> brise se; inace se dodaje prethodnom.
+    Radi samo kad su id-evi uzastopni (jiN, jiN+1)."""
     import re as _re
     from bs4 import NavigableString as _NS
 
@@ -662,7 +570,7 @@ def _popravi_fragment_pocetka(soup):
 
     n_drop = n_move = 0
     for cur in list(soup.find_all("p")):
-        prev = cur.find_previous("p")
+        prev = cur.find_previous_sibling("p")
         if prev is None or not cur.contents:
             continue
         a, b = _num(prev), _num(cur)
@@ -680,9 +588,7 @@ def _popravi_fragment_pocetka(soup):
         frag = m.group(1)
         if len(frag.split()) > 15:
             continue
-        nf = _norm(frag)
-        tail = _norm(prev.get_text())[-(len(nf) * 2 + 40):]
-        if len(nf) >= 5 and nf in tail:
+        if _norm(prev.get_text()).endswith(_norm(frag)) and len(_norm(frag)) >= 5:
             akcija = "brisem (ponovljen rep)"
             n_drop += 1
         else:
@@ -691,18 +597,12 @@ def _popravi_fragment_pocetka(soup):
                 continue
             last = nodes[-1]
             ls = str(last).rstrip()
-            pt = prev.get_text()
-            if ls.endswith("."):
-                last.replace_with(ls[:-1] + " " + frag)
-                akcija = "dodajem prethodnom"
-                n_move += 1
-            elif ls.endswith("…") and pt.count("„") > pt.count("”"):
-                last.replace_with(ls + " " + frag)
-                akcija = "spajam iza trotocke"
-                n_move += 1
-            else:
+            if not ls.endswith(".") or ls.endswith("…"):
                 print(f"  [frag-fix] preskoceno {cur.get('id')}: prethodni ne zavrsava tackom")
                 continue
+            last.replace_with(ls[:-1] + " " + frag)
+            akcija = "dodajem prethodnom"
+            n_move += 1
         rest = st[len(frag):].lstrip()
         if rest:
             first.replace_with(rest)
@@ -1915,9 +1815,6 @@ def run_epub_styler(
                 logger.warning("[tipografija] %s: %s", p.get("full_path"), _pr)
         except Exception:
             logger.exception("[tipografija] styler: provjera")
-        _ukloni_dup_id(soup)
-        _poredaj_po_id(soup)
-        _navodnik_nakon_replike(soup)
         _popravi_fragment_pocetka(soup)
         _stil_ocisti_p(soup)
         _ukloni_dup_par(soup)
