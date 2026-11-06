@@ -50,6 +50,15 @@
    "od": "Kad je želio biti posve poput njega.",
    "do": "biti heroj.”",
    "novo": "Kad je želio biti posve poput njega. „Eto ti ga na”, promrmlja, „moraš sam sebi biti heroj.”"
+  },
+  {
+   "id": "p22-0208-dupblok",
+   "fajl": "part0208.html",
+   "blok": 6,
+   "od": "<p class=\"bt1_body_text_\" id=\"ji3134\">",
+   "do": "Neka se sudbina smiluje Uniji.</p>",
+   "novo": "",
+   "brisi": true
   }
  ]
 }

@@ -68,7 +68,7 @@ def primijeni(ck, ispravke, strict=False, bdir=None, dry=False, log=print):
             if r == "dup":
                 dup.append(p)
             elif r is None:
-                if novo and novo in t:
+                if (novo and novo in t) or (isp.get("brisi") and isp.get("blok") is not None):
                     applied.append(p)
             else:
                 hit.append((p, t, r))
