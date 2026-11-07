@@ -392,8 +392,9 @@ def provjeri_blok(en_text, hr_text, glosar, fleet=None,
 
 # ── P2.1: oznaka bloka (ok / sumnjiv / los) ──────────────────────────────────
 # Izvodi se iz rezultata provjeri_blok(); NE mijenja score ni ponasanje provjere.
-OZNAKA_TEZKI_TIPOVI = ("negacija", "kriv_smisao")   # jedan takav nalaz => "los"
-OZNAKA_LOS_ISPOD = 7.0                               # score < 7.0 => "los"
+OZNAKA_TEZKI_TIPOVI = ("negacija", "broj", "izostavljeno", "dodano", "ime")  # => "los"
+OZNAKA_ZA_PREGLED = ("kriv_smisao",)                                          # => "sumnjiv"
+OZNAKA_LOS_ISPOD = 7.0   # ZASTARJELO: score vise ne utjece na oznaku (ostavljeno radi importa)
 
 
 def oznaka_bloka(rez) -> str:
@@ -401,8 +402,9 @@ def oznaka_bloka(rez) -> str:
 
     neprovjeren: model nije dao upotrebljiv odgovor (nije nalaz o prijevodu).
     ok:          provjera uspjela, nema gresaka.
-    los:         negacija/kriv_smisao, ili score < OZNAKA_LOS_ISPOD.
-    sumnjiv:     ima gresaka, ali nista od gore.
+    los:         bar jedna teska greska (OZNAKA_TEZKI_TIPOVI).
+    sumnjiv:     ima gresaka, ali samo "za pregled" (kriv_smisao i sl.).
+    Score se NE koristi: verifikator ga racuna iz broja gresaka pa bi gotovo sve bilo "los".
     """
     if not isinstance(rez, dict) or not rez.get("provjeren"):
         return "neprovjeren"
@@ -411,9 +413,6 @@ def oznaka_bloka(rez) -> str:
         return "ok"
     tipovi = {g.get("tip") for g in greske if isinstance(g, dict)}
     if tipovi & set(OZNAKA_TEZKI_TIPOVI):
-        return "los"
-    score = rez.get("score")
-    if isinstance(score, (int, float)) and score < OZNAKA_LOS_ISPOD:
         return "los"
     return "sumnjiv"
 
