@@ -213,3 +213,37 @@ def spremi(profil: dict, autor: str, jezik: str = "en", root=None) -> Path:
     tmp.write_text(json.dumps(profil, ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, p)
     return p
+
+
+# ── P4.3: usporedba EN profila i HR prijevoda (za kapiju) ────────────────────
+# Pragovi su pocetni (kalibrirani na 2 para: A Little Hatred, The Trouble with Peace);
+# kapija ih koristi samo kao WARN dok se ne kalibriraju na TWOC-u (P4.4).
+PRAGOVI = {"rec_min": 0.75, "rec_max": 1.25, "dij_min": 0.8, "dij_max": 1.25,
+           "crtica_min": 80.0, "min_recenica": 200}
+
+
+def usporedi(en: dict, hr: dict) -> list:
+    """EN profil vs HR profil -> [(provjera, detalj)]; prazno = u granicama."""
+    k = PRAGOVI
+    if not isinstance(en, dict) or not isinstance(hr, dict):
+        return []
+    if min(en.get("n_recenica", 0), hr.get("n_recenica", 0)) < k["min_recenica"]:
+        return []
+    out = []
+    a, b = en.get("prosj_rijeci_po_recenici"), hr.get("prosj_rijeci_po_recenici")
+    if a and b is not None:
+        r = b / a
+        if not (k["rec_min"] <= r <= k["rec_max"]):
+            out.append(("stil: duzina recenice HR/EN izvan %.2f-%.2f" % (k["rec_min"], k["rec_max"]),
+                        "%.1f vs %.1f rijeci/recenici (omjer %.2f)" % (b, a, r)))
+    a, b = en.get("dijalog_odlomaka_pct"), hr.get("dijalog_odlomaka_pct")
+    if a and b is not None:
+        r = b / a
+        if not (k["dij_min"] <= r <= k["dij_max"]):
+            out.append(("stil: udio dijaloga HR/EN izvan %.2f-%.2f" % (k["dij_min"], k["dij_max"]),
+                        "%.1f%% vs %.1f%% odlomaka (omjer %.2f)" % (b, a, r)))
+    cr = hr.get("crtica_pct_dijaloga") or 0
+    if (hr.get("dijalog_odlomaka_pct") or 0) > 0 and cr < k["crtica_min"]:
+        out.append(("stil: HR dijalog bez crtica (< %d%%)" % k["crtica_min"],
+                    "crtica u %.1f%% dijaloga" % cr))
+    return out

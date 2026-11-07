@@ -68,7 +68,53 @@ def _fin(agg):
     return (not any(r[0] == "FAIL" for r in rep)), rep
 
 
-def gate(path, forbid=("Nail", "Judge")):
+def _stil_provjera(path, opf, stil, add):
+    """P4.3 (samo WARN): stil HR prijevoda naspram EN profila iz data/stil/<autor>.json.
+
+    stil: dict (profil), str (putanja do JSON-a) ili None (trazi se po dc:creator).
+    Bez profila ne radi nista.
+    """
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    try:
+        from core import stil as _st
+    except ImportError as e:
+        print("[stil] core.stil nedostupan: %s" % e, file=sys.stderr)
+        return
+    if isinstance(stil, dict):
+        en = stil
+    else:
+        if stil:
+            p = Path(stil)
+        else:
+            cr = opf.find(".//" + _D + "creator")
+            ime = (cr.text or "").strip() if cr is not None else ""
+            if not ime:
+                return
+            p = root / "data" / "stil" / (_st.slug(ime) + ".json")
+        if not p.is_file():
+            return
+        try:
+            en = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            print("[stil] ne mogu citati %s: %s" % (p, e), file=sys.stderr)
+            return
+    if not isinstance(en, dict) or en.get("jezik") != "en":
+        return
+    try:
+        hr = _st.izmjeri(_st.izdvoji_odlomke(path), "hr")
+    except Exception as e:  # noqa: BLE001 — kapija se ne smije srusiti zbog stila
+        print("[stil] mjerenje HR nije uspjelo: %s: %s" % (type(e).__name__, e), file=sys.stderr)
+        return
+    for chk, ex in _st.usporedi(en, hr):
+        add("WARN", chk, "stil", ex)
+
+
+def gate(path, forbid=("Nail", "Judge"), stil=None):
     agg = {}
 
     def add(level, check, where, ex=""):
@@ -186,6 +232,8 @@ def gate(path, forbid=("Nail", "Judge")):
                         add("WARN", "EN ostaci (2-10%)", p, "%.1f%%" % (r * 100))
         if n_docs == 0:
             add("FAIL", "spine bez dokumenata", opf_path)
+        if stil is not False:
+            _stil_provjera(path, opf, stil, add)
     return _fin(agg)
 
 
@@ -193,11 +241,13 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("epub", nargs="+")
     ap.add_argument("--forbid", default="Nail,Judge")
+    ap.add_argument("--stil", default=None, help="putanja do data/stil/<autor>.json (inace po dc:creator)")
+    ap.add_argument("--bez-stila", action="store_true", help="iskljuci P4.3 provjeru stila")
     a = ap.parse_args(argv)
     forbid = tuple(x for x in a.forbid.split(",") if x)
     rc = 0
     for p in a.epub:
-        ok, rep = gate(p, forbid)
+        ok, rep = gate(p, forbid, stil=(False if a.bez_stila else a.stil))
         print("\n=== %s -> %s ===" % (p, "PROSAO" if ok else "PAO"))
         for lvl, chk, n, ex in rep:
             print("  %-4s %s x%d" % (lvl, chk, n))
