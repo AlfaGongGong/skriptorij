@@ -82,3 +82,11 @@ def test_slijepi_parseri():
     assert parsiraj_provjera('{"vjernije": true, "izmisljene_rijeci": ["x"]}') == {"vjernije": True, "izmisljene": ["x"]}
     assert parsiraj_provjera('{"vjernije": "da"}') is None
     assert "verifikator" not in prompt_slijepo("a", "b", "c").lower()
+
+
+def test_prompt_slijepo_en_sadrzi_kontekst_i_ne_spominje_verifikator():
+    from core.arbitar import prompt_slijepo_en
+    p = prompt_slijepo_en("I hoped", "Nadao se", "ctx hr", "I hoped I didn't sound uneasy")
+    assert "I hoped I didn't sound uneasy" in p
+    assert "verifikator" not in p.lower()
+    assert "(nije nadjen)" in prompt_slijepo_en("a", "b", "c", "")

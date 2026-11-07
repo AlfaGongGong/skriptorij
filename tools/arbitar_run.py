@@ -41,6 +41,26 @@ def raw_bloka(ck, k):
     return p.read_text("utf-8", "ignore") if p.exists() else ""
 
 
+def nadji_en(ck, blok, en, n=500):
+    """EN odlomak oko en_fragmenta iz izvornih OEBPS/Text/*.html u _skr_ folderu ("" ako nije nadjen)."""
+    import re
+    frag = re.sub(r"\s+", " ", (en or "").strip())
+    if len(frag) < 6:
+        return ""
+    tdir = ck.parent / "OEBPS" / "Text"
+    if not tdir.is_dir():
+        return ""
+    prvi = tdir / (blok.split(".html_blok")[0] + ".html")
+    kandidati = ([prvi] if prvi.exists() else []) + [p for p in sorted(tdir.glob("*.html")) if p != prvi]
+    for p in kandidati:
+        t = A._plain(p.read_text("utf-8", "ignore"))
+        for f in (frag, frag.replace("\u2019", "'"), frag.replace("'", "\u2019")):
+            i = t.find(f)
+            if i >= 0:
+                return t[max(0, i - n): i + len(f) + n]
+    return ""
+
+
 def cist(s):
     return str(s or "").replace("\t", " ").replace("\n", " ").strip()
 
@@ -69,8 +89,10 @@ async def jedan(engine, sem, n, ck, maxp, brojac):
         return res
     brojac[0] += 1
     ctx = A.kontekst_oko(A._plain(raw), hr)
+    enc = nadji_en(ck, n["blok"], en)
+    res["en_ctx"] = "da" if enc else "ne"
     try:
-        t1 = await zovi(engine, sem, A.prompt_slijepo(en, hr, ctx), n["br"], n["blok"])
+        t1 = await zovi(engine, sem, A.prompt_slijepo_en(en, hr, ctx, enc), n["br"], n["blok"])
         d1 = A.parsiraj_slijepo(t1)
         if not d1:
             res["razlog"] = "neparsirano:" + cist(t1)[:80]
@@ -118,6 +140,7 @@ async def main(epub, ime_skr, prefix, maxp):
     t0 = time.time()
     rez = await asyncio.gather(*[jedan(engine, sem, n, ck, maxp, brojac) for n in nalazi])
     print("slijepih presuda (AI): %d | trajanje %.0f s" % (brojac[0], time.time() - t0))
+    print("EN kontekst nadjen: %d/%d" % (sum(1 for x in rez if x.get("en_ctx") == "da"), sum(1 for x in rez if x.get("en_ctx"))))
 
     gold = json.load(open(Path(__file__).resolve().parent.parent / "data/arbitar_zlatni_set.json",
                           encoding="utf-8"))["presude"]

@@ -196,3 +196,18 @@ def parsiraj_provjera(txt):
         return None
     iz = d.get("izmisljene_rijeci") or []
     return {"vjernije": d["vjernije"], "izmisljene": [str(x) for x in iz] if isinstance(iz, list) else []}
+
+
+def prompt_slijepo_en(en, hr, kontekst, en_kontekst):
+    return (
+        "Ti si strogi, ali pravedan urednik prijevoda s engleskog na hrvatski.\n\n"
+        "EN odlomak iz izvornika (kontekst): %s\n"
+        "EN fragment: %s\nHR fragment (iz prijevoda): %s\nOkolni HR tekst: %s\n\n"
+        % (en_kontekst or "(nije nadjen)", en or "(nije naveden)", hr, kontekst)
+        + "Zadatak: 1) kratko napisi sto EN fragment znaci u ovom kontekstu (moj_smisao), uzimajuci u obzir cijelu "
+        "recenicu: osobu, broj, vrijeme, negaciju, subjekt. "
+        "2) Presudi: \"ekvivalentno\" = HR prenosi isti smisao, makar slobodnije ili idiomatski; "
+        "\"razlicito\" = HR mijenja ili gubi smisao (cak i ako zvuci prirodno), ili je gramaticki/semanticki besmisleno; "
+        "\"nesigurno\" = ne mozes procijeniti.\n"
+        "Odgovori ISKLJUCIVO JSON-om: {\"moj_smisao\": \"...\", \"presuda\": \"ekvivalentno\"|\"razlicito\"|\"nesigurno\", \"razlog\": \"...\"}"
+    )
