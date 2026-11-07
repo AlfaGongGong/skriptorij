@@ -1338,7 +1338,7 @@ def main():
     print(f"\nIzvještaj: {out / 'izvjestaj.md'}")
     print(f"CSV:       {out / 'nalazi.csv'}")
     if args.gate:
-        GATE_KAT = ("TIP-NAVOD", "TIP-ZAREZ", "INT-DUP", "INT-DUPS", "JEZ-EN", "INT-GLOSAR")
+        GATE_KAT = ("TIP-NAVOD", "TIP-ZAREZ", "INT-DUP", "INT-DUPS", "JEZ-EN", "INT-GLOSAR", "INT-RATIO")
         pad = {k: N.broj[k] for k in GATE_KAT if N.broj.get(k)}
         print("\n════ KAPIJA ════")
         for k, n in pad.items():
