@@ -116,10 +116,10 @@ def gate(path, forbid=("Nail", "Judge")):
                 add("FAIL", "spine idref bez manifesta", str(r))
         t = opf.find(".//" + _D + "title")
         if t is None or not (t.text or "").strip():
-            add("WARN", "nema dc:title", opf_path)
+            add("FAIL", "nema dc:title", opf_path)
         lg = opf.find(".//" + _D + "language")
         if lg is None or not (lg.text or "").strip():
-            add("WARN", "nema dc:language", opf_path)
+            add("FAIL", "nema dc:language", opf_path)
 
         ncx = [i for i in items.values() if i.get("media-type") == "application/x-dtbncx+xml"]
         nav = [i for i in items.values() if "nav" in (i.get("properties") or "").split()]
