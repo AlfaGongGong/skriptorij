@@ -242,3 +242,44 @@ def test_oblik_rezultata_uvijek_isti():
                 "odbaceno", "error"}
     for f in (None, fl(""), fl('{"ok": true}'), fl("smece")):
         assert set(V.provjeri_blok(EN, HR, {}, fleet=f)) == kljucevi
+
+
+# ── P2.1: oznaka_bloka ───────────────────────────────────────────────────────
+def _rez(tipovi, provjeren=True):
+    from core.verifier import izracunaj_score
+    greske = [{"tip": x} for x in tipovi]
+    return {"provjeren": provjeren, "greske": greske,
+            "score": izracunaj_score(greske) if provjeren else None}
+
+
+def test_oznaka_ok():
+    from core.verifier import oznaka_bloka
+    assert oznaka_bloka(_rez([])) == "ok"
+
+
+def test_oznaka_neprovjeren():
+    from core.verifier import oznaka_bloka
+    assert oznaka_bloka(_rez([], provjeren=False)) == "neprovjeren"
+    assert oznaka_bloka(None) == "neprovjeren"
+    assert oznaka_bloka({}) == "neprovjeren"
+
+
+def test_oznaka_sumnjiv_jedna_blaga_greska():
+    from core.verifier import oznaka_bloka
+    assert oznaka_bloka(_rez(["izostavljeno"])) == "sumnjiv"   # score 8.0
+
+
+def test_oznaka_sumnjiv_granica_7():
+    from core.verifier import oznaka_bloka
+    assert oznaka_bloka(_rez(["dodano", "dodano"])) == "sumnjiv"   # score 7.0
+
+
+def test_oznaka_los_negacija_i_kriv_smisao():
+    from core.verifier import oznaka_bloka
+    assert oznaka_bloka(_rez(["negacija"])) == "los"
+    assert oznaka_bloka(_rez(["kriv_smisao"])) == "los"
+
+
+def test_oznaka_los_nizak_score():
+    from core.verifier import oznaka_bloka
+    assert oznaka_bloka(_rez(["izostavljeno", "izostavljeno"])) == "los"   # score 6.0

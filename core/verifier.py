@@ -351,3 +351,31 @@ def provjeri_blok(en_text, hr_text, glosar, fleet=None,
     finally:
         ex.shutdown(wait=False)
     return obradi_odgovor(res, en_p, hr_p)
+
+
+# ── P2.1: oznaka bloka (ok / sumnjiv / los) ──────────────────────────────────
+# Izvodi se iz rezultata provjeri_blok(); NE mijenja score ni ponasanje provjere.
+OZNAKA_TEZKI_TIPOVI = ("negacija", "kriv_smisao")   # jedan takav nalaz => "los"
+OZNAKA_LOS_ISPOD = 7.0                               # score < 7.0 => "los"
+
+
+def oznaka_bloka(rez) -> str:
+    """ok | sumnjiv | los | neprovjeren.
+
+    neprovjeren: model nije dao upotrebljiv odgovor (nije nalaz o prijevodu).
+    ok:          provjera uspjela, nema gresaka.
+    los:         negacija/kriv_smisao, ili score < OZNAKA_LOS_ISPOD.
+    sumnjiv:     ima gresaka, ali nista od gore.
+    """
+    if not isinstance(rez, dict) or not rez.get("provjeren"):
+        return "neprovjeren"
+    greske = rez.get("greske") or []
+    if not greske:
+        return "ok"
+    tipovi = {g.get("tip") for g in greske if isinstance(g, dict)}
+    if tipovi & set(OZNAKA_TEZKI_TIPOVI):
+        return "los"
+    score = rez.get("score")
+    if isinstance(score, (int, float)) and score < OZNAKA_LOS_ISPOD:
+        return "los"
+    return "sumnjiv"
