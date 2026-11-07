@@ -1019,7 +1019,7 @@ def audit(args) -> dict:
                     if fa == fb:
                         continue
                     zp = len(os.path.commonprefix([fa, fb]))
-                    if zp >= max(4, min(len(fa), len(fb)) - 1):
+                    if zp >= max(3, min(len(fa), len(fb)) - 1):
                         continue
                     if levenshtein(fa, fb, 2) <= 2 and min(len(fa), len(fb)) >= 4:
                         kljuc = tuple(sorted((a[0], b[0])))
