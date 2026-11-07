@@ -91,6 +91,15 @@ SYS_PROMPT = (
 
 
 # ── pomocne: tekst ──────────────────────────────────────────────────────────
+_DODATAK_P21_LAZNI_ALARMI = (
+    "NE prijavljuj pretvorbu mjernih jedinica (funte/inci/milje u kg/cm/km) ako je preracunata vrijednost tocna.\n"
+    "NE prijavljuj ni vlastita imena mjesta, ustanova, trgovina i marki ostavljena u izvornom obliku (npr. Black Hills, Good Rest).\n"
+    "I dalje OBAVEZNO prijavi: izmisljen ili promijenjen smisao, izgubljenu ili obrnutu negaciju, izostavljene i dodane tvrdnje.\n"
+)
+if "Fragmenti moraju" in SYS_PROMPT:
+    SYS_PROMPT = SYS_PROMPT.replace("Fragmenti moraju", _DODATAK_P21_LAZNI_ALARMI + "Fragmenti moraju", 1)
+
+
 def _plain(t) -> str:
     """HTML -> plain; blok-tagovi postaju prelom reda (kao metrics._plain_za_provjeru)."""
     t = re.sub(r"</?(?:p|div|br|li|h[1-6]|section|blockquote)\b[^>]*>", "\n",
