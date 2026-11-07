@@ -1279,3 +1279,28 @@ def names_apply():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+
+# ── P2.6 odluke: pamcenje korisnickih odluka s kartica revizije ──────────────
+@bp.route("/api/review/odluka", methods=["POST"])
+def review_odluka():
+    """Zapisuje odluku korisnika (ostavi / prevedi_ponovo / preskoci / ponisti). Uvijek JSON."""
+    from flask import request as _rq
+    from core import odluke as _od
+    d = _rq.get_json(silent=True) or {}
+    try:
+        zap = _od.zabiljezi(
+            str(d.get("knjiga", "")), str(d.get("blok", "")),
+            str(d.get("en", "")), str(d.get("hr", "")),
+            str(d.get("tip", "?")), str(d.get("odluka", "")), str(d.get("novo", "")),
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"ok": True, "kljuc": zap["kljuc"]})
+
+
+@bp.route("/api/review/odluke/stat", methods=["GET"])
+def review_odluke_stat():
+    """Stvarna preciznost po vrsti greske iz korisnikovih klikova."""
+    from core import odluke as _od
+    return jsonify(_od.statistika())
