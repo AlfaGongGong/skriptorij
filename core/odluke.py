@@ -82,3 +82,8 @@ def statistika():
         u = d["ostavi"] + d["prevedi_ponovo"]
         d["preciznost"] = round(d["prevedi_ponovo"] / u, 2) if u else None
     return s
+
+
+def odlucen(knjiga, en, hr):
+    """True ako je za ovu knjigu vec donesena odluka o ovom paru (kartica se ne prikazuje ponovo)."""
+    return (knjiga, kljuc(en, hr)) in _stanje()

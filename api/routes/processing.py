@@ -1304,3 +1304,124 @@ def review_odluke_stat():
     """Stvarna preciznost po vrsti greske iz korisnikovih klikova."""
     from core import odluke as _od
     return jsonify(_od.statistika())
+
+
+# ── P2.6 kartice: teske greske verifikatora za pregled ───────────────────────
+_P26_TIP_NAZIV = {
+    "negacija": "Smisao je obrnut (negacija)",
+    "broj": "Broj se ne slaže s originalom",
+    "izostavljeno": "Nešto je izostavljeno iz originala",
+    "dodano": "Dodano je nešto čega nema u originalu",
+    "ime": "Ime je krivo prevedeno",
+}
+_P26_EN_CACHE = {}
+_P26_ORIGINALI = Path("/storage/emulated/0/Books/MoonReader/original")
+
+
+def _p26_knjiga():
+    book = SHARED_STATS.get("current_file", "")
+    if not book:
+        lb = Path(PROJECTS_ROOT) / "last_book.json"
+        if lb.exists():
+            try:
+                book = json.loads(lb.read_text("utf-8")).get("last_book", "")
+            except Exception as e:
+                print("[P2.6] last_book.json nečitljiv:", repr(e))
+    if not book:
+        return ""
+    st = Path(book).stem
+    st = re.sub(r"^(?:PREVEDENO_)+", "", st, flags=re.IGNORECASE)
+    st = re.sub(r"(?:_PREVEDENO|_STYLED)+$", "", st, flags=re.IGNORECASE)
+    return re.sub(r"[^a-zA-Z0-9_-]", "", st)
+
+
+def _p26_en_tekstovi(clean):
+    """EN tekst izvornog EPUB-a (trazi se po rijecima iz imena knjige); cache po knjizi."""
+    import html as _h
+    import zipfile
+    if clean in _P26_EN_CACHE:
+        return _P26_EN_CACHE[clean]
+    tok = [t for t in clean.lower().split("_") if t]
+    out = {}
+    if tok and _P26_ORIGINALI.exists():
+        for f in sorted(_P26_ORIGINALI.glob("*.epub")):
+            if all(t in f.name.lower() for t in tok):
+                try:
+                    with zipfile.ZipFile(f) as z:
+                        for n in z.namelist():
+                            if n.endswith((".html", ".xhtml")) and "/Text/" in n:
+                                raw = z.read(n).decode("utf-8", "ignore")
+                                t = _h.unescape(re.sub(r"<[^>]+>", " ", raw))
+                                out[n.rsplit("/", 1)[1]] = re.sub(r"\s+", " ", t)
+                except Exception as e:
+                    print("[P2.6] EN čitanje nije uspjelo:", f, repr(e))
+                break
+    _P26_EN_CACHE[clean] = out
+    return out
+
+
+def _p26_odlomak(tekstovi, blok, frag, n=300):
+    frag = re.sub(r"\s+", " ", (frag or "").strip())
+    if len(frag) < 6:
+        return ""
+    prvi = blok.split(".html_blok")[0] + ".html"
+    redoslijed = ([prvi] if prvi in tekstovi else []) + [k for k in sorted(tekstovi) if k != prvi]
+    for k in redoslijed:
+        t = tekstovi[k]
+        for f in (frag, frag.replace("\u2019", "'"), frag.replace("'", "\u2019")):
+            i = t.find(f)
+            if i >= 0:
+                return t[max(0, i - n): i + len(f) + n]
+    return ""
+
+
+@bp.route("/api/review/kartice", methods=["GET"])
+def review_kartice():
+    """Kartice revizije: samo teske greske verifikatora, bez vec odlucenih. Uvijek JSON."""
+    from core import odluke as _od
+    from core.verifier import OZNAKA_TEZKI_TIPOVI as _TEZ
+    try:
+        clean = _p26_knjiga()
+        if not clean:
+            return jsonify({"error": "Nema aktivne knjige."}), 404
+        ck = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
+        qv = ck / "quality_verifier.json"
+        if not qv.exists():
+            return jsonify({"error": "Nema rezultata verifikatora za ovu knjigu."}), 404
+        d = json.loads(qv.read_text("utf-8"))
+        en_t = _p26_en_tekstovi(clean)
+        kartice = []
+        for k, v in sorted(d.items()):
+            if v.get("verifier") == "skip":
+                continue
+            hr_plain = None
+            for g in (v.get("greske") or []):
+                tip = g.get("tip")
+                if tip not in _TEZ:
+                    continue
+                en = g.get("en_fragment") or ""
+                hr = (g.get("hr_fragment") or "").strip()
+                if _od.je_odbacen(en, hr) or _od.odlucen(clean, en, hr):
+                    continue
+                if hr_plain is None:
+                    p = ck / (k if k.endswith(".chk") else k + ".chk")
+                    raw = p.read_text("utf-8", "ignore") if p.exists() else ""
+                    raw = re.sub(r"<!--.*?-->", " ", raw, flags=re.S)
+                    hr_plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", raw))
+                kartice.append({
+                    "id": len(kartice) + 1, "knjiga": clean, "blok": k, "tip": tip,
+                    "tip_naziv": _P26_TIP_NAZIV.get(tip, tip),
+                    "en": en, "hr": hr,
+                    "en_kontekst": _p26_odlomak(en_t, k, en),
+                    "hr_kontekst": _p26_odlomak({"x": hr_plain}, "", hr, 200),
+                })
+        return jsonify(kartice)
+    except Exception as e:
+        print("[P2.6] review_kartice greška:", repr(e))
+        return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/revizija", methods=["GET"])
+def revizija_stranica():
+    from flask import render_template
+    return render_template("revizija.html")

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revizija</title>
+<style>
+  :root { --bg:#fff; --tx:#1b1b1b; --box:#f2f2f2; --mark:#ffe08a; --muted:#666; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#14141a; --tx:#eee; --box:#22222c; --mark:#7a5c00; --muted:#9a9aa5; } }
+  body { margin:0; padding:14px; background:var(--bg); color:var(--tx); font:17px/1.5 system-ui,sans-serif; }
+  #prog { color:var(--muted); font-size:14px; margin-bottom:6px; }
+  #tip { font-weight:700; font-size:19px; margin:4px 0 12px; }
+  .box { background:var(--box); border-radius:12px; padding:12px; margin-bottom:12px; }
+  .lab { font-size:13px; color:var(--muted); margin-bottom:4px; }
+  mark { background:var(--mark); color:inherit; border-radius:4px; padding:0 2px; }
+  button { width:100%; font-size:19px; padding:16px; margin:6px 0; border:0; border-radius:14px; color:#fff; }
+  #b-ostavi { background:#2e7d32; } #b-ponovo { background:#c62828; }
+  #b-preskoci { background:#555; } #b-ponisti { background:transparent; color:var(--muted); font-size:15px; padding:8px; }
+  button:disabled { opacity:.5; }
+  #poruka { color:#c62828; min-height:1.2em; }
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div id="kartica" style="display:none">
+  <div id="tip"></div>
+  <div class="box"><div class="lab">🇬🇧 Original</div><div id="en"></div></div>
+  <div class="box"><div class="lab">🇧🇦 Naš prijevod</div><div id="hr"></div></div>
+  <button id="b-ostavi">✔ U redu je, ostavi</button>
+  <button id="b-ponovo">🔁 Prevedi ponovo</button>
+  <button id="b-preskoci">⏭ Preskoči</button>
+  <button id="b-ponisti">↩ Poništi prethodnu</button>
+</div>
+<div id="kraj" style="display:none"></div>
+<div id="poruka"></div>
+<script>
+var kartice = [], i = 0, zadnje = [], zauzet = false;
+function el(id) { return document.getElementById(id); }
+function poruka(t) { el("poruka").textContent = t || ""; }
+function podcrtaj(cilj, kontekst, frag, rezerva) {
+  cilj.textContent = "";
+  var t = kontekst || rezerva || "";
+  var k = frag ? t.indexOf(frag) : -1;
+  if (k < 0) { cilj.textContent = t || frag || "—"; return; }
+  cilj.appendChild(document.createTextNode((k > 0 ? "…" : "") + t.slice(0, k)));
+  var m = document.createElement("mark"); m.textContent = frag; cilj.appendChild(m);
+  cilj.appendChild(document.createTextNode(t.slice(k + frag.length) + "…"));
+}
+function prikazi() {
+  poruka("");
+  if (i >= kartice.length) {
+    el("kartica").style.display = "none";
+    el("kraj").style.display = "block";
+    el("kraj").textContent = kartice.length ? "Gotovo. Sve odluke su spremljene. 👍" : "Nema ništa za pregled. 🎉";
+    el("prog").textContent = "";
+    return;
+  }
+  var c = kartice[i];
+  el("kraj").style.display = "none"; el("kartica").style.display = "block";
+  el("prog").textContent = (i + 1) + " / " + kartice.length;
+  el("tip").textContent = c.tip_naziv;
+  podcrtaj(el("en"), c.en_kontekst, c.en, c.en);
+  podcrtaj(el("hr"), c.hr_kontekst, c.hr, c.hr);
+  el("b-ponisti").style.display = zadnje.length ? "block" : "none";
+}
+function salji(c, odluka) {
+  return fetch("/api/review/odluka", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({knjiga: c.knjiga, blok: c.blok, en: c.en, hr: c.hr, tip: c.tip, odluka: odluka})
+  }).then(function (r) { if (!r.ok) throw new Error("Server: " + r.status); return r.json(); });
+}
+function odluci(odluka) {
+  if (zauzet || i >= kartice.length) return;
+  zauzet = true; var c = kartice[i];
+  salji(c, odluka).then(function () { zadnje.push(c); i++; prikazi(); })
+    .catch(function (e) { poruka("Nije spremljeno: " + e.message); })
+    .then(function () { zauzet = false; });
+}
+function ponisti() {
+  if (zauzet || !zadnje.length) return;
+  zauzet = true; var c = zadnje[zadnje.length - 1];
+  salji(c, "ponisti").then(function () { zadnje.pop(); i--; prikazi(); })
+    .catch(function (e) { poruka("Nije poništeno: " + e.message); })
+    .then(function () { zauzet = false; });
+}
+el("b-ostavi").onclick = function () { odluci("ostavi"); };
+el("b-ponovo").onclick = function () { odluci("prevedi_ponovo"); };
+el("b-preskoci").onclick = function () { odluci("preskoci"); };
+el("b-ponisti").onclick = ponisti;
+fetch("/api/review/kartice").then(function (r) { return r.json(); }).then(function (d) {
+  if (!Array.isArray(d)) { poruka(d.error || "Greška pri učitavanju."); return; }
+  kartice = d; prikazi();
+}).catch(function (e) { poruka("Greška: " + e.message); });
+</script>
+</body>
+</html>

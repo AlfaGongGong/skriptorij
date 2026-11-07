@@ -44,3 +44,10 @@ def test_statistika_i_nepoznata_odluka():
     assert odluke.statistika()["broj"]["preciznost"] == 0.5
     with pytest.raises(ValueError):
         odluke.zabiljezi("K1", "b", "a", "b", "broj", "nesto")
+
+
+def test_odlucen_po_knjizi():
+    assert not odluke.odlucen("K1", "a", "b")
+    odluke.zabiljezi("K1", "b", "a", "b", "broj", "preskoci")
+    assert odluke.odlucen("K1", "a", "b")
+    assert not odluke.odlucen("K2", "a", "b")
