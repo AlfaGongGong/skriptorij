@@ -1425,3 +1425,79 @@ def review_kartice():
 def revizija_stranica():
     from flask import render_template
     return render_template("revizija.html")
+
+
+# ── P2.6 prevedi: prijedlog novog prijevoda jednog fragmenta (ne mijenja .chk) ─
+_P26_PREVEDI_SYS = (
+    "Ti si profesionalni književni prevoditelj s engleskog na hrvatski/bosanski. "
+    "Dobit ćeš engleski odlomak, naš prijevod tog odlomka i FRAGMENT prijevoda koji je netočan. "
+    "Vrati ISKLJUČIVO ispravljeni fragment (zamjenu za označeni fragment): jedan redak, "
+    "bez objašnjenja i bez navodnika. Zamjena mora gramatički i stilski stati na mjesto "
+    "fragmenta u rečenici. Koristi samo postojeće, uobičajene riječi, ne izmišljaj riječi. "
+    "Zadrži ton i registar originala (sleng i psovke ostaju)."
+)
+
+
+def _p26_ocisti(txt, staro):
+    """Iz odgovora modela uzme prvi redak; '' ako nije upotrebljiv."""
+    redovi = [r for r in (txt or "").strip().splitlines() if r.strip()]
+    t = redovi[0].strip() if redovi else ""
+    t = re.sub(r"^(?:prijevod|novo|zamjena|rješenje)\s*:\s*", "", t, flags=re.IGNORECASE)
+    t = t.strip("`* \t")
+    if len(t) >= 2 and t[0] == t[-1] == '"' and not staro.startswith('"'):
+        t = t[1:-1].strip()
+    if not t or t == staro or "<" in t or ">" in t or len(t) > max(80, 3 * len(staro)):
+        return ""
+    return t
+
+
+def _p26_ai_prevedi(prompt, br, blok):
+    """Jedan AI poziv (uloga VERIFIER s vlastitim sistemskim promptom, kao tools/arbitar_run.py)."""
+    import asyncio
+
+    from core.engine import SkriptorijAllInOne
+    book = SHARED_STATS.get("current_file", "")
+    if not book:
+        lb = Path(PROJECTS_ROOT) / "last_book.json"
+        if lb.exists():
+            book = json.loads(lb.read_text("utf-8")).get("last_book", "")
+    full = Path(INPUT_DIR) / book if book else None
+    if not full or not full.exists():
+        raise RuntimeError(f"Knjiga nije u ulaznoj mapi: {book or '?'}")
+    engine = SkriptorijAllInOne(str(full), "V10_TURBO", {}, {})
+
+    async def _zovi():
+        r = await engine._call_ai_engine(prompt, br, uloga="VERIFIER", filename=blok,
+                                         sys_override=_P26_PREVEDI_SYS, tip_bloka="naracija")
+        txt = r[0] if isinstance(r, (tuple, list)) and r else r
+        return txt if isinstance(txt, str) else ""
+
+    return asyncio.run(_zovi())
+
+
+@bp.route("/api/review/prevedi", methods=["POST"])
+def review_prevedi():
+    """Prijedlog novog prijevoda jednog fragmenta. Ne mijenja nikakav fajl. Uvijek JSON."""
+    from flask import request as _rq
+    d = _rq.get_json(silent=True) or {}
+    en = str(d.get("en", "")).strip()
+    hr = str(d.get("hr", "")).strip()
+    if not en or not hr:
+        return jsonify({"error": "Nedostaje fragment."}), 400
+    enk = str(d.get("en_kontekst", "")).strip()[:700] or en
+    hrk = str(d.get("hr_kontekst", "")).strip()[:500] or hr
+    tip = _P26_TIP_NAZIV.get(str(d.get("tip", "")), str(d.get("tip", "")))
+    prompt = (
+        f"ENGLESKI ODLOMAK:\n{enk}\n\nNAŠ PRIJEVOD:\n{hrk}\n\n"
+        f"NETOČAN FRAGMENT: {hr}\nOdgovarajući engleski fragment: {en}\n"
+        f"Vrsta greške: {tip}\n\nZamjena za netočan fragment:"
+    )
+    try:
+        odg = _p26_ai_prevedi(prompt, int(d.get("id", 0) or 0), str(d.get("blok", "")))
+    except Exception as e:
+        print("[P2.6] prevedi greška:", repr(e))
+        return jsonify({"error": str(e)}), 500
+    novo = _p26_ocisti(odg, hr)
+    if not novo:
+        return jsonify({"error": "Model nije vratio upotrebljiv prijedlog. Pokušaj ponovo ili ostavi staro."}), 502
+    return jsonify({"prijedlog": novo})

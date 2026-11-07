@@ -14,10 +14,13 @@
   .lab { font-size:13px; color:var(--muted); margin-bottom:4px; }
   mark { background:var(--mark); color:inherit; border-radius:4px; padding:0 2px; }
   button { width:100%; font-size:19px; padding:16px; margin:6px 0; border:0; border-radius:14px; color:#fff; }
-  #b-ostavi { background:#2e7d32; } #b-ponovo { background:#c62828; }
-  #b-preskoci { background:#555; } #b-ponisti { background:transparent; color:var(--muted); font-size:15px; padding:8px; }
+  #b-ostavi, #b-prihvati { background:#2e7d32; } #b-ponovo { background:#c62828; }
+  #b-preskoci, #b-staro { background:#555; }
+  #b-ponisti { background:transparent; color:var(--muted); font-size:15px; padding:8px; }
   button:disabled { opacity:.5; }
   #poruka { color:#c62828; min-height:1.2em; }
+  #pr { display:none; }
+  #pr-tekst { font-weight:700; }
 </style>
 </head>
 <body>
@@ -26,15 +29,22 @@
   <div id="tip"></div>
   <div class="box"><div class="lab">🇬🇧 Original</div><div id="en"></div></div>
   <div class="box"><div class="lab">🇧🇦 Naš prijevod</div><div id="hr"></div></div>
-  <button id="b-ostavi">✔ U redu je, ostavi</button>
-  <button id="b-ponovo">🔁 Prevedi ponovo</button>
-  <button id="b-preskoci">⏭ Preskoči</button>
+  <div id="glavni">
+    <button id="b-ostavi">✔ U redu je, ostavi</button>
+    <button id="b-ponovo">🔁 Prevedi ponovo</button>
+    <button id="b-preskoci">⏭ Preskoči</button>
+  </div>
+  <div id="pr">
+    <div class="box"><div class="lab">Prijedlog novog prijevoda</div><div id="pr-tekst"></div></div>
+    <button id="b-prihvati">✔ Prihvati prijedlog</button>
+    <button id="b-staro">↩ Ostavi staro</button>
+  </div>
   <button id="b-ponisti">↩ Poništi prethodnu</button>
 </div>
 <div id="kraj" style="display:none"></div>
 <div id="poruka"></div>
 <script>
-var kartice = [], i = 0, zadnje = [], zauzet = false;
+var kartice = [], i = 0, zadnje = [], zauzet = false, prijedlog = "";
 function el(id) { return document.getElementById(id); }
 function poruka(t) { el("poruka").textContent = t || ""; }
 function podcrtaj(cilj, kontekst, frag, rezerva) {
@@ -47,7 +57,8 @@ function podcrtaj(cilj, kontekst, frag, rezerva) {
   cilj.appendChild(document.createTextNode(t.slice(k + frag.length) + "…"));
 }
 function prikazi() {
-  poruka("");
+  poruka(""); prijedlog = "";
+  el("pr").style.display = "none"; el("glavni").style.display = "block";
   if (i >= kartice.length) {
     el("kartica").style.display = "none";
     el("kraj").style.display = "block";
@@ -63,17 +74,33 @@ function prikazi() {
   podcrtaj(el("hr"), c.hr_kontekst, c.hr, c.hr);
   el("b-ponisti").style.display = zadnje.length ? "block" : "none";
 }
-function salji(c, odluka) {
+function salji(c, odluka, novo) {
   return fetch("/api/review/odluka", {
     method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({knjiga: c.knjiga, blok: c.blok, en: c.en, hr: c.hr, tip: c.tip, odluka: odluka})
+    body: JSON.stringify({knjiga: c.knjiga, blok: c.blok, en: c.en, hr: c.hr, tip: c.tip, odluka: odluka, novo: novo || ""})
   }).then(function (r) { if (!r.ok) throw new Error("Server: " + r.status); return r.json(); });
 }
-function odluci(odluka) {
+function odluci(odluka, novo) {
   if (zauzet || i >= kartice.length) return;
   zauzet = true; var c = kartice[i];
-  salji(c, odluka).then(function () { zadnje.push(c); i++; prikazi(); })
+  salji(c, odluka, novo).then(function () { zadnje.push(c); i++; prikazi(); })
     .catch(function (e) { poruka("Nije spremljeno: " + e.message); })
+    .then(function () { zauzet = false; });
+}
+function predlozi() {
+  if (zauzet || i >= kartice.length) return;
+  zauzet = true; var c = kartice[i];
+  poruka("Prevodim… (nekoliko sekundi)");
+  fetch("/api/review/prevedi", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({id: c.id, blok: c.blok, en: c.en, hr: c.hr, tip: c.tip, en_kontekst: c.en_kontekst, hr_kontekst: c.hr_kontekst})
+  }).then(function (r) { return r.json().then(function (j) { return {ok: r.ok, j: j}; }); })
+    .then(function (x) {
+      if (!x.ok || !x.j.prijedlog) throw new Error(x.j.error || "Nema prijedloga");
+      prijedlog = x.j.prijedlog; el("pr-tekst").textContent = prijedlog;
+      el("glavni").style.display = "none"; el("pr").style.display = "block"; poruka("");
+    })
+    .catch(function (e) { poruka("Prijevod nije uspio: " + e.message); })
     .then(function () { zauzet = false; });
 }
 function ponisti() {
@@ -84,8 +111,10 @@ function ponisti() {
     .then(function () { zauzet = false; });
 }
 el("b-ostavi").onclick = function () { odluci("ostavi"); };
-el("b-ponovo").onclick = function () { odluci("prevedi_ponovo"); };
+el("b-ponovo").onclick = predlozi;
 el("b-preskoci").onclick = function () { odluci("preskoci"); };
+el("b-prihvati").onclick = function () { odluci("prevedi_ponovo", prijedlog); };
+el("b-staro").onclick = function () { odluci("ostavi"); };
 el("b-ponisti").onclick = ponisti;
 fetch("/api/review/kartice").then(function (r) { return r.json(); }).then(function (d) {
   if (!Array.isArray(d)) { poruka(d.error || "Greška pri učitavanju."); return; }
