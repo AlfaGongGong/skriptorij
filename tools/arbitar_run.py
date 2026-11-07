@@ -47,7 +47,7 @@ def nadji_en(ck, blok, en, n=500):
     frag = re.sub(r"\s+", " ", (en or "").strip())
     if len(frag) < 6:
         return ""
-    tdir = ck.parent / "OEBPS" / "Text"
+    tdir = ck.parent.parent / "OEBPS" / "Text"
     if not tdir.is_dir():
         return ""
     prvi = tdir / (blok.split(".html_blok")[0] + ".html")
