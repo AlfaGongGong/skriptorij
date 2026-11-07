@@ -20,6 +20,25 @@ def ukljucen() -> bool:
     return os.environ.get("BOOKLYFI_VERIFIER", "") == "1"
 
 
+_BROJAC = 0
+
+
+def _dozvoljen() -> bool:
+    """BOOKLYFI_VERIFIER_MAX=N: najvise N verifikacija po procesu (probni run). 0/prazno = bez limita."""
+    global _BROJAC
+    try:
+        mx = int(os.environ.get("BOOKLYFI_VERIFIER_MAX", "0") or 0)
+    except ValueError:
+        mx = 0
+    if mx <= 0:
+        return True
+    with _LOCK:
+        if _BROJAC >= mx:
+            return False
+        _BROJAC += 1
+        return True
+
+
 def sazetak(res: dict) -> dict:
     status = res.get("status", "")
     if status == "ok":
@@ -37,6 +56,8 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
     if not isinstance(original_chunk, str) or not original_chunk.strip():
         return None
     if not isinstance(finalno, str) or not finalno.strip():
+        return None
+    if not _dozvoljen():
         return None
     try:
         from core.verifier import provjeri_blok_async

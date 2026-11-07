@@ -82,3 +82,15 @@ def test_bez_originala(tmp_path, monkeypatch):
     f = _Fake(tmp_path, '{"ok": true, "greske": []}')
     assert _run(f, original=None) is None
     assert not f.pozivi
+
+
+def test_limit_verifikacija(tmp_path, monkeypatch):
+    from processing import verifier_hook as vh
+
+    monkeypatch.setenv("BOOKLYFI_VERIFIER", "1")
+    monkeypatch.setenv("BOOKLYFI_VERIFIER_MAX", "1")
+    monkeypatch.setattr(vh, "_BROJAC", 0)
+    f = _Fake(tmp_path, '{"ok": true, "greske": []}')
+    _run(f)
+    _run(f)
+    assert len(f.pozivi) == 1
