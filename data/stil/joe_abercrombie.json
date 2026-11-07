@@ -1,0 +1,110 @@
+{
+  "verzija": 1,
+  "jezik": "en",
+  "n_odlomaka": 6095,
+  "n_recenica": 17984,
+  "n_rijeci": 178670,
+  "prosj_rijeci_po_recenici": 9.9,
+  "median_rijeci_po_recenici": 8.0,
+  "kratke_pct": 59.7,
+  "duge_pct": 5.1,
+  "prosj_rijeci_po_odlomku": 29.3,
+  "dijalog_odlomaka_pct": 55.8,
+  "dijalog_rijeci_pct": 45.8,
+  "crtica_pct_dijaloga": 0.0,
+  "navodnik_pct_dijaloga": 100.0,
+  "pasiv_pct": 3.6,
+  "fraze": [
+    [
+      "there was a",
+      84
+    ],
+    [
+      "one of the",
+      65
+    ],
+    [
+      "there was no",
+      47
+    ],
+    [
+      "by the dead",
+      44
+    ],
+    [
+      "the back of",
+      42
+    ],
+    [
+      "the young lion",
+      42
+    ],
+    [
+      "the great wolf",
+      39
+    ],
+    [
+      "out of the",
+      36
+    ],
+    [
+      "of the union",
+      36
+    ],
+    [
+      "in the circle",
+      34
+    ],
+    [
+      "the long eye",
+      32
+    ],
+    [
+      "but there was",
+      29
+    ],
+    [
+      "for a moment",
+      28
+    ],
+    [
+      "leo dan brock",
+      27
+    ],
+    [
+      "he gave a",
+      27
+    ],
+    [
+      "a lot of",
+      27
+    ],
+    [
+      "in the north",
+      26
+    ],
+    [
+      "the arch lector",
+      26
+    ],
+    [
+      "side of the",
+      26
+    ],
+    [
+      "the bloody nine",
+      25
+    ]
+  ],
+  "pragovi": {
+    "kratka_ispod": 10,
+    "duga_iznad": 25
+  },
+  "autor": "Joe Abercrombie",
+  "izvori": [
+    {
+      "datoteka": "A Little Hatred_ Book One (The Age of Madness) -- Abercrombie, Joe -- The Age of Madness #1, First Law World #8, First Edition -- Orion Publishing -- isbn13 9780316187169 -- 3331d0b927fc35b53bde67a301c1c3c9 -- Anna’s Archive.epub",
+      "odlomaka": 6095
+    }
+  ]
+}
