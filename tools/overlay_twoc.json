@@ -59,6 +59,24 @@
    "do": "Neka se sudbina smiluje Uniji.</p>",
    "novo": "",
    "brisi": true
+  },
+  {
+   "id": "p23-0198-ovl",
+   "fajl": "part0198.html",
+   "blok": 5,
+   "od": "<p class=\"bt1_body_text_\" id=\"ji2335\">",
+   "do": "<p class=\"bt1_body_text_\" id=\"ji2341\">— Ali tvoju neću poslati natrag?</p>",
+   "novo": "",
+   "brisi": true
+  },
+  {
+   "id": "p23-0220-ovl",
+   "fajl": "part0220.html",
+   "blok": 3,
+   "od": "<p class=\"bt1_body_text_\" id=\"ji3889\">",
+   "do": "<p class=\"bt1_body_text_\" id=\"ji3894\">Lord maršal Forest priprižurio je oči prema suncu, upijajući pravu toplinu, prvu takvu nakon tko zna koliko mjeseci, kako mu se činilo. „Ne sviđa mi se ovako marširati na čistini.”</p>",
+   "novo": "",
+   "brisi": true
   }
  ]
 }
