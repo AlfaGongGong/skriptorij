@@ -416,3 +416,15 @@ def oznaka_bloka(rez) -> str:
     if isinstance(score, (int, float)) and score < OZNAKA_LOS_ISPOD:
         return "los"
     return "sumnjiv"
+
+
+# P2.1: omotac - prvo odbaci prijave koje model sam opovrgava u objasnjenju
+_normaliziraj_greske_orig = normaliziraj_greske
+
+
+def normaliziraj_greske(sirove, en_plain: str, hr_plain: str) -> tuple:
+    if isinstance(sirove, list) and all(isinstance(g, dict) for g in sirove):
+        filt = _filtriraj_predomisljanje(sirove)
+        out, odb = _normaliziraj_greske_orig(filt, en_plain, hr_plain)
+        return out, odb + (len(sirove) - len(filt))
+    return _normaliziraj_greske_orig(sirove, en_plain, hr_plain)
