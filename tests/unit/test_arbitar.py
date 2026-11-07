@@ -65,3 +65,20 @@ def test_parsiraj_odgovor():
     assert parsiraj_odgovor('{"presuda": "nesto"}') is None
     assert parsiraj_odgovor("nema jsona") is None
     assert parsiraj_odgovor('{"presuda": "lazni_alarm"}')["zamjena"] == ""
+
+
+def test_provjeri_zamjenu_bez_rijecnika_ne_provjerava_nove_rijeci():
+    assert provjeri_zamjenu("zapsala se", "uvukla se", None) == (True, "")
+    assert provjeri_zamjenu("a", "a", None)[0] is False
+
+
+def test_slijepi_parseri():
+    from core.arbitar import parsiraj_provjera, parsiraj_slijepo, parsiraj_zamjena, prompt_slijepo
+    d = parsiraj_slijepo('x {"moj_smisao":"m","presuda":"razlicito","razlog":"r"} y')
+    assert d["presuda"] == "razlicito" and d["moj_smisao"] == "m"
+    assert parsiraj_slijepo('{"presuda":"stvarna_greska"}') is None
+    assert parsiraj_zamjena('{"zamjena":" kolima "}') == {"zamjena": "kolima"}
+    assert parsiraj_zamjena("nema") is None
+    assert parsiraj_provjera('{"vjernije": true, "izmisljene_rijeci": ["x"]}') == {"vjernije": True, "izmisljene": ["x"]}
+    assert parsiraj_provjera('{"vjernije": "da"}') is None
+    assert "verifikator" not in prompt_slijepo("a", "b", "c").lower()

@@ -1,8 +1,8 @@
-"""P2.5.2: dry-run AI arbitra nad kriv_smisao nalazima verifikatora.
+"""P2.5.2b: SLIJEPI dry-run AI arbitra nad kriv_smisao nalazima verifikatora.
 
-NE mijenja .chk ni EPUB. Pise TSV prijedloga i usporedbu sa zlatnim setom.
+Arbitar NE vidi tvrdnju verifikatora. Tri prolaza: slijepa presuda, zamjena (samo za 'razlicito'),
+provjera zamjene (vjernija? izmisljene rijeci?). NE mijenja .chk ni EPUB.
 Upotreba: python tools/arbitar_run.py <knjiga.epub> <ime_skr> <gold_prefix> [max_poziva]
-primjer:  python tools/arbitar_run.py Delacroix.epub Delacroix Delacroix 0
 """
 import asyncio
 import json
@@ -18,7 +18,7 @@ from core import arbitar as A  # noqa: E402
 CKB = Path("/storage/emulated/0/booklyfi_checkpoints")
 DL = Path("/storage/emulated/0/Download")
 SYS = "Odgovaras iskljucivo valjanim JSON objektom, bez dodatnog teksta."
-PRED = {"stvarna_greska": "stvarna", "lazni_alarm": "lazni", "nesigurno": "sumnjivo"}
+MAP = {"ekvivalentno": "lazni", "razlicito": "stvarna", "nesigurno": "sumnjivo"}
 
 
 def ucitaj_nalaze(ck):
@@ -45,39 +45,62 @@ def cist(s):
     return str(s or "").replace("\t", " ").replace("\n", " ").strip()
 
 
-async def jedan(engine, sem, n, rj, ck, maxp, brojac):
+async def zovi(engine, sem, prompt, br, blok):
+    async with sem:
+        r = await engine._call_ai_engine(prompt, br, uloga="VERIFIER", filename=blok,
+                                         sys_override=SYS, tip_bloka="naracija")
+    txt = r[0] if isinstance(r, (tuple, list)) and r else r
+    return txt if isinstance(txt, str) else ""
+
+
+async def jedan(engine, sem, n, ck, maxp, brojac):
     g = n["g"]
+    en = g.get("en_fragment") or ""
     hr = (g.get("hr_fragment") or "").strip()
     raw = raw_bloka(ck, n["blok"])
-    res = {"br": n["br"], "blok": n["blok"], "en": g.get("en_fragment") or "", "hr": hr,
-           "izvor": "ai", "presuda": "", "zamjena": "", "razlog": "", "sigurna": "", "nadjen": ""}
+    res = {"br": n["br"], "blok": n["blok"], "en": en, "hr": hr, "izvor": "ai",
+           "presuda": "?", "smisao": "", "zamjena": "", "razlog": "", "sigurna": "", "nadjen": ""}
     ok, razlog = A.predfilter(g)
     if not ok:
-        res.update(izvor="predfilter", presuda="lazni_alarm", razlog=razlog)
+        res.update(izvor="predfilter", presuda="lazni", razlog=razlog)
         return res
     if maxp and brojac[0] >= maxp:
-        res.update(izvor="preskoceno", presuda="?", razlog="max_poziva")
+        res.update(izvor="preskoceno", razlog="max_poziva")
         return res
     brojac[0] += 1
-    prompt = A.napravi_prompt(g.get("en_fragment"), hr, g.get("objasnjenje"),
-                              A.kontekst_oko(A._plain(raw), hr))
+    ctx = A.kontekst_oko(A._plain(raw), hr)
     try:
-        async with sem:
-            r = await engine._call_ai_engine(prompt, n["br"], uloga="VERIFIER", filename=n["blok"],
-                                             sys_override=SYS, tip_bloka="naracija")
-        txt = r[0] if isinstance(r, (tuple, list)) and r else r
-        d = A.parsiraj_odgovor(txt if isinstance(txt, str) else "")
-    except Exception as e:
-        res.update(presuda="?", razlog="greska:" + type(e).__name__ + ":" + str(e)[:80])
-        return res
-    if not d:
-        res.update(presuda="?", razlog="neparsirano:" + cist(txt)[:80])
-        return res
-    res.update(presuda=d["presuda"], zamjena=d["zamjena"], razlog=d["razlog"])
-    if d["presuda"] == "stvarna_greska":
-        s_ok, s_r = A.provjeri_zamjenu(hr, d["zamjena"], rj)
-        res["sigurna"] = "da" if s_ok else "ne:" + s_r
+        t1 = await zovi(engine, sem, A.prompt_slijepo(en, hr, ctx), n["br"], n["blok"])
+        d1 = A.parsiraj_slijepo(t1)
+        if not d1:
+            res["razlog"] = "neparsirano:" + cist(t1)[:80]
+            return res
+        res.update(presuda=MAP[d1["presuda"]], smisao=d1["moj_smisao"], razlog=d1["razlog"])
+        if d1["presuda"] != "razlicito":
+            return res
         res["nadjen"] = "da" if A.nadji_u_raw(raw, hr) is not None else "ne"
+        t2 = await zovi(engine, sem, A.prompt_zamjena(en, hr, ctx, d1["moj_smisao"]), n["br"], n["blok"])
+        d2 = A.parsiraj_zamjena(t2)
+        if not d2 or not d2["zamjena"]:
+            res["sigurna"] = "ne:bez_zamjene"
+            return res
+        res["zamjena"] = d2["zamjena"]
+        s_ok, s_r = A.provjeri_zamjenu(hr, d2["zamjena"], None)
+        if not s_ok:
+            res["sigurna"] = "ne:" + s_r
+            return res
+        t3 = await zovi(engine, sem, A.prompt_provjera(en, hr, d2["zamjena"]), n["br"], n["blok"])
+        d3 = A.parsiraj_provjera(t3)
+        if not d3:
+            res["sigurna"] = "ne:provjera_neparsirana"
+        elif not d3["vjernije"]:
+            res["sigurna"] = "ne:nije_vjernije"
+        elif d3["izmisljene"]:
+            res["sigurna"] = "ne:izmisljene:" + ",".join(d3["izmisljene"][:3])
+        else:
+            res["sigurna"] = "da"
+    except Exception as e:
+        res["razlog"] = "greska:" + type(e).__name__ + ":" + str(e)[:80]
     return res
 
 
@@ -89,50 +112,53 @@ async def main(epub, ime_skr, prefix, maxp):
         print("STOP: engine work_dir =", engine.work_dir, "| ocekivano", ck.parent)
         return 2
     nalazi = ucitaj_nalaze(ck)
-    rj = A.rijecnik_knjige(ck)
-    print("nalaza kriv_smisao:", len(nalazi), "| rijecnik:", len(rj), "rijeci")
+    print("nalaza kriv_smisao:", len(nalazi))
     sem = asyncio.Semaphore(3)
     brojac = [0]
     t0 = time.time()
-    rez = await asyncio.gather(*[jedan(engine, sem, n, rj, ck, maxp, brojac) for n in nalazi])
-    print("AI poziva: %d | trajanje %.0f s" % (brojac[0], time.time() - t0))
+    rez = await asyncio.gather(*[jedan(engine, sem, n, ck, maxp, brojac) for n in nalazi])
+    print("slijepih presuda (AI): %d | trajanje %.0f s" % (brojac[0], time.time() - t0))
 
     gold = json.load(open(Path(__file__).resolve().parent.parent / "data/arbitar_zlatni_set.json",
                           encoding="utf-8"))["presude"]
-    tsv = DL / ("arbitar_dryrun_%s_%s.tsv" % (prefix, os.environ.get("TS", "x")))
-    kol = ["br", "gold", "pred", "izvor", "presuda", "sigurna", "nadjen", "en", "hr", "zamjena", "razlog", "blok"]
+    tsv = DL / ("arbitar_slijepi_%s_%s.tsv" % (prefix, os.environ.get("TS", "x")))
+    kol = ["br", "gold", "presuda", "izvor", "sigurna", "nadjen", "en", "hr", "zamjena", "smisao", "razlog", "blok"]
     with open(tsv, "w", encoding="utf-8") as f:
         f.write("\t".join(kol) + "\n")
         for r in rez:
             r["gold"] = gold.get("%s.%d" % (prefix, r["br"]), "?")
-            r["pred"] = PRED.get(r["presuda"], "?")
             f.write("\t".join(cist(r.get(c)) for c in kol) + "\n")
     print("TSV:", tsv)
 
-    m = Counter((r["gold"], r["pred"]) for r in rez)
-    print("\n== zlatni (red) x arbitar (stupac) ==")
+    m = Counter((r["gold"], r["presuda"]) for r in rez)
     stup = ["stvarna", "sumnjivo", "lazni", "?"]
+    print("\n== zlatni (red) x arbitar (stupac) ==")
     print("%-10s" % "" + "".join("%10s" % s for s in stup))
     for gl in ("stvarna", "sumnjivo", "lazni"):
         print("%-10s" % gl + "".join("%10d" % m[(gl, s)] for s in stup))
     gs = sum(1 for r in rez if r["gold"] == "stvarna")
-    ps = [r for r in rez if r["pred"] == "stvarna"]
-    pogodak = sum(1 for r in ps if r["gold"] == "stvarna")
+    ps = [r for r in rez if r["presuda"] == "stvarna"]
+    pog = sum(1 for r in ps if r["gold"] == "stvarna")
     opasni = [r for r in ps if r["gold"] == "lazni"]
     prim = [r for r in ps if r["sigurna"] == "da" and r["nadjen"] == "da"]
-    prim_opasni = [r for r in prim if r["gold"] == "lazni"]
-    print("\nzlatnih stvarnih: %d | arbitar kaze stvarna: %d | od toga pogodak: %d" % (gs, len(ps), pogodak))
-    print("recall stvarnih: %.0f%% | preciznost: %.0f%%" % (
-        100.0 * pogodak / gs if gs else 0, 100.0 * pogodak / len(ps) if ps else 0))
-    print("OPASNI (arbitar: stvarna, zlatni: lazni): %d" % len(opasni))
-    print("zamjena primjenjiva (sigurna + fragment 1x): %d | od toga opasnih: %d" % (len(prim), len(prim_opasni)))
-    print("razlozi odbijene zamjene:", dict(Counter(r["sigurna"] for r in ps if r["sigurna"] != "da")))
+    prim_op = [r for r in prim if r["gold"] == "lazni"]
+    print("\nzlatnih stvarnih: %d | arbitar kaze stvarna: %d | pogodak: %d" % (gs, len(ps), pog))
+    print("recall: %.0f%% | preciznost: %.0f%% (prosli put 95%% / 42%%)" % (
+        100.0 * pog / gs if gs else 0, 100.0 * pog / len(ps) if ps else 0))
+    print("OPASNI (arbitar stvarna, zlatni lazni): %d | primjenjivih zamjena: %d | od toga opasnih: %d" % (
+        len(opasni), len(prim), len(prim_op)))
+    print("odbijene zamjene:", dict(Counter(r["sigurna"].split(":")[0] + ":" + (r["sigurna"].split(":")[1] if ":" in r["sigurna"] else "")
+                                         for r in ps if r["sigurna"] != "da")))
     print("\n== primjenjive zamjene (staro -> novo) ==")
     for r in prim:
         print("  #%d [%s] %s -> %s" % (r["br"], r["gold"], r["hr"][:45], r["zamjena"][:45]))
     print("\n== OPASNI ==")
     for r in opasni:
-        print("  #%d %s | %s | %s" % (r["br"], r["hr"][:40], r["zamjena"][:40], r["razlog"][:80]))
+        print("  #%d %s | %s | %s" % (r["br"], r["hr"][:35], r["zamjena"][:35], r["razlog"][:70]))
+    print("\n== propusteni (zlatni stvarna, arbitar nije) ==")
+    for r in rez:
+        if r["gold"] == "stvarna" and r["presuda"] != "stvarna":
+            print("  #%d [%s] %s | %s" % (r["br"], r["presuda"], r["hr"][:40], r["razlog"][:70]))
     return 0
 
 

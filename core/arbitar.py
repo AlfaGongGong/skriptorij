@@ -89,9 +89,10 @@ def provjeri_zamjenu(fragment, zamjena, rijecnik):
     r = len(z) / max(1, len(f))
     if r < 0.4 or r > 2.5:
         return False, "duljina_%.1f" % r
-    nr = nove_rijeci(z, f, rijecnik)
-    if nr:
-        return False, "nova_rijec:" + ",".join(nr[:4])
+    if rijecnik is not None:
+        nr = nove_rijeci(z, f, rijecnik)
+        if nr:
+            return False, "nova_rijec:" + ",".join(nr[:4])
     return True, ""
 
 
@@ -127,3 +128,71 @@ def parsiraj_odgovor(txt):
     return {"presuda": d["presuda"],
             "zamjena": str(d.get("zamjena") or "").strip(),
             "razlog": str(d.get("razlog") or "").strip()}
+
+
+# ── P2.5.2b: slijepa arbitraza (arbitar NE vidi tvrdnju verifikatora) ────────
+SLIJEPE = ("ekvivalentno", "razlicito", "nesigurno")
+
+
+def _json(txt):
+    m = re.search(r"\{.*\}", txt or "", flags=re.S)
+    if not m:
+        return None
+    try:
+        d = json.loads(m.group(0))
+    except (ValueError, TypeError):
+        return None
+    return d if isinstance(d, dict) else None
+
+
+def prompt_slijepo(en, hr, kontekst):
+    return (
+        "Ti si strogi, ali pravedan urednik prijevoda s engleskog na hrvatski.\n\n"
+        "EN fragment: %s\nHR fragment (iz prijevoda): %s\nOkolni HR tekst: %s\n\n" % (en or "(nije naveden)", hr, kontekst)
+        + "Zadatak: 1) kratko napisi sto EN fragment znaci u ovom kontekstu (moj_smisao). "
+        "2) Presudi: \"ekvivalentno\" = HR prenosi isti smisao, makar slobodnije, idiomatski ili uz lokalnu prilagodbu "
+        "(sleng, idiom, psovka prilagodjena hrvatskom); \"razlicito\" = HR mijenja ili gubi smisao, ili je besmisleno; "
+        "\"nesigurno\" = ne mozes procijeniti bez vise konteksta.\n"
+        "Odgovori ISKLJUCIVO JSON-om: {\"moj_smisao\": \"...\", \"presuda\": \"ekvivalentno\"|\"razlicito\"|\"nesigurno\", \"razlog\": \"...\"}"
+    )
+
+
+def parsiraj_slijepo(txt):
+    d = _json(txt)
+    if not d or d.get("presuda") not in SLIJEPE:
+        return None
+    return {"moj_smisao": str(d.get("moj_smisao") or "").strip(),
+            "presuda": d["presuda"], "razlog": str(d.get("razlog") or "").strip()}
+
+
+def prompt_zamjena(en, hr, kontekst, smisao):
+    return (
+        "EN fragment: %s\nZnacenje: %s\nHR fragment koji treba ispraviti: %s\nOkolni HR tekst: %s\n\n" % (en or "", smisao, hr, kontekst)
+        + "Napisi MINIMALNU zamjenu koja zamjenjuje TOCNO HR fragment: isti padez, rod, broj i interpunkcija koji "
+        "odgovaraju okolnom tekstu, bez HTML-a i novih redova, samo pravilne standardne hrvatske rijeci, bez izmisljenih. "
+        "Odgovori ISKLJUCIVO JSON-om: {\"zamjena\": \"...\"}"
+    )
+
+
+def parsiraj_zamjena(txt):
+    d = _json(txt)
+    if not d:
+        return None
+    return {"zamjena": str(d.get("zamjena") or "").strip()}
+
+
+def prompt_provjera(en, staro, novo):
+    return (
+        "EN: %s\nStari HR: %s\nNovi HR: %s\n\n" % (en or "", staro, novo)
+        + "Je li NOVI HR vjerniji izvorniku od starog i je li gramaticki ispravan? Sadrzi li novi HR rijeci koje NISU "
+        "pravilne standardne hrvatske rijeci (izmisljene, krivo tvorene)? "
+        "Odgovori ISKLJUCIVO JSON-om: {\"vjernije\": true|false, \"izmisljene_rijeci\": [\"...\"]}"
+    )
+
+
+def parsiraj_provjera(txt):
+    d = _json(txt)
+    if not d or not isinstance(d.get("vjernije"), bool):
+        return None
+    iz = d.get("izmisljene_rijeci") or []
+    return {"vjernije": d["vjernije"], "izmisljene": [str(x) for x in iz] if isinstance(iz, list) else []}

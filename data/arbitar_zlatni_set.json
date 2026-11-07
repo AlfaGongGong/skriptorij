@@ -1,5 +1,5 @@
 {
- "napomena": "Presude Claude acc-9, 2026-11-07, nad ispisom kriv_smisao_svi_20261107_223000.md. Radna referenca, nije ground truth.",
+ "napomena": "Presude Claude acc-9, 2026-11-07, nad ispisom kriv_smisao_svi_20261107_223000.md. Radna referenca, nije ground truth. Ispravak: Delacroix.1 (nož->šiljilo) je stvarna greška.",
  "presude": {
   "A_Death.1": "lazni",
   "A_Death.2": "stvarna",
@@ -27,7 +27,7 @@
   "A_Death.24": "stvarna",
   "A_Death.25": "lazni",
   "A_Death.26": "lazni",
-  "Delacroix.1": "lazni",
+  "Delacroix.1": "stvarna",
   "Delacroix.2": "stvarna",
   "Delacroix.3": "stvarna",
   "Delacroix.4": "sumnjivo",
