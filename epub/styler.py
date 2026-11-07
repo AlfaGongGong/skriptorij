@@ -419,6 +419,27 @@ def _crtica_navodnik_kraj(soup):
     return n
 
 
+def _ukloni_razmak_pred_zatvarajucim(soup):
+    """2026-11-07: model ponekad zapise razmak/novi red ispred zatvarajuceg ”
+    ('„Uspjesno.\n”'). Uklanja whitespace ispred ” u tekstualnim cvorovima,
+    osim iza crtice (taj slucaj radi _navodnici_popravi). Vraca broj popravaka."""
+    import re as _re_zn
+    from bs4 import NavigableString as _NS_zn
+    _rx = _re_zn.compile("(?<=[^\\s\u2014\u2013])\\s+\u201d")
+    _br = 0
+    for _n in list(soup.find_all(string=True)):
+        if type(_n) is not _NS_zn:
+            continue
+        if any(_q.name in ("script", "style") for _q in _n.parents):
+            continue
+        _st = str(_n)
+        _nv, _k = _rx.subn("\u201d", _st)
+        if _k:
+            _n.replace_with(_nv)
+            _br += _k
+    return _br
+
+
 def _navodnici_popravi(soup):
     """2026-11-06: popravke tipicnih gresaka AI prevoda u navodnicima, nad tekstualnim
     cvorovima (cuva <em>). Samo kad je broj navodnika neparan:
@@ -1819,6 +1840,7 @@ def run_epub_styler(
             from core.tipografija import normaliziraj_soup as _tip_norm
             _apostrof_fix(soup)
             _navodnici_popravi(soup)
+            _ukloni_razmak_pred_zatvarajucim(soup)
             _tip_norm(soup)
             _crtica_navodnik_kraj(soup)
         except Exception:
