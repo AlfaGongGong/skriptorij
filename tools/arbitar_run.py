@@ -41,19 +41,32 @@ def raw_bloka(ck, k):
     return p.read_text("utf-8", "ignore") if p.exists() else ""
 
 
+EN_TEXT = {}
+
+
+def ucitaj_en(epub):
+    """Jednom ucita EN tekst svih Text/*.html iz izvornog EPUB-a (naziv_fajla -> plain tekst)."""
+    import zipfile
+    EN_TEXT.clear()
+    with zipfile.ZipFile(epub) as z:
+        for nm in z.namelist():
+            if nm.endswith((".html", ".xhtml")) and "/Text/" in nm:
+                EN_TEXT[nm.rsplit("/", 1)[1]] = A._plain(z.read(nm).decode("utf-8", "ignore"))
+    print("EN tekstova ucitano:", len(EN_TEXT))
+
+
 def nadji_en(ck, blok, en, n=500):
     """EN odlomak oko en_fragmenta iz izvornih OEBPS/Text/*.html u _skr_ folderu ("" ako nije nadjen)."""
     import re
     frag = re.sub(r"\s+", " ", (en or "").strip())
     if len(frag) < 6:
         return ""
-    tdir = ck.parent.parent / "OEBPS" / "Text"
-    if not tdir.is_dir():
+    if not EN_TEXT:
         return ""
-    prvi = tdir / (blok.split(".html_blok")[0] + ".html")
-    kandidati = ([prvi] if prvi.exists() else []) + [p for p in sorted(tdir.glob("*.html")) if p != prvi]
-    for p in kandidati:
-        t = A._plain(p.read_text("utf-8", "ignore"))
+    prvi = blok.split(".html_blok")[0] + ".html"
+    kandidati = ([prvi] if prvi in EN_TEXT else []) + [k for k in sorted(EN_TEXT) if k != prvi]
+    for k in kandidati:
+        t = EN_TEXT[k]
         for f in (frag, frag.replace("\u2019", "'"), frag.replace("'", "\u2019")):
             i = t.find(f)
             if i >= 0:
@@ -129,6 +142,7 @@ async def jedan(engine, sem, n, ck, maxp, brojac):
 async def main(epub, ime_skr, prefix, maxp):
     from core.engine import SkriptorijAllInOne
     engine = SkriptorijAllInOne(epub, "V10_TURBO", {}, {})
+    ucitaj_en(epub)
     ck = CKB / ("_skr_" + ime_skr) / "checkpoints"
     if Path(engine.work_dir).resolve() != ck.parent.resolve():
         print("STOP: engine work_dir =", engine.work_dir, "| ocekivano", ck.parent)
