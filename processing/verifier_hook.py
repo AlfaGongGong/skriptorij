@@ -60,7 +60,7 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
     if not _dozvoljen():
         return None
     try:
-        from core.verifier import provjeri_blok_async
+        from core.verifier import oznaka_bloka, provjeri_blok_async
 
         _zadnji = {}
 
@@ -89,7 +89,7 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
                 except Exception:
                     logger.exception("[P2.1] quality_verifier.json nečitljiv, počinjem iznova")
                     ex = {}
-            ex[stem_key] = out
+            ex[stem_key] = dict(out, oznaka=oznaka_bloka(res))
             self._atomic_write(p, json.dumps(ex, ensure_ascii=False, indent=2))
         if out["verifier"] == "flags":
             self.log(

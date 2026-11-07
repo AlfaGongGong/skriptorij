@@ -48,7 +48,7 @@ def test_ok(tmp_path, monkeypatch):
     f = _Fake(tmp_path, '{"ok": true, "greske": []}')
     assert _run(f) == {"verifier": "ok"}
     d = json.loads((tmp_path / "quality_verifier.json").read_text("utf-8"))
-    assert d["f_blok_1"] == {"verifier": "ok"}
+    assert d["f_blok_1"] == {"verifier": "ok", "oznaka": "ok"}
 
 
 def test_flags(tmp_path, monkeypatch):
@@ -104,3 +104,22 @@ def test_skip_cuva_kraj_odgovora(tmp_path, monkeypatch):
     v = list(d.values())[0]
     assert v["verifier"] == "skip"
     assert "raw_len" in v and "raw_tail" in v
+
+
+def test_oznaka_u_zapisu_flags_los(tmp_path, monkeypatch):
+    monkeypatch.setenv("BOOKLYFI_VERIFIER", "1")
+    odg = json.dumps({"ok": False, "greske": [{
+        "tip": "negacija", "en_fragment": "did not go", "hr_fragment": "Otišao je",
+        "objasnjenje": "negacija izgubljena"}]})
+    f = _Fake(tmp_path, odg)
+    _run(f)
+    d = json.loads((tmp_path / "quality_verifier.json").read_text("utf-8"))
+    assert d["f_blok_1"]["oznaka"] == "los"
+
+
+def test_oznaka_u_zapisu_skip_neprovjeren(tmp_path, monkeypatch):
+    monkeypatch.setenv("BOOKLYFI_VERIFIER", "1")
+    f = _Fake(tmp_path, greska=RuntimeError("x"))
+    _run(f)
+    d = json.loads((tmp_path / "quality_verifier.json").read_text("utf-8"))
+    assert d["f_blok_1"]["oznaka"] == "neprovjeren"
