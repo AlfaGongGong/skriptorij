@@ -1638,7 +1638,6 @@ def run_epub_styler(
                     and len(_epub_stem) >= 20
                     and (
                         _k_name[:20] == _epub_stem[:20]
-                        or _k_name[-20:] == _epub_stem[-20:]
                     )
                 ):
                     _kandidati.append(_k)

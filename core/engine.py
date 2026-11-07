@@ -87,7 +87,7 @@ class SkriptorijAllInOne:
             # 2. Prefix fuzzy
             for kljuc_len in (30, 25, 20, 15, 10):
                 kljuc = name[:kljuc_len]
-                if len(kljuc) < 8:
+                if len(kljuc) < 20:
                     continue
                 for k in CHECKPOINT_BASE_DIR.glob(f"_skr_*{kljuc}*"):
                     ckpt_k = k / "checkpoints"
@@ -98,13 +98,11 @@ class SkriptorijAllInOne:
                     ):
                         return k
 
-            # 3. Suffix fuzzy
-            parts = name.split("_")
-            for i in range(len(parts) - 1):
-                suffix = "_".join(parts[i:])
-                if len(suffix) < 8:
-                    continue
-                for k in CHECKPOINT_BASE_DIR.glob(f"_skr_*{suffix}*"):
+            # 3. md5 iz imena (suffix fuzzy ukinut: zajednicki "Anna_s_Archive"
+            #    spajao razlicite knjige u isti _skr_)
+            _m5 = re.search(r"[0-9a-f]{32}", name)
+            if _m5:
+                for k in CHECKPOINT_BASE_DIR.glob(f"_skr_*{_m5.group(0)}*"):
                     ckpt_k = k / "checkpoints"
                     txt_k = k / "text"
                     if (
