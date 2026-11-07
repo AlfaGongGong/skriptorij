@@ -1271,6 +1271,21 @@ def _dodaj_naslov(soup, broj, naslov=None):
     body.insert(insert_pos, h1)
 
 
+
+
+def _zavrsava_url_ili_domenom(tekst):
+    """F0.18b izuzetak: blok koji zavrsava URL-om/domenom (npr. stranica 'O autoru')
+    nije prekinut prevod, jer URL nema zavrsnu interpunkciju."""
+    import re as _re_url
+    t = (tekst or "").strip()
+    if not t:
+        return False
+    zadnji = t.split()[-1]
+    return bool(_re_url.search(
+        r"(https?://|www\.)\S+|[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.(com|org|net|info|edu|gov|io|co|hr|ba|rs|me|uk)(/\S*)?$",
+        zadnji, _re_url.IGNORECASE))
+
+
 def run_epub_styler(
     epub_path, output_path=None, fleet=None, log_callback=None, options=None
 ):
@@ -1768,6 +1783,7 @@ def run_epub_styler(
                         _zadnji_tekst
                         and _zadnji_tekst[-1] not in '.!?"\u201c\u201d\u201e\u2014\u2026)\u203a\u00bb:;'
                         and len(_zadnji_tekst.split()) >= 50
+                        and not _zavrsava_url_ili_domenom(_zadnji_tekst)
                     ):
                         _delovi[-1] = _zadnji_html + '\n<p>[[NEPREVEDENO: prekinut prevod]]</p>'
                         _log("   -> PREKINUT: " + _html_name + " (" + str(len(_zadnji_tekst.split())) + "w) zavrsava sa " + repr(_zadnji_tekst[-40:]), "warning")
