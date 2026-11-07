@@ -71,7 +71,7 @@ MAX_TOKENS_MAP = {
     "GLOSAR_UPDATE": 512,
     "SCORER": 256,
     # P2.1: verifier vraca JSON do 10 gresaka; 256 tokena ga sijece
-    "VERIFIER": 1500,
+    "VERIFIER": 2500,
 }
 
 # P2.1: VERIFIER koristi redoslijed provajdera kao SCORER

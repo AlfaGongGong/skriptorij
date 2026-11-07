@@ -94,3 +94,13 @@ def test_limit_verifikacija(tmp_path, monkeypatch):
     _run(f)
     _run(f)
     assert len(f.pozivi) == 1
+
+
+def test_skip_cuva_kraj_odgovora(tmp_path, monkeypatch):
+    monkeypatch.setenv("BOOKLYFI_VERIFIER", "1")
+    f = _Fake(tmp_path, '{"ok": false, "greske": [{"tip": "dodano", "en')
+    _run(f)
+    d = json.loads((tmp_path / "quality_verifier.json").read_text("utf-8"))
+    v = list(d.values())[0]
+    assert v["verifier"] == "skip"
+    assert "raw_len" in v and "raw_tail" in v

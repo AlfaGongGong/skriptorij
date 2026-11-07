@@ -62,14 +62,24 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
     try:
         from core.verifier import provjeri_blok_async
 
+        _zadnji = {}
+
         async def _fleet(prompt, sys_p):
-            return await self._call_ai_engine(
+            _r = await self._call_ai_engine(
                 prompt, chunk_idx, uloga="VERIFIER", filename=file_name,
                 sys_override=sys_p, tip_bloka=tip_bloka,
             )
+            _zadnji["r"] = _r
+            return _r
 
         res = await provjeri_blok_async(original_chunk, finalno, glosar or {}, fleet=_fleet)
         out = sazetak(res)
+        if out.get("verifier") == "skip":
+            _rr = _zadnji.get("r")
+            _raw = _rr[0] if isinstance(_rr, (tuple, list)) and _rr else _rr
+            _raw = _raw if isinstance(_raw, str) else ""
+            out["raw_len"] = len(_raw)
+            out["raw_tail"] = _raw[-160:]
         p = self.checkpoint_dir / "quality_verifier.json"
         with _LOCK:
             ex = {}
