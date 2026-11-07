@@ -264,20 +264,29 @@ def test_oznaka_neprovjeren():
     assert oznaka_bloka({}) == "neprovjeren"
 
 
-def test_oznaka_sumnjiv_jedna_blaga_greska():
+def test_oznaka_kriv_smisao_je_sumnjiv_novo_pravilo():
     from core.verifier import oznaka_bloka
-    assert oznaka_bloka(_rez(["izostavljeno"])) == "sumnjiv"   # score 8.0
+    r = {"provjeren": True, "score": 1.0, "greske": [{"tip": "kriv_smisao"}]}
+    assert oznaka_bloka(r) == "sumnjiv"
 
 
-def test_oznaka_sumnjiv_granica_7():
+def test_oznaka_score_ne_utjece():
     from core.verifier import oznaka_bloka
-    assert oznaka_bloka(_rez(["dodano", "dodano"])) == "sumnjiv"   # score 7.0
+    for sc in (1.0, 6.9, 7.0, 9.5):
+        r = {"provjeren": True, "score": sc, "greske": [{"tip": "kriv_smisao"}]}
+        assert oznaka_bloka(r) == "sumnjiv"
 
 
-def test_oznaka_los_negacija_i_kriv_smisao():
+def test_oznaka_los_negacija_i_broj():
     from core.verifier import oznaka_bloka
-    assert oznaka_bloka(_rez(["negacija"])) == "los"
-    assert oznaka_bloka(_rez(["kriv_smisao"])) == "los"
+    for t in ("negacija", "broj"):
+        r = {"provjeren": True, "score": 9.0, "greske": [{"tip": t}]}
+        assert oznaka_bloka(r) == "los"
+
+
+
+
+
 
 
 def test_oznaka_los_nizak_score():
