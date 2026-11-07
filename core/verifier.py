@@ -100,6 +100,34 @@ if "Fragmenti moraju" in SYS_PROMPT:
     SYS_PROMPT = SYS_PROMPT.replace("Fragmenti moraju", _DODATAK_P21_LAZNI_ALARMI + "Fragmenti moraju", 1)
 
 
+_DODATAK_P21_BEZ_RAZMISLJANJA = (
+    "NE razmisljaj naglas i NE pisi analizu. Prijavi samo greske u koje si SIGURAN; ako nisi siguran ili je prijevod tocan, to NE prijavljuj.\n"
+    "Polje objasnjenje: JEDNA kratka recenica (do 25 rijeci). Svaki par fragmenata prijavi najvise jednom.\n"
+    "Cijeli odgovor mora biti kratak JSON, bez teksta oko njega.\n"
+)
+if "Fragmenti moraju" in SYS_PROMPT:
+    SYS_PROMPT = SYS_PROMPT.replace("Fragmenti moraju", _DODATAK_P21_BEZ_RAZMISLJANJA + "Fragmenti moraju", 1)
+
+_PREDOMISLJANJE = ("prijevod je tocan", "prijevod je točan", "ovo je tocno", "ovo je točno",
+                   "to je u redu", "cekaj", "čekaj", "provjeravam", "provjerajem", "provjerimi",
+                   "nije greska", "nije greška", "tocan prijevod", "točan prijevod")
+
+
+def _filtriraj_predomisljanje(greske: list) -> list:
+    """Odbaci prijave ciji tekst opovrgava samu prijavu; makni duplikate."""
+    vidjeno, out = set(), []
+    for g in greske or []:
+        ob = str((g or {}).get("objasnjenje", "")).lower()
+        if any(m in ob for m in _PREDOMISLJANJE):
+            continue
+        kljuc = (str(g.get("en_fragment", "")).strip().lower(), str(g.get("hr_fragment", "")).strip().lower())
+        if kljuc in vidjeno:
+            continue
+        vidjeno.add(kljuc)
+        out.append(g)
+    return out
+
+
 def _plain(t) -> str:
     """HTML -> plain; blok-tagovi postaju prelom reda (kao metrics._plain_za_provjeru)."""
     t = re.sub(r"</?(?:p|div|br|li|h[1-6]|section|blockquote)\b[^>]*>", "\n",
