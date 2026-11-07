@@ -77,6 +77,8 @@ SYS_PROMPT = (
     "- ostalo: druga ozbiljna greska smisla\n\n"
     "NE prijavljuj: stilske razlike, slobodniji ali vjeran prijevod, redoslijed "
     "rijeci, sinonime, interpunkciju, tipografiju, razlike u duljini rijecnika.\n"
+    "NE prijavljuj ni rod (muski/zenski) osoba i stvari: engleski ga ne odredjuje, "
+    "pa ga ne mozes provjeriti.\n"
     "Fragmenti moraju biti DOSLOVNO kopirani iz teksta (kratki, do ~15 rijeci). "
     "Kod 'izostavljeno' je hr_fragment prazan, kod 'dodano' je en_fragment prazan. "
     "Najvise 8 gresaka, najvaznije prve.\n\n"
