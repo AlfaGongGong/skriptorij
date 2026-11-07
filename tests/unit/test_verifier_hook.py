@@ -73,7 +73,7 @@ def test_uloga_i_sys_prompt(tmp_path, monkeypatch):
     monkeypatch.setenv("BOOKLYFI_VERIFIER", "1")
     f = _Fake(tmp_path, '{"ok": true, "greske": []}')
     _run(f)
-    assert f.pozivi[0]["uloga"] == "SCORER"
+    assert f.pozivi[0]["uloga"] == "VERIFIER"
     assert f.pozivi[0]["sys"]
 
 

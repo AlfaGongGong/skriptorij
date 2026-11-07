@@ -43,7 +43,7 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
 
         async def _fleet(prompt, sys_p):
             return await self._call_ai_engine(
-                prompt, chunk_idx, uloga="SCORER", filename=file_name,
+                prompt, chunk_idx, uloga="VERIFIER", filename=file_name,
                 sys_override=sys_p, tip_bloka=tip_bloka,
             )
 

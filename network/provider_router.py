@@ -54,6 +54,7 @@ TEMP_MAP = {
     "CHAPTER_SUMMARY": 0.30,
     "GLOSAR_UPDATE": 0.10,
     "SCORER": 0.05,
+    "VERIFIER": 0.05,
 }
 
 MAX_TOKENS_MAP = {
@@ -69,7 +70,12 @@ MAX_TOKENS_MAP = {
     "CHAPTER_SUMMARY": 512,
     "GLOSAR_UPDATE": 512,
     "SCORER": 256,
+    # P2.1: verifier vraca JSON do 10 gresaka; 256 tokena ga sijece
+    "VERIFIER": 1500,
 }
+
+# P2.1: VERIFIER koristi redoslijed provajdera kao SCORER
+_PRIO_ALIAS = {"VERIFIER": "SCORER"}
 
 _MODEL_TUNING_BY_ID = {
     "gemini-3.5-flash": {
@@ -320,7 +326,7 @@ async def _call_ai_engine(
 
             sys_c = QUALITY_SCORER_SYS
 
-    preferred = PROVIDER_PRIORITY.get(uloga, [])
+    preferred = PROVIDER_PRIORITY.get(_PRIO_ALIAS.get(uloga, uloga), [])
     ordered = [p for p in preferred if p in svi_upper]
     for p in svi_upper:
         if p not in ordered:
