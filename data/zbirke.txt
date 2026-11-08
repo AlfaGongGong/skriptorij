@@ -1,0 +1,3 @@
+# Zbirke/antologije bez jednog autorskog glasa (jedan izraz po retku; trazi se u naslovu i imenu fajla)
+unbound
+unfettered

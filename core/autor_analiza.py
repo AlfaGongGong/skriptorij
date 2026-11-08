@@ -191,6 +191,19 @@ def napravi_prompt(profil: dict) -> str:
 
 
 def analiziraj_knjigu(epub_path: str, max_znakova: int = 30000) -> dict:
+    """Zbirke (vise autora) nemaju jedan autorski glas: vraca {"greska": ...}, pozivatelji preskacu profil."""
+    try:
+        from core.zbirka import je_zbirka
+        zb, razlog = je_zbirka(epub_path)
+    except Exception as e:
+        print("[autor-analiza] provjera zbirke nije uspjela:", repr(e))
+        zb, razlog = False, ""
+    if zb:
+        return {"greska": "zbirka: " + razlog}
+    return _analiziraj_knjigu_orig(epub_path, max_znakova)
+
+
+def _analiziraj_knjigu_orig(epub_path: str, max_znakova: int = 30000) -> dict:
     """
     Analizira stil iz EPUB-a.
     Uzima prvih max_znakova iz prvih 5 poglavlja.
