@@ -226,6 +226,15 @@ def pokreni(knjiga, izvor, ck, dry=False):
         elif Path(tmp).exists():
             Path(tmp).unlink()
 
+        upd(korak="popravci")
+        try:
+            from core import epub_popravci
+            pst = epub_popravci.popravi(styled)
+            log("Popravci nasljedjenih gresaka: " + json.dumps(pst, ensure_ascii=False))
+            upd(popravci=pst)
+        except Exception as e:
+            log("Popravci nisu uspjeli: " + repr(e))
+
         upd(korak="provjera")
         try:
             upd(provjera=provjeri_u_epubu(styled, ispravke))
