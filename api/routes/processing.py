@@ -1334,6 +1334,9 @@ def _p26_zadnja_knjiga():
 
 def _p26_knjiga():
     book = SHARED_STATS.get("current_file", "")
+    if str(book).lower().endswith((".html", ".xhtml", ".htm")):
+        # current_file je ponekad ime poglavlja, ne knjige
+        book = str(SHARED_STATS.get("book_name", "")).replace(" ", "_")
     if not book:
         lb = Path(PROJECTS_ROOT) / "last_book.json"
         if lb.exists():
