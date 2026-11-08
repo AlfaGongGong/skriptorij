@@ -1346,7 +1346,28 @@ def _p26_knjiga():
     st = Path(book).stem
     st = re.sub(r"^(?:PREVEDENO_)+", "", st, flags=re.IGNORECASE)
     st = re.sub(r"(?:_PREVEDENO|_STYLED)+$", "", st, flags=re.IGNORECASE)
-    return re.sub(r"[^a-zA-Z0-9_-]", "", st)
+    clean = re.sub(r"[^a-zA-Z0-9_-]", "", st)
+    base = Path(CHECKPOINT_BASE_DIR)
+    if (base / f"_skr_{clean}" / "checkpoints").exists():
+        return clean
+    # P2.2 zaobilaz: ime EPUB-a ne mora odgovarati imenu _skr_ mape.
+    # Trazi mapu s verifierom koja dijeli rijec (4+ slova) s imenom knjige; _STARO_ mape se preskacu.
+    tok = {t for t in clean.lower().split("_") if len(t) >= 4}
+    kand = []
+    try:
+        for q in base.glob("_skr_*/checkpoints/quality_verifier.json"):
+            mapa = q.parent.parent.name
+            if "_staro_" in mapa.lower():
+                continue
+            if tok & {t for t in mapa[len("_skr_"):].lower().split("_") if len(t) >= 4}:
+                kand.append(q)
+        kand.sort(key=lambda q: q.stat().st_mtime, reverse=True)
+    except OSError as e:
+        print("[P2.6] trazenje mape po imenu nije uspjelo:", repr(e))
+        kand = []
+    if kand:
+        return re.sub(r"[^a-zA-Z0-9_-]", "", kand[0].parent.parent.name[len("_skr_"):])
+    return clean
 
 
 def _p26_en_tekstovi(clean):
