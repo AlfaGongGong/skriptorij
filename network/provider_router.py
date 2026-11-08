@@ -698,6 +698,18 @@ def _score_model(
     return score
 
 
+def _rang_providera(provider: str, uloga: str, health: float) -> int:
+    """P2.7: mjesto providera u PROVIDER_PRIORITY za ulogu (0 = prvi).
+    Bez popisa za ulogu svi imaju isti rang (staro ponasanje). Provider sa
+    zdravljem < 0.5 ide na kraj, da fallback preuzme kad zapne."""
+    u = (uloga or "").upper()
+    pref = PROVIDER_PRIORITY.get(_PRIO_ALIAS.get(u, u), [])
+    p = (provider or "").upper()
+    if not pref or p not in pref or health < 0.5:
+        return len(pref)
+    return pref.index(p)
+
+
 class ProviderRouterV2:
     """Model-aware router koji bira optimalni model za svaki zadatak."""
 
@@ -791,7 +803,9 @@ class ProviderRouterV2:
             )
             return None
 
-        kandidati.sort(key=lambda x: x[0], reverse=True)
+        kandidati.sort(
+            key=lambda x: (_rang_providera(x[2].provider, uloga, self.get_health_score(x[2].provider)), -x[0])
+        )
         best_score, best_ime, best_profil = kandidati[0]
 
         api_key = self._get_kljuc(best_profil.provider)
@@ -824,7 +838,9 @@ class ProviderRouterV2:
                 continue
             health = self.get_health_score(profil.provider)
             result.append((score * health, ime, profil))
-        result.sort(key=lambda x: x[0], reverse=True)
+        result.sort(
+            key=lambda x: (_rang_providera(x[2].provider, uloga, self.get_health_score(x[2].provider)), -x[0])
+        )
         return result
 
 
