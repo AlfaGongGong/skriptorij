@@ -1501,3 +1501,56 @@ def review_prevedi():
     if not novo:
         return jsonify({"error": "Model nije vratio upotrebljiv prijedlog. Pokušaj ponovo ili ostavi staro."}), 502
     return jsonify({"prijedlog": novo})
+
+
+
+# ── P2.6e zavrsi: primijeni odluke s kartica -> slozi EPUB -> kapija ─────────
+def _p26_izvorni_epub():
+    """Izvorni (EN) EPUB aktivne knjige u ulaznoj mapi ili None."""
+    book = SHARED_STATS.get("current_file", "")
+    if not book:
+        lb = Path(PROJECTS_ROOT) / "last_book.json"
+        if lb.exists():
+            try:
+                book = json.loads(lb.read_text("utf-8")).get("last_book", "")
+            except Exception as e:
+                print("[P2.6e] last_book.json nečitljiv:", repr(e))
+    if not book:
+        return None
+    p = Path(INPUT_DIR) / book
+    return p if p.exists() else None
+
+
+@bp.route("/api/review/zavrsi", methods=["POST"])
+def review_zavrsi():
+    """Primjenjuje odluke s kartica na .chk, slaze EPUB i pokrece kapiju.
+    {"dry": true}: samo broji ispravke (ne mijenja nista). Inace pokrece pozadinski tok (202). Uvijek JSON."""
+    from flask import request as _rq
+
+    from core import zavrsi as _z
+    d = _rq.get_json(silent=True) or {}
+    dry = bool(d.get("dry"))
+    try:
+        clean = _p26_knjiga()
+        if not clean:
+            return jsonify({"error": "Nema aktivne knjige."}), 404
+        ck = CHECKPOINT_BASE_DIR / f"_skr_{clean}" / "checkpoints"
+        if not ck.exists():
+            return jsonify({"error": "Nema checkpoint foldera za ovu knjigu."}), 404
+        izvor = _p26_izvorni_epub()
+        if dry:
+            return jsonify(_z.pokreni(clean, izvor, ck, dry=True))
+        if izvor is None:
+            return jsonify({"error": "Izvorni EPUB nije u ulaznoj mapi."}), 404
+        if not _z.zapocni(clean, str(izvor), ck):
+            return jsonify({"error": "Završi je već u tijeku.", "status": _z.status()}), 409
+        return jsonify({"ok": True, "poruka": "Pokrenuto.", "status": _z.status()}), 202
+    except Exception as e:
+        print("[P2.6e] review_zavrsi greška:", repr(e))
+        return jsonify({"error": str(e)}), 500
+
+
+@bp.route("/api/review/zavrsi/status", methods=["GET"])
+def review_zavrsi_status():
+    from core import zavrsi as _z
+    return jsonify(_z.status())

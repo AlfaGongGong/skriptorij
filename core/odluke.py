@@ -87,3 +87,9 @@ def statistika():
 def odlucen(knjiga, en, hr):
     """True ako je za ovu knjigu vec donesena odluka o ovom paru (kartica se ne prikazuje ponovo)."""
     return (knjiga, kljuc(en, hr)) in _stanje()
+
+
+def za_primjenu(knjiga):
+    """Zadnje odluke 'prevedi_ponovo' s upisanim novim prijevodom za ovu knjigu (za /api/review/zavrsi)."""
+    return [z for (k, _), z in _stanje().items()
+            if k == knjiga and z.get("odluka") == "prevedi_ponovo" and str(z.get("novo", "")).strip()]
