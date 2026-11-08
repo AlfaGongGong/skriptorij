@@ -93,3 +93,46 @@ def za_primjenu(knjiga):
     """Zadnje odluke 'prevedi_ponovo' s upisanim novim prijevodom za ovu knjigu (za /api/review/zavrsi)."""
     return [z for (k, _), z in _stanje().items()
             if k == knjiga and z.get("odluka") == "prevedi_ponovo" and str(z.get("novo", "")).strip()]
+
+
+def _n(s):
+    import html as _html
+    s = _html.unescape(re.sub(r"<[^>]+>", " ", str(s or "")))
+    s = s.replace("\u2019", "'").replace("\u2018", "'")
+    return re.sub(r"\s+", " ", s).strip().lower()
+
+
+def podsjetnici(en_tekst, max_n=3, min_en=12):
+    """Ispravci iz odluka 'prevedi_ponovo' (sve knjige) ciji se EN fragment (>= min_en znakova)
+    pojavljuje u en_tekst (HTML ili tekst). Najnoviji prvi, jedinstveni po (EN, novo)."""
+    t = _n(en_tekst)
+    if not t:
+        return []
+    vidjeno, out = set(), []
+    for z in sorted(_stanje().values(), key=lambda x: x.get("ts", ""), reverse=True):
+        if z.get("odluka") != "prevedi_ponovo":
+            continue
+        en = str(z.get("en", "")).strip()
+        hr = str(z.get("hr", "")).strip()
+        novo = str(z.get("novo", "")).strip()
+        if len(en) < min_en or not hr or not novo or hr == novo:
+            continue
+        k = (_n(en), _n(novo))
+        if k in vidjeno or _n(en) not in t:
+            continue
+        vidjeno.add(k)
+        out.append({"en": en, "hr": hr, "novo": novo})
+        if len(out) >= max_n:
+            break
+    return out
+
+
+def formatiraj_podsjetnike(en_tekst, max_n=3):
+    """Tekst za ubacivanje u sistemski prompt prevoditelja ('' ako nema podsjetnika)."""
+    p = podsjetnici(en_tekst, max_n)
+    if not p:
+        return ""
+    r = ["PRIJEVODNE ISPRAVKE (korisnik je vec odlucio; ako se ovaj engleski izraz pojavi, koristi ispravni oblik):"]
+    for x in p:
+        r.append(f'- EN: "{x["en"]}" | NE: "{x["hr"]}" | DA: "{x["novo"]}"')
+    return "\n".join(r)

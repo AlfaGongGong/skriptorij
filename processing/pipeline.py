@@ -1468,6 +1468,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     fusion_sys += "\n" + fs_text
             except Exception:
                 logger.exception("[C1_http] pipeline.py:1256 Exception")
+        # P2.6h: ispravci s kartica revizije za fragmente koji se pojavljuju u ovom bloku
+        try:
+            from core.odluke import formatiraj_podsjetnike
+            _pods = formatiraj_podsjetnike(chunk)
+            if _pods:
+                fusion_sys += "\n" + _pods
+        except Exception:
+            logger.exception("[P2.6h] podsjetnici nisu ubaceni")
         p_fusion = f"Engleski tekst za prevod:\n{chunk}"
         raw_fusion, prov1 = await self._call_ai_engine(
             p_fusion,
