@@ -128,6 +128,7 @@ var zTimer = null;
 function zPrikazi(s) {
   var b = el("z-status"); b.style.display = "block";
   var r = [];
+  if (s.knjiga) r.push("Knjiga: " + s.knjiga);
   r.push("Stanje: " + (s.stanje || "?") + (s.korak ? " (" + s.korak + ")" : ""));
   if (s.ukupno !== undefined) {
     r.push("Odluka za primjenu: " + s.ukupno + (s.ispravke ? " | uspjelo=" + s.ispravke.ok + " već=" + s.ispravke.vec + " nije=" + s.ispravke.fail : ""));

@@ -1318,6 +1318,20 @@ _P26_EN_CACHE = {}
 _P26_ORIGINALI = Path("/storage/emulated/0/Books/MoonReader/original")
 
 
+def _p26_zadnja_knjiga():
+    """Kad nema aktivne knjige (npr. restart servera): _skr_ folder s najnovijim quality_verifier.json."""
+    try:
+        c = sorted(Path(CHECKPOINT_BASE_DIR).glob("_skr_*/checkpoints/quality_verifier.json"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError as e:
+        print("[P2.6] trazenje zadnje knjige nije uspjelo:", repr(e))
+        return ""
+    if not c:
+        return ""
+    ime = c[0].parent.parent.name[len("_skr_"):]
+    return re.sub(r"[^a-zA-Z0-9_-]", "", ime)
+
+
 def _p26_knjiga():
     book = SHARED_STATS.get("current_file", "")
     if not book:
@@ -1328,7 +1342,7 @@ def _p26_knjiga():
             except Exception as e:
                 print("[P2.6] last_book.json nečitljiv:", repr(e))
     if not book or not re.search(r"[A-Za-z0-9]", str(book)):
-        return ""
+        return _p26_zadnja_knjiga()
     st = Path(book).stem
     st = re.sub(r"^(?:PREVEDENO_)+", "", st, flags=re.IGNORECASE)
     st = re.sub(r"(?:_PREVEDENO|_STYLED)+$", "", st, flags=re.IGNORECASE)
@@ -1461,9 +1475,16 @@ def _p26_ai_prevedi(prompt, br, blok):
         lb = Path(PROJECTS_ROOT) / "last_book.json"
         if lb.exists():
             book = json.loads(lb.read_text("utf-8")).get("last_book", "")
-    full = Path(INPUT_DIR) / book if book else None
-    if not full or not full.exists():
-        raise RuntimeError(f"Knjiga nije u ulaznoj mapi: {book or '?'}")
+    import shutil as _sh
+    import tempfile as _tf
+    clean = _p26_knjiga()
+    izvor = _p26_izvorni_epub()
+    if not izvor or not clean:
+        raise RuntimeError("Izvorni EPUB aktivne knjige nije pronađen (INPUT_DIR, original/, Download/).")
+    # kopija pod imenom <knjiga>.epub: engine izvodi _skr_ folder iz imena izvora (bez zalutalih foldera)
+    _tmpd = Path(_tf.mkdtemp(prefix="p26ai_"))
+    full = _tmpd / (clean + ".epub")
+    _sh.copy2(izvor, full)
     engine = SkriptorijAllInOne(str(full), "V10_TURBO", {}, {})
 
     async def _zovi():
@@ -1472,7 +1493,10 @@ def _p26_ai_prevedi(prompt, br, blok):
         txt = r[0] if isinstance(r, (tuple, list)) and r else r
         return txt if isinstance(txt, str) else ""
 
-    return asyncio.run(_zovi())
+    try:
+        return asyncio.run(_zovi())
+    finally:
+        _sh.rmtree(_tmpd, ignore_errors=True)
 
 
 @bp.route("/api/review/prevedi", methods=["POST"])
