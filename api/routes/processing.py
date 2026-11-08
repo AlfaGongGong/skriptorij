@@ -1505,8 +1505,12 @@ def review_prevedi():
 
 
 # ── P2.6e zavrsi: primijeni odluke s kartica -> slozi EPUB -> kapija ─────────
+_P26_DOWNLOAD = Path("/storage/emulated/0/Download")
+
+
 def _p26_izvorni_epub():
-    """Izvorni (EN) EPUB aktivne knjige u ulaznoj mapi ili None."""
+    """Izvorni (EN) EPUB aktivne knjige: 1) INPUT_DIR/current_file, 2) ime == knjiga ili sve rijeci iz imena
+    u INPUT_DIR, original/ i Download/ (bez PREVEDENO/STYLED/styled_bak). None ako ga nema."""
     book = SHARED_STATS.get("current_file", "")
     if not book:
         lb = Path(PROJECTS_ROOT) / "last_book.json"
@@ -1515,10 +1519,34 @@ def _p26_izvorni_epub():
                 book = json.loads(lb.read_text("utf-8")).get("last_book", "")
             except Exception as e:
                 print("[P2.6e] last_book.json nečitljiv:", repr(e))
-    if not book:
+    if book:
+        p = Path(INPUT_DIR) / book
+        if p.exists():
+            return p
+    clean = _p26_knjiga()
+    if not clean:
         return None
-    p = Path(INPUT_DIR) / book
-    return p if p.exists() else None
+    tok = [t for t in clean.lower().split("_") if t]
+    kand = []
+    for di, d in enumerate((Path(INPUT_DIR), _P26_ORIGINALI, _P26_DOWNLOAD)):
+        if not d.exists():
+            continue
+        for f in d.glob("*.epub"):
+            n = f.name.lower()
+            if any(x in n for x in ("prevedeno", "styled")):
+                continue
+            st = re.sub(r"[^a-zA-Z0-9_-]", "", f.stem)
+            if st == clean:
+                skor = 0
+            elif tok and all(t in n for t in tok):
+                skor = 1
+            else:
+                continue
+            kand.append((skor, di, -f.stat().st_mtime, f))
+    if not kand:
+        return None
+    kand.sort(key=lambda x: x[:3])
+    return kand[0][3]
 
 
 @bp.route("/api/review/zavrsi", methods=["POST"])

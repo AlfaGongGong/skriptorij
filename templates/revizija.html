@@ -21,6 +21,9 @@
   #poruka { color:#c62828; min-height:1.2em; }
   #pr { display:none; }
   #pr-tekst { font-weight:700; }
+  #zavrsi { margin-top:18px; border-top:1px solid var(--box); padding-top:10px; }
+  #b-zavrsi { background:#1565c0; } #b-zavrsi-dry { background:#555; }
+  #z-status { font-size:14px; white-space:pre-wrap; word-break:break-word; display:none; }
 </style>
 </head>
 <body>
@@ -43,6 +46,11 @@
 </div>
 <div id="kraj" style="display:none"></div>
 <div id="poruka"></div>
+<div id="zavrsi">
+  <button id="b-zavrsi-dry">📊 Pregled: što će se primijeniti</button>
+  <button id="b-zavrsi">🏁 Završi i složi EPUB</button>
+  <div class="box" id="z-status"></div>
+</div>
 <script>
 var kartice = [], i = 0, zadnje = [], zauzet = false, prijedlog = "";
 function el(id) { return document.getElementById(id); }
@@ -116,6 +124,57 @@ el("b-preskoci").onclick = function () { odluci("preskoci"); };
 el("b-prihvati").onclick = function () { odluci("prevedi_ponovo", prijedlog); };
 el("b-staro").onclick = function () { odluci("ostavi"); };
 el("b-ponisti").onclick = ponisti;
+var zTimer = null;
+function zPrikazi(s) {
+  var b = el("z-status"); b.style.display = "block";
+  var r = [];
+  r.push("Stanje: " + (s.stanje || "?") + (s.korak ? " (" + s.korak + ")" : ""));
+  if (s.ukupno !== undefined) {
+    r.push("Odluka za primjenu: " + s.ukupno + (s.ispravke ? " | uspjelo=" + s.ispravke.ok + " već=" + s.ispravke.vec + " nije=" + s.ispravke.fail : ""));
+  }
+  if (s.preskoceno && s.preskoceno.length) r.push("Preskočeno: " + s.preskoceno.length);
+  if (s.provjera && s.provjera.novo_u_epubu !== undefined) {
+    r.push("Novi tekst u EPUB-u: " + s.provjera.novo_u_epubu + ((s.provjera.nije_nadjeno || []).length ? " (nije nađeno: " + s.provjera.nije_nadjeno.length + ")" : ""));
+  }
+  if (s.kapija) r.push("Kapija: gate=" + s.kapija.epub_gate + " fix=" + s.kapija.epub_fix + " audit=" + s.kapija.audit + " epubcheck=" + s.kapija.epubcheck + (s.kapija_ok ? "  ✔" : "  ✖"));
+  if (s.styled) r.push("EPUB: " + s.styled);
+  if (s.greska) r.push("GREŠKA: " + s.greska);
+  if (s.log_fajl) r.push("Log: " + s.log_fajl);
+  if (s.log_rep && s.log_rep.length) r.push("— zadnji redci —\n" + s.log_rep.slice(-6).join("\n"));
+  b.textContent = r.join("\n");
+}
+function zPoll() {
+  fetch("/api/review/zavrsi/status").then(function (r) { return r.json(); }).then(function (s) {
+    zPrikazi(s);
+    if (s.stanje === "tece") { zTimer = setTimeout(zPoll, 3000); }
+    else { zTimer = null; el("b-zavrsi").disabled = false; el("b-zavrsi-dry").disabled = false; }
+  }).catch(function (e) { poruka("Status nije dostupan: " + e.message); zTimer = setTimeout(zPoll, 5000); });
+}
+function zDry() {
+  poruka("");
+  fetch("/api/review/zavrsi", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({dry: true})})
+    .then(function (r) { return r.json().then(function (j) { return {ok: r.ok, j: j}; }); })
+    .then(function (x) { if (!x.ok) throw new Error(x.j.error || "Greška"); zPrikazi(x.j); })
+    .catch(function (e) { poruka("Pregled nije uspio: " + e.message); });
+}
+function zPokreni() {
+  if (zTimer) return;
+  if (!confirm("Ovo upisuje prihvaćene prijevode u .chk (uz backup) i ponovo slaže EPUB. Nastaviti?")) return;
+  poruka("");
+  el("b-zavrsi").disabled = true; el("b-zavrsi-dry").disabled = true;
+  fetch("/api/review/zavrsi", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"})
+    .then(function (r) { return r.json().then(function (j) { return {st: r.status, j: j}; }); })
+    .then(function (x) {
+      if (x.st !== 202 && x.st !== 409) throw new Error(x.j.error || ("Server: " + x.st));
+      zPoll();
+    })
+    .catch(function (e) { poruka("Pokretanje nije uspjelo: " + e.message); el("b-zavrsi").disabled = false; el("b-zavrsi-dry").disabled = false; });
+}
+el("b-zavrsi-dry").onclick = zDry;
+el("b-zavrsi").onclick = zPokreni;
+fetch("/api/review/zavrsi/status").then(function (r) { return r.json(); }).then(function (s) {
+  if (s && s.stanje === "tece") { el("b-zavrsi").disabled = true; el("b-zavrsi-dry").disabled = true; zPrikazi(s); zPoll(); }
+}).catch(function (e) { console.log("status", e); });
 fetch("/api/review/kartice").then(function (r) { return r.json(); }).then(function (d) {
   if (!Array.isArray(d)) { poruka(d.error || "Greška pri učitavanju."); return; }
   kartice = d; prikazi();
