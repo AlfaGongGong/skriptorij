@@ -2162,6 +2162,21 @@ def create_app() -> Flask:
 
     app.register_blueprint(monitor_bp)
 
+    # P2.6: rute revizije iz blueprinta processing, pojedinacno. Cijeli blueprint se NE registrira
+    # jer bi duplicirao rute koje vec postoje u app.py (vidi api/__init__.py).
+    from api.routes import processing as _p26
+
+    for _rule, _fn, _m in (
+        ("/revizija", _p26.revizija_stranica, ["GET"]),
+        ("/api/review/kartice", _p26.review_kartice, ["GET"]),
+        ("/api/review/odluka", _p26.review_odluka, ["POST"]),
+        ("/api/review/odluke/stat", _p26.review_odluke_stat, ["GET"]),
+        ("/api/review/prevedi", _p26.review_prevedi, ["POST"]),
+        ("/api/review/zavrsi", _p26.review_zavrsi, ["POST"]),
+        ("/api/review/zavrsi/status", _p26.review_zavrsi_status, ["GET"]),
+    ):
+        app.add_url_rule(_rule, endpoint="p26_" + _fn.__name__, view_func=_fn, methods=_m)
+
     return app
 
 
