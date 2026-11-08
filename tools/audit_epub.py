@@ -111,6 +111,8 @@ KAT = {
     "INT-SPLIT": ("VISOKO", "rečenica prekinuta između dva pasusa (granica bloka)", "core/chunking.py (max_words=250), inter-chapter context"),
     "INT-NEZAV": ("SREDNJE", "pasus završava veznikom/zarezom (vjerovatno odsječen)", "core/chunking.py, http_client.py (max_tokens)"),
     "INT-MALO": ("SREDNJE", "pasus počinje malim slovom usred poglavlja", "core/chunking.py (granice), processing/pipeline.py merge"),
+    "INT-MALO-REC": ("SREDNJE", "rečenica počinje malim slovom nakon točke usred pasusa", "LEKTOR/POLISH korak, core/chunking.py"),
+    "TIP-NAVOD-IME": ("SREDNJE", "navodnik umjesto apostrofa usred riječi (d”Ange, L„Envers)", "core/tipografija.py, core/kalkovi/dijalog.py"),
     "INT-DUP": ("SREDNJE", "identičan dugi pasus se ponavlja", "processing/pipeline.py (retry/resume), spajanje .chk"),
     "INT-DUPS": ("VISOKO", "kraj jednog i početak sljedećeg pasusa se preklapaju (duplirana rečenica)", "core/chunking.py (preklapanje konteksta), pipeline merge"),
     "INT-LOOP": ("VISOKO", "petlja ponavljanja (model zapeo u ponavljanju)", "temperature/max_tokens u http_client.py, finish_reason"),
@@ -451,7 +453,25 @@ def _navod_nastavak(t, b, otv, zat):
     return False
 
 
+RE_NAVOD_SLOVO = re.compile(r"(?<=[^\W\d_])[„”“](?=[^\W\d_])")
+RE_MALO_REC = re.compile(r"(?<![.…])\b([^\W\d_]{1,12})\.\s+([a-zčćšžđ][^\W\d_]*)")
+SKR_BEZ_TOCKE = {"dr", "sv", "gđa", "gdin", "itd", "npr", "tj", "tzv", "usp", "str", "br", "pr", "kr", "god", "tel", "vl", "mr"}
+
+
+def _dopune_pasus(N, fajl, i, t):
+    if not t:
+        return
+    for m in RE_NAVOD_SLOVO.finditer(t):
+        N.add("TIP-NAVOD-IME", fajl, i, snip(t[max(0, m.start() - 20):m.end() + 20], 60), "navodnik usred riječi (apostrof?)")
+    for m in RE_MALO_REC.finditer(t):
+        w = m.group(1)
+        if w.lower() in SKR_BEZ_TOCKE or w.isupper():
+            continue
+        N.add("INT-MALO-REC", fajl, i, snip(t[max(0, m.start() - 30):m.end() + 30], 100), "rečenica počinje malim slovom nakon točke")
+
+
 def provjeri_pasus(N: Nalazi, K: Kontekst, fajl: str, i: int, b: dict):
+    _dopune_pasus(N, fajl, i, b.get("text", ""))
     t = b["text"]
     tag = b["tag"]
     if not t:
