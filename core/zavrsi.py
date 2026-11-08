@@ -204,7 +204,7 @@ def pokreni(knjiga, izvor, ck, dry=False):
         upd(backup_epub=_backup_styled(knjiga, ts, log))
 
         upd(korak="rebuild")
-        rc, out = _cmd([_py(), "tools/rebuild_knjiga.py", izvor], log, timeout=7200)
+        rc, out = _cmd([_py(), "tools/rebuild_knjiga.py", izvor, knjiga], log, timeout=7200)
         styled = ""
         for ln in out.splitlines():
             if ln.startswith("STYLED="):

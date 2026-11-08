@@ -1327,7 +1327,7 @@ def _p26_knjiga():
                 book = json.loads(lb.read_text("utf-8")).get("last_book", "")
             except Exception as e:
                 print("[P2.6] last_book.json nečitljiv:", repr(e))
-    if not book:
+    if not book or not re.search(r"[A-Za-z0-9]", str(book)):
         return ""
     st = Path(book).stem
     st = re.sub(r"^(?:PREVEDENO_)+", "", st, flags=re.IGNORECASE)
