@@ -22,6 +22,47 @@ def _cilj(naziv, ref):
     return posixpath.normpath(posixpath.join(posixpath.dirname(naziv), p)) if p else naziv
 
 
+_BLOK = {"p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "dl", "table",
+         "blockquote", "pre", "hr", "address", "noscript", "ins", "del", "script", "style"}
+
+
+def _blockquote_tekst_u_p(s):
+    """XHTML 1.1: blockquote smije imati samo blokove. Goli tekst/inline se omota u <p>, br dijeli odlomke."""
+    from bs4 import NavigableString
+    n = 0
+    for bq in s.find_all("blockquote"):
+        djeca = list(bq.children)
+        if not any((isinstance(c, NavigableString) and str(c).strip())
+                   or (getattr(c, "name", None) and c.name not in _BLOK) for c in djeca):
+            continue
+
+        def flush(run, prije):
+            nonlocal n
+            if not any((isinstance(x, NavigableString) and str(x).strip()) or getattr(x, "name", None) for x in run):
+                return
+            p = s.new_tag("p")
+            if prije is None:
+                bq.append(p)
+            else:
+                prije.insert_before(p)
+            for x in run:
+                p.append(x.extract())
+            n += 1
+
+        run = []
+        for c in djeca:
+            ime = getattr(c, "name", None)
+            if ime == "br":
+                flush(run, c); run = []
+                c.decompose()
+            elif ime in _BLOK:
+                flush(run, c); run = []
+            else:
+                run.append(c)
+        flush(run, None)
+    return n
+
+
 def ocisti_epub(putanja, dry=False):
     putanja = str(putanja)
     rez = {"img": 0, "link": 0, "datoteka": 0}
@@ -41,9 +82,11 @@ def ocisti_epub(putanja, dry=False):
         ch = False
         # EPUB 2 / XHTML 1.1: br ne smije biti izravno u body (RSC-005); izvor ga ima izmedju <p>
         for _b in list(s.find_all("br")):
-            if _b.parent is not None and _b.parent.name in ("body", "html", "blockquote"):
+            if _b.parent is not None and _b.parent.name in ("body", "html"):
                 _b.decompose()
                 ch = True
+        if _blockquote_tekst_u_p(s):
+            ch = True
         for im in list(s.find_all("img")):
             src = (im.get("src") or "").strip()
             if not src or src.lower().startswith(_VANJSKI):
