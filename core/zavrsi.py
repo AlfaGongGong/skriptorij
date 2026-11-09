@@ -86,6 +86,74 @@ def primijeni_odluke(knjiga, ck, bdir=None, dry=False, log=print):
     return st, ispravke, pres
 
 
+def _rx_fragment(s):
+    rijeci = str(s).split()
+    if not rijeci:
+        return None
+    return re.compile(r"(?:\s|<[^>]*>)+".join(re.escape(r) for r in rijeci))
+
+
+def primijeni_u_html(ck, ispravke, bdir=None, log=print, dry=False):
+    """P2.8: finalize pakira HTML iz work_dir-a (ne .chk), pa se ispravke upisuju i tamo.
+    Fragment mora pogoditi tocno 1x (tolerira tagove i entitete izmedju rijeci).
+    Vraca {ok, vec, fail}. Idempotentno."""
+    wd = Path(ck).parent
+    st = {"ok": 0, "vec": 0, "fail": 0}
+    for isp in ispravke:
+        oid = isp.get("id") or "?"
+        fajl = isp.get("fajl")
+        staro = str(isp.get("staro", ""))
+        novo = str(isp.get("novo", ""))
+        p = next((c for c in (wd / "text" / fajl, wd / fajl) if c.is_file()), None)
+        if p is None:
+            nadjeni = [x for x in wd.rglob(fajl) if "checkpoints" not in x.parts]
+            p = nadjeni[0] if nadjeni else None
+        if p is None:
+            log(f"  HTML WARN {oid}: nema {fajl} u {wd.name}")
+            st["fail"] += 1
+            continue
+        try:
+            t = p.read_text("utf-8")
+        except Exception as e:
+            log(f"  HTML WARN {oid}: nije citljivo {p.name}: {e!r}")
+            st["fail"] += 1
+            continue
+        novo_h = html.escape(novo, quote=False)
+        pogodak = None
+        for var in (staro, html.escape(staro, quote=False)):
+            if var and t.count(var) == 1:
+                i = t.find(var)
+                pogodak = (i, i + len(var))
+                break
+        if pogodak is None:
+            for var in (staro, html.escape(staro, quote=False)):
+                rx = _rx_fragment(var)
+                if rx is None:
+                    continue
+                m = list(rx.finditer(t))
+                if len(m) == 1:
+                    pogodak = (m[0].start(), m[0].end())
+                    break
+        if pogodak is None:
+            if novo_h in t or novo in t:
+                log(f"  HTML VEC {oid}: {p.name}")
+                st["vec"] += 1
+            else:
+                log(f"  HTML WARN {oid}: staro nije nadjeno tocno 1x u {p.name}")
+                st["fail"] += 1
+            continue
+        if not dry:
+            if bdir:
+                Path(bdir).mkdir(parents=True, exist_ok=True)
+                b = Path(bdir) / ("html_" + p.name)
+                if not b.exists():
+                    b.write_bytes(p.read_bytes())
+            p.write_text(t[:pogodak[0]] + novo_h + t[pogodak[1]:], encoding="utf-8")
+        log(f"  HTML OK{' (dry)' if dry else ''} {oid}: {p.name}")
+        st["ok"] += 1
+    return st
+
+
 def provjeri_u_epubu(epub, ispravke):
     """Nalazi li se 'novo' svake ispravke u tekstu EPUB-a (razmaci/velika slova normalizirani)."""
     def n(s):
@@ -197,6 +265,11 @@ def pokreni(knjiga, izvor, ck, dry=False):
         if dry:
             upd(stanje="dry", korak="gotovo", zavrsio=_vrijeme())
             return st
+        try:
+            upd(html=primijeni_u_html(ck, ispravke, bdir, log))
+        except Exception as e:
+            log("Primjena u HTML nije uspjela: " + repr(e))
+            upd(html={"greska": repr(e)})
         if rez.get("fail"):
             log(f"UPOZORENJE: {rez['fail']} ispravki nije primijenjeno (vidi gore); nastavljam s ostalima.")
 
@@ -236,12 +309,15 @@ def pokreni(knjiga, izvor, ck, dry=False):
             log("Popravci nisu uspjeli: " + repr(e))
 
         upd(korak="provjera")
+        prov_nije = []
         try:
             upd(provjera=provjeri_u_epubu(styled, ispravke))
             log("Provjera novog teksta u EPUB-u: " + json.dumps(st["provjera"], ensure_ascii=False))
+            prov_nije = list(st["provjera"].get("nije_nadjeno") or [])
         except Exception as e:
             log("Provjera nije uspjela: " + repr(e))
             upd(provjera={"greska": repr(e)})
+            prov_nije = ["provjera_pala"]
 
         upd(korak="audit")
         cmd = [_py(), "tools/audit_epub.py", "--izvor", izvor]
@@ -259,7 +335,9 @@ def pokreni(knjiga, izvor, ck, dry=False):
             log("epubcheck nije dostupan - preskoceno.")
 
         ok = (kap["epub_gate"] == 0 and kap["epub_fix"] == 0 and kap["audit"] == 0
-              and kap["epubcheck"] in (0, None))
+              and kap["epubcheck"] in (0, None) and not prov_nije)
+        if prov_nije:
+            log("UPOZORENJE: novi tekst NIJE u EPUB-u za: " + ", ".join(map(str, prov_nije)))
         upd(kapija=kap, kapija_ok=ok, stanje="gotovo" if ok else "gotovo_s_nalazima",
             korak="gotovo", zavrsio=_vrijeme())
     except Exception as e:
