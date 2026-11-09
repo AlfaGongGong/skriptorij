@@ -81,4 +81,11 @@ def test_styler_output_has_nav_in_spine(tmp_path):
         opfs = [n for n in z.namelist() if n.endswith(".opf")]
         assert opfs
         opf_content = z.read(opfs[0]).decode("utf-8", errors="replace")
-        assert 'idref="nav"' in opf_content, "nav nije u spine"
+        import re as _re
+
+        _v = _re.search(r'<package[^>]*\sversion="([^"]+)"', opf_content)
+        if _v and _v.group(1).startswith("2"):
+            assert 'idref="nav"' not in opf_content, "EPUB 2: nav ne smije biti u spine"
+            assert 'properties="nav"' not in opf_content, "EPUB 2: nav item ne smije postojati"
+        else:
+            assert 'idref="nav"' in opf_content, "nav nije u spine"

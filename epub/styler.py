@@ -1941,7 +1941,7 @@ def run_epub_styler(
         "<p><b>Autor:</b> " + _esc(creator) + "</p>"
         "<p><b>ID:</b> " + _esc(book_uid) + "</p>"
         "<p><b>Izdanje:</b> Booklyfi digitalno izdanje, " + str(year) + ".</p>"
-        "<p><b>Format:</b> EPUB 3</p><p>Sva prava zadrzana.</p>"
+        "<p><b>Format:</b> EPUB</p><p>Sva prava zadrzana.</p>"
     )
     files[nas_path] = _page("Naslovna", nas_body).encode("utf-8")
     files[imp_path] = _page("Impresum", imp_body).encode("utf-8")
@@ -1979,6 +1979,12 @@ def run_epub_styler(
         "<navMap>" + "".join(nps) + "</navMap></ncx>"
     ).encode("utf-8")
 
+    try:
+        _pkg = BeautifulSoup(files[opf_path], "xml").find("package")
+        _ver = _pkg.get("version", "2.0") if _pkg is not None else "2.0"
+    except Exception:
+        _ver = "2.0"
+    _epub2 = str(_ver).startswith("2")  # EPUB 2 paket: nav.xhtml i dcterms:modified nisu dopusteni
     nav_path = (opf_dir + "/nav.xhtml") if opf_dir else "nav.xhtml"
     nav_its = []
     for p in poglavlja:
@@ -2009,6 +2015,8 @@ def run_epub_styler(
         '<head><meta charset="utf-8"/><title>Sadržaj</title></head>'
         "<body>" + nav_body + "</body></html>"
     ).encode("utf-8")
+    if _epub2:
+        files.pop(nav_path, None)
 
     opf_soup = BeautifulSoup(files[opf_path], "xml")
     mtag = opf_soup.find("manifest")
@@ -2059,14 +2067,15 @@ def run_epub_styler(
         mtag.append(ni)
     for old in mtag.find_all("item", id="nav"):
         old.decompose()
-    ni = opf_soup.new_tag("item")
-    ni["id"] = "nav"
-    ni["href"] = Path(nav_path).name
-    ni["media-type"] = "application/xhtml+xml"
-    ni["properties"] = "nav"
-    mtag.append(ni)
+    if not _epub2:
+        ni = opf_soup.new_tag("item")
+        ni["id"] = "nav"
+        ni["href"] = Path(nav_path).name
+        ni["media-type"] = "application/xhtml+xml"
+        ni["properties"] = "nav"
+        mtag.append(ni)
 
-    if not opf_soup.find("meta", attrs={"property": "dcterms:modified"}):
+    if not _epub2 and not opf_soup.find("meta", attrs={"property": "dcterms:modified"}):
         now = _dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         meta = opf_soup.new_tag("meta")
         meta["property"] = "dcterms:modified"
@@ -2106,7 +2115,11 @@ def run_epub_styler(
             ni["media-type"] = "image/jpeg" if _ext in ("jpg", "jpeg") else "image/png"
             mtag.append(ni)
 
-    for iid in ("booklyfi-naslovna", "booklyfi-impresum", "nav"):
+    for iid in (
+        ("booklyfi-naslovna", "booklyfi-impresum")
+        if _epub2
+        else ("booklyfi-naslovna", "booklyfi-impresum", "nav")
+    ):
         ir = opf_soup.new_tag("itemref")
         ir["idref"] = iid
         stag.append(ir)
