@@ -33,7 +33,7 @@ _P = {
     ("FAIL", "siroce \u201d (razmak ispred, ne iza crte)"): re.compile(r"(?:^|(?<=[^\s\u2014\u2013-]\s))\u201d"),
     ("WARN", "razmak izmedju crte i \u201d"): re.compile(r"(?<=[\u2014\u2013-]\s)\u201d"),
     ("FAIL", "cirilica unutar rijeci"): re.compile(
-        r"[A-Za-z\u00c0-\u024f][\u0400-\u04ff]|[\u0400-\u04ff][A-Za-z\u00c0-\u024f]"),
+        r"[A-Za-z\u00c0-\u024f][\u0400-\u04ff\u0590-\u06ff\u0e00-\u0e7f\u3040-\u30ff\u4e00-\u9fff]|[\u0400-\u04ff\u0590-\u06ff\u0e00-\u0e7f\u3040-\u30ff\u4e00-\u9fff][A-Za-z\u00c0-\u024f]"),
     ("FAIL", "AI/placeholder ostaci"): re.compile(
         r"NEPREVEDENO|___SAVED_|OVDJE_IDI|```|finalno_polirano|"
         r"(?:Lektorisani|Korigirani) tekst ovdje", re.I),
