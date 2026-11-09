@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-TWOC Audiobook - Charon (3.1) v2
-- Model: gemini-3.1-flash-tts-preview | Glas: Charon
-- Kljucevi iz tools/.tts_keys (jedan po liniji) ili env TTS_KEYS (zarezom)
-- Round-robin + razmak po kljucu (KEY_GAP) + cooldown po kljucu
-- 429 dnevna kvota -> kljuc pauziran do reseta (pamti se u keystate.json)
-- 429 minutna -> cooldown po retryDelay
-- Svi kljucevi pauzirani ili 3 poglavlja zaredom puknu -> cisto staje
-Env: START_FROM, SKIP_FINAL_MERGE=1, KEY_GAP=30, RESET_KEYS=1
+TWOC Audiobook - Charon (3.1) v3 (bez nadzora)
+- Model gemini-3.1-flash-tts-preview, glas Charon, kljucevi iz tools/.tts_keys ili TTS_KEYS
+- AUTO=1 (zadano): sam ceka reset kljuceva i nastavlja; staje tek kad je sve gotovo
+- LIVE=1 (zadano): svaki gotov dio odmah u OUT/LIVE/*.mp3 + live.m3u (slusanje uz obradu)
+- SPEED=N: najvise N-puta brze od reprodukcije (0 = bez ogranicenja)
+- Provjera trajanja svakog dijela (sumnjiv zvuk se ponavlja), trajno neuspjeli dio se preskace i ide u izvjestaj
+- STATUS.json (stanje), RUN.log (cijeli ispis), REPORT.txt (izvjestaj), termux obavijesti
+- M4B se slaze samo za cijelu knjigu (bez START_FROM/MAX_PARTS), osim MERGE=1; SKIP_FINAL_MERGE=<bilo sto osim 0> ga ukida
+Env: EPUB, START_FROM, MAX_PARTS, SPEED, AUTO, LIVE, KEY_GAP, RESET_KEYS, VOICE, MODEL, STYLE, MERGE
 """
 import os, sys, json, re, time, subprocess, base64, wave, html
 from pathlib import Path
@@ -26,17 +27,28 @@ if EPUB:
     CK_DIR = OUT_DIR / "src"
 CHUNKS_DIR = OUT_DIR / "chunks"
 LISTEN_DIR = OUT_DIR / "LISTEN"
+LIVE_DIR = OUT_DIR / "LIVE"
 CHAPTERS_WAV = OUT_DIR / "chapters_wav"
 STATE_FILE = OUT_DIR / "keystate.json"
+FAILS_FILE = OUT_DIR / "fails.json"
+STATUS_FILE = OUT_DIR / "STATUS.json"
+REPORT_FILE = OUT_DIR / "REPORT.txt"
 
 START_FROM = os.environ.get("START_FROM", "part0000" if EPUB else "part0220")
 MAX_PARTS = int(os.environ.get("MAX_PARTS", "0") or 0)
 STYLE = os.environ.get("STYLE", "")
-SKIP_FINAL_MERGE = os.environ.get("SKIP_FINAL_MERGE", "0") == "1"
+SKIP_FINAL_MERGE = os.environ.get("SKIP_FINAL_MERGE", "0") not in ("", "0")
+FORCE_MERGE = os.environ.get("MERGE", "0") == "1"
 RESET_KEYS = os.environ.get("RESET_KEYS", "0") == "1"
 KEY_GAP = float(os.environ.get("KEY_GAP", "30"))
+AUTO = os.environ.get("AUTO", "1") != "0"
+LIVE = os.environ.get("LIVE", "1") != "0"
+SPEED = float(os.environ.get("SPEED", "0") or 0)
 LONG_WAIT = 600
 MAX_FAIL_STREAK = 10
+MAX_ROUNDS = 30
+BAD_RETRIES = 2
+MAX_CHUNK_FAILS = 3
 
 MODEL = os.environ.get("MODEL", "gemini-3.1-flash-tts-preview")
 VOICE = os.environ.get("VOICE", "Charon")
@@ -45,6 +57,12 @@ SAMPLE_RATE = 24000
 
 BOOK_TITLE = os.environ.get("BOOK_TITLE", "The Wisdom of Crowds")
 BOOK_AUTHOR = os.environ.get("BOOK_AUTHOR", "Joe Abercrombie")
+
+WARN = []
+FAILS = {}
+STATE = {}
+POOL = None
+PACE = {"audio": 0.0, "t0": None}
 
 
 class StopRun(Exception):
@@ -55,6 +73,63 @@ class AllKeysDead(StopRun):
     def __init__(self, until):
         super().__init__("svi kljucevi pauzirani")
         self.until = until
+
+
+class Tee:
+    def __init__(self, a, path):
+        self.a = a
+        self.f = open(path, "a", encoding="utf-8", buffering=1)
+
+    def write(self, s):
+        try:
+            self.a.write(s)
+            self.a.flush()
+        except Exception:
+            pass
+        try:
+            self.f.write(s)
+        except Exception:
+            pass
+        return len(s)
+
+    def flush(self):
+        try:
+            self.a.flush()
+            self.f.flush()
+        except Exception:
+            pass
+
+
+def hm():
+    return datetime.now().strftime("%H:%M:%S")
+
+
+def notify(title, text):
+    try:
+        subprocess.run(["termux-notification", "--title", title, "--content", text],
+                       capture_output=True, timeout=10)
+    except Exception:
+        pass
+
+
+def write_status(**kw):
+    STATE.update(kw)
+    STATE["vrijeme"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    STATE["upozorenja"] = len(WARN)
+    try:
+        STATE["kljucevi"] = POOL.status() if POOL else ""
+        tmp = STATUS_FILE.with_name("STATUS.json.tmp")
+        tmp.write_text(json.dumps(STATE, ensure_ascii=False, indent=1), "utf-8")
+        os.replace(tmp, STATUS_FILE)
+    except Exception:
+        pass
+
+
+def save_fails():
+    try:
+        FAILS_FILE.write_text(json.dumps(FAILS), "utf-8")
+    except Exception:
+        pass
 
 
 def load_keys():
@@ -182,6 +257,14 @@ def split_into_chunks(text, max_chars=CHUNK_SIZE):
     return chunks
 
 
+def wav_dur(p):
+    try:
+        with wave.open(str(p), "rb") as w:
+            return w.getnframes() / float(w.getframerate())
+    except Exception:
+        return 0.0
+
+
 def call_tts(text, key, out_wav):
     """Vraca (kod, info). 200=OK, 0=nema audia, -1=mrezna greska, ostalo=HTTP kod."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={key}"
@@ -270,6 +353,69 @@ def generate_chunk(text, out_wav, pool):
     return last
 
 
+def make_chunk(text, cf, pool):
+    """generate_chunk + provjera trajanja (zn/s). Sumnjiv zvuk se ponavlja, zadnji pokusaj se zadrzava uz upozorenje."""
+    for a in range(BAD_RETRIES + 1):
+        res = generate_chunk(text, cf, pool)
+        if res != "OK":
+            return res
+        d = wav_dur(cf)
+        cps = len(text) / d if d > 0 else 0
+        if 6 <= cps <= 35:
+            return "OK"
+        if a >= BAD_RETRIES:
+            WARN.append(f"{cf.parent.name}/{cf.name}: sumnjivo trajanje {d:.0f}s za {len(text)} znakova")
+            return "OK"
+        print(f"[sumnjivo {d:.0f}s/{cps:.0f}zn/s, ponavljam] ", end="", flush=True)
+        try:
+            cf.unlink()
+        except Exception:
+            pass
+    return "?"
+
+
+def pace_reset():
+    PACE["audio"] = 0.0
+    PACE["t0"] = time.time()
+
+
+def pace(d):
+    if SPEED <= 0:
+        return
+    if PACE["t0"] is None:
+        PACE["t0"] = time.time()
+    PACE["audio"] += d
+    need = PACE["audio"] / SPEED - (time.time() - PACE["t0"])
+    if need > 1:
+        print(f"[tempo {need:.0f}s] ", end="", flush=True)
+        time.sleep(need)
+
+
+def live_playlist():
+    files = sorted(LIVE_DIR.glob("*.mp3"))
+    tmp = LIVE_DIR / "live.m3u.tmp"
+    tmp.write_text("#EXTM3U\n" + "\n".join(f.name for f in files) + "\n", "utf-8")
+    os.replace(tmp, LIVE_DIR / "live.m3u")
+
+
+def live_add(part, ci, cf):
+    """Gotov dio odmah u LIVE/ (mp3) i osvjezi live.m3u."""
+    if not LIVE:
+        return
+    try:
+        LIVE_DIR.mkdir(parents=True, exist_ok=True)
+        mp3 = LIVE_DIR / f"{part}_c{ci:04d}.mp3"
+        if mp3.exists() and mp3.stat().st_size > 1000:
+            return
+        tmp = mp3.with_name(mp3.name + ".tmp")
+        subprocess.run(["ffmpeg", "-y", "-i", str(cf), "-codec:a", "libmp3lame", "-b:a", "96k",
+                        "-f", "mp3", str(tmp)], check=True, capture_output=True, timeout=120)
+        os.replace(tmp, mp3)
+        live_playlist()
+    except Exception as e:
+        print(f"[live greska {str(e)[:40]}] ", end="", flush=True)
+
+
 def get_duration(path):
     try:
         r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -282,7 +428,16 @@ def get_duration(path):
 
 def process_part(num, total, part, chunk_srcs, pool):
     """True = poglavlje gotovo (ili prazno), False = nekompletno."""
-    print(f"\n[{num}/{total}] {part}")
+    part_dir = CHUNKS_DIR / part
+    part_dir.mkdir(parents=True, exist_ok=True)
+    done = part_dir / ".done"
+    try:
+        if done.exists() and (LISTEN_DIR / done.read_text("utf-8").strip()).exists():
+            return True
+    except Exception:
+        pass
+
+    print(f"\n[{hm()}] [{num}/{total}] {part}")
     full_text, title = "", None
     for idx, chk_path in chunk_srcs:
         full_text += " " + extract_text(chk_path)
@@ -298,26 +453,37 @@ def process_part(num, total, part, chunk_srcs, pool):
     print(f"  Naslov: {title}")
     print(f"  {len(full_text)} char -> {len(chunks)} chunkova")
 
-    part_dir = CHUNKS_DIR / part
-    part_dir.mkdir(exist_ok=True)
-
     chunk_files = []
+    skipped = 0
     for ci, chunk_text in enumerate(chunks):
         cf = part_dir / f"chunk_{ci:04d}.wav"
+        write_status(dio=part, chunk=f"{ci+1}/{len(chunks)}", poglavlje=f"{num}/{total}", status="radim")
         if cf.exists() and cf.stat().st_size > 1000:
             chunk_files.append(cf)
+            live_add(part, ci, cf)
             continue
+        key = f"{part}:{ci}"
         print(f"  chunk {ci+1}/{len(chunks)} ({len(chunk_text)}c): ", end="", flush=True)
         t0 = time.time()
-        result = generate_chunk(chunk_text, cf, pool)
+        result = make_chunk(chunk_text, cf, pool)
         if result == "OK":
             print(f"\u2713 {time.time()-t0:.0f}s")
             chunk_files.append(cf)
+            live_add(part, ci, cf)
+            pace(wav_dur(cf))
         else:
             print(f"FAIL ({result})")
+            if result.startswith("NO_AUDIO") or result == "HTTP400":
+                FAILS[key] = FAILS.get(key, 0) + 1
+                save_fails()
+                if FAILS[key] >= MAX_CHUNK_FAILS:
+                    WARN.append(f"{part} chunk {ci}: preskocen nakon {FAILS[key]} neuspjeha ({result})")
+                    print(f"  PRESKACEM chunk {ci+1} (trajno neuspio)")
+                    skipped += 1
+                    continue
             break
 
-    if len(chunk_files) != len(chunks):
+    if not chunk_files or len(chunk_files) + skipped != len(chunks):
         print(f"  NEKOMPLETNO ({len(chunk_files)}/{len(chunks)})")
         return False
 
@@ -352,6 +518,11 @@ def process_part(num, total, part, chunk_srcs, pool):
             print(f" \u2705 {listen_mp3.name} ({m}:{s:02d})")
         except Exception as e:
             print(f" \u274c {str(e)[:80]}")
+            return False
+    try:
+        done.write_text(listen_mp3.name, "utf-8")
+    except Exception:
+        pass
     return True
 
 
@@ -414,7 +585,38 @@ def epub_to_chk():
     print("  poglavlja: %d" % k)
 
 
+def wait_until(ts, why):
+    when = datetime.fromtimestamp(ts).strftime("%H:%M %d.%m.")
+    print(f"\n[{hm()}] PAUZA: {why}. Nastavljam oko {when}")
+    notify("TTS pauza", f"{why}. Nastavak oko {when}")
+    while True:
+        rem = ts - time.time()
+        if rem <= 0:
+            break
+        write_status(status=f"pauza do {when}", razlog=why)
+        time.sleep(min(60, rem))
+    print(f"[{hm()}] nastavljam")
+
+
+def final_report(parts):
+    missing = [p for p in parts if not (CHUNKS_DIR / p / ".done").exists()]
+    mp3s = sorted(LISTEN_DIR.glob("*.mp3"))
+    total = sum(get_duration(m) for m in mp3s)
+    lines = [f"IZVJESTAJ {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+             f"Poglavlja: {len(parts) - len(missing)}/{len(parts)} gotovo",
+             f"Ukupno trajanje: {int(total // 3600)}h {int(total % 3600 // 60)}min",
+             f"Nedostaju: {', '.join(missing) if missing else 'nista'}",
+             f"Upozorenja ({len(WARN)}):"] + ["  " + w for w in WARN]
+    try:
+        REPORT_FILE.write_text("\n".join(lines) + "\n", "utf-8")
+    except Exception:
+        pass
+    print("\n" + "\n".join(lines))
+    return missing
+
+
 def main():
+    global POOL
     try:
         subprocess.run(["ffmpeg", "-version"], capture_output=True, check=True, timeout=5)
     except Exception:
@@ -428,6 +630,17 @@ def main():
 
     for d in (OUT_DIR, CHUNKS_DIR, LISTEN_DIR, CHAPTERS_WAV):
         d.mkdir(parents=True, exist_ok=True)
+    sys.stdout = Tee(sys.__stdout__, OUT_DIR / "RUN.log")
+    sys.stderr = sys.stdout
+    try:
+        subprocess.run(["termux-wake-lock"], capture_output=True, timeout=5)
+    except Exception:
+        pass
+    try:
+        FAILS.update(json.loads(FAILS_FILE.read_text("utf-8")))
+    except Exception:
+        pass
+
     if EPUB:
         epub_to_chk()
 
@@ -442,48 +655,70 @@ def main():
     for part in all_parts:
         all_parts[part].sort()
 
-    parts_to_process = sorted([p for p in all_parts if p >= START_FROM])
+    parts = sorted([p for p in all_parts if p >= START_FROM])
     if MAX_PARTS:
-        parts_to_process = parts_to_process[:MAX_PARTS]
-    if not parts_to_process:
+        parts = parts[:MAX_PARTS]
+    if not parts:
         print(f"Nema poglavlja od {START_FROM}")
         sys.exit(1)
 
     pool = KeyPool(keys)
-    print(f"Poglavlja: {len(parts_to_process)} ({parts_to_process[0]} -> {parts_to_process[-1]})")
-    print(f"Model: {MODEL} | Glas: {VOICE}")
+    POOL = pool
+    print(f"[{hm()}] Poglavlja: {len(parts)} ({parts[0]} -> {parts[-1]})")
+    print(f"Model: {MODEL} | Glas: {VOICE} | AUTO={int(AUTO)} LIVE={int(LIVE)} SPEED={SPEED:g}")
     print(f"Kljucevi: {pool.status()}")
-    print(f"Razmak po kljucu: {KEY_GAP:.0f}s")
     print(f"Output: {OUT_DIR}")
+    if LIVE:
+        print(f"Slusanje uz obradu: {LIVE_DIR}/live.m3u")
     print("=" * 70)
+    pace_reset()
 
-    stopped = False
-    fail_streak = 0
-    try:
-        for i, part in enumerate(parts_to_process):
-            ok = process_part(i + 1, len(parts_to_process), part, all_parts[part], pool)
-            fail_streak = 0 if ok else fail_streak + 1
-            if fail_streak >= MAX_FAIL_STREAK:
-                raise StopRun(f"{MAX_FAIL_STREAK} poglavlja zaredom nisu uspjela")
-    except AllKeysDead as e:
-        stopped = True
-        print("\n" + "=" * 70)
-        print("SVI KLJUCEVI ISCRPLJENI/PAUZIRANI.")
-        print("Najranije opet oko " + datetime.fromtimestamp(e.until).strftime("%H:%M %d.%m."))
-        print("Pokreni isto opet tada, nastavlja gdje je stao.")
-    except StopRun as e:
-        stopped = True
-        print("\n" + "=" * 70)
-        print(f"STOP: {e}. Provjeri log iznad, pa pokreni opet (resume radi).")
+    rounds = 0
+    finished = False
+    why = ""
+    while True:
+        wait_ts = None
+        try:
+            incomplete, streak = 0, 0
+            for i, part in enumerate(parts):
+                ok = process_part(i + 1, len(parts), part, all_parts[part], pool)
+                if ok:
+                    streak = 0
+                else:
+                    incomplete += 1
+                    streak += 1
+                if streak >= MAX_FAIL_STREAK:
+                    raise StopRun(f"{MAX_FAIL_STREAK} poglavlja zaredom nisu uspjela")
+            if incomplete == 0:
+                finished = True
+                break
+            raise StopRun(f"{incomplete} poglavlja nekompletno")
+        except AllKeysDead as e:
+            why = "svi kljucevi pauzirani"
+            wait_ts = e.until + 20
+        except StopRun as e:
+            why = str(e)
+            wait_ts = time.time() + 900
+        rounds += 1
+        if not AUTO or rounds > MAX_ROUNDS:
+            break
+        wait_until(max(wait_ts, time.time() + 30), why)
+        pool = KeyPool(keys) if RESET_KEYS else pool
+        POOL = pool
+        pace_reset()
 
     print("Zahtjeva u ovom runu: " + ", ".join(f"K{i+1}={n}" for i, n in enumerate(pool.reqs)))
+    missing = final_report(parts)
 
-    if stopped:
+    if not finished:
+        write_status(status="ZAUSTAVLJENO", razlog=why)
+        notify("TTS STOP", f"{why}. Pokreni opet, nastavlja gdje je stao.")
         print("Prekinuto - finalni merge preskocen.")
         sys.exit(2)
 
-    if SKIP_FINAL_MERGE:
-        print("\nSKIP_FINAL_MERGE=1 - preskacem finalno spajanje.")
+    partial = bool(MAX_PARTS) or os.environ.get("START_FROM", "") not in ("", "part0000")
+    if SKIP_FINAL_MERGE or (partial and not FORCE_MERGE):
+        print("\nFinalni M4B preskocen (djelomicno pokretanje ili SKIP_FINAL_MERGE). MERGE=1 ga prisiljava.")
     else:
         print("\n" + "=" * 70)
         print("Final merge u M4B sa poglavljima...")
@@ -516,10 +751,17 @@ def main():
         except subprocess.CalledProcessError as e:
             print(f"M4B greska: {e.stderr.decode()[:300]}")
 
+    write_status(status="GOTOVO", nedostaju=missing)
+    notify("TTS gotovo", f"{len(parts)-len(missing)}/{len(parts)} poglavlja, upozorenja: {len(WARN)}")
     print("\n" + "=" * 70)
     print("ZAVRSENO!")
     print(f"LISTEN folder: {LISTEN_DIR}")
+    print(f"Izvjestaj: {REPORT_FILE}")
     print("=" * 70)
+    try:
+        subprocess.run(["termux-wake-unlock"], capture_output=True, timeout=5)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
