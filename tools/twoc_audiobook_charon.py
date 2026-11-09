@@ -36,7 +36,7 @@ SKIP_FINAL_MERGE = os.environ.get("SKIP_FINAL_MERGE", "0") == "1"
 RESET_KEYS = os.environ.get("RESET_KEYS", "0") == "1"
 KEY_GAP = float(os.environ.get("KEY_GAP", "30"))
 LONG_WAIT = 600
-MAX_FAIL_STREAK = 3
+MAX_FAIL_STREAK = 10
 
 MODEL = os.environ.get("MODEL", "gemini-3.1-flash-tts-preview")
 VOICE = os.environ.get("VOICE", "Charon")
