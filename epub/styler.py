@@ -1341,10 +1341,12 @@ def run_epub_styler(
         )
         return (
             '<?xml version="1.0" encoding="utf-8"?>'
-            "<!DOCTYPE html>"
+            '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
+            '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
             '<html xmlns="http://www.w3.org/1999/xhtml" lang="hr">'
-            '<head><meta charset="utf-8"/><title>' + _esc(title) + "</title>"
-            "<style>" + css + "</style></head><body>" + body_html + "</body></html>"
+            '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>'
+            "<title>" + _esc(title) + "</title>"
+            '<style type="text/css">' + css + "</style></head><body>" + body_html + "</body></html>"
         )
 
     GENERIC_RX = _re.compile(
@@ -1916,20 +1918,33 @@ def run_epub_styler(
     files[imp_path] = _page("Impresum", imp_body).encode("utf-8")
 
     ncx_path = (opf_dir + "/toc.ncx") if opf_dir else "toc.ncx"
+    _ncx_uid = book_uid
+    try:
+        _ps = BeautifulSoup(files[opf_path], "xml")
+        _pk = _ps.find("package")
+        _uid_id = _pk.get("unique-identifier") if _pk else None
+        for _di in _ps.find_all("dc:identifier"):
+            if _uid_id and _di.get("id") == _uid_id and _di.get_text(strip=True):
+                _ncx_uid = _di.get_text(strip=True)
+                break
+    except Exception:
+        pass
     nps = []
+    _po = 0
     for p in poglavlja:
         if not p.get("_ima_h1"):
             continue  # nema h1 u EPUB-u -> nema u TOC-u
         nas = p.get("naslov") or ("POGLAVLJE %d" % p["order"])
+        _po += 1
         nps.append(
             '<navPoint id="np-%d" playOrder="%d"><navLabel><text>%s</text></navLabel>'
             '<content src="%s"/></navPoint>'
-            % (p["order"], p["order"], _esc(nas), _esc(p["href"]))
+            % (p["order"], _po, _esc(nas), _esc(p["href"]))
         )
     files[ncx_path] = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">'
-        '<head><meta name="dtb:uid" content="' + _esc(book_uid) + '"/>'
+        '<head><meta name="dtb:uid" content="' + _esc(_ncx_uid) + '"/>'
         '<meta name="dtb:depth" content="1"/></head>'
         "<docTitle><text>" + _esc(book_title) + "</text></docTitle>"
         "<navMap>" + "".join(nps) + "</navMap></ncx>"
@@ -1977,6 +1992,22 @@ def run_epub_styler(
         if fh not in existing and href not in existing:
             it.decompose()
 
+    for _f in sorted(existing):
+        if not _f.lower().endswith(".css"):
+            continue
+        _h = _f[len(opf_dir) + 1:] if opf_dir and _f.startswith(opf_dir + "/") else _f
+        if any(_i.get("href") == _h for _i in mtag.find_all("item")):
+            continue
+        _ids = {_i.get("id") for _i in mtag.find_all("item")}
+        _n = 1
+        while "booklyfi-css-%d" % _n in _ids:
+            _n += 1
+        mtag.append(
+            opf_soup.new_tag(
+                "item",
+                attrs={"id": "booklyfi-css-%d" % _n, "href": _h, "media-type": "text/css"},
+            )
+        )
     gd = opf_soup.find("guide")
     if gd:
         for ref in list(gd.find_all("reference")):
