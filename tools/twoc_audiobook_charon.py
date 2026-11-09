@@ -16,28 +16,35 @@ from urllib import request, error
 from datetime import datetime, timedelta, timezone
 
 HERE = Path(__file__).resolve().parent
+EPUB = os.environ.get("EPUB", "")
 CK_DIR = Path("/storage/emulated/0/booklyfi_checkpoints/_skr_The_Wisdom_of_Crowds/checkpoints")
 BASE_OUT = Path("/storage/emulated/0/Download/BOOKLYFI_AUDIOBOOK")
 OUT_DIR = BASE_OUT / "CHARON_3.1"
+if EPUB:
+    _slug = re.sub(r"[^A-Za-z0-9]+", "_", Path(EPUB).stem)[:60].strip("_")
+    OUT_DIR = BASE_OUT / (_slug + "_" + os.environ.get("VOICE", "Charon"))
+    CK_DIR = OUT_DIR / "src"
 CHUNKS_DIR = OUT_DIR / "chunks"
 LISTEN_DIR = OUT_DIR / "LISTEN"
 CHAPTERS_WAV = OUT_DIR / "chapters_wav"
 STATE_FILE = OUT_DIR / "keystate.json"
 
-START_FROM = os.environ.get("START_FROM", "part0220")
+START_FROM = os.environ.get("START_FROM", "part0000" if EPUB else "part0220")
+MAX_PARTS = int(os.environ.get("MAX_PARTS", "0") or 0)
+STYLE = os.environ.get("STYLE", "")
 SKIP_FINAL_MERGE = os.environ.get("SKIP_FINAL_MERGE", "0") == "1"
 RESET_KEYS = os.environ.get("RESET_KEYS", "0") == "1"
 KEY_GAP = float(os.environ.get("KEY_GAP", "30"))
 LONG_WAIT = 600
 MAX_FAIL_STREAK = 3
 
-MODEL = "gemini-3.1-flash-tts-preview"
-VOICE = "Charon"
+MODEL = os.environ.get("MODEL", "gemini-3.1-flash-tts-preview")
+VOICE = os.environ.get("VOICE", "Charon")
 CHUNK_SIZE = 1000
 SAMPLE_RATE = 24000
 
-BOOK_TITLE = "The Wisdom of Crowds"
-BOOK_AUTHOR = "Joe Abercrombie"
+BOOK_TITLE = os.environ.get("BOOK_TITLE", "The Wisdom of Crowds")
+BOOK_AUTHOR = os.environ.get("BOOK_AUTHOR", "Joe Abercrombie")
 
 
 class StopRun(Exception):
@@ -179,7 +186,7 @@ def call_tts(text, key, out_wav):
     """Vraca (kod, info). 200=OK, 0=nema audia, -1=mrezna greska, ostalo=HTTP kod."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={key}"
     body = {
-        "contents": [{"parts": [{"text": text}]}],
+        "contents": [{"parts": [{"text": (STYLE + " " + text) if STYLE else text}]}],
         "generationConfig": {
             "responseModalities": ["AUDIO"],
             "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": VOICE}}},
@@ -348,6 +355,65 @@ def process_part(num, total, part, chunk_srcs, pool):
     return True
 
 
+def epub_to_chk():
+    """EPUB -> CK_DIR/partNNNN.html_blok_0.chk (cisti HTML bez inline tagova). Ispisuje popis poglavlja."""
+    global BOOK_TITLE, BOOK_AUTHOR
+    import zipfile
+    import xml.etree.ElementTree as ET
+    from collections import Counter
+    from urllib.parse import unquote
+    CK_DIR.mkdir(parents=True, exist_ok=True)
+    z = zipfile.ZipFile(EPUB)
+    cont = ET.fromstring(z.read("META-INF/container.xml"))
+    opf_path = [e.get("full-path") for e in cont.iter() if e.tag.endswith("rootfile")][0]
+    opf = ET.fromstring(z.read(opf_path))
+    base = os.path.dirname(opf_path)
+    man = {e.get("id"): e.get("href") for e in opf.iter() if e.tag.endswith("}item")}
+    spine = [e.get("idref") for e in opf.iter() if e.tag.endswith("itemref")]
+    tt = [e.text.strip() for e in opf.iter() if e.tag.endswith("}title") and e.text]
+    aa = [e.text.strip() for e in opf.iter() if e.tag.endswith("}creator") and e.text]
+    if tt and "BOOK_TITLE" not in os.environ:
+        BOOK_TITLE = tt[0]
+    if aa and "BOOK_AUTHOR" not in os.environ:
+        BOOK_AUTHOR = aa[0]
+    skip = re.compile(r"nav|naslovna|impresum|cover|toc|titlepage", re.I)
+    raw = []
+    for idref in spine:
+        href = man.get(idref)
+        if not href or not href.lower().endswith(("html", "htm")):
+            continue
+        if skip.search(os.path.basename(href)):
+            continue
+        h = z.read((base + "/" if base else "") + unquote(href)).decode("utf-8", "replace")
+        b = re.search(r"(?is)<body[^>]*>(.*)</body>", h)
+        raw.append((href, b.group(1) if b else h))
+
+    def _txt(x):
+        return html.unescape(re.sub(r"<[^>]+>", "", x)).strip()
+
+    hpat = r"(?is)<h[1-3][^>]*>(.*?)</h[1-3]>"
+    cnt = Counter(t for _, b in raw for t in set(_txt(m) for m in re.findall(hpat, b)) if t)
+    running = {t for t, c in cnt.items() if c > max(1, len(raw) // 2)}
+    print("EPUB: %s | %s | %s" % (Path(EPUB).name, BOOK_TITLE, BOOK_AUTHOR))
+    k = 0
+    for href, b in raw:
+        b = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", "", b)
+        b = re.sub(hpat, lambda m: "" if _txt(m.group(1)) in running
+                   else "<h1>" + html.escape(_txt(m.group(1)), quote=False) + "</h1>", b)
+        b = re.sub(r"(?is)<img[^>]*>", "", b)
+        b = re.sub(r"(?is)</?(span|em|i|b|strong|a|sup|sub|small|u)\b[^>]*>", "", b)
+        b = re.sub(r"\[\[NEPREVEDENO[^\]]*\]\]", "", b)
+        plain = html.unescape(re.sub(r"<[^>]+>", " ", b))
+        if len(re.sub(r"\s+", "", plain)) < 40:
+            continue
+        name = "part%04d" % k
+        (CK_DIR / (name + ".html_blok_0.chk")).write_text(b, "utf-8")
+        t1 = re.search(r"<h1>(.*?)</h1>", b, re.S)
+        print("  %s  %7d znakova  %s" % (name, len(plain), (t1.group(1) if t1 else "-")[:50]))
+        k += 1
+    print("  poglavlja: %d" % k)
+
+
 def main():
     try:
         subprocess.run(["ffmpeg", "-version"], capture_output=True, check=True, timeout=5)
@@ -362,6 +428,8 @@ def main():
 
     for d in (OUT_DIR, CHUNKS_DIR, LISTEN_DIR, CHAPTERS_WAV):
         d.mkdir(parents=True, exist_ok=True)
+    if EPUB:
+        epub_to_chk()
 
     all_parts = {}
     for p in CK_DIR.glob("*.chk"):
@@ -375,6 +443,8 @@ def main():
         all_parts[part].sort()
 
     parts_to_process = sorted([p for p in all_parts if p >= START_FROM])
+    if MAX_PARTS:
+        parts_to_process = parts_to_process[:MAX_PARTS]
     if not parts_to_process:
         print(f"Nema poglavlja od {START_FROM}")
         sys.exit(1)
@@ -436,7 +506,7 @@ def main():
                 t = mm.group(1) if mm else m.stem
                 f.write(f"[CHAPTER]\nTIMEBASE=1/1000\nSTART={cur}\nEND={end}\ntitle={t}\n")
                 cur = end
-        m4b = OUT_DIR / "TWOC_Charon.m4b"
+        m4b = OUT_DIR / ("TWOC_Charon.m4b" if not EPUB else OUT_DIR.name + ".m4b")
         try:
             subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(cf),
                             "-i", str(mf), "-map_metadata", "1", "-c:a", "aac", "-b:a", "128k",
