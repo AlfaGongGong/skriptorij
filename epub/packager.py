@@ -542,7 +542,9 @@ def _spoji_chk_u_html(engine):
         # 1. Trenutni — mora imati .chk I text/ HTML
         ckpt = checkpoint_dir
         txt = work_dir / "text"
-        if ckpt.exists() and any(ckpt.glob("*.chk")) and txt.exists() and any(txt.glob("*.html")):
+        if ckpt.exists() and any(ckpt.glob("*.chk")) and (
+            (txt.exists() and any(txt.glob("*.html"))) or any(work_dir.glob("*.html"))
+        ):
             return work_dir
 
         # 2. Fuzzy po prefixu imena
