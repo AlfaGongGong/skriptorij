@@ -39,6 +39,11 @@ def ocisti_epub(putanja, dry=False):
     for n, s in soupovi.items():
         nav = posixpath.basename(n).lower() in ("nav.xhtml", "toc.xhtml") or s.find(attrs={"epub:type": "toc"}) is not None
         ch = False
+        # EPUB 2 / XHTML 1.1: br ne smije biti izravno u body (RSC-005); izvor ga ima izmedju <p>
+        for _b in list(s.find_all("br")):
+            if _b.parent is not None and _b.parent.name in ("body", "html", "blockquote"):
+                _b.decompose()
+                ch = True
         for im in list(s.find_all("img")):
             src = (im.get("src") or "").strip()
             if not src or src.lower().startswith(_VANJSKI):

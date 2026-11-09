@@ -38,6 +38,8 @@ class EpubStylerManager:
             if p and _os.path.isfile(str(p)):
                 from epub.ocisti import ocisti_epub
                 r["ocisceno"] = ocisti_epub(p)
+                from core.epub_popravci import popravi as _pop
+                r["popravci"] = _pop(p)
         except Exception as _e:
             print("[ocisti] greška:", _e)
         return r
