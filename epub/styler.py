@@ -789,6 +789,35 @@ def _read(path: Path) -> dict[str, bytes]:
         return {n: z.read(n) for n in z.namelist()}
 
 
+def _img_popravi(files: dict[str, bytes]) -> int:
+    """XHTML 1.1: img mora imati alt i ne smije biti dijete body-ja (omotac div)."""
+    n = 0
+    for name in list(files.keys()):
+        if not name.lower().endswith((".xhtml", ".html", ".htm")):
+            continue
+        raw = files[name]
+        if b"<img" not in raw:
+            continue
+        try:
+            soup = BeautifulSoup(raw.decode("utf-8"), "html.parser")
+        except Exception:
+            continue
+        izm = False
+        for im in soup.find_all("img"):
+            if im.get("alt") is None:
+                im["alt"] = ""
+                izm = True
+            if im.parent is not None and im.parent.name == "body":
+                w = soup.new_tag("div")
+                w["style"] = "text-align:center;"
+                im.wrap(w)
+                izm = True
+        if izm:
+            files[name] = str(soup).encode("utf-8")
+            n += 1
+    return n
+
+
 def _write(path: Path, files: dict[str, bytes]) -> None:
     tmp_fd, tmp = tempfile.mkstemp(suffix=".epub.tmp", dir=path.parent)
     try:
@@ -2098,6 +2127,7 @@ def run_epub_styler(
         od = Path(STYLED_OUTPUT_DIR)
         od.mkdir(parents=True, exist_ok=True)
         out = od / _ime(creator, book_title)
+    _img_popravi(files)
     _write(out, files)
 
     return {
