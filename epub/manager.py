@@ -29,7 +29,20 @@ class EpubStylerManager:
         if self.log_callback:
             self.log_callback(message, atype)
 
-    def stilizuj(self, options: Optional[dict] = None) -> Dict[str, Any]:
+    def stilizuj(self, *args, **kwargs):
+        """Omotač: iza stilizacije čisti mrtve slike i linkove (P2.10, P2.11)."""
+        r = self._stilizuj_bez_ciscenja(*args, **kwargs)
+        try:
+            import os as _os
+            p = r.get("epub_path") if isinstance(r, dict) else None
+            if p and _os.path.isfile(str(p)):
+                from epub.ocisti import ocisti_epub
+                r["ocisceno"] = ocisti_epub(p)
+        except Exception as _e:
+            print("[ocisti] greška:", _e)
+        return r
+
+    def _stilizuj_bez_ciscenja(self, options: Optional[dict] = None) -> Dict[str, Any]:
         self.log(f"EpubStylerManager: {self.epub_path.name}", "info")
 
         try:

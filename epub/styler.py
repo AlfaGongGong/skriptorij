@@ -1033,6 +1033,11 @@ def _dodaj_dropcap(soup):
     prvi_char = prvi_tekst[0] if prvi_tekst else ""
     dijalog_chars = ("—", "–", "-", "‒", "―", '"', "„", '"', '"', "«", "'")
 
+    if prvi_char in ('"', "\u201e", "\u201c", "\u201d", "\u00ab", "'"):
+        # P2.12: govor u navodnicima na početku poglavlja: bez dropcapa i bez umjetne crtice
+        prvi_p["class"] = list(_cls_ranije) + ["booklyfi-prvi"]
+        return False
+
     if prvi_char in dijalog_chars:
         # F0.11: dijalog na pocetku — velika crtica umesto slova
         if prvi_char in ("—", "–", "‒", "―"):
