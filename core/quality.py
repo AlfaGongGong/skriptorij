@@ -22,7 +22,7 @@ from bs4 import BeautifulSoup
 
 # Prag za retry — realno dostizan (AI scoreri max 9.2-9.3).
 # Score < 9.2 -> retry s feedbackom; score >= 9.2 -> OK, ne diraj.
-_QUALITY_RESCUE_THRESHOLD = 9.2
+_QUALITY_RESCUE_THRESHOLD = 8.0  # P2.x prag: uz stvarne AI ocjene (kompozit ~8.5-9.0) 9.2 bi retroom obuhvatio gotovo sve blokove
 
 # Prag za prihvatanje kesa — ne gubi revidirano pri restartu.
 # Score >= 7.5 ("dobar prevod") -> kes se prihvata. Score < 7.5 -> ponovo obradi.
@@ -492,7 +492,7 @@ async def _scoruj_kvalitetu(
             "opci": "TIP: OPCI. Ocjeni sva 4 kriterija.\n",
         }.get(tip_ocjenjivanja, "TIP: OPCI.\n")
 
-        prompt = f"{tip_prefix}TEKST ZA OCJENU:\n{cist}"
+        prompt = f"{tip_prefix}NAPOMENA: tekst je ISJECAK (prvih ~900 znakova odlomka); NE kaznjavaj prekinut pocetak ili kraj.\nTEKST ZA OCJENU:\n{cist}"
 
         # uloga="SCORER" → automatski koristi QUALITY_SCORER_SYS,
         # temp=0.05, max_tokens=128, priority=GROQ/CEREBRAS/GEMINI
