@@ -2348,6 +2348,7 @@ window.obrisiReviziju = obrisiReviziju;
 function switchTab(tabId) {
     document.querySelectorAll(".tab-btn").forEach(b => {
         b.classList.toggle("active", b.dataset.tab === tabId);
+        b.setAttribute("aria-selected", b.dataset.tab === tabId ? "true" : "false");
     });
     document.querySelectorAll(".tab-panel").forEach(p => {
         p.classList.toggle("active", p.id === tabId);

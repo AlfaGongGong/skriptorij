@@ -684,7 +684,7 @@ def _init_book_context(self, knjiga_id: str):
                     from core.stil import osiguraj_en_profil as _oep
 
                     _st, _sp = _oep(str(_epub))
-                    logging.info(f"[stil-auto] {_st} {_sp or ''}")
+                    print(f"[stil-auto] {_st} {_sp or ''}", flush=True)
                 except Exception as _se:
                     logging.warning(f"[stil-auto] preskoceno: {_se}")
                 if _profil and not _profil.get("greska"):

@@ -16,10 +16,10 @@
     <div id="toast-container" aria-live="polite"></div>
 
     <!-- ═══════════════════ DOWNLOAD MODAL ═══════════════════ -->
-    <div class="modal-overlay" id="download-modal" role="dialog" aria-modal="true">
+    <div class="modal-overlay" id="download-modal" role="dialog" aria-modal="true" aria-labelledby="download-modal-title">
         <div class="modal modal-friendly">
             <div class="modal-icon">📥</div>
-            <div class="modal-title">Preuzmi djelimičan prijevod?</div>
+            <div class="modal-title" id="download-modal-title">Preuzmi djelimičan prijevod?</div>
             <div class="modal-body" id="modal-body-text">
                 Obrada još nije gotova. Preuzet ćeš ono što je do sada završeno — ostatak knjige ostaje na originalnom jeziku.
             </div>
@@ -35,10 +35,10 @@
     </div>
 
     <!-- ═══════════════════ REPORT MODAL (U3) ═══════════════════ -->
-    <div class="modal-overlay" id="report-modal" role="dialog" aria-modal="true">
+    <div class="modal-overlay" id="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-modal-title">
         <div class="modal modal-friendly">
             <div class="modal-icon">🎉</div>
-            <div class="modal-title">Obrada završena!</div>
+            <div class="modal-title" id="report-modal-title">Obrada završena!</div>
             <div class="modal-body" id="report-body">
                 <div class="report-row"><span>Knjiga</span><b id="report-book">—</b></div>
                 <div class="report-row"><span>Trajanje</span><b id="report-duration">—</b></div>
@@ -69,10 +69,10 @@
     </div>
 
     <!-- ═══════════════════ PRE-FLIGHT MODAL (U1) ═══════════════════ -->
-    <div class="modal-overlay" id="preflight-modal" role="dialog" aria-modal="true">
+    <div class="modal-overlay" id="preflight-modal" role="dialog" aria-modal="true" aria-labelledby="preflight-modal-title">
         <div class="modal modal-friendly">
             <div class="modal-icon">🚀</div>
-            <div class="modal-title">Prije pokretanja</div>
+            <div class="modal-title" id="preflight-modal-title">Prije pokretanja</div>
             <div class="modal-body" id="preflight-body">
                 <div class="preflight-row"><span>Knjiga</span><b id="preflight-book">—</b></div>
                 <div class="preflight-row"><span>Mod</span><b id="preflight-mode">—</b></div>
@@ -90,7 +90,7 @@
     </div>
 
     <!-- ═══════════════════ CONFIRM MODAL (F) ═══════════════════ -->
-    <div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true">
+    <div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
         <div class="modal modal-friendly">
             <div class="modal-icon" id="confirm-icon">⚠️</div>
             <div class="modal-title" id="confirm-title">Potvrda</div>
@@ -153,7 +153,7 @@
                         <div class="upload-icon">📖</div>
                         <div class="upload-label">Klikni ili prevuci fajl ovdje</div>
                         <div class="upload-sub">.epub ili .mobi</div>
-                        <input type="file" id="file-input" accept=".epub,.mobi" />
+                        <input type="file" id="file-input" aria-label="Odaberi knjigu (EPUB ili MOBI)" accept=".epub,.mobi" />
                     </div>
                     <div id="upload-status" class="upload-status"></div>
                     <div id="guide-after-upload" class="guide-banner hidden">
@@ -190,7 +190,7 @@
                             <span class="tier-pill" data-tier="quality">🏆 Kvalitet</span>
                             <span class="tier-pill" data-tier="free">🆓 Besplatni</span>
                         </div>
-                        <select id="model-select">
+                        <select id="model-select" aria-label="Model">
                             <option value="V10_TURBO">V10_TURBO (preporučeno)</option>
                         </select>
                     </div>
@@ -320,19 +320,19 @@
 
         <!-- ═══════════════════ TABS ═══════════════════ -->
         <div class="card card-tabs">
-            <nav class="tab-nav">
-                <button class="tab-btn active" data-tab="tab-quality">🎯 Kval. <span class="badge badge-amber hidden" id="quality-badge">0</span></button>
-                <button class="tab-btn" data-tab="tab-history">📚 Hist.</button>
-                <button class="tab-btn" data-tab="tab-epub">👁 Preg.</button>
-                <button class="tab-btn" data-tab="tab-review">✏️ Rev.</button>
-                <button class="tab-btn" data-tab="tab-expert" aria-label="Stručnjak — API ključevi i dijagnostika">🔬 Struč.</button>
-                <button class="tab-btn" data-tab="panel-tts-filter">🔊 TTS</button>
-                <button class="tab-btn" data-tab="panel-stil" id="tab-btn-stil">✨ Stil</button>
-                <button class="tab-btn" data-tab="tab-monitor" id="tab-btn-monitor" aria-label="Monitor — live audit i dnevnik">📊 Mon.</button>
+            <nav class="tab-nav" role="tablist" aria-label="Glavni tabovi">
+                <button class="tab-btn active" role="tab" aria-controls="tab-quality" aria-selected="true" data-tab="tab-quality">🎯 Kval. <span class="badge badge-amber hidden" id="quality-badge">0</span></button>
+                <button class="tab-btn" role="tab" aria-controls="tab-history" aria-selected="false" data-tab="tab-history">📚 Hist.</button>
+                <button class="tab-btn" role="tab" aria-controls="tab-epub" aria-selected="false" data-tab="tab-epub">👁 Preg.</button>
+                <button class="tab-btn" role="tab" aria-controls="tab-review" aria-selected="false" data-tab="tab-review">✏️ Rev.</button>
+                <button class="tab-btn" role="tab" aria-controls="tab-expert" aria-selected="false" data-tab="tab-expert" aria-label="Stručnjak — API ključevi i dijagnostika">🔬 Struč.</button>
+                <button class="tab-btn" role="tab" aria-controls="panel-tts-filter" aria-selected="false" data-tab="panel-tts-filter">🔊 TTS</button>
+                <button class="tab-btn" role="tab" aria-controls="panel-stil" aria-selected="false" data-tab="panel-stil" id="tab-btn-stil">✨ Stil</button>
+                <button class="tab-btn" role="tab" aria-controls="tab-monitor" aria-selected="false" data-tab="tab-monitor" id="tab-btn-monitor" aria-label="Monitor — live audit i dnevnik">📊 Mon.</button>
             </nav>
 
             <!-- ═══ TAB: QUALITY ═══ -->
-            <div class="tab-panel active" id="tab-quality">
+            <div role="tabpanel" class="tab-panel active" id="tab-quality">
                 <div id="quality-loading" class="tab-empty">
                     Nema podataka. Pokreni obradu da se generišu quality scores.
                 </div>
@@ -439,10 +439,10 @@
             </div>
 
             <!-- ═══ TAB: HISTORY ═══ -->
-            <div class="tab-panel" id="tab-history">
+            <div role="tabpanel" class="tab-panel" id="tab-history">
                 <div id="history-controls" class="history-controls hidden">
                     <label class="history-select-all-wrap">
-                        <input type="checkbox" id="history-select-all" />
+                        <input type="checkbox" id="history-select-all" aria-label="Odaberi sve u povijesti" />
                         <span>Označi sve</span>
                     </label>
                     <span id="history-selected-count" class="history-selected-count">0 zapisa</span>
@@ -463,7 +463,7 @@
             </div>
 
             <!-- ═══ TAB: EPUB PREVIEW ═══ -->
-            <div class="tab-panel" id="tab-epub">
+            <div role="tabpanel" class="tab-panel" id="tab-epub">
                 <div id="epub-no-content" class="tab-empty">
                     <div class="u-empty-icon">📖</div>
                     <div>Pregled prevedenog EPUB-a bit će dostupan nakon završetka obrade.</div>
@@ -483,7 +483,7 @@
             </div>
 
             <!-- ═══ TAB: REVIEW (novi) ═══ -->
-            <div class="tab-panel" id="tab-review">
+            <div role="tabpanel" class="tab-panel" id="tab-review">
                 <a href="/revizija" target="_blank" class="link-revizija">🃏 Kartice teških grešaka (Revizija)</a>
                 <div id="review-empty-banner" class="tab-empty">
                     Odaberi blok iz Kvaliteta ili Historije da ga revidiraš.
@@ -504,7 +504,7 @@
                 </div>
                 <div class="review-editor-wrap">
                     <div id="hl-highlights" class="hl-highlights"></div>
-                    <textarea id="review-text" class="review-text" spellcheck="false" placeholder="Tekst bloka..."></textarea>
+                    <textarea id="review-text" aria-label="Tekst bloka" class="review-text" spellcheck="false" placeholder="Tekst bloka..."></textarea>
                 </div>
                 <div id="hl-stats-bar" class="hl-stats-bar"></div>
                 <div class="review-multi-bar">
@@ -515,7 +515,7 @@
             </div>
 
             <!-- ═══ TAB: EXPERT ═══ -->
-            <div class="tab-panel" id="tab-expert">
+            <div role="tabpanel" class="tab-panel" id="tab-expert">
                 <div class="expert-stack">
                     <details class="expert-section-details" open>
                         <summary class="expert-section-summary">
@@ -559,7 +559,7 @@
                     <div class="expert-section">
                         <div class="expert-section-title">🔑 API ključevi</div>
                         <div class="keys-add-form">
-                            <select id="key-provider-select">
+                            <select id="key-provider-select" aria-label="Provajder API ključa">
                                 <option value="">— Odaberi provajdera —</option>
                                 <option value="GEMINI">♊ GEMINI</option>
                                 <option value="NVIDIA">🟩 NVIDIA NIM</option>
@@ -578,7 +578,7 @@
                                 <option value="KLUSTER">🔗 KLUSTER</option>
                                 <option value="GITHUB">🐙 GITHUB</option>
                             </select>
-                            <input type="password" id="key-value-input" placeholder="Upiši API ključ" class="key-input" />
+                            <input type="password" id="key-value-input" aria-label="API ključ" placeholder="Upiši API ključ" class="key-input" />
                             <button class="btn btn-primary btn-sm" id="btn-add-key">➕ Dodaj</button>
                         </div>
                         <div id="keys-list-container" class="keys-cards-container">
@@ -589,7 +589,7 @@
             </div>
 
             <!-- ═══ TAB: STIL ═══ -->
-            <div class="tab-panel" id="panel-stil">
+            <div role="tabpanel" class="tab-panel" id="panel-stil">
                 <div class="section-header">
                     <h2 class="section-title">✨ Premium Stil — Stara knjižara</h2>
                     <span class="section-subtitle">Primjeni izdavački potpis na prevedenu knjigu</span>
@@ -623,7 +623,7 @@
                         <div class="upload-icon">📖</div>
                         <div class="upload-label">Učitaj knjigu (bilo gdje s telefona)</div>
                         <div class="upload-sub">.epub ili .mobi</div>
-                        <input type="file" id="st-file-input" accept=".epub,.mobi" />
+                        <input type="file" id="st-file-input" aria-label="Odaberi knjigu za stil" accept=".epub,.mobi" />
                     </div>
                     <div id="st-upload-status" class="upload-status"></div>
                     <div class="nr-row" id="st-selected-row" style="display:none">
@@ -695,13 +695,13 @@
             </div>
 
             <!-- ═══ TAB: TTS FILTER ═══ -->
-            <div class="tab-panel" id="panel-tts-filter">
+            <div role="tabpanel" class="tab-panel" id="panel-tts-filter">
                 <div class="nr-card">
                     <div class="upload-zone" id="tts-upload-zone">
                         <div class="upload-icon">📖</div>
                         <div class="upload-label">Učitaj knjigu (bilo gdje s telefona)</div>
                         <div class="upload-sub">.epub ili .mobi</div>
-                        <input type="file" id="tts-file-input" accept=".epub,.mobi" />
+                        <input type="file" id="tts-file-input" aria-label="Odaberi knjigu za TTS" accept=".epub,.mobi" />
                     </div>
                     <div id="tts-upload-status" class="upload-status"></div>
                     <div class="nr-row" id="tts-selected-row" style="display:none">
@@ -775,13 +775,13 @@
                         Format: <code>original#->#ispravka</code> — jedan po red.
                         Redovi koji počinju s <code>#!</code> su komentari.
                     </div>
-                    <textarea class="nr-textarea" id="tts-replacement-textarea" placeholder="original#->#ispravka&#10;varijanta#->#kanonska_forma" spellcheck="false"></textarea>
+                    <textarea class="nr-textarea" id="tts-replacement-textarea" aria-label="Popis zamjena za TTS" placeholder="original#->#ispravka&#10;varijanta#->#kanonska_forma" spellcheck="false"></textarea>
                     <div class="nr-pairs-count" id="tts-pairs-count"></div>
                 </div>
             </div>
 
             <!-- ═══ TAB: MONITOR ═══ -->
-            <div class="tab-panel" id="tab-monitor">
+            <div role="tabpanel" class="tab-panel" id="tab-monitor">
                 <div class="card monitor-head">
                     <div>
                         <span class="mon-label">UTC</span>
