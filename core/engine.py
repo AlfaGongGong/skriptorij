@@ -79,7 +79,7 @@ class SkriptorijAllInOne:
             txt = _default_work_dir / "text"
             if (
                 ckpt.exists() and any(ckpt.glob("*.chk"))
-                and txt.exists() and any(txt.glob("*.html"))
+                and ((txt.exists() and any(txt.glob("*.html"))) or any(_default_work_dir.glob("*.html")))  # P2.2 html u korijenu
             ):
                 return _default_work_dir
 
@@ -94,7 +94,7 @@ class SkriptorijAllInOne:
                     txt_k = k / "text"
                     if (
                         ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
-                        and txt_k.exists() and any(txt_k.glob("*.html"))
+                        and ((txt_k.exists() and any(txt_k.glob("*.html"))) or any(k.glob("*.html")))
                     ):
                         return k
 
@@ -107,7 +107,7 @@ class SkriptorijAllInOne:
                     txt_k = k / "text"
                     if (
                         ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
-                        and txt_k.exists() and any(txt_k.glob("*.html"))
+                        and ((txt_k.exists() and any(txt_k.glob("*.html"))) or any(k.glob("*.html")))
                     ):
                         return k
 
