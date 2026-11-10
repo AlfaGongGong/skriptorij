@@ -1223,6 +1223,9 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     knjiga_mode = getattr(self, "knjiga_mode", None)
     if knjiga_mode is None:
         knjiga_mode = self._detect_language(chunk)
+    # P2.13 EN guard: engleski blok nikad ne ide u LEKTURA granu (bez prijevoda, bez EN-gatea)
+    if knjiga_mode == "LEKTURA" and self._detect_language(chunk) == "PREVOD":
+        knjiga_mode = "PREVOD"
 
     # 2026-10-24 B4b: rel_glosar je vec pomeren gore (pre cache check-a)
     tip_bloka = detektuj_tip_bloka(chunk)
