@@ -1,0 +1,122 @@
+{
+  "verzija": 1,
+  "jezik": "en",
+  "n_odlomaka": 4767,
+  "n_recenica": 13954,
+  "n_rijeci": 169541,
+  "prosj_rijeci_po_recenici": 12.1,
+  "median_rijeci_po_recenici": 9.0,
+  "kratke_pct": 51.2,
+  "duge_pct": 10.0,
+  "prosj_rijeci_po_odlomku": 35.6,
+  "dijalog_odlomaka_pct": 27.9,
+  "dijalog_rijeci_pct": 19.5,
+  "crtica_pct_dijaloga": 1.2,
+  "navodnik_pct_dijaloga": 98.8,
+  "pasiv_pct": 4.7,
+  "fraze": [
+    [
+      "there was a",
+      88
+    ],
+    [
+      "out of the",
+      80
+    ],
+    [
+      "one of the",
+      76
+    ],
+    [
+      "in front of",
+      48
+    ],
+    [
+      "for a moment",
+      44
+    ],
+    [
+      "the back of",
+      42
+    ],
+    [
+      "the end of",
+      39
+    ],
+    [
+      "there was no",
+      33
+    ],
+    [
+      "side of the",
+      33
+    ],
+    [
+      "i don't know",
+      33
+    ],
+    [
+      "the rest of",
+      30
+    ],
+    [
+      "out of his",
+      30
+    ],
+    [
+      "the first time",
+      27
+    ],
+    [
+      "on the floor",
+      26
+    ],
+    [
+      "all the way",
+      25
+    ],
+    [
+      "a lot of",
+      24
+    ],
+    [
+      "end of the",
+      24
+    ],
+    [
+      "looked at the",
+      23
+    ],
+    [
+      "back to the",
+      22
+    ],
+    [
+      "he looked at",
+      22
+    ]
+  ],
+  "pragovi": {
+    "kratka_ispod": 10,
+    "duga_iznad": 25
+  },
+  "autor": "Stephen King",
+  "izvori": [
+    {
+      "datoteka": "A Death -- Stephen King -- 101 -- Simon and Schuster -- f4ffe438ff1a54c8a52081ee9a586b59 -- Anna’s Archive.epub",
+      "odlomaka": 204
+    },
+    {
+      "datoteka": "Stationary Bike -- Stephen King [King, Stephen] -- e39d4cec716e479f4e34b96d856df60b -- Anna’s Archive.epub",
+      "odlomaka": 214
+    },
+    {
+      "datoteka": "The Bad Death of Eduard Delacroix -- Stephen King [King, Stephen] -- The Green Mile #4, 2016 -- Scribner -- 26b36332dac413cc8c3343ac17dbaebc -- Anna’s Archive.epub",
+      "odlomaka": 513
+    },
+    {
+      "datoteka": "The_Collective.epub",
+      "odlomaka": 3836
+    }
+  ]
+}

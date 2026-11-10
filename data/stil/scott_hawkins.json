@@ -1,0 +1,110 @@
+{
+  "verzija": 1,
+  "jezik": "en",
+  "n_odlomaka": 5110,
+  "n_recenica": 16472,
+  "n_rijeci": 130084,
+  "prosj_rijeci_po_recenici": 7.9,
+  "median_rijeci_po_recenici": 6.0,
+  "kratke_pct": 70.0,
+  "duge_pct": 2.1,
+  "prosj_rijeci_po_odlomku": 25.5,
+  "dijalog_odlomaka_pct": 56.6,
+  "dijalog_rijeci_pct": 38.1,
+  "crtica_pct_dijaloga": 0.1,
+  "navodnik_pct_dijaloga": 99.9,
+  "pasiv_pct": 2.4,
+  "fraze": [
+    [
+      "a couple of",
+      85
+    ],
+    [
+      "out of the",
+      66
+    ],
+    [
+      "for a moment",
+      56
+    ],
+    [
+      "one of the",
+      55
+    ],
+    [
+      "there was a",
+      50
+    ],
+    [
+      "a lot of",
+      48
+    ],
+    [
+      "what do you",
+      35
+    ],
+    [
+      "in front of",
+      33
+    ],
+    [
+      "the first time",
+      32
+    ],
+    [
+      "shook his head",
+      32
+    ],
+    [
+      "the rest of",
+      32
+    ],
+    [
+      "looked at him",
+      32
+    ],
+    [
+      "shook her head",
+      32
+    ],
+    [
+      "a moment later",
+      30
+    ],
+    [
+      "i don’t think",
+      29
+    ],
+    [
+      "the two of",
+      28
+    ],
+    [
+      "two of them",
+      28
+    ],
+    [
+      "i don’t know",
+      28
+    ],
+    [
+      "do you mean",
+      28
+    ],
+    [
+      "the big guy",
+      27
+    ]
+  ],
+  "pragovi": {
+    "kratka_ispod": 10,
+    "duga_iznad": 25
+  },
+  "autor": "Scott Hawkins",
+  "izvori": [
+    {
+      "datoteka": "The Library at Mount Char _ A Novel -- Hawkins, Scott -- Penguin Random House LLC, New York, 2015 -- Crown_Archetype -- isbn13 9780553418606 -- 7c28e805fa39d8bc2380069e4f9868f4 -- Anna’s Archive.epub",
+      "odlomaka": 5110
+    }
+  ]
+}
