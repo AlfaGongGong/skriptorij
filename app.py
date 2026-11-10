@@ -2161,6 +2161,29 @@ def create_app() -> Flask:
     from api.routes.monitor import bp as monitor_bp
 
     app.register_blueprint(monitor_bp)
+    # P2.3 qualities: blueprint qualities.py nikad nije bio registriran; prenosimo samo rute kojih jos nema
+    try:
+        from flask import Flask as _QF
+        from api.routes.qualities import bp as _qbp
+
+        _qtmp = _QF("_qtmp")
+        _qtmp.register_blueprint(_qbp)
+        for _qr in _qtmp.url_map.iter_rules():
+            _qm = _qr.methods - {"HEAD", "OPTIONS"}
+            _postoji = {(r.rule, m) for r in app.url_map.iter_rules() for m in r.methods}
+            if any((_qr.rule, m) in _postoji for m in _qm):
+                continue
+            try:
+                app.add_url_rule(
+                    _qr.rule,
+                    endpoint="q_" + _qr.endpoint.split(".")[-1],
+                    view_func=_qtmp.view_functions[_qr.endpoint],
+                    methods=sorted(_qm),
+                )
+            except Exception as _qe:
+                print("[P2.3] ruta nije dodana:", _qr.rule, repr(_qe))
+    except Exception as _qe2:
+        print("[P2.3] qualities rute nisu registrirane:", repr(_qe2))
 
     # P2.6: rute revizije iz blueprinta processing, pojedinacno. Cijeli blueprint se NE registrira
     # jer bi duplicirao rute koje vec postoje u app.py (vidi api/__init__.py).

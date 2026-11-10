@@ -687,7 +687,7 @@ def qa_flags():
 
                 # QA-FLAG ako < 9.5 ili ima marker
                 ima_flag = "QA-FLAG" in content[:500] or (
-                    ocjena is not None and float(ocjena) < 9.5
+                    ocjena is not None and float(ocjena) < __import__("core.quality", fromlist=["_QUALITY_RESCUE_THRESHOLD"])._QUALITY_RESCUE_THRESHOLD
                 )
 
                 if ima_flag:
