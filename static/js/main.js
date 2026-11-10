@@ -4245,18 +4245,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const boxCritical = document.getElementById("qs-box-critical");
     if (boxCritical) boxCritical.onclick = () => selectBadBlocks("critical");
 
-    // Selection bar — 6 dugmadi
-    document.querySelectorAll("#qs-select-bar [data-select]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const tip = btn.dataset.select;
-            if (tip === "clear") {
-                clearMarkedBlocks();
-                document.querySelectorAll("#qs-select-bar [data-select]").forEach(b => b.classList.remove("active"));
-            } else {
-                selectBadBlocks(tip);
-            }
-        });
-    });
+    // Selection bar: klik obradjuje inline onclick -> window._qsSelect (bez drugog listenera, da se ne zove dvaput)
 });
 window.selectBadBlocks = selectBadBlocks;
 window.clearMarkedBlocks = clearMarkedBlocks;

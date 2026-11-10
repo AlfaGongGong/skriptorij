@@ -44,6 +44,31 @@ _P = {
 }
 
 
+_EKAV = None
+
+
+def _ekav_rx():
+    """P6.1: popis ekavizama iz core/kalkovi/ekavizmi.py (jedan izvor istine), kompajlirano jednom."""
+    global _EKAV
+    if _EKAV is None:
+        _EKAV = []
+        try:
+            from pathlib import Path
+            root = str(Path(__file__).resolve().parent.parent)
+            if root not in sys.path:
+                sys.path.insert(0, root)
+            from core.kalkovi.ekavizmi import EKAVIZMI
+            for e in EKAVIZMI:
+                if isinstance(e[0], str):
+                    try:
+                        _EKAV.append(re.compile(e[0], re.I))
+                    except re.error:
+                        pass
+        except Exception as ex:
+            print("[gate] ekavizmi nedostupni: %s" % ex, file=sys.stderr)
+    return _EKAV
+
+
 def _lines(raw):
     m = re.search(r"<body\b.*</body>", raw, re.S | re.I)
     s = _DROP.sub("", m.group(0) if m else raw)
@@ -222,6 +247,9 @@ def gate(path, forbid=("Nail", "Judge"), stil=None):
                 prev = ln
             if not front:
                 joined = " ".join(lines)
+                for rx_e in _ekav_rx():
+                    for m in rx_e.finditer(joined):
+                        add("WARN", "ekavizam (srbizam) u tekstu", p, joined[max(0, m.start() - 20):m.end() + 20])
                 allw = re.findall(r"\w+", joined)
                 eng = sum(1 for w in re.findall(r"[A-Za-z']+", joined) if w.lower() in _EN)
                 if len(allw) >= 50 and eng >= 5:
