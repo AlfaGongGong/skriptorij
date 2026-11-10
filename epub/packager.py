@@ -551,7 +551,7 @@ def _spoji_chk_u_html(engine):
         name = engine.clean_book_name
         for kljuc_len in (30, 25, 20, 15, 10):
             kljuc = name[:kljuc_len]
-            if len(kljuc) < 8:
+            if len(kljuc) < 20:
                 continue
             for k in _CPB.glob(f"_skr_*{kljuc}*"):
                 ckpt_k = k / "checkpoints"
@@ -560,13 +560,10 @@ def _spoji_chk_u_html(engine):
                         and txt_k.exists() and any(txt_k.glob("*.html"))):
                     return k
 
-        # 3. Fuzzy po sufiksu — skini prefikse
-        parts = name.split("_")
-        for i in range(len(parts) - 1):
-            suffix = "_".join(parts[i:])
-            if len(suffix) < 8:
-                continue
-            for k in _CPB.glob(f"_skr_*{suffix}*"):
+        # 3. P2.2 md5: sufiksni fuzzy ukinut (zajednicki "Anna_s_Archive" spajao razlicite knjige)
+        _m5 = _re_sk.search(r"[0-9a-f]{32}", name)
+        if _m5:
+            for k in _CPB.glob(f"_skr_*{_m5.group(0)}*"):
                 ckpt_k = k / "checkpoints"
                 txt_k = k / "text"
                 if (ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
