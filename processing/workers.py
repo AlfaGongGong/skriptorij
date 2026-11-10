@@ -839,16 +839,29 @@ async def process_single_file_worker(self, file_path):
                 f"⚠️ Blok {i} nije obrađen (None), upisujem NEPREVEDENO marker",
                 "warning",
             )
+            # P2.9 marker put: ranije se ovdje nista nije pisalo na disk (blok bez .chk, score 1.0).
+            _score_mk = 1.0
             try:
-                import hashlib as _hl_mk
-                _chk_p = self.checkpoint_dir / f"{file_name}_blok_{i}.chk"
-                _sha = _hl_mk.sha256(chunks[i].encode("utf-8")).hexdigest()[:16]
+                from core.text_utils import _je_odsjecen_html as _jo_mk
+                from processing.pipeline import _chk_write as _cw_mk
+                _pv_mk = self.checkpoint_dir / f"{file_name}_blok_{i}.prevod.chk"
+                _fb_txt = ""
+                if _pv_mk.exists():
+                    _fb_txt = re.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "",
+                                     _pv_mk.read_text("utf-8", errors="ignore"))
+                if len(_fb_txt.strip()) > 200 and not _jo_mk(_fb_txt):
+                    _cw_mk(self, file_name, i, _fb_txt, chunk_for_hash=chunks[i])
+                    _marker = _fb_txt
+                    _score_mk = 6.0
+                    self.log(f"[{file_name}] Blok {i}: koristim .prevod.chk umjesto markera (6.0)", "warning")
+                else:
+                    _cw_mk(self, file_name, i, _marker, chunk_for_hash=chunks[i])
             except Exception as _e:
                 self.log(f"⚠️ Ne mogu upisati marker: {_e}", "warning")
             _stem = f"{file_name}_blok_{i}"
             if "quality_scores" not in self.shared_stats:
                 self.shared_stats["quality_scores"] = {}
-            self.shared_stats["quality_scores"][_stem] = 1.0
+            self.shared_stats["quality_scores"][_stem] = _score_mk
             final_parts.append(_marker)
             continue
         else:
