@@ -427,3 +427,70 @@ def normaliziraj_greske(sirove, en_plain: str, hr_plain: str) -> tuple:
         out, odb = _normaliziraj_greske_orig(filt, en_plain, hr_plain)
         return out, odb + (len(sirove) - len(filt))
     return _normaliziraj_greske_orig(sirove, en_plain, hr_plain)
+
+
+# ── P2.1 JSON popravak: visak zagrade, odsjecen odgovor, "Nema greske" prijave ──
+_PREDOMISLJANJE = _PREDOMISLJANJE + ("nema greške", "nema greske", "nema pogreške", "nema pogreske")
+_izvuci_json_orig = izvuci_json
+
+
+def _ima_oblik(o):
+    return isinstance(o, dict) and ("ok" in o or "greske" in o)
+
+
+def _spasi_odsjeceni(t):
+    """Potpuni objekti iz niza "greske" i kad je odgovor odsjecen; None ako nema nijednog."""
+    i = t.find('"greske"')
+    j = t.find("[", i) if i >= 0 else -1
+    if j < 0:
+        return None
+    objs, k, n = [], j + 1, len(t)
+    while k < n:
+        s = t.find("{", k)
+        if s < 0:
+            break
+        dubina, u_str, esc, kraj = 0, False, False, -1
+        for m in range(s, n):
+            c = t[m]
+            if u_str:
+                if esc:
+                    esc = False
+                elif c == "\\":
+                    esc = True
+                elif c == '"':
+                    u_str = False
+                continue
+            if c == '"':
+                u_str = True
+            elif c == "{":
+                dubina += 1
+            elif c == "}":
+                dubina -= 1
+                if dubina == 0:
+                    kraj = m
+                    break
+        if kraj < 0:
+            break
+        try:
+            o = json.loads(t[s:kraj + 1])
+            if isinstance(o, dict):
+                objs.append(o)
+        except ValueError:
+            pass
+        k = kraj + 1
+    return {"ok": False, "greske": objs} if objs else None
+
+
+def izvuci_json(raw) -> dict | None:
+    obj = _izvuci_json_orig(raw)
+    if _ima_oblik(obj):
+        return obj
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    t = _FENCE_RE.sub("", _OMOTAC_RE.sub("", raw)).strip()
+    fixed = re.sub(r"\]\s*\]\s*\}", "]}", t)
+    if fixed != t:
+        obj = _izvuci_json_orig(fixed)
+        if _ima_oblik(obj):
+            return obj
+    return _spasi_odsjeceni(t)
