@@ -383,6 +383,61 @@ def _je_nonprose_blok(tekst: str) -> bool:
     return False
 
 
+class _ScorerMatch:
+    def __init__(self, s):
+        self._s = s
+
+    def group(self, *a):
+        return self._s
+
+
+def _scorer_json_match(raw):
+    """Izvlaci JSON ocjene iz odgovora: cijeli JSON, prvi uravnotezeni objekt s ocjenom, pa regex za "ocjena"."""
+    t = _strip_ai_json(raw) if raw else ""
+    if not t:
+        return None
+    try:
+        json.loads(t)
+        return _ScorerMatch(t)
+    except ValueError:
+        pass
+    s = t.find("{")
+    while s != -1:
+        d, u, e, kraj = 0, False, False, -1
+        for i in range(s, len(t)):
+            c = t[i]
+            if u:
+                if e:
+                    e = False
+                elif c == "\\":
+                    e = True
+                elif c == '"':
+                    u = False
+                continue
+            if c == '"':
+                u = True
+            elif c == "{":
+                d += 1
+            elif c == "}":
+                d -= 1
+                if d == 0:
+                    kraj = i
+                    break
+        if kraj > 0:
+            cand = t[s:kraj + 1]
+            try:
+                o = json.loads(cand)
+                if isinstance(o, dict) and ("ocjena" in o or "kriteriji" in o):
+                    return _ScorerMatch(cand)
+            except ValueError:
+                pass
+        s = t.find("{", s + 1)
+    mm = re.search(r'"ocjena"\s*:\s*(\d+(?:\.\d+)?)', t)
+    if mm:
+        return _ScorerMatch('{"ocjena": ' + mm.group(1) + '}')
+    return None
+
+
 async def _scoruj_kvalitetu(
     tekst: str,
     engine_fn,
@@ -467,10 +522,7 @@ async def _scoruj_kvalitetu(
 
         if raw:
             # Pokušaj 1: jednolinijski JSON
-            m = re.search(r"\{[^{}]+\}", raw)
-            # Pokušaj 2: višelinijski fallback
-            if not m:
-                m = re.search(r"\{.*?\}", raw, re.DOTALL)
+            m = _scorer_json_match(raw)  # P2.x: stari regex hvatao unutarnji objekt kriteriji
             if m:
                 try:
                     obj = json.loads(_strip_ai_json(m.group()))
