@@ -849,7 +849,7 @@ async def process_single_file_worker(self, file_path):
                 if _pv_mk.exists():
                     _fb_txt = re.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "",
                                      _pv_mk.read_text("utf-8", errors="ignore"))
-                if len(_fb_txt.strip()) > 200 and not _jo_mk(_fb_txt):
+                if len(_fb_txt.strip()) > 200 and not _jo_mk(_fb_txt) and _detektuj_en_ostatke(_fb_txt) < 0.08:
                     _cw_mk(self, file_name, i, _fb_txt, chunk_for_hash=chunks[i])
                     _marker = _fb_txt
                     _score_mk = 6.0

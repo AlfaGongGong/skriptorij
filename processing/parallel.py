@@ -10,6 +10,11 @@ import random
 _SLIDING_WINDOW_SIZE = 3  # PROBLEM #1 fix: bio 1 (ubijao dinamički algoritam); sada = gornja granica iz _get_window_size (max 6)
 
 
+# P2.9: ponovni pokusaji kad blok padne (429 oluja); .prevod.chk cache cini ponovni pokusaj jeftinim
+_MAX_PONOVNIH = 2
+_RETRY_PAUZA = 20
+
+
 class AdaptiveParallelism:
     """
     Upravlja paralelnom obradom chunkova uz poštovanje rate limita.
@@ -109,9 +114,21 @@ class AdaptiveParallelism:
 
                     p_ctx = p_ctx_func(chunks, idx)
                     n_ctx = n_ctx_func(chunks, idx)
-                    res, eng = await self.engine.process_chunk_with_ai(
-                        chunk, p_ctx, n_ctx, idx, file_name
-                    )
+                    res, eng = None, "N/A"
+                    for _pokusaj in range(1 + _MAX_PONOVNIH):
+                        res, eng = await self.engine.process_chunk_with_ai(
+                            chunk, p_ctx, n_ctx, idx, file_name
+                        )
+                        if res is not None:
+                            break
+                        if _pokusaj < _MAX_PONOVNIH:
+                            _pauza = _RETRY_PAUZA * (_pokusaj + 1)
+                            self.engine.log(
+                                f"🔄 Blok {idx} nije obrađen ({eng}) — ponovni pokušaj "
+                                f"{_pokusaj + 1}/{_MAX_PONOVNIH} za {_pauza}s",
+                                "warning",
+                            )
+                            await asyncio.sleep(_pauza)
                     return idx, res, eng
                 except Exception as e:
                     self.engine.log(f"❌ Task greška za blok {idx}: {e}", "error")
