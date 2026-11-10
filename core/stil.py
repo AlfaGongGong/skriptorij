@@ -206,6 +206,10 @@ def izmjeri_epube(putanje, autor: str, jezik: str = "en") -> dict:
 
 
 def slug(autor: str) -> str:
+    if autor and autor.count(",") == 1:
+        _a, _b = [x.strip() for x in autor.split(",")]
+        if _a and _b:
+            autor = _b + " " + _a
     s = unicodedata.normalize("NFKD", autor or "").encode("ascii", "ignore").decode()
     s = re.sub(r"[^a-z0-9]+", "_", s.lower()).strip("_")
     return s or "nepoznat_autor"
@@ -255,3 +259,48 @@ def usporedi(en: dict, hr: dict) -> list:
         out.append(("stil: HR dijalog bez crtica (< %d%%)" % k["crtica_min"],
                     "crtica u %.1f%% dijaloga" % cr))
     return out
+
+
+def osiguraj_en_profil(epub_path, root=None):
+    """P4.4: ako za autora EN izvornika jos nema data/stil/<slug>.json, izmjeri ga i spremi.
+
+    Preskace zbirke, knjige bez autora i knjige koje nisu na engleskom. Ne prepisuje postojeci profil.
+    Vraca (status, putanja|None); nikad ne baca iznimku.
+    """
+    try:
+        import html as _h
+        epub_path = str(epub_path)
+        try:
+            from core.zbirka import je_zbirka
+            zb, _r = je_zbirka(epub_path)
+        except Exception:
+            zb = False
+        if zb:
+            return "zbirka", None
+        with zipfile.ZipFile(epub_path) as z:
+            opf = next((n for n in z.namelist() if n.lower().endswith(".opf")), None)
+            t = z.read(opf).decode("utf-8", "ignore") if opf else ""
+        m = re.search(r"<dc:creator[^>]*>([^<]*)", t)
+        autor = _h.unescape(m.group(1)).strip() if m else ""
+        if not autor or autor.lower() in ("?", "va", "unknown", "sconosciuto", "nepoznat autor", "grupa autora"):
+            return "bez_autora", None
+        korijen = Path(root) if root else Path(__file__).resolve().parent.parent
+        cilj = korijen / "data" / "stil" / (slug(autor) + ".json")
+        if cilj.exists():
+            return "postoji", cilj
+        odl = izdvoji_odlomke(epub_path)
+        tekst = " ".join(odl[:400]).lower()
+        the = len(re.findall(r"\bthe\b", tekst))
+        hrr = len(re.findall(r"\b(je|da|se)\b", tekst))
+        if not (the > 50 and the > 3 * hrr):
+            return "nije_en", None
+        prof = izmjeri_epube([epub_path], autor, "en")
+        if prof.get("n_recenica", 0) < MIN_RECENICA_PROFIL:
+            return "premalo_teksta", None
+        prof.setdefault("jezik", "en")
+        return "spremljeno", spremi(prof, autor, "en", root=root)
+    except Exception as e:  # noqa: BLE001 — prijevod se ne smije srusiti zbog stila
+        return "greska: %s: %s" % (type(e).__name__, e), None
+
+
+MIN_RECENICA_PROFIL = 200

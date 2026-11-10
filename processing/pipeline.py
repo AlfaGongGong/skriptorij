@@ -680,6 +680,13 @@ def _init_book_context(self, knjiga_id: str):
             _epub = getattr(self, "book_path", None)
             if _epub and Path(_epub).exists():
                 _profil = analiziraj_knjigu(str(_epub))
+                try:
+                    from core.stil import osiguraj_en_profil as _oep
+
+                    _st, _sp = _oep(str(_epub))
+                    logging.info(f"[stil-auto] {_st} {_sp or ''}")
+                except Exception as _se:
+                    logging.warning(f"[stil-auto] preskoceno: {_se}")
                 if _profil and not _profil.get("greska"):
                     self.book_context.postavi_autor_stil_profil(_profil)
                     logging.info(
