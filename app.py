@@ -2184,6 +2184,45 @@ def create_app() -> Flask:
                 print("[P2.3] ruta nije dodana:", _qr.rule, repr(_qe))
     except Exception as _qe2:
         print("[P2.3] qualities rute nisu registrirane:", repr(_qe2))
+    # P2.3 names: blueprinti u api/routes koji nisu registrirani; prenosimo samo /api/names* i /api/download* koje jos nema
+    try:
+        import importlib as _il
+        import pkgutil as _pk
+
+        import api.routes as _ar
+        from flask import Blueprint as _BP, Flask as _NF
+
+        for _mi in _pk.iter_modules(_ar.__path__):
+            try:
+                _mod = _il.import_module("api.routes." + _mi.name)
+            except Exception as _ie:
+                print("[P2.3] modul nije uvezen:", _mi.name, repr(_ie))
+                continue
+            for _bp in {v for v in vars(_mod).values() if isinstance(v, _BP)}:
+                _nt = _NF("_ntmp_" + _mi.name + "_" + _bp.name)
+                try:
+                    _nt.register_blueprint(_bp)
+                except Exception as _re:
+                    print("[P2.3] bp nije registriran na pomocnu app:", _bp.name, repr(_re))
+                    continue
+                for _nr in _nt.url_map.iter_rules():
+                    if not _nr.rule.startswith(("/api/names", "/api/download")):
+                        continue
+                    _nm = _nr.methods - {"HEAD", "OPTIONS"}
+                    _po = {(r.rule, m) for r in app.url_map.iter_rules() for m in r.methods}
+                    if any((_nr.rule, m) in _po for m in _nm):
+                        continue
+                    try:
+                        app.add_url_rule(
+                            _nr.rule,
+                            endpoint="n_" + _mi.name + "_" + _nr.endpoint.split(".")[-1],
+                            view_func=_nt.view_functions[_nr.endpoint],
+                            methods=sorted(_nm),
+                        )
+                    except Exception as _ae:
+                        print("[P2.3] ruta nije dodana:", _nr.rule, repr(_ae))
+    except Exception as _ne:
+        print("[P2.3] names/download rute nisu registrirane:", repr(_ne))
 
     # P2.6: rute revizije iz blueprinta processing, pojedinacno. Cijeli blueprint se NE registrira
     # jer bi duplicirao rute koje vec postoje u app.py (vidi api/__init__.py).
