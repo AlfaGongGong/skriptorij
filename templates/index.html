@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
     <link rel="manifest" href="/static/manifest.json" />
     <meta name="theme-color" content="#030711" />
-    <link rel="stylesheet" href="/static/css/style.css?v=20261024a" />
+    <link rel="stylesheet" href="/static/css/style.css?v=20261110a" />
 </head>
 <body>
     <a href="#app" class="skip-link">Preskoči na sadržaj</a>
@@ -313,7 +313,7 @@
                     <button class="btn btn-sm hidden" id="btn-resume">▶ Nastavi</button>
                     <button class="btn btn-sm" id="btn-reset">🔄 Resetuj</button>
                     <button class="btn btn-sm btn-danger" id="btn-stop">⏹ Zaustavi</button>
-                    <button class="btn btn-sm btn-outline" id="btn-show-setup-dashboard" style="margin-left: auto">⚙ Postavi novo</button>
+                    <button class="btn btn-sm btn-outline u-ml-auto" id="btn-show-setup-dashboard">⚙ Postavi novo</button>
                 </div>
             </div>
 </section>
@@ -372,12 +372,12 @@
                             <div class="qs-box-val" id="qs-good">0</div>
                             <div class="qs-box-label">✅ Dobro<br />6.5–8.5</div>
                         </div>
-                        <div class="qs-box qs-poor qs-box-clickable" id="qs-box-poor" style="cursor:pointer" title="Klikni da označiš sve blokove koji trebaju retro">
+                        <div class="qs-box qs-poor qs-box-clickable" id="qs-box-poor" title="Klikni da označiš sve blokove koji trebaju retro">
                             <div class="qs-box-val" id="qs-poor">0</div>
                             <div class="qs-box-label">⚠ Treba retro<br />4.0–6.5</div>
                             <div class="qs-box-hint">↗ Označi sve</div>
                         </div>
-                        <div class="qs-box qs-critical qs-box-clickable" id="qs-box-critical" style="cursor:pointer" title="Klikni da označiš sve kritične blokove">
+                        <div class="qs-box qs-critical qs-box-clickable" id="qs-box-critical" title="Klikni da označiš sve kritične blokove">
                             <div class="qs-box-val" id="qs-critical">0</div>
                             <div class="qs-box-label">🔴 Kritično<br />&lt; 4.0</div>
                             <div class="qs-box-hint">↗ Označi sve</div>
@@ -388,12 +388,12 @@
                     <div class="quality-select-bar" id="qs-select-bar">
                         <span class="qs-sel-label">Selektuj:</span>
                         <button class="btn btn-sm" data-select="all" onclick="window._qsSelect && window._qsSelect('all')" title="Svi blokovi">⊕ Sve</button>
-                        <button class="btn btn-sm" data-select="excellent" onclick="window._qsSelect && window._qsSelect('excellent')" style="border-color:var(--emerald);color:var(--emerald)" title="Score ≥ 8.5">🌟 Odlično</button>
-                        <button class="btn btn-sm" data-select="good" onclick="window._qsSelect && window._qsSelect('good')" style="border-color:var(--accent-2);color:var(--accent-2)" title="Score 6.5-8.5">✅ Dobro</button>
-                        <button class="btn btn-sm" data-select="poor" onclick="window._qsSelect && window._qsSelect('poor')" style="border-color:var(--amber);color:var(--amber)" title="Score 4.0-6.5">⚠ Loše</button>
-                        <button class="btn btn-sm" data-select="critical" onclick="window._qsSelect && window._qsSelect('critical')" style="border-color:var(--rose);color:var(--rose)" title="Score < 4.0">🔴 Kritično</button>
-                        <button class="btn btn-sm" data-select="human_review" onclick="window._qsSelect && window._qsSelect('human_review')" style="border-color:var(--violet);color:var(--violet)" title="Blokovi iz human_review.json">👤 Human Review</button>
-                        <button class="btn btn-sm btn-outline" data-select="clear" onclick="window._qsSelect && window._qsSelect('clear')" title="Poništi selekciju" style="margin-left:auto">✕ Poništi</button>
+                        <button class="btn btn-sm btn-tone-emerald" data-select="excellent" onclick="window._qsSelect && window._qsSelect('excellent')" title="Score ≥ 8.5">🌟 Odlično</button>
+                        <button class="btn btn-sm btn-tone-accent2" data-select="good" onclick="window._qsSelect && window._qsSelect('good')" title="Score 6.5-8.5">✅ Dobro</button>
+                        <button class="btn btn-sm btn-tone-amber" data-select="poor" onclick="window._qsSelect && window._qsSelect('poor')" title="Score 4.0-6.5">⚠ Loše</button>
+                        <button class="btn btn-sm btn-tone-rose" data-select="critical" onclick="window._qsSelect && window._qsSelect('critical')" title="Score < 4.0">🔴 Kritično</button>
+                        <button class="btn btn-sm btn-tone-violet" data-select="human_review" onclick="window._qsSelect && window._qsSelect('human_review')" title="Blokovi iz human_review.json">👤 Human Review</button>
+                        <button class="btn btn-sm btn-outline u-ml-auto" data-select="clear" onclick="window._qsSelect && window._qsSelect('clear')" title="Poništi selekciju">✕ Poništi</button>
                     </div>
 
                     <!-- F3d: deterministicke metrike (quality_metrics.json) -->
@@ -418,7 +418,7 @@
 
                     <div id="qs-refix-bar" class="banner-refix" style="display:none">
                         <span id="qs-refix-info">0 blokova označeno</span>
-                        <button class="btn btn-sm" style="border-color:var(--rose);color:var(--rose)">🔴 + Kritični</button>
+                        <button class="btn btn-sm btn-tone-rose">🔴 + Kritični</button>
                         <button class="btn btn-sm" onclick="clearMarkedBlocks()">✕ Poništi</button>
                         <button class="btn btn-sm btn-warning" onclick="sendMarkedForRefix()">🔧 Pošalji na relekturu</button>
                     </div>
@@ -428,7 +428,7 @@
                             <span>Blokovi spremni za štampu</span>
                             <span id="qs-print-ready-pct">0%</span>
                         </div>
-                        <div class="progress-track" style="height: 8px">
+                        <div class="progress-track progress-track-sm">
                             <div class="progress-fill" id="qs-print-ready-bar" style="width: 0%; background: linear-gradient(90deg, var(--emerald), var(--accent-2));"></div>
                         </div>
                     </div>
@@ -465,9 +465,9 @@
             <!-- ═══ TAB: EPUB PREVIEW ═══ -->
             <div class="tab-panel" id="tab-epub">
                 <div id="epub-no-content" class="tab-empty">
-                    <div style="font-size: 2rem; margin-bottom: 8px">📖</div>
+                    <div class="u-empty-icon">📖</div>
                     <div>Pregled prevedenog EPUB-a bit će dostupan nakon završetka obrade.</div>
-                    <div style="font-size: 0.68rem; margin-top: 6px; color: var(--tx-3); font-family: var(--font-mono);">
+                    <div class="u-empty-hint">
                         Možeš i preuzeti EPUB i otvoriti ga u svom readeru.
                     </div>
                 </div>
@@ -484,7 +484,7 @@
 
             <!-- ═══ TAB: REVIEW (novi) ═══ -->
             <div class="tab-panel" id="tab-review">
-                <a href="/revizija" target="_blank" style="display:block;margin:8px 0;padding:12px;text-align:center;border-radius:10px;background:#2e7d32;color:#fff;text-decoration:none;">🃏 Kartice teških grešaka (Revizija)</a>
+                <a href="/revizija" target="_blank" class="link-revizija">🃏 Kartice teških grešaka (Revizija)</a>
                 <div id="review-empty-banner" class="tab-empty">
                     Odaberi blok iz Kvaliteta ili Historije da ga revidiraš.
                 </div>
@@ -497,10 +497,10 @@
                     <span id="review-filename" class="review-filename">—</span>
                     <span id="review-hint-count" class="review-hint"></span>
                 </div>
-                <div class="review-toolbar" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+                <div class="review-toolbar">
                     <button id="review-save-btn" class="btn btn-primary" onclick="sacuvajTrenutniChunk()" disabled>💾 Sačuvaj izmjenu</button>
                     <button id="review-delete-btn" class="btn btn-danger" onclick="obrisiTrenutniChunk()" disabled>🗑️ Obriši (AI re-obrada)</button>
-                    <span id="review-score-badge" class="review-score" style="margin-left:auto;font-weight:600;"></span>
+                    <span id="review-score-badge" class="review-score"></span>
                 </div>
                 <div class="review-editor-wrap">
                     <div id="hl-highlights" class="hl-highlights"></div>
@@ -548,7 +548,7 @@
                             <button class="audit-filter-chip" data-filter="log-critical">GREŠKA</button>
                         </div>
                         <div class="audit-log" id="audit-log">
-                            <span style="color: var(--tx-3)">Sistem spreman.</span>
+                            <span class="u-tx3">Sistem spreman.</span>
                         </div>
                         <div id="audit-scroll-indicator">
                             <span>⏸ Autoscroll pauziran</span>
@@ -786,14 +786,14 @@
                     <div>
                         <span class="mon-label">UTC</span>
                         <span id="mon-utc" class="mon-value">--:--:--</span>
-                        <span class="mon-label" style="margin-left:12px">reset RPD za</span>
+                        <span class="mon-label u-ml-12">reset RPD za</span>
                         <span id="mon-reset" class="mon-value">--</span>
                     </div>
                     <div>
                         <label class="mon-auto">
                             <input type="checkbox" id="mon-auto" checked> auto-refresh 5s
                         </label>
-                        <button class="btn btn-sm" id="mon-refresh" style="margin-left:8px">↻ Osvježi</button>
+                        <button class="btn btn-sm u-ml-8" id="mon-refresh">↻ Osvježi</button>
                     </div>
                 </div>
                 <div id="mon-body"></div>
@@ -864,9 +864,6 @@
     <script src="/static/js/main.js?v=20261024c"></script>
     <script src="/static/js/heatmap.js?v=1791803042"></script>
     <script src="/static/js/ui/fleet.js?v=1791803042"></script>
-<a id="p26-revizija-fab" href="/revizija" target="_blank" rel="noopener"
-   style="position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom, 0px));z-index:9999;
-          padding:12px 16px;border-radius:999px;background:#2e7d32;color:#fff;text-decoration:none;
-          font:600 15px/1 system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.45);">🃏 Revizija</a>
+<a id="p26-revizija-fab" href="/revizija" target="_blank" rel="noopener">🃏 Revizija</a>
 </body>
 </html>
