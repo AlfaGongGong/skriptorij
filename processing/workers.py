@@ -6,7 +6,7 @@ import time
 
 from bs4 import BeautifulSoup
 
-from core.quality import _scoruj_kvalitetu
+from core.quality import _QUALITY_RESCUE_THRESHOLD, _scoruj_kvalitetu
 from core.text_utils import _HTML_TAG_RE, _detektuj_en_ostatke
 from processing.parallel import AdaptiveParallelism
 
@@ -680,7 +680,7 @@ def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
             novi_qa = _qa_ai_ocjena(res, fleet)
             novi_ocjena = novi_qa.get("ukupno", 0)
 
-            if novi_ocjena >= 9.5:
+            if novi_ocjena >= _QUALITY_RESCUE_THRESHOLD:
                 self.log(
                     "  Retry QA uspio: " + str(ocjena) + " -> " + str(novi_ocjena),
                     "tech",
@@ -929,8 +929,8 @@ async def process_single_file_worker(self, file_path):
                     qa = _qa_ai_ocjena(res, fleet)
                     ukupno = qa.get("ukupno", 0)
 
-                if ukupno < 9.5:
-                    self.log("  QA: " + str(ukupno) + " < 9.5", "warning")
+                if ukupno < _QUALITY_RESCUE_THRESHOLD:
+                    self.log("  QA: " + str(ukupno) + " < " + str(_QUALITY_RESCUE_THRESHOLD), "warning")
 
                     # Retry 1 — s feedbackom
                     for retry_broj in range(1, 3):  # max 2 retry-a
@@ -957,7 +957,7 @@ async def process_single_file_worker(self, file_path):
                             break
 
                     # Ako i dalje < 9.5 — ostavi u EPUB s markerom
-                    if ukupno < 9.5:
+                    if ukupno < _QUALITY_RESCUE_THRESHOLD:
                         self.log(
                             "  QA-FLAG chunk " + str(i) + " (QA=" + str(ukupno) + ")",
                             "warning",

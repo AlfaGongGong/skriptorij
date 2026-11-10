@@ -26,7 +26,7 @@ from core.text_utils import (
     _smart_extract,
 )
 
-_RETRO_QA_THRESHOLD = 9.5  # FIX: QA retry prag za retro
+_RETRO_QA_THRESHOLD = _QUALITY_RESCUE_THRESHOLD  # P2.x prag: vezano uz jedinstveni prag  # FIX: QA retry prag za retro
 
 _RETRO_INLINE_TAGS = frozenset(
     {"p", "br", "em", "i", "strong", "b", "blockquote",
