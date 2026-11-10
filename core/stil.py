@@ -124,6 +124,14 @@ def izdvoji_odlomke(epub_path) -> list:
                 t = re.sub(r"\s+", " ", p.get_text()).strip()
                 if t and any(c.isalpha() for c in t):
                     out.append(t)
+            # P4.4: goli tekst izvan <p> (body/div/blockquote, redovi odvojeni s <br>)
+            for kont in soup.find_all(["body", "div", "blockquote"]):
+                for dijete in kont.children:
+                    if type(dijete).__name__ != "NavigableString":
+                        continue
+                    t = re.sub(r"\s+", " ", str(dijete)).strip()
+                    if len(t) > 1 and any(c.isalpha() for c in t):
+                        out.append(t)
     return out
 
 
