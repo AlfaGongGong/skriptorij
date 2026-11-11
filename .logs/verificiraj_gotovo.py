@@ -34,7 +34,7 @@ async def main():
         for i, p in enumerate(hr_blokovi):
             idx = int(re.search(r"_blok_(\d+)\.chk$", p.name).group(1))
             key = "%s_blok_%d" % (fn, idx)
-            if key in res_db: continue
+            if key in res_db and res_db[key].get("verifier") != "skip": continue
             hr = re.sub(r"^<!--.*?-->\s*", "", p.read_text("utf-8", "ignore"), flags=re.S)
             poslovi.append((key, fn, idx, chunks[i], hr))
     print("za verificirati: %d | vec gotovo: %d | preskoceno datoteka: %d" % (len(poslovi), len(res_db), len(preskoceno)))

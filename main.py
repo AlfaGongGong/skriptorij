@@ -1,3 +1,4 @@
+import os as _os_v; _os_v.environ.setdefault("BOOKLYFI_VERIFIER", "1")  # verifikator ukljucen po defaultu
 import atexit
 import contextlib
 import json
