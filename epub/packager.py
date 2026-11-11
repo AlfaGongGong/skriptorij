@@ -490,7 +490,7 @@ def _spoji_chk_u_files_dict(files: dict, checkpoint_dir: Path) -> int:
                 logger.exception("[C1_http] packager.py:477 Exception")
 
             if raw:
-                delovi.append(raw)
+                delovi.append(_obmotaj_goli_tekst(raw))
 
         if not delovi:
             continue
@@ -713,7 +713,7 @@ def _spoji_chk_u_html(engine):
                 pass
 
             if raw:
-                delovi.append(raw)
+                delovi.append(_obmotaj_goli_tekst(raw))
 
         if not delovi:
             # Nema .chk za ovaj fajl (paratekst) — samo ocisti HTML
@@ -1030,3 +1030,38 @@ def finalize(self):
             self.log("🗑️ Live preview fajl obrisan.", "tech")
     except Exception:
         pass
+
+
+def _obmotaj_goli_tekst(raw):
+    """Goli tekst na vrhu bloka (bez <p>) obmotaj u <p>, po novim redovima.
+    Inline tagovi (i, em, b, span...) ostaju uz svoj tekst. Za ElevenReader."""
+    try:
+        import re as _re
+        from bs4 import BeautifulSoup, NavigableString, Tag
+        inline = {"i", "em", "b", "strong", "span", "a", "sup", "sub", "u", "small", "br"}
+        s = BeautifulSoup(raw, "html.parser")
+        runs, cur = [], []
+        for node in list(s.contents):
+            je_inline = (type(node) is NavigableString) or (isinstance(node, Tag) and node.name in inline)
+            if je_inline:
+                cur.append(node)
+            elif cur:
+                runs.append(cur)
+                cur = []
+        if cur:
+            runs.append(cur)
+        promjena = False
+        for run in runs:
+            tekst = "".join(x.get_text() if isinstance(x, Tag) else str(x) for x in run)
+            if not tekst.strip():
+                continue
+            html = "".join(x.decode() if isinstance(x, Tag) else x.output_ready() for x in run)
+            for d in [d.strip() for d in _re.split(r"\n+", html) if d.strip()]:
+                p = BeautifulSoup("<p>" + d + "</p>", "html.parser").p
+                run[0].insert_before(p)
+            for x in run:
+                x.extract()
+            promjena = True
+        return str(s) if promjena else raw
+    except Exception:
+        return raw
