@@ -349,6 +349,26 @@ _EN_STOPWORDS = frozenset(
 )
 
 
+def _en_recenice(tekst: str, min_rijeci: int = 5, prag: float = 0.20) -> int:
+    """P2.14: broj rečenica koje izgledaju engleski (udio EN stop-riječi >= prag).
+    Rečenice s HR dijakriticima i kratke rečenice (<min_rijeci) se preskaču."""
+    try:
+        cist = re.sub(r"<[^>]+>", " ", tekst)
+        n = 0
+        for rec in re.split(r"(?<=[.!?…])\s+", cist):
+            low = rec.lower()
+            if any(c in _HR_DIACRITICALS for c in low):
+                continue
+            words = re.findall(r"\b[a-z]{2,}\b", low)
+            if len(words) < min_rijeci:
+                continue
+            if sum(1 for w in words if w in _EN_STOPWORDS) / len(words) >= prag:
+                n += 1
+        return n
+    except Exception:
+        return 0
+
+
 def _detektuj_en_ostatke(tekst: str) -> float:
     """
     B02 FIX — Stara verzija vraćala 0.0 za SVE tekstove s ikim HR dijakritičkim

@@ -34,6 +34,7 @@ from core.text_utils import (
     _agresivno_cisti,
     _automatska_korekcija,
     _detektuj_en_ostatke,
+    _en_recenice,
     _detektuj_halucinaciju,
     _je_ai_anotacija,
     _post_process_tipografija,
@@ -1390,6 +1391,62 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             )
             finalno = sirovo
 
+        # P2.15 gate: ćirilica -> latinica (automatski), ekavizmi samo upozorenje
+        try:
+            from core.gate_provjere import gate_blok
+            finalno, _gate_info = gate_blok(finalno)
+            if _gate_info:
+                self.log(f"[{file_name}] Blok {chunk_idx}: 🛡 gate: {_gate_info}", "warning")
+        except Exception as _ge:
+            self.log(f"[{file_name}] Blok {chunk_idx}: gate greška: {_ge}", "warning")
+
+        # P2.15 LEKTURA guardovi: EN rečenice, strani tekst (classla), izostavljeni dijelovi
+        try:
+            _en_rec_l = _en_recenice(finalno)
+            if _en_rec_l >= 2:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: 🇬🇧 {_en_rec_l} EN rečenica u lekturi — odbijam upis, pokušavam ponovo.",
+                    "warning",
+                )
+                self.chunk_skips += 1
+                return None, "EN_REC"
+            if __import__("os").environ.get("BOOKLYFI_CLASSLA", "1") != "0":
+                from core.classla_provjera import analiza as _cl_an_l
+
+                _cl_l = await asyncio.to_thread(_cl_an_l, finalno)
+                if (
+                    _cl_l
+                    and _cl_l["udio_x"] >= 0.3
+                    and _cl_l["rijeci"] >= 60
+                    and "NEPREVEDENO" not in finalno
+                ):
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: 🇬🇧 classla (lektura): strani tekst "
+                        f"(X={_cl_l['udio_x']:.0%}) — odbijam upis, pokušavam ponovo.",
+                        "warning",
+                    )
+                    self.chunk_skips += 1
+                    return None, "EN_REC"
+            from core.lektura_provjera import izostavljeno as _lek_izo
+
+            _iz_l = _lek_izo(chunk, finalno)
+            if _iz_l["udio"] >= 0.15:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ✂️ lektura izostavila {_iz_l['udio']:.0%} teksta "
+                    f"({_iz_l['ispao']} rečenica, npr. “{_iz_l['primjer']}”) — odbijam upis, pokušavam ponovo.",
+                    "warning",
+                )
+                self.chunk_skips += 1
+                return None, "LEKTURA_IZOSTAVLJENO"
+            if _iz_l["ispao"]:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ⚠️ lektura: {_iz_l['ispao']} rečenica bez para u izlazu "
+                    f"({_iz_l['udio']:.0%}) “{_iz_l['primjer']}”",
+                    "warning",
+                )
+        except Exception as _le:
+            self.log(f"[{file_name}] Blok {chunk_idx}: lektura guard greška: {_le}", "warning")
+
         # FIX 1.7: Provera prekinutog teksta
         if _je_prekinut_tekst(chunk, finalno):
             self.log(
@@ -1710,6 +1767,47 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             "warning",
         )
         finalno = sirovo
+
+    # P2.15 gate: ćirilica -> latinica (automatski), ekavizmi samo upozorenje
+    try:
+        from core.gate_provjere import gate_blok
+        finalno, _gate_info = gate_blok(finalno)
+        if _gate_info:
+            self.log(f"[{file_name}] Blok {chunk_idx}: 🛡 gate: {_gate_info}", "warning")
+    except Exception as _ge:
+        self.log(f"[{file_name}] Blok {chunk_idx}: gate greška: {_ge}", "warning")
+
+    # P2.14: rečenična EN provjera prije upisa .chk
+    _en_rec = _en_recenice(finalno)
+    if _en_rec >= 2:
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: 🇬🇧 {_en_rec} EN rečenica u prijevodu — odbijam upis, pokušavam ponovo.",
+            "warning",
+        )
+        self.chunk_skips += 1
+        return None, "EN_REC"
+
+    # P2.15 classla: strani tekst (UPOS X) u HR bloku; offline model, u zasebnoj niti
+    if __import__("os").environ.get("BOOKLYFI_CLASSLA", "1") != "0":
+        try:
+            from core.classla_provjera import analiza as _cl_an
+
+            _cl = await asyncio.to_thread(_cl_an, finalno)
+            if _cl and _cl["udio_x"] >= 0.3 and _cl["rijeci"] >= 60 and "NEPREVEDENO" not in finalno:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: 🇬🇧 classla: strani tekst "
+                    f"(X={_cl['udio_x']:.0%}, {_cl['sumnjive_rec']} rečenica) — odbijam upis, pokušavam ponovo.",
+                    "warning",
+                )
+                self.chunk_skips += 1
+                return None, "EN_REC"
+            elif _cl and _cl["sumnjive_rec"] >= 1:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ⚠️ classla: 1 sumnjiva rečenica {_cl['primjeri'][:1]}",
+                    "warning",
+                )
+        except Exception as _ce:
+            self.log(f"[{file_name}] Blok {chunk_idx}: classla greška: {_ce}", "warning")
 
     # FIX 1.7: Provera prekinutog teksta
     if _je_prekinut_tekst(chunk, finalno):

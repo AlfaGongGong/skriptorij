@@ -4315,3 +4315,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("[ZEN MODE] Dashboard očišćen. Fokus: Human Timeline.");
 });
+
+// P2.15 alati: nakon klika na TTS/Stil skrolaj na panel s tabovima
+(function () {
+    document.querySelectorAll(".tool-nav .tab-btn").forEach(b => {
+        b.addEventListener("click", () => {
+            const c = document.querySelector(".card-tabs");
+            if (c && c.scrollIntoView) {
+                try { c.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (_) {}
+            }
+        });
+    });
+})();

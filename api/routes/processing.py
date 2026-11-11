@@ -1394,6 +1394,18 @@ def _p26_en_tekstovi(clean):
                 except Exception as e:
                     print("[P2.6] EN čitanje nije uspjelo:", f, repr(e))
                 break
+    if not out:  # P2.15 EN fallback: izvorni EPUB izvan Books/MoonReader/original
+        try:
+            _fb = _p26_izvorni_epub()
+            if _fb:
+                with zipfile.ZipFile(_fb) as z:
+                    for n in z.namelist():
+                        if n.endswith((".html", ".xhtml")):
+                            raw = z.read(n).decode("utf-8", "ignore")
+                            t = _h.unescape(re.sub(r"<[^>]+>", " ", raw))
+                            out[n.rsplit("/", 1)[-1]] = re.sub(r"\s+", " ", t)
+        except Exception as e:
+            print("[P2.15] EN fallback nije uspio:", repr(e))
     _P26_EN_CACHE[clean] = out
     return out
 
@@ -1446,6 +1458,18 @@ def review_kartice():
                     raw = p.read_text("utf-8", "ignore") if p.exists() else ""
                     raw = re.sub(r"<!--.*?-->", " ", raw, flags=re.S)
                     hr_plain = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", raw))
+                if tip in ("izostavljeno", "dodano"):
+                    try:
+                        from core import sidro as _sd
+                        _s = _sd.sidro_za_blok(en_t, ck, k, tip, en, hr, hr_plain)
+                    except Exception as _se:
+                        print("[P2.15] sidro greška:", repr(_se))
+                        _s = None
+                    if _s:
+                        en, hr = _s["en"], _s["hr"]
+                        if _od.je_odbacen(en, hr) or _od.odlucen(clean, en, hr):
+                            continue
+                        _sd.KES[(k, hr)] = {"novo": _s.get("novo"), "tip": tip}
                 kartice.append({
                     "id": len(kartice) + 1, "knjiga": clean, "blok": k, "tip": tip,
                     "tip_naziv": _P26_TIP_NAZIV.get(tip, tip),
@@ -1530,8 +1554,41 @@ def review_prevedi():
     d = _rq.get_json(silent=True) or {}
     en = str(d.get("en", "")).strip()
     hr = str(d.get("hr", "")).strip()
+    if not hr and str(d.get("tip", "")) in ("izostavljeno", "dodano"):
+        return jsonify({"error": "Mjesto u prijevodu nije moguće odrediti automatski. Ostavi ili preskoči."}), 422
     if not en or not hr:
         return jsonify({"error": "Nedostaje fragment."}), 400
+    _tip_raw = str(d.get("tip", ""))
+    if _tip_raw in ("izostavljeno", "dodano"):
+        from core import sidro as _sd
+        _kes = _sd.KES.get((str(d.get("blok", "")), hr)) or {}
+        if _kes.get("novo"):
+            return jsonify({"prijedlog": _kes["novo"]})
+        if _tip_raw == "dodano":
+            return jsonify({"error": "Dodani dio nije pronađen u prijevodu. Ostavi ili preskoči."}), 422
+        _enk = str(d.get("en_kontekst", "")).strip()[:700] or en
+        _hrk = str(d.get("hr_kontekst", "")).strip()[:500] or hr
+        _prompt_i = (
+            f"ENGLESKI ODLOMAK:\n{_enk}\n\nNAŠ PRIJEVOD (odlomak):\n{_hrk}\n\n"
+            f"U našem prijevodu nedostaje prijevod ovog engleskog dijela:\n{en}\n\n"
+            f"TEKST KOJI MIJENJAMO (susjedni tekst našeg prijevoda):\n{hr}\n\n"
+            "Vrati SAMO taj tekst, ali s ubačenim prijevodom nedostajućeg dijela na ispravnom mjestu "
+            "(ijekavica, latinica). Ništa drugo ne mijenjaj, bez objašnjenja."
+        )
+        try:
+            _odg = _p26_ai_prevedi(_prompt_i, int(d.get("id", 0) or 0), str(d.get("blok", "")))
+        except Exception as e:
+            print("[P2.15] prevedi izostavljeno greška:", repr(e))
+            return jsonify({"error": str(e)}), 500
+        _novo = (_p26_ocisti(_odg, hr) or "").strip()
+        if not _novo:
+            _novo = str(_odg or "").strip().strip('"„“”')
+        from core.gate_provjere import cir2lat as _c2l
+        _novo = _c2l(_novo)
+        _ok, _razlog = _sd.provjeri_prijedlog(hr, en, _novo)
+        if not _ok:
+            return jsonify({"error": "Prijedlog nije prošao provjeru (" + _razlog + "). Pokušaj ponovo ili preskoči."}), 502
+        return jsonify({"prijedlog": _novo})
     enk = str(d.get("en_kontekst", "")).strip()[:700] or en
     hrk = str(d.get("hr_kontekst", "")).strip()[:500] or hr
     tip = _P26_TIP_NAZIV.get(str(d.get("tip", "")), str(d.get("tip", "")))

@@ -114,8 +114,15 @@ def _fix_ukljucen() -> bool:
 def _greske_u_tekst(greske) -> str:
     red = []
     for g in greske or []:
-        red.append('- izvornik: "%s" | tvoj raniji prijevod: "%s" | problem: %s' % (
-            g.get("en_fragment", ""), g.get("hr_fragment", ""), g.get("objasnjenje", "")))
+        if g.get("tip") == "izostavljeno" or not g.get("hr_fragment"):
+            red.append('- OBAVEZNO PREVEDI I UBACI (u prijevodu je nedostajalo): "%s" | problem: %s' % (
+                g.get("en_fragment", ""), g.get("objasnjenje", "")))
+        elif g.get("tip") == "dodano" or not g.get("en_fragment"):
+            red.append('- UKLONI (u izvorniku ne postoji): "%s" | problem: %s' % (
+                g.get("hr_fragment", ""), g.get("objasnjenje", "")))
+        else:
+            red.append('- izvornik: "%s" | tvoj raniji prijevod: "%s" | problem: %s' % (
+                g.get("en_fragment", ""), g.get("hr_fragment", ""), g.get("objasnjenje", "")))
     return "\n".join(red)
 
 
@@ -160,8 +167,8 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
             _upisi_zapis(self, stem_key, dict(zapis, popravljen=False, razlog="nema_odgovora"))
             return out
         novo = _smart_extract(raw)
-        lo, ln = len(_plain(finalno)), len(_plain(novo))
-        if not novo.strip() or "NEPREVEDENO" in novo or not (0.7 * lo <= ln <= 1.4 * lo):
+        lo, ln = len(_plain(original_chunk)), len(_plain(novo))
+        if not novo.strip() or "NEPREVEDENO" in novo or not (0.75 * lo <= ln <= 1.6 * lo):
             _upisi_zapis(self, stem_key, dict(zapis, popravljen=False, razlog="sumnjiva_duljina %d/%d" % (ln, lo)))
             return out
 

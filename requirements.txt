@@ -28,3 +28,4 @@ watchdog>=4.0.0
 Werkzeug>=3.1.8
 mobi>=0.4.1
 httpx>=0.28.1
+classla==2.2.3
