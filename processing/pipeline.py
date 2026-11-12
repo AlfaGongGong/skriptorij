@@ -1246,6 +1246,18 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 glosar_hash=glosar_hash,
             )
             if cached_lek:
+                try:
+                    from core.oov_kapija import provjeri as _oov_c
+
+                    if _oov_c(cached_lek)["odbij"]:
+                        self.log(
+                            f"[{file_name}] Blok {chunk_idx}: ♻️ lektura cache odbačen (kapija: engleski/nepoznate riječi)",
+                            "warning",
+                        )
+                        cached_lek = None
+                except Exception:
+                    pass
+            if cached_lek:
                 if not _chk_path(self, file_name, chunk_idx).exists():
                     _chk_write(
                         self, file_name, chunk_idx, cached_lek, chunk_for_hash=chunk
@@ -1446,6 +1458,21 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 )
         except Exception as _le:
             self.log(f"[{file_name}] Blok {chunk_idx}: lektura guard greška: {_le}", "warning")
+
+        # P2.18 kapija: engleski tekst / nepoznate rijeci (hunspell) u lekturi
+        try:
+            from core.oov_kapija import provjeri as _oov_l
+
+            _oov_rl = await asyncio.to_thread(_oov_l, finalno)
+            if _oov_rl["odbij"]:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: 🇬🇧 kapija (lektura): {_oov_rl['razlog']} — odbijam upis, pokušavam ponovo.",
+                    "warning",
+                )
+                self.chunk_skips += 1
+                return None, "EN_REC"
+        except Exception as _oe:
+            self.log(f"[{file_name}] Blok {chunk_idx}: kapija greška: {_oe}", "warning")
 
         # FIX 1.7: Provera prekinutog teksta
         if _je_prekinut_tekst(chunk, finalno):
@@ -1786,6 +1813,21 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         )
         self.chunk_skips += 1
         return None, "EN_REC"
+
+    # P2.18 kapija: engleski tekst / nepoznate rijeci (hunspell) u prijevodu
+    try:
+        from core.oov_kapija import provjeri as _oov_p
+
+        _oov_rp = await asyncio.to_thread(_oov_p, finalno)
+        if _oov_rp["odbij"]:
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: 🇬🇧 kapija (prijevod): {_oov_rp['razlog']} — odbijam upis, pokušavam ponovo.",
+                "warning",
+            )
+            self.chunk_skips += 1
+            return None, "EN_REC"
+    except Exception as _oe2:
+        self.log(f"[{file_name}] Blok {chunk_idx}: kapija greška: {_oe2}", "warning")
 
     # P2.15 classla: strani tekst (UPOS X) u HR bloku; offline model, u zasebnoj niti
     if __import__("os").environ.get("BOOKLYFI_CLASSLA", "1") != "0":
