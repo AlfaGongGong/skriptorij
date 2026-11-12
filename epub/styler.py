@@ -1272,6 +1272,15 @@ def _norm_naslov(t):
     return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", "", (t or "").lower())).strip()
 
 
+_NASLOV_PREVOD = {}  # norm(EN podnaslov) -> HR podnaslov, uci se iz poglavlja "5" + "Cetiri godine ranije"
+_NASLOV_EN_CH_RX = re.compile(r"(?i)^(?:chapter|poglavlje|ch\.?)\s+(\d{1,3})\s*[-\u2013\u2014:]\s*(.+)$")
+
+
+def _naslov_en_chapter(t):
+    m = _NASLOV_EN_CH_RX.match((t or "").strip())
+    return (m.group(1), m.group(2).strip()) if m else None
+
+
 def _naslov_lose(t, knjiga=""):
     """True ako tekst ne smije biti naslov poglavlja: prazan, naziv fajla,
     placeholder ili naslov cijele knjige."""
@@ -1298,6 +1307,8 @@ def _je_naslovni_tekst(t):
     if not t or len(t) > 80 or len(t.split()) > 10:
         return False
     if not re.search(r"\w", t):  # separatori: "*", "---"
+        return False
+    if _NASLOV_LOS_RX.search(t):  # "[[NEPREVEDENO: blok 0]]", naziv fajla
         return False
     if _NASLOV_KRAJ_RX.search(t):
         return False
@@ -1330,6 +1341,9 @@ def _naslov_iz_tijela(body):
     el1, t1 = parts[0]
     if not _je_naslovni_tekst(t1):
         return None
+    mc = re.match(r"^(\d{1,3})\s+([A-Z\u010c\u0106\u017d\u0160\u0110][^\n]{2,70})$", t1)
+    if mc:
+        return ("POGLAVLJE " + mc.group(1) + " \u2013 " + mc.group(2), [el1], "broj+naslov", mc.group(1))
     m = _NASLOV_BROJ_RX.match(t1) or _NASLOV_BROJ_RIJEC_RX.match(t1)
     if m:
         br = m.group(1).upper()
@@ -1376,7 +1390,18 @@ def _razdvoji_literalne_nl(soup):
     'rijec.\\n\\nSljedeci odlomak') -> pravi odlomci. Odlomke s ugnijezdenim tagovima
     ne dira. Vraca broj razdvojenih odlomaka."""
     n_split = 0
+    for tn in list(soup.find_all(string=True)):
+        if tn.parent is not None and tn.parent.name in ("style", "script"):
+            continue
+        s = str(tn)
+        if "\\u" in s:
+            ns = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), s)
+            if ns != s:
+                tn.replace_with(ns)
+                par = tn.parent if hasattr(tn, "parent") else None
     for p in list(soup.find_all("p")):
+        if not p.find(True) and "\u00a0" in p.get_text() and not p.get_text().replace("\u00a0", "").strip():
+            p.decompose()
         if p.find(True):
             continue
         s = p.get_text()
@@ -1441,8 +1466,16 @@ def _dodaj_naslov(soup, broj, naslov=None, knjiga=""):
 
     if lead and lead[2] == "broj+naslov":
         final, brisi = lead[0], list(lead[1])
+        _en = _naslov_en_chapter(naslov) if naslov else None
+        if _en and " \u2013 " in final:
+            _NASLOV_PREVOD[_norm_naslov(_en[1])] = final.split(" \u2013 ", 1)[1]
     elif naslov:
         final = naslov.strip()
+        _en = _naslov_en_chapter(final)
+        if _en and not lead:
+            # engleski TOC naslov ("Chapter 12 - Four years earlier"): bez engleskog teksta u knjizi
+            _sub = _NASLOV_PREVOD.get(_norm_naslov(_en[1]))
+            final = "POGLAVLJE %s" % _en[0] + (" \u2013 " + _sub if _sub else "")
         if not lead:
             _odvoji_broj_prefiks(body)
         if lead:
@@ -2079,6 +2112,7 @@ def run_epub_styler(
     except Exception as _e:
         print(f"  ⚠ _spoji_chk_u_html greška: {_e}")
 
+    _NASLOV_PREVOD.clear()
     for p in poglavlja:
         soup = BeautifulSoup(
             files[p["full_path"]].decode("utf-8", errors="replace"), "html.parser"

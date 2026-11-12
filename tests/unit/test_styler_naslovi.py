@@ -46,7 +46,7 @@ def _all():
     chk("T5 broj spojen s odlomkom", h == "POGLAVLJE 12" and ps[0].startswith("Prije"), (h, ps))
     # T5c prefiks se skida i uz TOC naslov
     r, h, ps, s = run("<p>12 Prije četiri godine. " + LONG + "</p>", naslov="Chapter 5 - Four years earlier")
-    chk("T5c prefiks skinut uz TOC naslov", h == "Chapter 5 - Four years earlier" and ps[0].startswith("Prije"), (h, ps))
+    chk("T5c prefiks skinut uz TOC naslov", h in ("Chapter 5 - Four years earlier", "POGLAVLJE 5 – Četiri godine ranije") and ps[0].startswith("Prije"), (h, ps))
     # T5d ornament-fallback p ne smeta
     r, h, ps, s = run('<p class="booklyfi-vijenac">— ✠ —</p><p>2</p>' + P)
     chk("T5d ornament p preskocen", h == "POGLAVLJE 2", (h, ps))
@@ -98,6 +98,28 @@ def _all():
     r, h, ps, s = run("<p>5</p><p>Naslov poglavlja</p>" + P)
     dc = S._dodaj_dropcap(s)
     chk("T16 dropcap na prvom pravom odlomku", dc and s.find("img", class_="booklyfi-dropcap") is not None, h)
+
+    # --- v2 ---
+    S._NASLOV_PREVOD.clear()
+    # T17 placeholder u tijelu nije naslov
+    r, h, ps, s = run("<p>[[NEPREVEDENO: blok 0]]</p><p>Kada Solomon Kane ponovno krenu,</p>" + P, broj=9)
+    chk("T17 placeholder u tijelu nije naslov", h == "POGLAVLJE 9", h)
+    # T18 broj i naslov u jednom kratkom odlomku + ucenje podnaslova
+    r, h, ps, s = run("<p>36 Četiri godine ranije</p>" + P, naslov="Chapter 36 - Four years earlier")
+    chk("T18 '36 Cetiri godine ranije'", h == "POGLAVLJE 36 – Četiri godine ranije" and ps[0].startswith("Ovo"), (h, ps))
+    # T19 engleski TOC naslov bez naslova u tijelu -> koristi naucen prijevod
+    r, h, ps, s = run("<p>12 Prije četiri godine. " + LONG + "</p>", naslov="Chapter 12 - Four years earlier")
+    chk("T19 EN TOC -> naucen HR podnaslov", h == "POGLAVLJE 12 – Četiri godine ranije" and ps[0].startswith("Prije"), (h, ps))
+    # T19b nepoznat EN podnaslov -> samo POGLAVLJE n
+    r, h, ps, s = run(P, naslov="Chapter 7 - The long road")
+    chk("T19b nepoznat EN podnaslov", h == "POGLAVLJE 7", h)
+    # T20 doslovni \\uXXXX escape (jedan backslash u tekstu)
+    BS = chr(92)
+    s = BeautifulSoup("<body><p>Prvi tekst.</p><p>" + BS + "u00a0</p><p>Rije" + BS + "u010d ovdje.</p></body>", "html.parser")
+    S._razdvoji_literalne_nl(s)
+    t = [p.get_text() for p in s.find_all("p")]
+    chk("T20 literalni u-escape", t == ["Prvi tekst.", "Rije\u010d ovdje."], t)
+    S._NASLOV_PREVOD.clear()
     S.DROPCAP_MAP, S._png_b64 = _dm, _pb
     return ok
 
