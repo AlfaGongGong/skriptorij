@@ -1246,12 +1246,168 @@ def _ocisti_fffc(soup):
     return soup
 
 
-def _dodaj_naslov(soup, broj, naslov=None):
-    """Nova verzija: cuva originalni h1 ako nema eksplicitnog naslova,
-    brise sve h1 ako ima, ne dodaje POGLAVLJE N za kratka tijela."""
+# ═══════════════════════════════════════════════════════════════════════════
+# NASLOVI v2 (P2.16, 2026-11-12)
+# Uzrok iz dijagnoze: h1 je dobivao (a) naslov knjige iz <title> (Prince of Thorns),
+# (b) naziv fajla iz TOC-a ("Part0000 Split 003", "The Savage T-F Solomon Kane Split 4"),
+# (c) placeholder "[[NEPREVEDENO: blok 0]]", dok je pravi naslov poglavlja ostajao
+# kao kratki <p> u tijelu (broj "2", "Obmana", "Desna ruka propasti"). Nav/NCX su
+# pisali "POGLAVLJE <redni broj fajla>", pa TOC nije odgovarao h1.
+# Sada: naslov = lose-provjera -> naslov iz tijela -> TOC -> h1 u fajlu -> <title>
+# -> "POGLAVLJE n". _dodaj_naslov VRACA tekst h1, a TOC koristi isti tekst.
+# ═══════════════════════════════════════════════════════════════════════════
+
+_NASLOV_LOS_RX = re.compile(
+    r"(?i)(\bsplit[\s_\-]*\d+|\bpart\d{3,}|\bdummy\b|\bindex[\s_\-]*\d+"
+    r"|\.x?html?$|neprevedeno|^\[\[|^onbekend$|^untitled$|^unknown$)"
+)
+_NASLOV_BROJ_RX = re.compile(r"^(\d{1,3}|[IVXLC]{1,7})\.?$")
+_NASLOV_BROJ_RIJEC_RX = re.compile(
+    r"(?i)^(?:chapter|poglavlje|glava|ch\.?)\s+(\d{1,3}|[IVXLC]{1,7})\.?$"
+)
+_NASLOV_KRAJ_RX = re.compile(r'[.!?\u2026,;:"\u201d\u201c\u00bb\u00ab)\u2019]$')
+
+
+def _norm_naslov(t):
+    return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", "", (t or "").lower())).strip()
+
+
+def _naslov_lose(t, knjiga=""):
+    """True ako tekst ne smije biti naslov poglavlja: prazan, naziv fajla,
+    placeholder ili naslov cijele knjige."""
+    t = re.sub(r"\s+", " ", (t or "").replace("\ufffc", "")).strip()
+    if not t:
+        return True
+    if _NASLOV_LOS_RX.search(t):
+        return True
+    if knjiga:
+        nk = _norm_naslov(knjiga)
+        nt = _norm_naslov(t)
+        if nk and nt and (nt == nk or (nk in nt and len(nt) <= len(nk) + 8)):
+            return True
+    return False
+
+
+def _p_tekst(el):
+    s = el.get_text(" ", strip=True).replace("\ufffc", "").replace("\u00a0", " ")
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _je_naslovni_tekst(t):
+    """Kratak odlomak bez zavrsne interpunkcije = kandidat za naslov."""
+    if not t or len(t) > 80 or len(t.split()) > 10:
+        return False
+    if not re.search(r"\w", t):  # separatori: "*", "---"
+        return False
+    if _NASLOV_KRAJ_RX.search(t):
+        return False
+    if re.match(r"^[\u2014\u2013\-\u201e\"\u201c\u00ab\u2018']", t):  # dijalog
+        return False
+    return True
+
+
+def _je_broj_naslova(t):
+    return bool(_NASLOV_BROJ_RX.match(t) or _NASLOV_BROJ_RIJEC_RX.match(t))
+
+
+def _naslov_iz_tijela(body):
+    """Pravi naslov poglavlja koji je ostao kao kratki <p> na pocetku tijela.
+    Vraca (tekst_h1, [p elementi za brisanje], vrsta, broj) ili None.
+    vrsta: 'broj+naslov' ("5" + "Cetiri godine ranije"), 'broj' ("12"), 'naslov' ("Obmana").
+    Prvi neprazni <p> mora biti kratak i bez zavrsne interpunkcije; "*" i dijalog prekidaju."""
+    parts = []
+    for el in body.find_all("p"):
+        if "booklyfi-vijenac" in (el.get("class") or []):
+            continue  # ornament-fallback "— ✠ —" kad nema PNG-a
+        t = _p_tekst(el)
+        if not t:
+            continue
+        parts.append((el, t))
+        if len(parts) == 2:
+            break
+    if not parts:
+        return None
+    el1, t1 = parts[0]
+    if not _je_naslovni_tekst(t1):
+        return None
+    m = _NASLOV_BROJ_RX.match(t1) or _NASLOV_BROJ_RIJEC_RX.match(t1)
+    if m:
+        br = m.group(1).upper()
+        lab = "POGLAVLJE " + br
+        if len(parts) == 2:
+            el2, t2 = parts[1]
+            if _je_naslovni_tekst(t2) and not _je_broj_naslova(t2):
+                return (lab + " \u2013 " + t2, [el1, el2], "broj+naslov", br)
+        return (lab, [el1], "broj", br)
+    return (t1, [el1], "naslov", "")
+
+
+def _odvoji_broj_prefiks(body):
+    """Broj poglavlja spojen s prvim odlomkom ("12 Prije cetiri godine...") ->
+    ukloni prefiks iz teksta i vrati broj (string) ili None. Samo 1-3 znamenke
+    ispred velikog slova/navodnika, tako da godine ("1066 ...") ostaju netaknute."""
+    from bs4 import NavigableString
+
+    for el in body.find_all("p"):
+        if "booklyfi-vijenac" in (el.get("class") or []):
+            continue
+        t = _p_tekst(el)
+        if not t:
+            continue
+        if len(t) < 40:
+            return None
+        for n in el.find_all(string=True):
+            s = str(n)
+            if not s.strip():
+                continue
+            m = re.match(
+                r"^\s*(\d{1,3})\s+(?=[A-Z\u010c\u0106\u017d\u0160\u0110\u201e\"\u201c\u00ab])", s
+            )
+            if m:
+                n.replace_with(NavigableString(s[m.end():]))
+                return m.group(1)
+            return None
+        return None
+    return None
+
+
+def _razdvoji_literalne_nl(soup):
+    """Doslovni znakovi backslash+n u tekstu odlomka (ostatak JSON-a iz .chk, npr.
+    'rijec.\\n\\nSljedeci odlomak') -> pravi odlomci. Odlomke s ugnijezdenim tagovima
+    ne dira. Vraca broj razdvojenih odlomaka."""
+    n_split = 0
+    for p in list(soup.find_all("p")):
+        if p.find(True):
+            continue
+        s = p.get_text()
+        if "\\n" not in s:
+            continue
+        dijelovi = [x.strip() for x in re.split(r"(?:\s*\\n\s*)+", s) if x.strip()]
+        if not dijelovi:
+            p.string = ""
+            continue
+        p.string = dijelovi[0]
+        if len(dijelovi) < 2:
+            continue
+        prev = p
+        for d in dijelovi[1:]:
+            novi = soup.new_tag("p")
+            if p.get("class"):
+                novi["class"] = list(p.get("class"))
+            novi.string = d
+            prev.insert_after(novi)
+            prev = novi
+        n_split += 1
+    return n_split
+
+
+def _dodaj_naslov(soup, broj, naslov=None, knjiga=""):
+    """v2: vraca tekst h1 koji je upisan/ostavljen (None = bez naslova).
+    Prioritet: lose-provjera -> broj+naslov iz tijela -> naslov (TOC) -> dobar h1 u fajlu
+    -> naslov/broj iz tijela -> broj spojen s odlomkom -> <title> -> POGLAVLJE n."""
     body = soup.find("body")
     if not body:
-        return
+        return None
 
     # FIX 2026-10-26: TOC naslov moze biti "Pitanja\nPoradili su mu na ruci…"
     # — spojen naslov + prva recenica iz .chk. Uzmi samo prvu liniju kao naslov
@@ -1271,68 +1427,80 @@ def _dodaj_naslov(soup, broj, naslov=None):
                         naslov = prva
                     break
 
-    if naslov:
-        for h in body.find_all("h1"):
-            h.decompose()
-        h1 = soup.new_tag("h1")
-        h1["class"] = "booklyfi-naslov"
-        h1.string = naslov
-        insert_pos = 0
-        for i, child in enumerate(body.children):
-            cls = child.get("class") if hasattr(child, "get") else None
-            if cls:
-                if isinstance(cls, str):
-                    cls = cls.split()
-                if "booklyfi-vijenac" in cls:
-                    insert_pos = i + 1
-                    continue
-            break
-        body.insert(insert_pos, h1)
+    if naslov and _naslov_lose(naslov, knjiga):
+        naslov = None
 
-        # F0.17: ako je prvi <p> posle h1 identican naslovu, obrisi ga
-        _prvi_p = h1.find_next("p")
-        if _prvi_p and _prvi_p.get_text(strip=True) == h1.get_text(strip=True):
-            _prvi_p.decompose()
+    lead = _naslov_iz_tijela(body)
+    h1_stari = body.find("h1")
+    h1_tekst = re.sub(r"\s+", " ", h1_stari.get_text(" ", strip=True)).strip() if h1_stari else ""
+    h1_dobar = bool(h1_stari) and not _naslov_lose(h1_tekst, knjiga)
 
-        # FIX 2026-11-11: naslov je kratki token (npr. broj "8"), a prvi <p> pocinje
-        # istim tokenom ("8 Sjedili smo...") -> ukloni ga da dropcap ide na pravo slovo.
-        _nas = (naslov or "").strip()
-        if _nas and len(_nas) <= 6:
-            import re as _re_nas
-            from bs4 import NavigableString as _NS_nas
-            for _p in h1.find_all_next("p"):
-                _nodes = [_n for _n in _p.find_all(string=True) if str(_n).strip()]
-                if not _nodes:
-                    continue
-                _n0 = _nodes[0]
-                _s0 = str(_n0)
-                if _s0.strip() == _nas:
-                    _n0.replace_with(_NS_nas(""))
-                else:
-                    _m0 = _re_nas.match(r"^\s*" + _re_nas.escape(_nas) + r"\s+(?=\S)", _s0)
-                    if _m0:
-                        _n0.replace_with(_NS_nas(_s0[_m0.end():]))
-                break
-        return
+    final = None
+    brisi = []
+    zadrzi_h1 = False
 
-    if body.find("h1"):
-        return
+    if lead and lead[2] == "broj+naslov":
+        final, brisi = lead[0], list(lead[1])
+    elif naslov:
+        final = naslov.strip()
+        if not lead:
+            _odvoji_broj_prefiks(body)
+        if lead:
+            if lead[2] == "naslov" and _norm_naslov(lead[0]) == _norm_naslov(final):
+                brisi = list(lead[1])
+            elif lead[2] == "broj" and re.search(r"(?<!\w)%s(?!\w)" % re.escape(lead[3]), final, re.I):
+                brisi = list(lead[1])
+    elif h1_dobar:
+        final = h1_tekst
+        zadrzi_h1 = True
+        if not lead:
+            _odvoji_broj_prefiks(body)
+        if lead and lead[2] == "naslov" and _norm_naslov(lead[0]) == _norm_naslov(final):
+            brisi = list(lead[1])
+    elif lead:
+        final, brisi = lead[0], list(lead[1])
+    else:
+        br = _odvoji_broj_prefiks(body)
+        if br:
+            final = "POGLAVLJE " + br
 
-    if len(body.get_text(strip=True)) < 400:
-        return
+    if final is None:
+        if len(body.get_text(strip=True)) < 400:
+            if h1_stari and not h1_dobar:
+                for h in body.find_all("h1"):
+                    h.decompose()
+            return None
+        # F0.36: Stroga validacija <title> taga (nikad naslov knjige / naziv fajla)
+        _title_tag = soup.find("title")
+        if _title_tag:
+            _t = _title_tag.get_text(strip=True)
+            if (
+                _t
+                and len(_t) <= 60
+                and len(_t.split()) <= 10
+                and not _t.endswith("…")
+                and not _t.endswith(".")
+                and _t.lower() not in ("navigation", "cover", "toc")
+                and _t not in ("A Little Hatred", "The Trouble With Peace", "The Wisdom of Crowds")
+                and not _naslov_lose(_t, knjiga)
+                and not re.match(r"(?i)^(?:part|chapter|ch\.?|poglavlje|section)\s*\d+$", _t)
+            ):
+                final = _t
+        if final is None:
+            final = "POGLAVLJE %d" % broj
 
-    # F0.36: Stroga validacija <title> taga
-    _naslov_fallback = None
-    _title_tag = soup.find("title")
-    if _title_tag:
-        _t = _title_tag.get_text(strip=True)
-        if _t and len(_t) <= 60 and len(_t.split()) <= 10 and not _t.endswith("…") and not _t.endswith("."):
-            if _t.lower() not in ("navigation", "cover", "toc")                and _t not in ("A Little Hatred", "The Trouble With Peace", "The Wisdom of Crowds"):
-                _naslov_fallback = _t
+    for el in brisi:
+        if el.parent is not None:
+            el.decompose()
 
+    if zadrzi_h1:
+        return final
+
+    for h in body.find_all("h1"):
+        h.decompose()
     h1 = soup.new_tag("h1")
     h1["class"] = "booklyfi-naslov"
-    h1.string = _naslov_fallback or ("POGLAVLJE %d" % broj)
+    h1.string = final
     insert_pos = 0
     for i, child in enumerate(body.children):
         cls = child.get("class") if hasattr(child, "get") else None
@@ -1344,6 +1512,32 @@ def _dodaj_naslov(soup, broj, naslov=None):
                 continue
         break
     body.insert(insert_pos, h1)
+
+    # F0.17: ako je prvi <p> posle h1 identican naslovu, obrisi ga
+    _prvi_p = h1.find_next("p")
+    if _prvi_p and _prvi_p.get_text(strip=True) == h1.get_text(strip=True):
+        _prvi_p.decompose()
+
+    # FIX 2026-11-11: naslov je kratki token (npr. broj "8"), a prvi <p> pocinje
+    # istim tokenom ("8 Sjedili smo...") -> ukloni ga da dropcap ide na pravo slovo.
+    _nas = (final or "").strip()
+    if _nas and len(_nas) <= 6:
+        import re as _re_nas
+        from bs4 import NavigableString as _NS_nas
+        for _p in h1.find_all_next("p"):
+            _nodes = [_n for _n in _p.find_all(string=True) if str(_n).strip()]
+            if not _nodes:
+                continue
+            _n0 = _nodes[0]
+            _s0 = str(_n0)
+            if _s0.strip() == _nas:
+                _n0.replace_with(_NS_nas(""))
+            else:
+                _m0 = _re_nas.match(r"^\s*" + _re_nas.escape(_nas) + r"\s+(?=\S)", _s0)
+                if _m0:
+                    _n0.replace_with(_NS_nas(_s0[_m0.end():]))
+            break
+    return final
 
 
 
@@ -1437,6 +1631,7 @@ def run_epub_styler(
             if t.endswith("…") or t.endswith("."): return False
             if t in INVALID_TITLES: return False
             if GENERIC_RX.match(t): return False
+            if _NASLOV_LOS_RX.search(t): return False  # P2.16: naziv fajla, placeholder
             if book_title and book_title.strip().lower() in t.lower(): return False
             if t.lower().startswith(("za ", "posveta", "uvod", "predgovor")): return False
             return True
@@ -1908,6 +2103,7 @@ def run_epub_styler(
                 logger.warning("[tipografija] %s: %s", p.get("full_path"), _pr)
         except Exception:
             logger.exception("[tipografija] styler: provjera")
+        _razdvoji_literalne_nl(soup)
         _popravi_fragment_pocetka(soup)
         _stil_ocisti_p(soup)
         _ukloni_dup_par(soup)
@@ -1916,10 +2112,13 @@ def run_epub_styler(
         _ocisti_fffc(soup)
         if p.get("no_heading"):
             pass
-        elif p.get("naslov"):
-            _dodaj_naslov(soup, p["order"], naslov=p["naslov"])
         else:
-            _dodaj_naslov(soup, p["order"])
+            _h1_tekst = _dodaj_naslov(
+                soup, p["order"], naslov=p.get("naslov"), knjiga=book_title
+            )
+            # P2.16: nav/ncx moraju imati isti naslov kao h1 u fajlu
+            if _h1_tekst:
+                p["naslov"] = _h1_tekst
         p["_ima_h1"] = bool(soup.find("h1"))
         if _dodaj_dropcap(soup):
             dropcaps += 1
