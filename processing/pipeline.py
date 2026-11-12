@@ -1145,6 +1145,22 @@ async def _posalji_po_paragrafima(
     return "\n".join(rezultati), markirano
 
 
+def _kapija_odbij(self, file_name, chunk_idx):
+    """P2.18: kapija odbija blok najvise 2 puta; trece puta prihvaca (fail-open), da blok ne nestane."""
+    d = getattr(self, "_kapija_br", None)
+    if d is None:
+        d = self._kapija_br = {}
+    k = (file_name, chunk_idx)
+    d[k] = d.get(k, 0) + 1
+    if d[k] <= 2:
+        return True
+    self.log(
+        f"[{file_name}] Blok {chunk_idx}: kapija prihvaca blok nakon {d[k] - 1} odbijanja (fail-open)",
+        "warning",
+    )
+    return False
+
+
 async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file_name):
     """
     Obrađuje jedan HTML chunk kroz AI pipeline.
@@ -1464,7 +1480,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             from core.oov_kapija import provjeri as _oov_l
 
             _oov_rl = await asyncio.to_thread(_oov_l, finalno)
-            if _oov_rl["odbij"]:
+            if _oov_rl["odbij"] and _kapija_odbij(self, file_name, chunk_idx):
                 self.log(
                     f"[{file_name}] Blok {chunk_idx}: 🇬🇧 kapija (lektura): {_oov_rl['razlog']} — odbijam upis, pokušavam ponovo.",
                     "warning",
@@ -1819,7 +1835,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         from core.oov_kapija import provjeri as _oov_p
 
         _oov_rp = await asyncio.to_thread(_oov_p, finalno)
-        if _oov_rp["odbij"]:
+        if _oov_rp["odbij"] and _kapija_odbij(self, file_name, chunk_idx):
             self.log(
                 f"[{file_name}] Blok {chunk_idx}: 🇬🇧 kapija (prijevod): {_oov_rp['razlog']} — odbijam upis, pokušavam ponovo.",
                 "warning",
