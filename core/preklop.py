@@ -1,5 +1,5 @@
-"""P2.17 v2: ukloni odlomke (i ponovljene prve recenice odlomka) na pocetku bloka koji su
-kopija kraja prethodnog bloka (model je preveo kontekst 'prethodni odlomak' i ponovio ga)."""
+"""P2.17 v3: ukloni preklop na pocetku bloka (echo konteksta prethodnog bloka):
+sidro (odlomci do zadnjeg koji je kopija kraja prethodnog bloka), spojeni odlomci, ponovljene prve recenice."""
 import difflib
 import re
 
@@ -18,16 +18,21 @@ def _t(u):
 
 
 def _isti(a, b):
-    return a == b or difflib.SequenceMatcher(None, a, b).ratio() >= 0.9
+    if a == b:
+        return True
+    if not a or not b:
+        return False
+    sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
+    if sm.real_quick_ratio() < 0.9 or sm.quick_ratio() < 0.9:
+        return False
+    return sm.ratio() >= 0.9
 
 
 def _prefix_strip(unit, pw):
-    """Ako odlomak pocinje istim recenicama kao neki prethodni odlomak (pw = liste normaliziranih rijeci),
-    skini te recenice (tagovi ostaju). Vraca (novi_unit, broj_rijeci) ili (unit, 0)."""
     toks = _TOK.findall(unit)
     if "".join(toks) != unit:
         return unit, 0
-    flat = []  # (indeks tokena, rijec)
+    flat = []
     for i, t in enumerate(toks):
         if t.startswith("<") or t.isspace():
             continue
@@ -43,7 +48,7 @@ def _prefix_strip(unit, pw):
             n += 1
         if n < _MINW:
             continue
-        if n == len(cw):  # cijeli odlomak je pocetak prethodnog -> ukloni cijeli
+        if n == len(cw):
             return "", n
         lasttok = flat[n - 1][0]
         cand = -1
@@ -64,12 +69,41 @@ def _prefix_strip(unit, pw):
     out = []
     for i, t in enumerate(toks):
         if i <= best_cand and not t.startswith("<"):
-            continue  # tekst i razmaci prefiksa; tagovi ostaju
+            continue
         out.append(t)
     return "".join(out).lstrip(), best_n
 
 
-def skini_preklop(prev, cur, k=15, maxskip=3):
+def _anchor(units, pu, maxu=30):
+    """Indeks zadnjeg odlomka u cur (prvih maxu nepraznih) koji je kopija odlomka iz pu, uz rastuci redoslijed.
+    Svi odlomci prije njega moraju biti echo (kontekst uvijek dolazi prije novog teksta). -1 ako nema."""
+    matches, seen, first_nb = [], 0, None
+    for ui, u in enumerate(units):
+        t = _t(u)
+        if not t:
+            continue
+        if first_nb is None:
+            first_nb = ui
+        seen += 1
+        if seen > maxu:
+            break
+        if len(t) < _MIN:
+            continue
+        hit = pu.index(t) if t in pu else next((pi for pi, p in enumerate(pu) if _isti(t, p)), None)
+        if hit is not None:
+            matches.append((ui, hit))
+    if not matches:
+        return -1
+    chain = [matches[0]]
+    for m in matches[1:]:
+        if m[1] > chain[-1][1]:
+            chain.append(m)
+    if len(chain) >= 2 or chain[0][0] == first_nb:
+        return chain[-1][0]
+    return -1
+
+
+def skini_preklop(prev, cur, k=25, maxskip=3):
     """Vraca (novi_cur, broj_uklonjenih_dijelova). Idempotentno; pri sumnji vraca cur nepromijenjen."""
     if not isinstance(prev, str) or not isinstance(cur, str):
         return cur, 0
@@ -85,36 +119,49 @@ def skini_preklop(prev, cur, k=15, maxskip=3):
     units = _UNIT.findall(body)
     if "".join(units) != body:
         return cur, 0
-    kept, removed, skipped, scanning, last_removed = [], 0, 0, True, False
+    removed = 0
+    j = _anchor(units, pu)
+    if j >= 0:
+        removed += sum(1 for u in units[:j + 1] if _t(u))
+        units = units[j + 1:]
+        while units and not _t(units[0]):
+            units = units[1:]
+    kept, skipped, scanning, last_removed = [], 0, True, j >= 0
     for u in units:
         if not scanning:
             kept.append(u)
             continue
-        t = _t(u)
-        if t == "":
+        cu = u
+        while True:
+            t = _t(cu)
+            if t == "":
+                break
+            if len(t) >= _MIN and any(_isti(t, p) for p in pu):
+                removed += 1
+                cu = None
+                break
+            nu, nr = _prefix_strip(cu, pw)
+            if nr:
+                removed += 1
+                if not _t(nu):
+                    cu = None
+                    break
+                cu = nu
+                continue
+            break
+        if cu is None:
+            last_removed = True
+            continue
+        if _t(cu) == "":
             if last_removed:
                 continue
             skipped += 1
             if skipped > maxskip:
                 scanning = False
-            kept.append(u)
-            continue
-        last_removed = False
-        if len(t) >= _MIN and any(_isti(t, p) for p in pu):
-            removed += 1
-            last_removed = True
-            continue
-        nu, nr = _prefix_strip(u, pw)
-        if nr:
-            removed += 1
-            if _t(nu):
-                kept.append(nu)
-                scanning = False
-            else:
-                last_removed = True
+            kept.append(cu)
             continue
         scanning = False
-        kept.append(u)
+        kept.append(cu)
     if not removed:
         return cur, 0
     novo = "".join(kept)
