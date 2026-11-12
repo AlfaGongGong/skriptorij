@@ -1293,6 +1293,26 @@ def _dodaj_naslov(soup, broj, naslov=None):
         _prvi_p = h1.find_next("p")
         if _prvi_p and _prvi_p.get_text(strip=True) == h1.get_text(strip=True):
             _prvi_p.decompose()
+
+        # FIX 2026-11-11: naslov je kratki token (npr. broj "8"), a prvi <p> pocinje
+        # istim tokenom ("8 Sjedili smo...") -> ukloni ga da dropcap ide na pravo slovo.
+        _nas = (naslov or "").strip()
+        if _nas and len(_nas) <= 6:
+            import re as _re_nas
+            from bs4 import NavigableString as _NS_nas
+            for _p in h1.find_all_next("p"):
+                _nodes = [_n for _n in _p.find_all(string=True) if str(_n).strip()]
+                if not _nodes:
+                    continue
+                _n0 = _nodes[0]
+                _s0 = str(_n0)
+                if _s0.strip() == _nas:
+                    _n0.replace_with(_NS_nas(""))
+                else:
+                    _m0 = _re_nas.match(r"^\s*" + _re_nas.escape(_nas) + r"\s+(?=\S)", _s0)
+                    if _m0:
+                        _n0.replace_with(_NS_nas(_s0[_m0.end():]))
+                break
         return
 
     if body.find("h1"):
