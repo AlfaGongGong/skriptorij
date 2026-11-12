@@ -17,7 +17,7 @@ PREVODILAC_TEMPLATE = """Ti si vrhunski književni prevodilac-lektor s 25 godina
 KONTEKST: {ton_injekcija}
 TIP BLOKA: {tip_bloka}
 GLOSAR (strogo koristi): {glosar_injekcija}
-PRETHODNI ODLOMAK (nastavi istim stilom/POV-om): {prev_kraj}
+PRETHODNI ODLOMAK (samo kontekst za stil/POV; NE prevodi ga i NE ponavljaj ga u izlazu): {prev_kraj}
 
 {tip_bloka_instrukcije}
 {autor_stil}
@@ -151,7 +151,7 @@ PRAVILA:
 - Dijalog: — em-crtica (U+2014).
 - Ne mijenjaj HTML tagove (<p>, <em>, <i>, <b>, <br>).
 Glosar: {glosar_injekcija}
-Prethodni odlomak: "{prev_kraj}"
+Prethodni odlomak (samo kontekst, NE ponavljaj ga u izlazu): "{prev_kraj}"
 
 Pravila:
 - Ispravi sva mašinska kalkiranja (npr. "bio je u stanju da" -> "mogao je").

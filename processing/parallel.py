@@ -154,4 +154,21 @@ class AdaptiveParallelism:
         delay = random.uniform(*self._human_delay)
         await asyncio.sleep(delay)
 
+        # P2.17: ukloni echo konteksta (blok N pocinje kopijom kraja bloka N-1)
+        try:
+            from core.preklop import skini_preklop
+
+            for _i in range(1, len(results)):
+                _pt, _ct = results[_i - 1][0], results[_i][0]
+                if isinstance(_pt, str) and isinstance(_ct, str):
+                    _novo, _n = skini_preklop(_pt, _ct)
+                    if _n:
+                        results[_i] = (_novo, results[_i][1])
+                        self.engine.log(
+                            f"preklop: {file_name} blok {_i}: uklonjeno {_n} ponovljenih odlomaka",
+                            "warning",
+                        )
+        except Exception:
+            logger.exception("[P2.17] preklop guard")
+
         return results
