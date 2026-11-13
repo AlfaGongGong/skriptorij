@@ -459,6 +459,22 @@ def _je_prekinut_tekst(original: str, finalno: str) -> bool:
 # ── Korak 5: Helper za kalkove + validator ──────────────────────────────────
 
 
+
+def _prip_upute(self, file_name) -> str:
+    """P2.19: uputa o rodu pripovjedača u 1. licu za prompt prevoda i lekture."""
+    _rod = (getattr(self, "_pripovjedac_rod", None) or {}).get(file_name)
+    _s = (
+        "\n\nPRIPOVJEDAČ U 1. LICU: ako tekst pripovijeda 'ja', odredi rod "
+        "pripovjedača iz izvornog konteksta i drži ISTI rod kroz cijeli blok "
+        "(glagolski pridjevi uz 'sam': ne miješaj muške -o i ženske -la oblike)."
+    )
+    if _rod == "Ž":
+        _s += " U ovoj priči pripovijeda ŽENA: sve oblike uz 'sam' u ženskom rodu (bila sam, rekla sam, skočila sam)."
+    elif _rod == "M":
+        _s += " U ovoj priči pripovijeda MUŠKARAC: sve oblike uz 'sam' u muškom rodu (bio sam, rekao sam, skočio sam)."
+    return _s + "\n"
+
+
 def _primijeni_kalkove_i_validator(
     self, finalno: str, file_name: str, chunk_idx: int
 ) -> str:
@@ -618,6 +634,31 @@ def _primijeni_kalkove_i_validator(
                 )
         except Exception as e:
             logging.debug(f"[pipeline] Rod detektor greška (blok {chunk_idx}): {e}")
+
+    # Korak 11c (P2.19): pripovjedač 1. lice — uskladi rod glagolskih pridjeva uz "sam"
+    try:
+        from core.kalkovi.rod_detektor import uskladi_pripovjedaca as _usk_prip
+
+        _mem_p = getattr(self, "_pripovjedac_rod", None)
+        if _mem_p is None:
+            _mem_p = {}
+            self._pripovjedac_rod = _mem_p
+        _fin_p, _n_p, _rod_p, _flag_p = _usk_prip(finalno, _mem_p.get(file_name))
+        if _rod_p:
+            _mem_p[file_name] = _rod_p
+        if _n_p and _fin_p and len(_fin_p.strip()) > 10:
+            finalno = _fin_p
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: pripovjedač rod ({_rod_p}) — {_n_p} zamjena",
+                "tech",
+            )
+        elif _flag_p:
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ rod pripovjedača nejasan ({_flag_p})",
+                "warning",
+            )
+    except Exception as _pe:
+        logging.debug(f"[pipeline] pripovjedač guard greška (blok {chunk_idx}): {_pe}")
 
     # Korak 12: lint_hr — sigurni popravci oblika + oznake (fail-safe, bez AI)
     try:
@@ -1569,6 +1610,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             glosar_chunk=rel_glosar, prev_kraj=prev_ctx, tip_bloka=tip_bloka
         )
         fusion_sys += _next_ctx_blok(next_ctx)
+        fusion_sys += _prip_upute(self, file_name)
         # V1.0: Dodaj few-shot primjere iz globalne baze
         if _FEW_SHOT_OK and formatiraj_za_prompt:
             try:
@@ -1687,6 +1729,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         tip_bloka=tip_bloka,
     )
     lek_sys += _next_ctx_blok(next_ctx)
+    lek_sys += _prip_upute(self, file_name)
     p_lek = (
         f"IZVORNI ENGLESKI TEKST:\n{chunk}\n\n"
         f"SIROVI PRIJEVOD:\n{sirovo}\n\n"

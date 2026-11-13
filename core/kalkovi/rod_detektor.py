@@ -808,6 +808,146 @@ rod_detektor: RodDetektor = RodDetektor()
 
 # ── CLI test ─────────────────────────────────────────────────────────────────
 
+
+# ── P2.19: pripovjedač u 1. licu — usklađivanje roda glagolskih pridjeva uz "sam" ──
+_PRIP_NEPR = {
+    "bio": "bila", "mogao": "mogla", "pomogao": "pomogla", "rekao": "rekla",
+    "stigao": "stigla", "pobjegao": "pobjegla", "legao": "legla",
+    "došao": "došla", "ušao": "ušla", "našao": "našla", "prošao": "prošla",
+    "otišao": "otišla", "izašao": "izašla", "sišao": "sišla",
+    "pronašao": "pronašla", "prišao": "prišla", "vidio": "vidjela",
+    "htio": "htjela", "uspio": "uspjela", "sjeo": "sjela",
+}
+_PRIP_Z_M = {z: m for m, z in {**GPR_M_Z, **_PRIP_NEPR}.items()}
+_PRIP_STOP = frozenset({"kao", "tako", "onako", "ovako", "nikako", "svako", "dosta"})
+_PRIP_KLIT = r"(?:\s+(?:se|si|ga|je|ih|mu|joj|im|me|te|ju|ti))*"
+_PRIP_BEF = re.compile(r"\b([^\W\d_]{3,})\s+sam\b")
+_PRIP_AFT = re.compile(r"\bsam" + _PRIP_KLIT + r"\s+([^\W\d_]{3,})\b")
+
+
+def _prip_klasa(w: str):
+    l = w.lower()
+    if l in _PRIP_STOP:
+        return None
+    if l in _PRIP_NEPR or l in GPR_M_Z:
+        return "M"
+    if l in _PRIP_Z_M:
+        return "Ž"
+    if len(l) >= 5 and l.endswith(("ao", "io")):
+        return "M"
+    if len(l) >= 5 and l.endswith(("ala", "ila")):
+        return "Ž"
+    return None
+
+
+def _prip_konv(w: str, cilj: str) -> str:
+    l = w.lower()
+    n = None
+    if cilj == "Ž":
+        n = _PRIP_NEPR.get(l) or GPR_M_Z.get(l)
+        if n is None:
+            if l.endswith(("kao", "gao", "hao")):
+                return w  # moguće nepravilno (reći/moći/vući): ne diraj
+            if l.endswith("ao"):
+                n = l[:-2] + "ala"
+            elif l.endswith("io"):
+                n = l[:-2] + "ila"
+    else:
+        n = _PRIP_Z_M.get(l)
+        if n is None:
+            if l.endswith("ala"):
+                n = l[:-3] + "ao"
+            elif l.endswith("ila"):
+                n = l[:-3] + "io"
+    if not n:
+        return w
+    return n[:1].upper() + n[1:] if w[:1].isupper() else n
+
+
+def _prip_segmenti(tekst: str):
+    """Dijeli tekst na (dio, vanjski). Tagovi i navodnici (dijalog) nisu vanjski."""
+    segs = []
+    u_nav = False
+    for tok in re.split(r"(<[^>]*>)", tekst):
+        if not tok:
+            continue
+        if tok[0] == "<" and tok[-1] == ">":
+            segs.append((tok, False))
+            continue
+        buf = []
+        for ch in tok:
+            if ch in "„«" or (ch == '"' and not u_nav):
+                if buf:
+                    segs.append(("".join(buf), not u_nav))
+                    buf = []
+                segs.append((ch, False))
+                u_nav = True
+            elif ch in "”»“" or (ch == '"' and u_nav):
+                if buf:
+                    segs.append(("".join(buf), not u_nav))
+                    buf = []
+                segs.append((ch, False))
+                u_nav = False
+            else:
+                buf.append(ch)
+        if buf:
+            segs.append(("".join(buf), not u_nav))
+    return segs
+
+
+def uskladi_pripovjedaca(tekst: str, zadnji_rod=None):
+    """Pripovjedač u 1. licu: uskladi rod glagolskih pridjeva uz "sam" izvan dijaloga.
+    Vraća (tekst, n_zamjena, rod, flag). Fail-safe: bez jasne većine ne mijenja ništa."""
+    if not tekst or " sam" not in tekst.lower() and "sam " not in tekst.lower():
+        return tekst, 0, None, ""
+    segs = _prip_segmenti(tekst)
+    nadjeno = []
+    m = f = 0
+    for dio, vanjski in segs:
+        d = {}
+        if vanjski:
+            for mt in _PRIP_BEF.finditer(dio):
+                d[mt.span(1)] = mt.group(1)
+            for mt in _PRIP_AFT.finditer(dio):
+                d[mt.span(1)] = mt.group(1)
+            for w in d.values():
+                k = _prip_klasa(w)
+                if k == "M":
+                    m += 1
+                elif k == "Ž":
+                    f += 1
+        nadjeno.append(d)
+    if m + f == 0:
+        return tekst, 0, None, ""
+    rod = None
+    flag = ""
+    if abs(m - f) >= 2 and m + f >= 3:
+        rod = "Ž" if f > m else "M"
+    elif m and f:
+        if zadnji_rod in ("M", "Ž"):
+            rod = zadnji_rod
+        else:
+            flag = f"m={m} z={f}"
+    if rod is None or (m if rod == "Ž" else f) == 0:
+        return tekst, 0, rod, flag
+    n = 0
+    izlaz = []
+    for (dio, vanjski), d in zip(segs, nadjeno):
+        if not vanjski or not d:
+            izlaz.append(dio)
+            continue
+        nov = dio
+        for (a, b), w in sorted(d.items(), reverse=True):
+            k = _prip_klasa(w)
+            if k and k != rod:
+                z = _prip_konv(w, rod)
+                if z != w:
+                    nov = nov[:a] + z + nov[b:]
+                    n += 1
+        izlaz.append(nov)
+    return "".join(izlaz), n, rod, flag
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format="%(levelname)s %(message)s")
 
