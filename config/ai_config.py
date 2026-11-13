@@ -50,6 +50,16 @@ PROVIDER_PRIORITY = {
     "SCORER": ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
 }
 
+# P2.19.2: jezične uloge SAMO na GEMINI (kvaliteta > brzina). Kad Gemini nije dostupan,
+# _call_ai_engine čeka kvotu umjesto da pada na Groq/Cloudflare. Gasi se s BOOKLYFI_STRICT_GEMINI=0.
+import os as _os_strict
+
+STRICT_PROVIDER_ROLES = (
+    {}
+    if _os_strict.environ.get("BOOKLYFI_STRICT_GEMINI", "1") == "0"
+    else {"PREVODILAC": ["GEMINI"], "LEKTOR": ["GEMINI"], "KOREKTOR": ["GEMINI"]}
+)
+
 # 2026-10-24: izvedeno iz providers.json (jedan izvor istine)
 AI_MODEL_STRINGS = all_profiles()
 

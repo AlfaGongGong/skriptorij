@@ -332,6 +332,18 @@ async def _call_ai_engine(
         if p not in ordered:
             ordered.append(p)
 
+    # P2.19.2: jezične uloge samo na GEMINI (config: ai_config.STRICT_PROVIDER_ROLES)
+    try:
+        from config.ai_config import STRICT_PROVIDER_ROLES
+
+        _strict = STRICT_PROVIDER_ROLES.get((uloga or "").upper())
+        if _strict:
+            _only = [p for p in ordered if p in _strict]
+            if _only:
+                ordered = _only
+    except Exception:
+        pass
+
     MAX_ATTEMPTS = 4
     for attempt in range(MAX_ATTEMPTS):
         any_activity = False
