@@ -73,3 +73,32 @@ def provjeri(t):
         r["odbij"] = True
         r["razlog"] = "nepoznate rijeci (%.0f/1000)" % r["oov"]
     return r
+
+
+# P2.23 glosar guard: EN termin iz glosara ostao u HR tekstu (npr. "Beauty", "Beautyin")
+_GL_RX = re.compile(r"^-\s+(.+?)\s+->\s+(.+?)(?:\s+\(spoji sa:[^)]*\))?\s+\[[^\]]*\]\s*$")
+
+
+def glosar_neprevedeno(rel_glosar, tekst):
+    """Vraca listu EN termina iz relevantnog glosara ('- EN -> HR [kat]') koji su ostali u tekstu
+    neprevedeni. Preskace termine kod kojih je HR isti kao EN i kratke (<4 slova)."""
+    if not rel_glosar or not tekst:
+        return []
+    plain = _TAG.sub(" ", tekst)
+    res = []
+    for linija in str(rel_glosar).split("\n"):
+        m = _GL_RX.match(linija.strip())
+        if not m:
+            continue
+        en, hr = m.group(1).strip(), m.group(2).strip()
+        if len(en) < 4 or en.lower() == hr.lower() or en.lower() in hr.lower():
+            continue
+        oblici = {en}
+        if en.islower():
+            oblici.add(en.capitalize())
+        suf = r"\w{0,3}" if len(en) >= 5 else ""
+        for o in oblici:
+            if re.search(r"(?<!\w)" + re.escape(o) + suf + r"(?!\w)", plain):
+                res.append(en)
+                break
+    return res

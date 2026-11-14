@@ -613,9 +613,8 @@ def _resolve_chunk_path(chk_dir, stem: str):
         base_part = stem.split("_blok_")[0]
         base_clean = re.sub(r"\.(x?html?)$", "", base_part, flags=re.IGNORECASE)
         for pattern in (
-            f"*{base_clean}*_blok_{blok_num}.chk",
-            f"*_blok_{blok_num}.chk",
-        ):
+            (f"*{base_clean}*_blok_{blok_num}.chk",) if base_clean else ()
+        ):  # P2.23: bez generickog *_blok_N.chk (pogadjao tudje poglavlje/knjigu)
             matches = list(chk_dir.glob(pattern))
             if matches:
                 return matches[0]

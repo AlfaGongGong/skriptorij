@@ -1539,6 +1539,21 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             self.chunk_skips += 1
             return None, "EN_REC"
 
+        # P2.23 glosar guard: EN termin iz glosara ostao u HR tekstu (lektura)
+        try:
+            from core.oov_kapija import glosar_neprevedeno as _gl_np
+
+            _gl_l = _gl_np(rel_glosar, finalno)
+            if _gl_l and _kapija_odbij(self, file_name, chunk_idx):
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: 🇬🇧 glosar: neprevedeno " + ", ".join(_gl_l[:5]) + " (lektura) — odbijam upis, pokušavam ponovo.",
+                    "warning",
+                )
+                self.chunk_skips += 1
+                return None, "EN_REC"
+        except Exception as _gl_e:
+            self.log(f"[{file_name}] Blok {chunk_idx}: glosar guard greška: {_gl_e}", "warning")
+
         # P2.18 kapija: engleski tekst / nepoznate rijeci (hunspell) u lekturi
         try:
             from core.oov_kapija import provjeri as _oov_l
@@ -1904,6 +1919,21 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         )
         self.chunk_skips += 1
         return None, "EN_REC"
+
+    # P2.23 glosar guard: EN termin iz glosara ostao u HR tekstu (prijevod)
+    try:
+        from core.oov_kapija import glosar_neprevedeno as _gl_np
+
+        _gl_l = _gl_np(rel_glosar, finalno)
+        if _gl_l and _kapija_odbij(self, file_name, chunk_idx):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: 🇬🇧 glosar: neprevedeno " + ", ".join(_gl_l[:5]) + " (prijevod) — odbijam upis, pokušavam ponovo.",
+                "warning",
+            )
+            self.chunk_skips += 1
+            return None, "EN_REC"
+    except Exception as _gl_e:
+        self.log(f"[{file_name}] Blok {chunk_idx}: glosar guard greška: {_gl_e}", "warning")
 
     # P2.18 kapija: engleski tekst / nepoznate rijeci (hunspell) u prijevodu
     try:
