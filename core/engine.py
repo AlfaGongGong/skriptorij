@@ -459,6 +459,8 @@ class SkriptorijAllInOne:
         self.log("Kanon ne postoji — generiram automatski...", "system")
 
         imena = _Counter()
+        from core.glosar_ekstrakcija import autori_iz_teksta, je_pozadinski_fajl, opf_autori
+        autori_tok = set()
         try:
             with _zip.ZipFile(self.book_path) as z:
                 for n in z.namelist():
@@ -470,6 +472,9 @@ class SkriptorijAllInOne:
                         continue
                     soup = _BS(html, "html.parser")
                     tekst = soup.get_text(" ", strip=True)
+                    autori_tok |= autori_iz_teksta(tekst)
+                    if je_pozadinski_fajl(n):
+                        continue
                     for m in _re.finditer(r"\b([A-ZČĆŠĐŽ][a-zčćšđž]{2,})\b", tekst):
                         imena[m.group(1)] += 1
         except Exception as e:
@@ -486,6 +491,11 @@ class SkriptorijAllInOne:
         self.log("Jezik knjige: " + jezik, "system")
 
         cisto = mehanicka_cistka(imena, min_pojava=3)
+        autori_tok |= opf_autori(self.book_path)
+        _izbaceni = [k for k in cisto if k in autori_tok]
+        if _izbaceni:
+            cisto = {k: v for k, v in cisto.items() if k not in autori_tok}
+            self.log("Glosar: izbačena imena autora/urednika: " + ", ".join(sorted(_izbaceni)), "tech")
         if len(cisto) > 500:
             cisto = dict(sorted(cisto.items(), key=lambda x: x[1], reverse=True)[:500])
         self.log("Kandidata za glosar: " + str(len(cisto)), "tech")

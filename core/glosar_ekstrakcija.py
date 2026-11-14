@@ -290,3 +290,55 @@ Vrati ISKLJUCIVO JSON:
                 "spoji_sa": "",
             }
     return rezultati
+
+
+# P2.22 autori u kanonu
+_POZ_RX = re.compile(
+    r"(?:^|/)(?:cover|title(?:page)?|halftitle|copyright|colophon|about|author|also|toc|nav|"
+    r"dedication|acknowledg\w*|praise|epigraph|permissions|credits|imprint|contents)[^/]*$",
+    re.I,
+)
+_IME = r"((?:[A-ZČĆŠĐŽ][\w'’\-]*\s+){0,3}[A-ZČĆŠĐŽ][\w'’\-]*)"
+_AUTOR_RX = [
+    re.compile(
+        r"\b(?:Introduction|Foreword|Afterword|Preface|Edited|Written|Translated|Illustrated|Text|Words)"
+        r"\s+(?:and\s+\w+\s+)?by\s+" + _IME
+    ),
+    re.compile(r"(?:©|Copyright|\(c\))\s*(?:©\s*)?\d{4}(?:\s*[-–,]\s*\d{4})*\s+(?:by\s+)?" + _IME),
+]
+
+
+def je_pozadinski_fajl(naziv):
+    """Naslovnica, copyright, o autoru, 'also by'... — ne daju likove za glosar."""
+    return bool(_POZ_RX.search(str(naziv).replace("\\", "/")))
+
+
+def autori_iz_teksta(tekst):
+    """Skup riječi koje su dijelovi imena autora/urednika (iz 'Introduction by X Y', 'Copyright 1979 X Y')."""
+    res = set()
+    for rx in _AUTOR_RX:
+        for m in rx.finditer(tekst or ""):
+            for t in m.group(1).split():
+                t = t.strip(".,;:'’\"")
+                if len(t) >= 3:
+                    res.add(t)
+    return res
+
+
+def opf_autori(epub_path):
+    """Riječi iz dc:creator / dc:contributor u OPF-u."""
+    import zipfile
+
+    res = set()
+    try:
+        with zipfile.ZipFile(epub_path) as z:
+            for n in z.namelist():
+                if n.endswith(".opf"):
+                    opf = z.read(n).decode("utf-8", "replace")
+                    for m in re.finditer(r"<dc:(?:creator|contributor)[^>]*>([^<]+)</dc:", opf):
+                        for t in re.split(r"[\s,;&]+", m.group(1)):
+                            if len(t) >= 3 and t[0].isupper():
+                                res.add(t)
+    except Exception:
+        pass
+    return res
