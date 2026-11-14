@@ -318,7 +318,7 @@ class SkriptorijAllInOne:
         # - Inače → PREVOD
         if hr_dijakritika_ratio > 0.003:
             mode = "LEKTURA"
-        elif en_ratio < 0.08:
+        elif en_ratio < 0.05:  # _L22_: bilo 0.08 (engleska proza ~0.12 pa je 0.08 premalo rezerve)
             mode = "LEKTURA"
         else:
             mode = "PREVOD"

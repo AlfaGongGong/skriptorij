@@ -124,6 +124,22 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
         except Exception:
             logger.exception("[C1_kriticno] run.py:123 Exception")
 
+        # _L22_: EN izvor (checkpoints/izvor_en) ima prednost nad spremljenim modom
+        try:
+            from core.mode_detekcija import mode_iz_izvora_en as _m_en_f
+
+            _m_en = _m_en_f(engine.checkpoint_dir)
+        except Exception:
+            _m_en = None
+        if _m_en in ("PREVOD", "LEKTURA") and _m_en != saved_mode:
+            engine.log(
+                f"💾 Nastavak sesije: spremljeni mod '{saved_mode}' ne odgovara EN izvoru "
+                f"→ '{_m_en}'",
+                "warning",
+            )
+            _save_book_analysis(engine, _m_en)
+            saved_mode = _m_en
+
         if saved_mode in ("PREVOD", "LEKTURA"):
             # 2026-10-23 FIX: override PREVOD ako filename sadrzi PREVEDENO
             book_name = (
@@ -157,7 +173,14 @@ def _odredi_strategiju(engine, html_files, scores: dict) -> str:
             return "LEKTURA"
         # Probaj detekciju iz html_files
         try:
-            detected = engine._detect_knjiga_mode(html_files, n_files=5)
+            try:
+                from core.mode_detekcija import mode_iz_izvora_en as _m_en_f2
+
+                detected = _m_en_f2(engine.checkpoint_dir)
+            except Exception:
+                detected = None
+            if detected is None:
+                detected = engine._detect_knjiga_mode(html_files, n_files=5)
             engine.log(
                 f"💾 Nastavak sesije: {chk_count} checkpointa — "
                 f"detektovano '{detected}' iz html_files",
