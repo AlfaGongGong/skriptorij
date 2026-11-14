@@ -809,8 +809,14 @@ def review_chunk(chunk_stem):
             new_text = data.get("text", "")
             if not new_text.strip():
                 return jsonify({"error": "Prazan tekst"}), 400
-            chk_path.parent.mkdir(parents=True, exist_ok=True)
-            chk_path.write_text(new_text, encoding="utf-8")
+            # _L19_: ne pisati u .lektura.chk/.prevod.chk (packager ih preskace -> ispravak se gubi)
+            from core.chk_cilj import cilj_za_upis, sa_zaglavljem
+
+            _cilj = cilj_za_upis(chk_path)
+            if _cilj != chk_path:
+                new_text = sa_zaglavljem(chk_path, new_text)
+            _cilj.parent.mkdir(parents=True, exist_ok=True)
+            _cilj.write_text(new_text, encoding="utf-8")
             return jsonify({"status": "ok", "stem": stem})
 
     except Exception as e:
