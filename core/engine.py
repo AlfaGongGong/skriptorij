@@ -151,6 +151,8 @@ class SkriptorijAllInOne:
         self.glosar_tekst = ""
         with contextlib.suppress(Exception):
             self._auto_generiraj_kanon()
+        with contextlib.suppress(Exception):
+            self._dopuni_uloge_kanon()
         # F0.20: popuni glosar_tekst iz kanona nakon generisanja
         with contextlib.suppress(Exception):
             self.glosar_tekst = self._build_glosar_tekst()
@@ -642,6 +644,78 @@ class SkriptorijAllInOne:
         except Exception:
             logger.debug("[C3_fallback] engine.py:543 Exception")
 
+        return True
+
+    def _dopuni_uloge_kanon(self):
+        """P2.25: dopuni kanon obicnim imenicama-ulogama (valet, butler...) s JEDNIM odabranim prijevodom,
+        da se kroz blokove ne prevode raznoliko (sobar/Batler/Lakaj). Jednom po knjizi (marker uloge_provjerene)."""
+        import os as _os
+        import shutil as _sh
+        import zipfile as _zip
+        from pathlib import Path as _P
+
+        if _os.environ.get("BOOKLYFI_ULOGE", "1") == "0":
+            return False
+        kd = _P(_os.environ.get("BOOKLYFI_KANON_DIR", "/root/skriptorij/data/kanon/knjige"))
+        kp = kd / (_P(self.book_path).stem + ".json")
+        if not kp.exists():
+            return False
+        data = json.loads(kp.read_text(encoding="utf-8"))
+        if data.get("uloge_provjerene"):
+            return True
+        from bs4 import BeautifulSoup as _BS
+
+        from core import glosar_ekstrakcija as _ge
+
+        if _ge.detektuj_jezik(self.book_path) == "HR":
+            return False
+        try:
+            from core.glosar_ekstrakcija import je_pozadinski_fajl as _poz
+        except ImportError:
+            def _poz(_n):
+                return False
+        brojac = {}
+        with _zip.ZipFile(self.book_path) as z:
+            for n in z.namelist():
+                if not n.endswith((".xhtml", ".html", ".htm")) or _poz(n):
+                    continue
+                try:
+                    tekst = _BS(z.read(n).decode("utf-8", "replace"), "html.parser").get_text(" ", strip=True)
+                except Exception:
+                    continue
+                _ge.prebroji_uloge(tekst, brojac)
+        termini = data.setdefault("termini", {})
+        postojeci = {k.lower() for k in termini}
+        kandidati = sorted(k for k, v in brojac.items() if v >= 3 and k not in postojeci)
+        dodano = 0
+        if kandidati:
+            fleet = getattr(self, "fleet", None)
+            if fleet is None:
+                return False
+            rez = _ge.posalji_ai_batch("EN", kandidati, fleet, sistem=_ge.SYSTEM_ULOGE)
+            rez_l = {str(k).lower(): v for k, v in (rez or {}).items()}
+            if not rez_l:
+                self.log("Uloge: AI nije vratio odgovor, pokušat ću ponovo idući put", "warning")
+                return False
+            for k in kandidati:
+                r = rez_l.get(k) or {}
+                hr = str(r.get("hr") or "").strip().lower()
+                if not hr or r.get("izbaci") or hr == k:
+                    continue
+                termini[k] = {
+                    "hr": hr, "kategorija": "termin", "odbacene_varijante": [],
+                    "broj_pojava": brojac[k], "spoji_sa": "", "potvrdjeno": True,
+                }
+                dodano += 1
+        data["uloge_provjerene"] = True
+        kp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        self.log("Uloge u kanonu: dodano " + str(dodano) + " (kandidata " + str(len(kandidati)) + ")", "system")
+        try:
+            dst = _P("/storage/emulated/0/Books/MoonReader/kanon") / kp.name
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            _sh.copy2(kp, dst)
+        except Exception:
+            logger.debug("[C3_fallback] uloge kopija kanona")
         return True
 
     def _build_glosar_tekst(self):

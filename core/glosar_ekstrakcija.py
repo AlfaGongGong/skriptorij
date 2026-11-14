@@ -137,7 +137,7 @@ def detektuj_jezik(epub_path):
     return "EN"
 
 
-def posalji_ai_batch(jezik, batch, fleet):
+def posalji_ai_batch(jezik, batch, fleet, sistem=None):
     """Posalji batch AI-ju. Rotira SVE providere. Ako svi padnu — deterministicki fallback."""
     from network.http_client import api_call
 
@@ -200,6 +200,8 @@ zagaditi glosar obicnom rijecom.
 Vrati ISKLJUCIVO JSON:
 {"rezultati": [{"en": "...", "izbaci": true}, {"en": "...", "kategorija": "lik", "hr": "...", "spoji_sa": ""}]}
 """
+    if sistem:
+        SYSTEM = sistem
     lista = "\n".join("- " + t for t in batch)
     user_prompt = "Termini:\n\n" + lista
 
@@ -342,3 +344,32 @@ def opf_autori(epub_path):
     except Exception:
         pass
     return res
+
+
+# P2.25 uloge: obicne imenice (sluge, zanimanja) koje se kroz blokove prevode razlicito
+ULOGE_EN = (
+    "valet butler footman coachman chauffeur steward chamberlain housemaid governess housekeeper "
+    "gardener servant courtier jester herald bailiff constable innkeeper blacksmith apothecary "
+    "midwife huntsman gamekeeper lackey equerry seneschal maid"
+).split()
+_ULOGE_RX = re.compile(r"\b(" + "|".join(sorted(ULOGE_EN, key=len, reverse=True)) + r")(?:es|s)?\b", re.I)
+
+SYSTEM_ULOGE = """Ti si urednik knjizevnog prijevoda s engleskog na hrvatski.
+
+Dobit ces listu OBICNIH imenica (sluge, zanimanja, uloge) koje se u knjizi cesto ponavljaju.
+Za SVAKU odaberi JEDAN hrvatski prijevod koji ce se DOSLJEDNO koristiti kroz cijelu knjigu
+(nominativ jednine, mala slova, uobicajena rijec, bez izmisljanja). Ne izbacuj nista.
+
+Vrati ISKLJUCIVO JSON:
+{"rezultati": [{"en": "valet", "hr": "sobar"}]}
+"""
+
+
+def prebroji_uloge(tekst, brojac=None):
+    """Broji pojave uloga (jednina/mnozina, bez obzira na velika slova). Vraca dict baza->broj."""
+    if brojac is None:
+        brojac = {}
+    for m in _ULOGE_RX.finditer(tekst or ""):
+        k = m.group(1).lower()
+        brojac[k] = brojac.get(k, 0) + 1
+    return brojac
