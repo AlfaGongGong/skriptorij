@@ -808,6 +808,19 @@ async def process_single_file_worker(self, file_path):
     except Exception:
         return
 
+    # P2.20 izvor ostaje EN: worker na kraju prepisuje file_path prijevodom, pa ponovni prolaz
+    # ne smije chunkati vlastiti izlaz. Kopija izvora u checkpoints/izvor_en (sufiks .en).
+    try:
+        _rel_iz = file_path.relative_to(self.work_dir).as_posix().replace("/", "__")
+        _pr_iz = self.checkpoint_dir / "izvor_en" / (_rel_iz + ".en")
+        if _pr_iz.exists():
+            raw_html = _pr_iz.read_text("utf-8", errors="ignore")
+        elif not (self.checkpoint_dir / f"{file_name}_blok_0.chk").exists():
+            _pr_iz.parent.mkdir(parents=True, exist_ok=True)
+            _pr_iz.write_text(raw_html, encoding="utf-8")
+    except Exception:
+        logger.exception("[P2.20] izvor_en")
+
     chunks = self.chunk_html(raw_html, max_words=500)
     if not chunks:
         return
