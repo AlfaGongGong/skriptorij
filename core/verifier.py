@@ -494,3 +494,22 @@ def izvuci_json(raw) -> dict | None:
         if _ima_oblik(obj):
             return obj
     return _spasi_odsjeceni(t)
+
+
+# P2.24 sazetak oznaka verifikatora za UI (header indikator)
+def sazetak_oznaka(d) -> dict:
+    """Broji oznake iz quality_verifier.json: ok | sumnjiv | los | neprovjeren."""
+    res = {"ukupno": 0, "ok": 0, "sumnjiv": 0, "los": 0, "neprovjeren": 0}
+    if not isinstance(d, dict):
+        d = {}
+    for v in d.values():
+        if not isinstance(v, dict):
+            continue
+        res["ukupno"] += 1
+        o = v.get("oznaka")
+        if o not in ("ok", "sumnjiv", "los", "neprovjeren"):
+            ver = v.get("verifier")
+            o = "ok" if ver == "ok" else ("neprovjeren" if ver == "skip" else "sumnjiv")
+        res[o] += 1
+    res["provjereno"] = res["ukupno"] - res["neprovjeren"]
+    return res

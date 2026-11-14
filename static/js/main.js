@@ -2373,6 +2373,47 @@ function switchTab(tabId) {
 
 // ═══════════════ QUALITY SCORES ═════════════════════
 
+// P2.24: verifier (EN<->HR) umjesto same HR ocjene u headeru
+async function _ucitajVerifier() {
+    try {
+        const r = await fetch("/api/verifier_summary");
+        if (!r.ok) return null;
+        const v = await r.json();
+        return v && v.has_data && v.provjereno > 0 ? v : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function _prikaziVerifier(badge, v, hrAvg) {
+    const pct = Math.round((v.ok / v.provjereno) * 100);
+    const losShare = v.los / v.provjereno;
+    const color =
+        losShare <= 0.05
+            ? "var(--emerald)"
+            : losShare <= 0.15
+              ? "var(--accent-2)"
+              : losShare <= 0.3
+                ? "var(--amber)"
+                : "var(--rose)";
+    const ring = badge.querySelector(".ql-ring");
+    if (ring) {
+        ring.style.setProperty("--ql-pct", pct + "%");
+        ring.style.background = `conic-gradient(${color} 0% ${pct}%, var(--bg-3) 0%)`;
+        ring.setAttribute("data-val", String(pct));
+    }
+    const mainEl = badge.querySelector(".ql-score-main");
+    const subEl = badge.querySelector(".ql-score-sub");
+    if (mainEl) mainEl.textContent = pct + "% ✓";
+    if (subEl)
+        subEl.textContent =
+            `${v.los} loših · ${v.sumnjiv} sumnj.` +
+            (v.neprovjeren ? ` · ${v.neprovjeren} neprov.` : "");
+    badge.title =
+        `Verifier (EN↔HR): ${v.ok} ok, ${v.sumnjiv} sumnjivih, ${v.los} loših, ` +
+        `${v.neprovjeren} neprovjerenih od ${v.ukupno}. HR ocjena (bez izvornika): ${hrAvg}/10`;
+}
+
 // [v2.0.3] Live quality indikator u headeru
 async function updateLiveQuality() {
     const badge = document.getElementById("quality-live-badge");
@@ -2427,11 +2468,15 @@ async function updateLiveQuality() {
 
         badge.classList.add("has-data");
 
+        const vs = await _ucitajVerifier();
+        if (vs) _prikaziVerifier(badge, vs, avgRounded);
+
         // Ažuriraj i badge na tabu kvaliteta
         const qualBadge = document.getElementById("quality-badge");
         if (qualBadge) {
-            if (bad > 0) {
-                qualBadge.textContent = bad;
+            const badN = vs ? vs.los : bad;
+            if (badN > 0) {
+                qualBadge.textContent = badN;
                 qualBadge.classList.remove("hidden");
             } else {
                 qualBadge.classList.add("hidden");
@@ -3656,7 +3701,7 @@ async function _ttsRunScan() {
         // Prava logika (tts.py / start_from_master) vec se pokrece
         // preko /api/start sa mode:"TTS", isto kao glavna obrada —
         // pa se prati preko /api/status kao i glavni dashboard.
-        const startResp = await fetch("/api/start", {
+        const startResp = await fetch("/api/tts/start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ book, model, mode: "TTS" })
@@ -3667,7 +3712,7 @@ async function _ttsRunScan() {
         const finalStats = await new Promise((resolve, reject) => {
             const timer = setInterval(async () => {
                 try {
-                    const sr = await fetch("/api/status");
+                    const sr = await fetch("/api/tts/status");
                     const sd = await sr.json();
                     const st = (sd.status || "").toUpperCase();
                     if (statusTxt) statusTxt.textContent = sd.status || "...";

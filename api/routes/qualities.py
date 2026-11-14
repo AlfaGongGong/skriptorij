@@ -834,3 +834,21 @@ def report_sve():
             500,
             {"Content-Type": "application/json"},
         )
+
+
+# P2.24: sazetak verifikatora (EN<->HR) za aktivnu knjigu; koristi header indikator
+@bp.route("/api/verifier_summary")
+def verifier_summary():
+    try:
+        from core.verifier import sazetak_oznaka
+
+        cache = _get_quality_cache_path()
+        qv = cache.parent / "quality_verifier.json" if cache else None
+        if not qv or not qv.exists():
+            return jsonify({"has_data": False})
+        out = sazetak_oznaka(json.loads(qv.read_text("utf-8")))
+        out["has_data"] = out["ukupno"] > 0
+        return jsonify(out)
+    except Exception as e:
+        logger.error("verifier_summary greška: %s", e, exc_info=True)
+        return jsonify({"has_data": False})
