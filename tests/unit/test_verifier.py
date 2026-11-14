@@ -291,4 +291,4 @@ def test_oznaka_los_negacija_i_broj():
 
 def test_oznaka_los_nizak_score():
     from core.verifier import oznaka_bloka
-    assert oznaka_bloka(_rez(["izostavljeno", "izostavljeno"])) == "los"   # score 6.0
+    assert oznaka_bloka(_rez(["broj", "broj"])) == "los"   # score 6.0

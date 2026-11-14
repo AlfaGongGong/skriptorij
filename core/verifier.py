@@ -396,6 +396,19 @@ OZNAKA_TEZKI_TIPOVI = ("negacija", "broj", "izostavljeno", "dodano", "ime")  # =
 OZNAKA_ZA_PREGLED = ("kriv_smisao",)                                          # => "sumnjiv"
 OZNAKA_LOS_ISPOD = 7.0   # ZASTARJELO: score vise ne utjece na oznaku (ostavljeno radi importa)
 
+# _L17_: korisnikove odluke na karticama: dodano 4/57 i izostavljeno 4/41 "prevedi ponovo" (ostalo "ostavi"),
+# pa ti tipovi sami ne cine blok "los". broj 14/24, ime 7/7, negacija 3/4 ostaju "los".
+# OZNAKA_TEZKI_TIPOVI se NE mijenja (kartice revizije i metrika ga koriste, sidro filtrira dodano/izostavljeno).
+OZNAKA_LOS_TIPOVI = ("negacija", "broj", "ime")
+
+
+def _los_tipovi():
+    import os
+
+    if os.environ.get("BOOKLYFI_OZNAKA_STROGO", "0") == "1":
+        return OZNAKA_TEZKI_TIPOVI
+    return OZNAKA_LOS_TIPOVI
+
 
 def oznaka_bloka(rez) -> str:
     """ok | sumnjiv | los | neprovjeren.
@@ -412,7 +425,7 @@ def oznaka_bloka(rez) -> str:
     if not greske:
         return "ok"
     tipovi = {g.get("tip") for g in greske if isinstance(g, dict)}
-    if tipovi & set(OZNAKA_TEZKI_TIPOVI):
+    if tipovi & set(_los_tipovi()):
         return "los"
     return "sumnjiv"
 
@@ -507,6 +520,9 @@ def sazetak_oznaka(d) -> dict:
             continue
         res["ukupno"] += 1
         o = v.get("oznaka")
+        # _L17_: preracunaj iz gresaka (stare oznake su iz vremena kad su dodano/izostavljeno bili "los")
+        if o in ("sumnjiv", "los") and isinstance(v.get("greske"), list) and v.get("greske"):
+            o = oznaka_bloka({"provjeren": True, "greske": v["greske"]})
         if o not in ("ok", "sumnjiv", "los", "neprovjeren"):
             ver = v.get("verifier")
             o = "ok" if ver == "ok" else ("neprovjeren" if ver == "skip" else "sumnjiv")
