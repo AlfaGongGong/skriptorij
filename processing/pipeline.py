@@ -1202,6 +1202,20 @@ def _kapija_odbij(self, file_name, chunk_idx):
     return False
 
 
+# P2.21 naslov EN guard: naslov poglavlja (div.ct) ne smije ostati engleski
+_CT_DIV_RX = re.compile(r'(?is)<div\b[^>]*\bclass="[^"]*\bct\b[^"]*"[^>]*>(.*?)</div>')
+_CT_EN_RIJECI = {"THE", "OF", "MR", "MRS", "MISS", "AND", "WITH", "FROM", "FOR", "BY", "IN"}
+
+
+def _ct_naslov_en(html: str) -> bool:
+    """True ako naslov poglavlja (div.ct) u bloku sadrzi engleske rijeci (THE, OF, MR ...)."""
+    for m in _CT_DIV_RX.finditer(html or ""):
+        t = re.sub(r"<[^>]+>", "", m.group(1))
+        if set(re.findall(r"[A-Za-z]+", t.upper())) & _CT_EN_RIJECI:
+            return True
+    return False
+
+
 async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file_name):
     """
     Obrađuje jedan HTML chunk kroz AI pipeline.
@@ -1515,6 +1529,15 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 )
         except Exception as _le:
             self.log(f"[{file_name}] Blok {chunk_idx}: lektura guard greška: {_le}", "warning")
+
+        # P2.21 naslov EN guard (lektura)
+        if _ct_naslov_en(finalno) and _kapija_odbij(self, file_name, chunk_idx):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: 🇬🇧 naslov poglavlja ostao engleski (lektura) — odbijam upis, pokušavam ponovo.",
+                "warning",
+            )
+            self.chunk_skips += 1
+            return None, "EN_REC"
 
         # P2.18 kapija: engleski tekst / nepoznate rijeci (hunspell) u lekturi
         try:
@@ -1868,6 +1891,15 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     if _en_rec >= 2:
         self.log(
             f"[{file_name}] Blok {chunk_idx}: 🇬🇧 {_en_rec} EN rečenica u prijevodu — odbijam upis, pokušavam ponovo.",
+            "warning",
+        )
+        self.chunk_skips += 1
+        return None, "EN_REC"
+
+    # P2.21 naslov EN guard (prijevod)
+    if _ct_naslov_en(finalno) and _kapija_odbij(self, file_name, chunk_idx):
+        self.log(
+            f"[{file_name}] Blok {chunk_idx}: 🇬🇧 naslov poglavlja ostao engleski — odbijam upis, pokušavam ponovo.",
             "warning",
         )
         self.chunk_skips += 1
