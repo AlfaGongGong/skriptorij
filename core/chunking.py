@@ -22,7 +22,7 @@ from bs4 import XMLParsedAsHTMLWarning
 
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, Comment, NavigableString, Tag
 
 # Regex za granicu rečenice: iza . ! ? … slijedi razmak ili kraj
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?\u2026])\s+")
@@ -191,6 +191,12 @@ def _split_p_tag(p_tag: Tag, max_words: int) -> list:
             # Tag (<em>, <i>, <b>) — dodaj u trenutni dio
             s = str(child)
             w = _word_count(child)
+            # _L16_: ugnijezdeni tag veci od max_words (npr. <p><span>cijelo poglavlje</span></p>)
+            if isinstance(child, Tag) and w > max_words:
+                flush()
+                for _pd in _split_p_tag(child, max_words):
+                    dijelovi.append(_pd)
+                continue
             if (
                 trenutni_trenutni_rijeci > 0
                 and trenutni_trenutni_rijeci + w > max_words
@@ -223,6 +229,20 @@ def _grupisi_djecu(children: list, max_words: int) -> list:
         if w == 0:
             if trenutna:
                 trenutna.append(str(child))
+            continue
+
+        # _L16_: goli tekst (NavigableString) veci od max_words -> <p> blokovi po recenicama
+        if (
+            isinstance(child, NavigableString)
+            and not isinstance(child, Comment)
+            and w > max_words
+        ):
+            if trenutna:
+                grupe.append(trenutna)
+                trenutna = []
+                trenutne_rijeci = 0
+            for d in _split_text_by_sentences(str(child), max_words):
+                grupe.append(["<p>" + d.strip() + "</p>"])
             continue
 
         # Ako je <p> > max_words — reži ga
@@ -285,7 +305,39 @@ def chunk_html(html_content: str, max_words: int = 250) -> list:
 
     grupe = _grupisi_djecu(list(body.children), max_words)
     chunks = ["".join(g) for g in grupe if "".join(g).strip()]
-    return chunks
+    # _L16_: zadnja sigurnosna mreza; nijedan blok ne smije biti puno veci od max_words
+    gotovi = []
+    for c in chunks:
+        gotovi.extend(_sigurno_rezi(c, max_words))
+    return gotovi
+
+
+def _sigurno_rezi(chunk: str, max_words: int) -> list:
+    """Ako je blok i nakon svega > 2*max_words rijeci, rezi ga po tekstu (gubi inline oznake, ali ne tekst)."""
+    try:
+        tekst = BeautifulSoup(chunk, "html.parser").get_text("\n")
+    except Exception:
+        return [chunk]
+    if len(tekst.split()) <= max_words * 2:
+        return [chunk]
+    odlomci = [o.strip() for o in re.split(r"\n+", tekst) if o.strip()]
+    dijelovi = []
+    for o in odlomci:
+        if len(o.split()) > max_words:
+            dijelovi.extend(_split_text_by_sentences(o, max_words))
+        else:
+            dijelovi.append(o)
+    izlaz, tren, br = [], [], 0
+    for d in dijelovi:
+        w = len(d.split())
+        if tren and br + w > max_words:
+            izlaz.append("".join("<p>" + x + "</p>" for x in tren))
+            tren, br = [], 0
+        tren.append(d)
+        br += w
+    if tren:
+        izlaz.append("".join("<p>" + x + "</p>" for x in tren))
+    return izlaz or [chunk]
 
 
 def get_context_window(checkpoint_dir, chunks: list, idx: int, file_name: str) -> tuple:
