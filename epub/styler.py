@@ -1426,6 +1426,34 @@ def _razdvoji_literalne_nl(soup):
     return n_split
 
 
+# P2.22 L4: naslov poglavlja kao div.ct (slovo + span.sc) ima prednost pred (engleskim) TOC naslovom
+def _naslov_iz_div_ct(body, knjiga=""):
+    """Vraca (tekst, element) ili None. Tekst: slova spojena bez separatora, sentence-case;
+    rijeci koje se u tijelu pojavljuju velikim slovom usred recenice (a nikad malim) ostaju velike (vlastita imena)."""
+    ct = body.find("div", class_="ct")
+    if ct is None:
+        return None
+    prije = ct.find_previous("p")
+    if prije is not None and body in prije.parents and len(_p_tekst(prije)) >= 40:
+        return None
+    for br in ct.find_all("br"):
+        br.replace_with(" ")
+    t = re.sub(r"\s+", " ", ct.get_text("").replace("\ufffc", "").replace("\u00a0", " ")).strip()
+    if not t or len(t) > 80 or not any(c.isalpha() for c in t) or _naslov_lose(t, knjiga):
+        return None
+    tijelo = body.get_text(" ")
+    out = []
+    for i, w in enumerate(t.lower().split(" ")):
+        if i == 0:
+            out.append(w[:1].upper() + w[1:])
+            continue
+        stem = w[:-1] if len(w) > 4 else w
+        velika = re.search(r"[a-z\u010d\u0107\u017e\u0161\u0111,;:]\s+" + re.escape(stem.capitalize()), tijelo)
+        mala = re.search(r"(?<!\w)" + re.escape(stem), tijelo)
+        out.append(w.capitalize() if (len(w) >= 3 and velika and not mala) else w)
+    return " ".join(out), ct
+
+
 def _dodaj_naslov(soup, broj, naslov=None, knjiga=""):
     """v2: vraca tekst h1 koji je upisan/ostavljen (None = bez naslova).
     Prioritet: lose-provjera -> broj+naslov iz tijela -> naslov (TOC) -> dobar h1 u fajlu
@@ -1456,6 +1484,7 @@ def _dodaj_naslov(soup, broj, naslov=None, knjiga=""):
         naslov = None
 
     lead = _naslov_iz_tijela(body)
+    _ct_lead = _naslov_iz_div_ct(body, knjiga)  # P2.22 L4
     h1_stari = body.find("h1")
     h1_tekst = re.sub(r"\s+", " ", h1_stari.get_text(" ", strip=True)).strip() if h1_stari else ""
     h1_dobar = bool(h1_stari) and not _naslov_lose(h1_tekst, knjiga)
@@ -1464,7 +1493,9 @@ def _dodaj_naslov(soup, broj, naslov=None, knjiga=""):
     brisi = []
     zadrzi_h1 = False
 
-    if lead and lead[2] == "broj+naslov":
+    if _ct_lead:
+        final, brisi = _ct_lead[0], [_ct_lead[1]]
+    elif lead and lead[2] == "broj+naslov":
         final, brisi = lead[0], list(lead[1])
         _en = _naslov_en_chapter(naslov) if naslov else None
         if _en and " \u2013 " in final:

@@ -884,6 +884,16 @@ async def analiziraj_knjigu(engine, book_path):
         logging.debug(traceback.format_exc())
 
 
+# P2.22 L5: ime ulazi u glosar samo ako se bar jednom pojavi velikim slovom usred recenice
+# (rijeci kao "Ako", "Kako", "Moja" stoje samo na pocetku recenice i nisu vlastita imena)
+def _je_vlastito_ime(ime, tekst):
+    import re as _re5
+
+    if not isinstance(ime, str) or not ime.strip():
+        return False
+    return bool(_re5.search(r"[a-z\u010d\u0107\u017e\u0161\u0111,;:]\s+" + _re5.escape(ime.strip()) + r"(?!\w)", tekst or ""))
+
+
 async def _inkrementalna_analiza_glosara(engine, poglavlje_tekst, poglavlje_ime):
     """Inkrementalno dodaje likove u glosar."""
     import asyncio
@@ -898,7 +908,8 @@ async def _inkrementalna_analiza_glosara(engine, poglavlje_tekst, poglavlje_ime)
                 min_pojavljivanja=2,
             )
             for lik in likovi:
-                engine.context_mgr.dodaj_u_glosar(lik)
+                if _je_vlastito_ime(lik, poglavlje_tekst):
+                    engine.context_mgr.dodaj_u_glosar(lik)
     logging.info(f"[book_context] Glosar analiza: {poglavlje_ime}")
 
 
