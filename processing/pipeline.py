@@ -1500,6 +1500,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 if (
                     _cl_l
                     and _cl_l["udio_x"] >= 0.3
+                    and _cl_l.get("udio_x_mala", _cl_l["udio_x"]) >= 0.2
                     and _cl_l["rijeci"] >= 60
                     and "NEPREVEDENO" not in finalno
                 ):
@@ -1956,10 +1957,16 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             from core.classla_provjera import analiza as _cl_an
 
             _cl = await asyncio.to_thread(_cl_an, finalno)
-            if _cl and _cl["udio_x"] >= 0.3 and _cl["rijeci"] >= 60 and "NEPREVEDENO" not in finalno:
+            if (
+                _cl
+                and _cl["udio_x"] >= 0.3
+                and _cl.get("udio_x_mala", _cl["udio_x"]) >= 0.2
+                and _cl["rijeci"] >= 60
+                and "NEPREVEDENO" not in finalno
+            ):
                 self.log(
                     f"[{file_name}] Blok {chunk_idx}: 🇬🇧 classla: strani tekst "
-                    f"(X={_cl['udio_x']:.0%}, {_cl['sumnjive_rec']} rečenica) — odbijam upis, pokušavam ponovo.",
+                    f"(X={_cl['udio_x']:.0%}, mala={_cl.get('udio_x_mala', 0):.0%}, {_cl['sumnjive_rec']} rečenica) — odbijam upis, pokušavam ponovo.",
                     "warning",
                 )
                 self.chunk_skips += 1

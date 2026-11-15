@@ -37,7 +37,7 @@ def analiza(html, max_znakova=6000):
         return {"rijeci": 0, "x": 0, "udio_x": 0.0, "sumnjive_rec": 0, "primjeri": []}
     with _LOCK:
         doc = nlp(t[:max_znakova])
-    ukupno = x = sumnjivih = 0
+    ukupno = x = x_mala = sumnjivih = 0
     primjeri = []
     for s in doc.sentences:
         w = [a for a in s.words if re.search(r"[A-Za-zČĆŽŠĐčćžšđ]", a.text)]
@@ -46,9 +46,11 @@ def analiza(html, max_znakova=6000):
         nx = sum(1 for a in w if a.upos == "X")
         ukupno += len(w)
         x += nx
+        x_mala += sum(1 for t_ in w if t_.upos == "X" and t_.text[:1].islower())
         if len(w) >= 4 and nx / len(w) >= 0.3:
             sumnjivih += 1
             if len(primjeri) < 2:
                 primjeri.append(" ".join(a.text for a in s.words)[:80])
     return {"rijeci": ukupno, "x": x, "udio_x": round(x / max(ukupno, 1), 3),
+            "udio_x_mala": round(x_mala / max(ukupno, 1), 3),
             "sumnjive_rec": sumnjivih, "primjeri": primjeri}
