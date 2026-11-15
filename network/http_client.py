@@ -717,6 +717,17 @@ async def _async_http_post(
 
 
 # ── Gemini poziv (native endpoint) ───────────────────────────────────────────
+def _l25_override_modeli() -> set:
+    """L25: modeli izricito trazeni preko BOOKLYFI_MODEL_<ULOGA> (smiju biti izvan GOOGLE_MODEL_POOL)."""
+    import os as _os_l25
+
+    return {
+        v.strip()
+        for k, v in _os_l25.environ.items()
+        if k.startswith("BOOKLYFI_MODEL_") and v.strip()
+    }
+
+
 async def _call_gemini_with_full_rotation(
     self,
     sys_content,
@@ -775,7 +786,10 @@ async def _call_gemini_with_full_rotation(
             return None, "GEMINI_TIMEOUT"
         key = ks.key
 
-        if preferred_model and preferred_model in {m["model"] for m in pool}:
+        if preferred_model and (
+            preferred_model in {m["model"] for m in pool}
+            or preferred_model in _l25_override_modeli()
+        ):
             current_model = preferred_model
             for i, m in enumerate(pool):
                 if m["model"] == preferred_model:
