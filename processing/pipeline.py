@@ -276,6 +276,19 @@ def _chk_read(
     return None
 
 
+def _prevod_je_en_original(tekst, chunk) -> bool:
+    """L29: .prevod.chk koji je samo EN original (ALL_FAILED grana ga je upisivala) nije prijevod."""
+    import re as _re_en
+
+    def _n(s):
+        s = _re_en.sub(r"<!--.*?-->", "", s or "", flags=_re_en.S)
+        s = _re_en.sub(r"<[^>]+>", "", s)
+        return _re_en.sub(r"[\W_]+", "", s.lower())
+
+    a, b = _n(tekst), _n(chunk)
+    return len(b) >= 40 and a == b
+
+
 def _chk_write(
     self,
     file_name: str,
@@ -1635,6 +1648,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             chunk_for_hash=chunk,
             glosar_hash=glosar_hash,
         )
+        if sirovo_cached and _prevod_je_en_original(sirovo_cached, chunk):
+            self.log(
+                f"[{file_name}] Blok {chunk_idx}: ⚠️ .prevod.chk je EN original, ne prijevod — brišem i prevodim ponovo",
+                "warning",
+            )
+            with contextlib.suppress(Exception):
+                _chk_path(self, file_name, chunk_idx, "prevod").unlink(missing_ok=True)
+            sirovo_cached = None
         if sirovo_cached:
             self.log(
                 f"[{file_name}] Blok {chunk_idx}: ♻️ Sirovi prijevod iz cache-a — nastavljam od lektora.",
@@ -1720,7 +1741,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
             if prov1 == "ALL_FAILED":
                 marker = (
                     f"<p>[[NEPREVEDENO: chunk {chunk_idx}]]</p>\n"
-                    f"<p><!-- EN original sacuvan u .prevod fajlu --></p>"
+                    f"<p><!-- EN original je u izvor_en --></p>"
                 )
                 self.log(
                     f"[{file_name}] Blok {chunk_idx}: ❌ Svi provideri pali "
@@ -1728,15 +1749,6 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     "error",
                 )
                 self.chunk_skips += 1
-                _chk_write(
-                    self,
-                    file_name,
-                    chunk_idx,
-                    chunk,
-                    "prevod",
-                    chunk_for_hash=chunk,
-                    glosar_hash=glosar_hash,
-                )
                 _chk_write(
                     self,
                     file_name,
@@ -2172,7 +2184,12 @@ async def process_chunk_with_retry(
         _fb_prevod = _FbPath(str(_fb_dir)) / f"{file_name}_blok_{chunk_idx}.prevod.chk"
         if _fb_prevod.exists():
             _fb_txt = _fb_prevod.read_text("utf-8", errors="ignore")
-            if _fb_txt and len(_fb_txt.strip()) > 200 and not _je_odsjecen_html(_fb_txt):
+            if (
+                _fb_txt
+                and len(_fb_txt.strip()) > 200
+                and not _je_odsjecen_html(_fb_txt)
+                and not _prevod_je_en_original(_fb_txt, chunk)
+            ):
                 _chk_write(self, file_name, chunk_idx, _fb_txt, chunk_for_hash=chunk)
                 if not hasattr(self, "_quality_scores"):
                     self._quality_scores = {}
