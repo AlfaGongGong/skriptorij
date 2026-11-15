@@ -844,6 +844,23 @@ async def process_single_file_worker(self, file_path):
         chunks, file_name, get_p_ctx, get_n_ctx
     )
 
+    # L30: dnevna kvota iscrpljena -> bez markera, poglavlje se NE prepisuje;
+    # blokovi s .chk ostaju, ostali se prevode pri sljedećem pokretanju
+    if any(_e == "QUOTA_STOP" for _r, _e in results):
+        self.kvota_stop = True
+        self.log(
+            f"⛔ [{file_name}] dnevna kvota iscrpljena — poglavlje NIJE prepisano; "
+            f"nastavi nakon resetiranja kvote",
+            "error",
+        )
+        _sc30 = getattr(self, "shared_controls", None)
+        if isinstance(_sc30, dict):
+            _sc30["stop"] = True
+        try:
+            self.shared_stats["status"] = "ZAUSTAVLJENO: dnevna kvota iscrpljena"
+        except Exception:
+            pass
+        return
     final_parts = []
     for i, (res, _eng) in enumerate(results):
         if res is None:

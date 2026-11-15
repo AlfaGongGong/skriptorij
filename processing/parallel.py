@@ -72,6 +72,9 @@ class AdaptiveParallelism:
         async def process_one(idx, chunk):
             async with semaphore:
                 try:
+                    # L30: dnevna kvota iscrpljena -> bez API poziva za preostale blokove
+                    if getattr(self.engine, "kvota_stop", False):
+                        return idx, None, "QUOTA_STOP"
                     # ── Stagger — samo za blokove koji idu na API ─────────────
                     # Cache hit (.chk postoji + score ≥ threshold) ne ide na
                     # mrežu pa nema smisla čekati API throttle interval.
@@ -120,6 +123,8 @@ class AdaptiveParallelism:
                             chunk, p_ctx, n_ctx, idx, file_name
                         )
                         if res is not None:
+                            break
+                        if eng == "QUOTA_STOP":
                             break
                         if _pokusaj < _MAX_PONOVNIH:
                             _pauza = _RETRY_PAUZA * (_pokusaj + 1)

@@ -1739,6 +1739,25 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 )
         if not raw_fusion:
             if prov1 == "ALL_FAILED":
+                # L30: svi ključevi u dnevnom cooldownu -> bez markera, zaustavi knjigu
+                try:
+                    from network.quota_tracker import quota_tracker as _qt30
+
+                    _iscr30, _rem30 = _qt30.dnevna_kvota_iscrpljena()
+                except Exception:
+                    _iscr30, _rem30 = False, 0.0
+                if _iscr30:
+                    import time as _t30
+
+                    self.kvota_stop = True
+                    self.kvota_stop_do = _t30.time() + _rem30
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: ⛔ dnevna kvota svih providera "
+                        f"iscrpljena (najraniji reset za {_rem30 / 3600:.1f} h) — "
+                        f"ne upisujem marker, zaustavljam knjigu",
+                        "error",
+                    )
+                    return None, "QUOTA_STOP"
                 marker = (
                     f"<p>[[NEPREVEDENO: chunk {chunk_idx}]]</p>\n"
                     f"<p><!-- EN original je u izvor_en --></p>"

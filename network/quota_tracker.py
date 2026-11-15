@@ -527,6 +527,26 @@ class QuotaTracker:
         except Exception as e:
             logger.debug("[QuotaTracker] Ucitavanje windows-a palo: %s", e)
 
+    def dnevna_kvota_iscrpljena(self, min_s: float = 3600.0) -> tuple:
+        """L30: (True, sekundi do najranijeg ključa) ako SVI ključevi SVIH providera
+        imaju cooldown dulji od min_s (dnevni RPD limit); inače (False, 0.0)."""
+        with self._lock:
+            provs = list(self._providers.values())
+        n_keys = 0
+        min_rem = None
+        for pq in provs:
+            with pq._lock:
+                kqs = list(pq._keys.values())
+            for kq in kqs:
+                n_keys += 1
+                rem = kq.cooldown_remaining()
+                if rem <= min_s:
+                    return False, 0.0
+                min_rem = rem if min_rem is None else min(min_rem, rem)
+        if n_keys == 0:
+            return False, 0.0
+        return True, float(min_rem or 0.0)
+
     def _get_provider(self, prov: str) -> ProviderQuota | None:
         with self._lock:
             return self._providers.get(prov)
