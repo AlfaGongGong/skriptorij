@@ -316,6 +316,40 @@ def _generiraj_ttsfilter_sadrzaj(ai_fonetika: dict[str, str]) -> str:
     return "\n".join(linije) + "\n"
 
 
+def _tts_ai_sa_cekanjem(batch, engine, log, shared_stats, max_pokusaja=8, pauza=15, max_cekanje_kljuca=1800):
+    # Koristi samo slobodne kljuceve; ako ih nema, ceka. Ne odustaje na prvu gresku.
+    import time as _time
+
+    def _slobodnih():
+        try:
+            return int(engine.fleet.get_total_active_keys())
+        except Exception:
+            return 1
+
+    zadnja = "nepoznato"
+    for pokusaj in range(1, max_pokusaja + 1):
+        cekano = 0
+        while _slobodnih() <= 0:
+            if cekano >= max_cekanje_kljuca:
+                raise RuntimeError("nema slobodnih kljuceva duze od %d s" % max_cekanje_kljuca)
+            shared_stats["status"] = "TTS: cekam slobodan kljuc..."
+            if cekano % 60 == 0:
+                log("⏳ TTS: nema slobodnih ključeva, čekam...", "warning")
+            _time.sleep(5)
+            cekano += 5
+        shared_stats["status"] = "TTS: AI fonetizacija (pokusaj %d/%d)..." % (pokusaj, max_pokusaja)
+        try:
+            rez = asyncio.run(_ai_fonetizacija(batch, engine, log))
+            if rez:
+                return rez
+            zadnja = "prazan odgovor"
+        except Exception as e:
+            zadnja = str(e)
+        log("⏳ TTS: pokušaj %d/%d nije uspio (%s), čekam %d s..." % (pokusaj, max_pokusaja, zadnja, pauza), "warning")
+        _time.sleep(pauza)
+    raise RuntimeError("AI fonetizacija neuspjela nakon %d pokusaja: %s" % (max_pokusaja, zadnja))
+
+
 def start_from_master(
     book_path: str, model: str, shared_stats: dict, shared_controls: dict
 ):
@@ -423,7 +457,7 @@ def start_from_master(
             )
             shared_stats["status"] = f"TTS: AI fonetizacija ({len(batch)} riječi)..."
             try:
-                ai_fonetika = asyncio.run(_ai_fonetizacija(batch, engine, log))
+                ai_fonetika = _tts_ai_sa_cekanjem(batch, engine, log, shared_stats)
                 log(
                     f"✅ TTS: AI fonetizirao {len(ai_fonetika)}/{len(batch)} riječi.",
                     "success",

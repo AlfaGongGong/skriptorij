@@ -461,6 +461,11 @@ def _spoji_chk_u_files_dict(files: dict, checkpoint_dir: Path) -> int:
                 for a in _tmp.find_all("a"):
                     a.unwrap()
 
+                # div sa tekstom (bez blok-djece) -> <p>, da odlomci ne ostanu goli
+                for _d in _tmp.find_all("div"):
+                    if _d.get_text(strip=True) and not _d.find(["p", "div", "ul", "ol", "table", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6"]):
+                        _d.name = "p"
+
                 # Skini <section>, <div>, <span>
                 for tag in _tmp.find_all(["section", "div", "span"]):
                     # Očuvaj dropcap span
@@ -680,6 +685,11 @@ def _spoji_chk_u_html(engine):
                 # 3. Skini <section> (unwrap)
                 for sec in _tmp_soup.find_all("section"):
                     sec.unwrap()
+
+                # div sa tekstom (bez blok-djece) -> <p>, da odlomci ne ostanu goli
+                for _d in _tmp_soup.find_all("div"):
+                    if _d.get_text(strip=True) and not _d.find(["p", "div", "ul", "ol", "table", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6"]):
+                        _d.name = "p"
 
                 # 4. Skini <div> sa tekstom → unwrap, sa decom → unwrap
                 for div in _tmp_soup.find_all("div"):

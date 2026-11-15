@@ -1,4 +1,5 @@
 import os as _os_v; _os_v.environ.setdefault("BOOKLYFI_VERIFIER", "1")  # verifikator ukljucen po defaultu
+_os_v.environ.setdefault("BOOKLYFI_VERIFIER_FIX", "1")  # P2.19.3: verifikator ponovno prevodi flagirane blokove (kvaliteta > brzina)
 import atexit
 import contextlib
 import json
@@ -205,6 +206,74 @@ def _termux_wake_unlock():
 # ── Gemini TTS proxy endpoint (2026-11-02) ─────────────────────────────────
 # Lokalni endpoint za TTS Server plugin. Flask radi Gemini API iz Pythona,
 # plugin zove 127.0.0.1:8080/tts/gemini. Zaobilazi drake.net probleme.
+
+# ── TTS filter: zaseban thread i status (ne gazi prevod) ──────────────────
+_TTS_JOB = {"stats": None, "thread": None}
+
+
+@app.route("/api/tts/start", methods=["POST"])
+def api_tts_start():
+    import copy
+    import os
+    import threading
+    from flask import request, jsonify
+    from config.settings import INPUT_DIR, SHARED_STATS
+
+    data = request.get_json(silent=True) or {}
+    book = data.get("book")
+    model = data.get("model") or "V10_TURBO"
+    if not book:
+        return jsonify({"error": "Nije odabrana knjiga"}), 400
+    th = _TTS_JOB.get("thread")
+    if th is not None and th.is_alive():
+        return jsonify({"error": "TTS filter je već u toku"}), 409
+    full_path = os.path.join(str(INPUT_DIR), book)
+    if not os.path.exists(full_path):
+        return jsonify({"error": "Fajl '" + str(book) + "' ne postoji u " + str(INPUT_DIR)}), 404
+    try:
+        stats = copy.deepcopy(SHARED_STATS)
+    except Exception:
+        stats = dict(SHARED_STATS)
+    stats.update({
+        "status": "POKRETANJE (TTS)...", "pct": 0, "live_audit": "",
+        "output_file": "", "current_file": book,
+        "audit_events": [], "audit_next_id": 1,
+    })
+    try:
+        from config.settings import SHARED_CONTROLS
+        controls = dict(SHARED_CONTROLS)
+    except Exception:
+        controls = {}
+    controls.update({"stop": False, "pause": False, "reset": False})
+    _TTS_JOB["stats"] = stats
+
+    def _run():
+        try:
+            from tts import start_from_master as _start_tts
+            _start_tts(full_path, model, stats, controls)
+        except Exception as exc:
+            stats["status"] = "GREŠKA (TTS): " + type(exc).__name__
+            stats["live_audit"] = str(stats.get("live_audit", "")) + "<div>" + str(exc) + "</div>"
+
+    t = threading.Thread(target=_run, daemon=True)
+    _TTS_JOB["thread"] = t
+    t.start()
+    return jsonify({"status": "Started", "file": book, "tool": "TTS"})
+
+
+@app.route("/api/tts/status", methods=["GET"])
+def api_tts_status():
+    from flask import jsonify
+    st = _TTS_JOB.get("stats")
+    if not st:
+        return jsonify({"status": "IDLE", "pct": 0, "live_audit": "", "output_file": ""})
+    return jsonify({
+        "status": str(st.get("status", "")),
+        "pct": st.get("pct", 0),
+        "live_audit": str(st.get("live_audit", "")),
+        "output_file": str(st.get("output_file", "")),
+    })
+
 
 @app.route("/tts/gemini", methods=["POST"])
 def tts_gemini_endpoint():
