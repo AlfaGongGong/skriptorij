@@ -94,6 +94,19 @@ DEFAULT_REQ = {
 }
 
 
+_L25_VIDJENO = set()
+
+
+def _l25_log(role, poruka):
+    kljuc = (role, poruka)
+    if kljuc in _L25_VIDJENO:
+        return
+    _L25_VIDJENO.add(kljuc)
+    import sys as _sys
+
+    print("[L25] " + str(role) + ": " + poruka, file=_sys.stderr, flush=True)
+
+
 def pick_model_for_role(role: str, available_models: list[dict]) -> str | None:
     """
     Bira najbolji model za datu ulogu iz liste.
@@ -111,8 +124,14 @@ def pick_model_for_role(role: str, available_models: list[dict]) -> str | None:
     # L25: opt-in override modela po ulozi, npr. BOOKLYFI_MODEL_PREVODILAC=gemini-3.5-flash
     import os as _os
     _ov = _os.environ.get("BOOKLYFI_MODEL_" + (role or "").upper(), "").strip()
-    if _ov and any(m.get("model") == _ov for m in available_models):
-        return _ov
+    if _ov:
+        _imena = [m.get("model") for m in available_models]
+        if _ov in _imena:
+            _l25_log(role, "primijenjen: " + _ov)
+            return _ov
+        _l25_log(role, "IGNORIRAN: " + _ov + " nije u listi " + str(_imena))
+    elif (role or "").upper() == "PREVODILAC":
+        _l25_log(role, "env BOOKLYFI_MODEL_PREVODILAC nije postavljen")
 
     req = MODEL_REQUIREMENTS.get((role or "").upper(), DEFAULT_REQ)
 

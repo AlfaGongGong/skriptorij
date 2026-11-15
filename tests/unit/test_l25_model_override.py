@@ -24,3 +24,9 @@ def test_override_nepostojeci_model_ignoriran(monkeypatch):
 def test_druge_uloge_netaknute(monkeypatch):
     monkeypatch.setenv("BOOKLYFI_MODEL_PREVODILAC", "gemini-3.5-flash")
     assert pick_model_for_role("LEKTOR", M) == "gemini-3.5-flash-lite"
+
+
+def test_log_ignoriran(monkeypatch, capsys):
+    monkeypatch.setenv("BOOKLYFI_MODEL_LEKTOR", "nema-takvog-x")
+    assert pick_model_for_role("LEKTOR", M) == "gemini-3.5-flash-lite"
+    assert "IGNORIRAN" in capsys.readouterr().err
