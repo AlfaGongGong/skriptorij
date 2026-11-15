@@ -1743,7 +1743,10 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 try:
                     from network.quota_tracker import quota_tracker as _qt30
 
-                    _iscr30, _rem30 = _qt30.dnevna_kvota_iscrpljena()
+                    from config.ai_config import STRICT_PROVIDER_ROLES as _sp30
+
+                    # _L34_: strogi PREVODILAC smije samo na GEMINI, pa je samo on mjerodavan
+                    _iscr30, _rem30 = _qt30.dnevna_kvota_iscrpljena(provs=_sp30.get("PREVODILAC"))
                 except Exception:
                     _iscr30, _rem30 = False, 0.0
                 if _iscr30:

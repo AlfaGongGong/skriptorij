@@ -498,7 +498,10 @@ class QuotaTracker:
                         continue
                     oznaka = "%s ...%s" % (prov, key[-4:])
                     until = ent.get("cooldown_until", 0)
-                    if until > now:
+                    if until > now and prov == "GEMINI" and "RPD kvota (dnevni limit)" in str(ent.get("cooldown_reason", "")):
+                        # _L34_: stari cooldown CIJELOG kljuca (prije L33) ne vraćamo; dnevni limit se vodi po modelu
+                        info["istekli"].append("%s (stari cooldown ključa, L34)" % oznaka)
+                    elif until > now:
                         kq.set_cooldown_external(until - now, ent.get("cooldown_reason", ""))
                         info["cooldown"] += 1
                     elif until:
@@ -760,21 +763,52 @@ class QuotaTracker:
         except Exception as e:
             logger.debug("[QuotaTracker] Ucitavanje windows-a palo: %s", e)
 
-    def dnevna_kvota_iscrpljena(self, min_s: float = 3600.0) -> tuple:
-        """L30: (True, sekundi do najranijeg ključa) ako SVI ključevi SVIH providera
-        imaju cooldown dulji od min_s (dnevni RPD limit); inače (False, 0.0)."""
+    def dnevna_kvota_iscrpljena(self, min_s: float = 3600.0, provs=None) -> tuple:
+        """L30/L34: (True, sekundi do najranijeg reseta) ako je SVAKI ključ promatranih providera
+        iscrpljen: cooldown cijelog ključa dulji od min_s ILI (Gemini/Gemma) SVI modeli poola
+        u dnevnom limitu po modelu (L33, mrtvi modeli se ne broje). provs = providere koje uloga
+        smije koristiti (npr. ["GEMINI"] za strogu ulogu); None = svi. Inače (False, 0.0)."""
+        # _L34_
+        pool_imena, mrtvi = {}, {}
+        try:
+            from config.ai_config import GEMMA_MODEL_POOL, GOOGLE_MODEL_POOL
+
+            pool_imena = {
+                "GEMINI": [m["model"] for m in GOOGLE_MODEL_POOL],
+                "GEMMA": [m["model"] for m in GEMMA_MODEL_POOL],
+            }
+        except Exception:
+            pool_imena = {}
+        try:
+            from network.model_discovery import get_dead_models
+
+            mrtvi = {p: set(get_dead_models(p)) for p in pool_imena}
+        except Exception:
+            mrtvi = {}
+        trazeni = {str(p).upper() for p in provs} if provs else None
         with self._lock:
-            provs = list(self._providers.values())
+            stavke = list(self._providers.items())
         n_keys = 0
         min_rem = None
-        for pq in provs:
+        for prov, pq in stavke:
+            if trazeni is not None and prov.upper() not in trazeni:
+                continue
             with pq._lock:
                 kqs = list(pq._keys.values())
             for kq in kqs:
                 n_keys += 1
                 rem = kq.cooldown_remaining()
                 if rem <= min_s:
-                    return False, 0.0
+                    modeli = [
+                        m for m in pool_imena.get(prov.upper(), []) if m not in mrtvi.get(prov.upper(), set())
+                    ]
+                    rem = None
+                    if modeli:
+                        rems = [kq.model_cooldown(m)[0] for m in modeli]
+                        if all(r > min_s for r in rems):
+                            rem = min(rems)
+                    if rem is None:
+                        return False, 0.0
                 min_rem = rem if min_rem is None else min(min_rem, rem)
         if n_keys == 0:
             return False, 0.0

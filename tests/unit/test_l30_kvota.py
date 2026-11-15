@@ -44,8 +44,8 @@ def test_integracija_u_kodu():
     pipe = (ROOT / "processing/pipeline.py").read_text("utf-8")
     par = (ROOT / "processing/parallel.py").read_text("utf-8")
     wrk = (ROOT / "processing/workers.py").read_text("utf-8")
-    assert "dnevna_kvota_iscrpljena()" in pipe and 'return None, "QUOTA_STOP"' in pipe
-    assert pipe.index("dnevna_kvota_iscrpljena()") < pipe.index("[[NEPREVEDENO: chunk")
+    assert "dnevna_kvota_iscrpljena(" in pipe and 'return None, "QUOTA_STOP"' in pipe
+    assert pipe.index("dnevna_kvota_iscrpljena(") < pipe.index("[[NEPREVEDENO: chunk")
     assert 'getattr(self.engine, "kvota_stop", False)' in par
     assert 'if eng == "QUOTA_STOP":' in par
     assert wrk.index('_e == "QUOTA_STOP"') < wrk.index("final_parts = []")
