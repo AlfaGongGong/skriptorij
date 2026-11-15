@@ -1,22 +1,22 @@
 {
   "Brady": {
     "rod": "M",
-    "clue_m": 10,
+    "clue_m": 17,
     "clue_z": 0
   },
   "Richarda": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Sifkitz": {
     "rod": "M",
-    "clue_m": 15,
+    "clue_m": 17,
     "clue_z": 0
   },
   "Berkowitz": {
-    "rod": null,
-    "clue_m": 1,
+    "rod": "M",
+    "clue_m": 2,
     "clue_z": 0
   },
   "Problem": {
@@ -26,7 +26,7 @@
   },
   "Bradyja": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Ekonomija": {
@@ -70,6 +70,11 @@
     "clue_z": 0
   },
   "David": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Neprestano": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
