@@ -596,7 +596,7 @@ class FleetManager:
         self._save_state()
 
     def analyze_response(
-        self, provider: str, key: str, status_code: int, headers, body=None
+        self, provider: str, key: str, status_code: int, headers, body=None, model=None
     ):
         """
         Ažurira pozivne brojače ključa prema HTTP status kodu.
@@ -762,6 +762,14 @@ class FleetManager:
                         retry_after,
                     )
 
+        # L33: dnevni limit jednog modela -> cooldown samo tog modela, ne cijelog ključa
+        _model_limit = False
+        if status_code == 429 and model and prov_u in ("GEMINI", "GEMMA"):
+            try:
+                _model_limit = quota_tracker.obradi_429_model(prov_u, key, model, body)
+            except Exception:
+                logger.exception("[L33] obradi_429_model")
+
         # QuotaTracker — cooldown, kvote, tokeni
         quota_tracker.record_response(
             provider=prov_u,
@@ -770,6 +778,8 @@ class FleetManager:
             tokens=tokens,
             retry_after=retry_after,
             headers=headers,
+            model=model,
+            model_limit=_model_limit,
         )
 
         with self.lock:

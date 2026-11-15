@@ -1,13 +1,15 @@
-"""network/quota_tracker.py
+"""network/quota_tracker.py  (L33: dnevna kvota po ključu i modelu)
 
 Per-ključ cooldown praćenje. Prati RPM/RPD iscrpljenost i cooldown stanje
 svakog API ključa. Podaci se persistiraju na disk kako bi preživjeli restart.
 """
 
 import contextlib
+import datetime as _dt
 import json
 import logging
 import os
+import re
 import threading
 import time
 from pathlib import Path
@@ -22,6 +24,59 @@ def _get_cooldown_429_s(provider: str) -> float:
         return get_cooldown_429(provider)
     except Exception:
         return 15.0
+
+
+# L33: dnevna kvota po KLJUČU i MODELU (Google limiti su po projektu i po modelu).
+_DNEVNI_RX = re.compile(r"per[_ ]?day|\bdaily\b|\brpd\b", re.I)
+_MODEL_URL_RX = re.compile(r"/models/([^:/?]+)")
+
+
+def _pacific(now: float):
+    try:
+        from zoneinfo import ZoneInfo
+
+        return _dt.datetime.fromtimestamp(now, ZoneInfo("America/Los_Angeles"))
+    except Exception:
+        return _dt.datetime.fromtimestamp(now, _dt.timezone(_dt.timedelta(hours=-8)))
+
+
+def dan_kvote(now: float | None = None) -> str:
+    """Datum (Pacific) po kojem Google broji dnevnu kvotu; mijenja se u ponoć Pacific."""
+    return _pacific(time.time() if now is None else now).strftime("%Y-%m-%d")
+
+
+def sekundi_do_reseta(now: float | None = None) -> float:
+    """Sekunde do sljedeceg dnevnog reseta (ponoć Pacific) + 60 s rezerve."""
+    now = time.time() if now is None else now
+    p = _pacific(now)
+    sutra = _dt.datetime.combine(
+        p.date() + _dt.timedelta(days=1), _dt.time(0, 0), tzinfo=p.tzinfo
+    )
+    return max(60.0, sutra.timestamp() - now + 60.0)
+
+
+def je_dnevni_limit(body) -> bool:
+    """True ako 429 odgovor govori o DNEVNOM limitu (PerDay / daily / RPD)."""
+    try:
+        s = body if isinstance(body, str) else json.dumps(body, default=str)
+    except Exception:
+        return False
+    return bool(_DNEVNI_RX.search(s or ""))
+
+
+def model_iz_url(url: str) -> str:
+    m = _MODEL_URL_RX.search(url or "")
+    return m.group(1) if m else ""
+
+
+def _fmt_trajanje(s: float) -> str:
+    s = int(max(0, s))
+    h, r = divmod(s, 3600)
+    return ("%dh %02dmin" % (h, r // 60)) if h else ("%dmin" % max(1, r // 60))
+
+
+def _lok_vrijeme(ts: float) -> str:
+    return _dt.datetime.fromtimestamp(ts).strftime("%d.%m. %H:%M")
 
 
 class KeyQuota:
@@ -42,6 +97,8 @@ class KeyQuota:
         self._rpd_window: list = []  # FIX fleet-status: [ts, ...] zadnjih 24h
         self._tpd_window: list = []  # FIX fleet-status: [(ts, tokens)] zadnjih 24h
         self._consecutive_401: int = 0
+        self._model_cd: dict = {}  # L33: model -> (until, reason)
+        self._model_rpd: dict = {}  # L33: model -> {'dan': 'YYYY-MM-DD', 'n': int}
 
     def is_available(self) -> tuple:
         with self._lock:
@@ -179,6 +236,34 @@ class KeyQuota:
                     )
                 self._set_cooldown(cooldown_s, reason)
 
+    # ---- L33: stanje po modelu ----
+    def set_model_cooldown(self, model: str, seconds: float, reason: str = ""):
+        with self._lock:
+            until = time.time() + seconds
+            cur = self._model_cd.get(model)
+            if not cur or until > cur[0]:
+                self._model_cd[model] = (until, reason)
+
+    def model_cooldown(self, model: str) -> tuple:
+        with self._lock:
+            cur = self._model_cd.get(model)
+            now = time.time()
+            if cur and cur[0] > now:
+                return cur[0] - now, cur[1]
+            if cur:
+                del self._model_cd[model]
+            return 0.0, ""
+
+    def record_model_request(self, model: str) -> int:
+        with self._lock:
+            dan = dan_kvote()
+            e = self._model_rpd.get(model)
+            if not e or e.get("dan") != dan:
+                e = {"dan": dan, "n": 0}
+            e["n"] += 1
+            self._model_rpd[model] = e
+            return e["n"]
+
     def _set_cooldown(self, seconds: float, reason: str):
         new_until = time.time() + seconds
         if new_until > self._cooldown_until:
@@ -236,6 +321,9 @@ class KeyQuota:
                 "cooldown_s": round(cd, 1),
                 "cooldown_reason": self._cooldown_reason if cd > 0 else "",
                 "errors": dict(self.errors),
+                "model_cooldowns": {
+                    m: round(u - now, 1) for m, (u, _r) in self._model_cd.items() if u > now
+                },
             }
 
 
@@ -311,6 +399,8 @@ class ProviderQuota:
 class QuotaTracker:
     # BUG #5 fix: apsolutna putanja — cooldowni više ne ovise o cwd()
     _PERSIST_PATH = str(Path(__file__).resolve().parent.parent / "quota_cooldowns.json")
+    _ispisano = False  # L33: ispis stanja jednom po procesu
+    _plock = threading.Lock()
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -377,69 +467,204 @@ class QuotaTracker:
                     )
         logger.info("QuotaTracker inicijaliziran: %d provajdera", len(fleet))
         self._restore_cooldowns()
+        if not QuotaTracker._ispisano:
+            QuotaTracker._ispisano = True
+            try:
+                for _l in self.ispis_stanja():
+                    print(_l, flush=True)
+                    logger.info(_l)
+            except Exception as e:
+                logger.warning("[QuotaTracker] ispis stanja nije uspio: %s", e)
 
     def _restore_cooldowns(self):
+        """L33: obnavlja cooldown (ključ i model), prozore i dnevne brojače modela s diska.
+        Istekli cooldowni i brojači iz prošlog dana se odbacuju (= reset)."""
+        self._restored_info = {"cooldown": 0, "model": 0, "istekli": []}
+        info = self._restored_info
         try:
             if not os.path.exists(self._PERSIST_PATH):
                 return
             with open(self._PERSIST_PATH, encoding="utf-8") as f:
                 data = json.load(f)
             now = time.time()
-            restored = 0
+            danas = dan_kvote(now)
             for prov, keys in data.items():
-                for key, info in keys.items():
-                    until = info.get("cooldown_until", 0)
-                    reason = info.get("cooldown_reason", "")
+                pq = self._get_provider(prov)
+                if not pq:
+                    continue
+                for key, ent in keys.items():
+                    kq = pq.get_key(key)
+                    if not kq:
+                        continue
+                    oznaka = "%s ...%s" % (prov, key[-4:])
+                    until = ent.get("cooldown_until", 0)
                     if until > now:
-                        remaining = until - now
-                        pq = self._get_provider(prov)
-                        kq = pq.get_key(key) if pq else None
-                        if kq:
-                            kq.set_cooldown_external(remaining, reason)
-                            restored += 1
-            if restored:
+                        kq.set_cooldown_external(until - now, ent.get("cooldown_reason", ""))
+                        info["cooldown"] += 1
+                    elif until:
+                        info["istekli"].append("%s (ključ)" % oznaka)
+                    with kq._lock:
+                        if not kq._rpm_window:
+                            kq._rpm_window = [t for t in ent.get("rpm_window", []) if now - t < 60.0]
+                        if not kq._rpd_window:
+                            kq._rpd_window = [t for t in ent.get("rpd_window", []) if now - t < 86400.0]
+                        if not kq._tpd_window:
+                            kq._tpd_window = [
+                                (t, tok) for t, tok in ent.get("tpd_window", []) if now - t < 86400.0
+                            ]
+                    for m, mi in (ent.get("model_cooldowns") or {}).items():
+                        u = mi.get("until", 0)
+                        if u > now:
+                            kq.set_model_cooldown(m, u - now, mi.get("reason", ""))
+                            info["model"] += 1
+                        else:
+                            info["istekli"].append("%s %s" % (oznaka, m))
+                    for m, e in (ent.get("model_rpd") or {}).items():
+                        if e.get("dan") == danas:
+                            with kq._lock:
+                                cur = kq._model_rpd.get(m)
+                                n = int(e.get("n", 0))
+                                if not cur or cur.get("dan") != danas or cur.get("n", 0) < n:
+                                    kq._model_rpd[m] = {"dan": danas, "n": n}
+            if info["cooldown"] or info["model"]:
                 logger.info(
-                    "[QuotaTracker] Obnovljeno %d cooldown(a) s diska", restored
+                    "[QuotaTracker] Obnovljeno s diska: %d ključ(a), %d model(a) u cooldownu",
+                    info["cooldown"],
+                    info["model"],
                 )
         except Exception as e:
             logger.warning("[QuotaTracker] Nije moguće obnoviti cooldown stanje: %s", e)
 
     def _persist_cooldowns(self):
+        # NAPOMENA: ne uzimati kq._lock (poziva se i iz record_error pod tim lockom).
         now = time.time()
+        danas = dan_kvote(now)
         data = {}
         with self._lock:
-            for prov, pq in self._providers.items():
-                with pq._lock:
-                    for key, kq in pq._keys.items():
-                        until = kq._cooldown_until
-                        if until > now:
-                            data.setdefault(prov, {})[key] = {
-                                "cooldown_until": until,
-                                "cooldown_reason": kq._cooldown_reason,
-                            }
-                        # 2026-10-24 B3: perzistiraj RPM/RPD/TPD windows
-                        # (bili su in-memory, resetovali se na restart)
-                        _rpm = [t for t in kq._rpm_window if now - t < 60.0]
-                        _rpd = [t for t in kq._rpd_window if now - t < 86400.0]
-                        _tpd = [
-                            (t, tok) for t, tok in kq._tpd_window if now - t < 86400.0
-                        ]
-                        if _rpm or _rpd or _tpd:
-                            entry = data.setdefault(prov, {}).setdefault(
-                                key,
-                                {
-                                    "cooldown_until": 0,
-                                    "cooldown_reason": "",
-                                },
-                            )
-                            entry["rpm_window"] = _rpm
-                            entry["rpd_window"] = _rpd
-                            entry["tpd_window"] = _tpd
+            provs = list(self._providers.items())
+        for prov, pq in provs:
+            with pq._lock:
+                keys = list(pq._keys.items())
+            for key, kq in keys:
+                ent = {"cooldown_until": 0, "cooldown_reason": ""}
+                dirty = False
+                until = kq._cooldown_until
+                if until > now:
+                    ent["cooldown_until"] = until
+                    ent["cooldown_reason"] = kq._cooldown_reason
+                    dirty = True
+                _rpm = [t for t in list(kq._rpm_window) if now - t < 60.0]
+                _rpd = [t for t in list(kq._rpd_window) if now - t < 86400.0]
+                _tpd = [(t, tok) for t, tok in list(kq._tpd_window) if now - t < 86400.0]
+                if _rpm or _rpd or _tpd:
+                    ent["rpm_window"], ent["rpd_window"], ent["tpd_window"] = _rpm, _rpd, _tpd
+                    dirty = True
+                mcd = {
+                    m: {"until": u, "reason": r}
+                    for m, (u, r) in list(kq._model_cd.items())
+                    if u > now
+                }
+                if mcd:
+                    ent["model_cooldowns"] = mcd
+                    dirty = True
+                mrpd = {m: dict(e) for m, e in list(kq._model_rpd.items()) if e.get("dan") == danas}
+                if mrpd:
+                    ent["model_rpd"] = mrpd
+                    dirty = True
+                if dirty:
+                    data.setdefault(prov, {})[key] = ent
         try:
-            with open(self._PERSIST_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+            with self._plock:
+                tmp = self._PERSIST_PATH + ".tmp"
+                with open(tmp, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+                os.replace(tmp, self._PERSIST_PATH)
         except Exception as e:
             logger.warning("[QuotaTracker] Nije moguće snimiti cooldown stanje: %s", e)
+
+    # ---- L33: po modelu ----
+    def is_model_available(self, provider: str, key: str, model: str) -> tuple:
+        pq = self._get_provider(provider.upper())
+        kq = pq.get_key(key) if pq else None
+        if not kq or not model:
+            return True, ""
+        rem, reason = kq.model_cooldown(model)
+        if rem > 0:
+            return False, "model %s cooldown %.0fs (%s)" % (model, rem, reason)
+        return True, ""
+
+    def set_model_cooldown(self, provider: str, key: str, model: str, seconds: float, reason: str = ""):
+        pq = self._get_provider(provider.upper())
+        kq = pq.get_key(key) if pq else None
+        if kq and model:
+            kq.set_model_cooldown(model, seconds, reason)
+            self._persist_cooldowns()
+
+    def record_model_request(self, provider: str, key: str, model: str):
+        pq = self._get_provider(provider.upper())
+        kq = pq.get_key(key) if pq else None
+        if kq and model:
+            n = kq.record_model_request(model)
+            if n % 5 == 1:
+                self._persist_cooldowns()
+
+    def obradi_429_model(self, provider: str, key: str, model: str, body) -> bool:
+        """429 s dnevnim limitom za JEDAN model: cooldown samo tog modela do sljedeceg
+        reseta (ponoć Pacific). Vraća True ako je obrađeno (ključ NE ide u cooldown)."""
+        if not model or not je_dnevni_limit(body):
+            return False
+        sek = sekundi_do_reseta()
+        self.set_model_cooldown(provider, key, model, sek, "dnevni limit modela")
+        logger.warning(
+            "[QuotaTracker] %s ...%s model %s: dnevni limit — model na cooldown %.1fh (ključ ostaje dostupan za druge modele)",
+            provider,
+            key[-4:],
+            model,
+            sek / 3600,
+        )
+        return True
+
+    def ispis_stanja(self) -> list:
+        """Čitljiv ispis: što je iscrpljeno, do kada, koliko poziva po modelu danas."""
+        now = time.time()
+        danas = dan_kvote(now)
+        sek = sekundi_do_reseta(now)
+        redovi = [
+            "[Kvote] dnevni limiti Google modela resetiraju se u %s (za %s)"
+            % (_lok_vrijeme(now + sek), _fmt_trajanje(sek))
+        ]
+        with self._lock:
+            provs = list(self._providers.items())
+        n_red = 0
+        for prov, pq in sorted(provs):
+            with pq._lock:
+                keys = list(pq._keys.items())
+            for key, kq in keys:
+                dijelovi = []
+                rem = kq.cooldown_remaining()
+                if rem > 0:
+                    dijelovi.append(
+                        "ključ na cooldownu još %s (%s)" % (_fmt_trajanje(rem), kq._cooldown_reason)
+                    )
+                for m, (u, r) in sorted(list(kq._model_cd.items())):
+                    if u > now:
+                        dijelovi.append(
+                            "model %s ISCRPLJEN do %s (za %s)" % (m, _lok_vrijeme(u), _fmt_trajanje(u - now))
+                        )
+                for m, e in sorted(list(kq._model_rpd.items())):
+                    if e.get("dan") == danas and e.get("n", 0) > 0:
+                        dijelovi.append("%s: %d poziva danas" % (m, e["n"]))
+                if dijelovi:
+                    redovi.append("  %s ...%s: %s" % (prov, key[-4:], "; ".join(dijelovi)))
+                    n_red += 1
+        if n_red == 0:
+            redovi.append("[Kvote] nijedan ključ ni model trenutno nije iscrpljen")
+        info = getattr(self, "_restored_info", None) or {}
+        if info.get("istekli"):
+            redovi.append(
+                "[Kvote] resetirano od zadnjeg pokretanja (limit istekao): " + ", ".join(info["istekli"][:10])
+            )
+        return redovi
 
     def record_request(self, provider: str, key: str):
         pq = self._get_provider(provider.upper())
@@ -455,11 +680,19 @@ class QuotaTracker:
         tokens: int = 0,
         retry_after=None,
         headers=None,
+        model=None,
+        model_limit=False,
     ):
         # BUG #7 fix: jedan lookup umjesto dva — thread-safer, bez duplog _get_provider
         pq = self._get_provider(provider.upper())
         kq = pq.get_key(key) if pq else None
         if not kq:
+            return
+        if model_limit:
+            # L33: dnevni limit samo jednog modela — ključ ostaje dostupan
+            with kq._lock:
+                kq.errors[429] = kq.errors.get(429, 0) + 1
+            self._persist_cooldowns()
             return
         if status_code == 200:
             with kq._lock:

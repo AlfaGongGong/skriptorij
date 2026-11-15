@@ -209,6 +209,16 @@ def _get_google_model_pool() -> list[dict]:
     return filtered if filtered else _GOOGLE_MODEL_POOL_FALLBACK
 
 
+def _model_slobodan(prov: str, key: str, model: str) -> bool:
+    """L33: False ako je model (za ovaj ključ) u dnevnom limitu; greška = slobodan."""
+    try:
+        from network.quota_tracker import quota_tracker as _qt
+
+        return bool(_qt.is_model_available(prov, key, model)[0])
+    except Exception:
+        return True
+
+
 # ── Per-ključ model cache ─────────────────────────────────────────────────────
 _key_model_cache: dict[str, int] = {}
 _key_model_cache_lock = threading.Lock()
@@ -497,6 +507,12 @@ async def _async_http_post(
         except Exception:
             logger.debug("[C3_fallback] http_client.py:498 Exception")
 
+        if prov_upper in ("GEMINI", "GEMMA"):  # L33: dnevni brojač po modelu
+            with contextlib.suppress(Exception):
+                from network.quota_tracker import model_iz_url as _miu2
+                from network.quota_tracker import quota_tracker as _qtm
+
+                _qtm.record_model_request(prov, key, _miu2(url))
         # FIX: Gemini/GEMMA timeout 45s (bilo 90s), ostali 45s
         _read_timeout = _GEMINI_TIMEOUT if prov_upper in ("GEMINI", "GEMMA") else 20
         try:
@@ -598,8 +614,15 @@ async def _async_http_post(
                 return None
 
         with contextlib.suppress(Exception):
+            from network.quota_tracker import model_iz_url as _miu
+
             self.fleet.analyze_response(
-                prov, key, resp.status_code, resp.headers, resp_body
+                prov,
+                key,
+                resp.status_code,
+                resp.headers,
+                resp_body,
+                model=(_miu(url) if prov_upper in ("GEMINI", "GEMMA") else None),
             )
 
         if resp.status_code == 200:
@@ -805,6 +828,27 @@ async def _call_gemini_with_full_rotation(
             if current_model in tried:
                 break
             tried.add(current_model)
+
+            # L33: model u dnevnom limitu -> prvi slobodan model; ako ih nema, sljedeći ključ
+            if not _model_slobodan("GEMINI", key, current_model):
+                _slob = next(
+                    (
+                        m["model"]
+                        for m in pool
+                        if m["model"] not in tried
+                        and _model_slobodan("GEMINI", key, m["model"])
+                    ),
+                    None,
+                )
+                if _slob is None:
+                    self.log(
+                        f"[GEMINI] ključ ...{key[-4:]}: svi modeli u dnevnom limitu — preskačem",
+                        "warning",
+                    )
+                    break
+                self.log(f"[GEMINI] {current_model} u dnevnom limitu → {_slob}", "warning")
+                current_model = _slob
+                tried.add(current_model)
 
             url = f"{get_gemini_url(current_model)}?key={key}"
             headers = _build_headers("GEMINI")
@@ -1094,6 +1138,27 @@ async def _call_gemma_with_rotation(
             if current_model in tried:
                 break
             tried.add(current_model)
+
+            # L33: model u dnevnom limitu -> prvi slobodan model; ako ih nema, sljedeći ključ
+            if not _model_slobodan("GEMMA", key, current_model):
+                _slob = next(
+                    (
+                        m["model"]
+                        for m in pool
+                        if m["model"] not in tried
+                        and _model_slobodan("GEMMA", key, m["model"])
+                    ),
+                    None,
+                )
+                if _slob is None:
+                    self.log(
+                        f"[GEMMA] ključ ...{key[-4:]}: svi modeli u dnevnom limitu — preskačem",
+                        "warning",
+                    )
+                    break
+                self.log(f"[GEMMA] {current_model} u dnevnom limitu → {_slob}", "warning")
+                current_model = _slob
+                tried.add(current_model)
 
             url = f"{get_gemini_url(current_model)}?key={key}"
             headers = _build_headers("GEMMA")
