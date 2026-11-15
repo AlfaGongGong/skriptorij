@@ -108,6 +108,12 @@ def pick_model_for_role(role: str, available_models: list[dict]) -> str | None:
     if not available_models:
         return None
 
+    # L25: opt-in override modela po ulozi, npr. BOOKLYFI_MODEL_PREVODILAC=gemini-3.5-flash
+    import os as _os
+    _ov = _os.environ.get("BOOKLYFI_MODEL_" + (role or "").upper(), "").strip()
+    if _ov and any(m.get("model") == _ov for m in available_models):
+        return _ov
+
     req = MODEL_REQUIREMENTS.get((role or "").upper(), DEFAULT_REQ)
 
     candidates = []
