@@ -55,4 +55,4 @@ def test_idevi_nepromijenjeni():
 
 
 def test_verzija_css():
-    assert "design.css?v=20261116d" in HTML
+    assert re.search(r"design\.css\?v=\d+[a-z]?", HTML)

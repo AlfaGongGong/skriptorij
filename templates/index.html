@@ -10,7 +10,7 @@
     <link rel="manifest" href="/static/manifest.json" />
     <meta name="theme-color" content="#070b14" />
     <link rel="stylesheet" href="/static/css/style.css?v=20261110a" />
-    <link rel="stylesheet" href="/static/css/design.css?v=20261116d" />
+    <link rel="stylesheet" href="/static/css/design.css?v=20261116e" />
 </head>
 <body data-view="rad">
     <a href="#app" class="skip-link">Preskoči na sadržaj</a>
@@ -692,7 +692,7 @@
                         <span class="nr-log-title">Log</span>
                         <button class="btn btn-sm nr-log-clear" id="st-btn-clear-log">× Očisti</button>
                     </div>
-                    <div class="audit-log" id="st-audit-log"></div>
+                    <details class="log-details"><summary>Prikaži log</summary><div class="audit-log" id="st-audit-log"></div></details>
                 </div>
             </div>
 
@@ -762,7 +762,7 @@
                         <span class="nr-log-title">Log</span>
                         <button class="btn btn-sm nr-log-clear" id="tts-btn-clear-log">× Očisti</button>
                     </div>
-                    <div class="audit-log" id="tts-audit-log"></div>
+                    <details class="log-details"><summary>Prikaži log</summary><div class="audit-log" id="tts-audit-log"></div></details>
                 </div>
 
                 <div class="nr-card nr-preview-card" id="tts-preview-card" style="display:none">
@@ -867,6 +867,7 @@
     <script src="/static/js/heatmap.js?v=1791803042"></script>
     <script src="/static/js/ui/fleet.js?v=1791803042"></script>
     <script src="/static/js/ui/views.js?v=20261116c"></script>
+    <script src="/static/js/ui/dashboard.js?v=20261116e"></script>
 <nav id="bottom-nav" class="bottom-nav" aria-label="Pogledi">
     <button type="button" class="bn-btn active" data-view="rad" aria-current="page"><span class="bn-ico" aria-hidden="true">▶</span><span class="bn-lbl">Rad</span></button>
     <button type="button" class="bn-btn" data-view="kvaliteta"><span class="bn-ico" aria-hidden="true">🎯</span><span class="bn-lbl">Kvaliteta</span></button>
