@@ -863,14 +863,20 @@ function _checkTimelineStuck(s) {
     }
 }
 
+let _pollStatusBusy = false; // _L52_
 async function pollStatus() {
+    if (_pollStatusBusy) return;
+    _pollStatusBusy = true;
     try {
         const r = await fetch("/api/status");
         if (!r.ok) return;
         const d = await r.json();
         updateStatus(d);
         _checkTimelineStuck(d);
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+        _pollStatusBusy = false;
+    }
 }
 
 async function pollFleet() {
@@ -1261,10 +1267,19 @@ function updateStatus(s) {
     })();
 
     if (s.live_audit) {
-        pollAuditAndUpdate().then(function (ok) {
-            if (ok === false) updateAuditLog(s.live_audit);
-        });
-        extractPreview(s.live_audit);
+        // _L52_: crtaj samo kad je Rad ili Strucnjak (audit-log) vidljiv i kad se sadrzaj promijenio
+        const _la52 = String(s.live_audit);
+        const _key52 = _la52.length + ":" + _la52.slice(-160) + ":" + (s.pct || 0);
+        const _vid52 =
+            (document.body.getAttribute("data-view") || "rad") === "rad" ||
+            !!document.getElementById("tab-expert")?.classList.contains("active");
+        if (_vid52 && _key52 !== window._liveAuditKey52) {
+            window._liveAuditKey52 = _key52;
+            pollAuditAndUpdate().then(function (ok) {
+                if (ok === false) updateAuditLog(s.live_audit);
+            });
+            extractPreview(s.live_audit);
+        }
     }
 
     const km = s.knjiga_mode;
@@ -2948,14 +2963,26 @@ async function loadEpubPreview() {
 
         // Prikaži čist tekst — svaki paragraf u <p> tagu
         if (content) {
-            content.innerHTML = text
-                .split(/\n\n+/)
-                .filter(p => p.trim().length > 0)
-                .map(
-                    p =>
-                        `<p style="margin:0 0 0.9em 0;line-height:1.7">${p.trim().replace(/\n/g, "<br>")}</p>`
-                )
-                .join("");
+            // _L52_: crtaj zadnjih 150 odlomaka; ostalo na zahtjev (gumb)
+            const _sviOdl = text.split(/\n\n+/).filter(p => p.trim().length > 0);
+            const _MAX52 = 150;
+            const _crtaj52 = lista =>
+                lista
+                    .map(
+                        p =>
+                            `<p style="margin:0 0 0.9em 0;line-height:1.7">${p.trim().replace(/\n/g, "<br>")}</p>`
+                    )
+                    .join("");
+            if (_sviOdl.length > _MAX52) {
+                content.innerHTML =
+                    `<div class="epub-trunc-note"><button type="button" class="btn btn-sm" id="btn-epub-show-all">Prikazano zadnjih ${_MAX52} od ${_sviOdl.length} odlomaka — prikaži sve</button></div>` +
+                    _crtaj52(_sviOdl.slice(-_MAX52));
+                document.getElementById("btn-epub-show-all")?.addEventListener("click", () => {
+                    content.innerHTML = _crtaj52(_sviOdl);
+                });
+            } else {
+                content.innerHTML = _crtaj52(_sviOdl);
+            }
         }
 
         if (wrap) wrap.classList.remove("hidden");
