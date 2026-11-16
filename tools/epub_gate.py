@@ -211,7 +211,7 @@ def gate(path, forbid=("Nail", "Judge"), stil=None):
             if p in nset and not re.search(rb"<a\b", z.read(p)):
                 add("WARN", "nav bez linkova", p)
 
-        rx_f = re.compile(r"\b(?:%s)" % "|".join(map(re.escape, forbid))) if forbid else None
+        rx_f = re.compile(r"\b(?:%s)\b" % "|".join(map(re.escape, forbid))) if forbid else None  # L44: cijela rijec ("Nailaze" nije "Nail")
         prev = ""
         n_docs = 0
         for idref in spine:
