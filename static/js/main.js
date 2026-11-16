@@ -4355,7 +4355,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Sakrij sirovi Audit log card
     const auditLog = document.getElementById("audit-log");
     const auditCard = auditLog ? auditLog.closest(".card") : null;
-    if (auditCard && auditCard !== dashboard) {
+    if (auditCard && auditCard !== dashboard && dashboard.contains(auditCard)) { // _L53_: audit-log je u tabu Strucnjak, ne u dashboardu
         auditCard.style.display = "none";
         auditCard.dataset.zenHidden = "1";
     }
