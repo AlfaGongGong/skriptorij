@@ -5,7 +5,7 @@
  * ISPRAVLJENA VERZIJA: uklonjen duplikat koji je uzrokovao SyntaxError
  */
 
-const CACHE_NAME = "booklyfi-cache-v8";
+const CACHE_NAME = "booklyfi-cache-v9";
 const STATIC_ASSETS = [
     "/",
     "/static/css/style.css",
