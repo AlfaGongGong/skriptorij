@@ -169,7 +169,9 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
         novo = _smart_extract(raw)
         lo, ln = len(_plain(original_chunk)), len(_plain(novo))
         if not novo.strip() or "NEPREVEDENO" in novo or not (0.75 * lo <= ln <= 1.6 * lo):
-            _upisi_zapis(self, stem_key, dict(zapis, popravljen=False, razlog="sumnjiva_duljina %d/%d" % (ln, lo)))
+            _upisi_zapis(self, stem_key, dict(zapis, popravljen=False, razlog="sumnjiva_duljina %d/%d" % (ln, lo),
+                                              raw_pocetak=raw[:200], raw_kraj=raw[-200:], raw_duljina=len(raw),
+                                              curenje=bool(__import__("re").search(r"Let's|\" ->|\(Wait|\bwe need to\b", raw))))
             return out
 
         async def _fleet2(prompt2, sys_p):
