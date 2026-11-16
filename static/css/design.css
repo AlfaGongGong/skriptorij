@@ -748,3 +748,30 @@ body:has(.modal-overlay.open) #toast-container {
 body:has(.modal-overlay.open) #p26-revizija-fab {
     display: none;
 }
+
+/* R6: poliranje (fokus, ciljevi dodira, smanjeno kretanje, forsirane boje) */
+a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--focus-ring, #7aa2ff);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  button, .btn, [role="button"], select, summary, .tab-btn {
+    min-height: 44px;
+  }
+  button, .btn, [role="button"], .tab-btn {
+    min-width: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (forced-colors: active) {
+  :focus-visible { outline: 2px solid Highlight; }
+  button, .btn, [role="button"] { border: 1px solid ButtonText; }
+}
