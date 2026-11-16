@@ -50,6 +50,7 @@
                 if (btn) btn.click();
             }
         }
+        updateTitle();
         try { window.scrollTo(0, 0); } catch (e) { /* nema scrolla */ }
     }
 
@@ -59,11 +60,36 @@
         if (!g) return;
         lastTab[g] = t;
         if (g !== currentView()) setView(g);
+        updateTitle();
+    }
+
+    var NAMES = { rad: "Rad", kvaliteta: "Kvaliteta", knjiga: "Knjiga", alati: "Alati" };
+
+    function tabLabel() {
+        var b = document.querySelector(".tab-btn.active");
+        if (!b) return "";
+        var cl = b.cloneNode(true);
+        var bd = cl.querySelectorAll(".badge");
+        for (var i = 0; i < bd.length; i++) bd[i].remove();
+        return (cl.textContent || "").replace(/^[^A-Za-z\u0100-\u017F]+/, "").trim();
+    }
+
+    function updateTitle() {
+        var el = document.getElementById("view-title");
+        if (!el) return;
+        var view = currentView();
+        var txt = NAMES[view] || "Rad";
+        if (GROUPS[view] && GROUPS[view].length > 1) {
+            var l = tabLabel();
+            if (l) txt += " \u00b7 " + l;
+        }
+        el.textContent = txt;
     }
 
     function init() {
         if (!document.body.getAttribute("data-view")) document.body.setAttribute("data-view", "rad");
         markNav(currentView());
+        updateTitle();
         var nav = document.getElementById("bottom-nav");
         if (nav) {
             nav.addEventListener("click", function (ev) {

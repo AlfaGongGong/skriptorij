@@ -10,7 +10,7 @@
     <link rel="manifest" href="/static/manifest.json" />
     <meta name="theme-color" content="#070b14" />
     <link rel="stylesheet" href="/static/css/style.css?v=20261110a" />
-    <link rel="stylesheet" href="/static/css/design.css?v=20261116b" />
+    <link rel="stylesheet" href="/static/css/design.css?v=20261116c" />
 </head>
 <body data-view="rad">
     <a href="#app" class="skip-link">Preskoči na sadržaj</a>
@@ -128,6 +128,7 @@
                 <button class="btn-icon" id="theme-btn" title="Promijeni temu" aria-label="Promijeni temu">🌙</button>
                 <button class="btn-icon" id="btn-show-setup" title="Postavke" aria-label="Otvori postavke">⚙</button>
             </div>
+            <div class="view-title" id="view-title" aria-live="polite">Rad</div>
         </header>
 
         <!-- ═══════════════════ SETUP ═══════════════════ -->
@@ -322,14 +323,14 @@
         <!-- ═══════════════════ TABS ═══════════════════ -->
         <div class="card card-tabs">
             <nav class="tab-nav" role="tablist" aria-label="Glavni tabovi">
-                <button class="tab-btn active" role="tab" aria-controls="tab-quality" aria-selected="true" data-tab="tab-quality" data-group="kvaliteta">🎯 Kval. <span class="badge badge-amber hidden" id="quality-badge">0</span></button>
-                <button class="tab-btn" role="tab" aria-controls="tab-epub" aria-selected="false" data-tab="tab-epub" data-group="knjiga">👁 Preg.</button>
-                <button class="tab-btn" role="tab" aria-controls="tab-review" aria-selected="false" data-tab="tab-review" data-group="knjiga">✏️ Rev.</button>
-                <button class="tab-btn" role="tab" aria-controls="tab-history" aria-selected="false" data-tab="tab-history" data-group="knjiga">📚 Hist.</button>
+                <button class="tab-btn active" role="tab" aria-controls="tab-quality" aria-selected="true" data-tab="tab-quality" data-group="kvaliteta">🎯 Kvaliteta <span class="badge badge-amber hidden" id="quality-badge">0</span></button>
+                <button class="tab-btn" role="tab" aria-controls="tab-epub" aria-selected="false" data-tab="tab-epub" data-group="knjiga">👁 Pregled</button>
+                <button class="tab-btn" role="tab" aria-controls="tab-review" aria-selected="false" data-tab="tab-review" data-group="knjiga">✏️ Revizija</button>
+                <button class="tab-btn" role="tab" aria-controls="tab-history" aria-selected="false" data-tab="tab-history" data-group="knjiga">📚 Povijest</button>
                 <button class="tab-btn" role="tab" aria-controls="panel-stil" aria-selected="false" data-tab="panel-stil" data-group="alati" id="tab-btn-stil">✨ Stil</button>
                 <button class="tab-btn" role="tab" aria-controls="panel-tts-filter" aria-selected="false" data-tab="panel-tts-filter" data-group="alati">🔊 TTS</button>
-                <button class="tab-btn" role="tab" aria-controls="tab-expert" aria-selected="false" data-tab="tab-expert" data-group="alati" aria-label="Stručnjak — API ključevi i dijagnostika">🔬 Struč.</button>
-                <button class="tab-btn" role="tab" aria-controls="tab-monitor" aria-selected="false" data-tab="tab-monitor" data-group="alati" id="tab-btn-monitor" aria-label="Monitor — live audit i dnevnik">📊 Mon.</button>
+                <button class="tab-btn" role="tab" aria-controls="tab-expert" aria-selected="false" data-tab="tab-expert" data-group="alati" aria-label="Stručnjak — API ključevi i dijagnostika">🔬 Stručnjak</button>
+                <button class="tab-btn" role="tab" aria-controls="tab-monitor" aria-selected="false" data-tab="tab-monitor" data-group="alati" id="tab-btn-monitor" aria-label="Monitor — live audit i dnevnik">📊 Monitor</button>
             </nav>
 
             <!-- ═══ TAB: QUALITY ═══ -->
@@ -865,7 +866,7 @@
     <script src="/static/js/main.js?v=20261024c"></script>
     <script src="/static/js/heatmap.js?v=1791803042"></script>
     <script src="/static/js/ui/fleet.js?v=1791803042"></script>
-    <script src="/static/js/ui/views.js?v=20261116b"></script>
+    <script src="/static/js/ui/views.js?v=20261116c"></script>
 <nav id="bottom-nav" class="bottom-nav" aria-label="Pogledi">
     <button type="button" class="bn-btn active" data-view="rad" aria-current="page"><span class="bn-ico" aria-hidden="true">▶</span><span class="bn-lbl">Rad</span></button>
     <button type="button" class="bn-btn" data-view="kvaliteta"><span class="bn-ico" aria-hidden="true">🎯</span><span class="bn-lbl">Kvaliteta</span></button>
