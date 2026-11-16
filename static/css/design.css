@@ -660,3 +660,91 @@ input[type="radio"] {
 .log-details[open] > summary {
     margin-bottom: var(--sp-2);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   R5: modali i obavijesti (toast). Dodano na kraj; ne dira id-eve.
+   ═══════════════════════════════════════════════════════════ */
+.modal-overlay {
+    backdrop-filter: none;
+    background: rgba(3, 6, 12, 0.82);
+    z-index: 1200;
+    padding: var(--sp-4);
+    padding-bottom: calc(var(--sp-4) + env(safe-area-inset-bottom, 0px));
+}
+
+.modal {
+    background: var(--bg-1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-xl);
+    padding: var(--sp-5);
+    max-width: 440px;
+    max-height: 88dvh;
+    max-height: 88vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.modal-title { font-size: var(--fs-lg, 1.125rem); }
+.modal-body { font-size: var(--fs-sm, 0.9rem); line-height: 1.6; color: var(--tx-2); }
+.modal-pct-label { color: var(--tx-2); }
+
+.modal-actions { flex-direction: column-reverse; gap: var(--sp-2); }
+.modal-actions .btn { flex: none; width: 100%; min-height: 48px; }
+
+@media (min-width: 560px) {
+    .modal-actions { flex-direction: row; }
+    .modal-actions .btn { flex: 1; width: auto; }
+}
+
+/* Uski ekran: modal kao donji list */
+@media (max-width: 559px) {
+    .modal-overlay { align-items: flex-end; padding: 0; }
+    .modal-overlay .modal {
+        max-width: none;
+        border-radius: var(--r-xl) var(--r-xl) 0 0;
+        padding-bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* Toast: iznad donje navigacije, uz sredinu, cijela sirina na uskom ekranu */
+#toast-container {
+    top: auto;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(var(--nav-h, 64px) + var(--sp-3) + env(safe-area-inset-bottom, 0px));
+    width: min(92vw, 420px);
+    align-items: stretch;
+    z-index: 1300;
+}
+
+.toast {
+    max-width: none;
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--fs-sm, 0.9rem);
+    line-height: 1.45;
+    color: var(--tx-1);
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-left-width: 4px;
+    animation: bfToastUp 180ms ease;
+}
+
+@keyframes bfToastUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast { animation: none; }
+}
+
+/* Dok je modal otvoren: toast ide na vrh, a plutajuci gumb Revizija se sakriva */
+body:has(.modal-overlay.open) #toast-container {
+    bottom: auto;
+    top: calc(var(--sp-3) + env(safe-area-inset-top, 0px));
+}
+
+body:has(.modal-overlay.open) #p26-revizija-fab {
+    display: none;
+}

@@ -4,27 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Revizija</title>
-<style>
-  :root { --bg:#fff; --tx:#1b1b1b; --box:#f2f2f2; --mark:#ffe08a; --muted:#666; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#14141a; --tx:#eee; --box:#22222c; --mark:#7a5c00; --muted:#9a9aa5; } }
-  body { margin:0; padding:14px; background:var(--bg); color:var(--tx); font:17px/1.5 system-ui,sans-serif; }
-  #prog { color:var(--muted); font-size:14px; margin-bottom:6px; }
-  #tip { font-weight:700; font-size:19px; margin:4px 0 12px; }
-  .box { background:var(--box); border-radius:12px; padding:12px; margin-bottom:12px; }
-  .lab { font-size:13px; color:var(--muted); margin-bottom:4px; }
-  mark { background:var(--mark); color:inherit; border-radius:4px; padding:0 2px; }
-  button { width:100%; font-size:19px; padding:16px; margin:6px 0; border:0; border-radius:14px; color:#fff; }
-  #b-ostavi, #b-prihvati { background:#2e7d32; } #b-ponovo { background:#c62828; }
-  #b-preskoci, #b-staro { background:#555; }
-  #b-ponisti { background:transparent; color:var(--muted); font-size:15px; padding:8px; }
-  button:disabled { opacity:.5; }
-  #poruka { color:#c62828; min-height:1.2em; }
-  #pr { display:none; }
-  #pr-tekst { font-weight:700; }
-  #zavrsi { margin-top:18px; border-top:1px solid var(--box); padding-top:10px; }
-  #b-zavrsi { background:#1565c0; } #b-zavrsi-dry { background:#555; }
-  #z-status { font-size:14px; white-space:pre-wrap; word-break:break-word; display:none; }
-</style>
+<link rel="stylesheet" href="/static/css/revizija.css">
 </head>
 <body>
 <div id="prog"></div>
@@ -45,7 +25,7 @@
   <button id="b-ponisti">↩ Poništi prethodnu</button>
 </div>
 <div id="kraj" style="display:none"></div>
-<div id="poruka"></div>
+<div id="poruka" role="status" aria-live="polite"></div>
 <div id="zavrsi">
   <button id="b-zavrsi-dry">📊 Pregled: što će se primijeniti</button>
   <button id="b-zavrsi">🏁 Završi i složi EPUB</button>

@@ -269,4 +269,6 @@ html, body {
     }
 }
 
-
+/* R5: intro: dovoljno velika meta za Preskoci */
+.skip-intro-btn { min-height: 44px; min-width: 88px; }
+.skip-intro-btn { color: rgba(255,255,255,0.8); }
