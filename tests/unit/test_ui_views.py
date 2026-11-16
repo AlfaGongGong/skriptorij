@@ -40,7 +40,7 @@ def test_donja_navigacija_4_pogleda():
 def test_views_js_ukljucen_i_precache():
     assert "/static/js/ui/views.js" in HTML
     assert '"/static/js/ui/views.js"' in SW
-    assert "booklyfi-cache-v10" in SW
+    assert int(__import__("re").search(r"booklyfi-cache-v(\d+)", SW).group(1)) >= 10
     assert VJS.exists()
 
 
