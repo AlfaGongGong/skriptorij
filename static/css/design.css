@@ -132,3 +132,94 @@ textarea:focus-visible {
         scroll-behavior: auto !important;
     }
 }
+
+
+/* ═══════════ R2a: pogledi (Rad, Kvaliteta, Knjiga, Alati) i donja navigacija ═══════════ */
+:root {
+    --nav-h: 64px;
+}
+
+.bottom-nav {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: min(100%, 720px);
+    display: flex;
+    background: var(--bg-1);
+    border-top: 1px solid var(--bd);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 900;
+}
+
+.bn-btn {
+    flex: 1 1 0;
+    min-height: var(--nav-h);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--sp-1) var(--sp-2);
+    background: transparent;
+    border: 0;
+    border-top: 3px solid transparent;
+    border-radius: 0;
+    color: var(--tx-3);
+    font: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.bn-btn .bn-ico {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.bn-btn:hover {
+    color: var(--tx-1);
+}
+
+.bn-btn.active {
+    color: var(--accent-text);
+    border-top-color: var(--accent-text);
+    background: var(--bg-2);
+}
+
+body[data-view] #app {
+    padding-bottom: calc(var(--nav-h) + var(--sp-4) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Rad: zaglavlje + postavljanje ili nadzorna ploča; kartica s tabovima je sakrivena */
+body[data-view="rad"] .card-tabs {
+    display: none;
+}
+
+/* Ostali pogledi: samo kartica s tabovima te grupe */
+body[data-view]:not([data-view="rad"]) #setup-panel,
+body[data-view]:not([data-view="rad"]) #dashboard-panel {
+    display: none !important;
+}
+
+body[data-view="kvaliteta"] .tab-btn:not([data-group="kvaliteta"]),
+body[data-view="knjiga"] .tab-btn:not([data-group="knjiga"]),
+body[data-view="alati"] .tab-btn:not([data-group="alati"]) {
+    display: none;
+}
+
+body[data-view="kvaliteta"] .tab-nav {
+    display: none;
+}
+
+/* Plutajući gumb Revizija ne smije prekriti navigaciju */
+#p26-revizija-fab {
+    bottom: calc(var(--nav-h) + var(--sp-3) + env(safe-area-inset-bottom, 0px));
+}
+
+@media print {
+    .bottom-nav {
+        display: none;
+    }
+}
