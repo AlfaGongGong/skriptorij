@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
     <link rel="manifest" href="/static/manifest.json" />
     <meta name="theme-color" content="#030711" />
-    <link rel="stylesheet" href="/static/css/style.css?v=20261111a" />
+    <link rel="stylesheet" href="/static/css/style.css?v=20261110a" />
 </head>
 <body>
     <a href="#app" class="skip-link">Preskoči na sadržaj</a>
@@ -319,12 +319,6 @@
 </section>
 
         <!-- ═══════════════════ TABS ═══════════════════ -->
-        <nav class="tool-nav" aria-label="Alati">
-            <button class="tab-btn tool-btn" aria-controls="panel-tts-filter" aria-selected="false" data-tab="panel-tts-filter">🔊 TTS</button>
-            <button class="tab-btn tool-btn" aria-controls="panel-stil" aria-selected="false" data-tab="panel-stil" id="tab-btn-stil">✨ Stil</button>
-            <a class="tool-btn" href="/revizija" target="_blank" rel="noopener">🃏 Revizija</a>
-        </nav>
-
         <div class="card card-tabs">
             <nav class="tab-nav" role="tablist" aria-label="Glavni tabovi">
                 <button class="tab-btn active" role="tab" aria-controls="tab-quality" aria-selected="true" data-tab="tab-quality">🎯 Kval. <span class="badge badge-amber hidden" id="quality-badge">0</span></button>
@@ -332,8 +326,8 @@
                 <button class="tab-btn" role="tab" aria-controls="tab-epub" aria-selected="false" data-tab="tab-epub">👁 Preg.</button>
                 <button class="tab-btn" role="tab" aria-controls="tab-review" aria-selected="false" data-tab="tab-review">✏️ Rev.</button>
                 <button class="tab-btn" role="tab" aria-controls="tab-expert" aria-selected="false" data-tab="tab-expert" aria-label="Stručnjak — API ključevi i dijagnostika">🔬 Struč.</button>
-                
-                
+                <button class="tab-btn" role="tab" aria-controls="panel-tts-filter" aria-selected="false" data-tab="panel-tts-filter">🔊 TTS</button>
+                <button class="tab-btn" role="tab" aria-controls="panel-stil" aria-selected="false" data-tab="panel-stil" id="tab-btn-stil">✨ Stil</button>
                 <button class="tab-btn" role="tab" aria-controls="tab-monitor" aria-selected="false" data-tab="tab-monitor" id="tab-btn-monitor" aria-label="Monitor — live audit i dnevnik">📊 Mon.</button>
             </nav>
 
@@ -490,7 +484,7 @@
 
             <!-- ═══ TAB: REVIEW (novi) ═══ -->
             <div role="tabpanel" class="tab-panel" id="tab-review">
-                
+                <a href="/revizija" target="_blank" class="link-revizija">🃏 Kartice teških grešaka (Revizija)</a>
                 <div id="review-empty-banner" class="tab-empty">
                     Odaberi blok iz Kvaliteta ili Historije da ga revidiraš.
                 </div>
@@ -867,9 +861,9 @@
     })();
     </script>
 
-    <script src="/static/js/main.js?v=20261111_185144"></script>
+    <script src="/static/js/main.js?v=20261024c"></script>
     <script src="/static/js/heatmap.js?v=1791803042"></script>
     <script src="/static/js/ui/fleet.js?v=1791803042"></script>
-
+<a id="p26-revizija-fab" href="/revizija" target="_blank" rel="noopener">🃏 Revizija</a>
 </body>
 </html>
