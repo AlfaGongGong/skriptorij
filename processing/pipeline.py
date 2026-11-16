@@ -2032,7 +2032,13 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         model_hash=prov1,
     )
     with contextlib.suppress(Exception):
-        _chk_path(self, file_name, chunk_idx, "prevod").unlink(missing_ok=True)
+        _pv_s = _chk_path(self, file_name, chunk_idx, "prevod")
+        # _PILOT_: uz BOOKLYFI_ZADRZI_SIROVO=1 sacuvaj sirovi prijevod (prije lekture) kao .sirovo.txt
+        if _os.environ.get("BOOKLYFI_ZADRZI_SIROVO") == "1" and _pv_s.exists():
+            import shutil as _sh_pilot
+
+            _sh_pilot.copyfile(str(_pv_s), str(_pv_s)[: -len(".prevod.chk")] + ".sirovo.txt")
+        _pv_s.unlink(missing_ok=True)
 
     self.global_done_chunks += 1
     self.stvarno_prevedeno_u_sesiji += 1
