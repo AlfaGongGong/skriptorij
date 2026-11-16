@@ -1,0 +1,134 @@
+/* ═══════════════════════════════════════════════════════════
+   BOOKLYFI — design.css (R1: tokeni i osnova)
+   Učitava se IZA style.css. Mijenja samo vrijednosti varijabli i
+   osnovne stilove; ne dira ID-eve ni strukturu komponenti.
+   Kontrasti (WCAG AA) provjereni testom tests/unit/test_ui_design.py
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+    /* Pozadine (tamna tema) */
+    --bg-0: #070b14;
+    --bg-1: #0e1626;
+    --bg-2: #16203a;
+    --bg-3: #1f2b49;
+
+    /* Tekst */
+    --tx-1: #eaf0fa;
+    --tx-2: #b4bfd4;
+    --tx-3: #8d99b3;
+
+    /* Akcenti: ispuna (bijeli tekst >= 4.5:1) i akcent za tekst/linkove */
+    --accent-1: #5b5ff0;
+    --accent-text: #9ea3ff;
+
+    /* Obrubi */
+    --bd: #243253;
+    --bd-soft: rgba(255, 255, 255, 0.06);
+
+    /* Radijusi */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 20px;
+
+    /* Razmaci (4 px osnova) */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
+    --sp-7: 48px;
+
+    /* Skala fontova */
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.875rem;
+    --fs-md: 1rem;
+    --fs-lg: 1.125rem;
+    --fs-xl: 1.375rem;
+    --fs-2xl: 1.75rem;
+    --lh-tight: 1.2;
+    --lh-body: 1.55;
+
+    /* Sjene i fokus */
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.18);
+    --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.28);
+    --focus-ring: 0 0 0 2px var(--bg-0), 0 0 0 4px var(--accent-text);
+
+    /* Pokret */
+    --t-fast: 120ms ease;
+    --t-med: 200ms ease;
+    --t-slow: 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body.light {
+    --bg-0: #f6f1e7;
+    --bg-1: #ffffff;
+    --bg-2: #f9f7f1;
+    --bg-3: #ebe5d8;
+
+    --tx-1: #2a1a10;
+    --tx-2: #5a4129;
+    --tx-3: #6b6150;
+
+    --accent-1: #4f46e5;
+    --accent-text: #4338ca;
+
+    --bd: #d9d0bf;
+    --bd-soft: rgba(42, 26, 16, 0.08);
+
+    --shadow-1: 0 1px 2px rgba(60, 40, 20, 0.08), 0 4px 16px rgba(60, 40, 20, 0.08);
+    --shadow-2: 0 2px 4px rgba(60, 40, 20, 0.12), 0 12px 32px rgba(60, 40, 20, 0.14);
+}
+
+/* ─────────── Osnova ─────────── */
+body {
+    color-scheme: dark;
+    font-size: var(--fs-md);
+    line-height: var(--lh-body);
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--bd) transparent;
+}
+
+body.light {
+    color-scheme: light;
+}
+
+h1, h2, h3, h4 {
+    line-height: var(--lh-tight);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+}
+
+::selection {
+    background: var(--accent-1);
+    color: #ffffff;
+}
+
+/* Fokus: vidljiv samo pri navigaciji tipkovnicom */
+:focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* Poštuj korisničku postavku smanjenog pokreta */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
