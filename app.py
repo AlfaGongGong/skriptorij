@@ -78,6 +78,46 @@ def _get_fleet() -> FleetManager:
     return _af._active_fleet if _af._active_fleet is not None else _fleet_fallback
 
 
+# L56: dev_api.json = cijela flota API kljuceva. Strogo citanje (neispravan JSON se NIKAD
+# ne prepisuje), sigurnosna kopija .bak (samo kad je trenutni fajl ispravan) i atomski zapis.
+_KEYS_LOCK = threading.Lock()
+
+
+class _KeysCfgError(Exception):
+    pass
+
+
+def _keys_cfg_load(cfg_path):
+    p = Path(cfg_path)
+    if not p.exists():
+        return {}
+    txt = p.read_text("utf-8")
+    if not txt.strip():
+        return {}
+    try:
+        cfg = json.loads(txt)
+    except ValueError as e:
+        raise _KeysCfgError("dev_api.json nije ispravan JSON: " + str(e)[:80])
+    if not isinstance(cfg, dict):
+        raise _KeysCfgError("dev_api.json nije JSON objekt")
+    return cfg
+
+
+def _keys_cfg_save(cfg_path, cfg):
+    import shutil as _sh
+
+    from utils.file_utils import atomic_write_json
+
+    p = Path(cfg_path)
+    if p.exists():
+        try:
+            if isinstance(json.loads(p.read_text("utf-8")), dict):
+                _sh.copy2(p, p.with_suffix(p.suffix + ".bak"))
+        except Exception:
+            pass  # trenutni fajl neispravan: ne diraj postojeci .bak
+    atomic_write_json(p, cfg)
+
+
 # ── Shared state ─────────────────────────────────────────────────────────────
 try:
     from config.settings import (
@@ -1144,18 +1184,19 @@ def create_app() -> Flask:
                 return jsonify({"error": "Ključ je prekratak (min 8 znakova)"}), 400
             prov_u = provider.upper()
             cfg_path = Path(_CONFIG_PATH)
-            try:
-                cfg = json.loads(cfg_path.read_text("utf-8"))
-            except Exception:
-                cfg = {}
-            if prov_u not in cfg:
-                cfg[prov_u] = []
-            if isinstance(cfg[prov_u], list):
-                if key not in cfg[prov_u]:
-                    cfg[prov_u].append(key)
-            elif isinstance(cfg[prov_u], dict):
-                cfg[prov_u][f"key_{len(cfg[prov_u]) + 1}"] = key
-            cfg_path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), "utf-8")
+            with _KEYS_LOCK:
+                try:
+                    cfg = _keys_cfg_load(cfg_path)
+                except _KeysCfgError as _ke:
+                    return jsonify({"error": str(_ke), "hint": "dev_api.json nije izmijenjen"}), 409
+                if prov_u not in cfg:
+                    cfg[prov_u] = []
+                if isinstance(cfg[prov_u], list):
+                    if key not in cfg[prov_u]:
+                        cfg[prov_u].append(key)
+                elif isinstance(cfg[prov_u], dict):
+                    cfg[prov_u][f"key_{len(cfg[prov_u]) + 1}"] = key
+                _keys_cfg_save(cfg_path, cfg)
             _get_fleet().reload()
             return jsonify({"ok": True, "provider": prov_u})
         except Exception as e:
@@ -1166,13 +1207,17 @@ def create_app() -> Flask:
         try:
             prov_u = provider.upper()
             cfg_path = Path(_CONFIG_PATH)
-            cfg = json.loads(cfg_path.read_text("utf-8"))
-            if prov_u not in cfg or not isinstance(cfg[prov_u], list):
-                return jsonify({"error": "Provajder nije pronađen"}), 404
-            if index >= len(cfg[prov_u]):
-                return jsonify({"error": "Index van granica"}), 400
-            removed = cfg[prov_u].pop(index)
-            cfg_path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), "utf-8")
+            with _KEYS_LOCK:
+                try:
+                    cfg = _keys_cfg_load(cfg_path)
+                except _KeysCfgError as _ke:
+                    return jsonify({"error": str(_ke), "hint": "dev_api.json nije izmijenjen"}), 409
+                if prov_u not in cfg or not isinstance(cfg[prov_u], list):
+                    return jsonify({"error": "Provajder nije pronađen"}), 404
+                if index >= len(cfg[prov_u]):
+                    return jsonify({"error": "Index van granica"}), 400
+                removed = cfg[prov_u].pop(index)
+                _keys_cfg_save(cfg_path, cfg)
             _get_fleet().reload()
             return jsonify({"ok": True, "removed": removed[:8] + "..."})
         except Exception as e:

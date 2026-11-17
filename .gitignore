@@ -43,3 +43,5 @@ tools/.tts_keys
 
 # P0.7: MCP server, ne commit-uj (secret se nalazi u kodu: tools/claude_files_mcp/.state/secret.txt)
 tools/claude_files_mcp/
+dev_api.json.bak
+dev_api.json.tmp
