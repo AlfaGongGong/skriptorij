@@ -1,7 +1,7 @@
 {
   "Brady": {
     "rod": "M",
-    "clue_m": 19,
+    "clue_m": 29,
     "clue_z": 0
   },
   "Richarda": {
@@ -11,22 +11,22 @@
   },
   "Sifkitz": {
     "rod": "M",
-    "clue_m": 21,
+    "clue_m": 39,
     "clue_z": 0
   },
   "Berkowitz": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Problem": {
     "rod": "M",
-    "clue_m": 2,
+    "clue_m": 3,
     "clue_z": 0
   },
   "Bradyja": {
     "rod": "M",
-    "clue_m": 5,
+    "clue_m": 7,
     "clue_z": 0
   },
   "Ekonomija": {
@@ -41,13 +41,13 @@
   },
   "Bradyju": {
     "rod": "M",
-    "clue_m": 4,
+    "clue_m": 5,
     "clue_z": 0
   },
   "Carlos": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Još": {
     "rod": null,
@@ -55,9 +55,9 @@
     "clue_z": 0
   },
   "Cesta": {
-    "rod": null,
+    "rod": "Ž",
     "clue_m": 0,
-    "clue_z": 1
+    "clue_z": 2
   },
   "Freddy": {
     "rod": null,
@@ -85,6 +85,26 @@
     "clue_z": 0
   },
   "Ujutro": {
+    "rod": "M",
+    "clue_m": 2,
+    "clue_z": 0
+  },
+  "Teško": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Prejako": {
+    "rod": null,
+    "clue_m": 1,
+    "clue_z": 0
+  },
+  "Životinja": {
+    "rod": null,
+    "clue_m": 0,
+    "clue_z": 1
+  },
+  "Zatim": {
     "rod": null,
     "clue_m": 1,
     "clue_z": 0
