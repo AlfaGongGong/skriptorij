@@ -1302,6 +1302,41 @@ def _primijeni_broj_prethodnog(soup, broj, h1_tekst, order):
     return novi
 
 
+def _toc_hr_mapa(files):
+    """L49: prevedeni TOC dokument ('1: Dan vjenčanja' -> split_010.html) ->
+    {ime_fajla: (broj ili None, naslov)}. Uzima samo dokument s >= 3 poveznice oblika 'N: naslov'."""
+    from urllib.parse import unquote
+
+    rx = re.compile(r"^(\d{1,3})\s*[:.]\s*(\S.{1,78})$")
+    for n, hb in list(files.items()):
+        low = n.lower()
+        if not low.endswith((".html", ".xhtml", ".htm")) or "booklyfi_" in low:
+            continue
+        try:
+            sp = BeautifulSoup(hb, "html.parser")
+            veze = []
+            for a in sp.find_all("a"):
+                h = (a.get("href") or "").split("#")[0]
+                if not h or not h.lower().endswith((".html", ".xhtml", ".htm")):
+                    continue
+                t = re.sub(r"\s+", " ", a.get_text(" ", strip=True)).strip()
+                if t:
+                    veze.append((unquote(h).rsplit("/", 1)[-1], t))
+            if sum(1 for _, t in veze if rx.match(t)) < 3:
+                continue
+            mapa = {}
+            for base, t in veze:
+                m = rx.match(t)
+                if m:
+                    mapa.setdefault(base, (m.group(1), m.group(2).strip()))
+                elif len(t) <= 60:
+                    mapa.setdefault(base, (None, t))
+            return mapa
+        except Exception:
+            logger.debug("[C3_fallback] styler.py L49 toc_hr Exception")
+    return {}
+
+
 def _naslov_iz_tijela(body):
     """Pravi naslov poglavlja koji je ostao kao kratki <p> na pocetku tijela.
     Vraca (tekst_h1, [p elementi za brisanje], vrsta, broj) ili None.
@@ -1484,7 +1519,7 @@ def _dodaj_naslov(soup, broj, naslov=None, knjiga=""):
     elif naslov:
         final = naslov.strip()
         _en = _naslov_en_chapter(final)
-        if _en and not lead:
+        if _en and not lead and not final.lower().startswith("poglavlje"):
             # engleski TOC naslov ("Chapter 12 - Four years earlier"): bez engleskog teksta u knjizi
             _sub = _NASLOV_PREVOD.get(_norm_naslov(_en[1]))
             final = "POGLAVLJE %s" % _en[0] + (" \u2013 " + _sub if _sub else "")
@@ -1866,6 +1901,8 @@ def run_epub_styler(
                 logger.exception("[C1_http] styler.py:1581 Exception")
             break
 
+    _toc_hr = _toc_hr_mapa(files)  # L49: prevedeni TOC (broj + naslov po dokumentu)
+    _log("   -> L49: prevedeni TOC: %d stavki" % len(_toc_hr), "tech")
     for n in list(files.keys()):
         low = n.lower()
         if not low.endswith((".html", ".xhtml", ".htm", ".ncx")):
@@ -1897,6 +1934,7 @@ def run_epub_styler(
     poglavlja = []
     skip_hrefs = set()
     _pending_broj = None  # L49
+    _pending_toc = None
 
     for itemref in spine.find_all("itemref"):
         href = id_to_href.get(itemref.get("idref", ""), "")
@@ -1907,6 +1945,9 @@ def run_epub_styler(
         if not hb:
             continue
         toc_naslov = toc_mapa.get(href) or toc_mapa.get(full)
+        _e_hr = _toc_hr.get(href.rsplit("/", 1)[-1])
+        if not toc_naslov and _e_hr:
+            toc_naslov = ("POGLAVLJE %s \u2013 %s" % _e_hr) if _e_hr[0] else _e_hr[1]
         keep, razlog, finalni, no_heading = _classify(
             hb, href, toc_naslov, book_title, cover_hrefs
         )
@@ -1917,6 +1958,12 @@ def run_epub_styler(
                 if _b49:
                     _pending_broj = _b49
                     _log("   -> L49: broj %s iz %s prenosim na idu\u0107e poglavlje" % (_b49, href), "tech")
+            if razlog in ("samo-slika", "cover-slicica"):
+                _e49 = _toc_hr.get(href.rsplit("/", 1)[-1])
+                if _e49 and _e49[0]:
+                    _pending_broj = _pending_broj or _e49[0]
+                    _pending_toc = "POGLAVLJE %s \u2013 %s" % _e49
+                    _log("   -> L49: TOC za %s: %s" % (href, _pending_toc), "tech")
             skip_hrefs.add(href)
             skip_hrefs.add(full)
             continue
@@ -1925,12 +1972,13 @@ def run_epub_styler(
                 "href": href,
                 "full_path": full,
                 "order": len(poglavlja) + 1,
-                "naslov": finalni,
+                "naslov": finalni or _pending_toc,
                 "no_heading": no_heading,
                 "pending_broj": _pending_broj,
             }
         )
         _pending_broj = None
+        _pending_toc = None
 
     _log("   -> %d poglavlja" % len(poglavlja), "tech")
 

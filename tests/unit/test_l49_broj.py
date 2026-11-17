@@ -74,3 +74,31 @@ def test_integracija_styler(tmp_path):
                 h1[n.rsplit("/", 1)[-1]] = h.get_text() if h else None
     assert h1.get("b.xhtml") == "POGLAVLJE 1 \u2013 Obmana", h1
     assert h1.get("d.xhtml") == "POGLAVLJE 2", h1
+
+
+def test_toc_hr_mapa_broj_i_naslov():
+    toc = (
+        '<html><body>'
+        '<p><a href="CR%21X_split_005.html#a"> Zahvale</a></p>'
+        '<p><a href="CR%21X_split_008.html#b"> Prolog</a></p>'
+        '<p><a href="CR%21X_split_010.html#c"> 1: Dan vjen\u010danja</a></p>'
+        '<p><a href="CR%21X_split_012.html#d"> 2: Obmana</a></p>'
+        '<p><a href="CR%21X_split_014.html#e"> 3: Kutija</a></p>'
+        '</body></html>'
+    ).encode("utf-8")
+    files = {"OEBPS/CR!X_split_007.html": toc, "OEBPS/a.html": b"<html><body><p>nema</p></body></html>"}
+    m = S._toc_hr_mapa(files)
+    assert m["CR!X_split_010.html"] == ("1", "Dan vjen\u010danja")
+    assert m["CR!X_split_012.html"] == ("2", "Obmana")
+    assert m["CR!X_split_008.html"] == (None, "Prolog")
+
+
+def test_toc_hr_mapa_premalo_stavki():
+    toc = b'<html><body><p><a href="a.html">1: Prvo</a></p><p><a href="b.html">Kraj</a></p></body></html>'
+    assert S._toc_hr_mapa({"t.html": toc}) == {}
+
+
+def test_hrvatski_toc_naslov_ostaje():
+    s = BeautifulSoup('<html><body><p>%s</p></body></html>' % (LONG * 3), "html.parser")
+    r = S._dodaj_naslov(s, 5, naslov="POGLAVLJE 1 \u2013 Dan vjen\u010danja", knjiga="Kralj trnja")
+    assert r == "POGLAVLJE 1 \u2013 Dan vjen\u010danja"
