@@ -1023,6 +1023,13 @@ def _dodaj_naslov(soup, broj, naslov=None):
     body.insert(insert_pos, h1)
 
 
+def _dc_kandidat(t):
+    """L48: prvi odlomak za dropcap: >=60 znakova ili kratka cijela recenica (>=12 zn., zavrsna interpunkcija)."""
+    if not t or t.isdigit():
+        return False
+    return len(t) >= 60 or (len(t) >= 12 and t[-1] in ".!?\u201d\"\u2026\u00bb")
+
+
 def _dodaj_dropcap(soup):
     from bs4 import NavigableString
 
@@ -1039,13 +1046,13 @@ def _dodaj_dropcap(soup):
     if h1:
         for kandidat in h1.find_all_next("p"):
             t = kandidat.get_text(strip=True)
-            if len(t) >= 60 and not t.isdigit():
+            if _dc_kandidat(t):
                 prvi_p = kandidat
                 break
     if prvi_p is None:
         for kandidat in body.find_all("p"):
             t = kandidat.get_text(strip=True)
-            if len(t) >= 60 and not t.isdigit():
+            if _dc_kandidat(t):
                 prvi_p = kandidat
                 break
 
@@ -1222,6 +1229,11 @@ def _naslov_lose(t, knjiga=""):
         nk = _norm_naslov(knjiga)
         nt = _norm_naslov(t)
         if nk and nt and (nt == nk or (nk in nt and len(nt) <= len(nk) + 8)):
+            return True
+        # L48: <title> Calibrea je cesto "Naslov: Podnaslov serije" = naslov knjige, ne poglavlja
+        _tl = t.lower()
+        _kl = re.sub(r"\s+", " ", knjiga).strip().lower()
+        if _kl and len(_tl) > len(_kl) and _tl.startswith(_kl) and _tl[len(_kl)] in ":\u2013\u2014-,":
             return True
     return False
 
