@@ -34,7 +34,7 @@ requirements-parser==0.13.1
 rich==15.0.0
 ruff==0.17.2
 six==1.17.0
-soupsieve==2.8.4
+soupsieve==4.0
 standard-imghdr==3.13.0
 stevedore==5.9.1
 tomli==2.5.0
