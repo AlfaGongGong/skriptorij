@@ -1726,7 +1726,14 @@ def run_epub_styler(
             # FIX 2026-10-26: Calibre "Navigation" stub nije poglavlje
             if title == "navigation":
                 return False, "navigation stub", None, False
-            if imgs >= 1 and tlen < 30:
+            # L65: <title> ulazi u get_text(): dugacak naslov knjige (npr. 45 zn) pretvarao je
+            # dokument 'broj + slika' u 'cover-slicica' pa se broj nije prenosio (L49).
+            # Za 'samo-slika' racuna se samo tijelo (bez <title>); ostale granice nepromijenjene.
+            _s_bt = BeautifulSoup(hb, "html.parser")
+            for _t_bt in _s_bt(["script", "style", "title"]):
+                _t_bt.decompose()
+            _tlen_bt = len(_s_bt.get_text(" ", strip=True).replace("\ufffc", ""))
+            if imgs >= 1 and _tlen_bt < 30:
                 return False, "samo-slika", None, False
             if imgs >= 1 and tlen < 100:
                 return False, "cover-slicica", None, False
