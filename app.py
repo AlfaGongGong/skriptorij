@@ -255,6 +255,36 @@ def create_app() -> Flask:
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
     app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024
 
+    # L57: kad je BOOKLYFI_TOKEN postavljen, zahtjevi koji NE dolaze s loopbacka (drugi uredaji
+    # na mrezi) moraju imati token: zaglavlje X-Booklyfi-Token, kolacic ili ?token= (jednom, pa kolacic).
+    _LOOPBACK = ("127.0.0.1", "::1", "::ffff:127.0.0.1")
+
+    @app.before_request
+    def _l57_token():
+        tok = os.environ.get("BOOKLYFI_TOKEN", "")
+        if not tok or request.remote_addr in _LOOPBACK:
+            return None
+        import hmac as _hm
+
+        poslano = (
+            request.headers.get("X-Booklyfi-Token")
+            or request.cookies.get("booklyfi_token")
+            or request.args.get("token")
+            or ""
+        )
+        if poslano and _hm.compare_digest(str(poslano), tok):
+            return None
+        return jsonify({"error": "Potreban je BOOKLYFI_TOKEN (otvori /?token=...)"}), 401
+
+    @app.after_request
+    def _l57_kolacic(resp):
+        tok = os.environ.get("BOOKLYFI_TOKEN", "")
+        if tok and request.remote_addr not in _LOOPBACK and request.args.get("token") == tok:
+            resp.set_cookie(
+                "booklyfi_token", tok, httponly=True, samesite="Lax", max_age=30 * 24 * 3600
+            )
+        return resp
+
     # ═════════════════════════════════════════════════════════════════════════
     # STRANICE
     # ═════════════════════════════════════════════════════════════════════════

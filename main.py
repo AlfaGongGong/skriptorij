@@ -393,6 +393,14 @@ if __name__ == "__main__":
     _kill_previous_instance()
     _write_pid_file()
 
+    if _host not in ("127.0.0.1", "localhost", "::1") and not _os.environ.get("BOOKLYFI_TOKEN"):
+        import secrets as _secrets
+
+        _os.environ["BOOKLYFI_TOKEN"] = _secrets.token_urlsafe(12)
+        print(
+            f"{_YELLOW}[BOOKLYFI]{_RESET} Server je dostupan s mreže ({_host}); drugi uređaji trebaju token."
+            f" Otvori s drugog uređaja: http://<IP>:{PORT}/?token={_os.environ['BOOKLYFI_TOKEN']}"
+        )
     print(f"{_GREEN}[BOOKLYFI]{_RESET} Server na http://{_host}:{PORT}…")
     if _INTRO_LOADED:
         print(f"{_CYAN}[BOOKLYFI]{_RESET} Intro animacija: AKTIVAN")
