@@ -391,7 +391,7 @@ Ocjeni tekst na skali 1-10 po kriterijima:
   - stil: tecan, knjizevni hrvatski
   - gramatika: bez greski (padezi, slaganje, interpunkcija)
   - konzistentnost: imena likova, termini
-  - tipografija: dijalog u navodnicima „…” je ISPRAVAN i ne kaznjava se; kaznjavaju se samo ASCII navodnici " ili pomijesani stilovi; tri tacke
+  - tipografija: replika s em-crticom (—) je ISPRAVNA; replika u navodnicima „…” je blaga greska (ne kaznjavaj ispod 7); kaznjavaju se ASCII navodnici " ili pomijesani stilovi; tri tacke
 
 Vrati ISKLJUCIVO JSON:
 {"vjernost": 9.0, "stil": 9.0, "gramatika": 10, "konzistentnost": 10, "tipografija": 10, "ukupno": 9.6, "razlog": "kratko"}

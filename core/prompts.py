@@ -51,7 +51,7 @@ PRAVILA (sva obavezna):
 
 5. TIPOGRAFIJA (obavezno!):
    Navodnici: „ovako" (U+201E otvara, U+201C zatvara) — NIKAD ASCII "ovako"
-   Dijalog: — em-crtica (U+2014) | Tri tačke: … (U+2026, jedan znak)
+   Dijalog: replika UVIJEK s — em-crticom (U+2014), NIKAD u navodnicima | Tri tačke: … (U+2026, jedan znak)
    Nikad razmak ispred interpunkcije: točno, ne točno .
 
 6. HTML: Zadrži SVE tagove tačno (<p>, <em>, <i>, <b>, <br>)
@@ -147,8 +147,8 @@ Stilski vodič: {stilski_vodic}
 
 PRAVILA:
 - HTML ATRIBUTI: U atributima (class=, src=, alt=, href=, id=) UVIJEK ASCII navodnici ("), NIKAD „".
-- Navodnici u TEKSTU (sadržaj): „ovako" (U+201E/U+201C).
-- Dijalog: — em-crtica (U+2014).
+- Navodnici u TEKSTU (sadržaj): samo citati, naslovi i izdvojene riječi, „ovako” (U+201E/U+201C). Replike dijaloga NISU u navodnicima.
+- Dijalog: replika počinje — em-crticom (U+2014); nikad „…” oko replike.
 - Ne mijenjaj HTML tagove (<p>, <em>, <i>, <b>, <br>).
 Glosar: {glosar_injekcija}
 Prethodni odlomak (samo kontekst, NE ponavljaj ga u izlazu): "{prev_kraj}"
@@ -201,6 +201,7 @@ PROVJERI I ISPRAVI SVAKU KATEGORIJU:
 5. NAVODNICI (kritično!)
    - Otvaranje: „ (U+201E — na dnu), zatvaranje: " (U+201C — gore lijevo)
    - ZABRANJEN ASCII: "ovako" ili 'ovako' — zamijeni s „ovako"
+   - REPLIKE DIJALOGA: uvijek em-crtica (—), ne navodnici; ako je replika u navodnicima, zamijeni ih crticom: — Ovako.
    - Ugniježđeni navodnici: ‚unutarnji' (U+201A i U+2018)
 
 6. KONZISTENTNOST
@@ -322,8 +323,8 @@ Za PRIJEVOD ocjenjujes 4 kriterija:
   tacnost  9-10=savrseno prenosi smisao | 7-8=blago odstupanje | 5-6=neke greske | 1-4=propusti
   jezik    9-10=idiomatski HR | 7-8=par kalkova | 5-6=vise kalkova/EN | 1-4=dominiraju kalkovi
   stil     9-10=tecan knjizevni | 7-8=mali problemi | 5-6=prevodilacki trag | 1-4=mehanicno
-  tipograf 9-10=ispravni navodnici „…” ili em-crtice za dijalog, dobra interpunkcija | 7-8=1-2 greske | 5-6=ASCII navodnici " ili pomijesani stilovi | 1-4=haos
-  (Dijalog u navodnicima „…” je ISPRAVAN i ne smije se kaznjavati.)
+  tipograf 9-10=replike s em-crticom (—), dobra interpunkcija | 7-8=1-2 greske ili replika u navodnicima „…” | 5-6=ASCII navodnici " ili pomijesani stilovi | 1-4=haos
+  (Replika s em-crticom je ISPRAVNA; replika u navodnicima je blaga greska tipografije, ne kaznjavaj ispod 7.)
   Ako nema dijaloga: tipograf=9. Finalna ocjena = prosjek sva 4.
 
 Za RELEKTURA ocjenjujes 3 kriterija (BEZ tacnosti — nema originalnog EN za poredenje):
@@ -777,7 +778,7 @@ MODEL_PATCHES: dict[str, dict[str, str]] = {
 TIP_BLOKA_PATCHES: dict[str, str] = {
     "dijalog": (
         "Ovaj blok sadrži DIJALOG. "
-        "Navodnici u dijalogu pišu se kao »tekst« ili — tekst (em-crtica). "
+        "Replike dijaloga pišu se ISKLJUČIVO s em-crticom: — tekst. NIKAD u navodnicima („…”, »…«, \"…\"); navodnici ostaju samo za citate, naslove i izdvojene riječi unutar rečenice. "
         "Govor likova mora biti prirodan, ne formalan. "
         "Svaki lik ima prepoznatljiv glas — čuvaj ga."
     ),
