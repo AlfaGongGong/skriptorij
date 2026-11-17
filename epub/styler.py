@@ -1262,6 +1262,46 @@ def _je_broj_naslova(t):
     return bool(_NASLOV_BROJ_RX.match(t) or _NASLOV_BROJ_RIJEC_RX.match(t))
 
 
+_SAMO_SLIKA_BROJ_RX = re.compile(
+    r"(?i)^(?:(?:chapter|poglavlje|glava|ch\.?)\s+)?(\d{1,3}|[IVXLC]{1,7})\.?$"
+)
+
+
+def _broj_iz_samo_slike(hb):
+    """L49: dokument 'broj + slika' (Calibre split) -> broj poglavlja kao string ili None."""
+    try:
+        sp = BeautifulSoup(hb, "html.parser")
+        for t in sp(["script", "style", "title"]):
+            t.decompose()
+        tekst = sp.get_text(" ", strip=True).replace("\ufffc", "").replace("\u00a0", " ")
+        tekst = re.sub(r"\s+", " ", tekst).strip()
+        m = _SAMO_SLIKA_BROJ_RX.match(tekst)
+        return m.group(1).upper() if m else None
+    except Exception:
+        return None
+
+
+def _primijeni_broj_prethodnog(soup, broj, h1_tekst, order):
+    """L49: h1 poglavlja dobiva broj iz prethodnog 'samo-slika' dokumenta.
+    Vraca novi tekst h1 (ili stari ako nema sto mijenjati)."""
+    h1_tekst = (h1_tekst or "").strip()
+    if not broj or not h1_tekst:
+        return h1_tekst
+    if re.search(r"(?<!\w)%s(?!\w)" % re.escape(broj), h1_tekst, re.I):
+        return h1_tekst  # broj vec u naslovu
+    if h1_tekst == "POGLAVLJE %d" % order:
+        novi = "POGLAVLJE " + broj  # redni broj (fallback) nije pravi broj
+    elif _je_broj_naslova(h1_tekst) or re.match(r"(?i)^(?:poglavlje|chapter|glava)\s+\d", h1_tekst):
+        return h1_tekst  # ima vlastiti broj: ne diraj
+    else:
+        novi = "POGLAVLJE " + broj + " \u2013 " + h1_tekst
+    h1 = soup.find("h1")
+    if h1 is None:
+        return h1_tekst
+    h1.string = novi
+    return novi
+
+
 def _naslov_iz_tijela(body):
     """Pravi naslov poglavlja koji je ostao kao kratki <p> na pocetku tijela.
     Vraca (tekst_h1, [p elementi za brisanje], vrsta, broj) ili None.
@@ -1849,6 +1889,7 @@ def run_epub_styler(
 
     poglavlja = []
     skip_hrefs = set()
+    _pending_broj = None  # L49
 
     for itemref in spine.find_all("itemref"):
         href = id_to_href.get(itemref.get("idref", ""), "")
@@ -1864,6 +1905,11 @@ def run_epub_styler(
         )
         if not keep:
             _log("   -> Skip (%s): %s" % (razlog, href), "tech")
+            if razlog == "samo-slika":
+                _b49 = _broj_iz_samo_slike(hb)
+                if _b49:
+                    _pending_broj = _b49
+                    _log("   -> L49: broj %s iz %s prenosim na idu\u0107e poglavlje" % (_b49, href), "tech")
             skip_hrefs.add(href)
             skip_hrefs.add(full)
             continue
@@ -1874,8 +1920,10 @@ def run_epub_styler(
                 "order": len(poglavlja) + 1,
                 "naslov": finalni,
                 "no_heading": no_heading,
+                "pending_broj": _pending_broj,
             }
         )
+        _pending_broj = None
 
     _log("   -> %d poglavlja" % len(poglavlja), "tech")
 
@@ -2122,6 +2170,11 @@ def run_epub_styler(
             _h1_tekst = _dodaj_naslov(
                 soup, p["order"], naslov=p.get("naslov"), knjiga=book_title
             )
+            # L49: broj iz prethodnog 'samo-slika' dokumenta
+            if _h1_tekst and p.get("pending_broj"):
+                _h1_tekst = _primijeni_broj_prethodnog(
+                    soup, p["pending_broj"], _h1_tekst, p["order"]
+                )
             # P2.16: nav/ncx moraju imati isti naslov kao h1 u fajlu
             if _h1_tekst:
                 p["naslov"] = _h1_tekst
