@@ -55,5 +55,5 @@ regex==2026.11.9
 reldi-tokeniser==1.0.3
 setuptools==84.2.1
 sympy==1.13.1
-torch==2.6.0
+torch==2.13.0
 tqdm==4.70.1
