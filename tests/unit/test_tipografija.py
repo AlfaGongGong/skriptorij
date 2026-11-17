@@ -53,9 +53,10 @@ def test_crtice_i_trotocje():
     assert normaliziraj("<p>-- Ne.</p>") == "<p>— Ne.</p>"
 
 
-def test_vise_odlomaka_govor_ostaje():
+def test_vise_odlomaka_govor_u_crticama():
+    # L50 (odluka 17.11.): replika u navodnicima na početku odlomka postaje crtica
     h = "<p>„Dug govor koji se nastavlja</p><p>„i dalje traje.”</p>"
-    assert normaliziraj(h) == h
+    assert normaliziraj(h) == "<p>— Dug govor koji se nastavlja</p><p>— i dalje traje.</p>"
 
 
 def test_plain_tekst():

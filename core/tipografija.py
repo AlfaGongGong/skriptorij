@@ -93,6 +93,78 @@ def _zatvarajuci(t, i):
             and (i + 1 >= len(t) or t[i + 1].isspace() or t[i + 1] in ",;:.!?\u2026)"))
 
 
+# ── L50: replika u navodnicima na početku odlomka → crtica ───────────────────
+# Odluka korisnika (17.11.): dijalog je u CRTICAMA od početka. Odlomak koji
+# počinje navodnikom postaje replika samo ako se može pouzdano prepoznati:
+#   • citat završava .!?… ili zarezom, ILI iza njega slijedi „, malo-slovo“ (oznaka govornika),
+#   • ILI je navodnik nezatvoren (govor se nastavlja u idućem odlomku).
+# Ostalo (npr. „Dobar dan” je bila šifra; „Reče”, „da” i „ne”) ostaje u navodnicima.
+_OTVARACI = _TOGGLE + OTV
+_ZATVARACI = _TOGGLE + ZAT
+_KRAJ_REC = ".!?\u2026"
+_RX_ODMAH_OTV = re.compile(r"[,;]?\s*([" + re.escape(_OTVARACI) + r"])")
+
+
+def _kraj_citata(t, o):
+    for i in range(o + 1, len(t)):
+        if t[i] in _ZATVARACI:
+            return i
+    return -1
+
+
+def _je_replika(s, ostatak):
+    st = s.rstrip()
+    if not st:
+        return False
+    if st[-1] in _KRAJ_REC or st[-1] == ",":
+        return True
+    return bool(re.match(r",\s*[a-zčćšžđ]", ostatak))
+
+
+def _replike_u_crtice(z):
+    """Nove znakove ako odlomak počinje replikom u navodnicima, inače None."""
+    t = _spoji(z)
+    lead = len(t) - len(t.lstrip())
+    if lead >= len(t) or t[lead] not in _OTVARACI:
+        return None
+    c = _kraj_citata(t, lead)
+    if c == -1:
+        return _primijeni(z, [(lead, lead + 1, "\u2014 ")])
+    if not _je_replika(t[lead + 1:c], t[c + 1:]):
+        return None
+    izm = [(lead, lead + 1, "\u2014 ")]
+    o = lead
+    while c != -1:
+        s, rest = t[o + 1:c], t[c + 1:]
+        if not rest.strip():
+            izm.append((c, c + 1, ""))
+            break
+        m_next = _RX_ODMAH_OTV.match(rest)
+        if s.rstrip().endswith(",") or re.match(r"\s*[\u2014\u2013]", rest):
+            izm.append((c, c + 1, ""))
+            nar = c + 1
+        elif m_next:
+            o2 = c + 1 + m_next.start(1)
+            izm.append((c, o2 + 1, " \u2014 "))
+            o, c = o2, _kraj_citata(t, o2)
+            continue
+        else:
+            m = re.match(r"[,;]?\s*", rest)
+            izm.append((c, c + 1 + m.end(), " \u2014 "))
+            nar = c + 1 + m.end()
+        j = next((i for i in range(nar, len(t)) if t[i] in _OTVARACI), -1)
+        if j == -1:
+            break
+        k = j
+        while k > nar and t[k - 1].isspace():
+            k -= 1
+        if k > nar and t[k - 1] == ",":
+            k -= 1
+        izm.append((k, j + 1, " \u2014 "))
+        o, c = j, _kraj_citata(t, j)
+    return _primijeni(z, izm)
+
+
 def _navodnici(z):
     t = _spoji(z)
     if not any(c in t for c in _SVE):
@@ -102,6 +174,13 @@ def _navodnici(z):
     t = _spoji(z)
     lead = len(t) - len(t.lstrip())
     dash = t[lead:lead + 1] in _CRTICE
+    if not dash:
+        nz = _replike_u_crtice(z)
+        if nz is not None:
+            z = nz
+            t = _spoji(z)
+            lead = len(t) - len(t.lstrip())
+            dash = True
 
     zam, otv, src, opos, stray = _prolaz(t)
     if otv and src == "toggle":

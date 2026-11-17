@@ -92,10 +92,14 @@ def test_tip_soup_drugi_prolaz_nula(h):
 
 @pytest.mark.parametrize("h", [
     "<p>— „Idemo” — reče on.</p>",
-    "<p>„Idemo”, reče on.</p>",
 ])
 def test_dijalog_tipografski_ostaje(h):
     assert normaliziraj(h) == h
+
+
+def test_dijalog_navodnici_na_pocetku_postaju_crtica():
+    # L50 (odluka 17.11.): odlomak koji počinje replikom u navodnicima dobiva crticu
+    assert normaliziraj("<p>„Idemo”, reče on.</p>") == "<p>— Idemo — reče on.</p>"
 
 
 def test_dijalog_ascii_u_tipografske_s_crticom():
