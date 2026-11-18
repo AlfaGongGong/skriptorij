@@ -1282,8 +1282,8 @@ def create_app() -> Flask:
                 model = GOOGLE_MODEL_POOL[0]["model"]
 
             if prov_u in ("GEMINI", "GEMMA"):
-                url = f"{get_gemini_url(model)}?key={key}"
-                headers = {"Content-Type": "application/json"}
+                url = get_gemini_url(model)
+                headers = {"Content-Type": "application/json", "x-goog-api-key": key}
                 payload = {
                     "contents": [{"role": "user", "parts": [{"text": "ok"}]}],
                     "generationConfig": {"temperature": 0.0, "maxOutputTokens": 1},

@@ -75,9 +75,10 @@ def test_page_size_1000_used_in_url():
 
     # Proveri URL
     assert mock_get.called
-    url = mock_get.call_args[0][0]
-    assert "pageSize=1000" in url
-    assert "pageSize=50" not in url
+    kw = mock_get.call_args.kwargs
+    assert kw["params"]["pageSize"] == 1000
+    assert "key=" not in mock_get.call_args[0][0]
+    assert kw["headers"]["x-goog-api-key"] == "fake_key"
 
 
 # ── retryDelay — RPM vs RPD ───────────────────────────────────────────────

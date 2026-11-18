@@ -624,10 +624,9 @@ class SkriptorijAllInOne:
             }
 
         kanon_path.parent.mkdir(parents=True, exist_ok=True)
-        kanon_path.write_text(
-            _json.dumps(glosar, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        from utils.file_utils import atomic_write_text as _awt
+
+        _awt(kanon_path, _json.dumps(glosar, ensure_ascii=False, indent=2))
         self.log(
             "Kanon sacuvan: "
             + kanon_path.name
@@ -708,7 +707,9 @@ class SkriptorijAllInOne:
                 }
                 dodano += 1
         data["uloge_provjerene"] = True
-        kp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        from utils.file_utils import atomic_write_text as _awt2
+
+        _awt2(kp, json.dumps(data, ensure_ascii=False, indent=2))
         self.log("Uloge u kanonu: dodano " + str(dodano) + " (kandidata " + str(len(kandidati)) + ")", "system")
         try:
             dst = _P("/storage/emulated/0/Books/MoonReader/kanon") / kp.name

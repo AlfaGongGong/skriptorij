@@ -373,9 +373,9 @@ class FleetManager:
             p: {ks.key: ks.to_dict() for ks in keys} for p, keys in self.fleet.items()
         }
         try:
-            self.state_path.write_text(
-                json.dumps(state, indent=2, ensure_ascii=False), "utf-8"
-            )
+            from utils.file_utils import atomic_write_json as _awj
+
+            _awj(self.state_path, state)
             self._last_save_time = time.time()
             self._dirty = False
             logger.debug("[FleetManager] Stanje flushed u %s", self.state_path)

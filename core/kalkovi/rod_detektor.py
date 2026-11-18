@@ -450,10 +450,9 @@ class _RodRegistar:
     def spremi(self) -> None:
         try:
             REGISTRI_DIR.mkdir(parents=True, exist_ok=True)
-            self._path.write_text(
-                json.dumps(self._data, ensure_ascii=False, indent=2),
-                encoding="utf-8",
-            )
+            from utils.file_utils import atomic_write_text as _awt
+
+            _awt(self._path, json.dumps(self._data, ensure_ascii=False, indent=2))
         except Exception as e:
             log.debug(f"[rod_detektor] Snimanje registra palo: {e}")
 

@@ -314,12 +314,17 @@ def _fetch_gemini_native_models(
     page_token = None
 
     for _ in range(5):
-        url = f"{base_url}?key={api_key}&pageSize=1000"
+        params = {"pageSize": 1000}
         if page_token:
-            url += f"&pageToken={page_token}"
+            params["pageToken"] = page_token
 
         try:
-            resp = requests.get(url, timeout=timeout)
+            resp = requests.get(
+                base_url,
+                params=params,
+                headers={"x-goog-api-key": api_key},
+                timeout=timeout,
+            )
         except requests.exceptions.RequestException as exc:
             logger.warning("[ModelDiscovery] GEMINI native /models greška: %s", exc)
             break

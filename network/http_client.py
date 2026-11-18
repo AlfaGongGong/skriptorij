@@ -69,6 +69,8 @@ def _get_http_session():
 import contextlib
 import threading
 
+from utils.redakt import redaktiraj
+
 from config.ai_config import (
     GEMMA_MODEL_POOL as _GEMMA_MODEL_POOL_FALLBACK,
 )
@@ -561,13 +563,13 @@ async def _async_http_post(
                     last_exc = e2
                     continue
                 except Exception as e2:
-                    self.log(f"[{prov_upper}] Mrežna greška: {str(e2)[:120]}", "error")
+                    self.log(f"[{prov_upper}] Mrežna greška: {redaktiraj(str(e2))[:120]}", "error")
                     with contextlib.suppress(Exception):
                         self.fleet.record_failure(prov, key)
                     return None
             if last_exc is not None:
                 self.log(
-                    f"[{prov_upper}] Mrežna greška nakon 3 pokušaja: {str(last_exc)[:120]}",
+                    f"[{prov_upper}] Mrežna greška nakon 3 pokušaja: {redaktiraj(str(last_exc))[:120]}",
                     "error",
                 )
                 return None
@@ -584,10 +586,10 @@ async def _async_http_post(
                     "warning",
                 )
             else:
-                self.log(f"[{prov_upper}] Runtime greška: {str(e)[:120]}", "error")
+                self.log(f"[{prov_upper}] Runtime greška: {redaktiraj(str(e))[:120]}", "error")
             return None
         except Exception as e:
-            self.log(f"[{prov_upper}] Mrežna greška: {str(e)[:120]}", "error")
+            self.log(f"[{prov_upper}] Mrežna greška: {redaktiraj(str(e))[:120]}", "error")
             with contextlib.suppress(Exception):
                 self.fleet.record_failure(prov, key)
             return None
@@ -850,8 +852,8 @@ async def _call_gemini_with_full_rotation(
                 current_model = _slob
                 tried.add(current_model)
 
-            url = f"{get_gemini_url(current_model)}?key={key}"
-            headers = _build_headers("GEMINI")
+            url = get_gemini_url(current_model)
+            headers = _build_headers("GEMINI", key)
             payload = _build_gemini_native_payload(
                 sys_content, user_prompt, opt_temp, max_tokens
             )
@@ -1160,8 +1162,8 @@ async def _call_gemma_with_rotation(
                 current_model = _slob
                 tried.add(current_model)
 
-            url = f"{get_gemini_url(current_model)}?key={key}"
-            headers = _build_headers("GEMMA")
+            url = get_gemini_url(current_model)
+            headers = _build_headers("GEMMA", key)
             #  — Gemma 4 thinking model, isključi za bulk prevod
             # Gemma 4 je thinking model — troši 200-300+ tokena na thoughts
             # prije vidljivog odgovora. thinkingConfig nije podrzan (400).
@@ -1484,8 +1486,8 @@ def api_call(
     )
 
     if prov_upper in ("GEMINI", "GEMMA"):
-        url = f"{get_gemini_url(model)}?key={api_key}"
-        headers = _build_headers(prov_upper)
+        url = get_gemini_url(model)
+        headers = _build_headers(prov_upper, api_key)
         payload = _build_gemini_native_payload(system, user, temperature, max_tokens)
 
         # FIX: thinking OFF za Gemini 3.5 (thinkingBudget: 0 vraća 400!)
@@ -1593,7 +1595,7 @@ def api_call(
                 prov_upper,
                 _dt,
                 _kid,
-                str(e)[:120],
+                redaktiraj(str(e))[:120],
             )
             return None
 
@@ -1811,10 +1813,10 @@ def _posalji_na_gemini_s_kontekstom(system, user, max_tokens, timeout):
             ],
         }
 
-        url = f"{get_gemini_url(model)}?key={key}"
+        url = get_gemini_url(model)
         req = _ur.Request(
             url,
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "x-goog-api-key": key},
             method="POST",
             data=_json.dumps(payload).encode(),
         )
@@ -1830,5 +1832,5 @@ def _posalji_na_gemini_s_kontekstom(system, user, max_tokens, timeout):
                     if txt and len(txt) > 10:
                         return txt
     except Exception as e:
-        print(f"   [GEMINI kontekst] {type(e).__name__}: {e}")
+        print(f"   [GEMINI kontekst] {type(e).__name__}: {redaktiraj(str(e))}")
     return None

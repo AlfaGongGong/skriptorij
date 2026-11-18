@@ -14,6 +14,13 @@ def configure_logging(level: int = logging.INFO) -> None:
     # Werkzeug request log — ograniči na WARNING da ne zatrpa konzolu
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
+    try:
+        from utils.redakt import instaliraj_redaktor
+
+        instaliraj_redaktor()
+    except Exception:
+        logging.getLogger(__name__).warning("[logging_config] redaktor logova nije aktivan")
+
     # Standardni handler za zadani level
     root = logging.getLogger()
     root.setLevel(level)

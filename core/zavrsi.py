@@ -172,7 +172,9 @@ def provjeri_u_epubu(epub, ispravke):
 def _spremi(st):
     try:
         LOGS.mkdir(parents=True, exist_ok=True)
-        STATUS_FILE.write_text(json.dumps(st, ensure_ascii=False, indent=1), "utf-8")
+        from utils.file_utils import atomic_write_text as _awt
+
+        _awt(STATUS_FILE, json.dumps(st, ensure_ascii=False, indent=1))
     except Exception as e:
         print("[zavrsi] status nije spremljen:", repr(e))
 

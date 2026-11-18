@@ -46,7 +46,8 @@ def atomic_write_text(path, content: str) -> None:
     from pathlib import Path as _P
     path = _P(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
+    import threading as _th
+    tmp = path.with_name("%s.%d.%d.tmp" % (path.name, os.getpid(), _th.get_ident()))
     try:
         tmp.write_text(content, encoding="utf-8")
         tmp.replace(path)
