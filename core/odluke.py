@@ -17,7 +17,7 @@ def kljuc(en, hr):
     """Stabilan kljuc para (EN fragment, HR fragment), neosjetljiv na razmake i velika slova."""
     def n(s):
         return re.sub(r"\s+", " ", str(s or "")).strip().lower()
-    return hashlib.sha1((n(en) + "\x1f" + n(hr)).encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha1((n(en) + "\x1f" + n(hr)).encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
 
 
 def _citaj():

@@ -105,6 +105,22 @@ def _pid_is_alive(pid: int) -> bool:
     return True
 
 
+_SERVER_ZNAKOVI = ("main.py", "run.py", "app.py", "booklyfi", "skriptorij")
+
+
+def _pid_je_nasa(pid: int, znakovi=_SERVER_ZNAKOVI):
+    """L62a: True ako cmdline procesa izgleda kao nas server, False ako je to
+    tudi proces (PID iz starog fajla se reciklirao), None ako se ne moze procitati."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return None
+    cmd = raw.replace(b"\x00", b" ").decode("utf-8", "ignore").lower()
+    if not cmd.strip():
+        return None
+    return any(z in cmd for z in znakovi)
+
+
 def _kill_previous_instance() -> None:
     """Ako je stara instanca servera i dalje živa (po PID fajlu), gasi je
     prije nego nova krene."""
@@ -117,6 +133,13 @@ def _kill_previous_instance() -> None:
         return
 
     if old_pid == os.getpid() or not _pid_is_alive(old_pid):
+        _PID_FILE.unlink(missing_ok=True)
+        return
+
+    if _pid_je_nasa(old_pid) is False:
+        print(
+            f"{_YELLOW}[BOOKLYFI]{_RESET} PID {old_pid} iz starog fajla nije nas server — ne diram taj proces."
+        )
         _PID_FILE.unlink(missing_ok=True)
         return
 
