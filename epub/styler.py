@@ -1309,13 +1309,11 @@ _DNEVNIK_KANON = "IZ DNEVNIKA KATHERINE AP SCORRON"
 _SPLIT_RX = re.compile(r"(split_\d+\.x?html?)$", re.I)
 
 
-def _naslovi_iz_chk(skr):
-    """L63: prevedeni h1 iz bloka 0 .chk -> {split_NNN.html: naslov}. Prazan dict ako nema _skr_."""
+def _chk_h1_po_splitu(skr):
+    """L63: {split_NNN.html: tekst h1} iz bloka 0 .chk."""
     import html as _h
     from pathlib import Path as _P
     out = {}
-    if not skr:
-        return out
     try:
         for f in _P(skr, "checkpoints").glob("*_blok_0.chk"):
             m = _SPLIT_RX.search(f.name[: -len("_blok_0.chk")])
@@ -1328,12 +1326,70 @@ def _naslovi_iz_chk(skr):
                 continue
             nas = _h.unescape(re.sub(r"<[^>]+>", "", mh.group(1)))
             nas = re.sub(r"\s+", " ", nas.replace("\ufffc", "").replace("\u00a0", " ")).strip()
-            if not nas or len(nas) > 60 or _NASLOV_LOS_RX.search(nas) or _NASLOV_BROJ_RX.match(nas):
-                continue
-            out[m.group(1).lower()] = _NASLOV_GLOSAR_HR.get(nas.lower(), nas)
+            if nas:
+                out[m.group(1).lower()] = nas
     except Exception:
-        logger.exception("[L63] naslovi iz chk")
+        logger.exception("[L63] h1 iz chk")
     return out
+
+
+def _naslovi_iz_chk(skr):
+    """L63: {split_NNN.html: prevedeni naslov} (bez golih brojeva), uz glosar."""
+    out = {}
+    if not skr:
+        return out
+    for k, nas in _chk_h1_po_splitu(skr).items():
+        if len(nas) > 60 or _NASLOV_LOS_RX.search(nas) or _NASLOV_BROJ_RX.match(nas):
+            continue
+        out[k] = _NASLOV_GLOSAR_HR.get(nas.lower(), nas)
+    return out
+
+
+def _brojevi_iz_chk(skr):
+    """L63: {split_NNN.html: broj poglavlja} iz dokumenata ciji je h1 samo broj."""
+    out = {}
+    if not skr:
+        return out
+    for k, nas in _chk_h1_po_splitu(skr).items():
+        if _NASLOV_BROJ_RX.match(nas):
+            out[k] = nas.rstrip(".").upper()
+    return out
+
+
+def _nadi_skr_za_fajlove(imena):
+    """L63: _skr_ mapa ciji .chk (<prefiks>_split_NNN.html) odgovara imenima dokumenata u EPUB-u."""
+    from pathlib import Path as _P
+    try:
+        from config.settings import CHECKPOINT_BASE_DIR as _C
+    except Exception:
+        return None
+    bases = []
+    for n in imena:
+        b = str(n).rsplit("/", 1)[-1].lower()
+        m = _SPLIT_RX.search(b)
+        if m:
+            bases.append((b, m.group(1).lower()))
+    if not bases:
+        return None
+    best, best_n = None, 0
+    try:
+        for d in _P(_C).glob("_skr_*"):
+            ck = d / "checkpoints"
+            if not ck.is_dir():
+                continue
+            kljucevi = {}
+            for f in ck.glob("*_blok_0.chk"):
+                k = f.name[: -len("_blok_0.chk")].lower()
+                m = _SPLIT_RX.search(k)
+                if m:
+                    kljucevi[m.group(1).lower()] = k
+            n = sum(1 for b, sp in bases if sp in kljucevi and b.endswith(kljucevi[sp]))
+            if n > best_n:
+                best, best_n = d, n
+    except Exception:
+        logger.exception("[L63] trazenje _skr_")
+        return None
+    return best if best_n >= 3 else None
 
 
 def _normaliziraj_naslov_dnevnika(soup):
@@ -1981,6 +2037,10 @@ def run_epub_styler(
         if href.lower().endswith((".html", ".xhtml", ".htm")):
             id_to_href[it.get("id", "")] = href
 
+    _skr63 = _nadi_skr_za_fajlove(list(files.keys()))
+    _chk_naslovi = _naslovi_iz_chk(_skr63)
+    _chk_brojevi = _brojevi_iz_chk(_skr63)
+    _log("   -> L63: .chk dir=%s, naslova=%d, brojeva=%d" % (getattr(_skr63, "name", None), len(_chk_naslovi), len(_chk_brojevi)), "tech")
     poglavlja = []
     skip_hrefs = set()
     _pending_broj = None  # L49
@@ -1996,6 +2056,10 @@ def run_epub_styler(
             continue
         toc_naslov = toc_mapa.get(href) or toc_mapa.get(full)
         _e_hr = _toc_hr.get(href.rsplit("/", 1)[-1])
+        _m63k = _SPLIT_RX.search(href)
+        _k63 = _m63k.group(1).lower() if _m63k else None
+        _n63 = _chk_brojevi.get(_k63) if _k63 else None
+        _t63 = _chk_naslovi.get(_k63) if _k63 else None
         if not toc_naslov and _e_hr:
             toc_naslov = ("POGLAVLJE %s \u2013 %s" % _e_hr) if _e_hr[0] else _e_hr[1]
         keep, razlog, finalni, no_heading = _classify(
@@ -2014,6 +2078,8 @@ def run_epub_styler(
                     _pending_broj = _pending_broj or _e49[0]
                     _pending_toc = "POGLAVLJE %s \u2013 %s" % _e49
                     _log("   -> L49: TOC za %s: %s" % (href, _pending_toc), "tech")
+            if _n63:
+                _pending_broj = _n63
             skip_hrefs.add(href)
             skip_hrefs.add(full)
             continue
@@ -2022,9 +2088,9 @@ def run_epub_styler(
                 "href": href,
                 "full_path": full,
                 "order": len(poglavlja) + 1,
-                "naslov": finalni or _pending_toc,
+                "naslov": _t63 or finalni or _pending_toc,
                 "no_heading": no_heading,
-                "pending_broj": _pending_broj,
+                "pending_broj": _pending_broj or _n63,
             }
         )
         _pending_broj = None
@@ -2238,8 +2304,6 @@ def run_epub_styler(
         print(f"  ⚠ _spoji_chk_u_html greška: {_e}")
 
     _NASLOV_PREVOD.clear()
-    _chk_naslovi = _naslovi_iz_chk(locals().get("_skr"))
-    _log("   -> L63: %d naslova iz .chk" % len(_chk_naslovi), "tech")
     for p in poglavlja:
         soup = BeautifulSoup(
             files[p["full_path"]].decode("utf-8", errors="replace"), "html.parser"
