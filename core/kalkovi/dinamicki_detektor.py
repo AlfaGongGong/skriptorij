@@ -72,17 +72,22 @@ def _init_poznati():
 
 # --- Classla NLP pipeline (lazy init) ---
 _nlp = None
+_nlp_pokusano = False  # L68: jedan pokusaj inicijalizacije po procesu (bez mreze se ne ponavlja)
 
 
 def _get_nlp():
-    global _nlp
-    if _nlp is None and CLASSLA_DOSTUPAN:
+    global _nlp, _nlp_pokusano
+    if _nlp is None and CLASSLA_DOSTUPAN and not _nlp_pokusano:
+        _nlp_pokusano = True
+        res_dir = BASE_DIR / "data" / "classla_resources"
         try:
-            classla.download("hr", dir=str(BASE_DIR / "data" / "classla_resources"))
+            # L68: download samo ako modeli nisu vec skinuti (inace svaki start trazi mrezu)
+            if not (res_dir / "hr").is_dir():
+                classla.download("hr", dir=str(res_dir))
             _nlp = classla.Pipeline(
                 "hr",
                 processors="tokenize,pos,lemma",
-                dir=str(BASE_DIR / "data" / "classla_resources"),
+                dir=str(res_dir),
                 logging_level="ERROR",
             )
         except Exception as e:
