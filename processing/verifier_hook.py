@@ -202,3 +202,22 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
     except Exception:
         logger.exception("[P2.1] verifier fix")
         return out
+
+
+# L49b: tockasti popravak (BOOKLYFI_VERIFIER_TOCKA=1, ili automatski uz BOOKLYFI_VERIFIER_FIX=1)
+_verifikuj_blok_cijeli = verifikuj_blok
+
+
+async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
+                         file_name, tip_bloka, glosar=None):
+    out = await _verifikuj_blok_cijeli(self, finalno, original_chunk, stem_key,
+                                       chunk_idx, file_name, tip_bloka, glosar)
+    try:
+        from processing import verifier_tocka as _vt
+        if not _vt.ukljucena() or not out or out.get("verifier") != "flags":
+            return out
+        return await _vt.tocka_popravak(self, out, original_chunk, stem_key,
+                                        chunk_idx, file_name, tip_bloka, glosar)
+    except Exception:
+        logger.exception("[L49b] tocka hook")
+        return out
