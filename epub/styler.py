@@ -1302,6 +1302,56 @@ def _primijeni_broj_prethodnog(soup, broj, h1_tekst, order):
     return novi
 
 
+# L63: naslov poglavlja iz bloka 0 .chk + naslov dnevnika
+_NASLOV_GLOSAR_HR = {"wedding day": "Dan vjenčanja"}
+_DNEVNIK_RX = re.compile(r"(?i)^(?:from|iz)\s+(?:the\s+)?(?:dnevnika|journal|diary)\b.*\bscorron$")
+_DNEVNIK_KANON = "IZ DNEVNIKA KATHERINE AP SCORRON"
+_SPLIT_RX = re.compile(r"(split_\d+\.x?html?)$", re.I)
+
+
+def _naslovi_iz_chk(skr):
+    """L63: prevedeni h1 iz bloka 0 .chk -> {split_NNN.html: naslov}. Prazan dict ako nema _skr_."""
+    import html as _h
+    from pathlib import Path as _P
+    out = {}
+    if not skr:
+        return out
+    try:
+        for f in _P(skr, "checkpoints").glob("*_blok_0.chk"):
+            m = _SPLIT_RX.search(f.name[: -len("_blok_0.chk")])
+            if not m:
+                continue
+            t = f.read_text(encoding="utf-8", errors="ignore")
+            t = re.sub(r"<!--.*?-->", "", t, flags=re.S)
+            mh = re.search(r"(?is)<h1\b[^>]*>(.*?)</h1>", t)
+            if not mh:
+                continue
+            nas = _h.unescape(re.sub(r"<[^>]+>", "", mh.group(1)))
+            nas = re.sub(r"\s+", " ", nas.replace("\ufffc", "").replace("\u00a0", " ")).strip()
+            if not nas or len(nas) > 60 or _NASLOV_LOS_RX.search(nas) or _NASLOV_BROJ_RX.match(nas):
+                continue
+            out[m.group(1).lower()] = _NASLOV_GLOSAR_HR.get(nas.lower(), nas)
+    except Exception:
+        logger.exception("[L63] naslovi iz chk")
+    return out
+
+
+def _normaliziraj_naslov_dnevnika(soup):
+    """L63: 'FROM DNEVNIKA KATE RINE SCORRON' i sl. -> kanonski naslov dnevnika (prvi odlomak)."""
+    body = soup.find("body")
+    if not body:
+        return False
+    for p in body.find_all("p", limit=2):
+        t = re.sub(r"\s+", " ", p.get_text("")).strip()
+        if _DNEVNIK_RX.match(t):
+            if t == _DNEVNIK_KANON:
+                return False
+            p.clear()
+            p.string = _DNEVNIK_KANON
+            return True
+    return False
+
+
 def _toc_hr_mapa(files):
     """L49: prevedeni TOC dokument ('1: Dan vjenčanja' -> split_010.html) ->
     {ime_fajla: (broj ili None, naslov)}. Uzima samo dokument s >= 3 poveznice oblika 'N: naslov'."""
@@ -2188,6 +2238,8 @@ def run_epub_styler(
         print(f"  ⚠ _spoji_chk_u_html greška: {_e}")
 
     _NASLOV_PREVOD.clear()
+    _chk_naslovi = _naslovi_iz_chk(locals().get("_skr"))
+    _log("   -> L63: %d naslova iz .chk" % len(_chk_naslovi), "tech")
     for p in poglavlja:
         soup = BeautifulSoup(
             files[p["full_path"]].decode("utf-8", errors="replace"), "html.parser"
@@ -2219,6 +2271,11 @@ def run_epub_styler(
         _ukloni_duplikate_p(soup)
         _dodaj_vijenac(soup)
         _ocisti_fffc(soup)
+        _normaliziraj_naslov_dnevnika(soup)
+        _m63 = _SPLIT_RX.search(p["href"])
+        _cn63 = _chk_naslovi.get(_m63.group(1).lower()) if _m63 else None
+        if _cn63:
+            p["naslov"] = _cn63
         if p.get("no_heading"):
             pass
         else:
