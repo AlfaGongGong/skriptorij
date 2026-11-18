@@ -33,7 +33,10 @@ def _meta(epub):
         opf = next((n for n in z.namelist() if n.lower().endswith(".opf")), None)
         if not opf:
             return autori, naslov
-        root = ET.fromstring(z.read(opf))
+        sirovo = z.read(opf)
+        if b"<!entity" in sirovo.lower():
+            raise ET.ParseError("OPF s DTD entitetima odbijen")
+        root = ET.fromstring(sirovo)
     for el in root.iter():
         tag = el.tag.split("}")[-1]
         t = (el.text or "").strip()

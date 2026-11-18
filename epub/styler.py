@@ -2189,7 +2189,7 @@ def run_epub_styler(
                         d = _j.loads(t)
                         for k in ("finalno_polirano", "korektura", "tekst", "translated"):
                             if k in d and isinstance(d[k], str): return d[k]
-                    except: pass
+                    except Exception: pass
                 return t
 
             _spojeno = 0
@@ -2205,7 +2205,9 @@ def run_epub_styler(
 
                 try:
                     _soup = BeautifulSoup(files[_html_name].decode("utf-8", "replace"), "html.parser")
-                except: continue
+                except Exception as _e_soup:
+                    _log("   -> " + str(_html_name) + ": HTML se ne moze parsirati (" + type(_e_soup).__name__ + "), .chk se ne spaja", "warning")
+                    continue
                 _body = _soup.body
                 if not _body: continue
 
