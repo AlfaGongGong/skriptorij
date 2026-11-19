@@ -2106,6 +2106,7 @@ def run_epub_styler(
             _log("   -> Obrisan iz EPUB-a: " + h, "tech")
 
     dropcaps = 0
+    _chk_greske = []  # G20: fail-closed ako spajanje .chk ne uspije
     # FIX 2026-10-26: PRE obrade HTML-a, spoji .chk u HTML.
     # Time se izbegava da originalni HTML (galley-rw, navodnici)
     # pregazi .chk sadržaj.
@@ -2171,6 +2172,8 @@ def run_epub_styler(
                     + "), .chk se ne spaja",
                     "warning",
                 )
+                if len(_kandidati) > 1:
+                    _chk_greske.append("_skr_ nije jedinstven: " + _imena)
 
         if _skr:
             _ckpt = _skr / "checkpoints"
@@ -2200,16 +2203,23 @@ def run_epub_styler(
                     for _k2 in files:
                         if _k2.endswith(_html_name) or _html_name.endswith(_k2.split("/")[-1]):
                             _found = _k2; break
-                    if not _found: continue
+                    if not _found:
+                        _bn = str(_html_name).split("/")[-1]
+                        if not any(str(_h).split("/")[-1] == _bn for _h in skip_hrefs):
+                            _chk_greske.append("nema HTML za .chk: " + str(_html_name))
+                        continue
                     _html_name = _found
 
                 try:
                     _soup = BeautifulSoup(files[_html_name].decode("utf-8", "replace"), "html.parser")
                 except Exception as _e_soup:
                     _log("   -> " + str(_html_name) + ": HTML se ne moze parsirati (" + type(_e_soup).__name__ + "), .chk se ne spaja", "warning")
+                    _chk_greske.append("HTML se ne moze parsirati: " + str(_html_name))
                     continue
                 _body = _soup.body
-                if not _body: continue
+                if not _body:
+                    _chk_greske.append("HTML bez body: " + str(_html_name))
+                    continue
 
                 _ids_all = sorted(_blokovi.keys())
                 _delovi = [_ocisti_chk(_blokovi[i].read_text("utf-8", errors="ignore")).strip() for i in _ids_all]
@@ -2302,8 +2312,16 @@ def run_epub_styler(
                     _body.append(_c.extract())
                 files[_html_name] = str(_soup).encode("utf-8")
                 _spojeno += 1
+            if _chk_po_fajlu and _spojeno == 0:
+                _chk_greske.append("nijedan .chk nije spojen")
     except Exception as _e:
         print(f"  ⚠ _spoji_chk_u_html greška: {_e}")
+        _chk_greske.append("spajanje palo: " + type(_e).__name__ + ": " + str(_e))
+
+    if _chk_greske:
+        _g20 = "G20: .chk se ne spaja (" + "; ".join(_chk_greske[:5]) + "), EPUB nije napravljen"
+        _log("   -> " + _g20, "error")
+        return {"ok": False, "error": _g20}
 
     _NASLOV_PREVOD.clear()
     for p in poglavlja:
