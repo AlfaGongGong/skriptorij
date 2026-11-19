@@ -31,7 +31,7 @@ KANON = Path("/storage/emulated/0/Books/MoonReader/kanon")
 DOWNLOAD = Path("/storage/emulated/0/Download")
 EPUBCHECK = Path("/usr/share/java/epubcheck.jar")
 
-_BLOK = re.compile(r"^(.+\.html)_blok_(\d+)(?:\.chk)?$")
+_BLOK = re.compile(r"^(.+\.x?html)_blok_(\d+)(?:\.chk)?$")
 _LOCK = threading.Lock()
 STATUS = {"stanje": "nema"}
 
