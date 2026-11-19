@@ -45,3 +45,5 @@ tools/.tts_keys
 tools/claude_files_mcp/
 dev_api.json.bak
 dev_api.json.tmp
+data/few_shot_abercombie.json
+data/odluke.jsonl

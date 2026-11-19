@@ -50,7 +50,7 @@ PRAVILA (sva obavezna):
    Srpski oblici ZABRANJENI: preduzeti→poduzeti | saglasan→suglasan | preduzimati→poduzimati
 
 5. TIPOGRAFIJA (obavezno!):
-   Navodnici: „ovako" (U+201E otvara, U+201C zatvara) — NIKAD ASCII "ovako"
+   Navodnici: „ovako” (U+201E otvara, U+201D zatvara) — NIKAD ASCII "ovako"
    Dijalog: replika UVIJEK s — em-crticom (U+2014), NIKAD u navodnicima | Tri tačke: … (U+2026, jedan znak)
    Nikad razmak ispred interpunkcije: točno, ne točno .
 
@@ -61,8 +61,8 @@ PRAVILA (sva obavezna):
    NIKAD tipografske („") u atributima!
    Točka 5 (TIPOGRAFIJA) vrijedi SAMO za TEKST (sadržaj <p>, dijalog) — NE za atribute.
 
-   ISPRAVNO:  <p class="booklyfi-dijalog">„Dijalog ovdje"</p>
-   POGREŠNO:  <p class=„booklyfi-dijalog">„Dijalog ovdje"</p>
+   ISPRAVNO:  <p class="booklyfi-dijalog">— Dijalog ovdje</p>
+   POGREŠNO:  <p class=„booklyfi-dijalog">— Dijalog ovdje</p>
 
    Bez ovoga čitači ne mogu parsirati HTML.
 
@@ -110,6 +110,10 @@ KONTEKST: {knjiga_kontekst} | TIP: {tip_bloka}
 STIL: {stilski_vodic}
 GLOSAR: {glosar_injekcija}
 
+
+PRETHODNI ODLOMAK (samo kontekst za stil/POV; NE prevodi ga i NE ponavljaj ga u izlazu): {prev_kraj}
+SAŽETAK POGLAVLJA (samo kontekst): {chapter_summary}
+
 PRAVILA:
 1. SADRŽAJ — ništa ne dodaješ, ništa ne brišeš.
 2. KALKOVI — "bio je u stanju da"→"mogao je" | "uspio je da uradi"→"uspio je uraditi". NIKAD "glagol + da + prezent".
@@ -147,7 +151,7 @@ Stilski vodič: {stilski_vodic}
 
 PRAVILA:
 - HTML ATRIBUTI: U atributima (class=, src=, alt=, href=, id=) UVIJEK ASCII navodnici ("), NIKAD „".
-- Navodnici u TEKSTU (sadržaj): samo citati, naslovi i izdvojene riječi, „ovako” (U+201E/U+201C). Replike dijaloga NISU u navodnicima.
+- Navodnici u TEKSTU (sadržaj): samo citati, naslovi i izdvojene riječi, „ovako” (U+201E/U+201D). Replike dijaloga NISU u navodnicima.
 - Dijalog: replika počinje — em-crticom (U+2014); nikad „…” oko replike.
 - Ne mijenjaj HTML tagove (<p>, <em>, <i>, <b>, <br>).
 Glosar: {glosar_injekcija}
@@ -199,8 +203,8 @@ PROVJERI I ISPRAVI SVAKU KATEGORIJU:
    - Nikad dvostruki razmaci
 
 5. NAVODNICI (kritično!)
-   - Otvaranje: „ (U+201E — na dnu), zatvaranje: " (U+201C — gore lijevo)
-   - ZABRANJEN ASCII: "ovako" ili 'ovako' — zamijeni s „ovako"
+   - Otvaranje: „ (U+201E — na dnu), zatvaranje: ” (U+201D — gore desno)
+   - ZABRANJEN ASCII: "ovako" ili 'ovako' — zamijeni s „ovako”
    - REPLIKE DIJALOGA: uvijek em-crtica (—), ne navodnici; ako je replika u navodnicima, zamijeni ih crticom: — Ovako.
    - Ugniježđeni navodnici: ‚unutarnji' (U+201A i U+2018)
 
@@ -449,14 +453,16 @@ def get_lektor_prompt(
         tip_bloka, _LEKTOR_TIP_INSTRUKCIJE["naracija"]
     )
 
+    import re as _re
+
     return LEKTOR_TEMPLATE.format(
         knjiga_kontekst=knjiga_kontekst,
         tip_bloka=tip_bloka.upper(),
         tip_bloka_instrukcije=tip_inst,
         stilski_vodic=stilski_vodic,
         glosar_injekcija=glosar_injekcija or "Nema glosara.",
-        prev_kraj=(prev_kraj[-600:] if prev_kraj else "—"),
-        chapter_summary=chapter_summary or "Nema chapter konteksta.",
+        prev_kraj=(_re.sub(r"<[^>]+>", "", prev_kraj)[-600:].strip() if prev_kraj else "—"),
+        chapter_summary=(chapter_summary or "Nema chapter konteksta.")[:500],
     )
 
 
@@ -910,7 +916,7 @@ if __name__ == "__main__":
 # TOC_TITLE_SYS — AI generira kratak naslov poglavlja iz prvog paragrafa
 # Koristi se kad poglavlje nema <h1>/<h2>/<h3> tag (nema naslova u EPUB-u)
 # ═══════════════════════════════════════════════════════════════════════════
-TOC_TITLE_SYS = """Ti si ekspert za bosansku/hrvatsku knjizevnost. Tvoj zadatak je predloziti KRATAK naslov poglavlja na osnovu prvog paragrafa.
+TOC_TITLE_SYS = """Ti si ekspert za hrvatsku knjizevnost. Tvoj zadatak je predloziti KRATAK naslov poglavlja na osnovu prvog paragrafa.
 
 PRAVILA:
 - Naslov na hrvatskom (ijekavica)
@@ -938,5 +944,5 @@ def get_toc_title_prompt(paragraph: str, max_len: int = 200) -> str:
         + text
         + chr(34)
         + "\n\n"
-        + "Predlozi kratak naslov poglavlja (max 5 rijeci) na bosanskom."
+        + "Predlozi kratak naslov poglavlja (max 5 rijeci) na hrvatskom (ijekavica)."
     )
