@@ -1515,6 +1515,26 @@ def create_app() -> Flask:
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    @app.route("/api/download/<path:name>")
+    def api_download_by_name(name):
+        # L60a: frontend (kartica stilizacije) trazi /api/download/<ime.epub>; ruta nije postojala (404).
+        # Samo ime fajla (bez putanje), samo .epub, samo iz poznatih mapa; symlink van mape se odbija.
+        try:
+            if Path(name).name != name or not name.lower().endswith(".epub"):
+                return jsonify({"error": "Neispravno ime fajla"}), 400
+            for baza in (Path(OUTPUT_DIR), Path(INPUT_DIR), Path(INPUT_DIR).parent / "STYLED"):
+                p = baza / name
+                if p.is_file() and p.resolve().parent == baza.resolve():
+                    return send_file(
+                        p,
+                        as_attachment=True,
+                        download_name=p.name,
+                        mimetype="application/epub+zip",
+                    )
+            return jsonify({"error": "EPUB nije pronađen"}), 404
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     @app.route("/api/download_live")
     def api_download_live():
         try:
