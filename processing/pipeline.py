@@ -2013,6 +2013,28 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         except Exception as _ce:
             self.log(f"[{file_name}] Blok {chunk_idx}: classla greška: {_ce}", "warning")
 
+    # G3: deterministicka strukturna kapija (odlomci, brojevi, imena, replike, negacije)
+    try:
+        from core.strukturna_kapija import provjeri as _g3_provjeri
+        from core.quality import _je_nonprose_blok as _g3_nonprose
+
+        if _os.environ.get("BOOKLYFI_G3", "1") != "0" and "NEPREVEDENO" not in finalno and not _g3_nonprose(chunk):
+            _g3_r = _g3_provjeri(chunk, finalno, rel_glosar)
+            if _g3_r and _kapija_odbij(self, file_name, chunk_idx):
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: 🧱 G3 struktura: " + "; ".join(_g3_r[:3]) + " — odbijam upis, pokušavam ponovo.",
+                    "warning",
+                )
+                self.chunk_skips += 1
+                return None, "STRUKT"
+            elif _g3_r:
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: G3 struktura (prihvaćeno, fail-open): " + "; ".join(_g3_r[:3]),
+                    "warning",
+                )
+    except Exception as _g3e:
+        self.log(f"[{file_name}] Blok {chunk_idx}: G3 greška: {_g3e}", "warning")
+
     # FIX 1.7: Provera prekinutog teksta
     if _je_prekinut_tekst(chunk, finalno):
         self.log(
