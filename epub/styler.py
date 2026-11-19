@@ -2003,6 +2003,8 @@ def run_epub_styler(
                 lg = osoup.find("dc:language")
                 if lg:
                     dc_lang = lg.get_text(strip=True) or "hr"
+                    if not dc_lang.lower().startswith(("hr", "bs")):
+                        dc_lang = "hr"
             except Exception:
                 logger.exception("[C1_http] styler.py:1581 Exception")
             break
@@ -2431,7 +2433,9 @@ def run_epub_styler(
         "<p><b>Autor:</b> " + _esc(creator) + "</p>"
         "<p><b>ID:</b> " + _esc(book_uid) + "</p>"
         "<p><b>Izdanje:</b> Booklyfi digitalno izdanje, " + str(year) + ".</p>"
-        "<p><b>Format:</b> EPUB</p><p>Sva prava zadrzana.</p>"
+        "<p><b>Format:</b> EPUB</p>"
+        "<p>Autorska prava na izvorno djelo pripadaju autoru i nositeljima prava izvornika.</p>"
+        "<p>Sva prava pridržana.</p>"
     )
     files[nas_path] = _page("Naslovna", nas_body).encode("utf-8")
     files[imp_path] = _page("Impresum", imp_body).encode("utf-8")
@@ -2573,6 +2577,18 @@ def run_epub_styler(
         md = opf_soup.find("metadata")
         if md:
             md.append(meta)
+
+    # G26: dc:language u izlaznom OPF-u je hr/bs (ne naslijedeni 'en')
+    _lt = opf_soup.find("dc:language")
+    if _lt is not None:
+        if (_lt.get_text(strip=True) or "") != dc_lang:
+            _lt.string = dc_lang
+    else:
+        _mdl = opf_soup.find("metadata")
+        if _mdl is not None:
+            _nl = opf_soup.new_tag("dc:language")
+            _nl.string = dc_lang
+            _mdl.append(_nl)
 
     kept_hrefs = {p["href"] for p in poglavlja}
     orig_ids = []
