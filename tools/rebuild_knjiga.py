@@ -40,7 +40,7 @@ def main(argv):
         ss, sc = {}, {}
         e = SkriptorijAllInOne(str(book), "V10_TURBO", ss, sc)
         if not getattr(e, "html_files", None):
-            e.html_files = sorted((Path(e.work_dir) / "text").glob("*.html"))
+            e.html_files = sorted((Path(e.work_dir) / "text").glob("*.*html"))
         print(f"HTML fajlova u work_dir: {len(e.html_files)}")
         e.generate_ncx()
         e.finalize()
@@ -53,8 +53,9 @@ def main(argv):
             print("STOP: finalize nije napravio EPUB:", u)
             return 1
         print(f"Medjukorak: {u} ({u.stat().st_size} B)")
-        r = EpubStylerManager(epub_path=u, log_callback=lambda m, a="info": None).stilizuj()
+        r = EpubStylerManager(epub_path=u, log_callback=lambda m, a="info": print("[styler]", m)).stilizuj()
         print(f"Stilizacija ok={r.get('ok')}, poglavlja={r.get('chapters')}")
+        print("Stilizacija rezultat:", {k: str(v)[:300] for k, v in r.items()})
         s = Path(r.get("epub_path", "") or "")
         if not s.is_file():
             print("STOP: stilizacija nije napravila EPUB.")

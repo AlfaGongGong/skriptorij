@@ -548,7 +548,7 @@ def _spoji_chk_u_html(engine):
         ckpt = checkpoint_dir
         txt = work_dir / "text"
         if ckpt.exists() and any(ckpt.glob("*.chk")) and (
-            (txt.exists() and any(txt.glob("*.html"))) or any(work_dir.glob("*.html"))
+            (txt.exists() and any(txt.glob("*.*html"))) or any(work_dir.glob("*.*html"))
         ):
             return work_dir
 
@@ -562,7 +562,7 @@ def _spoji_chk_u_html(engine):
                 ckpt_k = k / "checkpoints"
                 txt_k = k / "text"
                 if (ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
-                        and txt_k.exists() and any(txt_k.glob("*.html"))):
+                        and txt_k.exists() and any(txt_k.glob("*.*html"))):
                     return k
 
         # 3. P2.2 md5: sufiksni fuzzy ukinut (zajednicki "Anna_s_Archive" spajao razlicite knjige)
@@ -572,7 +572,7 @@ def _spoji_chk_u_html(engine):
                 ckpt_k = k / "checkpoints"
                 txt_k = k / "text"
                 if (ckpt_k.exists() and any(ckpt_k.glob("*.chk"))
-                        and txt_k.exists() and any(txt_k.glob("*.html"))):
+                        and txt_k.exists() and any(txt_k.glob("*.*html"))):
                     return k
 
         return None
