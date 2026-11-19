@@ -473,6 +473,73 @@ def _je_prekinut_tekst(original: str, finalno: str) -> bool:
 
 
 
+def _prip_ucitaj_brojke(self):
+    """J2: brojke M/Z oblika po bloku; pri prvom pozivu iz vec spremljenih .chk (nastavak obrade)."""
+    b = getattr(self, "_prip_brojke", None)
+    if b is not None:
+        return b
+    b = self._prip_brojke = {}
+    try:
+        from core.kalkovi.rod_detektor import prebroji_pripovjedaca as _pb
+
+        d = getattr(self, "checkpoint_dir", None)
+        if d is not None:
+            for i, p in enumerate(sorted(Path(str(d)).glob("*.chk"))):
+                if i >= 600:
+                    break
+                if p.name.endswith(".prevod.chk"):
+                    continue
+                b[p.stem] = _pb(p.read_text("utf-8", errors="ignore"))
+    except Exception:
+        logger.exception("[J2] ucitavanje brojki")
+    return b
+
+
+def _prip_knjiga_rod(self, file_name=None):
+    """J2: zadani rod pripovjedaca knjige = jasna vecina (>=4x) oblika u dosadasnjem tekstu, min 10."""
+    try:
+        b = _prip_ucitaj_brojke(self)
+        m = sum(v[0] for v in b.values())
+        z = sum(v[1] for v in b.values())
+        if m + z >= 10 and (m >= 4 * z or z >= 4 * m):
+            return "M" if m > z else "\u017d"
+    except Exception:
+        pass
+    return None
+
+
+def _prip_korak(self, finalno: str, file_name: str, chunk_idx: int) -> str:
+    """J2: rod pripovjedaca po poglavlju uz zadanu vrijednost knjige. Isti korak za V1 i V2.
+    Blok s jasnom vecinom zadrzava svoj rod (Katherine ostaje Z); nejasan blok ide prema poglavlju,
+    a ako ono nema podatka, prema knjizi. Zenski blok u poglavlju koje je dosad bilo muško se oznacuje
+    u human_review (ne prisiljava se)."""
+    try:
+        from core.kalkovi.rod_detektor import prebroji_pripovjedaca as _pb
+        from core.kalkovi.rod_detektor import uskladi_pripovjedaca as _usk
+
+        brojke = _prip_ucitaj_brojke(self)
+        mem = getattr(self, "_pripovjedac_rod", None)
+        if mem is None:
+            mem = self._pripovjedac_rod = {}
+        knj = _prip_knjiga_rod(self, file_name)
+        pret = mem.get(file_name)
+        fin, n, rod, flag = _usk(finalno, pret or knj)
+        if n and fin and len(fin.strip()) > 10:
+            finalno = fin
+            self.log(f"[{file_name}] Blok {chunk_idx}: pripovjeda\u010d rod ({rod}) \u2014 {n} zamjena", "tech")
+        elif flag:
+            self.log(f"[{file_name}] Blok {chunk_idx}: \u26a0\ufe0f rod pripovjeda\u010da nejasan ({flag})", "warning")
+        m, z = _pb(finalno)
+        brojke[f"{file_name}_blok_{chunk_idx}"] = (m, z)
+        if rod and (pret is None or pret == rod or m + z >= 6):
+            mem[file_name] = rod
+        if rod == "\u017d" and pret == "M" and "Jorg" not in finalno:
+            _hr_oznaci(self, file_name, chunk_idx, "rod pripovjeda\u010da \u017d u poglavlju koje je dosad M (provjeri)", None, finalno)
+    except Exception as _je:
+        logger.debug(f"[J2] pripovjedac korak (blok {chunk_idx}): {_je}")
+    return finalno
+
+
 def _prip_upute(self, file_name) -> str:
     """P2.19: uputa o rodu pripovjedača u 1. licu za prompt prevoda i lekture."""
     _rod = (getattr(self, "_pripovjedac_rod", None) or {}).get(file_name)
@@ -481,6 +548,13 @@ def _prip_upute(self, file_name) -> str:
         "pripovjedača iz izvornog konteksta i drži ISTI rod kroz cijeli blok "
         "(glagolski pridjevi uz 'sam': ne miješaj muške -o i ženske -la oblike)."
     )
+    _kn = None if _rod else _prip_knjiga_rod(self, file_name)
+    if _kn:
+        _s += (
+            " Dosadašnji tekst ove knjige pripovijeda " + ("MUŠKARAC" if _kn == "M" else "ŽENA")
+            + ": drži taj rod; promijeni ga SAMO ako ovaj dio izričito pripovijeda drugi lik suprotnog roda "
+            "(npr. dnevnik ili poglavlje drugog lika)."
+        )
     if _rod == "Ž":
         _s += " U ovoj priči pripovijeda ŽENA: sve oblike uz 'sam' u ženskom rodu (bila sam, rekla sam, skočila sam)."
     elif _rod == "M":
@@ -636,30 +710,8 @@ def _primijeni_kalkove_i_validator(
         except Exception as e:
             logging.debug(f"[pipeline] Rod detektor greška (blok {chunk_idx}): {e}")
 
-    # Korak 11c (P2.19): pripovjedač 1. lice — uskladi rod glagolskih pridjeva uz "sam"
-    try:
-        from core.kalkovi.rod_detektor import uskladi_pripovjedaca as _usk_prip
-
-        _mem_p = getattr(self, "_pripovjedac_rod", None)
-        if _mem_p is None:
-            _mem_p = {}
-            self._pripovjedac_rod = _mem_p
-        _fin_p, _n_p, _rod_p, _flag_p = _usk_prip(finalno, _mem_p.get(file_name))
-        if _rod_p:
-            _mem_p[file_name] = _rod_p
-        if _n_p and _fin_p and len(_fin_p.strip()) > 10:
-            finalno = _fin_p
-            self.log(
-                f"[{file_name}] Blok {chunk_idx}: pripovjedač rod ({_rod_p}) — {_n_p} zamjena",
-                "tech",
-            )
-        elif _flag_p:
-            self.log(
-                f"[{file_name}] Blok {chunk_idx}: ⚠️ rod pripovjedača nejasan ({_flag_p})",
-                "warning",
-            )
-    except Exception as _pe:
-        logging.debug(f"[pipeline] pripovjedač guard greška (blok {chunk_idx}): {_pe}")
+    # Korak 11c (P2.19 + J2): pripovjedač 1. lice, rod po poglavlju uz zadanu vrijednost knjige
+    finalno = _prip_korak(self, finalno, file_name, chunk_idx)
 
     # Korak 12: lint_hr — sigurni popravci oblika + oznake (fail-safe, bez AI)
     try:
@@ -2193,7 +2245,7 @@ async def process_chunk_with_retry(
         self.log(f"[{file_name}] Blok {chunk_idx}: 🚀 V10.4 workers_v2 aktivan", "tech")
         try:
             tip_bloka = detektuj_tip_bloka(chunk)
-            chapter_summary = self._get_chapter_summary_for_lektor(file_name)
+            chapter_summary = (self._get_chapter_summary_for_lektor(file_name) or "") + _prip_upute(self, file_name)  # J2
 
             worker = WorkerV2(
                 uloga="prevodilac"
@@ -2220,6 +2272,7 @@ async def process_chunk_with_retry(
                         "warning",
                     )
                     raise _V2Odbijen(_v2_razlog)
+                tekst = _prip_korak(self, tekst, file_name, chunk_idx)  # J2
                 engine_label = f"V2/{rezultat.get('provider', '?')}/{rezultat.get('model_ime', '?')}"
                 if not hasattr(self, "_v2_engine_stats"):
                     self._v2_engine_stats = {}

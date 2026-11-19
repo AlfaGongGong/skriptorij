@@ -947,6 +947,28 @@ def uskladi_pripovjedaca(tekst: str, zadnji_rod=None):
     return "".join(izlaz), n, rod, flag
 
 
+def prebroji_pripovjedaca(tekst: str):
+    """J2: (m, z) = broj muskih i zenskih oblika uz "sam" izvan dijaloga (bez izmjene teksta)."""
+    if not tekst:
+        return 0, 0
+    m = z = 0
+    for dio, vanjski in _prip_segmenti(tekst):
+        if not vanjski:
+            continue
+        d = {}
+        for mt in _PRIP_BEF.finditer(dio):
+            d[mt.span(1)] = mt.group(1)
+        for mt in _PRIP_AFT.finditer(dio):
+            d[mt.span(1)] = mt.group(1)
+        for w in d.values():
+            k = _prip_klasa(w)
+            if k == "M":
+                m += 1
+            elif k == "\u017d":
+                z += 1
+    return m, z
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format="%(levelname)s %(message)s")
 
