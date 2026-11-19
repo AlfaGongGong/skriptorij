@@ -518,21 +518,9 @@ def _primijeni_kalkove_i_validator(
                 kanon = _data.get("termini", {})
 
         if kanon:
-            zamenjeno = 0
-            for _en, _info in kanon.items():
-                _hr = _info.get("hr", _en)
-                _forbidden = _info.get("odbacene_varijante", [])
-                for _bad in _forbidden:
-                    if not _bad or _bad.lower() == _hr.lower():
-                        continue
-                    _pattern = _re_lore.compile(
-                        r"\b" + _re_lore.escape(_bad) + r"\b",
-                        _re_lore.IGNORECASE,
-                    )
-                    _new, _n = _pattern.subn(_hr, finalno)
-                    if _n > 0:
-                        finalno = _new
-                        zamenjeno += _n
+            from core.lore import primijeni_kanon as _lore_primijeni
+
+            finalno, zamenjeno = _lore_primijeni(finalno, kanon)
             if zamenjeno > 0:
                 self.log(
                     f"[{file_name}] Blok {chunk_idx}: Lore enforcement — {zamenjeno} zamena",
