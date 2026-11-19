@@ -2323,6 +2323,22 @@ def run_epub_styler(
         _log("   -> " + _g20, "error")
         return {"ok": False, "error": _g20}
 
+    # G20 / DIO 2: knjiga koja je i nakon spajanja .chk ostala engleska se ne stilizira
+    try:
+        from core.jezik_epub import ocijeni_knjigu as _g20_ocjena
+        _g20_ok, _g20_msg, _g20_stat = _g20_ocjena(
+            (p["full_path"], files[p["full_path"]].decode("utf-8", errors="replace"))
+            for p in poglavlja
+            if p["full_path"] in files
+        )
+    except Exception:
+        logger.exception("[G20] provjera jezika")
+        _g20_ok, _g20_msg = True, ""
+    if not _g20_ok:
+        _g20 = "G20: knjiga je ostala engleska (" + _g20_msg + "), EPUB nije napravljen"
+        _log("   -> " + _g20, "error")
+        return {"ok": False, "error": _g20}
+
     _NASLOV_PREVOD.clear()
     for p in poglavlja:
         soup = BeautifulSoup(
