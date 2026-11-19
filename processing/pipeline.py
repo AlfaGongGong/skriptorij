@@ -1199,6 +1199,50 @@ async def _posalji_po_paragrafima(
     return "\n".join(rezultati), markirano
 
 
+def _hr_oznaci(self, file_name, chunk_idx, razlog, score=None, preview=""):
+    """G6/G7: upis bloka u human_review.json s razlogom (idempotentno po stemu, razlozi se spajaju)."""
+    try:
+        d = getattr(self, "checkpoint_dir", None)
+        if d is None:
+            return
+        p = Path(str(d)) / "human_review.json"
+        stem = f"{file_name}_blok_{chunk_idx}"
+        prev = re.sub(r"<[^>]+>", "", preview or "").strip()[:120]
+        with _QS_LOCK:
+            data = []
+            if p.exists():
+                try:
+                    data = json.loads(_strip_ai_json(p.read_text("utf-8")))
+                except Exception:
+                    try:
+                        p.with_suffix(".json.bak").write_text(p.read_text("utf-8", errors="ignore"), "utf-8")
+                    except Exception:
+                        pass
+                    data = []
+            if not isinstance(data, list):
+                data = []
+            for it in data:
+                if isinstance(it, dict) and it.get("stem") == stem:
+                    rs = [x for x in str(it.get("reason", "")).split("; ") if x]
+                    if razlog not in rs:
+                        rs.append(razlog)
+                        it["reason"] = "; ".join(rs)
+                        atomic_write_json(p, data)
+                    return
+            data.append(
+                {
+                    "stem": stem,
+                    "score": score,
+                    "tip": "-",
+                    "reason": razlog,
+                    "preview": prev,
+                }
+            )
+            atomic_write_json(p, data)
+    except Exception:
+        logger.exception("[G6/G7] human_review upis")
+
+
 def _kapija_odbij(self, file_name, chunk_idx):
     """P2.18: kapija odbija blok najvise 2 puta; trece puta prihvaca (fail-open), da blok ne nestane."""
     d = getattr(self, "_kapija_br", None)
@@ -1212,6 +1256,7 @@ def _kapija_odbij(self, file_name, chunk_idx):
         f"[{file_name}] Blok {chunk_idx}: kapija prihvaca blok nakon {d[k] - 1} odbijanja (fail-open)",
         "warning",
     )
+    _hr_oznaci(self, file_name, chunk_idx, f"kapija prihvaćena nakon {d[k] - 1} odbijanja")
     return False
 
 
@@ -2251,6 +2296,7 @@ async def process_chunk_with_retry(
                     f"[{file_name}] Blok {chunk_idx}: ⚠️ LEKTOR pao — koristim PREVODILAC izlaz (6.0)",
                     "warning",
                 )
+                _hr_oznaci(self, file_name, chunk_idx, "nelektorirano (PREVOD-FALLBACK)", 6.0, _fb_txt)
                 return _fb_txt, "PREVOD-FALLBACK"
     except Exception as _fb_err:
         self.log(
@@ -2270,4 +2316,5 @@ async def process_chunk_with_retry(
         self.shared_stats["quality_scores"] = {}
     self._quality_scores[_stem] = 1.0
     self.shared_stats["quality_scores"][_stem] = 1.0
+    _hr_oznaci(self, file_name, chunk_idx, "neprevedeno (marker)", 1.0, chunk)
     return _marker, "NEPREVEDENO-MARKER"
