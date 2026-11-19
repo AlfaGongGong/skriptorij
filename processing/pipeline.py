@@ -511,7 +511,7 @@ def _primijeni_kalkove_i_validator(
         if hasattr(self, "book_path"):
             from pathlib import Path as _P
             _knjiga_id = _P(self.book_path).stem
-            _kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (_knjiga_id + ".json")
+            _kanon_path = _P(_kanon_dir_cfg()) / (_knjiga_id + ".json")
             if _kanon_path.exists():
                 import json as _json_lore
                 _data = _json_lore.loads(_kanon_path.read_text(encoding="utf-8"))
@@ -2300,3 +2300,10 @@ async def process_chunk_with_retry(
     self.shared_stats["quality_scores"][_stem] = 1.0
     _hr_oznaci(self, file_name, chunk_idx, "neprevedeno (marker)", 1.0, chunk)
     return _marker, "NEPREVEDENO-MARKER"
+
+
+def _kanon_dir_cfg():
+    """G18: direktorij kanona iz config.settings (nadjacivo BOOKLYFI_KANON_DIR)."""
+    from config.settings import KANON_DIR
+
+    return KANON_DIR

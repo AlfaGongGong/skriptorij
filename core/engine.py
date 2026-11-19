@@ -361,8 +361,8 @@ class SkriptorijAllInOne:
 
             knjiga_id = _P(self.book_path).stem
             _kanon_dirs = [
-                _P("/root/skriptorij/data/kanon/knjige"),
-                _P("/storage/emulated/0/Books/MoonReader/kanon"),
+                _P(_kanon_dir_cfg()),
+                _P(_kanon_zrcalo_cfg()),
             ]
             kanon_path = None
             for _kd in _kanon_dirs:
@@ -453,7 +453,7 @@ class SkriptorijAllInOne:
             return False
 
         knjiga_id = _P(self.book_path).stem
-        kanon_path = _P("/root/skriptorij/data/kanon/knjige") / (knjiga_id + ".json")
+        kanon_path = _P(_kanon_dir_cfg()) / (knjiga_id + ".json")
 
         if kanon_path.exists():
             return True
@@ -637,7 +637,7 @@ class SkriptorijAllInOne:
         )
 
         try:
-            dst = _P("/storage/emulated/0/Books/MoonReader/kanon") / kanon_path.name
+            dst = _P(_kanon_zrcalo_cfg()) / kanon_path.name
             dst.parent.mkdir(parents=True, exist_ok=True)
             _sh.copy2(kanon_path, dst)
         except Exception:
@@ -655,7 +655,7 @@ class SkriptorijAllInOne:
 
         if _os.environ.get("BOOKLYFI_ULOGE", "1") == "0":
             return False
-        kd = _P(_os.environ.get("BOOKLYFI_KANON_DIR", "/root/skriptorij/data/kanon/knjige"))
+        kd = _P(_os.environ.get("BOOKLYFI_KANON_DIR", str(_kanon_dir_cfg())))
         kp = kd / (_P(self.book_path).stem + ".json")
         if not kp.exists():
             return False
@@ -712,7 +712,7 @@ class SkriptorijAllInOne:
         _awt2(kp, json.dumps(data, ensure_ascii=False, indent=2))
         self.log("Uloge u kanonu: dodano " + str(dodano) + " (kandidata " + str(len(kandidati)) + ")", "system")
         try:
-            dst = _P("/storage/emulated/0/Books/MoonReader/kanon") / kp.name
+            dst = _P(_kanon_zrcalo_cfg()) / kp.name
             dst.parent.mkdir(parents=True, exist_ok=True)
             _sh.copy2(kp, dst)
         except Exception:
@@ -1017,3 +1017,17 @@ class SkriptorijAllInOne:
         return retroaktivna_rod_korekcija(
             self, samo_loše=samo_loše, bad_threshold=bad_threshold
         )
+
+
+def _kanon_dir_cfg():
+    """G18: direktorij kanona iz config.settings (nadjacivo BOOKLYFI_KANON_DIR)."""
+    from config.settings import KANON_DIR
+
+    return KANON_DIR
+
+
+def _kanon_zrcalo_cfg():
+    """G18: zrcalo kanona iz config.settings (Android zrcalo ili lokalni fallback)."""
+    from config.settings import KANON_ZRCALO_DIR
+
+    return KANON_ZRCALO_DIR

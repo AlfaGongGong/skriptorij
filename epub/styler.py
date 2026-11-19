@@ -33,10 +33,12 @@ _PNG_CACHE: dict[str, str] = {}
 logger = logging.getLogger(__name__)
 
 
-STYLED_OUTPUT_DIR = "/storage/emulated/0/Books/MoonReader/STYLED"
+from config.settings import ORNAMENTS_DIR as _CFG_ORN, STYLED_DIR as _CFG_STYLED
+
+STYLED_OUTPUT_DIR = str(_CFG_STYLED)
 
 
-ORNAMENTS_DIR = "/storage/emulated/0/Books/MoonReader/ornaments_small_size"
+ORNAMENTS_DIR = str(_CFG_ORN)
 
 
 CENTER_ORNAMENT_PNG = "center_ornament.png"

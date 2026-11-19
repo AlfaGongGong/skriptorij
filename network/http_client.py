@@ -158,7 +158,9 @@ def _load_proxies() -> list[dict]:
         import json
         from pathlib import Path as _P
 
-        cfg = _P("/root/skriptorij/dev_api.json")
+        from config.settings import CONFIG_PATH as _CFG_PATH
+
+        cfg = _P(_CFG_PATH)
         if not cfg.exists():
             return []
         data = json.loads(cfg.read_text("utf-8"))

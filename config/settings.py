@@ -68,6 +68,31 @@ CONFIG_PATH: str = os.environ.get(
 # Ime projekta (koristi se u logovima i imenima direktorija)
 PROJECTS_ROOT: Path = INPUT_DIR
 
+# ── G18: putanje (jedan izvor istine; sve se moze nadjacati okolinom) ──────────
+# Na Androidu (Termux) ostaju stare lokacije; bez /storage/emulated/0 pada na ~/Skriptorij.
+PROJECT_ROOT: Path = _PROJECT_ROOT
+_ANDROID_BOOKS = Path("/storage/emulated/0/Books/MoonReader")
+_HOME_SKR = Path(os.path.expanduser("~")) / "Skriptorij"
+
+
+def _android_ili(rel: str, lokalno: Path) -> Path:
+    return _ANDROID_BOOKS / rel if Path("/storage/emulated/0").is_dir() else lokalno
+
+
+KANON_DIR: Path = Path(
+    os.environ.get("BOOKLYFI_KANON_DIR") or (_PROJECT_ROOT / "data" / "kanon" / "knjige")
+)
+KANON_ZRCALO_DIR: Path = Path(
+    os.environ.get("BOOKLYFI_KANON_ZRCALO_DIR") or _android_ili("kanon", _HOME_SKR / "kanon")
+)
+STYLED_DIR: Path = Path(
+    os.environ.get("BOOKLYFI_STYLED_DIR") or _android_ili("STYLED", _HOME_SKR / "STYLED")
+)
+ORNAMENTS_DIR: Path = Path(
+    os.environ.get("BOOKLYFI_ORNAMENTS_DIR")
+    or _android_ili("ornaments_small_size", _HOME_SKR / "ornaments_small_size")
+)
+
 # ── Dijeljeno stanje (zajednički rječnik između Flask threada i processing threada) ─
 SHARED_STATS: dict = {
     "status": "IDLE",

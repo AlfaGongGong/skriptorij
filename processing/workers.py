@@ -346,7 +346,9 @@ def _ocisti_html_atribute(html: str) -> str:
 import json as _json_pw
 import re as _re_pw
 
-_GLOGAR_PATH = "/root/skriptorij/data/kanon/knjige"
+from config.settings import KANON_DIR as _KANON_DIR
+
+_GLOGAR_PATH = str(_KANON_DIR)
 _GLOSAR_CACHE = {}
 
 

@@ -725,7 +725,7 @@ class BookContextManager:
         """Vraća glosar kao tekst za prompt injection.
 
         Prioritet:
-        1. Ako postoji kanon za knjigu u /root/skriptorij/data/kanon/knjige/ — koristi njega
+        1. Ako postoji kanon za knjigu u data/kanon/knjige/ — koristi njega
         2. Inače vrati SAMO potvrđene termine (s kategorijom)
         3. Ako nema kanona — vrati prazno (bolje nego smeće iz self._glosar)
         """
@@ -744,8 +744,8 @@ class BookContextManager:
                 )
             if kid:
                 _kanon_dirs = [
-                    _P("/root/skriptorij/data/kanon/knjige"),
-                    _P("/storage/emulated/0/Books/MoonReader/kanon"),
+                    _P(_kanon_dir_cfg()),
+                    _P(_kanon_zrcalo_cfg()),
                 ]
                 kanon_path = None
                 for _kd in _kanon_dirs:
@@ -932,3 +932,17 @@ async def _generiraj_chapter_summary(engine, file_name, file_content):
             )
         except Exception as e:
             logging.warning(f"[book_context] Summary greška: {e}")
+
+
+def _kanon_dir_cfg():
+    """G18: direktorij kanona iz config.settings (nadjacivo BOOKLYFI_KANON_DIR)."""
+    from config.settings import KANON_DIR
+
+    return KANON_DIR
+
+
+def _kanon_zrcalo_cfg():
+    """G18: zrcalo kanona iz config.settings (Android zrcalo ili lokalni fallback)."""
+    from config.settings import KANON_ZRCALO_DIR
+
+    return KANON_ZRCALO_DIR
