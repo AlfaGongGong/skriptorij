@@ -4015,6 +4015,7 @@ const EpubStyler = (() => {
                 }
 
             } else {
+                if (data.g20 && data.poruka_korisniku) _log(`⛔ ${data.poruka_korisniku}`, 'error');
                 _log(`Greška: ${data.error || 'Nepoznata greška'}`, 'error');
                 if (data.traceback) _log(data.traceback.slice(-300), 'error');
             }

@@ -572,6 +572,14 @@ def style_epub_endpoint():
         
         result["audit"] = audit_msgs[-30:]
         status_code = 200 if result.get("ok") else 500
+        # G20 / DIO 3: odbijanje (knjiga nije prevedena do kraja) nije kvar servera
+        if not result.get("ok") and str(result.get("error") or "").startswith("G20:"):
+            result["g20"] = True
+            result["poruka_korisniku"] = (
+                "Stilizacija je zaustavljena da ne nastane engleski EPUB: prijevod nije "
+                "potpun ili se nije mogao spojiti. Dovrsi prijevod knjige pa ponovi stilizaciju."
+            )
+            status_code = 422
         return jsonify(result), status_code
 
     except Exception as e:
