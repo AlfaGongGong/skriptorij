@@ -964,17 +964,8 @@ async def _quality_scoring(
         if _qs_meta:
             try:
                 _sp = self.checkpoint_dir / "quality_status.json"
-                _sm = {}
-                if _sp.exists():
-                    try:
-                        _sm = json.loads(_sp.read_text("utf-8"))
-                    except Exception:
-                        _sm = {}
                 _qs_meta["score"] = score_float
-                _sm[stem_key] = _qs_meta
-                self._atomic_write(
-                    _sp, json.dumps(_sm, ensure_ascii=False, indent=2)
-                )
+                _json_upsert(self, _sp, stem_key, _qs_meta)
             except Exception:
                 logger.exception("[qs_status] pipeline.py upis status Exception")
 
@@ -985,25 +976,13 @@ async def _quality_scoring(
 
             _metrics = compute_metrics(finalno, original_chunk)
             _mp = self.checkpoint_dir / "quality_metrics.json"
-            _existing_m = {}
-            if _mp.exists():
-                try:
-                    import json as _json_m
-
-                    _existing_m = _json_m.loads(_mp.read_text("utf-8"))
-                except Exception:
-                    _existing_m = {}
             try:
                 from core.metrics import classify_metrics as _classify
 
                 _metrics["quality_class"] = _classify(_metrics)
             except Exception:
                 _metrics["quality_class"] = "?"
-            _existing_m[stem_key] = _metrics
-            self._atomic_write(
-                _mp,
-                __import__("json").dumps(_existing_m, ensure_ascii=False, indent=2),
-            )
+            _json_upsert(self, _mp, stem_key, _metrics)
         except Exception:
             logger.exception("[C1_kriticno] pipeline.py:823 Exception")
 
@@ -1031,28 +1010,9 @@ async def _quality_scoring(
                 f"score={score_float:.1f} (prevodilac: {_prov}) — {preview[:60]}…",
                 "warning",
             )
-            hr_path = self.checkpoint_dir / "human_review.json"
-            try:
-                hr_data = (
-                    json.loads(_strip_ai_json(hr_path.read_text("utf-8")))
-                    if hr_path.exists()
-                    else []
-                )
-                if not any(item.get("stem") == stem_key for item in hr_data):
-                    hr_data.append(
-                        {
-                            "stem": stem_key,
-                            "score": score_float,
-                            "tip": tip_bloka,
-                            "preview": preview,
-                        }
-                    )
-                    self._atomic_write(
-                        hr_path,
-                        json.dumps(hr_data, ensure_ascii=False, indent=2),
-                    )
-            except Exception:
-                logger.exception("[C1_kriticno] pipeline.py:853 Exception")
+            _hr_oznaci(
+                self, file_name, chunk_idx, f"score {score_float:.1f} < 6.5", score_float, preview, tip_bloka
+            )
 
         done = self.global_done_chunks
         if done > 0 and done % 10 == 0:
@@ -1199,7 +1159,29 @@ async def _posalji_po_paragrafima(
     return "\n".join(rezultati), markirano
 
 
-def _hr_oznaci(self, file_name, chunk_idx, razlog, score=None, preview=""):
+def _json_upsert(self, path, key, value):
+    """G9: read-modify-write JSON rjecnika pod _QS_LOCK (nema izgubljenih upisa medju nitima), atomski, kompaktno."""
+    path = Path(str(path))
+    with _QS_LOCK:
+        data = {}
+        if path.exists():
+            try:
+                data = json.loads(path.read_text("utf-8"))
+            except Exception:
+                try:
+                    path.with_suffix(path.suffix + ".bak").write_text(
+                        path.read_text("utf-8", errors="ignore"), "utf-8"
+                    )
+                except Exception:
+                    pass
+                data = {}
+            if not isinstance(data, dict):
+                data = {}
+        data[key] = value
+        atomic_write_json(path, data, indent=None)
+
+
+def _hr_oznaci(self, file_name, chunk_idx, razlog, score=None, preview="", tip="-"):
     """G6/G7: upis bloka u human_review.json s razlogom (idempotentno po stemu, razlozi se spajaju)."""
     try:
         d = getattr(self, "checkpoint_dir", None)
@@ -1233,7 +1215,7 @@ def _hr_oznaci(self, file_name, chunk_idx, razlog, score=None, preview=""):
                 {
                     "stem": stem,
                     "score": score,
-                    "tip": "-",
+                    "tip": tip,
                     "reason": razlog,
                     "preview": prev,
                 }
