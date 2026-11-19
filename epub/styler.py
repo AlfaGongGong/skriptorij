@@ -1394,6 +1394,27 @@ def _nadi_skr_za_fajlove(imena):
     return best if best_n >= 3 else None
 
 
+def _skr_pokrivenost(d, imena):
+    """G29: koliko dokumenata EPUB-a (po basenameu) ima <ime>_blok_0.chk u _skr_ mapi d."""
+    bn = {str(n).rsplit("/", 1)[-1].lower() for n in imena}
+    try:
+        ck = Path(d) / "checkpoints"
+        ime = {f.name[: -len("_blok_0.chk")].lower() for f in ck.glob("*_blok_0.chk")}
+    except Exception:
+        return 0
+    return len(ime & bn)
+
+
+def _skr_po_pokrivenosti(svi, imena):
+    """G29: (mapa, broj) _skr_ mape koja pokriva NAJVISE dokumenata EPUB-a; (None, n) ako nema ili je neodlucno."""
+    ocjene = sorted(((_skr_pokrivenost(d, imena), d) for d in svi), key=lambda x: x[0], reverse=True)
+    if not ocjene or ocjene[0][0] == 0:
+        return None, 0
+    if len(ocjene) > 1 and ocjene[1][0] == ocjene[0][0]:
+        return None, ocjene[0][0]
+    return ocjene[0][1], ocjene[0][0]
+
+
 def _normaliziraj_naslov_dnevnika(soup):
     """L63: 'FROM DNEVNIKA KATE RINE SCORRON' i sl. -> kanonski naslov dnevnika (prvi odlomak)."""
     body = soup.find("body")
@@ -2178,6 +2199,23 @@ def run_epub_styler(
                 )
                 if len(_kandidati) > 1:
                     _chk_greske.append("_skr_ nije jedinstven: " + _imena)
+
+        # G29: ime-prema-EPUB-u moze pogoditi STAROG _skr_ (npr. ostatak od ranijeg pokusa);
+        # ako druga mapa pokriva bitno vise dokumenata ove knjige, koristi nju.
+        try:
+            _bst, _bn = _skr_po_pokrivenosti(_svi_sa_chk, list(files.keys()))
+            _tr = _skr_pokrivenost(_skr, list(files.keys())) if _skr else 0
+            if _bst is not None and _bst != _skr and _bn >= 3 and _tr * 2 < _bn:
+                _log(
+                    "   -> G29: _skr_ " + (_skr.name[:40] if _skr else "(nema)") + " pokriva "
+                    + str(_tr) + " dokumenata, " + _bst.name[:40] + " pokriva " + str(_bn)
+                    + "; koristim drugu",
+                    "warning",
+                )
+                _skr = _bst
+                _chk_greske[:] = [g for g in _chk_greske if not g.startswith("_skr_ nije jedinstven")]
+        except Exception:
+            logger.exception("[G29] odabir _skr_")
 
         if _skr:
             _ckpt = _skr / "checkpoints"
