@@ -2123,6 +2123,61 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
     return finalno, f"{prov1}→{prov2}→{prov3}"
 
 
+# ── G10: kapije za V2 rezultat (iste provjere kao V1 prije upisa .chk) ──────────
+
+
+class _V2Odbijen(Exception):
+    """G10: V2 rezultat nije prošao kapije (nije greška, samo fallback na V1)."""
+
+
+async def _v2_kapije(self, chunk, tekst, file_name, chunk_idx):
+    """Vraca (razlog, tekst): razlog je None ako V2 tekst smije u .chk, inace kratak opis
+    (pozivatelj tada pada na V1 koji ima cijeli lanac). Bez brojaca _kapija_odbij."""
+    try:
+        if _je_placeholder_lokalni(tekst):
+            return "meta-odgovor umjesto prijevoda", tekst
+        try:
+            from core.gate_provjere import gate_blok
+
+            tekst, _gi = gate_blok(tekst)
+        except Exception as _ge:
+            self.log(f"[{file_name}] Blok {chunk_idx}: V2 gate greška: {_ge}", "warning")
+        _n = _en_recenice(tekst)
+        if _n >= 2:
+            return f"{_n} EN rečenica", tekst
+        if _ct_naslov_en(tekst):
+            return "naslov poglavlja ostao engleski", tekst
+        _rg = ""
+        try:
+            from core.oov_kapija import glosar_neprevedeno as _gl_np
+            from core.oov_kapija import provjeri as _oov_p
+
+            _rg = self._extract_relevant_glossary(chunk)
+            _gl = _gl_np(_rg, tekst)
+            if _gl:
+                return "glosar neprevedeno " + ", ".join(_gl[:5]), tekst
+            _oo = await asyncio.to_thread(_oov_p, tekst)
+            if _oo["odbij"]:
+                return f"kapija: {_oo['razlog']}", tekst
+        except Exception as _oe:
+            self.log(f"[{file_name}] Blok {chunk_idx}: V2 kapija greška: {_oe}", "warning")
+        try:
+            from core.quality import _je_nonprose_blok as _np
+            from core.strukturna_kapija import provjeri as _g3
+
+            if _os.environ.get("BOOKLYFI_G3", "1") != "0" and "NEPREVEDENO" not in tekst and not _np(chunk):
+                _r = _g3(chunk, tekst, _rg)
+                if _r:
+                    return "G3 struktura: " + "; ".join(_r[:3]), tekst
+        except Exception as _ge3:
+            self.log(f"[{file_name}] Blok {chunk_idx}: V2 G3 greška: {_ge3}", "warning")
+        if _je_prekinut_tekst(chunk, tekst):
+            return "tekst prekinut", tekst
+    except Exception as _e:
+        self.log(f"[{file_name}] Blok {chunk_idx}: V2 kapije greška: {_e}", "warning")
+    return None, tekst
+
+
 # ── Retry wrapper ─────────────────────────────────────────────────────────────
 
 
@@ -2134,7 +2189,7 @@ async def process_chunk_with_retry(
     V3.1: Ispravan async poziv workers_v2 (WorkerV2 je sync klasa,
     pokreće se u executor-u da ne blokira event loop).
     """
-    if USE_WORKERS_V2 and _V2_DOSTUPAN:
+    if USE_WORKERS_V2 and _V2_DOSTUPAN and not getattr(self, "kvota_stop", False):
         self.log(f"[{file_name}] Blok {chunk_idx}: 🚀 V10.4 workers_v2 aktivan", "tech")
         try:
             tip_bloka = detektuj_tip_bloka(chunk)
@@ -2157,6 +2212,14 @@ async def process_chunk_with_retry(
 
             if rezultat and rezultat.get("success") and rezultat.get("tekst"):
                 tekst = rezultat["tekst"]
+                # G10: iste kapije kao V1; ako odbije, pada se na V1 (cijeli lanac)
+                _v2_razlog, tekst = await _v2_kapije(self, chunk, tekst, file_name, chunk_idx)
+                if _v2_razlog:
+                    self.log(
+                        f"⚠️ [{file_name}] Blok {chunk_idx}: V2 odbijen ({_v2_razlog}) — fallback na V1",
+                        "warning",
+                    )
+                    raise _V2Odbijen(_v2_razlog)
                 engine_label = f"V2/{rezultat.get('provider', '?')}/{rezultat.get('model_ime', '?')}"
                 if not hasattr(self, "_v2_engine_stats"):
                     self._v2_engine_stats = {}
@@ -2213,6 +2276,8 @@ async def process_chunk_with_retry(
                 f"⚠️ [{file_name}] Blok {chunk_idx}: V2 nije vratio tekst — fallback na V1",
                 "warning",
             )
+        except _V2Odbijen:
+            pass  # vec zabiljezeno; nastavlja V1 fallback
         except Exception as v2_err:
             self.log(
                 f"⚠️ [{file_name}] Blok {chunk_idx}: V2 iznimka "
