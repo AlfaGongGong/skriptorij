@@ -36,7 +36,8 @@ def rijeci_razlika(a, b):
     return out
 
 
-def obradi_mapu(d):
+def obradi_mapu(d, ime=None):
+    ime = ime or d.name
     zast = []
     eng = SimpleNamespace(log=lambda *a, **k: None, checkpoint_dir=d)
     P._hr_oznaci = lambda self, f, i, razlog, *a, **k: zast.append((f, i, razlog))
@@ -67,8 +68,8 @@ def obradi_mapu(d):
             if len(uzorci) < 6:
                 uzorci.append((p.name, raz[:4]))
             if PRIMIJENI:
-                (BK / d.name).mkdir(parents=True, exist_ok=True)
-                shutil.copy2(p, BK / d.name / p.name)
+                (BK / ime).mkdir(parents=True, exist_ok=True)
+                shutil.copy2(p, BK / ime / p.name)
                 tmp = p.with_suffix(".chk.tmp")
                 tmp.write_text(n, "utf-8")
                 os.replace(tmp, p)
@@ -87,9 +88,10 @@ def main():
             if r in vidjeno or not d.is_dir() or (filt and filt not in d.name.lower()):
                 continue
             vidjeno.add(r)
-            if not any(d.glob("*.chk")):
+            ck = d / "checkpoints" if (d / "checkpoints").is_dir() else d  # J3fix
+            if not any(ck.glob("*.chk")):
                 continue
-            u, uz, z = obradi_mapu(d)
+            u, uz, z = obradi_mapu(ck, d.name)
             print(f">> {d.name[:60]} | blokova {u['blokova']} | promijenjeno {u['promijenjeno']} | zamjena {u['zamjena']} | preskoceno {u['preskoceno']} | za provjeru {len(z)}")
             for ime, raz in uz:
                 print(f"   {ime}: {raz}")
