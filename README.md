@@ -87,6 +87,7 @@ Napomena: besplatni planovi imaju dnevni limit zahtjeva (RPD). Više ključeva i
 | `BOOKLYFI_ORNAMENTS_DIR` | ukrasi za stilizator |
 | `BOOKLYFI_VERIFIER`, `BOOKLYFI_VERIFIER_FIX` | verifikator i ponovni prijevod označenih blokova; `main.py` ih postavlja na `1` ako nisu zadane, `run.py` pokrenut sam ih ne postavlja |
 | `BOOKLYFI_CEKAJ` | `0` isključuje čekanje reseta kvote (vraća zaustavljanje) |
+| `BOOKLYFI_WORKER_REP` | `1` vraća stari rep workera (ponovno ocjenjivanje, retry, EN rescue nad kopijom koja ne ulazi u `.chk`); zadano isključen |
 | `CLOUDFLARE_ACCOUNT_ID` | za Cloudflare provajdera (vidi `.env.example`) |
 
 Postoje i druge `BOOKLYFI_*` varijable (modeli po ulozi, filtriranje datoteka itd.); popis: `grep -rhoE "BOOKLYFI_[A-Z_0-9]+" --include=*.py .`

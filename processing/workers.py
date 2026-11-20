@@ -803,6 +803,13 @@ def _qa_ocjena(html):
     return ocjene
 
 
+def _worker_rep_ukljucen() -> bool:
+    """G35: stari rep workera (ponovno ocjenjivanje + retry + EN rescue) samo uz BOOKLYFI_WORKER_REP=1."""
+    import os
+
+    return os.environ.get("BOOKLYFI_WORKER_REP", "0") == "1"
+
+
 async def _cekaj_reset_kvote(self, file_name) -> bool:
     """G5: dnevna kvota iscrpljena -> spava do kvota_stop_do pa sama nastavlja.
     True = nastavi (kvota resetirana), False = odustani (korisnik zaustavio, previse pokusaja,
@@ -941,7 +948,8 @@ async def process_single_file_worker(self, file_path):
             continue
         else:
             # VALIDACIJA 1: prekratak output (AI vratio samo dio)
-            if len(res.strip()) < 50:
+            # G36: kratak izlaz je sumnjiv samo kad je i original dug (naslov, 'Da.' su legitimno kratki)
+            if len(res.strip()) < 50 and len(chunks[i].strip()) >= 200:
                 self.log(
                     f"⚠️ Blok {i}: sumnjivo kratak output ({len(res)} znakova), koristim original",
                     "warning",
@@ -980,104 +988,107 @@ async def process_single_file_worker(self, file_path):
                     + " navodnika ostalo",
                     "tech",
                 )
-            # QA ocjena (postojeci scorer)
-            try:
-                fleet = getattr(self, "fleet", None)
-                engine_fn = getattr(self, "_get_prevodilac_prompt", None)
+            # G35: QA/retry/EN-rescue rep radi nad kopijom koja nikad ne ulazi u .chk, a packager i styler
+            # grade poglavlje iz .chk; rep je trosio AI pozive uzalud. Iskljucen osim uz BOOKLYFI_WORKER_REP=1.
+            if _worker_rep_ukljucen():
+                # QA ocjena (postojeci scorer)
                 try:
-                    # _scoruj_kvalitetu je async — await direktno
-                    qa_raw = await _scoruj_kvalitetu(
-                        res,
-                        engine_fn,
-                        i,
-                        file_name,
-                        tip_ocjenjivanja="prevod",
-                    )
-                    if isinstance(qa_raw, dict):
-                        qa = qa_raw
-                        ukupno = qa.get("ukupno", qa.get("score", 0))
-                    else:
-                        qa = {"ukupno": float(qa_raw)}
-                        ukupno = float(qa_raw)
-                except Exception as e:
-                    self.log("  Scorer greska: " + str(e), "warning")
-                    qa = _qa_ai_ocjena(res, fleet)
-                    ukupno = qa.get("ukupno", 0)
-
-                if ukupno < _QUALITY_RESCUE_THRESHOLD:
-                    self.log("  QA: " + str(ukupno) + " < " + str(_QUALITY_RESCUE_THRESHOLD), "warning")
-
-                    # Retry 1 — s feedbackom
-                    for retry_broj in range(1, 3):  # max 2 retry-a
-                        self.log(
-                            "  Retry " + str(retry_broj) + "/2 s QA feedbackom...",
-                            "warning",
-                        )
-                        res_novi, qa_novi, uspjeh = _retry_s_feedbackom(
-                            self, res, chunks[i], qa, fleet, i
-                        )
-                        ukupno_novi = qa_novi.get("ukupno", 0)
-                        if uspjeh:
-                            res = res_novi
-                            qa = qa_novi
-                            ukupno = ukupno_novi
-                            break
-                        # Prihvati ako je bolje, ali probaj još jednom
-                        if ukupno_novi > ukupno:
-                            res = res_novi
-                            qa = qa_novi
-                            ukupno = ukupno_novi
-                            # Ako je i dalje < 9.5, probaj ponovno s novim feedbackom
-                        else:
-                            break
-
-                    # Ako i dalje < 9.5 — ostavi u EPUB s markerom
-                    if ukupno < _QUALITY_RESCUE_THRESHOLD:
-                        self.log(
-                            "  QA-FLAG chunk " + str(i) + " (QA=" + str(ukupno) + ")",
-                            "warning",
-                        )
-                        # Ubaci HTML komentar s QA podacima na početak chunka
-                        try:
-                            razlog_esc = str(qa.get("razlog", "")).replace("--", "")
-                            marker = (
-                                "<!-- QA-FLAG: ocjena="
-                                + str(ukupno)
-                                + " razlog="
-                                + razlog_esc[:200]
-                                + " -->\n"
-                            )
-                            res = marker + res
-                        except Exception:
-                            logger.exception("[C1_http] workers.py:840 Exception")
-                    else:
-                        self.log("  QA: " + str(ukupno) + " OK nakon retry-a", "tech")
-                else:
-                    self.log("  QA: " + str(ukupno) + " OK", "tech")
-            except Exception as e:
-                self.log("  QA greska: " + str(e), "warning")
-            # Detekcija EN ostataka
-            try:
-                en_ratio = _detektuj_en_ostatke(res)
-                if en_ratio > 0.20:
-                    self.log(
-                        "  ⚠ EN ostaci: "
-                        + str(round(en_ratio * 100, 1))
-                        + "% — pokusavam rescue",
-                        "warning",
-                    )
-                    # Probaj rescue iz originala
+                    fleet = getattr(self, "fleet", None)
+                    engine_fn = getattr(self, "_get_prevodilac_prompt", None)
                     try:
-                        from processing.rescue import _spasi_od_sirovog
+                        # _scoruj_kvalitetu je async — await direktno
+                        qa_raw = await _scoruj_kvalitetu(
+                            res,
+                            engine_fn,
+                            i,
+                            file_name,
+                            tip_ocjenjivanja="prevod",
+                        )
+                        if isinstance(qa_raw, dict):
+                            qa = qa_raw
+                            ukupno = qa.get("ukupno", qa.get("score", 0))
+                        else:
+                            qa = {"ukupno": float(qa_raw)}
+                            ukupno = float(qa_raw)
+                    except Exception as e:
+                        self.log("  Scorer greska: " + str(e), "warning")
+                        qa = _qa_ai_ocjena(res, fleet)
+                        ukupno = qa.get("ukupno", 0)
 
-                        spasen = _spasi_od_sirovog(res)
-                        if spasen and len(spasen) > 10:
-                            res = spasen
-                            self.log("  Rescue uspio", "tech")
-                    except Exception:
-                        logger.debug("[C3_fallback] workers.py:866 Exception")
-            except Exception:
-                logger.debug("[C3_fallback] workers.py:868 Exception")
+                    if ukupno < _QUALITY_RESCUE_THRESHOLD:
+                        self.log("  QA: " + str(ukupno) + " < " + str(_QUALITY_RESCUE_THRESHOLD), "warning")
+
+                        # Retry 1 — s feedbackom
+                        for retry_broj in range(1, 3):  # max 2 retry-a
+                            self.log(
+                                "  Retry " + str(retry_broj) + "/2 s QA feedbackom...",
+                                "warning",
+                            )
+                            res_novi, qa_novi, uspjeh = _retry_s_feedbackom(
+                                self, res, chunks[i], qa, fleet, i
+                            )
+                            ukupno_novi = qa_novi.get("ukupno", 0)
+                            if uspjeh:
+                                res = res_novi
+                                qa = qa_novi
+                                ukupno = ukupno_novi
+                                break
+                            # Prihvati ako je bolje, ali probaj još jednom
+                            if ukupno_novi > ukupno:
+                                res = res_novi
+                                qa = qa_novi
+                                ukupno = ukupno_novi
+                                # Ako je i dalje < 9.5, probaj ponovno s novim feedbackom
+                            else:
+                                break
+
+                        # Ako i dalje < 9.5 — ostavi u EPUB s markerom
+                        if ukupno < _QUALITY_RESCUE_THRESHOLD:
+                            self.log(
+                                "  QA-FLAG chunk " + str(i) + " (QA=" + str(ukupno) + ")",
+                                "warning",
+                            )
+                            # Ubaci HTML komentar s QA podacima na početak chunka
+                            try:
+                                razlog_esc = str(qa.get("razlog", "")).replace("--", "")
+                                marker = (
+                                    "<!-- QA-FLAG: ocjena="
+                                    + str(ukupno)
+                                    + " razlog="
+                                    + razlog_esc[:200]
+                                    + " -->\n"
+                                )
+                                res = marker + res
+                            except Exception:
+                                logger.exception("[C1_http] workers.py:840 Exception")
+                        else:
+                            self.log("  QA: " + str(ukupno) + " OK nakon retry-a", "tech")
+                    else:
+                        self.log("  QA: " + str(ukupno) + " OK", "tech")
+                except Exception as e:
+                    self.log("  QA greska: " + str(e), "warning")
+                # Detekcija EN ostataka
+                try:
+                    en_ratio = _detektuj_en_ostatke(res)
+                    if en_ratio > 0.20:
+                        self.log(
+                            "  ⚠ EN ostaci: "
+                            + str(round(en_ratio * 100, 1))
+                            + "% — pokusavam rescue",
+                            "warning",
+                        )
+                        # Probaj rescue iz originala
+                        try:
+                            from processing.rescue import _spasi_od_sirovog
+
+                            spasen = _spasi_od_sirovog(res)
+                            if spasen and len(spasen) > 10:
+                                res = spasen
+                                self.log("  Rescue uspio", "tech")
+                        except Exception:
+                            logger.debug("[C3_fallback] workers.py:866 Exception")
+                except Exception:
+                    logger.debug("[C3_fallback] workers.py:868 Exception")
             final_parts.append(res)
 
         # Ažuriraj UI povremeno
