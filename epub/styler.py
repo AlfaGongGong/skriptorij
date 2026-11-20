@@ -303,6 +303,28 @@ def _je_duplikat(t1, t2, threshold=0.7):
     return len(w1 & w2) / min(len(w1), len(w2)) >= threshold
 
 
+def _je_duplikat_slijed(t1, t2, prag=0.8):
+    """G22: skup rijeci nije dokaz duplikata. Duplikat samo ako se SLIJED rijeci
+    krace strane (bez oznaka) poklapa s duljom >= prag (zbroj podudarnih blokova
+    / broj rijeci krace strane)."""
+    import difflib as _dl
+    import html as _hh
+    import re as _re
+
+    def _rijeci(t):
+        t = _re.sub(r"<[^>]+>", " ", str(t))
+        return _re.findall(r"\w+", _hh.unescape(t).lower())
+
+    a, b = _rijeci(t1), _rijeci(t2)
+    if not a or not b:
+        return False
+    if len(a) > len(b):
+        a, b = b, a
+    sm = _dl.SequenceMatcher(None, a, b, autojunk=False)
+    zbroj = sum(m.size for m in sm.get_matching_blocks())
+    return (zbroj / len(a)) >= prag
+
+
 def _skrati_overlap_fuzzy(prethodni, sljedeci, prag=0.85, min_znakova=60, zadnjih=60):
     """2026-11-03: fuzzy overlap na razini odlomaka. Ako pocetak sljedeceg bloka
     priblizno (>=prag) ponavlja zadnje odlomke prethodnog, ukloni ih iz sljedeceg.
@@ -2288,6 +2310,9 @@ def run_epub_styler(
                         else:
                             _th = 0.90
                         if not _je_duplikat(_t1, _t2, _th):
+                            continue
+                        if not _je_duplikat_slijed(_t1, _t2):
+                            print(f"  [dup-preskoceno] {_html_name}: blok_{_i1}/blok_{_i2} dijele rijeci, ali ne i slijed (nije duplikat)")
                             continue
                         _w1 = len(_t1.split())
                         _w2 = len(_t2.split())
