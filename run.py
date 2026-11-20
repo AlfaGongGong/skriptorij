@@ -1,3 +1,4 @@
+from utils.file_utils import atomic_write_text
 import logging
 logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
@@ -66,7 +67,7 @@ def _save_book_analysis(engine, mode: str) -> None:
             except Exception:
                 existing = {}
         existing["knjiga_mode"] = mode
-        ba_path.write_text(json.dumps(existing, ensure_ascii=False, indent=2), "utf-8")
+        atomic_write_text(ba_path, json.dumps(existing, ensure_ascii=False, indent=2), "utf-8")
     except Exception:
         logger.exception("[C1_kriticno] run.py:69 Exception")
 
@@ -457,7 +458,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 original = hf.read_text("utf-8", errors="ignore")
                 cleaned = _ocisti_epub_html(original)
                 if cleaned != original:
-                    hf.write_text(cleaned, encoding="utf-8")
+                    atomic_write_text(hf, cleaned, encoding="utf-8")
                     ocisceno_html += 1
             except Exception:
                 logger.exception("[C1_kriticno] run.py:438 Exception")
@@ -544,7 +545,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                 try:
                     soup = _BS(hf.read_text("utf-8"), "html.parser")
                     engine.apply_dropcap_and_toc(soup, hf)
-                    hf.write_text(str(soup), encoding="utf-8")
+                    atomic_write_text(hf, str(soup), encoding="utf-8")
                 except Exception:
                     logger.exception("[C1_kriticno] run.py:500 Exception")
             engine.generate_ncx()
@@ -634,7 +635,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             try:
                 soup = BeautifulSoup(hf.read_text("utf-8"), "html.parser")
                 engine.apply_dropcap_and_toc(soup, hf)
-                hf.write_text(str(soup), encoding="utf-8")
+                atomic_write_text(hf, str(soup), encoding="utf-8")
             except Exception:
                 logger.exception("[C1_kriticno] run.py:562 Exception")
         engine.generate_ncx()
@@ -649,7 +650,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
                         qs[k] = float(v["score"])
             if qs:
                 qs_path = engine.checkpoint_dir / "quality_scores.json"
-                qs_path.write_text(
+                atomic_write_text(qs_path, 
                     json.dumps(qs, ensure_ascii=False, indent=2), encoding="utf-8"
                 )
                 engine.log(f"💾 Quality scores sačuvani: {len(qs)} blokova", "system")
@@ -705,7 +706,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             if ba_path.exists():
                 ba_data = json.loads(ba_path.read_text("utf-8"))
             ba_data["knjiga_mode"] = getattr(engine, "knjiga_mode", None)
-            ba_path.write_text(
+            atomic_write_text(ba_path, 
                 json.dumps(ba_data, ensure_ascii=False, indent=2), encoding="utf-8"
             )
             engine.log(

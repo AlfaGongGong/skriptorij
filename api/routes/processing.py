@@ -3,6 +3,7 @@ Rute za upravljanje obradom knjiga (files, start, status, modeli).
 Dio Skriptorij V12.0 sistema.
 """
 
+from utils.file_utils import atomic_write_text
 import logging
 logger = logging.getLogger(__name__)
 import contextlib
@@ -816,7 +817,7 @@ def review_chunk(chunk_stem):
             if _cilj != chk_path:
                 new_text = sa_zaglavljem(chk_path, new_text)
             _cilj.parent.mkdir(parents=True, exist_ok=True)
-            _cilj.write_text(new_text, encoding="utf-8")
+            atomic_write_text(_cilj, new_text, encoding="utf-8")
             return jsonify({"status": "ok", "stem": stem})
 
     except Exception as e:
@@ -1279,7 +1280,7 @@ def names_apply():
     from pathlib import Path as _NPath
     p = _NPath(str(INPUT_DIR)) / f"{book}.replacement"
     try:
-        p.write_text(text, encoding="utf-8")
+        atomic_write_text(p, text, encoding="utf-8")
         return jsonify({"ok": True, "path": str(p)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -41,7 +41,7 @@ def safe_path(filename: str, root: str | None = None) -> str:
     return full
 
 
-def atomic_write_text(path, content: str) -> None:
+def atomic_write_text(path, content: str, encoding: str = "utf-8") -> None:
     """Atomicki upis: pise u .tmp pa os.replace. Prezivljava pad usred upisa."""
     from pathlib import Path as _P
     path = _P(path)
@@ -49,7 +49,7 @@ def atomic_write_text(path, content: str) -> None:
     import threading as _th
     tmp = path.with_name("%s.%d.%d.tmp" % (path.name, os.getpid(), _th.get_ident()))
     try:
-        tmp.write_text(content, encoding="utf-8")
+        tmp.write_text(content, encoding=encoding)
         tmp.replace(path)
     except Exception:
         try:

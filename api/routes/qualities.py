@@ -3,6 +3,7 @@
 Rute za quality scores — dohvat i prikaz po blokovima i fajlovima.
 """
 
+from utils.file_utils import atomic_write_text
 import contextlib
 import json
 import logging
@@ -437,7 +438,7 @@ def human_review():
                 with contextlib.suppress(Exception):
                     notes = _j.loads(notes_path.read_text("utf-8"))
             notes[stem] = {"note": note, "ts": __import__("time").time()}
-            notes_path.write_text(
+            atomic_write_text(notes_path, 
                 _j.dumps(notes, ensure_ascii=False, indent=2), encoding="utf-8"
             )
         return jsonify({"status": "ok", "stem": stem})
@@ -781,7 +782,7 @@ def qa_flags_save():
         )
 
     # Sacuvaj novi tekst (bez QA-FLAG markera — rijeseno)
-    chk_path.write_text(novi_tekst, encoding="utf-8")
+    atomic_write_text(chk_path, novi_tekst, encoding="utf-8")
 
     return (
         _json.dumps({"ok": True, "poruka": "Sacuvano"}),

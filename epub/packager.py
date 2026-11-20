@@ -1,3 +1,4 @@
+from utils.file_utils import atomic_write_text
 import logging
 import os
 logger = logging.getLogger(__name__)
@@ -157,7 +158,7 @@ def generate_ncx(self):
 {nav_points}  </navMap>
 </ncx>"""
 
-    ncx_path.write_text(ncx_content, encoding="utf-8")
+    atomic_write_text(ncx_path, ncx_content, encoding="utf-8")
     self.log(
         f"📑 NCX navigacija generirana ({len(self.toc_entries)} poglavlja)",
         "tech",
@@ -241,7 +242,7 @@ def _finaliziraj_fix_epub(self):
             out = str(soup)
             if not out.startswith("<?xml"):
                 out = '<?xml version="1.0" encoding="utf-8"?>\n' + out
-            f.write_text(out, encoding="utf-8")
+            atomic_write_text(f, out, encoding="utf-8")
 
     # 2. CSS spajanje
     css_blokovi = set()
@@ -258,7 +259,7 @@ def _finaliziraj_fix_epub(self):
 
     if css_blokovi:
         css_path = base_dir / "styles.css"
-        css_path.write_text("\n\n".join(sorted(css_blokovi)), encoding="utf-8")
+        atomic_write_text(css_path, "\n\n".join(sorted(css_blokovi)), encoding="utf-8")
 
         for f in work_dir.rglob("*"):
             if f.suffix.lower() not in (".xhtml", ".html", ".htm"):
@@ -290,7 +291,7 @@ def _finaliziraj_fix_epub(self):
             out = str(soup)
             if not out.startswith("<?xml"):
                 out = '<?xml version="1.0" encoding="utf-8"?>\n' + out
-            f.write_text(out, encoding="utf-8")
+            atomic_write_text(f, out, encoding="utf-8")
 
     # 3. TOC NCX regeneracija
     ncx_path = None
@@ -334,7 +335,7 @@ def _finaliziraj_fix_epub(self):
                 novi_ncx = ncx_text
                 for start, end, novi in reversed(zamjene):
                     novi_ncx = novi_ncx[:start] + novi + novi_ncx[end:]
-                ncx_path.write_text(novi_ncx, encoding="utf-8")
+                atomic_write_text(ncx_path, novi_ncx, encoding="utf-8")
         except Exception:
             logger.exception("[C1_kriticno] packager.py:336 Exception")
 
@@ -355,7 +356,7 @@ def _finaliziraj_fix_epub(self):
                 _soup = _BS_typo(_raw, "html.parser")
                 _changed = _tip_n(_soup) > 0
                 if _changed:
-                    _f.write_text(str(_soup), encoding="utf-8")
+                    atomic_write_text(_f, str(_soup), encoding="utf-8")
                     n_typo += 1
             except Exception:
                 pass
@@ -762,7 +763,7 @@ def _spoji_chk_u_html(engine):
                     _tip_n(soup)
                 except Exception:
                     logger.exception("[tipografija] packager")
-                src.write_text(str(soup), encoding="utf-8")
+                atomic_write_text(src, str(soup), encoding="utf-8")
                 zamenjeno += 1
             except Exception:
                 logger.exception("[C1_kriticno] packager.py:762 Exception")
@@ -810,7 +811,7 @@ def _spoji_chk_u_html(engine):
         except Exception:
             logger.exception("[C1_http] packager.py:814 Exception")
 
-        src.write_text(str(soup), encoding="utf-8")
+        atomic_write_text(src, str(soup), encoding="utf-8")
         zamenjeno += 1
 
     return zamenjeno
@@ -985,8 +986,9 @@ def finalize(self):
 
         # FIX 2026-10-26: Streaming pakovanje sa minimalnom memorijom.
         # compresslevel=1 (3x manje memorije), mimetype prvi bez kompresije.
+        # G38 zip: pakuje se u .tmp pa os.replace (pad usred pakovanja ne kvari stari EPUB)
         with zipfile.ZipFile(
-            self.out_path, "w", zipfile.ZIP_DEFLATED, compresslevel=1
+            str(self.out_path) + ".tmp", "w", zipfile.ZIP_DEFLATED, compresslevel=1
         ) as z:
             mimetype = self.work_dir / "mimetype"
             if mimetype.exists():
@@ -999,6 +1001,7 @@ def finalize(self):
                 if f.name == "mimetype":
                     continue
                 z.write(f, f.relative_to(self.work_dir))
+        os.replace(str(self.out_path) + ".tmp", str(self.out_path))
         self.log(f"📦 EPUB spakovan: {self.out_path.name}", "tech")
     except Exception as e:
         self.log(f"❌ Pakovanje EPUB-a palo: {e}", "error")

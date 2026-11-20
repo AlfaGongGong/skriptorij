@@ -1,5 +1,6 @@
 """Čišćenje checkpoint fajlova od JSON omotača i placeholder teksta."""
 
+from utils.file_utils import atomic_write_text
 import json
 import logging
 import re
@@ -217,7 +218,7 @@ def _no_cisti_chk_fajlove(checkpoint_dir: Path, log_fn=None) -> int:
                 obrisano += 1
                 continue
             if ocisceno != sadrzaj:
-                chk.write_text(ocisceno, encoding="utf-8")
+                atomic_write_text(chk, ocisceno, encoding="utf-8")
                 popravljeno += 1
         except Exception as e:
             if log_fn:

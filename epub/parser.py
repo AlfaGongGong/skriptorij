@@ -1,3 +1,4 @@
+from utils.file_utils import atomic_write_text
 import logging
 logger = logging.getLogger(__name__)
 # epub/parser.py
@@ -92,7 +93,7 @@ def _strip_json_artifacts_from_html(html_fajlovi: list, log_fn=None) -> int:
                             node.replace_with(NavigableString(extracted))
                             changed = True
             if changed:
-                fajl.write_text(str(soup), encoding="utf-8")
+                atomic_write_text(fajl, str(soup), encoding="utf-8")
                 fixed += 1
         except Exception:
             logger.exception("[C1_kriticno] parser.py:96 Exception")
@@ -115,7 +116,7 @@ def _ukloni_inline_stilove(html_fajlovi: list, log_fn=None) -> int:
                     del tag["style"]
                     izmijenjeno = True
             if izmijenjeno:
-                fajl.write_text(str(soup), encoding="utf-8")
+                atomic_write_text(fajl, str(soup), encoding="utf-8")
                 modificirano += 1
         except Exception:
             logger.exception("[C1_kriticno] parser.py:119 Exception")

@@ -20,6 +20,7 @@ Korištenje:
 """
 
 from __future__ import annotations
+from utils.file_utils import atomic_write_text
 
 import json
 import logging
@@ -211,7 +212,7 @@ class BookContext:
                     for k, v in self._poglavlja.items()
                 },
             }
-            self._cache_path.write_text(
+            atomic_write_text(self._cache_path, 
                 json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
             )
         except Exception as e:
@@ -714,7 +715,7 @@ class BookContextManager:
                 import json
 
                 self._cache_file.parent.mkdir(parents=True, exist_ok=True)
-                self._cache_file.write_text(
+                atomic_write_text(self._cache_file, 
                     json.dumps({"glosar": self._glosar}, ensure_ascii=False, indent=2),
                     encoding="utf-8",
                 )

@@ -1,5 +1,6 @@
 # processing/workers.py
 
+from utils.file_utils import atomic_write_text
 import json
 import re
 import time
@@ -867,7 +868,7 @@ async def process_single_file_worker(self, file_path):
             raw_html = _pr_iz.read_text("utf-8", errors="ignore")
         elif not (self.checkpoint_dir / f"{file_name}_blok_0.chk").exists():
             _pr_iz.parent.mkdir(parents=True, exist_ok=True)
-            _pr_iz.write_text(raw_html, encoding="utf-8")
+            atomic_write_text(_pr_iz, raw_html, encoding="utf-8")
     except Exception:
         logger.exception("[P2.20] izvor_en")
 
@@ -1136,10 +1137,10 @@ async def process_single_file_worker(self, file_path):
         source = translated_soup.body or translated_soup
         for child in list(source.children):
             body.append(child.extract())
-        file_path.write_text(str(orig_soup), encoding="utf-8")
+        atomic_write_text(file_path, str(orig_soup), encoding="utf-8")
     else:
         import re as _re_ws2
-        file_path.write_text(
+        atomic_write_text(file_path, 
             _re_ws2.sub(r"<!--\s*chunk_sha[^>]*-->\s*\n?", "", "".join(final_parts)),
             encoding="utf-8",
         )

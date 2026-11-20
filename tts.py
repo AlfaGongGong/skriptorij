@@ -16,6 +16,7 @@ LOGIKA:
   5. Snima .ttsfilter fajl pored izlazne knjige (OUTPUT_DIR)
 """
 
+from utils.file_utils import atomic_write_text
 import asyncio
 import re
 import shutil
@@ -482,7 +483,7 @@ def start_from_master(
 
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(sadrzaj, encoding="utf-8")
+            atomic_write_text(output_path, sadrzaj, encoding="utf-8")
             log(f"✅ TTS filter sačuvan: {output_path}", "success")
         except Exception as e:
             log(f"❌ TTS: Greška pri pisanju fajla: {e}", "error")
@@ -545,7 +546,7 @@ def _primijeni_checkpointe_na_html(
                     dijelovi.append(sadrzaj)
 
             if dijelovi:
-                hf.write_text("\n".join(dijelovi), encoding="utf-8")
+                atomic_write_text(hf, "\n".join(dijelovi), encoding="utf-8")
         except Exception as e:
             log_fn(
                 f"⚠️ TTS: Greška pri primjeni checkpointa za {file_name}: {e}",

@@ -1,3 +1,4 @@
+from utils.file_utils import atomic_write_text
 import logging
 logger = logging.getLogger(__name__)
 # processing/retro.py
@@ -497,7 +498,7 @@ async def retroaktivna_relektura_v10(
         try:
             soup = BeautifulSoup(hf.read_text("utf-8"), "html.parser")
             self.apply_dropcap_and_toc(soup, hf)
-            hf.write_text(str(soup), encoding="utf-8")
+            atomic_write_text(hf, str(soup), encoding="utf-8")
         except Exception:
             logger.exception("[C1_kriticno] retro.py:419 Exception")
 

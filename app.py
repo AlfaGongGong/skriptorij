@@ -1,3 +1,4 @@
+from utils.file_utils import atomic_write_text
 import contextlib
 import json
 import os
@@ -740,7 +741,7 @@ def create_app() -> Flask:
                 elif isinstance(v, dict) and "score" in v:
                     normalized[k] = float(v["score"])
 
-            qs_path.write_text(
+            atomic_write_text(qs_path, 
                 json.dumps(normalized, ensure_ascii=False, indent=2), encoding="utf-8"
             )
             return jsonify({"ok": True, "saved": len(normalized), "path": str(qs_path)})
@@ -1821,14 +1822,14 @@ def create_app() -> Flask:
                             break
                     else:
                         obj["translated"] = new_text
-                    chk_path.write_text(
+                    atomic_write_text(chk_path, 
                         json.dumps(obj, ensure_ascii=False, indent=2), "utf-8"
                     )
                 else:
-                    chk_path.write_text(new_text, "utf-8")
+                    atomic_write_text(chk_path, new_text, "utf-8")
             except (json.JSONDecodeError, ValueError):
                 # Plain tekst fajl
-                chk_path.write_text(new_text, "utf-8")
+                atomic_write_text(chk_path, new_text, "utf-8")
 
             # ── Automatska ocjena 10.0 za ručnu izmjenu ──
             try:
@@ -1871,11 +1872,11 @@ def create_app() -> Flask:
                             "edited_at": _dt.now().isoformat(timespec="seconds"),
                             "note": "Ručna izmjena — automatska ocjena 10.0",
                         }
-                        meta_path.write_text(
+                        atomic_write_text(meta_path, 
                             json.dumps(meta, indent=2, ensure_ascii=False),
                             encoding="utf-8",
                         )
-                        qs_path.write_text(
+                        atomic_write_text(qs_path, 
                             _json.dumps(scores, indent=2, ensure_ascii=False),
                             encoding="utf-8",
                         )
@@ -1903,7 +1904,7 @@ def create_app() -> Flask:
                     if isinstance(hr_data, list):
                         novi_hr = [item for item in hr_data if item.get("stem") != stem]
                         if len(novi_hr) != len(hr_data):
-                            hr_path.write_text(
+                            atomic_write_text(hr_path, 
                                 json.dumps(novi_hr, ensure_ascii=False, indent=2),
                                 encoding="utf-8",
                             )

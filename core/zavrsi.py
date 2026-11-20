@@ -148,7 +148,7 @@ def primijeni_u_html(ck, ispravke, bdir=None, log=print, dry=False):
                 b = Path(bdir) / ("html_" + p.name)
                 if not b.exists():
                     b.write_bytes(p.read_bytes())
-            p.write_text(t[:pogodak[0]] + novo_h + t[pogodak[1]:], encoding="utf-8")
+            atomic_write_text(p, t[:pogodak[0]] + novo_h + t[pogodak[1]:], encoding="utf-8")
         log(f"  HTML OK{' (dry)' if dry else ''} {oid}: {p.name}")
         st["ok"] += 1
     return st

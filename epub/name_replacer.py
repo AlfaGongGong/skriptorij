@@ -28,6 +28,7 @@ STANDALONE: ne importuje iz pipeline-a, radi s bilo kojim EPUB-om.
 """
 
 from __future__ import annotations
+from utils.file_utils import atomic_write_text
 
 import json
 import logging
@@ -490,7 +491,7 @@ def _write_replacement_file(
             lines.append(f"{variant}{_SEP}{canonical}")
         lines.append("")
 
-    rep_path.write_text("\n".join(lines), encoding="utf-8")
+    atomic_write_text(rep_path, "\n".join(lines), encoding="utf-8")
     return rep_path
 
 
