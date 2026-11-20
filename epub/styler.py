@@ -2286,6 +2286,16 @@ def run_epub_styler(
                     continue
 
                 _ids_all = sorted(_blokovi.keys())
+                # G41s: rupa u indeksima .chk blokova = izgubljen tekst; poglavlje se ne smije
+                # prepisati nepotpunim prijevodom (BOOKLYFI_FINALIZE_OTVORENO=1 dopusta).
+                _rupe41 = sorted(set(range(_ids_all[-1] + 1)) - set(_ids_all))
+                if _rupe41:
+                    if os.environ.get("BOOKLYFI_FINALIZE_OTVORENO") == "1":
+                        _log("   -> G41s: " + str(_html_name) + " nedostaju blokovi " + str(_rupe41[:5]) + " (dopusteno)", "warning")
+                    else:
+                        _log("   -> G41s: " + str(_html_name) + " nedostaju .chk blokovi " + str(_rupe41[:5]), "error")
+                        _chk_greske.append("G41 rupa u .chk blokovima: " + str(_html_name) + " " + str(_rupe41[:5]))
+                        continue
                 _delovi = [_ocisti_chk(_blokovi[i].read_text("utf-8", errors="ignore")).strip() for i in _ids_all]
                 _blok_ids = [_bi for _bi, _d in zip(_ids_all, _delovi) if _d]
                 _delovi = [d for d in _delovi if d]
