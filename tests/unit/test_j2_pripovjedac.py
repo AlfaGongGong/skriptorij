@@ -63,3 +63,11 @@ def test_v1_i_v2_zovu_korak():
     assert "_prip_korak(self, finalno" in inspect.getsource(P._primijeni_kalkove_i_validator)
     src = inspect.getsource(P.process_chunk_with_retry)
     assert "_prip_korak(self, tekst" in src and "_prip_upute(self, file_name)" in src
+
+
+def test_imenice_nisu_participi(tmp_path):
+    _knjiga_m(tmp_path)
+    e = _eng(tmp_path)
+    t = "<p>Bio sam miran, a ti si bila budala; vidjeli smo vješala, ali sam rekao ne.</p>"
+    out = P._prip_korak(e, t, "p4", 0)
+    assert "budala" in out and "vješala" in out

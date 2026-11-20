@@ -818,7 +818,8 @@ _PRIP_NEPR = {
     "htio": "htjela", "uspio": "uspjela", "sjeo": "sjela",
 }
 _PRIP_Z_M = {z: m for m, z in {**GPR_M_Z, **_PRIP_NEPR}.items()}
-_PRIP_STOP = frozenset({"kao", "tako", "onako", "ovako", "nikako", "svako", "dosta"})
+_PRIP_STOP = frozenset({"kao", "tako", "onako", "ovako", "nikako", "svako", "dosta",
+                       "budala", "vješala", "vjesala", "kandila", "bubala"})  # J3b: imenice, ne participi
 _PRIP_KLIT = r"(?:\s+(?:se|si|ga|je|ih|mu|joj|im|me|te|ju|ti))*"
 _PRIP_BEF = re.compile(r"\b([^\W\d_]{3,})\s+sam\b")
 _PRIP_AFT = re.compile(r"\bsam" + _PRIP_KLIT + r"\s+([^\W\d_]{3,})\b")

@@ -14,6 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from processing import pipeline as P  # noqa: E402
 
 PRIMIJENI = os.environ.get("J3_PRIMIJENI") == "1"
+_HR_ORIG = P._hr_oznaci
+ANTOLOGIJE = ("neverland", "unfettered", "conan")  # J3b: vise pripovjedaca, zadani rod knjige ne vrijedi
 KORIJENI = [
     "/storage/emulated/0/booklyfi_checkpoints",
     "/root/Skriptorij/data",
@@ -40,7 +42,11 @@ def obradi_mapu(d, ime=None):
     ime = ime or d.name
     zast = []
     eng = SimpleNamespace(log=lambda *a, **k: None, checkpoint_dir=d)
-    P._hr_oznaci = lambda self, f, i, razlog, *a, **k: zast.append((f, i, razlog))
+    def _hr(self, f, i, razlog, *a, **k):  # J3b
+        zast.append((f, i, razlog))
+        if PRIMIJENI:
+            _HR_ORIG(self, f, i, razlog, *a, **k)
+    P._hr_oznaci = _hr
     grupe = {}
     for p in d.glob("*.chk"):
         m = RX.match(p.name)
@@ -88,6 +94,9 @@ def main():
             if r in vidjeno or not d.is_dir() or (filt and filt not in d.name.lower()):
                 continue
             vidjeno.add(r)
+            if any(x in d.name.lower() for x in ANTOLOGIJE):
+                print(f">> {d.name[:40]} | preskoceno (antologija)")
+                continue
             ck = d / "checkpoints" if (d / "checkpoints").is_dir() else d  # J3fix
             if not any(ck.glob("*.chk")):
                 continue
