@@ -6,7 +6,7 @@ IZMJENE vs v3.0:
   - Dodan _norm_score fallback za slučaj da quality nije float
   - _init_book_context: morfo_validator se inicijalizira iz fleet-a, ne iz gemini_api_key
   - process_chunk_with_retry: ispravan async poziv _obradi_chunk_v2
-  - Dodat USE_WORKERS_V2 env fallback na "1" (aktivan po defaultu)
+  - USE_WORKERS_V2 env fallback na "0" (G17: zadano ISKLJUCEN, BOOKLYFI_V2=1 ga ukljucuje)
   - Korak 7: Nezavisni scorer — bilježenje prevoditelja za quality_scorer_v2
 """
 
@@ -78,7 +78,7 @@ except ImportError:
     _INJECTOR_OK = False
 
 # ── Workers integracija ─────────────────────────────────────────────────────
-USE_WORKERS_V2: bool = _os.environ.get("BOOKLYFI_V2", "1").strip() == "1"
+USE_WORKERS_V2: bool = _os.environ.get("BOOKLYFI_V2", "0").strip() == "1"
 
 try:
     from processing.workers import WorkerV2
