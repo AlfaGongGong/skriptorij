@@ -85,7 +85,7 @@ Napomena: besplatni planovi imaju dnevni limit zahtjeva (RPD). Više ključeva i
 | `BOOKLYFI_STYLED_DIR` | direktorij za stilizirane EPUB-ove |
 | `BOOKLYFI_KANON_DIR`, `BOOKLYFI_KANON_ZRCALO_DIR` | kanonske knjige i njihovo zrcalo |
 | `BOOKLYFI_ORNAMENTS_DIR` | ukrasi za stilizator |
-| `BOOKLYFI_VERIFIER`, `BOOKLYFI_VERIFIER_FIX` | verifikator i ponovni prijevod označenih blokova (zadano `1`) |
+| `BOOKLYFI_VERIFIER`, `BOOKLYFI_VERIFIER_FIX` | verifikator i ponovni prijevod označenih blokova; `main.py` ih postavlja na `1` ako nisu zadane, `run.py` pokrenut sam ih ne postavlja |
 | `BOOKLYFI_CEKAJ` | `0` isključuje čekanje reseta kvote (vraća zaustavljanje) |
 | `CLOUDFLARE_ACCOUNT_ID` | za Cloudflare provajdera (vidi `.env.example`) |
 
