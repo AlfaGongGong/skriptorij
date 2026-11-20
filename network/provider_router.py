@@ -77,6 +77,96 @@ MAX_TOKENS_MAP = {
 # P2.1: VERIFIER koristi redoslijed provajdera kao SCORER
 _PRIO_ALIAS = {"VERIFIER": "SCORER"}
 
+# G16: pomocne uloge (kratki JSON, provjere) ne smiju trositi GEMINI RPD koji je rezerviran za
+# jezicne uloge (PREVODILAC/LEKTOR/KOREKTOR), i nemaju 2. i 3. krug fallbacka (90 s pauze).
+# BOOKLYFI_AUX_GEMINI=1 vraca staro ponasanje.
+_POMOCNE_ULOGE = {"SCORER", "VERIFIER", "GLOSAR_UPDATE", "VALIDATOR"}
+
+
+def _je_pomocna(uloga) -> bool:
+    import os as _os
+
+    if _os.environ.get("BOOKLYFI_AUX_GEMINI", "") == "1":
+        return False
+    return (uloga or "").upper() in _POMOCNE_ULOGE
+
+
+# G16: statistika poziva po (uloga, provider): .logs/ai_pozivi.json (BOOKLYFI_AI_STAT mijenja putanju,
+# BOOKLYFI_G16_STAT=0 gasi). Brojac je logicki poziv _call_ai_engine, ne pojedini pokusaj.
+import threading as _g16_threading
+
+_G16_LOCK = _g16_threading.Lock()
+_G16_DELTA: dict = {}
+_G16_N = [0]
+
+
+def _g16_putanja():
+    import os as _os
+    from pathlib import Path as _P
+
+    ov = _os.environ.get("BOOKLYFI_AI_STAT", "").strip()
+    if ov:
+        return _P(ov)
+    if _os.environ.get("PYTEST_CURRENT_TEST"):
+        return None
+    from config.settings import PROJECT_ROOT
+
+    return _P(PROJECT_ROOT) / ".logs" / "ai_pozivi.json"
+
+
+def _g16_flush_locked():
+    import json as _json
+
+    if not _G16_DELTA:
+        return
+    path = _g16_putanja()
+    if path is None:
+        _G16_DELTA.clear()
+        return
+    from utils.file_utils import atomic_write_json
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ex = {}
+    if path.exists():
+        try:
+            ex = _json.loads(path.read_text("utf-8"))
+        except Exception:
+            ex = {}
+    for k, d in _G16_DELTA.items():
+        e = ex.setdefault(k, {"n": 0, "ok": 0, "fail": 0, "sek": 0.0})
+        for f in ("n", "ok", "fail"):
+            e[f] = int(e.get(f, 0)) + d[f]
+        e["sek"] = round(float(e.get("sek", 0.0)) + d["sek"], 1)
+    atomic_write_json(path, ex)
+    _G16_DELTA.clear()
+
+
+def _g16_zapisi(uloga, raw, label, sekunde):
+    import os as _os
+
+    if _os.environ.get("BOOKLYFI_G16_STAT", "") == "0":
+        return
+    prov = (str(label or "N/A").split("-")[0].split("/")[0].upper()) or "N/A"
+    k = "%s|%s" % ((uloga or "?").upper(), prov)
+    with _G16_LOCK:
+        d = _G16_DELTA.setdefault(k, {"n": 0, "ok": 0, "fail": 0, "sek": 0.0})
+        d["n"] += 1
+        d["ok" if raw else "fail"] += 1
+        d["sek"] += float(sekunde)
+        _G16_N[0] += 1
+        if _G16_N[0] % 10 == 0:
+            _g16_flush_locked()
+
+
+def _g16_flush():
+    with _G16_LOCK:
+        _g16_flush_locked()
+
+
+import atexit as _g16_atexit
+
+_g16_atexit.register(lambda: _g16_flush())
+
 _MODEL_TUNING_BY_ID = {
     "gemini-3.5-flash": {
         "PREVODILAC": {"temp_mul": 0.88, "max_tokens": 2200},
@@ -280,7 +370,7 @@ async def call_provider(
     return None
 
 
-async def _call_ai_engine(
+async def _call_ai_engine_impl(
     self,
     prompt,
     chunk_idx,
@@ -343,6 +433,13 @@ async def _call_ai_engine(
                 ordered = _only
     except Exception:
         pass
+
+    # G16: pomocne uloge bez GEMINI (ako ima ikoga drugog)
+    _aux = _je_pomocna(uloga)
+    if _aux:
+        _bez = [p for p in ordered if p != "GEMINI"]
+        if _bez:
+            ordered = _bez
 
     MAX_ATTEMPTS = 4
     for attempt in range(MAX_ATTEMPTS):
@@ -483,6 +580,14 @@ async def _call_ai_engine(
             await asyncio.sleep(wait_s)
             continue
         break
+
+    # G16: pomocna uloga nema pauze od 30 s + 60 s ni krug samo na GEMINI
+    if _aux:
+        self.log(
+            f"\u274c [{uloga}] pomocna uloga: prvi krug pao za blok {chunk_idx}, bez daljnjih krugova",
+            "warning",
+        )
+        return None, "ALL_FAILED"
 
     # 2026-10-22: prvi krug pao — pauza 30s, pa drugi krug sa svim providerima
     self.log(
@@ -641,6 +746,42 @@ async def _call_ai_engine(
         "error",
     )
     return None, "ALL_FAILED"
+
+
+async def _call_ai_engine(
+    self,
+    prompt,
+    chunk_idx,
+    uloga="LEKTOR",
+    filename="",
+    sys_override=None,
+    tip_bloka="naracija",
+):
+    """G16: omotac oko _call_ai_engine_impl koji biljezi uloga/provider/ishod/trajanje."""
+    import time as _time
+
+    t0 = _time.monotonic()
+    raw, label = None, "EXC"
+    try:
+        res = await _call_ai_engine_impl(
+            self,
+            prompt,
+            chunk_idx,
+            uloga=uloga,
+            filename=filename,
+            sys_override=sys_override,
+            tip_bloka=tip_bloka,
+        )
+        try:
+            raw, label = res
+        except Exception:
+            raw, label = None, "N/A"
+        return res
+    finally:
+        try:
+            _g16_zapisi(uloga, raw, label, _time.monotonic() - t0)
+        except Exception:
+            logger.debug("[G16] statistika nije upisana", exc_info=True)
 
 
 # ── V2 Routing ────────────────────────────────────────────────────────────────
