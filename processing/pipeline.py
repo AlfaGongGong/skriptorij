@@ -406,6 +406,47 @@ _MIN_TRANSLATION_RATIO = 0.62
 _MIN_LEKTOR_RATIO = 0.80
 
 
+def _kor_pretjeran(prije: str, poslije: str, max_udio: float = 0.25):
+    """G15: determinisicka zastita od KOREKTORA koji vidi samo HR tekst.
+    Vraca (True, razlog) ako korektor mijenja previse (udio promijenjenih rijeci > max_udio),
+    mijenja brojeve ili gubi vlastita imena (rijeci s velikim slovom usred recenice)."""
+    try:
+        import difflib
+        import re as _re
+        from collections import Counter
+
+        def _pl(x):
+            return BeautifulSoup(x or "", "html.parser").get_text(" ", strip=True)
+
+        a, b = _pl(prije), _pl(poslije)
+        if not a or not b:
+            return False, ""
+        if Counter(_re.findall(r"\d+", a)) != Counter(_re.findall(r"\d+", b)):
+            return True, "brojevi promijenjeni"
+        wa = _re.findall(r"\w+", a)
+        wb = _re.findall(r"\w+", b)
+        if len(wa) >= 15:
+            udio = 1.0 - difflib.SequenceMatcher(None, wa, wb, autojunk=False).ratio()
+            if udio > max_udio:
+                return True, f"promijenjeno {udio * 100:.0f}% rijeci"
+        tok = _re.findall(r"[.!?\u2026\u2014\u2013\u201e\u201c\u201d\x22]|[^\W\d_]+", a)
+        poc, imena = True, set()
+        for x in tok:
+            if not x[0].isalpha():
+                poc = True
+                continue
+            if x[0].isupper() and len(x) >= 3 and not poc:
+                imena.add(x[:4].lower())
+            poc = False
+        pref_b = {x[:4].lower() for x in _re.findall(r"[^\W\d_]+", b)}
+        fali = [n for n in imena if n not in pref_b]
+        if len(fali) >= 3 and len(fali) > 0.3 * len(imena):
+            return True, "nestala imena: " + ", ".join(sorted(fali)[:4])
+    except Exception:
+        pass
+    return False, ""
+
+
 def _plain_len(tekst: str) -> int:
     try:
         return len(BeautifulSoup(tekst or "", "html.parser").get_text(" ", strip=True))
@@ -1535,7 +1576,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                         "warning",
                     )
                 else:
-                    finalno = kor_l
+                    _kp, _kr = _kor_pretjeran(pre_korektor_l, kor_l)  # G15
+                    if _kp:
+                        self.log(
+                            f"[{file_name}] Blok {chunk_idx}: \u26a0\ufe0f Korektor previse mijenja ({_kr}) - zadrzavam lektor verziju.",
+                            "warning",
+                        )
+                    else:
+                        finalno = kor_l
 
         finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
 
@@ -1982,7 +2030,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                     "warning",
                 )
             else:
-                finalno = kor
+                _kp, _kr = _kor_pretjeran(pre_korektor, kor)  # G15
+                if _kp:
+                    self.log(
+                        f"[{file_name}] Blok {chunk_idx}: \u26a0\ufe0f Korektor previse mijenja ({_kr}) - zadrzavam prethodnu verziju.",
+                        "warning",
+                    )
+                else:
+                    finalno = kor
 
     finalno = _post_process_tipografija(_agresivno_cisti(finalno))
     finalno = _primijeni_kalkove_i_validator(self, finalno, file_name, chunk_idx)
