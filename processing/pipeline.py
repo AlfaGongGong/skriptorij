@@ -2285,6 +2285,14 @@ async def _v2_kapije(self, chunk, tekst, file_name, chunk_idx):
     return None, tekst
 
 
+def _g14_glosar(self, chunk):
+    """G14: isti relevantni glosar koji V1 daje promptu (V2 ga prije nije dobivao)."""
+    try:
+        return self._extract_relevant_glossary(chunk) or ""
+    except Exception:
+        return ""
+
+
 # ── Retry wrapper ─────────────────────────────────────────────────────────────
 
 
@@ -2309,6 +2317,9 @@ async def process_chunk_with_retry(
                 tip_bloka=tip_bloka,
                 book_context=getattr(self, "book_context", None),
                 chapter_summary=chapter_summary,
+                glosar_injekcija=_g14_glosar(self, chunk),  # G14
+                prev_kraj=prev_ctx or "",  # G14
+                next_kraj=_next_ctx_blok(next_ctx),  # G14
             )
 
             # WorkerV2.obradi_chunk je sinkron — pokreni u thread pool-u

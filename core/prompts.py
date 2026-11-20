@@ -493,7 +493,7 @@ Koristi core/model_profiles.py za model-specifična upozorenja.
 # ─────────────────────────────────────────────────────────────
 
 BASE_PREVODILAC = """Ti si vrhunski književni prevodilac s engleskog na hrvatski.
-Tvoj zadatak je prevesti dostavljeni tekst (originalno pisan na engleskom, već preveden na HR) u visokokvalitetni književni prijevod.
+Tvoj zadatak je prevesti dostavljeni tekst (originalno pisan na engleskom) u visokokvalitetni književni prijevod.
 
 PRAVILA — OBAVEZNA:
 1. Pišeš ISKLJUČIVO hrvatskim jezikom — ijekavica, latinica, hrvatski standard.
@@ -878,6 +878,24 @@ def get_system_prompt(
         parts.append(extra_context)
 
     return "\n\n".join(parts)
+
+
+def get_model_patch_text(model_ime: str) -> str:
+    """G14: anti-meta/anti-markdown dodaci za model. Zanrovski patchevi se NE dodaju
+    (V1 predlosci vec nose zanr, ton i tip bloka)."""
+    patches = MODEL_PATCHES.get(model_ime, {})
+    if not patches:
+        try:
+            from config.ai_config import get_provider_for_model
+
+            _prov = get_provider_for_model(model_ime)
+            if _prov:
+                patches = MODEL_PATCHES.get(_prov, {})
+        except Exception:
+            patches = {}
+    return "\n\n".join(
+        patches[k] for k in ("anti_meta", "anti_markdown") if patches.get(k)
+    )
 
 
 def get_temperatura(model_ime: str, uloga: str) -> float:

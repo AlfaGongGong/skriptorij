@@ -1301,6 +1301,9 @@ class WorkerV2:
         book_context: Any | None = None,
         chapter_summary: str | None = None,
         few_shot_primjeri: list[str] | None = None,
+        glosar_injekcija: str = "",
+        prev_kraj: str = "",
+        next_kraj: str = "",
     ):
         """
         Args:
@@ -1315,9 +1318,49 @@ class WorkerV2:
         self.book_context = book_context
         self.chapter_summary = chapter_summary
         self.few_shot_primjeri = few_shot_primjeri or []
+        # G14: isti ulazi koje V1 daje predlosku
+        self.glosar_injekcija = glosar_injekcija or ""
+        self.prev_kraj = prev_kraj or ""
+        self.next_kraj = next_kraj or ""
 
     def _sklopi_prompt(self, model_ime: str, chunk_tekst: str) -> str:
         """Sklapa kompletan system prompt za ovaj chunk i model."""
+        # G14: jedan izvor prompta. V1 predlosci (glosar, prethodni kraj, kontekst poglavlja, tip bloka).
+        # PromptInjector.assemble ne postoji, pa je V2 ranije uvijek padao na goli BASE prompt bez glosara.
+        if isinstance(self.book_context, dict):
+            try:
+                from core.prompts import (
+                    get_lektor_prompt,
+                    get_model_patch_text,
+                    get_prevodilac_prompt,
+                )
+
+                _tip = self.tip_bloka or "naracija"
+                if self.uloga == "lektor":
+                    _sp = get_lektor_prompt(
+                        self.book_context,
+                        self.prev_kraj,
+                        self.glosar_injekcija,
+                        self.chapter_summary or "",
+                        tip_bloka=_tip,
+                    )
+                else:
+                    _sp = get_prevodilac_prompt(
+                        self.book_context,
+                        self.glosar_injekcija,
+                        self.prev_kraj,
+                        tip_bloka=_tip,
+                    )
+                    if self.chapter_summary:
+                        _sp += "\n\n" + self.chapter_summary
+                _sp += self.next_kraj
+                _patch = get_model_patch_text(model_ime)
+                if _patch:
+                    _sp += "\n\n" + _patch
+                return _sp
+            except Exception as e:
+                logger.warning(f"G14: V1 predlozak u V2 nije sklopljen: {e} — stari put")
+
         if _injector_ok:
             try:
                 injector = PromptInjector()
