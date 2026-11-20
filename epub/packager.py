@@ -1,4 +1,5 @@
 import logging
+import os
 logger = logging.getLogger(__name__)
 import contextlib
 import re
@@ -580,6 +581,7 @@ def _spoji_chk_u_html(engine):
     pravi_skr = _nadji_skr_folder()
     if pravi_skr is None:
         engine.log("⚠ _spoji_chk_u_html: nema _skr_ sa .chk + text/", "warning")
+        engine._spoji_bez_skr = True  # G37: finalize odlucuje je li to greska
         return 0
 
     stvarni_work_dir = pravi_skr
@@ -968,7 +970,18 @@ def finalize(self):
                     "tech",
                 )
         except Exception as _e:
-            self.log(f"⚠ Spajanje .chk u HTML palo: {_e}", "warning")
+            # G37: fail-closed. Bez spojenog prijevoda EPUB bi sadrzavao
+            # izvorni (engleski) tekst, a status bi ipak bio ZAVRSENO.
+            self.log(f"❌ Spajanje .chk u HTML palo: {_e}", "error")
+            if os.environ.get("BOOKLYFI_FINALIZE_OTVORENO") != "1":
+                raise RuntimeError(f"G37: spajanje .chk palo: {_e}") from _e
+        else:
+            if (
+                getattr(self, "_spoji_bez_skr", False)
+                and (getattr(self, "shared_stats", None) or {}).get("knjiga_mode")
+                and os.environ.get("BOOKLYFI_FINALIZE_OTVORENO") != "1"
+            ):
+                raise RuntimeError("G37: prijevod u tijeku, a nema _skr_ s .chk (EPUB bi bio engleski)")
 
         # FIX 2026-10-26: Streaming pakovanje sa minimalnom memorijom.
         # compresslevel=1 (3x manje memorije), mimetype prvi bez kompresije.
