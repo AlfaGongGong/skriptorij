@@ -622,6 +622,19 @@ def _spoji_chk_u_html(engine):
 
     zamenjeno = 0
     for html_name, blokovi in chks.items():
+        # G41: indeksi blokova moraju biti uzastopni 0..n-1; inace bi se tijelo
+        # poglavlja prepisalo nepotpunim prijevodom (rupa = izgubljen tekst).
+        _idx = sorted(blokovi.keys())
+        _rupe = sorted(set(range(_idx[-1] + 1)) - set(_idx)) if _idx else []
+        if _rupe:
+            engine.log(
+                f"❌ G41: {html_name}: nedostaju .chk blokovi {_rupe[:10]}"
+                f"{'...' if len(_rupe) > 10 else ''} (ima {len(_idx)}, zadnji {_idx[-1]}); "
+                "poglavlje se NE prepisuje",
+                "error",
+            )
+            engine._spoji_rupe = list(getattr(engine, "_spoji_rupe", [])) + [html_name]
+            continue
         src = stvarni_work_dir / "text" / html_name
         if not src.exists():
             # Pokušaj rekurzivno
@@ -983,6 +996,14 @@ def finalize(self):
                 and os.environ.get("BOOKLYFI_FINALIZE_OTVORENO") != "1"
             ):
                 raise RuntimeError("G37: prijevod u tijeku, a nema _skr_ s .chk (EPUB bi bio engleski)")
+            if (
+                getattr(self, "_spoji_rupe", None)
+                and (getattr(self, "shared_stats", None) or {}).get("knjiga_mode")
+                and os.environ.get("BOOKLYFI_FINALIZE_OTVORENO") != "1"
+            ):
+                raise RuntimeError(
+                    "G41: poglavlja s rupom u .chk blokovima: " + ", ".join(self._spoji_rupe[:10])
+                )
 
         # FIX 2026-10-26: Streaming pakovanje sa minimalnom memorijom.
         # compresslevel=1 (3x manje memorije), mimetype prvi bez kompresije.
