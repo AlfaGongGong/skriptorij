@@ -188,6 +188,13 @@ async def verifikuj_blok(self, finalno, original_chunk, stem_key, chunk_idx,
             return out
 
         stari = p_chk.read_text("utf-8", errors="ignore")
+        from core.popravak_kapija import prihvatljiv as _prih_kapija  # G34
+        _ok_g, _raz_g = _prih_kapija(original_chunk, novo, stari, glosar)
+        if not _ok_g:
+            self.log("[" + file_name + "] Blok " + str(chunk_idx) + ": verifikator-popravak odbijen kapijom: "
+                     + "; ".join(_raz_g)[:200], "warning")
+            _upisi_zapis(self, stem_key, dict(zapis, popravljen=False, razlog="kapija: " + "; ".join(_raz_g)[:200]))
+            return out
         m = _re.match(r"<!--\s*chunk_sha[^>]*-->\s*\n", stari)
         zaglavlje = m.group(0) if m else ""
         bk = self.checkpoint_dir / "verifier_prije"

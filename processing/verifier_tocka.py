@@ -238,6 +238,15 @@ async def tocka_popravak(self, out, original_chunk, stem_key, chunk_idx,
                 "pokusano": izmjene, "vec_ispravno": vec_ok, "preskoceno": preskoceno})
             return out
 
+        from core.popravak_kapija import prihvatljiv as _prih_kapija  # G34
+        _ok_g, _raz_g = _prih_kapija(original_chunk, novo_tijelo, tijelo, glosar)
+        if not _ok_g:
+            self.log("[" + file_name + "] Blok " + str(chunk_idx) + ": tockasti popravak odbijen kapijom: "
+                     + "; ".join(_raz_g)[:200], "warning")
+            _spoji_zapis(self, stem_key, None, tocka={
+                "popravljeno": 0, "razlog": "kapija: " + "; ".join(_raz_g)[:200],
+                "pokusano": izmjene, "vec_ispravno": vec_ok, "preskoceno": preskoceno})
+            return out
         bk = self.checkpoint_dir / "verifier_prije"
         bk.mkdir(parents=True, exist_ok=True)
         bk_f = bk / (p_chk.name + ".tocka.txt")
