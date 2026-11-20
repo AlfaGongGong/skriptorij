@@ -43,6 +43,10 @@ class AdaptiveParallelism:
         if total_active == 0:
             return 1
 
+        # G40: s jednim aktivnim kljucem samo 1 slot (prije je max(2, ...) davao 2)
+        if total_active == 1:
+            return 1
+
         # Konzervativno: 1 slot per 2 ključa, min 2, max 6
         dynamic = max(2, min(total_active // 2, 6))
 
