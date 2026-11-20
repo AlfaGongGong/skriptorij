@@ -99,6 +99,7 @@ def test_provider_pada_upisuje_marker_i_poglavlje_ostaje_citljivo(engine):  # no
 
 def test_kvota_stop_ne_prepisuje_poglavlje(engine, monkeypatch):  # noqa: F811
     f = _pripremi(engine)
+    monkeypatch.setenv("BOOKLYFI_CEKAJ", "0")  # G5: ovdje se testira zaustavljanje bez cekanja
     prije = f.read_text("utf-8")
     import network.quota_tracker as qt
 

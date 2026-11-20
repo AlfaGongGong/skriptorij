@@ -803,6 +803,47 @@ def _qa_ocjena(html):
     return ocjene
 
 
+async def _cekaj_reset_kvote(self, file_name) -> bool:
+    """G5: dnevna kvota iscrpljena -> spava do kvota_stop_do pa sama nastavlja.
+    True = nastavi (kvota resetirana), False = odustani (korisnik zaustavio, previse pokusaja,
+    ili BOOKLYFI_CEKAJ=0). Samo jedan cekac (lock); ostali nastavljaju kad se kvota oslobodi."""
+    import asyncio
+    import os
+    import time as _t
+
+    if os.environ.get("BOOKLYFI_CEKAJ", "1") == "0":
+        return False
+    br = self.__dict__.setdefault("_cekaj_br", {})
+    br[file_name] = br.get(file_name, 0) + 1
+    if br[file_name] > 3:
+        return False
+    lock = getattr(self, "_cekaj_lock", None)
+    if lock is None:
+        lock = self._cekaj_lock = asyncio.Lock()
+    async with lock:
+        if not getattr(self, "kvota_stop", False):
+            return True  # netko drugi je vec pricekao reset
+        do = float(getattr(self, "kvota_stop_do", 0) or 0) or (_t.time() + 3600.0)
+        hhmm = _t.strftime("%H:%M", _t.localtime(do))
+        self.log(f"⏳ Dnevna kvota iscrpljena — čekam reset, nastavljam u {hhmm}", "warning")
+        while True:
+            sc = getattr(self, "shared_controls", None)
+            if isinstance(sc, dict) and sc.get("stop"):
+                return False
+            rest = do - _t.time()
+            if rest <= 0:
+                break
+            try:
+                self.shared_stats["status"] = f"ČEKAM reset kvote, nastavljam u {hhmm}"
+            except Exception:
+                pass
+            await asyncio.sleep(min(30.0, rest))
+        self.kvota_stop = False
+        self.kvota_stop_do = 0
+        self.log("▶️ Kvota resetirana — nastavljam obradu", "info")
+        return True
+
+
 async def process_single_file_worker(self, file_path):
     file_name = file_path.name
     try:
@@ -850,6 +891,8 @@ async def process_single_file_worker(self, file_path):
     # blokovi s .chk ostaju, ostali se prevode pri sljedećem pokretanju
     if any(_e == "QUOTA_STOP" for _r, _e in results):
         self.kvota_stop = True
+        if await _cekaj_reset_kvote(self, file_name):  # G5
+            return await process_single_file_worker(self, file_path)
         self.log(
             f"⛔ [{file_name}] dnevna kvota iscrpljena — poglavlje NIJE prepisano; "
             f"nastavi nakon resetiranja kvote",
