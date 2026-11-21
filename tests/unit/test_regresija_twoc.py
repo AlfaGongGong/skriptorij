@@ -176,11 +176,11 @@ def test_dropcap_obican_paragraf(dc):
     assert p.get_text() == DUGO
 
 
-def test_dropcap_dijalog_daje_crticu_a_ne_sliku(dc):
+def test_dropcap_dijalog_bez_dropcapa_i_bez_velike_crtice(dc):
     soup = _soup(f"<p>{DIJALOG_P}</p>")
-    assert styler._dodaj_dropcap(soup) is True
+    assert styler._dodaj_dropcap(soup) is False
     p = soup.find("p")
-    assert p.find("span", class_="booklyfi-crtica") is not None
+    assert p.find("span", class_="booklyfi-crtica") is None
     assert p.find("img", class_="booklyfi-dropcap") is None
     assert "booklyfi-prvi" in p["class"]
 
@@ -314,7 +314,7 @@ def test_dropcap_dijalog_drugi_poziv_ne_dupla_crticu(dc):
     soup = _soup(f"<p>{DIJALOG_P}</p>")
     styler._dodaj_dropcap(soup)
     styler._dodaj_dropcap(soup)
-    assert len(soup.find_all("span", class_="booklyfi-crtica")) == 1
+    assert len(soup.find_all("span", class_="booklyfi-crtica")) == 0
 
 
 # ── restyle: _ukloni_sve → _normalizuj → _dodaj_dropcap (ponovno stiliziranje) ──
@@ -356,7 +356,7 @@ def test_check_accuracy_imena_nedostaju_samo_jednom():
 
 def test_dropcap_dijalog_ostaje_jedna_crtica(dc):
     soup = _soup(f"<p>{DIJALOG_P}</p>")
-    assert styler._dodaj_dropcap(soup) is True
+    assert styler._dodaj_dropcap(soup) is False
     assert soup.find("p").get_text() == DIJALOG_P
 
 

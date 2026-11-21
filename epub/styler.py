@@ -1099,34 +1099,10 @@ def _dodaj_dropcap(soup):
         return False
 
     if prvi_char in dijalog_chars:
-        # F0.11: dijalog na pocetku — velika crtica umesto slova
-        if prvi_char in ("—", "–", "‒", "―"):
-            crtica = prvi_char
-        else:
-            crtica = "—"
-        img_html = (
-            '<span class="booklyfi-crtica" '
-            'style="float:left;display:block;'
-            'font-size:4em;line-height:0.8;'
-            'margin:0.1em 0.05em 0 0;padding:0;">'
-            + crtica
-            + '</span>'
-        )
-        cls = prvi_p.get("class") or []
-        if isinstance(cls, str):
-            cls = cls.split()
-        crtica_tag = BeautifulSoup(img_html, "html.parser").find("span")
-        if prvi_char in ("\u2014", "\u2013", "\u2012", "\u2015", "-"):
-            for _n in prvi_p.find_all(string=True):
-                _s = str(_n)
-                if _s.strip():
-                    _i = len(_s) - len(_s.lstrip())
-                    if _s[_i] == prvi_char:
-                        _n.replace_with(NavigableString(_s[:_i] + _s[_i + 1:]))
-                    break
-        prvi_p.insert(0, crtica_tag)
-        prvi_p["class"] = list(cls) + ["booklyfi-prvi"]
-        return True
+        # L64: replika (crtica) na pocetku poglavlja: bez dropcapa i bez velike crtice;
+        # crtica ostaje obican tekst odlomka
+        prvi_p["class"] = list(_cls_ranije) + ["booklyfi-prvi"]
+        return False
 
     # Primeni dropcap SAMO na prvi_p
     for p in [prvi_p]:

@@ -12,7 +12,8 @@ def test_navodnik_bez_crtice():
     assert s.find("p").get_text().startswith("„")
 
 
-def test_crtica_replike_ostaje():
+def test_crtica_replike_ostaje_obican_tekst():
     s = BeautifulSoup(f"<body><h1>X</h1><p>— {TEKST}</p></body>", "html.parser")
-    assert _dodaj_dropcap(s) is True
-    assert s.find("span", class_="booklyfi-crtica") is not None
+    assert _dodaj_dropcap(s) is False
+    assert s.find("span", class_="booklyfi-crtica") is None
+    assert s.find("p").get_text().startswith("—")
