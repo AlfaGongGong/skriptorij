@@ -21,8 +21,38 @@ _IME_STOP = frozenset(
     "November December The And But For With This That What When Then There They "
     "She Her His Him You Your Not Now Yes Well Why How Who Where".split()
 )
+# K2e3: obicne engleske rijeci s velikim slovom usred recenice (titule, epiteti, opce
+# imenice) koje se prevode ("Red Queen" -> "Crvena kraljica"): to nisu imena likova.
+_OBICNE = frozenset(
+    """emperor empress king queen prince princess duke duchess count countess baron lord lady
+    knight knights captain general sergeant colonel commander chief father mother brother brothers
+    sister sisters grandmother grandfather uncle aunt son daughter cousin elder old young little
+    big great grand high low long short tall black white red blue green grey gray golden silver
+    crimson dark light bright silent broken dead drowned fallen falling unborn wicked bitter holy
+    sacred common double single first second third last final north south east west northern
+    southern eastern western gate door hall castle city town village bridge fort tower keep road
+    street house court yard land isle island isles river lake sea ocean mountain hill forest wood
+    woods marsh marshes valley pass pit hole holes hollow field fields garden temple church chapel
+    tomb grave dragon angel devil demon god gods ghost spirit shadow blood death day night
+    morning evening battle war fist hand head heart eye tongue empire kingdom realm army guard
+    guards inquisitor inquisitors priest monk man men woman women boy girl ladies norseman
+    hallows beyond pyrrhic corinthian wall walls sword axe axes stone iron steel fire ice wind
+    storm thorn thorns order free""".split()
+)
+
+
+def _obicna(rijec: str, mala=()) -> bool:
+    """True ako je rijec obicna (titula, epitet, opca imenica), ne ime lika."""
+    l = rijec.lower()
+    if l in _OBICNE or l in mala:
+        return True
+    if l.endswith("s") and (l[:-1] in _OBICNE or l[:-1] in mala):
+        return True
+    return l.endswith("men") and (l[:-3] + "man") in _OBICNE
+
+
 _NEG_EN = re.compile(
-    r"n't\b|\b(?:not|never|no|nothing|nobody|none|neither|nor|nowhere|without|cannot)\b", re.I
+    r"n['\u2019]t\b|\b(?:not|never|no|nothing|nobody|none|neither|nor|nowhere|without|cannot)\b", re.I
 )
 _NEG_HR = re.compile(
     r"\b(?:ne|nije|nisam|nisi|nismo|niste|nisu|neću|nećeš|neće|nećemo|nećete|nema|nemam|"
@@ -49,8 +79,9 @@ def _brojevi(plain: str) -> set:
 
 def _imena(plain: str) -> set:
     res = set()
+    mala = set(re.findall(r"\b[a-z]{3,}\b", plain))
     for m in _IME_RX.finditer(plain):
-        if m.group(1) in _IME_STOP:
+        if m.group(1) in _IME_STOP or _obicna(m.group(1), mala):
             continue
         pre = plain[: m.start()].rstrip()
         if not pre or pre[-1] in ".!?\u2026\"\u201c\u201d\u2018:;\u2014\u2013(":
