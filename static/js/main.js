@@ -4361,26 +4361,8 @@ document.addEventListener("DOMContentLoaded", () => {
         auditCard.dataset.zenHidden = "1";
     }
 
-    // 3. Dodaj toggle dugme na dno dashboard-a
-    const toggleBar = document.createElement("div");
-    toggleBar.className = "zen-toggle-bar";
-
-    const btn = document.createElement("button");
-    btn.className = "btn btn-sm btn-outline zen-toggle-btn";
-    btn.innerHTML = "⚙️ Prikaži tehničke detalje";
-    toggleBar.appendChild(btn);
-    dashboard.appendChild(toggleBar);
-
-    let techVisible = false;
-    btn.addEventListener("click", () => {
-        techVisible = !techVisible;
-        document.querySelectorAll("[data-zen-hidden]").forEach(el => {
-            el.style.display = techVisible ? "" : "none";
-        });
-        btn.innerHTML = techVisible
-            ? "⚙️ Sakrij tehničke detalje"
-            : "⚙️ Prikaži tehničke detalje";
-    });
+    // 3. (U2) Toggle 'Prikazi tehnicke detalje' uklonjen: podaci su duplo.
+    //    Elementi ostaju skriveni (data-zen-hidden), JS koristi njihove ID-eve.
 
     // 4. Expert tab blago utišan (postoji, ne uklanja se)
     const expertTab = document.querySelector('[data-tab="tab-expert"]');

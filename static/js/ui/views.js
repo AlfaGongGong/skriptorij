@@ -11,6 +11,7 @@
     };
     var VIEWS = ["rad", "kvaliteta", "knjiga", "alati"];
     var lastTab = {};
+    var prevActive = null;
 
     function groupOf(tabId) {
         for (var g in GROUPS) {
@@ -56,6 +57,10 @@
 
     function onTabChange() {
         var t = activeTab();
+        // U3: observer hvata svaku promjenu klase u .tab-nav (npr. badge pri pollingu);
+        // pogled se mijenja samo ako se aktivni tab stvarno promijenio.
+        if (t === prevActive) return;
+        prevActive = t;
         var g = groupOf(t);
         if (!g) return;
         lastTab[g] = t;
@@ -97,6 +102,7 @@
                 if (b) setView(b.getAttribute("data-view"));
             });
         }
+        prevActive = activeTab();
         var tabs = document.querySelector(".tab-nav");
         if (tabs && window.MutationObserver) {
             new MutationObserver(onTabChange).observe(tabs, {
