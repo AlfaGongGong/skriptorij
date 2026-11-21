@@ -777,6 +777,9 @@ async def _call_ai_engine(
         except Exception:
             raw, label = None, "N/A"
         return res
+    except Exception as _e:
+        logger.warning("[G16] %s izuzetak %s: %s", uloga, type(_e).__name__, str(_e)[:160])
+        raise
     finally:
         try:
             _g16_zapisi(uloga, raw, label, _time.monotonic() - t0)
