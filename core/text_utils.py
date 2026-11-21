@@ -194,8 +194,11 @@ def _smart_extract(raw: str) -> str:
                         return _ocisti_escape_artifacts(
                             _strip_html_wrapper(str(data[k]).strip())
                         )
-        except Exception:
-            logger.warning("[C2_parse] text_utils.py:188 Exception")
+        except Exception as _e:
+            if candidate.lstrip().startswith("{"):
+                logger.warning("[C2_parse] JSON nije valjan: %s", str(_e)[:120])
+            else:
+                logger.debug("[C2_parse] odgovor nije JSON (%s)", type(_e).__name__)
 
     # Regex fallback za finalno_polirano: pohlepni (.+) namjerno hvata vrijednosti
     # s neescape-danim ASCII navodnicima unutar HTML-a (npr. dijalog sekcije).
