@@ -63,7 +63,7 @@ def nadji_en(ck, blok, en, n=500):
         return ""
     if not EN_TEXT:
         return ""
-    prvi = blok.split(".html_blok")[0] + ".html"
+    prvi = (blok.rsplit("_blok_", 1)[0] if "_blok_" in blok else blok.split(".html_blok")[0] + ".html")
     kandidati = ([prvi] if prvi in EN_TEXT else []) + [k for k in sorted(EN_TEXT) if k != prvi]
     for k in kandidati:
         t = EN_TEXT[k]

@@ -147,7 +147,7 @@ def sidro_za_blok(en_t, ck_dir, k, tip, en, hr, hr_plain):
         return sidro_za_nalaz(tip, en, hr, "", hr_plain)
     if not isinstance(en_t, dict) or not en_t or not en:
         return None
-    fajl = k.split(".html_blok")[0] + ".html"
+    fajl = (k.rsplit("_blok_", 1)[0] if "_blok_" in k else k.split(".html_blok")[0] + ".html")
     if fajl in en_t:
         def _idx(p):
             m = re.search(r"_blok_(\d+)\.chk$", p)

@@ -1420,7 +1420,7 @@ def _p26_odlomak(tekstovi, blok, frag, n=300):
     frag = re.sub(r"\s+", " ", (frag or "").strip())
     if len(frag) < 6:
         return ""
-    prvi = blok.split(".html_blok")[0] + ".html"
+    prvi = (blok.rsplit("_blok_", 1)[0] if "_blok_" in blok else blok.split(".html_blok")[0] + ".html")
     redoslijed = ([prvi] if prvi in tekstovi else []) + [k for k in sorted(tekstovi) if k != prvi]
     for k in redoslijed:
         t = tekstovi[k]
