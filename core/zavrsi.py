@@ -22,18 +22,59 @@ import time
 import zipfile
 from pathlib import Path
 
+from utils.file_utils import atomic_write_text
+
 REPO = Path(__file__).resolve().parent.parent
 LOGS = REPO / ".logs"
 STATUS_FILE = LOGS / "zavrsi_status.json"
-ISPRAVCI = Path("/storage/emulated/0/Download/BOOKLYFI_ISPRAVCI")
-STYLED_DIR = Path("/storage/emulated/0/Books/MoonReader/STYLED")
-KANON = Path("/storage/emulated/0/Books/MoonReader/kanon")
-DOWNLOAD = Path("/storage/emulated/0/Download")
+
+
+def _download_dir(env=None):
+    """R9-25: Download mapa iz okoline (BOOKLYFI_DOWNLOAD_DIR); Android kao dosad, inace ~/Skriptorij/Download."""
+    env = os.environ if env is None else env
+    zadano = ("/storage/emulated/0/Download" if Path("/storage/emulated/0").is_dir()
+              else str(Path.home() / "Skriptorij" / "Download"))
+    return Path(env.get("BOOKLYFI_DOWNLOAD_DIR") or zadano)
+
+
+DOWNLOAD = _download_dir()
+ISPRAVCI = Path(os.environ.get("BOOKLYFI_ISPRAVCI_DIR") or (DOWNLOAD / "BOOKLYFI_ISPRAVCI"))
+# STYLED_DIR i KANON: None = uzmi iz config/settings.py (lijeni uvoz, settings ima nuspojave)
+STYLED_DIR = None
+KANON = None
+
+
+def _styled_dir():
+    if STYLED_DIR is not None:
+        return Path(STYLED_DIR)
+    try:
+        from config.settings import STYLED_DIR as _s
+        return Path(_s)
+    except Exception:
+        return Path("/storage/emulated/0/Books/MoonReader/STYLED")
+
+
+def _kanon_dir():
+    if KANON is not None:
+        return Path(KANON)
+    try:
+        from config.settings import KANON_ZRCALO_DIR as _k
+        return Path(_k)
+    except Exception:
+        return Path("/storage/emulated/0/Books/MoonReader/kanon")
 EPUBCHECK = Path("/usr/share/java/epubcheck.jar")
 
 _BLOK = re.compile(r"^(.+\.x?html)_blok_(\d+)(?:\.chk)?$")
 _LOCK = threading.Lock()
+_STATUS_LOCK = threading.Lock()  # _LOCK drzi cijeli tok pa se ne smije uzimati u upd()
 STATUS = {"stanje": "nema"}
+
+
+def _postavi_status(st):
+    """R9-26: nova referenca umjesto clear()+update() (citac nikad ne vidi prazan rjecnik)."""
+    global STATUS
+    with _STATUS_LOCK:
+        STATUS = dict(st)
 
 
 def _vrijeme():
@@ -93,6 +134,68 @@ def _rx_fragment(s):
     return re.compile(r"(?:\s|<[^>]*>)+".join(re.escape(r) for r in rijeci))
 
 
+_VOID = frozenset("br hr img meta link input col area base wbr source track param embed".split())
+_TAG = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9:-]*)[^>]*?(/?)>")
+_INLINE = "a|abbr|b|bdi|bdo|cite|code|dfn|em|i|kbd|mark|q|s|samp|small|span|strong|sub|sup|time|u|var"
+_INLINE_RX = re.compile(r"</?(?:" + _INLINE + r")(?:\s[^>]*)?>", re.I)
+
+
+def _tagovi_uravnotezeni(s):
+    """R9-22: True ako su tagovi u rasponu u paru (nema zalutalog zatvarajuceg ni otvorenog bez zatvaranja)."""
+    stog = []
+    for m in _TAG.finditer(s):
+        zatv, ime, samo = m.group(1), m.group(2).lower(), m.group(3)
+        if samo or ime in _VOID:
+            continue
+        if zatv:
+            if not stog or stog[-1] != ime:
+                return False
+            stog.pop()
+        else:
+            stog.append(ime)
+    return not stog
+
+
+def _nadji_html(wd, fajl):
+    """R9-28: (putanja|None, nejednoznacno). rglob s vise pogodaka se NE bira napamet."""
+    p = next((c for c in (wd / "text" / fajl, wd / fajl) if c.is_file()), None)
+    if p is not None:
+        return p, False
+    nadjeni = sorted(x for x in wd.rglob(fajl) if "checkpoints" not in x.parts)
+    if len(nadjeni) > 1:
+        return None, True
+    return (nadjeni[0] if nadjeni else None), False
+
+
+def _vrati_iz_backupa(bdir, ck, log=print):
+    """R9-24: vraca .chk (bdir/<ime>.chk -> ck/<ime>.chk) i HTML (bdir/html_<ime>) iz backupa. Vraca {chk, html}."""
+    rez = {"chk": 0, "html": 0}
+    if not bdir or not Path(bdir).is_dir():
+        return rez
+    ck = Path(ck)
+    wd = ck.parent
+    for f in sorted(Path(bdir).glob("*.chk")):
+        cilj = ck / f.name
+        try:
+            atomic_write_text(cilj, f.read_bytes().decode("utf-8"), encoding="utf-8")
+            rez["chk"] += 1
+        except Exception as e:
+            log(f"  VRACANJE FAIL {f.name}: {e!r}")
+    for f in sorted(Path(bdir).glob("html_*")):
+        ime = f.name[len("html_"):]
+        cilj, dup = _nadji_html(wd, ime)
+        if cilj is None:
+            log(f"  VRACANJE HTML preskoceno {ime}: {'nejednoznacno' if dup else 'nema fajla'}")
+            continue
+        try:
+            atomic_write_text(cilj, f.read_bytes().decode("utf-8"), encoding="utf-8")
+            rez["html"] += 1
+        except Exception as e:
+            log(f"  VRACANJE FAIL {f.name}: {e!r}")
+    log(f"Vraceno iz backupa: .chk={rez['chk']}, html={rez['html']}")
+    return rez
+
+
 def primijeni_u_html(ck, ispravke, bdir=None, log=print, dry=False):
     """P2.8: finalize pakira HTML iz work_dir-a (ne .chk), pa se ispravke upisuju i tamo.
     Fragment mora pogoditi tocno 1x (tolerira tagove i entitete izmedju rijeci).
@@ -104,12 +207,9 @@ def primijeni_u_html(ck, ispravke, bdir=None, log=print, dry=False):
         fajl = isp.get("fajl")
         staro = str(isp.get("staro", ""))
         novo = str(isp.get("novo", ""))
-        p = next((c for c in (wd / "text" / fajl, wd / fajl) if c.is_file()), None)
+        p, dup = _nadji_html(wd, fajl)
         if p is None:
-            nadjeni = [x for x in wd.rglob(fajl) if "checkpoints" not in x.parts]
-            p = nadjeni[0] if nadjeni else None
-        if p is None:
-            log(f"  HTML WARN {oid}: nema {fajl} u {wd.name}")
+            log(f"  HTML WARN {oid}: " + (f"{fajl} nejednoznacno u {wd.name}" if dup else f"nema {fajl} u {wd.name}"))
             st["fail"] += 1
             continue
         try:
@@ -120,6 +220,7 @@ def primijeni_u_html(ck, ispravke, bdir=None, log=print, dry=False):
             continue
         novo_h = html.escape(novo, quote=False)
         pogodak = None
+        odbijen = False
         for var in (staro, html.escape(staro, quote=False)):
             if var and t.count(var) == 1:
                 i = t.find(var)
@@ -132,8 +233,14 @@ def primijeni_u_html(ck, ispravke, bdir=None, log=print, dry=False):
                     continue
                 m = list(rx.finditer(t))
                 if len(m) == 1:
-                    pogodak = (m[0].start(), m[0].end())
-                    break
+                    if _tagovi_uravnotezeni(t[m[0].start():m[0].end()]):
+                        pogodak = (m[0].start(), m[0].end())
+                        break
+                    odbijen = True
+        if pogodak is None and odbijen:
+            log(f"  HTML WARN {oid}: raspon u {p.name} presijeca tagove (zalutali tag), preskacem")
+            st["fail"] += 1
+            continue
         if pogodak is None:
             if novo_h in t or novo in t:
                 log(f"  HTML VEC {oid}: {p.name}")
@@ -163,6 +270,7 @@ def provjeri_u_epubu(epub, ispravke):
         for ime in z.namelist():
             if ime.lower().endswith((".html", ".xhtml", ".htm")):
                 raw = z.read(ime).decode("utf-8", "ignore")
+                raw = _INLINE_RX.sub("", raw)  # R9-23: inline tag ne razbija rijec
                 dijelovi.append(html.unescape(re.sub(r"<[^>]+>", " ", raw)))
     t = n(" ".join(dijelovi))
     nije = [i.get("id") for i in ispravke if n(i["novo"]) not in t]
@@ -172,16 +280,15 @@ def provjeri_u_epubu(epub, ispravke):
 def _spremi(st):
     try:
         LOGS.mkdir(parents=True, exist_ok=True)
-        from utils.file_utils import atomic_write_text as _awt
-
-        _awt(STATUS_FILE, json.dumps(st, ensure_ascii=False, indent=1))
+        atomic_write_text(STATUS_FILE, json.dumps(st, ensure_ascii=False, indent=1))
     except Exception as e:
         print("[zavrsi] status nije spremljen:", repr(e))
 
 
 def status():
-    if STATUS.get("stanje") != "nema":
-        return dict(STATUS)
+    tren = STATUS
+    if tren.get("stanje") != "nema":
+        return dict(tren)
     try:
         if STATUS_FILE.exists():
             d = json.loads(STATUS_FILE.read_text("utf-8"))
@@ -190,7 +297,7 @@ def status():
             return d
     except Exception as e:
         print("[zavrsi] status nečitljiv:", repr(e))
-    return dict(STATUS)
+    return dict(tren)
 
 
 def _cmd(cmd, log, timeout=None):
@@ -216,17 +323,19 @@ def _cmd(cmd, log, timeout=None):
 
 
 def _backup_styled(knjiga, ts, log):
-    if not STYLED_DIR.exists():
+    sd = _styled_dir()
+    if not sd.exists():
         return None
     nm = knjiga.lower()
-    c = [f for f in STYLED_DIR.glob("*_STYLED.epub") if nm in f.name.lower()]
+    c = [f for f in sd.glob("*_STYLED.epub") if nm in f.name.lower()]
     if not c:
         tok = [t for t in nm.split("_") if t]
-        c = [f for f in STYLED_DIR.glob("*_STYLED.epub") if tok and all(t in f.name.lower() for t in tok)]
+        c = [f for f in sd.glob("*_STYLED.epub") if tok and all(t in f.name.lower() for t in tok)]
     if not c:
         log("Nema starog STYLED EPUB-a za backup.")
         return None
     f = max(c, key=lambda x: x.stat().st_mtime)
+    DOWNLOAD.mkdir(parents=True, exist_ok=True)
     dst = DOWNLOAD / f"styled_bak_{knjiga}_{ts}.epub"
     shutil.copy2(f, dst)
     log(f"Backup STYLED: {f.name} -> {dst.name}")
@@ -240,6 +349,7 @@ def pokreni(knjiga, izvor, ck, dry=False):
     LOGS.mkdir(parents=True, exist_ok=True)
     lf = LOGS / f"zavrsi_{knjiga}_{ts}{'_dry' if dry else ''}.log"
     rep = []
+    bdir = None
     st = {"stanje": "tece", "knjiga": knjiga, "dry": dry, "poceo": _vrijeme(),
           "log_fajl": str(lf), "korak": "start"}
 
@@ -254,8 +364,7 @@ def pokreni(knjiga, izvor, ck, dry=False):
         st.update(kw)
         st["log_rep"] = rep[-25:]
         if not dry:
-            STATUS.clear()
-            STATUS.update(st)
+            _postavi_status(st)
             _spremi(st)
 
     try:
@@ -285,7 +394,8 @@ def pokreni(knjiga, izvor, ck, dry=False):
             if ln.startswith("STYLED="):
                 styled = ln[len("STYLED="):].strip()
         if rc != 0 or not styled or not Path(styled).is_file():
-            upd(stanje="pao", greska=f"rebuild rc={rc}, styled={styled!r}", zavrsio=_vrijeme())
+            _vr = _vrati_iz_backupa(bdir, ck, log)
+            upd(stanje="pao", greska=f"rebuild rc={rc}, styled={styled!r}", vraceno=_vr, zavrsio=_vrijeme())
             return st
         upd(styled=styled)
 
@@ -323,7 +433,7 @@ def pokreni(knjiga, izvor, ck, dry=False):
 
         upd(korak="audit")
         cmd = [_py(), "tools/audit_epub.py", "--izvor", izvor]
-        g = KANON / f"{knjiga}.json"
+        g = _kanon_dir() / f"{knjiga}.json"
         if g.exists():
             cmd += ["--glosar", g]
         cmd += ["--chk", ck, "--gate", styled]
@@ -346,7 +456,13 @@ def pokreni(knjiga, izvor, ck, dry=False):
         import traceback
         log("GRESKA: " + repr(e))
         log(traceback.format_exc()[-600:])
-        upd(stanje="pao", greska=repr(e), zavrsio=_vrijeme())
+        _vr = None
+        if not dry and st.get("korak") in ("ispravke", "backup_epub", "rebuild"):
+            try:
+                _vr = _vrati_iz_backupa(bdir, ck, log)
+            except Exception as e2:
+                log("Vracanje iz backupa nije uspjelo: " + repr(e2))
+        upd(stanje="pao", greska=repr(e), vraceno=_vr, zavrsio=_vrijeme())
     return st
 
 
