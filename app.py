@@ -187,11 +187,29 @@ def _find_epub(name: str) -> Path | None:
 
 
 def _latest_prevedeno() -> Path | None:
+    # FIX download: pokriva PREVEDENO_x.epub i x_PREVEDENO.epub; prvo aktivna knjiga,
+    # tek onda najnovija (prije je uzimao najnoviji PREVEDENO_* bez obzira na knjigu).
     candidates = []
     for base in [OUTPUT_DIR, INPUT_DIR]:
-        candidates += list(Path(base).glob("PREVEDENO_*.epub"))
+        for pat in ("PREVEDENO_*.epub", "*_PREVEDENO.epub"):
+            candidates += list(Path(base).glob(pat))
+    candidates = [c for c in candidates if "styled" not in c.name.lower()]
     if not candidates:
         return None
+    try:
+        _cur = SHARED_STATS.get("current_file", "") or ""
+        if not _cur:
+            _lb = Path(INPUT_DIR) / "last_book.json"
+            if _lb.exists():
+                _cur = json.loads(_lb.read_text("utf-8")).get("last_book", "")
+        _tok = [t for t in re.sub(r"[^a-z0-9]+", "_", Path(_cur).stem.lower()).split("_") if len(t) > 2][:6]
+        if _tok:
+            _akt = [c for c in candidates if all(t in re.sub(r"[^a-z0-9]+", "_", c.name.lower()) for t in _tok)]
+            if _akt:
+                return max(_akt, key=lambda p: p.stat().st_mtime)
+            return None  # aktivna knjiga nema prevedeni EPUB: bolje 404 nego pogresna knjiga
+    except Exception:
+        logger.exception("[download] aktivna knjiga")
     return max(candidates, key=lambda p: p.stat().st_mtime)
 
 

@@ -2245,7 +2245,31 @@ def run_epub_styler(
                             _found = _k2; break
                     if not _found:
                         _bn = str(_html_name).split("/")[-1]
-                        if not any(str(_h).split("/")[-1] == _bn for _h in skip_hrefs):
+                        # G20-fix: .chk bez HTML-a nije greska ako je TOC (styler ga brise) ili kratka
+                        # stranica (naslovnica/impresum, <150 rijeci) koju je ranija stilizacija uklonila
+                        _bn_low = _bn.lower()
+                        _je_obrisani_toc = any(kw in _bn_low for kw in ("toc", "sadrzaj", "contents", "nav."))
+                        try:
+                            _txt_chk = " ".join(
+                                _re_s.sub(r"<[^>]+>", " ", _ocisti_chk(_b.read_text("utf-8", errors="ignore")))
+                                for _b in _blokovi.values()
+                            )
+                            _rij = len(_txt_chk.split())
+                        except Exception:
+                            _txt_chk = ""
+                            _rij = 10 ** 6
+                        # isti kriterij kao styler F0.10: kratka stranica (<=5000 znakova) s copyright oznakama
+                        _tl = _txt_chk.lower()
+                        _je_copyright = len(_txt_chk) <= 5000 and any(
+                            m in _tl for m in ("\u00a9", "copyright", "sva prava", "all rights", "autorska prava",
+                                               "isbn", "published by", "first published", "originally published")
+                        )
+                        _log("   -> G20 dijag: nema HTML za " + _bn + " (" + str(_rij) + " rijeci); part* u EPUB-u: "
+                             + ", ".join(sorted(k for k in files if "part000" in k.lower()))[:300], "tech")
+                        if _je_obrisani_toc or _rij < 150 or _je_copyright:
+                            _log("   -> G20: .chk preskocen: " + _bn + (" (TOC)" if _je_obrisani_toc else " (copyright)" if _je_copyright else " (kratka stranica)")
+                                 + " pocetak: " + _txt_chk.strip()[:80].replace("\n", " "), "warning")
+                        elif not any(str(_h).split("/")[-1] == _bn for _h in skip_hrefs):
                             _chk_greske.append("nema HTML za .chk: " + str(_html_name))
                         continue
                     _html_name = _found
