@@ -895,7 +895,9 @@ class ProviderRouterV2:
         fleet = self._get_fleet()
         if fleet:
             try:
-                with fleet.lock:
+                _lk = fleet.lock
+                _cm = _lk if hasattr(_lk, "__enter__") else __import__("contextlib").nullcontext()
+                with _cm:
                     keys = fleet.fleet.get(prov_u, [])
                     rates = [ks.success_rate for ks in keys]
                 if rates:

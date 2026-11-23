@@ -54,10 +54,21 @@ PROVIDER_PRIORITY = {
 # _call_ai_engine čeka kvotu umjesto da pada na Groq/Cloudflare. Gasi se s BOOKLYFI_STRICT_GEMINI=0.
 import os as _os_strict
 
+# 2026-11-23: smiju i GEMMA (Gemini -> Gemma), jer su kvote po modelu; inače knjiga staje
+# kad se istroše samo Gemini modeli. Staro ponašanje: BOOKLYFI_STRICT_GEMINI_ONLY=1.
+_STRICT_GOOGLE = (
+    ["GEMINI"]
+    if _os_strict.environ.get("BOOKLYFI_STRICT_GEMINI_ONLY", "0") == "1"
+    else ["GEMINI", "GEMMA"]
+)
 STRICT_PROVIDER_ROLES = (
     {}
     if _os_strict.environ.get("BOOKLYFI_STRICT_GEMINI", "1") == "0"
-    else {"PREVODILAC": ["GEMINI"], "LEKTOR": ["GEMINI"], "KOREKTOR": ["GEMINI"]}
+    else {
+        "PREVODILAC": list(_STRICT_GOOGLE),
+        "LEKTOR": list(_STRICT_GOOGLE),
+        "KOREKTOR": list(_STRICT_GOOGLE),
+    }
 )
 
 # 2026-10-24: izvedeno iz providers.json (jedan izvor istine)

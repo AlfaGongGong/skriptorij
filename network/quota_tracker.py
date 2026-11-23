@@ -61,6 +61,12 @@ def je_dnevni_limit(body) -> bool:
         s = body if isinstance(body, str) else json.dumps(body, default=str)
     except Exception:
         return False
+    # 2026-11-23: ako Google navodi quotaId, odlučuje on (minutni limit nije dnevni)
+    _ids = re.findall(r'quotaId"?\s*[:=]\s*"([^"]+)"', s or "")
+    if _ids:
+        _dan = any(re.search(r"per[_ ]?day", i, re.I) for i in _ids)
+        _min = any(re.search(r"per[_ ]?minute", i, re.I) for i in _ids)
+        return _dan and not _min
     return bool(_DNEVNI_RX.search(s or ""))
 
 
