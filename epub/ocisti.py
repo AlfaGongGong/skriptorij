@@ -36,7 +36,7 @@ def _blockquote_tekst_u_p(s):
                    or (getattr(c, "name", None) and c.name not in _BLOK) for c in djeca):
             continue
 
-        def flush(run, prije):
+        def flush(run, prije, bq=bq):
             nonlocal n
             if not any((isinstance(x, NavigableString) and str(x).strip()) or getattr(x, "name", None) for x in run):
                 return

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# R0-18: odbija commit ako staged .py ima F821/F811/E9 (u tests/ F811 se ne gleda: pytest fixture). Bez ruff-a samo upozori.
+command -v ruff >/dev/null 2>&1 || { echo "pre-commit: ruff nije instaliran, preskacem"; exit 0; }
+FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
+[ -z "$FILES" ] && exit 0
+# shellcheck disable=SC2086
+ruff check --select F821,F811,E9 --extend-per-file-ignores "tests/*:F811" $FILES || { echo "pre-commit: ruff F821/F811/E9, commit odbijen"; exit 1; }

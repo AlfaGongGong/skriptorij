@@ -348,7 +348,7 @@ def _finaliziraj_fix_epub(self):
     # Tipografija na tekstualnim čvorovima (ne regex na HTML-u)
     try:
         from core.tipografija import normaliziraj_soup as _tip_n
-        from bs4 import BeautifulSoup as _BS_typo, NavigableString as _NS_typo
+        from bs4 import BeautifulSoup as _BS_typo
         n_typo = 0
         for _f in list(work_dir.rglob("*.xhtml")) + list(work_dir.rglob("*.html")):
             try:

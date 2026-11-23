@@ -98,7 +98,7 @@ def _keys_cfg_load(cfg_path):
     try:
         cfg = json.loads(txt)
     except ValueError as e:
-        raise _KeysCfgError("dev_api.json nije ispravan JSON: " + str(e)[:80])
+        raise _KeysCfgError("dev_api.json nije ispravan JSON: " + str(e)[:80]) from e
     if not isinstance(cfg, dict):
         raise _KeysCfgError("dev_api.json nije JSON objekt")
     return cfg

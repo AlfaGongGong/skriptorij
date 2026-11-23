@@ -10,7 +10,6 @@ Rollback: kopiraj .chk iz backup_zavrsi_* nazad i ponovi rebuild.
 CLI: python -m core.zavrsi <knjiga> [izvorni.epub] [--dry]
 """
 import html
-import importlib.util
 import json
 import os
 import re
@@ -87,11 +86,8 @@ def _py():
 
 
 def _overlay():
-    p = REPO / "tools" / "apply_overlay.py"
-    spec = importlib.util.spec_from_file_location("apply_overlay_zavrsi", p)
-    m = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(m)
-    return m
+    from core import apply_overlay
+    return apply_overlay
 
 
 def ispravke_iz_odluka(knjiga):

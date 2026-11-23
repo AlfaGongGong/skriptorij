@@ -262,7 +262,7 @@ def _skrati_overlap(prethodni, sljedeci, min_rijeci=15):
     def _words(t):
         return _re.sub(r"<[^>]+>", " ", t).split()
     w1 = _words(prethodni)
-    w2 = _words(sljedeci) if False else _words(sljedeci)
+    w2 = _words(sljedeci)
     mn = min(len(w1), len(w2), 500)
     for L in range(mn, min_rijeci - 1, -1):
         if w1[-L:] == w2[:L]:
@@ -1541,7 +1541,6 @@ def _razdvoji_literalne_nl(soup):
             ns = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), s)
             if ns != s:
                 tn.replace_with(ns)
-                par = tn.parent if hasattr(tn, "parent") else None
     for p in list(soup.find_all("p")):
         if not p.find(True) and "\u00a0" in p.get_text() and not p.get_text().replace("\u00a0", "").strip():
             p.decompose()
@@ -2142,7 +2141,6 @@ def run_epub_styler(
         # Ne koristimo _spoji_chk_u_html jer on radi na engine.work_dir
         # Umesto toga, direktno spojimo .chk u files dict
         import re as _re_s
-        from pathlib import Path as _P_s
         from config.settings import CHECKPOINT_BASE_DIR as _CPB_s
 
         _epub_stem = Path(str(epub_path)).stem

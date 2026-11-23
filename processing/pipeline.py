@@ -611,7 +611,6 @@ def _primijeni_kalkove_i_validator(
     Fail-safe: ako bilo što ne uspije, vraća originalni tekst.
     """
     import logging
-    import re as _re_lore
 
     # Korak 0.9: HTML atributi cleanup („ → " u atributima)
     try:

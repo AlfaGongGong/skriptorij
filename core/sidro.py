@@ -125,7 +125,6 @@ def sidro_za_nalaz(tip, en_frag, hr_frag, en_blok, hr_plain):
 
 def provjeri_prijedlog(sidro, en, novo):
     """(ok, razlog): prijedlog mora sadrzavati vecinu rijeci sidra, ne smije biti kraci i bez EN/cirilice."""
-    from core.gate_provjere import cir2lat
     from core.text_utils import _en_recenice
     if not novo or len(novo) < len(sidro) * 0.95:
         return False, "prekratko"
