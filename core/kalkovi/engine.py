@@ -14,10 +14,14 @@ Primjenjuje regex zamjene na tekst:
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import re
+import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -52,13 +56,19 @@ _HTML_TAG_RE = re.compile(r"<[^>]+>", re.UNICODE)
 def _izgradi_whitelist_re(glosar: dict) -> re.Pattern | None:
     """
     Prima glosar {originalni_termin: prijevod} ili {termin: None}.
-    Vraća kompajlirani pattern koji matchuje sve termine koje treba zaštititi,
-    ili None ako je glosar prazan.
+    Štiti i originalne termine i hrvatske vrijednosti glosara (R11a-11),
+    da kalk ne pokvari ime/izraz koji je glosar već odredio.
+    Vraća kompajlirani pattern ili None ako nema što štititi.
     """
     if not glosar:
         return None
-    termini = sorted(glosar.keys(), key=len, reverse=True)  # duži prvi
-    escaped = [re.escape(t) for t in termini if t.strip()]
+    termini = set()
+    for k, v in glosar.items():
+        if isinstance(k, str) and k.strip():
+            termini.add(k)
+        if isinstance(v, str) and len(v.strip()) >= 3:
+            termini.add(v)
+    escaped = [re.escape(t) for t in sorted(termini, key=len, reverse=True)]
     if not escaped:
         return None
     return re.compile(
@@ -66,10 +76,35 @@ def _izgradi_whitelist_re(glosar: dict) -> re.Pattern | None:
     )
 
 
+# R11a-11: regex se gradi jednom po glosaru (ključ = sadržaj), ne za svaki blok
+_WL_CACHE: dict = {}
+_WL_LOCK = threading.Lock()
+_WL_MAX = 8
+
+
+def _whitelist_za(glosar: dict | None) -> re.Pattern | None:
+    if not glosar:
+        return None
+    try:
+        kljuc = frozenset((k, v if isinstance(v, str) else None) for k, v in glosar.items())
+    except TypeError:
+        return _izgradi_whitelist_re(glosar)
+    with _WL_LOCK:
+        if kljuc in _WL_CACHE:
+            return _WL_CACHE[kljuc]
+    re_obj = _izgradi_whitelist_re(glosar)
+    with _WL_LOCK:
+        if len(_WL_CACHE) >= _WL_MAX:
+            _WL_CACHE.clear()
+        _WL_CACHE[kljuc] = re_obj
+    return re_obj
+
+
 def _zamijeni_s_whitelistom(
     tekst: str,
     whitelist_re: re.Pattern | None,
     compiled_patterns: list[_KompajliraniPattern],
+    dogadaji: list | None = None,
 ) -> tuple[str, int]:
     """
     Primjenjuje patterne na tekst uz zaštitu whitelist termina.
@@ -98,7 +133,7 @@ def _zamijeni_s_whitelistom(
         try:
             brojac = [0]
 
-            def _repl(m, _z=kp.zamjena, _b=brojac):
+            def _repl(m, _z=kp.zamjena, _b=brojac, _kat=kp.kategorija):
                 orig = m.group(0)
                 out = m.expand(_z)
                 if out and orig[:1].islower() and out[:1].isupper():
@@ -110,6 +145,8 @@ def _zamijeni_s_whitelistom(
                         out = out[:1].upper() + out[1:]
                 if out != orig:
                     _b[0] += 1
+                    if dogadaji is not None:
+                        dogadaji.append((_kat or "ostalo", orig, out))
                 return out
 
             novi_tekst = kp.compiled.sub(_repl, tekst)
@@ -129,6 +166,35 @@ def _zamijeni_s_whitelistom(
         tekst = tekst.replace(key, original)
 
     return tekst, ukupno_zamjena
+
+
+# R11a-23: dnevnik zamjena (jedan JSON po retku): .logs/kalkovi_zamjene.jsonl
+_ZADANI_DNEVNIK = Path(__file__).resolve().parents[2] / ".logs" / "kalkovi_zamjene.jsonl"
+LOG_PATH = _ZADANI_DNEVNIK
+_LOG_MAX_BYTES = 20 * 1024 * 1024
+_LOG_LOCK = threading.Lock()
+
+
+def _upisi_dnevnik(blok_id: str, dogadaji: list) -> None:
+    """Dodaje zamjene u LOG_PATH. Nikad ne baca iznimku; pod pytestom ne piše u zadani dnevnik."""
+    path = LOG_PATH
+    if not path or not dogadaji:
+        return
+    try:
+        path = Path(path)
+        if path == _ZADANI_DNEVNIK and os.environ.get("PYTEST_CURRENT_TEST"):
+            return
+        with _LOG_LOCK:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if path.exists() and path.stat().st_size > _LOG_MAX_BYTES:
+                return
+            ts = time.strftime("%Y-%m-%d %H:%M:%S")
+            with open(path, "a", encoding="utf-8") as f:
+                for kat, iz, u in dogadaji:
+                    f.write(json.dumps({"ts": ts, "blok": blok_id, "kat": kat, "iz": iz, "u": u},
+                                       ensure_ascii=False) + "\n")
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("[kalkovi] dnevnik zamjena nije upisan: %s", exc)
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +219,8 @@ class KalkoviEngine:
         :param html_safe: Ako True, zamjene ne diraju sadržaj HTML tagova.
         """
         self._html_safe = html_safe
+        self._lock = threading.Lock()
+        self._zamjene_po_kat: dict[str, int] = {}
         self._compiled: list[_KompajliraniPattern] = []
         self._kompajliraj(liste)
         logger.info(
@@ -230,17 +298,19 @@ class KalkoviEngine:
         if not tekst or not tekst.strip():
             return tekst, 0
 
-        if not self._compiled:
+        compiled = self._compiled  # snimka reference (reload zamjenjuje cijelu listu)
+        if not compiled:
             logger.debug("[kalkovi] Nema kompajliranih patterna — tekst nepromijenjen.")
             return tekst, 0
 
         t_start = time.perf_counter()
 
-        whitelist_re = _izgradi_whitelist_re(glosar or {})
+        whitelist_re = _whitelist_za(glosar)
+        dogadaji: list = []
 
         try:
             rezultat, n_zamjena = _zamijeni_s_whitelistom(
-                tekst, whitelist_re, self._compiled
+                tekst, whitelist_re, compiled, dogadaji
             )
         except Exception as exc:  # noqa: BLE001
             # Fail-safe: iznimka ne smije srušiti pipeline
@@ -253,6 +323,12 @@ class KalkoviEngine:
             return tekst, 0
 
         t_kraj = time.perf_counter()
+
+        if dogadaji:
+            with self._lock:
+                for kat, _iz, _u in dogadaji:
+                    self._zamjene_po_kat[kat] = self._zamjene_po_kat.get(kat, 0) + 1
+            _upisi_dnevnik(blok_id, dogadaji)
 
         if n_zamjena:
             logger.info(
@@ -293,10 +369,13 @@ class KalkoviEngine:
             kategorije[kp.kategorija or "ostalo"] = (
                 kategorije.get(kp.kategorija or "ostalo", 0) + 1
             )
+        with self._lock:
+            zamjene = dict(self._zamjene_po_kat)
         return {
             "ukupno_patterna": len(self._compiled),
             "html_safe": self._html_safe,
             "kategorije": kategorije,
+            "zamjene_po_kategoriji": zamjene,
         }
 
 
@@ -311,9 +390,9 @@ def _inicijaliziraj_engine() -> KalkoviEngine:
     Fail-safe: ako SVE_LISTE nije dostupan, vraća prazni engine.
     """
     try:
-        from core.kalkovi import SVE_LISTE  # noqa: PLC0415
+        from core.kalkovi import SVE_LISTE_KAT  # noqa: PLC0415
 
-        return KalkoviEngine(SVE_LISTE)
+        return KalkoviEngine(SVE_LISTE_KAT)
     except Exception as exc:  # noqa: BLE001
         logger.error(
             "[kalkovi] Ne mogu učitati SVE_LISTE: %s — engine je prazan (fallback).",

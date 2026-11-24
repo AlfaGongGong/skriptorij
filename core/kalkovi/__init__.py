@@ -49,10 +49,29 @@ def _sastavi_liste(dinamicki):
     )
 
 
+# Kategorija = naziv modula (za statistiku i dnevnik zamjena; R11a-18)
+_KATEGORIJE = ("da", "ekavizmi", "dinamicki", "dijalog", "pleonazmi", "glagoli")
+
+
+def _sastavi_kat(dinamicki):
+    """Isti unosi kao _sastavi_liste, ali treći član je naziv modula."""
+    izvori = (
+        ("da", _filtriraj(_DA)),
+        ("ekavizmi", _filtriraj(_EKAVIZMI)),
+        ("dinamicki", _filtriraj(dinamicki)),
+        ("dijalog", _filtriraj(DIJALOG)),
+        ("pleonazmi", _filtriraj(PLEONAZMI)),
+        ("glagoli", _filtriraj(GLAGOLI)),
+    )
+    return [(e[0], e[1], naziv) for naziv, lista in izvori for e in lista]
+
+
 SVE_LISTE = _sastavi_liste(_DINAMICKI)
+SVE_LISTE_KAT = _sastavi_kat(_DINAMICKI)
 
 __all__ = [
     "SVE_LISTE",
+    "SVE_LISTE_KAT",
     "_DA",
     "_EKAVIZMI",
     "_DINAMICKI",
@@ -71,7 +90,7 @@ def reload_dinamicki_kalkove() -> int:
     """
     import sys
 
-    global _DINAMICKI, SVE_LISTE
+    global _DINAMICKI, SVE_LISTE, SVE_LISTE_KAT
 
     mod_name = "core.kalkovi.dinamicki_lista"
     stari_modul = sys.modules.pop(mod_name, None)
@@ -85,10 +104,12 @@ def reload_dinamicki_kalkove() -> int:
         logger.warning("[kalkovi] reload dinamičke liste pao (%s) — ostaje stara", exc)
 
     nova = _sastavi_liste(_DINAMICKI)
+    nova_kat = _sastavi_kat(_DINAMICKI)
     from core.kalkovi.engine import kalkovi_engine
 
-    kalkovi_engine.reload(nova)
+    kalkovi_engine.reload(nova_kat)
     SVE_LISTE = nova
+    SVE_LISTE_KAT = nova_kat
     return kalkovi_engine.broj_patterna
 
 

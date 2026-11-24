@@ -3,7 +3,9 @@ Korak 11c — Promoter i feedback loop zaštita
 Promovira potvrđene kalkove u aktivnu listu + rollback zaštita.
 """
 
+import ast
 import logging
+import os
 import re
 import sqlite3
 from datetime import datetime
@@ -19,6 +21,38 @@ MAX_DOZVOLJENI_PAD_SCORE = 0.3
 MIN_KNJIGA_ZA_PROMOCIJU = 3
 
 
+_UNOS_RE = re.compile(
+    r"""^\s*\(\s*([rR]?(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'))\s*,"""
+)
+
+
+def _unos_pattern(linija: str):
+    """Prvi string literal iz retka liste ('(r"\\bx\\b", "y"),') ili None."""
+    m = _UNOS_RE.match(linija)
+    if not m:
+        return None
+    try:
+        v = ast.literal_eval(m.group(1))
+    except (ValueError, SyntaxError):
+        return None
+    return v if isinstance(v, str) else None
+
+
+def _unos_ima_pattern(linija: str, pattern: str) -> bool:
+    """Točno podudaranje (ne podniz): 'deteta' nije 'dete' (R11b-4)."""
+    lit = _unos_pattern(linija)
+    if lit is None:
+        return False
+    esc = re.escape(pattern)
+    return lit in (pattern, esc, r"\b" + esc + r"\b", r"\b" + pattern + r"\b")
+
+
+def _atomarno_pisi(path: Path, tekst: str) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(tekst, encoding="utf-8")
+    os.replace(tmp, path)
+
+
 class DinamickiPromoter:
     def __init__(self, db_path: Path = DB_PATH):
         self.db_path = db_path
@@ -26,8 +60,10 @@ class DinamickiPromoter:
     def _dohvati_potvrdjene(self) -> list:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
-            rows = conn.execute("""
-                SELECT id, pattern, tip, broj_pojavljivanja,
+            stupci = {r[1] for r in conn.execute("PRAGMA table_info(kandidati)")}
+            zam = "zamjena," if "zamjena" in stupci else "'' AS zamjena,"
+            rows = conn.execute(f"""
+                SELECT id, pattern, tip, {zam} broj_pojavljivanja,
                        CASE WHEN broj_pojavljivanja > 0
                             THEN ukupan_score / broj_pojavljivanja
                             ELSE 0 END as avg_score,
@@ -56,18 +92,28 @@ class DinamickiPromoter:
             return avg, "prihvatljiv"
         return avg, "dobar_score_mozda_nije_kalk"
 
-    def _generisi_python_unos(self, pattern: str, tip: str) -> str:
-        escaped = re.escape(pattern)
-        return f'    (r"\\b{escaped}\\b", ""),  # auto: {tip}'
+    def _generisi_python_unos(self, pattern: str, tip: str, zamjena: str = "") -> str:
+        """Prazna zamjena = nema unosa (''): prazan niz bi BRISAO riječ iz knjige."""
+        if not isinstance(zamjena, str) or not zamjena.strip():
+            return ""
+        lit = repr(r"\b" + re.escape(pattern) + r"\b")
+        tip_s = " ".join(str(tip).split())
+        return f"    ({lit}, {zamjena!r}),  # auto: {tip_s}"
 
     def _ucitaj_dinamicki_listu(self) -> list:
+        """Retci unosa između 'DINAMICKI_KALKOVI = [' i zatvarajuće ']' (ne lomi se na ']' u regexu)."""
         if not DINAMICKI_LISTA_PATH.exists():
             return []
-        content = DINAMICKI_LISTA_PATH.read_text(encoding="utf-8")
-        match = re.search(r"DINAMICKI_KALKOVI\s*=\s*\[(.*?)\]", content, re.DOTALL)
-        if match:
-            return match.group(1).strip().splitlines()
-        return []
+        out, unutra = [], False
+        for l in DINAMICKI_LISTA_PATH.read_text(encoding="utf-8").splitlines():
+            if not unutra:
+                unutra = l.strip().startswith("DINAMICKI_KALKOVI") and l.rstrip().endswith("[")
+                continue
+            if l.rstrip() == "]":
+                break
+            if l.strip():
+                out.append(l.rstrip())
+        return out
 
     def _spasi_dinamicki_listu(self, unosi: list):
         sadrzaj = (
@@ -76,7 +122,8 @@ class DinamickiPromoter:
             f'Zadnje azuriranje: {datetime.now().strftime("%Y-%m-%d %H:%M")}\n"""\n\n'
             "DINAMICKI_KALKOVI = [\n" + "\n".join(unosi) + "\n]\n"
         )
-        DINAMICKI_LISTA_PATH.write_text(sadrzaj, encoding="utf-8")
+        compile(sadrzaj, str(DINAMICKI_LISTA_PATH), "exec")  # ne upisuj neispravan Python
+        _atomarno_pisi(DINAMICKI_LISTA_PATH, sadrzaj)
 
     def promoviraj(self, dry_run: bool = False) -> dict:
         kandidati = self._dohvati_potvrdjene()
@@ -87,8 +134,7 @@ class DinamickiPromoter:
         for k in kandidati:
             pattern = k["pattern"]
             tip = k["tip"]
-            escaped = re.escape(pattern)
-            if any(escaped in u or pattern in u for u in postojeci_unosi):
+            if any(_unos_ima_pattern(u, pattern) for u in postojeci_unosi):
                 rezultat["preskocan"].append(pattern)
                 continue
 
@@ -106,7 +152,10 @@ class DinamickiPromoter:
                         conn.commit()
                 continue
 
-            novi_unos = self._generisi_python_unos(pattern, tip)
+            novi_unos = self._generisi_python_unos(pattern, tip, k.get("zamjena", ""))
+            if not novi_unos:
+                rezultat["preskocan"].append(pattern)  # bez poznate zamjene ne promoviramo
+                continue
             novi_unosi.append(novi_unos)
             rezultat["promoviran"].append(
                 {
@@ -148,11 +197,8 @@ class DinamickiPromoter:
             conn.commit()
         if DINAMICKI_LISTA_PATH.exists():
             content = DINAMICKI_LISTA_PATH.read_text(encoding="utf-8")
-            escaped = re.escape(pattern)
-            linije = [
-                l for l in content.splitlines() if pattern not in l and escaped not in l
-            ]
-            DINAMICKI_LISTA_PATH.write_text("\n".join(linije) + "\n", encoding="utf-8")
+            linije = [l for l in content.splitlines() if not _unos_ima_pattern(l, pattern)]
+            _atomarno_pisi(DINAMICKI_LISTA_PATH, "\n".join(linije) + "\n")
             log.warning(
                 f"Rollback: '{pattern}' uklonjen iz dinamicke liste. Razlog: {razlog}"
             )
