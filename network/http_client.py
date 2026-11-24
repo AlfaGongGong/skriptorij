@@ -1557,8 +1557,11 @@ def api_call(
             _time.sleep(wait_s)
     except Exception:
         logger.debug("[C3_fallback] http_client.py:1426 Exception")
-    prov_sem.acquire()
-    key_sem.acquire()
+    if not prov_sem.acquire(timeout=180):
+        return None
+    if not key_sem.acquire(timeout=180):
+        prov_sem.release()
+        return None
     try:
         with contextlib.suppress(Exception):
             quota_tracker.record_request(prov_upper, api_key)

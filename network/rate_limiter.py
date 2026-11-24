@@ -371,6 +371,15 @@ async def _throttle_provider(provider: str | None, key: str | None = None) -> No
         _LAST_CALLS[prov] = now_sending
 
 
+async def _acquire_async(sem, max_cekanje: float = 240.0) -> None:
+    """Zauzmi semafor bez blokiranja niti; prekid (cancel) ne ostavlja zauzet slot."""
+    t0 = time.monotonic()
+    while not sem.acquire(blocking=False):
+        if time.monotonic() - t0 > max_cekanje:
+            raise RuntimeError("semafor: slot nije oslobođen u %.0fs" % max_cekanje)
+        await asyncio.sleep(0.05 + random.uniform(0.0, 0.1))
+
+
 async def acquire_key(key: str, provider: str | None = None):
     if provider:
         try:
@@ -448,35 +457,30 @@ async def acquire_key(key: str, provider: str | None = None):
     # Throttle PRIJE semaphore — ne blokiramo ostale ključeve dok čekamo gap/cooldown
     await _throttle_provider(provider, key=key)
 
-    if provider:
-        prov_sem = get_provider_semaphore(provider)
-        await asyncio.to_thread(prov_sem.acquire)
-        logger.debug(
-            "[rate_limiter] %s IP-semaphore zauzet (key=...%s)",
-            provider.upper(),
-            key[-4:],
-        )
-        syslog.debug(
-            "[rate_limiter] %s IP-semaphore zauzet (key=...%s)",
-            provider.upper(),
-            key[-4:],
-        )
-
-    # FIX: globalna kocnica preko SVIH provajdera — vidi MAX_CONCURRENT_GLOBAL
-    await asyncio.to_thread(_GLOBAL_SEMAPHORE.acquire)
-    logger.debug("[rate_limiter] GLOBAL-semaphore zauzet (key=...%s)", key[-4:])
-
-    sem = get_key_semaphore(key)
-    await asyncio.to_thread(sem.acquire)
+    # 2026-11-24: slotovi se zauzimaju bez blokirajućih niti. Stari kod (to_thread(sem.acquire))
+    # je pri prekidu poziva (asyncio.wait_for u verifikatoru) ostavljao zauzet slot koji nitko
+    # nije oslobodio; nakon 8 takvih globalni semafor je bio prazan i sve je stalo satima.
+    _zauzeto = []
+    try:
+        if provider:
+            prov_sem = get_provider_semaphore(provider)
+            await _acquire_async(prov_sem)
+            _zauzeto.append(prov_sem)
+        # FIX: globalna kocnica preko SVIH provajdera — vidi MAX_CONCURRENT_GLOBAL
+        await _acquire_async(_GLOBAL_SEMAPHORE)
+        _zauzeto.append(_GLOBAL_SEMAPHORE)
+        sem = get_key_semaphore(key)
+        await _acquire_async(sem)
+        _zauzeto.append(sem)
+    except BaseException:
+        for _s in reversed(_zauzeto):
+            try:
+                _s.release()
+            except Exception:
+                pass
+        raise
     logger.debug(
-        "[rate_limiter] key-semaphore zauzet: ...%s (%s)",
-        key[-4:],
-        (provider or "").upper(),
-    )
-    syslog.debug(
-        "[rate_limiter] key-semaphore zauzet: ...%s (%s)",
-        key[-4:],
-        (provider or "").upper(),
+        "[rate_limiter] semafori zauzeti: ...%s (%s)", key[-4:], (provider or "").upper()
     )
 
     if provider:
