@@ -202,15 +202,13 @@ GOOGLE_MODEL_POOL = _GOOGLE_MODEL_POOL_FALLBACK
 
 
 def _get_google_model_pool() -> list[dict]:
+    # L2: statički pool prvi, otkriveni flash modeli (>= 2.5) kao rezerva na kraju
     try:
-        from network.model_discovery import get_dead_models
+        from network.model_discovery import get_effective_google_pool
 
-        dead = get_dead_models("GEMINI")
+        return get_effective_google_pool(_GOOGLE_MODEL_POOL_FALLBACK)
     except Exception:
-        dead = frozenset()
-
-    filtered = [m for m in _GOOGLE_MODEL_POOL_FALLBACK if m["model"] not in dead]
-    return filtered if filtered else _GOOGLE_MODEL_POOL_FALLBACK
+        return list(_GOOGLE_MODEL_POOL_FALLBACK)
 
 
 def _model_slobodan(prov: str, key: str, model: str) -> bool:
@@ -536,7 +534,7 @@ async def _async_http_post(
             try:
                 from network.quota_tracker import quota_tracker
 
-                quota_tracker.set_key_cooldown(prov_upper, key, 30.0, "timeout 90s")
+                quota_tracker.set_key_cooldown(prov, key, 30.0, "timeout %ss" % _read_timeout)
 
             except Exception:
                 logger.debug("[C3_fallback] http_client.py:522 Exception")
@@ -666,7 +664,7 @@ async def _async_http_post(
                     from network.quota_tracker import quota_tracker as _qt
 
                     _qt.set_key_cooldown(
-                        prov_upper,
+                        prov,
                         key,
                         5.0,
                         "503 high demand (kratki backoff)",
@@ -684,7 +682,7 @@ async def _async_http_post(
                 from network.quota_tracker import quota_tracker as _qt
 
                 _qt.set_key_cooldown(
-                    prov_upper,
+                    prov,
                     key,
                     30.0,
                     f"{resp.status_code} server greska",
@@ -706,6 +704,13 @@ async def _async_http_post(
                 if isinstance(json_payload, dict)
                 else ""
             )
+            if not model_used and prov_upper in ("GEMINI", "GEMMA"):
+                try:
+                    from network.quota_tracker import model_iz_url as _miu404
+
+                    model_used = _miu404(url)
+                except Exception:
+                    logger.debug("[C3_fallback] 404: model iz URL-a nije uspio")
             if model_used:
                 try:
                     from network.model_discovery import invalidate_cached_model

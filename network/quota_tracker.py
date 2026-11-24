@@ -779,8 +779,14 @@ class QuotaTracker:
         try:
             from config.ai_config import GEMMA_MODEL_POOL, GOOGLE_MODEL_POOL
 
+            try:
+                from network.model_discovery import get_effective_google_pool as _gep
+
+                _gp = _gep(GOOGLE_MODEL_POOL)
+            except Exception:
+                _gp = GOOGLE_MODEL_POOL
             pool_imena = {
-                "GEMINI": [m["model"] for m in GOOGLE_MODEL_POOL],
+                "GEMINI": [m["model"] for m in _gp],
                 "GEMMA": [m["model"] for m in GEMMA_MODEL_POOL],
             }
         except Exception:

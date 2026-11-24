@@ -18,8 +18,7 @@ def test_google_pool_uses_only_whitelisted_models(monkeypatch):
     monkeypatch.setattr(
         "network.model_discovery.get_cached_model_list",
         lambda _provider: [
-            "gemini-3-flash",
-            "gemini-2.5-flash",  # GA verzija (whitelisted)
+            "gemini-2.0-flash",
             "gemini-3.5-flash",
             "some-random-model",
         ],
@@ -27,16 +26,13 @@ def test_google_pool_uses_only_whitelisted_models(monkeypatch):
     monkeypatch.setattr(
         "network.model_discovery.get_dead_models", lambda _p: frozenset()
     )
-
     pool = http_client._get_google_model_pool()
     model_ids = [m["model"] for m in pool]
-
-    # Modeli koji nisu u statičkom fallback whitelistu ostaju van poola
-    assert "gemini-3-flash" not in model_ids
+    # Staro (2.0) i nepoznato ostaju van; statički redosljed je autoritativan
+    assert "gemini-2.0-flash" not in model_ids
     assert "some-random-model" not in model_ids
-    # Whitelistirani modeli su prisutni; statički ai_config redosljed ostaje autoritativan
     assert model_ids[0] == "gemini-3.5-flash-lite"
-    assert "gemini-3.5-flash-lite" in model_ids
+    assert "gemini-3.5-flash" in model_ids
 
 
 def test_google_pool_falls_back_when_discovery_empty(monkeypatch):
@@ -443,3 +439,49 @@ def test_gemma_rotation_checks_gemma_cooldown_tracker(monkeypatch):
     assert content == "GEMMA ODGOVOR"
     assert label == "GEMMA-gemma-4-26b-a4b-it"
     assert fake_quota_tracker.providers == ["GEMMA", "GEMMA", "GEMMA"]
+
+
+def test_google_pool_adds_discovered_flash_models_after_static(monkeypatch):
+    _reset_dead_models()
+    monkeypatch.setattr(
+        "network.model_discovery.get_cached_model_list",
+        lambda _p: [
+            "gemini-3.5-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-2.0-flash",
+            "gemini-3.5-flash-image",
+            "gemini-3.2-flash",
+            "some-random-model",
+        ],
+    )
+    monkeypatch.setattr(
+        "network.model_discovery.get_dead_models", lambda _p: frozenset()
+    )
+    ids = [m["model"] for m in http_client._get_google_model_pool()]
+    static = [m["model"] for m in http_client._GOOGLE_MODEL_POOL_FALLBACK]
+    assert ids[: len(static)] == static
+    assert "gemini-3.5-flash" in ids and "gemini-3.2-flash" in ids
+    for bad in ("gemini-2.0-flash", "gemini-3.5-flash-image", "some-random-model"):
+        assert bad not in ids
+
+
+def test_google_pool_extras_capped_and_skip_dead(monkeypatch):
+    _reset_dead_models()
+    monkeypatch.setattr(
+        "network.model_discovery.get_cached_model_list",
+        lambda _p: [
+            "gemini-3.9-flash",
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-3.6-flash",
+            "gemini-3.4-flash",
+        ],
+    )
+    monkeypatch.setattr(
+        "network.model_discovery.get_dead_models",
+        lambda _p: frozenset({"gemini-3.9-flash"}),
+    )
+    ids = [m["model"] for m in http_client._get_google_model_pool()]
+    static = [m["model"] for m in http_client._GOOGLE_MODEL_POOL_FALLBACK]
+    extras = [m for m in ids if m not in static]
+    assert extras == ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"]

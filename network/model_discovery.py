@@ -690,3 +690,39 @@ def prime_cache_sync(fleet) -> int:
             logger.debug("[prime_cache] %s: %s", prov, exc)
     logger.info("[prime_cache] Popunjeno %d provajdera", filled)
     return filled
+
+
+# ── L2: efektivni Google pool (statički + otkriveni) ──────────────────────────
+_EXTRA_GEMINI_MAX = 3
+_EXTRA_GEMINI_BLOCK = (
+    "image", "tts", "audio", "live", "robotics", "computer", "embed",
+    "thinking", "exp", "vision", "learnlm",
+)
+
+
+def get_effective_google_pool(static_pool: list) -> list:
+    """Statički pool (redoslijed ostaje autoritativan, mrtvi izbačeni) + do 3
+    otkrivena flash modela (>= 2.5) na kraju, kao rezerva za 503/429."""
+    dead = get_dead_models("GEMINI")
+    pool = [m for m in static_pool if m["model"] not in dead]
+    seen = {m["model"] for m in static_pool}
+    try:
+        found = get_cached_model_list("GEMINI")
+    except Exception:
+        found = []
+    extras = 0
+    for mid in found or []:
+        if extras >= _EXTRA_GEMINI_MAX:
+            break
+        low = str(mid).lower()
+        if mid in seen or mid in dead:
+            continue
+        mm = re.match(r"gemini-(\d+(?:\.\d+)?)-flash", low)
+        if not mm or float(mm.group(1)) < 2.5:
+            continue
+        if any(b in low for b in _EXTRA_GEMINI_BLOCK):
+            continue
+        pool.append({"model": mid, "rpm": 10, "rpd": 0})
+        seen.add(mid)
+        extras += 1
+    return pool if pool else list(static_pool)
