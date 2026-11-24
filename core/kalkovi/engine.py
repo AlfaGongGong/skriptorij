@@ -96,15 +96,25 @@ def _zamijeni_s_whitelistom(
     ukupno_zamjena = 0
     for kp in compiled_patterns:
         try:
-            def _repl(m, _z=kp.zamjena):
+            brojac = [0]
+
+            def _repl(m, _z=kp.zamjena, _b=brojac):
+                orig = m.group(0)
                 out = m.expand(_z)
-                if out and m.group(0)[:1].islower() and out[:1].isupper():
+                if out and orig[:1].islower() and out[:1].isupper():
                     out = out[:1].lower() + out[1:]
+                elif out and orig[:1].isupper() and out[:1].islower():
+                    if len(orig) > 1 and orig.isupper():
+                        out = out.upper()
+                    else:
+                        out = out[:1].upper() + out[1:]
+                if out != orig:
+                    _b[0] += 1
                 return out
 
-            novi_tekst, n = kp.compiled.subn(_repl, tekst)
-            if n:
-                ukupno_zamjena += n
+            novi_tekst = kp.compiled.sub(_repl, tekst)
+            if brojac[0]:
+                ukupno_zamjena += brojac[0]
                 tekst = novi_tekst
         except Exception as exc:  # noqa: BLE001
             logger.warning(
@@ -154,27 +164,32 @@ class KalkoviEngine:
     # Privatne metode
     # ------------------------------------------------------------------
 
-    def _kompajliraj(self, liste: list[tuple[str, str]]) -> None:
-        """Kompajlira sve patterne — poziva se jednom pri startu."""
-        uspjesno = 0
+    def _kompajliraj(self, liste) -> int:
+        """
+        Kompajlira patterne u NOVU listu i tek na kraju je zamijeni (atomarno).
+        Neispravne unose (prazni tuple, 1-tuple, kriv regex) preskače. Ako nijedan
+        unos nije valjan, ostaje stara lista (reload je ne prazni).
+        Kategorija 'dinamicki' = samo cijele riječi.
+        """
+        nova: list[_KompajliraniPattern] = []
         neuspjesno = 0
-        self._compiled = []
-
-        for entry in liste:
-            # Podržavamo i 2-tuple i 3-tuple (pattern, zamjena, kategorija)
-            if len(entry) == 3:
-                pattern_str, zamjena, kategorija = entry
-            else:
-                pattern_str, zamjena = entry
-                kategorija = ""
-
+        for entry in liste or []:
             try:
+                if isinstance(entry, str) or len(entry) < 2:
+                    raise ValueError("unos nema (pattern, zamjena)")
+                pattern_str, zamjena = entry[0], entry[1]
+                kategorija = entry[2] if len(entry) >= 3 else ""
                 finalni_pattern = pattern_str
-                if self._html_safe and _HTML_LOOKAHEAD not in pattern_str:
-                    finalni_pattern = pattern_str + _HTML_LOOKAHEAD
-
+                if (
+                    kategorija == "dinamicki"
+                    and "\\b" not in pattern_str
+                    and "(?<" not in pattern_str
+                ):
+                    finalni_pattern = r"(?<!\w)(?:" + pattern_str + r")(?!\w)"
+                if self._html_safe and _HTML_LOOKAHEAD not in finalni_pattern:
+                    finalni_pattern = finalni_pattern + _HTML_LOOKAHEAD
                 compiled = re.compile(finalni_pattern, re.IGNORECASE | re.UNICODE)
-                self._compiled.append(
+                nova.append(
                     _KompajliraniPattern(
                         izvorni_pattern=pattern_str,
                         zamjena=zamjena,
@@ -182,20 +197,16 @@ class KalkoviEngine:
                         kategorija=kategorija,
                     )
                 )
-                uspjesno += 1
-            except re.error as exc:
-                logger.error(
-                    "[kalkovi] Neispravan regex %r — preskačem: %s",
-                    pattern_str,
-                    exc,
-                )
+            except (re.error, ValueError, TypeError) as exc:
+                logger.error("[kalkovi] Neispravan unos %r — preskačem: %s", entry, exc)
                 neuspjesno += 1
-
         if neuspjesno:
-            logger.warning(
-                "[kalkovi] %d patterna nije kompajlirano (pogledaj greške iznad).",
-                neuspjesno,
-            )
+            logger.warning("[kalkovi] %d unosa nije kompajlirano.", neuspjesno)
+        if nova or not liste:
+            self._compiled = nova
+        else:
+            logger.error("[kalkovi] Nijedan unos nije valjan — zadržavam postojeće patterne.")
+        return len(self._compiled)
 
     # ------------------------------------------------------------------
     # Javno sučelje

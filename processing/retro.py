@@ -711,7 +711,7 @@ def retroaktivna_rod_korekcija(
                 tekst_kor, n = _kalkovi_engine_retro.primijeni(
                     tekst_orig, glosar=glosar_k, blok_id=chk.stem
                 )
-                if n and tekst_kor and len(tekst_kor.strip()) > 10:
+                if n and tekst_kor and tekst_kor != tekst_orig and len(tekst_kor.strip()) > 10:
                     tmp = chk.with_suffix(".kal_tmp")
                     tmp.write_text(tekst_kor, encoding="utf-8")
                     tmp.replace(chk)

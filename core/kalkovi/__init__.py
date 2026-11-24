@@ -33,14 +33,23 @@ def _filtriraj(lista):
     return out
 
 
-SVE_LISTE = (
-    _filtriraj(_DA)
-    + _filtriraj(_EKAVIZMI)
-    + _filtriraj(_DINAMICKI)
-    + _filtriraj(DIJALOG)
-    + _filtriraj(PLEONAZMI)
-    + _filtriraj(GLAGOLI)
-)
+def _dinamicki_oznaci(lista):
+    """Dinamički kalkovi idu s oznakom 'dinamicki': engine ih primjenjuje samo kao cijele riječi."""
+    return [(e[0], e[1], "dinamicki") for e in _filtriraj(lista)]
+
+
+def _sastavi_liste(dinamicki):
+    return (
+        _filtriraj(_DA)
+        + _filtriraj(_EKAVIZMI)
+        + _dinamicki_oznaci(dinamicki)
+        + _filtriraj(DIJALOG)
+        + _filtriraj(PLEONAZMI)
+        + _filtriraj(GLAGOLI)
+    )
+
+
+SVE_LISTE = _sastavi_liste(_DINAMICKI)
 
 __all__ = [
     "SVE_LISTE",
@@ -56,35 +65,31 @@ __all__ = [
 
 def reload_dinamicki_kalkove() -> int:
     """
-    Reučitava dinamički generirane kalkove iz dinamicki_lista.py
-    i ažurira globalni kalkovi_engine novim listama.
-    Vraća ukupan broj aktivnih patterna.
+    Reučitava dinamičke kalkove i gradi NOVU listu za engine istim filterom kao pri
+    startu. Engine je zamijeni tek kad je uspješno složena (pri grešci ostaje stara).
+    Vraća broj patterna koje engine stvarno ima aktivne.
     """
     import sys
 
     global _DINAMICKI, SVE_LISTE
 
     mod_name = "core.kalkovi.dinamicki_lista"
-    if mod_name in sys.modules:
-        del sys.modules[mod_name]
-
+    stari_modul = sys.modules.pop(mod_name, None)
     try:
         from core.kalkovi.dinamicki_lista import DINAMICKI_KALKOVI as _new_din
 
         _DINAMICKI = _new_din
-    except Exception:
-        _DINAMICKI = []
+    except Exception as exc:  # noqa: BLE001
+        if stari_modul is not None:
+            sys.modules[mod_name] = stari_modul
+        logger.warning("[kalkovi] reload dinamičke liste pao (%s) — ostaje stara", exc)
 
-    SVE_LISTE = _DA + _EKAVIZMI + _DINAMICKI + DIJALOG + PLEONAZMI + GLAGOLI
+    nova = _sastavi_liste(_DINAMICKI)
+    from core.kalkovi.engine import kalkovi_engine
 
-    try:
-        from core.kalkovi.engine import kalkovi_engine
-
-        kalkovi_engine.reload(SVE_LISTE)
-    except Exception:
-        logger.debug("[C3_fallback] __init__.py:83 Exception")
-
-    return len(SVE_LISTE)
+    kalkovi_engine.reload(nova)
+    SVE_LISTE = nova
+    return kalkovi_engine.broj_patterna
 
 
 # ── Morfologija blacklist (Korak 3) ────────────────────────────────────────
