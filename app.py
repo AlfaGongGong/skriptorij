@@ -164,7 +164,7 @@ _MAX_PING_ERROR_LEN = 120
 
 def _list_books() -> list[dict]:
     base = Path(INPUT_DIR)
-    exts = {".epub", ".mobi"}
+    exts = {".epub", ".mobi", ".pdf"}
     books = []
     for p in sorted(base.glob("*")):
         if p.suffix.lower() in exts and not p.name.startswith("(LIVE)"):
@@ -340,7 +340,7 @@ def create_app() -> Flask:
             if not f:
                 return jsonify({"error": "Nema fajla u zahtjevu"}), 400
             ext = Path(f.filename).suffix.lower()
-            if ext not in {".epub", ".mobi"}:
+            if ext not in {".epub", ".mobi", ".pdf"}:
                 return jsonify({"error": f"Nepodržani format: {ext}"}), 400
             safe_name = _secure_filename(f.filename)
             dest = Path(INPUT_DIR) / safe_name

@@ -312,6 +312,16 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
       - Ako nema checkpointa → počinje od nule
       - Automatski bira: PREVOD | LEKTURA | AUTO-RETRO
     """
+    if str(bookpathstr).lower().endswith(".pdf"):
+        try:
+            from epub.pdf_ulaz import pdf_u_epub
+
+            sharedstats["status"] = "PDF → EPUB..."
+            bookpathstr = str(pdf_u_epub(bookpathstr))
+        except Exception:
+            logger.exception("[C1_kriticno] run.py: PDF ulaz pao")
+            sharedstats["status"] = "ZAUSTAVLJENO"
+            return
     engine = SkriptorijAllInOne(bookpathstr, modelname, sharedstats, shared_controls)
     engine.log("🚀 V10.2 Booklyfi pokrenut — auto-mode detekcija aktiva", "system")
     engine.log(f"📁 Checkpoint putanja: {engine.checkpoint_dir}", "tech")

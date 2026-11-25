@@ -44,8 +44,8 @@ def api_upload_from_path():
         source = Path(source_path)
         if not source.exists():
             return jsonify({"error": f"Fajl ne postoji: {source_path}"}), 404
-        if source.suffix.lower() not in {".epub", ".mobi"}:
-            return jsonify({"error": "Samo EPUB i MOBI"}), 400
+        if source.suffix.lower() not in {".epub", ".mobi", ".pdf"}:
+            return jsonify({"error": "Samo EPUB, MOBI i PDF"}), 400
         dest = Path(INPUT_DIR) / source.name
         if source.resolve() != dest.resolve():
             shutil.copy2(str(source), str(dest))
@@ -75,7 +75,7 @@ def api_browse_files():
                     "type": "folder" if item.is_dir() else "file",
                 }
                 if item.is_file():
-                    info["epub"] = item.suffix.lower() in {".epub", ".mobi"}
+                    info["epub"] = item.suffix.lower() in {".epub", ".mobi", ".pdf"}
                 files.append(info)
         except PermissionError:
             return jsonify({"error": "Nemate pristup", "files": []}), 403

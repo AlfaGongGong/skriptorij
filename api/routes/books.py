@@ -12,7 +12,7 @@ from utils.file_utils import secure_filename
 bp = Blueprint("books", __name__)
 logger = logging.getLogger(__name__)
 
-_SUPPORTED_EXTS = {".epub", ".mobi"}
+_SUPPORTED_EXTS = {".epub", ".mobi", ".pdf"}
 
 
 def _list_books() -> list[dict]:
