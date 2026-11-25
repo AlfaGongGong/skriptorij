@@ -273,6 +273,22 @@ def provjeri_u_epubu(epub, ispravke):
     return {"novo_u_epubu": len(ispravke) - len(nije), "nije_nadjeno": nije}
 
 
+def staro_u_epubu(epub, ispravke):
+    """L5: id-ovi ispravki ciji stari tekst je jos u EPUB-u (samo upozorenje; kratki fragment
+    se moze legitimno ponoviti drugdje u knjizi). Preskace ispravke kojima je staro dio novog."""
+    def n(s):
+        return re.sub(r"\s+", " ", str(s or "")).strip().lower()
+    dijelovi = []
+    with zipfile.ZipFile(epub) as z:
+        for ime in z.namelist():
+            if ime.lower().endswith((".html", ".xhtml", ".htm")):
+                raw = _INLINE_RX.sub("", z.read(ime).decode("utf-8", "ignore"))
+                dijelovi.append(html.unescape(re.sub(r"<[^>]+>", " ", raw)))
+    t = n(" ".join(dijelovi))
+    return [i.get("id") for i in ispravke
+            if n(i.get("staro")) and n(i.get("staro")) not in n(i.get("novo")) and n(i.get("staro")) in t]
+
+
 def _spremi(st):
     try:
         LOGS.mkdir(parents=True, exist_ok=True)
@@ -318,19 +334,45 @@ def _cmd(cmd, log, timeout=None):
     return r.returncode, out
 
 
-def _backup_styled(knjiga, ts, log):
-    sd = _styled_dir()
+_STYLED_SUM = frozenset(("prevedeno", "styled"))
+
+
+def _nadji_styled(knjiga, sd=None):
+    """L5: (stari STYLED za knjigu | None, razlog). 1) ime sadrzi knjigu, 2) sve rijeci knjige su u imenu,
+    3) sve znacajne rijeci STYLED imena (bez PREVEDENO/STYLED) su u imenu knjige; ime iz Anna's Archive
+    je dulje od STYLED imena pa 1) i 2) tu ne pogadjaju. Izjednacenje razlicitih fajlova -> None."""
+    sd = Path(sd) if sd is not None else _styled_dir()
     if not sd.exists():
-        return None
+        return None, "nema STYLED mape"
+    sve = sorted(sd.glob("*_STYLED.epub"))
     nm = knjiga.lower()
-    c = [f for f in sd.glob("*_STYLED.epub") if nm in f.name.lower()]
+    c = [f for f in sve if nm in f.name.lower()]
     if not c:
         tok = [t for t in nm.split("_") if t]
-        c = [f for f in sd.glob("*_STYLED.epub") if tok and all(t in f.name.lower() for t in tok)]
-    if not c:
-        log("Nema starog STYLED EPUB-a za backup.")
+        c = [f for f in sve if tok and all(t in f.name.lower() for t in tok)]
+    if c:
+        return max(c, key=lambda x: x.stat().st_mtime), "ime"
+    ravno = re.sub(r"[^a-z0-9]+", "", nm)
+    bod = []
+    for f in sve:
+        rij = {r for r in re.split(r"[^a-z0-9]+", f.name[:-len(".epub")].lower())
+               if len(r) >= 3 and r not in _STYLED_SUM}
+        if len(rij) >= 2 and all(r in ravno for r in rij):
+            bod.append((len(rij), f))
+    if not bod:
+        return None, "nema podudaranja"
+    bod.sort(key=lambda x: x[0], reverse=True)
+    if len(bod) > 1 and bod[0][0] == bod[1][0]:
+        return None, "nejednoznacno: " + ", ".join(b[1].name for b in bod[:3])
+    return bod[0][1], "rijeci STYLED imena"
+
+
+def _backup_styled(knjiga, ts, log):
+    f, razlog = _nadji_styled(knjiga)
+    if f is None:
+        log(f"Nema starog STYLED EPUB-a za backup ({razlog}).")
         return None
-    f = max(c, key=lambda x: x.stat().st_mtime)
+    log(f"Stari STYLED pronadjen ({razlog}): {f.name}")
     DOWNLOAD.mkdir(parents=True, exist_ok=True)
     dst = DOWNLOAD / f"styled_bak_{knjiga}_{ts}.epub"
     shutil.copy2(f, dst)
@@ -396,9 +438,6 @@ def pokreni(knjiga, izvor, ck, dry=False):
         upd(styled=styled)
 
         kap = {}
-        upd(korak="epub_gate")
-        kap["epub_gate"], _ = _cmd([_py(), "tools/epub_gate.py", styled], log, timeout=900)
-
         upd(korak="epub_fix")
         tmp = styled + ".fixed.tmp"
         kap["epub_fix"], _ = _cmd([_py(), "tools/epub_fix.py", styled, tmp], log, timeout=900)
@@ -416,12 +455,20 @@ def pokreni(knjiga, izvor, ck, dry=False):
         except Exception as e:
             log("Popravci nisu uspjeli: " + repr(e))
 
+        # L5: kapija nakon epub_fix i popravaka (prije je sudila nepopravljenom EPUB-u)
+        upd(korak="epub_gate")
+        kap["epub_gate"], _ = _cmd([_py(), "tools/epub_gate.py", styled], log, timeout=900)
+
         upd(korak="provjera")
         prov_nije = []
         try:
             upd(provjera=provjeri_u_epubu(styled, ispravke))
             log("Provjera novog teksta u EPUB-u: " + json.dumps(st["provjera"], ensure_ascii=False))
             prov_nije = list(st["provjera"].get("nije_nadjeno") or [])
+            _ost = staro_u_epubu(styled, ispravke)
+            if _ost:
+                upd(staro_ostalo=_ost)
+                log("UPOZORENJE: stari tekst jos postoji u EPUB-u za: " + ", ".join(map(str, _ost)))
         except Exception as e:
             log("Provjera nije uspjela: " + repr(e))
             upd(provjera={"greska": repr(e)})
