@@ -27,6 +27,13 @@ def _get_quality_cache_path() -> Path | None:
     """Pronalazi quality_scores.json za aktivni ili zadnji projekt."""
     import re as _re
 
+    # L3b: tocna mapa aktivne knjige (objavljuje engine)
+    _sd = SHARED_STATS.get("skr_dir", "")
+    if _sd:
+        _c = Path(_sd) / "checkpoints" / "quality_scores.json"
+        if _c.exists():
+            return _c
+
     # 1. Aktivni output_file → stem → _skr_{stem}/checkpoints/
     output_file = SHARED_STATS.get("output_file", "")
     if output_file:
