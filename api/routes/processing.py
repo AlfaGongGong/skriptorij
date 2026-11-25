@@ -1339,6 +1339,15 @@ def _p26_zadnja_knjiga():
 
 
 def _p26_knjiga():
+    # L3: engine objavljuje tocnu _skr_ mapu; ime iz current_file/book_name je nepouzdano
+    _sd = SHARED_STATS.get("skr_dir", "")
+    if _sd and str(Path(_sd).name).startswith("_skr_"):
+        try:
+            if (Path(_sd) / "checkpoints" / "quality_verifier.json").exists():
+                return re.sub(r"[^a-zA-Z0-9_-]", "", Path(_sd).name[len("_skr_"):])
+        except OSError:
+            pass
+        return _p26_zadnja_knjiga()
     book = SHARED_STATS.get("current_file", "")
     if str(book).lower().endswith((".html", ".xhtml", ".htm")):
         # current_file je ponekad ime poglavlja, ne knjige

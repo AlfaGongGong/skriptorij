@@ -315,6 +315,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
     engine = SkriptorijAllInOne(bookpathstr, modelname, sharedstats, shared_controls)
     engine.log("🚀 V10.2 Booklyfi pokrenut — auto-mode detekcija aktiva", "system")
     engine.log(f"📁 Checkpoint putanja: {engine.checkpoint_dir}", "tech")
+    sharedstats["skr_dir"] = str(engine.work_dir)  # L3: tocna mapa knjige za reviziju/verifikator
 
     engine.work_dir.mkdir(parents=True, exist_ok=True)
     engine.checkpoint_dir.mkdir(parents=True, exist_ok=True)
