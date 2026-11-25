@@ -550,7 +550,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.generate_ncx()
             engine.finalize()
             _obrada_karantene_kraj_knjige(engine)
-            _auto_stilizuj(engine.out_path)
+            _auto_stilizuj(engine.out_path, sharedstats)
             sharedstats["status"] = "ZAVRŠENO (AUTO-RETRO)"
             sharedstats["pct"] = 100
         return  # Izlaz — ne ulazi u main_loop() ispod
@@ -695,7 +695,7 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.log(f"⚠ Metadata greška: {_me}", "warning")
 
         _obrada_karantene_kraj_knjige(engine)
-        _auto_stilizuj(engine.out_path)
+        _auto_stilizuj(engine.out_path, sharedstats)
 
         # BUG #2 FIX (nastavak): Sačuvaj knjiga_mode u book_analysis.json na kraju
         # sesije da bi ga sljedeća sesija mogla pročitati i preskočiti detekciju.
@@ -716,7 +716,37 @@ def start_skriptorij_from_master(bookpathstr, modelname, sharedstats, shared_con
             engine.log(f"⚠️ knjiga_mode snimanje palo: {e}", "warning")
 
 
-def _auto_stilizuj(epub_path):
+def _javi_styled_izlaz(result, epub_path, shared_stats, log, t0):
+    # Nakon stilizacije upisi pravu putanju styled EPUB-a u shared_stats,
+    # inace app i dalje gleda (praznu) booklyfi mapu.
+    if shared_stats is None or not isinstance(result, dict) or not result.get("ok"):
+        return
+    try:
+        from config import settings as _st
+        sd = Path(str(getattr(_st, "STYLED_DIR", "") or "."))
+        cands = []
+        for k in ("epub_path", "output_path", "output"):
+            v = result.get(k)
+            if v and Path(str(v)).is_file():
+                cands.append(Path(str(v)))
+        if sd.is_dir():
+            e = sd / (Path(epub_path).stem + "_STYLED.epub")
+            if e.is_file():
+                cands.append(e)
+            cands += [f for f in sd.glob("*_STYLED.epub") if f.stat().st_mtime >= t0]
+        cands = [x for x in cands if x.suffix.lower() == ".epub"]
+        if not cands:
+            log("Styled EPUB nije pronadjen, output_file ostaje: " + str(shared_stats.get("output_file")), "warning")
+            return
+        best = max(cands, key=lambda x: (x.name.endswith("_STYLED.epub"), x.stat().st_mtime))
+        shared_stats["output_file"] = str(best)
+        shared_stats["output_dir"] = str(best.parent)
+        log("output_file postavljen na styled: " + str(best), "system")
+    except Exception as _e:
+        log("javi_styled_izlaz pao: " + repr(_e), "warning")
+
+
+def _auto_stilizuj(epub_path, shared_stats=None):
     """Automatsko stilizovanje sa sigurnim loggerom i EpubStylerManager-om."""
     if isinstance(epub_path, str):
         epub_path = Path(epub_path)
@@ -728,7 +758,10 @@ def _auto_stilizuj(epub_path):
     try:
         from epub.manager import EpubStylerManager
         manager = EpubStylerManager(epub_path=epub_path, log_callback=log)
+        import time as _tm_s
+        _t0 = _tm_s.time() - 2
         result = manager.stilizuj()
+        _javi_styled_izlaz(result, epub_path, shared_stats, log, _t0)
         if result.get("ok"):
             log(f"Auto-stilizacija uspješno završena. Obrađeno poglavlja: {result.get('chapters')}", "success")
         else:
