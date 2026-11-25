@@ -40,7 +40,19 @@ def main(argv):
         ss, sc = {}, {}
         e = SkriptorijAllInOne(str(book), "V10_TURBO", ss, sc)
         if not getattr(e, "html_files", None):
-            e.html_files = sorted((Path(e.work_dir) / "text").glob("*.*html"))
+            # L6b: HTML nije samo u text/ (npr. OEBPS/xhtml); trazi posvuda, bez checkpoints i META-INF
+            from core.natural_sort import natural_sort_key
+            e.html_files = sorted(
+                (
+                    f
+                    for f in Path(e.work_dir).rglob("*")
+                    if f.is_file()
+                    and f.suffix.lower() in {".html", ".htm", ".xhtml"}
+                    and "checkpoints" not in f.parts
+                    and "META-INF" not in f.parts
+                ),
+                key=natural_sort_key,
+            )
         print(f"HTML fajlova u work_dir: {len(e.html_files)}")
         e.generate_ncx()
         e.finalize()
