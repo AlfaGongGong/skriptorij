@@ -1761,6 +1761,43 @@ def _zavrsava_url_ili_domenom(tekst):
         zadnji, _re_url.IGNORECASE))
 
 
+_INLINE_RODITELJI = ("p", "h1", "h2", "h3", "h4", "h5", "h6")
+
+
+def _div_iz_inline(soup):
+    # L8: div unutar p/h* nije dopusten (RSC-005). Roditelj se razdvaja: p(prije) + div + p(poslije).
+    from bs4 import NavigableString, Tag
+
+    n = 0
+    for _ in range(500):
+        d = None
+        for cand in soup.find_all("div"):
+            if cand.find_parent(_INLINE_RODITELJI) is not None:
+                d = cand
+                break
+        if d is None:
+            break
+        a = d.find_parent(_INLINE_RODITELJI)
+        c = d
+        while c.parent is not None and c.parent is not a:
+            c = c.parent
+        poslije = list(c.next_siblings)
+        d.extract()
+        rep = None
+        if any((isinstance(x, NavigableString) and x.strip()) or isinstance(x, Tag) for x in poslije):
+            at = {k: v for k, v in a.attrs.items() if k != "id"}
+            rep = soup.new_tag(a.name, attrs=at)
+            for x in poslije:
+                rep.append(x.extract())
+        a.insert_after(d)
+        if rep is not None:
+            d.insert_after(rep)
+        if not a.get_text(strip=True) and not a.find(["img", "svg", "image"]):
+            a.decompose()
+        n += 1
+    return n
+
+
 def run_epub_styler(
     epub_path, output_path=None, fleet=None, log_callback=None, options=None
 ):
@@ -1778,6 +1815,20 @@ def run_epub_styler(
     def _esc(s):
         return _html.escape(str(s or ""), quote=True)
 
+    def _doctype():
+        # L8: EPUB 3 traži <!DOCTYPE html>; XHTML 1.1 samo za EPUB 2
+        try:
+            pk = BeautifulSoup(files[opf_path], "xml").find("package")
+            v = str(pk.get("version", "2.0")) if pk is not None else "2.0"
+        except Exception:
+            v = "2.0"
+        if v.startswith("2"):
+            return (
+                '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
+                '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
+            )
+        return "<!DOCTYPE html>"
+
     def _page(title, body_html):
         css = (
             "body{background:#FDF6E3;color:#3E2723;font-family:Georgia,serif;"
@@ -1790,9 +1841,8 @@ def run_epub_styler(
         )
         return (
             '<?xml version="1.0" encoding="utf-8"?>'
-            '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
-            '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
-            '<html xmlns="http://www.w3.org/1999/xhtml" lang="hr">'
+            + _doctype()
+            + '<html xmlns="http://www.w3.org/1999/xhtml" lang="hr">'
             '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>'
             "<title>" + _esc(title) + "</title>"
             '<style type="text/css">' + css + "</style></head><body>" + body_html + "</body></html>"
@@ -2465,6 +2515,7 @@ def run_epub_styler(
             # P2.16: nav/ncx moraju imati isti naslov kao h1 u fajlu
             if _h1_tekst:
                 p["naslov"] = _h1_tekst
+        _div_iz_inline(soup)  # L8
         p["_ima_h1"] = bool(soup.find("h1"))
         if _dodaj_dropcap(soup):
             dropcaps += 1
