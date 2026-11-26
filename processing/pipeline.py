@@ -1004,6 +1004,7 @@ async def _quality_scoring(
             tip_ocjenjivanja=tip_ocjenjivanja,
             prevodilac_provider=prevodilac_provider,
             meta_out=_qs_meta,
+            izvornik=(original_chunk if tip_ocjenjivanja not in ("lektura", "relektura") else None),
         )
         score_float = float(max(1.0, min(10.0, score)))
         if original_chunk:

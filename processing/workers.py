@@ -950,6 +950,7 @@ async def process_single_file_worker(self, file_path):
                             i,
                             file_name,
                             tip_ocjenjivanja="prevod",
+                            izvornik=chunks[i],
                         )
                         if isinstance(qa_raw, dict):
                             qa = qa_raw
