@@ -10,3 +10,9 @@ extend-exclude = [".cistoca", "venv", ".venv"]
 select = ["F", "E9", "B", "I", "UP"]
 # B905 (zip strict) i B007 (nekorištena petlja) su stil, ne bug
 ignore = ["B905", "B007", "S110"]
+
+# F03/R0-11: F401/F841 samo u kodu aplikacije
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401", "F841"]
+"tools/*" = ["F401", "F841"]
+"__init__.py" = ["F401"]

@@ -150,14 +150,11 @@ def _ukloni_sve(soup: BeautifulSoup) -> None:
         if tag.name not in ("img", "image"):
             # Style
             if "style" in tag.attrs:
-                style_val = tag["style"]
-                if "font-size:1px" not in style_val and "booklyfi-dropcap" not in tag.get("class", []):
+                if "font-size:1px" not in tag["style"]:
                     del tag["style"]
-            # Class
+            # F03/R0-4: booklyfi-* klase su vec skinute iznad, pa se sve preostale klase brisu
             if "class" in tag.attrs:
-                cls = tag["class"]
-                if not any(c.startswith("booklyfi-") for c in cls) and "booklyfi-dropcap" not in cls:
-                    del tag["class"]
+                del tag["class"]
 
     # FIX 2026-10-26: unwrap <section> i div.galley-rw (sirovi lektura HTML iz .chk)
     for sec in soup.find_all("section"):
