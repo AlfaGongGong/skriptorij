@@ -30,6 +30,9 @@ _CACHE_ACCEPT_SCORE = 7.5
 
 _QUALITY_EXCELLENT_THRESHOLD = 8.5
 
+# Prag za oznaku "treba ljudski pregled" (human_review); jedino mjesto za ovu brojku.
+_HR_REVIEW_THRESHOLD = 6.5
+
 # Težine za EN kontaminaciju
 _EN_CONTAMINATION_WEIGHTS = {
     "critical": 0.0,  # >20% engleskog → odmah 1–2
@@ -819,7 +822,9 @@ def get_scorer_sys_override(self_obj, prevodilac_provider, chunk_idx, file_name)
             for k in fleet.keys():
                 dostupni.add(_normaliziraj_provider(str(k)))
         if scorer_provider in dostupni:
-            return f"__FORCE_PROVIDER__{scorer_provider}__"
+            # F09c (R8-6): marker FORCE_PROVIDER nitko ne cita; router ga je uzimao
+            # kao sistemski prompt umjesto uputa za ocjenjivaca. Zato None (zadani prompt).
+            return None
     except Exception:
         logger.exception("[C1_http] quality.py:740 Exception")
     return None
@@ -862,9 +867,14 @@ def generiraj_report(knjiga_id: str, checkpoint_dir: str = None) -> dict:
     vals = [float(v) for v in scores.values() if isinstance(v, (int, float))]
     prosjek = sum(vals) / len(vals) if vals else 0
 
-    iz_prve = sum(1 for v in vals if v >= 9.5)
-    retry = sum(1 for v in vals if 9.0 <= v < 9.5)
-    karantena = sum(1 for v in vals if v < 9.0)
+    # F09c (R8-7): stvarni pragovi (isti kao quality_summary)
+    iz_prve = sum(1 for v in vals if v >= _QUALITY_EXCELLENT_THRESHOLD)
+    retry = sum(
+        1
+        for v in vals
+        if _QUALITY_RESCUE_THRESHOLD <= v < _QUALITY_EXCELLENT_THRESHOLD
+    )
+    karantena = sum(1 for v in vals if v < _QUALITY_RESCUE_THRESHOLD)
 
     # QA-FLAG iz .chk
     qa_flag_count = 0

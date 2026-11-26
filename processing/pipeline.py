@@ -29,7 +29,7 @@ from utils.file_utils import atomic_write_json
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 import contextlib
 
-from core.quality import _CACHE_ACCEPT_SCORE
+from core.quality import _CACHE_ACCEPT_SCORE, _HR_REVIEW_THRESHOLD
 from core.text_utils import (
     _agresivno_cisti,
     _automatska_korekcija,
@@ -1084,7 +1084,7 @@ async def _quality_scoring(
         except Exception:
             logger.exception("[P2.1] verifier hook")
 
-        if score_float < 6.5:
+        if score_float < _HR_REVIEW_THRESHOLD:
             _prov = prevodilac_provider or "?"
             self.log(
                 f"⚠️ [{file_name}] Blok {chunk_idx} [{tip_bloka}]: "
@@ -1092,7 +1092,7 @@ async def _quality_scoring(
                 "warning",
             )
             _hr_oznaci(
-                self, file_name, chunk_idx, f"score {score_float:.1f} < 6.5", score_float, preview, tip_bloka
+                self, file_name, chunk_idx, f"score {score_float:.1f} < {_HR_REVIEW_THRESHOLD}", score_float, preview, tip_bloka
             )
 
         done = self.global_done_chunks

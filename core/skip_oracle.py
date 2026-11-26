@@ -10,7 +10,7 @@ from difflib import SequenceMatcher
 from bs4 import BeautifulSoup
 
 # Pragovi — BEZ DEGRADACIJE (konzervativni)
-MIN_SCORE_ZA_SKIP = 8.5  # samo odlični blokovi mogu skipovati
+from core.quality import _QUALITY_EXCELLENT_THRESHOLD as MIN_SCORE_ZA_SKIP  # F09c (R8-21): isti prag kao 'izvrstan'; samo odlični blokovi mogu skipovati
 MAX_LEKTOR_PROMJENA = 0.05  # lektor smije promijeniti max 5% teksta
 MIN_SLICNOST_LEKTOR_IZLAZ = 0.92  # lektor izlaz mora biti 92% sličan ulazu
 
