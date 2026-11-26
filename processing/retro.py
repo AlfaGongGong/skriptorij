@@ -1,3 +1,4 @@
+import asyncio
 from utils.file_utils import atomic_write_text
 import logging
 logger = logging.getLogger(__name__)
@@ -346,8 +347,9 @@ async def retroaktivna_relektura_v10(
                     "ukupno": ocjena,
                     "razlog": f"Ocjena ispod {_RETRO_QA_THRESHOLD} nakon retro re-lekture",
                 }
-                res_novi, qa_novi, uspjeh = _retry_s_feedbackom(
-                    self, finalno, old_text_cist, _qa_dict, self.fleet, chunk_idx
+                res_novi, qa_novi, uspjeh = await asyncio.to_thread(
+                    _retry_s_feedbackom,
+                    self, finalno, old_text_cist, _qa_dict, self.fleet, chunk_idx,
                 )
                 if isinstance(qa_novi, dict):
                     novi_score = float(qa_novi.get("ukupno", 0))

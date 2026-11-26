@@ -5,11 +5,13 @@ BEZ DEGRADACIJE: koristi se samo za NOVE chunkove, ne mijenja postojeće.
 
 import json
 import re
+import threading
 from difflib import SequenceMatcher
 from pathlib import Path
 
 FEW_SHOT_PATH = Path(__file__).parent.parent / "data" / "few_shot_abercombie.json"
 MAX_SHOTS = 5000
+_LOCK = threading.Lock()
 MIN_SCORE = 9.0  # BEZ DEGRADACIJE: samo odlični (9+) idu u bazu
 MIN_SIMILARITY = 0.4  # sniženo: pasusi iz različitih knjiga retko imaju >0.5; 0.4 hvata najsličnije
 
@@ -80,6 +82,12 @@ def save_shots(shots):
 
 
 def dodaj_odlican_prevod(en_text, bs_text, score, tip_bloka):
+    """Zakljucano: poziva se iz vise niti (asyncio.to_thread)."""
+    with _LOCK:
+        return _dodaj_odlican_prevod_nelockan(en_text, bs_text, score, tip_bloka)
+
+
+def _dodaj_odlican_prevod_nelockan(en_text, bs_text, score, tip_bloka):
     """Dodaje prevod u globalnu bazu. BEZ DEGRADACIJE: samo score >= 9.0"""
     if score < MIN_SCORE:
         return

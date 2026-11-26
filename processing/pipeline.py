@@ -1789,7 +1789,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
         if _FEW_SHOT_OK and formatiraj_za_prompt:
             try:
                 en_plain = BeautifulSoup(chunk, "html.parser").get_text()[:300]
-                fs_text = formatiraj_za_prompt(en_plain, tip_bloka, max_n=2)
+                fs_text = await asyncio.to_thread(formatiraj_za_prompt, en_plain, tip_bloka, 2)
                 if fs_text:
                     fusion_sys += "\n" + fs_text
             except Exception:
@@ -2216,7 +2216,7 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 # V1.0: Dodaj i u GLOBALNI few-shot (za sve buduće knjige)
                 if _FEW_SHOT_OK and dodaj_odlican_prevod:
                     with contextlib.suppress(Exception):
-                        dodaj_odlican_prevod(en_tekst, hr_tekst, qs_score, tip_bloka)
+                        await asyncio.to_thread(dodaj_odlican_prevod, en_tekst, hr_tekst, qs_score, tip_bloka)
         except Exception:
             logger.exception("[C1_http] pipeline.py:1527 Exception")
 

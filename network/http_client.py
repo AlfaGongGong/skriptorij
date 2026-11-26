@@ -942,8 +942,8 @@ async def _call_gemini_with_full_rotation(
                         "warning",
                     )
                     # FALLBACK 1: Gemini s kontekstom (eksplicitno "književna scena")
-                    ctx_res = _posalji_na_gemini_s_kontekstom(
-                        sys_content, user_prompt, max_tokens, timeout=120
+                    ctx_res = await asyncio.to_thread(
+                        _posalji_na_gemini_s_kontekstom, sys_content, user_prompt, max_tokens, 120
                     )
                     if ctx_res:
                         self.log(
@@ -1207,8 +1207,8 @@ async def _call_gemma_with_rotation(
                         f"pokušavam s prilagođenim promptom",
                         "warning",
                     )
-                    ctx_res = _posalji_na_gemini_s_kontekstom(
-                        sys_content, user_prompt, max_tokens, timeout=120
+                    ctx_res = await asyncio.to_thread(
+                        _posalji_na_gemini_s_kontekstom, sys_content, user_prompt, max_tokens, 120
                     )
                     if ctx_res:
                         return ctx_res, f"GEMMA-{current_model}-kontekst"
@@ -1331,7 +1331,8 @@ async def _call_single_provider(
         if not cf_key:
             logger.warning("[CLOUDFLARE] nema dostupnog ključa u floti")
             return None, None
-        return _call_cloudflare_native(
+        return await asyncio.to_thread(
+            _call_cloudflare_native,
             cf_key,
             model,
             sys_content,

@@ -1,5 +1,6 @@
 # processing/workers.py
 
+import asyncio
 from utils.file_utils import atomic_write_text
 import json
 import re
@@ -627,7 +628,9 @@ def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
         )
 
     # Pozovi AI
-    for provider in ["GEMINI", "GROQ", "MISTRAL", "NVIDIA", "CLOUDFLARE"]:
+    from config.ai_config import PROVIDER_PRIORITY as _PP_RF
+
+    for provider in _PP_RF.get("LEKTOR", ["GEMINI", "GROQ", "NVIDIA", "MISTRAL"]):
         try:
             key = fleet.get_best_key(provider)
             if not key:
@@ -1013,7 +1016,7 @@ async def process_single_file_worker(self, file_path):
                             ukupno = float(qa_raw)
                     except Exception as e:
                         self.log("  Scorer greska: " + str(e), "warning")
-                        qa = _qa_ai_ocjena(res, fleet)
+                        qa = await asyncio.to_thread(_qa_ai_ocjena, res, fleet)
                         ukupno = qa.get("ukupno", 0)
 
                     if ukupno < _QUALITY_RESCUE_THRESHOLD:
@@ -1025,8 +1028,8 @@ async def process_single_file_worker(self, file_path):
                                 "  Retry " + str(retry_broj) + "/2 s QA feedbackom...",
                                 "warning",
                             )
-                            res_novi, qa_novi, uspjeh = _retry_s_feedbackom(
-                                self, res, chunks[i], qa, fleet, i
+                            res_novi, qa_novi, uspjeh = await asyncio.to_thread(
+                                _retry_s_feedbackom, self, res, chunks[i], qa, fleet, i
                             )
                             ukupno_novi = qa_novi.get("ukupno", 0)
                             if uspjeh:

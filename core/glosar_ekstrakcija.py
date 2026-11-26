@@ -207,9 +207,15 @@ Vrati ISKLJUCIVO JSON:
 
     # Rotiraj kroz SVE moguce providere
     # GEMMA samo za dugačke promptove (batch >= 20) — inače timeout/500
-    PROVIDERI = ["GROQ", "GEMINI", "NVIDIA", "OPENROUTER", "CLOUDFLARE", "MISTRAL"]
-    if len(batch) >= 20:
-        PROVIDERI.append("GEMMA")  # Gemma radi za dugačke promptove
+    from config.ai_config import PROVIDER_PRIORITY as _PP_G
+
+    PROVIDERI = [
+        p for p in _PP_G.get("GLOSAR_UPDATE", ["GROQ", "GEMINI", "NVIDIA"])
+        if p != "GEMMA" or len(batch) >= 20  # Gemma samo za dugacke promptove
+    ]
+    for _p_dod in ("OPENROUTER", "CLOUDFLARE", "MISTRAL"):
+        if _p_dod not in PROVIDERI:
+            PROVIDERI.append(_p_dod)
 
     for provider in PROVIDERI:
         try:
@@ -250,6 +256,7 @@ Vrati ISKLJUCIVO JSON:
                     timeout=180,
                 )
             if not res:
+                logger.warning("[glosar] %s: prazan odgovor", provider)
                 continue
 
             clean = re.sub(r"```(?:json)?\s*", "", res).replace("```", "").strip()
@@ -275,7 +282,8 @@ Vrati ISKLJUCIVO JSON:
                     }
             if rezultati:
                 return rezultati
-        except Exception:
+        except Exception as _e_prov:
+            logger.warning("[glosar] %s nije uspio: %s", provider, _e_prov)
             continue
 
     # DETERMINISTICKI FALLBACK — svi AI provideri pali
