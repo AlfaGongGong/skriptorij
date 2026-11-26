@@ -422,6 +422,8 @@ async def _call_ai_engine_impl(
         if p not in ordered:
             ordered.append(p)
 
+    _ordered_sve = list(ordered)  # F05: prije STRICT sužavanja
+
     # P2.19.2: jezične uloge samo na GEMINI (config: ai_config.STRICT_PROVIDER_ROLES)
     try:
         from config.ai_config import STRICT_PROVIDER_ROLES
@@ -738,6 +740,50 @@ async def _call_ai_engine_impl(
             return raw, label
     except Exception as e:
         self.log(f"❌ [{uloga}] Treći krug EXC: {e}", "warning")
+
+    # 2026-11-26 (F05): zadnja linija — STRICT ograničenje (GEMINI/GEMMA) se ukida da blok
+    # ne ostane [[NEPREVEDENO]] kad Google odbije sadržaj. Gasi: BOOKLYFI_ZADNJA_LINIJA=0.
+    import os as _os_zl
+
+    if _os_zl.environ.get("BOOKLYFI_ZADNJA_LINIJA", "1") != "0":
+        for prov_zl in [p for p in _ordered_sve if p not in ordered]:
+            if self.shared_controls.get("stop"):
+                return None, "N/A"
+            if not self.fleet.has_available_key(prov_zl):
+                continue
+            model = self.fleet.get_active_model(prov_zl, MODEL_MAP.get(prov_zl))
+            if not model:
+                continue
+            opt_temp, opt_max_tokens = _resolve_model_generation_params(
+                uloga, model, base_temp, base_max_tokens
+            )
+            self.log(
+                f"🆘 [{uloga}] Zadnja linija — blok {chunk_idx} na {prov_zl} (izvan STRICT)",
+                "warning",
+            )
+            try:
+                raw, label = await _call_single_provider(
+                    self,
+                    prov_zl,
+                    model,
+                    sys_c,
+                    prompt,
+                    opt_temp,
+                    max_tokens=opt_max_tokens,
+                )
+            except ContentFilterError:
+                continue
+            except Exception as _e_zl:
+                self.log(
+                    f"[{prov_zl}] zadnja linija EXC: {type(_e_zl).__name__}",
+                    "warning",
+                )
+                continue
+            if raw:
+                self.log(
+                    f"✅ [{uloga}] Zadnja linija uspješna ({prov_zl})", "warning"
+                )
+                return raw, label
 
     self.log(
         f"❌ [{uloga}] Sva 3 kruga fallback-a pala za blok {chunk_idx}",
