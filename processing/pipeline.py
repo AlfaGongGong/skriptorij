@@ -1180,17 +1180,39 @@ async def _posalji_po_paragrafima(
     self, chunk, chunk_idx, file_name, fusion_sys, tip_bloka
 ):
     """
-    Kad Gemini blokira cijeli chunk (PROHIBITED_CONTENT / CONTENT_FILTER),
-    pokusaj svaki paragraf zasebno. Toxicne paragrafe markiraj (sa originalom
-    u HTML komentaru), ostale prevedi.
-    Vraca (tekst, broj_markiranih) ili (None, 0) ako nema paragrafa.
+    # F08-MARKER
+    Kad Gemini blokira cijeli chunk, prevodi blok po blok u izvornom redoslijedu
+    (p, naslovi, liste, citati...). Stvarni filter sadrzaja -> marker s originalom
+    u komentaru. Mrezna greska/prazan odgovor -> prekid.
+    Vraca (tekst, broj_markiranih); (None, 0) ako nema sto prevoditi;
+    (None, -1) ako je pala mreza/provider (blok se ponavlja kasnije).
     """
     from bs4 import BeautifulSoup
+    from bs4.element import Comment, Tag
+
+    _blok_re = re.compile(
+        r"^\s*<(p|h[1-6]|ul|ol|li|blockquote|div|table|pre|section|figure|hr)\b", re.I
+    )
+    _kont = ("div", "section", "article", "main", "body")
+
+    def _plosni(cvor):
+        for c in cvor.contents:
+            if (
+                isinstance(c, Tag)
+                and c.name in _kont
+                and any(isinstance(x, Tag) for x in c.contents)
+            ):
+                yield from _plosni(c)
+            else:
+                yield c
+
+    def _okvir(ime):
+        return ime if re.fullmatch(r"h[1-6]", ime or "") else "p"
 
     soup = BeautifulSoup(chunk, "html.parser")
-    paras = soup.find_all("p")
+    ima_tag = soup.find(lambda t: t.get_text().strip() != "") is not None
 
-    if not paras:
+    if not ima_tag:
         tekst = soup.get_text().strip()
         if not tekst:
             return None, 0
@@ -1198,43 +1220,61 @@ async def _posalji_po_paragrafima(
         if len(recenice) < 2:
             return None, 0
         dijelovi = [" ".join(recenice[i : i + 3]) for i in range(0, len(recenice), 3)]
-        paras_iter = [(None, d) for d in dijelovi]
-        is_html = False
+        stavke = [("", d_, True) for d_ in dijelovi]
+        plain = True
     else:
-        paras_iter = [(p, str(p)) for p in paras]
-        is_html = True
+        stavke = []
+        for c in _plosni(soup):
+            if isinstance(c, Comment):
+                stavke.append(("", f"<!--{c}-->", False))
+            elif isinstance(c, Tag):
+                stavke.append((c.name, str(c), c.get_text().strip() != ""))
+            else:
+                s_ = str(c).strip()
+                if s_:
+                    stavke.append(("p", s_, True))
+        plain = False
 
     rezultati = []
     markirano = 0
-
-    for i, (_, p_html) in enumerate(paras_iter):
+    n = 0
+    for ime, html_s, prevedi in stavke:
+        if not prevedi:
+            rezultati.append(html_s)
+            continue
+        n += 1
         raw, prov = await self._call_ai_engine(
-            f"Engleski tekst za prevod:\n{p_html}",
+            f"Engleski tekst za prevod:\n{html_s}",
             chunk_idx,
             uloga="PREVODILAC",
             filename=file_name,
             sys_override=fusion_sys,
             tip_bloka=tip_bloka,
         )
-        if prov == "CONTENT_FILTER" or not raw:
-            original_esc = p_html.replace("--", "- -")
-            if is_html:
+        if prov == "CONTENT_FILTER":
+            orig = html_s.replace("--", "- -")
+            if plain:
                 rezultati.append(
-                    f"<p>[[MANUAL: chunk {chunk_idx}, dio {i + 1}]]"
-                    f"<!-- EN: {original_esc} --></p>"
+                    f"[[MANUAL: chunk {chunk_idx}, dio {n}]]<!-- EN: {orig} -->"
                 )
             else:
+                ok = _okvir(ime)
                 rezultati.append(
-                    f"[[MANUAL: chunk {chunk_idx}, dio {i + 1}]]"
-                    f"<!-- EN: {original_esc} -->"
+                    f"<{ok}>[[MANUAL: chunk {chunk_idx}, dio {n}]]"
+                    f"<!-- EN: {orig} --></{ok}>"
                 )
             markirano += 1
+            continue
+        if not raw:
+            return None, -1
+        tekst = (_smart_extract(raw) or "").strip()
+        if not tekst:
+            return None, -1
+        if plain or _blok_re.match(tekst):
+            rezultati.append(tekst)
         else:
-            tekst = _smart_extract(raw)
-            if is_html:
-                rezultati.append(f"<p>{tekst}</p>")
-            else:
-                rezultati.append(tekst)
+            ok = _okvir(ime)
+            rezultati.append(f"<{ok}>{tekst}</{ok}>")
 
     return "\n".join(rezultati), markirano
 
@@ -1554,7 +1594,8 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
 
         # ── KOREKTOR pass (temp 0.15) ─────────────────────────────────────────
         pre_korektor_l = finalno
-        raw_kor_l, prov_kor_l = await self._call_ai_engine(
+        # F08 R2-7: lektor pao (AUTO-HR) -> korektor se ne zove
+        raw_kor_l, prov_kor_l = (None, "PRESKOCEN") if prov_l == "AUTO-HR" else await self._call_ai_engine(
             finalno,
             chunk_idx,
             uloga="KOREKTOR",
@@ -1825,6 +1866,14 @@ async def process_chunk_with_ai(self, chunk, prev_ctx, next_ctx, chunk_idx, file
                 fusion_sys,
                 tip_bloka,
             )
+            if markirano == -1:  # F08 R1-3
+                self.log(
+                    f"[{file_name}] Blok {chunk_idx}: ⚠️ Mrežna greška kod prijevoda po odlomcima — "
+                    f"blok se ne markira, ponavlja se kasnije",
+                    "warning",
+                )
+                self.chunk_skips += 1
+                return None, "N/A"
             if bisekt:
                 raw_fusion = bisekt
                 prov1 = f"BISEKCIJA/{markirano}mark"
