@@ -15,6 +15,7 @@
 #   • Ako nema retryDelay ali je RESOURCE_EXHAUSTED — cooldown do ponoći UTC
 # ============================================================================
 
+import atexit
 import contextlib
 import json
 import logging
@@ -82,6 +83,39 @@ PROVIDER_ORDER = [
     "GITHUB",
     "GEMMA",
 ]
+
+
+def _je_sadrzajni_razlog(reason: str) -> bool:
+    """Sadrzajni blok (safety/prohibited): isti sadrzaj daje isti rezultat na svakom kljucu,
+    pa kljuc nije kriv i ne smije se kazniti."""
+    r = (reason or "").upper()
+    return any(m in r for m in ("PROHIBITED_CONTENT", "SAFETY", "RECITATION", "CONTENT_FILTER"))
+
+
+def _tekst_greske(body) -> str:
+    """Cijelo tijelo greske kao mala slova (poruka, status, detalji, quotaId)."""
+    try:
+        err = body.get("error", body) if isinstance(body, dict) else body
+        return json.dumps(err, ensure_ascii=False).lower()
+    except Exception:
+        return str(body).lower()
+
+
+def _sekunde_do_ponoci_pacifika() -> float:
+    """Google resetira dnevnu kvotu u ponoc po America/Los_Angeles (ne UTC)."""
+    import datetime
+
+    utc = datetime.timezone.utc
+    try:
+        from zoneinfo import ZoneInfo
+
+        sada = datetime.datetime.now(ZoneInfo("America/Los_Angeles"))
+    except Exception:
+        sada = datetime.datetime.now(utc)
+    ponoc = (sada + datetime.timedelta(days=1)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    return (ponoc.astimezone(utc) - sada.astimezone(utc)).total_seconds() + 60.0
 
 
 def _check_body_content(provider: str, body) -> tuple:
@@ -249,12 +283,26 @@ class FleetManager:
 
         self._load_config()
         self._resolve_models()
+        atexit.register(self._flush_pri_izlazu)
+
+    def _flush_pri_izlazu(self):
+        try:
+            self.flush_now()
+        except Exception:
+            pass
 
     def _load_config(self):
         try:
             raw = json.loads(self.config_path.read_text("utf-8"))
             logger.debug("[FleetManager] Konfiguracija učitana iz %s", self.config_path)
         except Exception as e:
+            if self.fleet:
+                logger.error(
+                    "[FleetManager] Konfiguracija nečitljiva (%s): %s — zadržavam staru flotu",
+                    self.config_path,
+                    e,
+                )
+                return
             logger.warning(
                 "[FleetManager] Nije moguće učitati konfiguraciju (%s): %s — flota prazna",
                 self.config_path,
@@ -647,12 +695,11 @@ class FleetManager:
                         # bez eksplicitne RPD oznake u message-u. Ovo je dovelo do
                         # 2x 12h blokade svih kljuceva 23.10.2026.
                         if _retry_val > 3600:
-                            _err_msg_check = str(
-                                body.get("error", {}).get("message", "")
-                            ).lower()
+                            _err_msg_check = _tekst_greske(body)
                             _is_rpd_hint = (
                                 "rpd" in _err_msg_check
                                 or "per day" in _err_msg_check
+                                or "perday" in _err_msg_check
                                 or "daily" in _err_msg_check
                                 or "po danu" in _err_msg_check
                             )
@@ -695,28 +742,23 @@ class FleetManager:
             # RPD SAMO ako Google eksplicitno kaze "rpd", "daily", "per day",
             # ili retry_after > 3600 (1h).
             if retry_after is None:
-                err_msg = str(body.get("error", {}).get("message", "")).lower()
+                err_msg = _tekst_greske(body)
                 err_status = str(body.get("error", {}).get("status", "").lower())
                 if "resource_exhausted" in err_status or "quota" in err_msg:
                     # Eksplicitna RPD detekcija
                     _is_explicit_rpd = (
                         "rpd" in err_msg
                         or "per day" in err_msg
+                        or "perday" in err_msg
                         or "daily" in err_msg
                         or "po danu" in err_msg
                     )
                     if _is_explicit_rpd:
                         # Google je rekao RPD — cooldown do ponoci UTC
-                        import datetime
-
-                        utc_now = datetime.datetime.utcnow()
-                        midnight = (utc_now + datetime.timedelta(days=1)).replace(
-                            hour=0, minute=0, second=0, microsecond=0
-                        )
-                        retry_after = (midnight - utc_now).total_seconds() + 60.0
+                        retry_after = _sekunde_do_ponoci_pacifika()
                         logger.warning(
                             "[FleetManager] %s ...%s RPD iscrpljen (eksplicitno) "
-                            "— cooldown do ponoci UTC %.1fh",
+                            "— cooldown do ponoci Pacifika %.1fh",
                             prov_u,
                             key[-4:],
                             retry_after / 3600,
@@ -797,7 +839,9 @@ class FleetManager:
                 # Gemini vraća finishReason=PROHIBITED_CONTENT.
                 _valid, _reason = _check_body_content(prov_u, body)
                 if not _valid:
-                    ks.calls_failed += 1
+                    _sadrzajni = _je_sadrzajni_razlog(_reason)
+                    if not _sadrzajni:
+                        ks.calls_failed += 1
                     ks.last_used = time.time()
                     logger.warning(
                         "[FleetManager] %s ...%s → 200 ali nevalidan: %s (failed=%d)",
@@ -822,7 +866,7 @@ class FleetManager:
                             or "length" in _reason.lower()
                             or "truncat" in _reason.lower()
                         )
-                        if not _is_trunc:
+                        if not _is_trunc and not _sadrzajni:
                             quota_tracker.set_key_cooldown(prov_u, key, 90.0, _reason)
                         logger.debug(
                             "[FleetManager] %s ...%s nevalidan 200 — cooldown 90s (%s)",
@@ -852,6 +896,8 @@ class FleetManager:
                     )
             elif status_code >= 500:
                 ks.calls_failed += 1
+                if status_code == 503:
+                    ks._last_503_time = time.time()
                 logger.warning(
                     "[FleetManager] %s ...%s → %d server error (failed=%d)",
                     prov_u,
