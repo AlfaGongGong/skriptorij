@@ -331,12 +331,7 @@ def _ocisti_html_atribute(html: str) -> str:
             return tag
         # Očisti tipografske navodnike IZ TAG-a (atributi)
         tag = tag.replace("„", '"').replace("“", '"').replace("”", '"')
-        # Ako ima neparan broj ", pokušaj popraviti (dodaj na kraj ako je atribut bez zatvaranja)
-        # Prebroj '
-        broj_single = tag.count("'")
-        if broj_single % 2 == 1:
-            # Dodaj ' na kraj ako ima otvoren
-            tag = tag + "'"
+        # F06 (R3-12): apostrof u vrijednosti atributa je legalan, ne dodaje se nista
         return tag
 
     try:
@@ -709,68 +704,16 @@ def _retry_s_feedbackom(self, tekst, original_tekst, qa, fleet, chunk_idx):
 
 def _normalizuj_dijalog_pipeline(html):
     """
-    Pretvori "dijalog" u — dijalog.
-    Strog regex: hvata otvarajuce navodnike na pocetku i zatvarajuce u sredini/kraju.
+    Dijalog i navodnici: jedini vlasnik je core.tipografija (F06: stara regex
+    verzija kvarila je navodnike usred rečenice, npr. "Titanic").
     Vraca (novi_html, broj_promjena, broj_navodnika_ostalo).
     """
     from bs4 import BeautifulSoup as _BS
-    from bs4 import NavigableString as _NS
+
+    from core import tipografija as _tip
 
     soup = _BS(html, "html.parser")
-    promjena = 0
-
-    OTV = "\"\u201e\u00bb\u00ab'"
-    ZAT = "\"\u201c\u00ab\u00bb'"
-
-    for p in soup.find_all("p"):
-        for child in list(p.children):
-            if not isinstance(child, _NS):
-                continue
-            original = str(child)
-            tekst = original
-
-            # 1. Na pocetku: navodnik + opc. razmak -> em-crtica
-            tekst = re.sub(
-                r"^(\s*)[" + OTV + r"]\s*",
-                r"\1— ",
-                tekst,
-            )
-            # 2. Zatvarajuci navodnik NAKON interpunkcije unutar teksta:
-            #    ". "Sljedeca rijec" -> ". — Sljedeca rijec"
-            tekst = re.sub(
-                r"([.!?\u2026])[" + ZAT + r"]\s+",
-                r"\1 — ",
-                tekst,
-            )
-            # 3. Zatvarajuci navodnik na kraju -> ukloni
-            tekst = re.sub(
-                r"\s*[" + ZAT + r"]\s*$",
-                "",
-                tekst,
-            )
-            # 4. Zatvarajuci navodnik prije interpunkcije: 'Da!"' -> 'Da!'
-            tekst = re.sub(
-                r"[" + ZAT + r"]([.!?\u2026])",
-                r"\1",
-                tekst,
-            )
-            # 5. Preostali navodnik prije razmaka i rijeci -> crtica
-            tekst = re.sub(
-                r"[" + ZAT + r"]\s+(?=[A-ZČĆŠĐŽa-zčćšđž])",
-                r" — ",
-                tekst,
-            )
-
-            # 6. Otvarajuci navodnik NAKON interpunkcije u sredini:
-            #    ". \"Sljedeca rijec\" -> ". — Sljedeca rijec"
-            tekst = re.sub(
-                r"([.!?\u2026])\s+[" + OTV + r"]",
-                r"\1 — ",
-                tekst,
-            )
-            if tekst != original:
-                child.replace_with(_NS(tekst))
-                promjena += 1
+    promjena = _tip.normaliziraj_soup(soup)
 
     navodnika_ostalo = 0
     for p in soup.find_all("p"):
@@ -778,7 +721,7 @@ def _normalizuj_dijalog_pipeline(html):
         if t and t[0] in "\"\u201e\u00bb\u00ab'":
             navodnika_ostalo += 1
 
-    return str(soup), promjena, navodnika_ostalo
+    return str(soup), int(promjena or 0), navodnika_ostalo
 
 
 def _qa_ocjena(html):

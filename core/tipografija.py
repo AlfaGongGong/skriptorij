@@ -71,6 +71,8 @@ def _prolaz(t):
     zam, otvoren, src, opos, stray = [], False, None, -1, []
     for i, c in enumerate(t):
         if c in _TOGGLE:
+            if not otvoren and i > 0 and t[i - 1].isdigit():
+                continue  # znak za inče (5"), ne navodnik
             if otvoren:
                 zam.append((i, i + 1, ZAT))
                 otvoren = False
@@ -169,8 +171,6 @@ def _navodnici(z):
     t = _spoji(z)
     if not any(c in t for c in _SVE):
         return z
-    # replika u ASCII navodnicima na početku odlomka → crtica
-    z = _regex(z, r'^(\s*)"([^"\n]{1,300})"(?=\s|[,.;:!?]|$)', r"\1— \2")
     t = _spoji(z)
     lead = len(t) - len(t.lstrip())
     dash = t[lead:lead + 1] in _CRTICE
@@ -208,7 +208,9 @@ def _blok(z):
     z = _regex(z, r"^(\s*)\u2014(?=[^\s\u2014])", "\\1\u2014 ")
     z = _regex(z, r"(?<=\S)--(?=\S)", "\u2014")
     z = _regex(z, r"\s+--\s+", " \u2014 ")
-    z = _regex(z, r"(?<=\d)\s*-\s*(?=\d)", "\u2013")
+    # en-crtica samo za raspone godina (1990-1995) i stranica (str. 10-20); telefoni i datumi ostaju
+    z = _regex(z, r"(?<![\d-])((?:1[0-9]|20)\d\d)\s*-\s*((?:1[0-9]|20)\d\d)(?![\d-])", "\\1\u2013\\2")
+    z = _regex(z, r"\b((?:str|pp|p|s)\.\s*)(\d+)\s*-\s*(\d+)(?![\d-])", "\\1\\2\u2013\\3")
     z = _regex(z, r"(?<=[^\s\u2014])\u2014(?=[^\s\u2014])", " \u2014 ")
     z = _navodnici(z)
     z = _regex(z, r",,+", ",")
