@@ -369,8 +369,10 @@ def _je_nonprose_blok(tekst: str) -> bool:
     plain_lower = plain.lower()
 
     # 4. Ključne fraze parateksta
+    _n_rij = len(plain_lower.split())
+    _podrucje = plain_lower if _n_rij < 40 else plain_lower[:120]
     for kw in _NONPROSE_KEYWORDS:
-        if kw in plain_lower:
+        if _re.search(r"(?<!\w)" + _re.escape(kw) + r"(?!\w)", _podrucje):
             return True
 
     # 5. Kratak blok bez rečenične strukture
@@ -432,10 +434,19 @@ def _scorer_json_match(raw):
             except ValueError:
                 pass
         s = t.find("{", s + 1)
-    mm = re.search(r'"ocjena"\s*:\s*(\d+(?:\.\d+)?)', t)
+    mm = re.search(r'"ocjena"\s*:\s*"?(\d+(?:[.,]\d+)?)', t)
     if mm:
-        return _ScorerMatch('{"ocjena": ' + mm.group(1) + '}')
+        return _ScorerMatch('{"ocjena": ' + mm.group(1).replace(",", ".") + '}')
     return None
+
+
+def _isjecak(cist: str, n: int = 400) -> str:
+    """Tri isjecka (pocetak, sredina, kraj) za dugacke blokove; kratki ostaju cijeli."""
+    cist = cist or ""
+    if len(cist) <= 3 * n:
+        return cist
+    sr = len(cist) // 2
+    return cist[:n] + " [...] " + cist[sr - n // 2 : sr + n // 2] + " [...] " + cist[-n:]
 
 
 async def _scoruj_kvalitetu(
@@ -448,6 +459,7 @@ async def _scoruj_kvalitetu(
     tip_ocjenjivanja: str = "opci",
     prevodilac_provider: str = None,
     meta_out: dict = None,
+    izvornik: str = None,
 ) -> float:
     """Opcioni meta_out se popunjava sa heur/ai/status. Ostali pozivaoci
     (retro) ga ne prosledjuju i ponasanje im je nepromijenjeno."""
@@ -483,7 +495,8 @@ async def _scoruj_kvalitetu(
     ai_score = None
     try:
         cist = _ekstrahuj_cist_tekst(tekst)
-        cist = cist[:900]
+        cist = _isjecak(cist)
+        _izv = _isjecak(_ekstrahuj_cist_tekst(izvornik)) if izvornik else None
 
         tip_prefix = {
             "prevod": "TIP: PRIJEVOD (EN->HR). Ocjeni sva 4 kriterija.\n",
@@ -492,7 +505,16 @@ async def _scoruj_kvalitetu(
             "opci": "TIP: OPCI. Ocjeni sva 4 kriterija.\n",
         }.get(tip_ocjenjivanja, "TIP: OPCI.\n")
 
-        prompt = f"{tip_prefix}NAPOMENA: tekst je ISJECAK (prvih ~900 znakova odlomka); NE kaznjavaj prekinut pocetak ili kraj.\nTEKST ZA OCJENU:\n{cist}"
+        _izv_dio = ""
+        if _izv:
+            _izv_dio = f"IZVORNIK (EN, isti dijelovi):\n{_izv}\n"
+        elif tip_ocjenjivanja in ("prevod", "opci"):
+            _izv_dio = "IZVORNIK NIJE DOSTUPAN: kriterij tacnosti NE ocjenjuj, ocjena je prosjek ostala tri kriterija.\n"
+        prompt = (
+            f"{tip_prefix}NAPOMENA: tekst je ISJECAK (pocetak, sredina i kraj odlomka, odvojeni s [...]); NE kaznjavaj prekinut pocetak ili kraj.\n"
+            + _izv_dio
+            + f"TEKST ZA OCJENU:\n{cist}"
+        )
 
         # uloga="SCORER" → automatski koristi QUALITY_SCORER_SYS,
         # temp=0.05, max_tokens=128, priority=GROQ/CEREBRAS/GEMINI
@@ -526,7 +548,7 @@ async def _scoruj_kvalitetu(
             if m:
                 try:
                     obj = json.loads(_strip_ai_json(m.group()))
-                    raw_score = float(obj.get("ocjena", 0))
+                    raw_score = float(str(obj.get("ocjena", 0)).replace(",", "."))
                     if 1.0 <= raw_score <= 10.0:
                         ai_score = raw_score
                         # Debug: logiramo sumnjive "srednje" ocjene
@@ -570,7 +592,7 @@ async def _scoruj_kvalitetu(
         kompozitni = round(heur_score * 0.25 + ai_score * 0.75, 1)
     else:
         # Bez AI potvrde — koristimo heuristiku direktno (nema razloga za kaznu)
-        kompozitni = round(heur_score * 1.0, 1)
+        kompozitni = round(min(heur_score, 8.0), 1)  # F09a: bez AI ocjene najvise 8.0
 
     kompozitni -= relektura_kazna
     _final = round(max(1.0, min(10.0, kompozitni)), 1)
