@@ -561,6 +561,15 @@ class FleetManager:
             )
             return chosen.key
 
+    def has_available_key(self, provider: str) -> bool:
+        """Je li ima dostupan ključ; NE pomiče kotač (za provjere prije stvarnog odabira)."""
+        prov_u = provider.upper()
+        now = time.time()
+        with self.lock:
+            keys = self.fleet.get(prov_u, [])
+            keys = [k for k in keys if (now - getattr(k, "_last_503_time", 0)) >= 60.0]
+            return any(ks.available for ks in keys)
+
     def get_best_key_for_role(self, role: str):
         # FIX: preskoči providere bez ključeva BEZ log warningа (bilo je 40+ upozorenja
         # u 90 min za SAMBANOVA/MISTRAL koji uopće nemaju ključeve u dev_api.json).
@@ -617,11 +626,10 @@ class FleetManager:
                 return
 
     def record_failure(self, provider: str, key: str):
-        """Zabilježi neuspješan poziv."""
+        """Zabilježi neuspješan poziv (total_requests je već brojao record_request)."""
         prov_u = provider.upper()
         for ks in self.fleet.get(prov_u, []):
             if ks.key == key:
-                ks.total_requests += 1
                 ks.calls_failed += 1
                 return
 

@@ -479,8 +479,7 @@ async def _call_ai_engine_impl(
                     any_activity = True
                     continue
             else:
-                key = self.fleet.get_best_key(prov_upper)
-                if not key:
+                if not self.fleet.has_available_key(prov_upper):
                     keys = self.fleet.fleet.get(prov_upper, [])
                     if keys:
                         any_activity = True
@@ -626,8 +625,7 @@ async def _call_ai_engine_impl(
                     any_activity2 = True
                     continue
             else:
-                key = self.fleet.get_best_key(prov_upper)
-                if not key:
+                if not self.fleet.has_available_key(prov_upper):
                     keys = self.fleet.fleet.get(prov_upper, [])
                     if keys:
                         any_activity2 = True
@@ -912,7 +910,7 @@ class ProviderRouterV2:
             return len(self.dostupni_kljucevi.get(prov_u, [])) > 0
         fleet = self._get_fleet()
         if fleet:
-            return fleet.get_best_key(prov_u) is not None
+            return fleet.has_available_key(prov_u)
         return True
 
     def _get_kljuc(self, provider: str) -> str | None:

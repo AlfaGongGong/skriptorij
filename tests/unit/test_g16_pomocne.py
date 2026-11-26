@@ -23,6 +23,9 @@ class _Fleet:
         k = self.fleet.get(prov)
         return k[0] if k else None
 
+    def has_available_key(self, prov):
+        return bool(self.fleet.get(prov))
+
     def get_active_model(self, prov, default=None):
         return MODEL_MAP.get(prov, default or "m")
 

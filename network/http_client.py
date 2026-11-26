@@ -604,8 +604,6 @@ async def _async_http_post(
         # FIX tokeni=0: za 200 OK parsiramo JSON PRIJE analyze_response
         # kako bi tokens ekstrakcija u analyze_response imala body s usage poljem.
         if resp.status_code == 200:
-            with contextlib.suppress(Exception):
-                self.fleet.record_success(prov, key)
             try:
                 data = resp.json()
                 resp_body = data  # <-- proslijedi body s usage tokenima
@@ -628,14 +626,12 @@ async def _async_http_post(
             )
 
         if resp.status_code == 200:
-            with contextlib.suppress(Exception):
-                self.fleet.record_success(prov, key)
+            # R5-11: uspjeh broji analyze_response (samo za valjan 200)
             register_provider_runtime_limits(prov_upper, resp.headers, data)
             return data
 
         if resp.status_code in (429, 425):
-            with contextlib.suppress(Exception):
-                self.fleet.record_failure(prov, key)
+            # R6-11: 429 vec broji analyze_response (calls_rejected)
             register_provider_runtime_limits(prov_upper, resp.headers, resp_body)
             body_preview = str(resp_body)[:300] if resp_body else "nema body-ja"
             self.log(
