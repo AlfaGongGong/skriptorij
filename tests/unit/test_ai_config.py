@@ -15,9 +15,13 @@ def test_google_model_pool_uses_current_rpd_limits():
     assert by_model["gemini-3.1-flash-lite"]["rpd"] == 500
 
 
-def test_gemma_is_present_in_secondary_provider_priorities():
-    for role in ("GUARDIAN", "POLISH", "SCORER", "GLOSAR_UPDATE"):
-        assert "GEMMA" in PROVIDER_PRIORITY[role]
+def test_samo_aktivni_provideri_u_prioritetima():
+    from config.ai_config import AKTIVNI_PROVIDERI
+
+    for role, lista in PROVIDER_PRIORITY.items():
+        assert lista, role
+        assert set(lista) <= set(AKTIVNI_PROVIDERI), role
+        assert "GEMMA" not in lista
 
 
 def test_morfo_validator_uses_high_quota_google_model():

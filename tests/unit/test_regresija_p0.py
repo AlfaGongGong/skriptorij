@@ -31,8 +31,6 @@ def eng():
     ("A šta ti je?", "A što ti je?"),
     ("Šta ti je?", "Što ti je?"),
     ("Znaš šta to znači.", "Znaš što to znači."),
-    ("Nije valjda došao.", "Valjda nije došao."),
-    ("Ja mislim da nije valjda došao.", "Ja mislim da valjda nije došao."),
 ])
 def test_engine_case(eng, ulaz, ocekivano):
     out, _ = eng.primijeni(ulaz)

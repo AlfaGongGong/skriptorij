@@ -213,9 +213,6 @@ Vrati ISKLJUCIVO JSON:
         p for p in _PP_G.get("GLOSAR_UPDATE", ["GROQ", "GEMINI", "NVIDIA"])
         if p != "GEMMA" or len(batch) >= 20  # Gemma samo za dugacke promptove
     ]
-    for _p_dod in ("OPENROUTER", "CLOUDFLARE", "MISTRAL"):
-        if _p_dod not in PROVIDERI:
-            PROVIDERI.append(_p_dod)
 
     for provider in PROVIDERI:
         try:

@@ -180,17 +180,26 @@ def test_multiple_analyze_responses(tmp_path):
     assert ks.available is False
 
 
-def test_load_config_clones_gemini_keys_for_gemma(tmp_path):
+def test_load_config_ignorira_ugasene_providere(tmp_path):
     cfg = tmp_path / "dev_api.json"
     state = tmp_path / "api_state.json"
     quota_tracker._providers.clear()
     quota_tracker._PERSIST_PATH = str(tmp_path / "quota_cooldowns.json")
-    cfg.write_text(json.dumps({"GEMINI": ["gem_key_1234567890"]}), "utf-8")
+    cfg.write_text(
+        json.dumps(
+            {
+                "GEMINI": ["gem_key_1234567890"],
+                "GROQ": ["gsk_key_1234567890"],
+                "GEMMA": ["gma_key_1234567890"],
+                "NVIDIA": ["nv_key_1234567890"],
+            }
+        ),
+        "utf-8",
+    )
 
     fm = FleetManager(config_path=str(cfg), state_path=str(state))
 
-    assert "GEMINI" in fm.fleet
-    assert "GEMMA" in fm.fleet
-    assert [ks.key for ks in fm.fleet["GEMMA"]] == [ks.key for ks in fm.fleet["GEMINI"]]
-    ok, _reason = quota_tracker.is_key_available("GEMMA", "gem_key_1234567890")
-    assert ok is True
+    assert set(fm.fleet) == {"GEMINI", "GROQ"}
+    assert fm.get_best_key("GEMMA") is None
+    assert fm.get_best_key("NVIDIA") is None
+    assert fm.get_best_key("GEMINI") == "gem_key_1234567890"

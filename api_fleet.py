@@ -24,6 +24,7 @@ import time
 from pathlib import Path
 
 from config.system_logger import syslog
+from config.ai_config import AKTIVNI_PROVIDERI
 from network.quota_tracker import quota_tracker
 
 logger = logging.getLogger(__name__)
@@ -321,7 +322,7 @@ class FleetManager:
         # Vidi reviziju 2026-10-19. Ne spajamo ih više.
         # Fallback: ako GEMMA nema vlastite ključeve, koristi GEMINI
         # (backward compat za stare konfiguracije bez odvojenog GEMMA poola).
-        if "GEMINI" in raw:
+        if "GEMINI" in raw and "GEMMA" in AKTIVNI_PROVIDERI:
 
             def _as_key_list(v):
                 if isinstance(v, list):
@@ -362,6 +363,9 @@ class FleetManager:
         for prov, data in raw.items():
             prov_u = prov.upper()
             if prov_u in {"EPUB_BACKGROUND", "PROXIES", "PROXIES_OFF"}:
+                continue
+            if prov_u not in AKTIVNI_PROVIDERI:
+                logger.info("[FleetManager] %s ugašen (aktivni: %s), preskačem", prov_u, ",".join(AKTIVNI_PROVIDERI))
                 continue
             self.fleet[prov_u] = []
             self._rr_index[prov_u] = 0

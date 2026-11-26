@@ -10,6 +10,16 @@ from dataclasses import dataclass
 
 from config.providers import all_fallbacks, all_profiles
 
+# Jedini providers koji rade posao. Ostali (GEMMA, NVIDIA, MISTRAL, CLOUDFLARE, OPENROUTER...) su ugašeni:
+# flota ih ne učitava, prioriteti ih ne sadrže. Povratak: BOOKLYFI_AKTIVNI_PROVIDERI=GEMINI,GROQ,NVIDIA
+import os as _os_akt
+
+AKTIVNI_PROVIDERI = tuple(
+    p.strip().upper()
+    for p in _os_akt.environ.get("BOOKLYFI_AKTIVNI_PROVIDERI", "GEMINI,GROQ").split(",")
+    if p.strip()
+)
+
 # RPD limiti (free tier, maj 2026):
 #   gemini-3.5-flash:      10 RPM / 20 RPD  — primarni, stabilan
 #   gemini-3.1-flash-lite: 15 RPM / 500 RPD — visok RPD fallback
@@ -49,6 +59,10 @@ PROVIDER_PRIORITY = {
     "GLOSAR_UPDATE": ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
     "SCORER": ["GROQ", "GEMINI", "NVIDIA", "GEMMA"],
 }
+PROVIDER_PRIORITY = {
+    _r: [_p for _p in _lista if _p in AKTIVNI_PROVIDERI]
+    for _r, _lista in PROVIDER_PRIORITY.items()
+}
 
 # P2.19.2: jezične uloge SAMO na GEMINI (kvaliteta > brzina). Kad Gemini nije dostupan,
 # _call_ai_engine čeka kvotu umjesto da pada na Groq/Cloudflare. Gasi se s BOOKLYFI_STRICT_GEMINI=0.
@@ -59,7 +73,7 @@ import os as _os_strict
 _STRICT_GOOGLE = (
     ["GEMINI"]
     if _os_strict.environ.get("BOOKLYFI_STRICT_GEMINI_ONLY", "0") == "1"
-    else ["GEMINI", "GEMMA"]
+    else [p for p in ["GEMINI", "GEMMA"] if p in AKTIVNI_PROVIDERI]
 )
 STRICT_PROVIDER_ROLES = (
     {}
