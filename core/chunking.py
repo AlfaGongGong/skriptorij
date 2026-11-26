@@ -264,6 +264,24 @@ def _grupisi_djecu(children: list, max_words: int) -> list:
     return grupe
 
 
+def _spoji_bez_rijeci(chunks: list) -> list:
+    """F04b: blok bez ijedne rijeci (samo <img>/<hr>/<a id>) se spaja sa susjednim blokom,
+    jer AI takav blok ne moze prevesti (zavrsi kao [[NEPREVEDENO: blok N]])."""
+    izlaz, pred = [], ""
+    for c in chunks:
+        if not BeautifulSoup(c, "html.parser").get_text(" ", strip=True).split():
+            if izlaz:
+                izlaz[-1] += c
+            else:
+                pred += c
+            continue
+        izlaz.append(pred + c)
+        pred = ""
+    if pred:
+        izlaz.append(pred)
+    return izlaz
+
+
 def _otisak(html_content: str) -> tuple:
     """(broj rijeci, broj img, broj hr, skup id-ova) tijela dokumenta."""
     soup = BeautifulSoup(html_content, "html.parser")
@@ -301,6 +319,7 @@ def chunk_html(html_content: str, max_words: int = MAX_WORDS_DEFAULT) -> list:
 
     grupe = _grupisi_djecu(list(body.children), max_words)
     chunks = ["".join(g) for g in grupe if "".join(g).strip()]
+    chunks = _spoji_bez_rijeci(chunks)
     gotovi = []
     for c in chunks:
         gotovi.extend(_sigurno_rezi(c, max_words))

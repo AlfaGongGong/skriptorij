@@ -61,3 +61,11 @@ def test_provjera_sacuvanosti_baca_gresku(monkeypatch):
     monkeypatch.setattr(chunking, "_grupisi_djecu", lambda ch, mw: [["<p>Samo ovo.</p>"]])
     with pytest.raises(ChunkingError):
         chunk_html('<p>Samo ovo.</p><img src="a.png"/><p>I još.</p>', 500)
+
+
+def test_nema_bloka_bez_rijeci():
+    html = "<p>" + " ".join(["riječ"] * 700) + "</p><img src='x.png'/>"
+    ch = chunk_html(html, 500)
+    assert all(_otisak(c)[0] > 0 for c in ch)
+    assert _otisak("".join(ch))[1] == 1
+    assert "<img" in ch[-1]
