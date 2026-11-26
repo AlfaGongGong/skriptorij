@@ -1014,6 +1014,16 @@ async def _call_gemini_with_full_rotation(
                         "[GEMINI] Svi fallback-ovi pali (kontekst, Gemma, Groq, Mistral) — odustajem",
                         "error",
                     )
+                    # F06: PROHIBITED -> ContentFilterError, da pipeline podijeli blok po
+                    # paragrafima (samo problematicni dobije [[MANUAL]] + EN komentar) umjesto
+                    # 3 kruga istog odbijanja i [[NEPREVEDENO]] za cijeli blok.
+                    # Gasi: BOOKLYFI_PROHIBITED_BISEKCIJA=0
+                    import os as _os_f06
+
+                    if _os_f06.environ.get("BOOKLYFI_PROHIBITED_BISEKCIJA", "1") != "0":
+                        raise ContentFilterError(
+                            "[GEMINI] PROHIBITED_CONTENT — svi fallback-ovi pali"
+                        )
                     return None, None
 
             if not ks.available:
