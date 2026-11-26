@@ -41,8 +41,6 @@ DIJALOG_KALKOVI = [
     # (r"\bkako\s+god\b", "kako mu drago"),
     # (r"\bkako\s+god\s+ti\b", "kako ti"),
     # Srpska forma odricanja u dijalogu
-    (r"\bNije\s+valjda\b", "Valjda nije"),
-    (r"\bnema\s+na\s+čemu\b", "nema na čemu"),  # OK u BS ali provjeriti
     # "Šta" umjesto "što" — dosljedan ekavizam/srbizam u dijalogu
     (r"\bŠta\b", "Što"),
     (r"\bšta\b", "što"),

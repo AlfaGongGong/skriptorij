@@ -13,7 +13,7 @@ def test_reload_ne_prazni_engine():
     from core.kalkovi.engine import kalkovi_engine
     n0 = kalkovi_engine.broj_patterna
     n1 = reload_dinamicki_kalkove()
-    assert n0 >= 500
+    assert n0 >= 400
     assert n1 == n0 == kalkovi_engine.broj_patterna
     t, n = kalkovi_engine.primijeni("Deca su došla.")
     assert t == "Djeca su došla." and n == 1

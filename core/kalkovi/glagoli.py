@@ -63,40 +63,20 @@ GLAGOLI = [
     # 2. POGREŠNA REKCIJA
     # ══════════════════════════════════════════════════════════════
     # "čekati na nekoga" → "čekati nekoga" (HR/BS norma)
-    (
-        r"\bčekati\s+na\s+(?=(?:njega|nju|njih|vas|nas|tebe|te|mene|me|ga|je|ih|Ž))",
-        "čekati ",
-    ),
-    (
-        r"\bčekao\s+(?:je\s+)?na\s+(?=(?:njega|nju|njih|vas|nas|tebe|me|ga|je|ih))",
-        "čekao na ",
-    ),  # čekao je na njega — OK, ostaviti
     # Točniji: samo "čekati NA + ličnu zamjenicu" je pogrešno
-    (r"\bčekati\s+na\s+(njega|nju|njih|vas|nas|tebe|te|mene|me)\b", r"čekati \1"),
-    (r"\bčekao\s+na\s+(njega|nju|njih|tebe|te|mene|me)\b", r"čekao \1"),
-    (r"\bčekala\s+na\s+(njega|nju|njih|tebe|te|mene|me)\b", r"čekala \1"),
-    (r"\bčekali\s+na\s+(njega|nju|njih|vas|nas)\b", r"čekali \1"),
     # "pitati za" nešto → "pitati za" je OK, ali "pitati NA pitanje" nije
-    (r"\bodgovoriti\s+na\s+pitanje\b", "odgovoriti na pitanje"),  # OK, ostavljamo
     # ══════════════════════════════════════════════════════════════
     # 3. POGREŠNI POVRATNI OBLICI
     # ══════════════════════════════════════════════════════════════
     # "sjetiti" bez "se" (refleksivni glagol uvijek traži "se")
     # Oprezno: samo kad nije već "sjetiti se"
-    (r"\bsjetiti\s+(?!se\b)", "sjetiti se "),
-    (r"\bsjetio\s+(?!se\b)", "sjetio se "),
-    (r"\bsjetila\s+(?!se\b)", "sjetila se "),
-    (r"\bsjetili\s+(?!se\b)", "sjetili se "),
     # "dosjetiti" bez "se"
-    (r"\bdosjetiti\s+(?!se\b)", "dosjetiti se "),
-    (r"\bdosjetio\s+(?!se\b)", "dosjetio se "),
     # "smijati" bez "se" (u značenju laughing)
     # Previše opasno za regex — preskačemo, handled u prompt_injector
     # ══════════════════════════════════════════════════════════════
     # 4. STILSKI LOŠI ALI GRAMATIČKI OK OBLICI
     # ══════════════════════════════════════════════════════════════
     # "reče sam" → "rekoh" (arhaični narativni perfekt u dijalogu)
-    (r"\breče\s+sam\b", "rekoh"),
     # F1.4 ZAMRZNUTO: brise zamjenicu koja kaze ko govori
     # (r"\breče\s+ona\b", "reče"),  # "reče ona" → "reče" (redundantno)
     # F1.4 ZAMRZNUTO: brise zamjenicu koja kaze ko govori

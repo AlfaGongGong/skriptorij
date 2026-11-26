@@ -10,11 +10,6 @@ općenitijeg da nema false-positive kolizija.
 
 PLEONAZMI = [
     # ── 1. Suvišni priložni dodaci uz glagole kretanja/stanja ──────────────
-    (r"\bspustiti\s+(?:se\s+)?(?:prema\s+)?dolje\b", "spustiti se"),
-    (r"\bspusti\s+(?:se\s+)?(?:prema\s+)?dolje\b", "spusti se"),
-    (r"\bspustio\s+(?:se\s+)?(?:prema\s+)?dolje\b", "spustio se"),
-    (r"\bspustila\s+(?:se\s+)?(?:prema\s+)?dolje\b", "spustila se"),
-    (r"\bspustili\s+(?:se\s+)?(?:prema\s+)?dolje\b", "spustili se"),
     (r"\bpopeti\s+se\s+gore\b", "popeti se"),
     (r"\bpopeo\s+se\s+gore\b", "popeo se"),
     (r"\bpopela\s+se\s+gore\b", "popela se"),
@@ -31,11 +26,9 @@ PLEONAZMI = [
     (r"\bvratio\s+se\s+natrag\b", "vratio se"),
     (r"\bvratila\s+se\s+natrag\b", "vratila se"),
     (r"\bvratili\s+se\s+natrag\b", "vratili se"),
-    (r"\buspe?ti\s+se\s+gore\b", "uspeti se"),
     # ── 2. Suvišna pojačavanja pridjeva ─────────────────────────────────────
     # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
     # (r"\bpotpuno\s+uništen(?:a|o|i|e)?\b", "uništen"),
-    (r"\bpotpuno\s+mrtav\b", "mrtav"),
     (r"\bpotpuno\s+mrtva\b", "mrtva"),
     (r"\bpotpuno\s+mrtvo\b", "mrtvo"),
     # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
@@ -59,9 +52,6 @@ PLEONAZMI = [
     # (r"\bsam\s+lično\b", "osobno"),
     # F1.4 ZAMRZNUTO: zamjena kvari rod/broj ili znacenje
     # (r"\bsama\s+lično\b", "osobno"),
-    (r"\bja\s+osobno\s+sam\b", "osobno sam"),
-    (r"\bti\s+osobno\s+si\b", "osobno si"),
-    (r"\bon\s+osobno\s+je\b", "osobno je"),
     # ── 5. Glagolski pleonazmi ───────────────────────────────────────────────
     (r"\bvidjeti\s+(?:na\s+)?vlastite\s+oči\b", "vidjeti"),
     (r"\bvidio\s+(?:na\s+)?vlastite\s+oči\b", "vidio"),
@@ -70,10 +60,5 @@ PLEONAZMI = [
     (r"\bponoviti\s+(?:još\s+)?jednom\s+(?:više|opet)\b", "ponoviti"),
     (r"\bponovio\s+(?:još\s+)?jednom\s+(?:više|opet)\b", "ponovio"),
     # ── 6. Opisni pleonazmi ──────────────────────────────────────────────────
-    (r"\bcrna\s+tama\b", "tama"),
-    (r"\bbijela\s+snijeg\b", "snijeg"),  # "bijeli snijeg"
-    (r"\bbijeli\s+snijeg\b", "snijeg"),
-    (r"\bstara\s+ruševina\b", "ruševina"),
-    (r"\bstare\s+ruševine\b", "ruševine"),
     (r"\bmladi\s+podmladak\b", "podmladak"),
 ]

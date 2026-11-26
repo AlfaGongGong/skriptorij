@@ -31,26 +31,6 @@ Napomena o patternima:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _m(modal_oblici, infinitiv):
-    """
-    Vraća listu kalkova za sve oblike modalnog glagola + da + prezent.
-    modal_oblici: lista regex stringova za oblike modalnog glagola
-    infinitiv: ispravni infinitiv koji se ubacuje u zamjenu
-    """
-    rezultat = []
-    for oblik in modal_oblici:
-        # modal + da + jednočlani prezent (najčešći slučaj)
-        rezultat.append(
-            (
-                rf"\b{oblik}\s+da\s+(\w+)",
-                lambda m, inf=infinitiv: (
-                    f"{m.group(0).split('da')[0].rstrip()} {inf}" if False else r"\g<0>"
-                ),  # placeholder — koristimo dolje
-            )
-        )
-    return rezultat
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # LISTA KALKOVA
 # Format: (pattern, zamjena) — re.IGNORECASE se primjenjuje automatski
@@ -114,18 +94,6 @@ KALKOVI = [
     # ══════════════════════════════════════════════════════════════════════
     # 18. PRISILITI / TJERATI / NATJERATI / PUSTITI / DATI (dopuštanje)
     # ══════════════════════════════════════════════════════════════════════
-    (
-        r"\bprisili\s+(?:ga|je|ih|me|te|nas|vas)\s+da\s+(\w+)",
-        lambda m: m.group(0).replace(" da ", " ").rstrip(),
-    ),  # ostavi strukturu
-    (
-        r"\btjera\s+(?:ga|je|ih|me|te|nas|vas)\s+da\s+(\w+)",
-        lambda m: m.group(0).replace(" da ", " "),
-    ),
-    (
-        r"\bnatjera\s+(?:ga|je|ih|me|te|nas|vas)\s+da\s+(\w+)",
-        lambda m: m.group(0).replace(" da ", " "),
-    ),
     # "pusti me da idem" → "pusti me ići" — kontekstualno, ostavljamo
     # "dao mi je da" → kontekstualno
     # ══════════════════════════════════════════════════════════════════════
@@ -137,14 +105,6 @@ KALKOVI = [
     # ══════════════════════════════════════════════════════════════════════
     # 21. POMOĆI / DOPUSTITI / DOZVOLITI
     # ══════════════════════════════════════════════════════════════════════
-    (
-        r"\bpomoći\s+(?:mu|joj|im|mi|ti|nam|vam)\s+da\s+(\w+)",
-        lambda m: m.group(0).replace(" da ", " "),
-    ),
-    (
-        r"\bpomogao\s+(?:mu|joj|im|mi|ti)\s+da\s+(\w+)",
-        lambda m: m.group(0).replace(" da ", " "),
-    ),
     # ══════════════════════════════════════════════════════════════════════
     # 22. OSTATI / ZADRŽATI SE
     # ══════════════════════════════════════════════════════════════════════
@@ -162,21 +122,6 @@ KALKOVI = [
     # Ovi patterni su BEZ capture grupe (bez \1) — sigurni.
     # Zamjenjuju ustaljene frazne kalkove engleskog u HR.
     # ═══════════════════════════════════════════════════════════════════
-    (r"\bbio je u stanju da\b", r"mogao je"),
-    (r"\bbila je u stanju da\b", r"mogla je"),
-    (r"\bbili su u stanju da\b", r"mogli su"),
-    (r"\bbile su u stanju da\b", r"mogle su"),
-    (r"\bbio sam u stanju da\b", r"mogao sam"),
-    (r"\bbila sam u stanju da\b", r"mogla sam"),
-    (r"\bnije bio u mogu[ćc]nosti da\b", r"nije mogao"),
-    (r"\bnije bila u mogu[ćc]nosti da\b", r"nije mogla"),
-    (r"\bnije u mogu[ćc]nosti da\b", r"ne može"),
-    (r"\bnije u stanju da\b", r"ne može"),
-    (r"\buspio je da\b", r"uspio je"),
-    (r"\buspjela je da\b", r"uspjela je"),
-    (r"\buspio sam da\b", r"uspio sam"),
-    (r"\bpoku[šs]ao je da\b", r"pokušao je"),
-    (r"\bpoku[šs]ala je da\b", r"pokušala je"),
     (r"\bu cilju da\b", r"da bi"),
     (r"\bs ciljem da\b", r"da bi"),
     (r"\bsa svrhom da\b", r"da bi"),

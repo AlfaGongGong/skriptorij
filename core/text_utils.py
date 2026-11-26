@@ -519,22 +519,9 @@ def _automatska_korekcija(tekst: str) -> str:
     def _korigiraj_cist(cist: str) -> str:
         zamjene = [
             # ── Modalni kalkovi (da + prezent → infinitiv) ──────────────────
-            (r"\bbio\s+je\s+u\s+stanju\s+da\b", "mogao je"),
-            (r"\bbila\s+je\s+u\s+stanju\s+da\b", "mogla je"),
             (r"\bnije\s+bio\s+u\s+mogu[ćc]nosti\b", "nije mogao"),
             (r"\bnije\s+bila\s+u\s+mogu[ćc]nosti\b", "nije mogla"),
             (r"\buspio\s+je\s+da\s+uradi\b", "uspio je uraditi"),
-            (r"\bpokušao\s+je\s+da\b", "pokušao je"),
-            (r"\bpokušala\s+je\s+da\b", "pokušala je"),
-            (r"\bodlučio\s+je\s+da\b", "odlučio je"),
-            (r"\bodlučila\s+je\s+da\b", "odlučila je"),
-            (r"\bhtio\s+je\s+da\b", "htio je"),
-            (r"\bhtjela\s+je\s+da\b", "htjela je"),
-            (r"\bmorao\s+je\s+da\b", "morao je"),
-            (r"\bmorala\s+je\s+da\b", "morala je"),
-            (r"\bmorao\s+sam\s+da\b", "morao sam"),
-            (r"\bmorala\s+sam\s+da\b", "morala sam"),
-            (r"\bznao\s+je\s+da\b\s+(?=\w+i\b)", "znao je "),
             # ── Srpski oblici → HR ───────────────────────────────────────────
             (r"\bsaglasan\b", "suglasan"),
             (r"\bsaglasnost\b", "suglasnost"),
