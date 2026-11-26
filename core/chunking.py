@@ -1,19 +1,15 @@
-# core/chunking.py — v3 (2026-10-06)
+# core/chunking.py — v4 (F04, 2026-11-26)
 #
-# ZAŠTO v3:
-#   v2 je grupirala djecu <div>/<p> po max_words, ali NIJE rezala pojedinačni <p>.
-#   Kad je <p> > max_words, ostavljen je cijeli — rezultat: prevelik chunk
-#   (HTTP 413 na Groq, MAX_TOKENS na drugima).
-#
-# RJEŠENJE u v3:
-#   1. Grupiraj djecu po max_words (kao v2).
-#   2. Ako je POJEDINAČNI <p> > max_words — reži ga PO REČENICAMA.
-#   3. Čuvaj HTML tagove (<em>, <i>, <b>) unutar rečenice.
-#   4. Nikad ne reži riječ na pola.
-#   5. Ako je rečenica > max_words — reži po zarezu/razmaku.
-#   6. Ne gubi tekst — svaki znak ide u točno jedan chunk.
-#
-# Default max_words = 400 (sigurnija granica za modele s niskim TPM).
+# v3 -> v4 (audit R7-4..R7-9, R7-25):
+#   - broj rijeci: get_text(" ", strip=True) (oznake oko svake rijeci vise ne spajaju rijeci)
+#   - <img>, <hr>, <a id> i komentari na pocetku bloka se vise ne gube
+#   - tekst se escapea (&, <, >) pri slaganju bloka, komentari se pisu kao komentari
+#   - nema umetnutog razmaka usred rijeci uz inline oznake (<i>stig</i>la)
+#   - zarez-rez cuva razmake ("1,000" ostaje) i dio veci od limita se dijeli po rijecima
+#   - rijecenica veca od limita unutar <p> s oznakama se dijeli po rijecima
+#   - jedan zadani limit: MAX_WORDS_DEFAULT = 500 (kao produkcija)
+#   - sigurnosna mreza ne uklanja oznake ako blok ima img/hr/id
+#   - provjera sacuvanosti nakon chunk_html (rijeci, img, hr, id) baca ChunkingError
 
 import re
 import warnings
@@ -24,14 +20,36 @@ warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 from bs4 import BeautifulSoup, Comment, NavigableString, Tag
 
-# Regex za granicu rečenice: iza . ! ? … slijedi razmak ili kraj
+MAX_WORDS_DEFAULT = 500
+
+
+class ChunkingError(ValueError):
+    """Chunking je izgubio ili promijenio sadrzaj (rijeci, img, hr, id)."""
+
+
+# Granica recenice: iza . ! ? … slijedi razmak ili kraj
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?\u2026])\s+")
+# Isto, ali razmak ostaje uz sljedeci dio (nista se ne gubi)
+_SENTENCE_KEEP = re.compile(r"(?<=[.!?\u2026])(?=\s)")
+
+
+def _esc(s: str) -> str:
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _html(node) -> str:
+    """HTML cvora: obican tekst se escapea, komentar ostaje komentar, tag kao str(tag)."""
+    if isinstance(node, NavigableString):
+        return node.output_ready(formatter="minimal")
+    return str(node)
 
 
 def _word_count(node) -> int:
+    if isinstance(node, Comment):
+        return 0
     if isinstance(node, NavigableString):
         return len(str(node).split())
-    return len(node.get_text(strip=True).split())
+    return len(node.get_text(" ", strip=True).split())
 
 
 def _tag_open_close(tag) -> tuple:
@@ -48,277 +66,259 @@ def _tag_open_close(tag) -> tuple:
     return open_tag, close_tag
 
 
-def _split_text_by_sentences(text: str, max_words: int) -> list:
-    """
-    Reži TEKST po rečenicama, u grupe od max_words.
-    Nikad ne reže riječ na pola. Ako je rečenica > max_words, reže po zarezu.
-    Vraća listu stringova.
-    """
-    if not text.strip():
-        return [text]
-
-    # 1. Podijeli po rečenicama
-    sentences = [s for s in _SENTENCE_SPLIT.split(text) if s.strip()]
-    if not sentences:
-        sentences = [text]
-
-    # 2. Grupiraj rečenice u grupe od max_words
-    grupe = []
-    trenutna = []
-    trenutne_rijeci = 0
-
-    for s in sentences:
-        w = len(s.split())
-
-        # Ako je JEDNA rečenica prevelika — reži je
-        if w > max_words:
-            # Prvo zatvori trenutnu grupu
-            if trenutna:
-                grupe.append(" ".join(trenutna))
-                trenutna = []
-                trenutne_rijeci = 0
-            # Reži veliku rečenicu
-            dijelovi = _split_long_sentence(s, max_words)
-            grupe.extend(dijelovi)
-            continue
-
-        if trenutne_rijeci > 0 and trenutne_rijeci + w > max_words:
-            grupe.append(" ".join(trenutna))
-            trenutna = [s]
-            trenutne_rijeci = w
-        else:
-            trenutna.append(s)
-            trenutne_rijeci += w
-
-    if trenutna:
-        grupe.append(" ".join(trenutna))
-
+def _split_po_rijecima(text: str, max_words: int) -> list:
+    rijeci = text.split()
+    grupe = [" ".join(rijeci[i : i + max_words]) for i in range(0, len(rijeci), max_words)]
     return grupe if grupe else [text]
 
 
 def _split_long_sentence(sentence: str, max_words: int) -> list:
     """
-    Reži JEDNU preveliku rečenicu. Prvo po zarezu, pa po razmaku.
-    Nikad ne reže riječ na pola.
+    Rezi JEDNU preveliku recenicu: prvo iza zareza (zarez i razmak ostaju uz prethodni dio,
+    "1,000" se ne dira), a dio koji je i sam veci od limita po rijecima.
     """
-    # Probaj po zarezu
-    if "," in sentence:
-        dijelovi = [d.strip() for d in sentence.split(",") if d.strip()]
-        if len(dijelovi) > 1:
-            # Grupiraj dijelove po max_words
-            grupe = []
-            trenutna = []
-            trenutne_rijeci = 0
-            for d in dijelovi:
-                w = len(d.split())
-                if trenutne_rijeci > 0 and trenutne_rijeci + w > max_words:
-                    grupe.append(", ".join(trenutna) + ",")
-                    trenutna = [d]
-                    trenutne_rijeci = w
-                else:
-                    trenutna.append(d)
-                    trenutne_rijeci += w
-            if trenutna:
-                grupe.append(", ".join(trenutna))
-            return grupe
-
-    # Zadnja linija: reži po razmaku
-    rijeci = sentence.split()
-    grupe = []
-    trenutna = []
-    for r in rijeci:
-        trenutna.append(r)
-        if len(trenutna) >= max_words:
-            grupe.append(" ".join(trenutna))
-            trenutna = []
-    if trenutna:
-        grupe.append(" ".join(trenutna))
+    dijelovi = [d for d in re.split(r"(?<=,)\s+", sentence.strip()) if d]
+    grupe, tren, br = [], [], 0
+    for d in dijelovi:
+        w = len(d.split())
+        if w > max_words:
+            if tren:
+                grupe.append(" ".join(tren))
+                tren, br = [], 0
+            grupe.extend(_split_po_rijecima(d, max_words))
+            continue
+        if tren and br + w > max_words:
+            grupe.append(" ".join(tren))
+            tren, br = [d], w
+        else:
+            tren.append(d)
+            br += w
+    if tren:
+        grupe.append(" ".join(tren))
     return grupe if grupe else [sentence]
 
 
+def _split_text_by_sentences(text: str, max_words: int) -> list:
+    """
+    Rezi TEKST po recenicama u grupe od najvise max_words rijeci (cisti tekst, bez escapea).
+    Nikad ne rezi rijec na pola.
+    """
+    if not text.strip():
+        return [text]
+
+    sentences = [s for s in _SENTENCE_SPLIT.split(text) if s.strip()]
+    if not sentences:
+        sentences = [text]
+
+    grupe, trenutna, trenutne_rijeci = [], [], 0
+    for s in sentences:
+        w = len(s.split())
+        if w > max_words:
+            if trenutna:
+                grupe.append(" ".join(trenutna))
+                trenutna, trenutne_rijeci = [], 0
+            grupe.extend(_split_long_sentence(s, max_words))
+            continue
+        if trenutne_rijeci > 0 and trenutne_rijeci + w > max_words:
+            grupe.append(" ".join(trenutna))
+            trenutna, trenutne_rijeci = [s], w
+        else:
+            trenutna.append(s)
+            trenutne_rijeci += w
+    if trenutna:
+        grupe.append(" ".join(trenutna))
+    return grupe if grupe else [text]
+
+
 def _split_p_tag(p_tag: Tag, max_words: int) -> list:
-    """
-    Reži JEDAN <p> tag na više <p> tagova, čuvajući unutrašnje tagove.
-    Vraća listu stringova (HTML).
-    """
+    """Rezi JEDAN <p> na vise <p> (HTML stringovi), cuvajuci unutarnje oznake."""
     open_tag, close_tag = _tag_open_close(p_tag)
     if not close_tag:
         return [str(p_tag)]
 
-    # Ako <p> ima samo tekst — reži po rečenicama
-    if len(list(p_tag.children)) == 1 and isinstance(
-        list(p_tag.children)[0], NavigableString
-    ):
-        text = str(list(p_tag.children)[0])
-        dijelovi = _split_text_by_sentences(text, max_words)
-        return [open_tag + d + close_tag for d in dijelovi]
+    djeca = list(p_tag.children)
+    if len(djeca) == 1 and type(djeca[0]) is NavigableString:
+        dijelovi = _split_text_by_sentences(str(djeca[0]), max_words)
+        return [open_tag + _esc(d) + close_tag for d in dijelovi]
 
-    # Ako <p> ima ugniježđene tagove (<em>, <i>, <b>) — reži po rečenicama na tekstualnoj razini
-    # Prvo: pretvori u "virtualni" tekst s tagovima
-    # Jednostavno: iteriraj kroz djecu, akumuliraj tekst, čuvaj tagove
-
-    dijelovi = []  # lista (tekst, tagovi)
-    trenutni_tekst = []
-    trenutni_trenutni_rijeci = 0
-    trenutni_dijelovi = []  # čuvaj (string, tip)
+    dijelovi = []
+    tren = []
+    br = 0
 
     def flush():
-        nonlocal trenutni_tekst, trenutni_trenutni_rijeci, trenutni_dijelovi
-        if trenutni_dijelovi:
-            html_inner = "".join(trenutni_dijelovi)
-            dijelovi.append(html_inner)
-        trenutni_tekst = []
-        trenutni_trenutni_rijeci = 0
-        trenutni_dijelovi = []
+        nonlocal tren, br
+        if tren:
+            dijelovi.append("".join(tren))
+        tren, br = [], 0
 
-    for child in p_tag.children:
+    for child in djeca:
         if isinstance(child, NavigableString):
+            if type(child) is not NavigableString:  # komentar, CDATA...
+                tren.append(_html(child))
+                continue
             text = str(child)
-            # Reži ovaj tekst po rečenicama
-            sentences = [s for s in _SENTENCE_SPLIT.split(text) if s.strip()]
-            if not sentences:
-                sentences = [text]
-            for s in sentences:
+            dijelovi_s = [s for s in _SENTENCE_KEEP.split(text) if s != ""] or [text]
+            for s in dijelovi_s:
                 w = len(s.split())
-                if (
-                    trenutni_trenutni_rijeci > 0
-                    and trenutni_trenutni_rijeci + w > max_words
-                ):
+                if w > max_words:
+                    lead = s[: len(s) - len(s.lstrip())]
+                    trail = s[len(s.rstrip()) :]
+                    dp = _split_long_sentence(s.strip(), max_words)
+                    for i, d in enumerate(dp):
+                        wd = len(d.split())
+                        if br > 0 and br + wd > max_words:
+                            flush()
+                        txt = (lead if i == 0 else "") + d + (trail if i == len(dp) - 1 else "")
+                        tren.append(_esc(txt))
+                        br += wd
+                        if i < len(dp) - 1:
+                            flush()
+                    continue
+                if br > 0 and br + w > max_words:
                     flush()
-                trenutni_dijelovi.append(s + " " if not s.endswith(" ") else s)
-                trenutni_trenutni_rijeci += w
+                tren.append(_esc(s))
+                br += w
         else:
-            # Tag (<em>, <i>, <b>) — dodaj u trenutni dio
             s = str(child)
             w = _word_count(child)
-            # _L16_: ugnijezdeni tag veci od max_words (npr. <p><span>cijelo poglavlje</span></p>)
             if isinstance(child, Tag) and w > max_words:
                 flush()
-                for _pd in _split_p_tag(child, max_words):
-                    dijelovi.append(_pd)
+                dijelovi.extend(_split_p_tag(child, max_words))
                 continue
-            if (
-                trenutni_trenutni_rijeci > 0
-                and trenutni_trenutni_rijeci + w > max_words
-            ):
+            if br > 0 and br + w > max_words:
                 flush()
-            trenutni_dijelovi.append(s)
-            trenutni_trenutni_rijeci += w
+            tren.append(s)
+            br += w
 
     flush()
-
     if not dijelovi:
         return [str(p_tag)]
-
     return [open_tag + d + close_tag for d in dijelovi]
 
 
 def _grupisi_djecu(children: list, max_words: int) -> list:
     """
-    Grupira djecu u grupe od max_words.
-    Ako je pojedinačno dijete > max_words i to je <p>, reži ga.
-    Vraća listu grupa (svaka grupa je lista stringova HTML).
+    Grupira djecu u grupe od najvise max_words rijeci. Dijete bez rijeci (img, hr, <a id>,
+    komentar) se UVIJEK zadrzava (na pocetku se prilijepi prvoj sljedecoj grupi).
+    Vraca listu grupa (svaka grupa je lista HTML stringova).
     """
     grupe = []
     trenutna = []
-    trenutne_rijeci = 0
+    br = 0
 
     for child in children:
         w = _word_count(child)
 
         if w == 0:
-            if trenutna:
-                trenutna.append(str(child))
+            # samo prazan obican tekst na pocetku grupe se baca (razmaci izmedju blokova)
+            if trenutna or type(child) is not NavigableString:
+                trenutna.append(_html(child))
             continue
 
-        # _L16_: goli tekst (NavigableString) veci od max_words -> <p> blokovi po recenicama
-        if (
-            isinstance(child, NavigableString)
-            and not isinstance(child, Comment)
-            and w > max_words
-        ):
+        if w > max_words and (isinstance(child, Tag) or type(child) is NavigableString):
+            pre = []
             if trenutna:
-                grupe.append(trenutna)
-                trenutna = []
-                trenutne_rijeci = 0
-            for d in _split_text_by_sentences(str(child), max_words):
-                grupe.append(["<p>" + d.strip() + "</p>"])
-            continue
+                if br > 0:
+                    grupe.append(trenutna)
+                else:
+                    pre = trenutna
+                trenutna, br = [], 0
 
-        # Ako je <p> > max_words — reži ga
-        if isinstance(child, Tag) and child.name == "p" and w > max_words:
-            if trenutna:
-                grupe.append(trenutna)
-                trenutna = []
-                trenutne_rijeci = 0
-            # Reži <p>
-            dijelovi = _split_p_tag(child, max_words)
+            if isinstance(child, Tag):
+                if child.name == "p":
+                    dijelovi = _split_p_tag(child, max_words)
+                else:
+                    open_tag, close_tag = _tag_open_close(child)
+                    if close_tag:
+                        dijelovi = [
+                            open_tag + "".join(ug) + close_tag
+                            for ug in _grupisi_djecu(list(child.children), max_words)
+                        ]
+                    else:
+                        dijelovi = [str(child)]
+            else:
+                dijelovi = [
+                    "<p>" + _esc(d.strip()) + "</p>"
+                    for d in _split_text_by_sentences(str(child), max_words)
+                ]
+
+            if pre:
+                if dijelovi:
+                    dijelovi[0] = "".join(pre) + dijelovi[0]
+                else:
+                    dijelovi = ["".join(pre)]
             for d in dijelovi:
                 grupe.append([d])
             continue
 
-        # Ako je bilo koji drugi tag > max_words (npr. <div>) — rekurzivno
-        if isinstance(child, Tag) and w > max_words:
-            if trenutna:
-                grupe.append(trenutna)
-                trenutna = []
-                trenutne_rijeci = 0
-            # Rekurzivno obradi djecu tog taga
-            open_tag, close_tag = _tag_open_close(child)
-            if close_tag:
-                unutrasnje_grupe = _grupisi_djecu(list(child.children), max_words)
-                for ug in unutrasnje_grupe:
-                    grupe.append([open_tag + "".join(ug) + close_tag])
-            else:
-                grupe.append([str(child)])
-            continue
-
-        if trenutne_rijeci > 0 and trenutne_rijeci + w > max_words:
+        if br > 0 and br + w > max_words:
             grupe.append(trenutna)
-            trenutna = [str(child)]
-            trenutne_rijeci = w
+            trenutna = [_html(child)]
+            br = w
         else:
-            trenutna.append(str(child))
-            trenutne_rijeci += w
+            trenutna.append(_html(child))
+            br += w
 
     if trenutna:
         grupe.append(trenutna)
-
     return grupe
 
 
-def chunk_html(html_content: str, max_words: int = 250) -> list:
+def _otisak(html_content: str) -> tuple:
+    """(broj rijeci, broj img, broj hr, skup id-ova) tijela dokumenta."""
+    soup = BeautifulSoup(html_content, "html.parser")
+    body = soup.body if soup.body else soup
+    rijeci = len(body.get_text(" ", strip=True).split())
+    ids = {str(t.get("id")) for t in body.find_all(attrs={"id": True})}
+    return rijeci, len(body.find_all("img")), len(body.find_all("hr")), ids
+
+
+def _provjeri_sacuvanost(ulaz: str, chunkovi: list) -> None:
+    """R7-25: nakon rezanja ne smije nestati ni promijeniti se rijec, img, hr ni id."""
+    a = _otisak(ulaz)
+    b = _otisak("".join(chunkovi))
+    greske = []
+    if a[0] != b[0]:
+        greske.append("rijeci %d -> %d" % (a[0], b[0]))
+    if a[1] != b[1]:
+        greske.append("img %d -> %d" % (a[1], b[1]))
+    if a[2] != b[2]:
+        greske.append("hr %d -> %d" % (a[2], b[2]))
+    if a[3] != b[3]:
+        greske.append("id nedostaje: %s" % sorted(a[3] - b[3])[:5])
+    if greske:
+        raise ChunkingError("chunk_html nije sacuvao sadrzaj: " + "; ".join(greske))
+
+
+def chunk_html(html_content: str, max_words: int = MAX_WORDS_DEFAULT) -> list:
     """
-    Dijeli HTML sadržaj na blokove od max_words riječi.
-
-    Radi za sve slučajeve:
-    - Ako je <p> prevelik — reži po rečenicama.
-    - Ako je <div> prevelik — reži po <p> djeci.
-    - Ako je rečenica prevelika — reži po zarezu/razmaku.
-    - Nikad ne reže riječ na pola.
-    - Čuva <em>, <i>, <b> unutar rečenice.
-
-    Default: 400 riječi.
+    Dijeli HTML na blokove od najvise max_words rijeci (zadano MAX_WORDS_DEFAULT = 500).
+    Veliki <p> se rezi po recenicama, veliki <div> po djeci, velika recenica po zarezu/rijecima.
+    Cuva inline oznake, img/hr/sidra; nikad ne rezi rijec. Baca ChunkingError ako se sadrzaj promijeni.
     """
     soup = BeautifulSoup(html_content, "html.parser")
     body = soup.body if soup.body else soup
 
     grupe = _grupisi_djecu(list(body.children), max_words)
     chunks = ["".join(g) for g in grupe if "".join(g).strip()]
-    # _L16_: zadnja sigurnosna mreza; nijedan blok ne smije biti puno veci od max_words
     gotovi = []
     for c in chunks:
         gotovi.extend(_sigurno_rezi(c, max_words))
+    _provjeri_sacuvanost(html_content, gotovi)
     return gotovi
 
 
 def _sigurno_rezi(chunk: str, max_words: int) -> list:
-    """Ako je blok i nakon svega > 2*max_words rijeci, rezi ga po tekstu (gubi inline oznake, ali ne tekst)."""
+    """Zadnja mreza: blok i nakon svega > 2*max_words rijeci se rezi po tekstu.
+    Ako blok ima img/hr/id, NE dira se (oznake bi se izgubile); bolje velik blok nego izgubljen sadrzaj."""
     try:
-        tekst = BeautifulSoup(chunk, "html.parser").get_text("\n")
+        soup = BeautifulSoup(chunk, "html.parser")
+        tekst = soup.get_text("\n")
     except Exception:
         return [chunk]
     if len(tekst.split()) <= max_words * 2:
+        return [chunk]
+    if soup.find(["img", "hr"]) or soup.find(attrs={"id": True}):
         return [chunk]
     odlomci = [o.strip() for o in re.split(r"\n+", tekst) if o.strip()]
     dijelovi = []
@@ -331,12 +331,12 @@ def _sigurno_rezi(chunk: str, max_words: int) -> list:
     for d in dijelovi:
         w = len(d.split())
         if tren and br + w > max_words:
-            izlaz.append("".join("<p>" + x + "</p>" for x in tren))
+            izlaz.append("".join("<p>" + _esc(x) + "</p>" for x in tren))
             tren, br = [], 0
         tren.append(d)
         br += w
     if tren:
-        izlaz.append("".join("<p>" + x + "</p>" for x in tren))
+        izlaz.append("".join("<p>" + _esc(x) + "</p>" for x in tren))
     return izlaz or [chunk]
 
 

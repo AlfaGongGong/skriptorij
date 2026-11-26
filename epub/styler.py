@@ -2180,7 +2180,6 @@ def run_epub_styler(
     # Time se izbegava da originalni HTML (galley-rw, navodnici)
     # pregazi .chk sadržaj.
     try:
-        from epub.packager import _spoji_chk_u_html
         class _TmpEngine:
             pass
         _eng = _TmpEngine()
